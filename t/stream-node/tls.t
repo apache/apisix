@@ -35,24 +35,9 @@ no_root_location();
 worker_connections(1024);
 no_shuffle();
 
-sub set_env_from_file {
-    my ($env_name, $file_path) = @_;
-
-    open my $fh, '<', $file_path or die $!;
-    my $content = do { local $/; <$fh> };
-    close $fh;
-
-    $ENV{$env_name} = $content;
-}
-
 
 add_block_preprocessor(sub {
     my ($block) = @_;
-
-    if (!$block->request) {
-        $block->set_value("request", "GET /t");
-    }
-
 });
 
 run_tests();
@@ -211,6 +196,8 @@ release table api_ctx
             ngx.say("passed")
         }
     }
+--- request
+GET /t
 --- response_body
 passed
 
@@ -316,6 +303,8 @@ passed
             ngx.say("passed")
         }
     }
+--- request
+GET /t
 --- response_body
 passed
 
@@ -327,4 +316,3 @@ hello
 --- stream_sni: secret.test.com
 --- response_body
 hello world
-

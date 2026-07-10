@@ -49,7 +49,7 @@ You can use APISIX Secret functions by specifying format variables in the consum
 Secret references (`$secret://...`, `$env://...`, `$ENV://...`) can be used in the following contexts:
 
 - **Plugin configurations**: Any string field in any plugin configuration. Secret references are automatically resolved at runtime in `plugin.filter()` before the plugin executes.
-- **SSL certificates**: The `cert`, `key`, `certs`, and `keys` fields in SSL resources. Secret references are resolved during TLS handshake.
+- **SSL certificates**: The `cert`, `key`, `certs`, and `keys` fields in SSL resources. Secret references are resolved during TLS handshake, including stream (L4) TLS mode.
 - **Consumer auth configurations**: Any string field in consumer authentication plugin configurations (e.g., `key-auth`, `jwt-auth`). Secret references are resolved when consumer configuration is loaded.
 
 :::tip
