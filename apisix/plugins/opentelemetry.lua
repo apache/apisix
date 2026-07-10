@@ -48,6 +48,7 @@ local pairs   = pairs
 local ipairs  = ipairs
 local unpack  = unpack
 local string_format = string.format
+local string_lower = string.lower
 local update_time = ngx.update_time
 local tostring = tostring
 
@@ -56,6 +57,29 @@ local lrucache = core.lrucache.new({
 })
 
 local asterisk = string.byte("*", 1)
+
+-- capture the library's default (random) generator once, so wrapping it below
+-- stays idempotent even when create_tracer_obj re-runs after cache expiry
+local original_new_ids = id_generator.new_ids
+
+
+-- expects an already-lowercased string
+local function is_valid_trace_id(trace_id)
+    if not trace_id or #trace_id ~= 32 then
+        return false
+    end
+
+    if not trace_id:match("^[0-9a-f]+$") then
+        return false
+    end
+
+    -- W3C Trace Context: all-zero trace_id is invalid
+    if trace_id == "00000000000000000000000000000000" then
+        return false
+    end
+
+    return true
+end
 
 local metadata_schema = {
     type = "object",
@@ -231,10 +255,28 @@ end
 
 
 local function create_tracer_obj(conf, plugin_info)
+    -- id_generator is a shared module, so restore the default before applying
+    -- the override: without this, switching trace_id_source back to "random"
+    -- would keep honoring X-Request-Id until the worker restarts
+    id_generator.new_ids = original_new_ids
+
     if plugin_info.trace_id_source == "x-request-id" then
         id_generator.new_ids = function()
-            local trace_id = core.request.headers()["x-request-id"] or ngx_var.request_id
-            return trace_id, id_generator.new_span_id()
+            local trace_id = core.request.headers()["x-request-id"]
+                            or ngx_var.request_id
+
+            -- a duplicated X-Request-Id makes get_headers() return a table;
+            -- only a plain, valid 32-hex string can be used as a trace_id,
+            -- anything else (UUID, table, empty, ...) falls back to the
+            -- default generator instead of crashing the otlp encoder
+            if type(trace_id) == "string" then
+                trace_id = string_lower(trace_id)
+                if is_valid_trace_id(trace_id) then
+                    return trace_id, id_generator.new_span_id()
+                end
+            end
+
+            return original_new_ids()
         end
     end
     -- create exporter
