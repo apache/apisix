@@ -144,7 +144,7 @@ GET /compare
     "token": "${KUBERNETES_CLIENT_TOKEN}"
   },
   "watch_endpoint_slices": false,
-  "shared_size": "1m",
+  "shared_size": "64m",
   "default_weight": 50
 }
 --- more_headers
@@ -179,7 +179,7 @@ GET /compare
     "token": "${KUBERNETES_CLIENT_TOKEN}"
   },
   "watch_endpoint_slices": false,
-  "shared_size": "1m",
+  "shared_size": "64m",
   "default_weight": 50
 }
 --- more_headers
@@ -251,7 +251,7 @@ GET /compare
     "token": "${KUBERNETES_CLIENT_TOKEN}"
   },
   "watch_endpoint_slices": false,
-  "shared_size": "1m",
+  "shared_size": "64m",
   "default_weight": 33
 }
 --- more_headers
@@ -304,7 +304,7 @@ GET /compare
     },
     "watch_endpoint_slices": false,
     "default_weight": 50,
-    "shared_size": "1m"
+    "shared_size": "64m"
   },
   {
     "id": "release",
@@ -354,7 +354,7 @@ GET /compare
     "token": "${KUBERNETES_CLIENT_TOKEN}"
   },
   "watch_endpoint_slices": true,
-  "shared_size": "1m",
+  "shared_size": "64m",
   "default_weight": 33
 }
 --- more_headers

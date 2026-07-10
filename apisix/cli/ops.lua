@@ -908,7 +908,7 @@ Please modify "admin_key" in conf/config.yaml .
         end
 
         local consul_conf = yaml_conf.discovery["consul"]
-        sys_conf["discovery_shared_dicts"]["consul"] = consul_conf.shared_size or "10m"
+        sys_conf["discovery_shared_dicts"]["consul"] = consul_conf.shared_size or "64m"
     end
 
     -- fix up lua path
