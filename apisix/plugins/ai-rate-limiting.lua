@@ -259,34 +259,12 @@ local function transform_limit_conf(plugin_conf, instance_conf, instance_name)
         limit_conf.reset_header = "X-AI-RateLimit-Reset-" .. name
     end
 
-    if plugin_conf.policy == "redis" then
-        limit_conf.redis_host = plugin_conf.redis_host
-        limit_conf.redis_port = plugin_conf.redis_port
-        limit_conf.redis_username = plugin_conf.redis_username
-        limit_conf.redis_password = plugin_conf.redis_password
-        limit_conf.redis_database = plugin_conf.redis_database
-        limit_conf.redis_timeout = plugin_conf.redis_timeout
-        limit_conf.redis_ssl = plugin_conf.redis_ssl
-        limit_conf.redis_ssl_verify = plugin_conf.redis_ssl_verify
-    elseif plugin_conf.policy == "redis-cluster" then
-        limit_conf.redis_cluster_nodes = plugin_conf.redis_cluster_nodes
-        limit_conf.redis_cluster_name = plugin_conf.redis_cluster_name
-        limit_conf.redis_password = plugin_conf.redis_password
-        limit_conf.redis_timeout = plugin_conf.redis_timeout
-        limit_conf.redis_cluster_ssl = plugin_conf.redis_cluster_ssl
-        limit_conf.redis_cluster_ssl_verify = plugin_conf.redis_cluster_ssl_verify
-    elseif plugin_conf.policy == "redis-sentinel" then
-        limit_conf.redis_sentinels = plugin_conf.redis_sentinels
-        limit_conf.redis_master_name = plugin_conf.redis_master_name
-        limit_conf.redis_username = plugin_conf.redis_username
-        limit_conf.redis_password = plugin_conf.redis_password
-        limit_conf.sentinel_username = plugin_conf.sentinel_username
-        limit_conf.sentinel_password = plugin_conf.sentinel_password
-        limit_conf.redis_role = plugin_conf.redis_role
-        limit_conf.redis_connect_timeout = plugin_conf.redis_connect_timeout
-        limit_conf.redis_read_timeout = plugin_conf.redis_read_timeout
-        limit_conf.redis_keepalive_timeout = plugin_conf.redis_keepalive_timeout
-        limit_conf.redis_database = plugin_conf.redis_database
+    -- copy the redis fields straight from the policy's schema so no field is missed
+    local extra = policy_to_additional_properties[plugin_conf.policy]
+    if extra then
+        for k in pairs(extra.properties) do
+            limit_conf[k] = plugin_conf[k]
+        end
     end
     return limit_conf
 end
