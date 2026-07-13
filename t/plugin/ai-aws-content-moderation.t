@@ -402,3 +402,30 @@ POST /echo
 --- error_code: 500
 --- response_body_chomp
 no ai instance picked, ai-aws-content-moderation plugin must be used with ai-proxy or ai-proxy-multi plugin
+
+
+
+=== TEST 17: schema check: deny_code must be within [200, 599]
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.ai-aws-content-moderation")
+            local conf = {
+                comprehend = {
+                    access_key_id = "a",
+                    secret_access_key = "s",
+                    region = "us-east-1"
+                }
+            }
+            for _, code in ipairs({199, 600}) do
+                conf.deny_code = code
+                ngx.say(code, ": ", plugin.check_schema(conf) and "accepted" or "rejected")
+            end
+            conf.deny_code = 403
+            ngx.say("403: ", plugin.check_schema(conf) and "accepted" or "rejected")
+        }
+    }
+--- response_body
+199: rejected
+600: rejected
+403: accepted

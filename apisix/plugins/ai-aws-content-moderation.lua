@@ -73,7 +73,15 @@ local schema = {
             default = 0.5
         },
         check_request = { type = "boolean", default = true },
-        deny_code = { type = "number", default = 200 },
+        deny_code = {
+            type = "integer",
+            minimum = 200,
+            maximum = 599,
+            default = 200,
+            description = "HTTP status returned on a deny. Defaults to 200 so the " ..
+                          "provider-compatible refusal parses as a normal completion in " ..
+                          "client SDKs; set a 4xx to surface denies as HTTP errors instead.",
+        },
         deny_message = { type = "string" },
         fail_mode = binding.schema_property("skip"),
     },

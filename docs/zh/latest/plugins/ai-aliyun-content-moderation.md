@@ -65,7 +65,7 @@ import TabItem from '@theme/TabItem';
 | response_check_service | string | 否 | `"llm_response_moderation"` | | 用于响应审核的阿里云服务。 |
 | response_check_length_limit | number | 否 | `5000` | >= 1 | 响应内容长度上限。如果超过该限制，内容将分块发送到阿里云。例如，如果响应内容为 250 个字符，且 `response_check_length_limit` 设置为 `100`，则内容将分 3 次请求发送到阿里云。 |
 | risk_level_bar | string | 否 | `"high"` | `none`、`low`、`medium`、`high`、`max` | 如果评估的风险等级低于 `risk_level_bar`，请求或响应将分别被放行到上游 LLM 或客户端。 |
-| deny_code | number | 否 | `200` | | 拒绝时的 HTTP 状态码。 |
+| deny_code | integer | 否 | `200` | [200, 599] | 拒绝时的 HTTP 状态码。默认为 `200`，使兼容 provider 的拒绝响应在客户端 SDK 中被解析为正常补全；设置为 4xx 可将拒绝暴露为 HTTP 错误。 |
 | deny_message | string | 否 | | | 拒绝时的消息。 |
 | timeout | integer | 否 | `10000` | >= 1 | 超时时间（毫秒）。 |
 | keepalive | boolean | 否 | `true` | | 如果为 `true`，启用到阿里云的 HTTP 连接保活。 |
