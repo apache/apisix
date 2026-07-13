@@ -36,6 +36,10 @@ local defaults = {
     constant_tags = {"source:apisix"}
 }
 
+-- DogStatsD agent's default receive buffer (dogstatsd_buffer_size); datagrams
+-- larger than this are silently truncated, so cap coalescing here
+local MAX_DATAGRAM_SIZE = 8192
+
 local batch_processor_manager = bp_manager_mod.new(plugin_name)
 
 -- Shared schema for individual tag strings.
@@ -142,7 +146,7 @@ local function generate_tag(entry, const_tags)
 end
 
 
--- Build all DogStatsD metrics for one entry as a single newline-delimited packet.
+-- Build the DogStatsD metric lines for one entry.
 local function build_metrics(entry, metadata)
     -- Generate prefix & suffix according dogstatsd udp data format.
     local suffix = generate_tag(entry, metadata.value.constant_tags)
@@ -168,7 +172,7 @@ local function build_metrics(entry, metadata)
     core.table.insert(metrics, format("%s:%s|%s%s", prefix .. "egress.size",
                                       entry.response.size, "ms", suffix))
 
-    return concat(metrics, "\n")
+    return metrics
 end
 
 
@@ -197,8 +201,27 @@ local function push_metrics(entries)
 
     local err_msg, first_fail
     for i = 1, #entries do
-        -- coalesce the per-request metrics into one datagram
-        local send_ok, send_err = sock:send(build_metrics(entries[i], metadata))
+        local lines = build_metrics(entries[i], metadata)
+        local payload = concat(lines, "\n")
+
+        local send_ok, send_err
+        if #payload <= MAX_DATAGRAM_SIZE then
+            -- coalesce the entry's metrics into one datagram
+            send_ok, send_err = sock:send(payload)
+        else
+            -- too large to coalesce safely: one datagram per metric
+            for j = 1, #lines do
+                if #lines[j] > MAX_DATAGRAM_SIZE then
+                    core.log.warn("dogstatsd metric line exceeds ", MAX_DATAGRAM_SIZE,
+                                  " bytes, agent may truncate it")
+                end
+                send_ok, send_err = sock:send(lines[j])
+                if not send_ok then
+                    break
+                end
+            end
+        end
+
         if not send_ok then
             err_msg = "failed to send metrics to dogstatsd server: host[" .. host
                       .. "] port[" .. tostring(port) .. "] err: " .. send_err

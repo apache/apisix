@@ -34,8 +34,8 @@ local schema = {
             default = false,
         },
         realm = schema_def.get_realm_schema("basic"),
+        anonymous_consumer = schema_def.anonymous_consumer_schema,
     },
-    anonymous_consumer = schema_def.anonymous_consumer_schema,
 }
 
 local consumer_schema = {

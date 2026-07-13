@@ -96,3 +96,76 @@ GET /t
     }
 --- response_body
 nil
+
+
+
+=== TEST 2: store secret into vault
+--- exec
+VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault kv put kv/apisix/lru-key/jack key=value
+--- response_body
+Success! Data written to: kv/apisix/lru-key/jack
+
+
+
+=== TEST 3: deleted secret is evicted from the LRU cache
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local secret = require("apisix.secret")
+
+            -- configure the vault secret manager
+            local code, body = t('/apisix/admin/secrets/vault/lru',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "http://127.0.0.1:8200",
+                    "prefix": "kv/apisix",
+                    "token": "root"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                return ngx.say(body)
+            end
+
+            local ref = { key = "$secret://vault/lru/lru-key/jack/key" }
+
+            -- resolve through the cache once the manager config is synced
+            local resolved
+            for _ = 1, 50 do
+                resolved = secret.fetch_secrets(ref, true)
+                if resolved.key == "value" then
+                    break
+                end
+                ngx.sleep(0.1)
+            end
+            ngx.say(resolved.key)
+
+            local _, ver = secret.secrets()
+
+            code, body = t('/apisix/admin/secrets/vault/lru', ngx.HTTP_DELETE)
+            if code >= 300 then
+                ngx.status = code
+                return ngx.say(body)
+            end
+
+            -- wait for the /secrets config version to bump
+            for _ = 1, 50 do
+                local _, new_ver = secret.secrets()
+                if new_ver ~= ver then
+                    break
+                end
+                ngx.sleep(0.1)
+            end
+
+            -- cache must re-resolve: the manager is gone, so it falls back to the literal ref
+            resolved = secret.fetch_secrets(ref, true)
+            ngx.say(resolved.key)
+        }
+    }
+--- request
+GET /t
+--- timeout: 20
+--- response_body
+value
+$secret://vault/lru/lru-key/jack/key

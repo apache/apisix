@@ -45,7 +45,7 @@ if ! grep "env TOKEN_ENV" conf/nginx.conf; then
   exit 1
 fi
 
-if ! grep "lua_shared_dict kubernetes 1m;" conf/nginx.conf; then
+if ! grep "lua_shared_dict kubernetes 64m;" conf/nginx.conf; then
   echo "kubernetes discovery lua_shared_dict inject failed"
   exit 1
 fi
@@ -100,7 +100,7 @@ if ! grep "env PRO_TOKEN" conf/nginx.conf; then
   exit 1
 fi
 
-if ! grep "lua_shared_dict kubernetes-dev 1m;" conf/nginx.conf; then
+if ! grep "lua_shared_dict kubernetes-dev 64m;" conf/nginx.conf; then
   echo "kubernetes discovery lua_shared_dict inject failed"
   exit 1
 fi
