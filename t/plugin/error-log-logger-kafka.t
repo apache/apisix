@@ -335,3 +335,39 @@ done
 --- response_body
 property "kafka" validation failed: property "tls" validation failed: property "verify" validation failed: wrong type: expected boolean, got string
 done
+
+
+
+=== TEST 10: put metadata with kafka tls and log an error message - send via TLS
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/error-log-logger',
+                ngx.HTTP_PUT,
+                [[{
+                    "kafka": {
+                        "brokers": [{
+                            "host": "127.0.0.1",
+                            "port": 9093
+                        }],
+                        "kafka_topic": "test2",
+                        "meta_refresh_interval": 1,
+                        "tls": {"verify": false}
+                    },
+                    "level": "ERROR",
+                    "inactive_timeout": 1
+                }]]
+                )
+            ngx.sleep(2)
+            core.log.error("this is a error message for tls test.")
+        }
+    }
+--- error_log eval
+[qr/this is a error message for tls test/,
+qr/sending a batch logs to kafka brokers: \[\{"host":"127.0.0.1","port":9093\}\]/,
+qr/send data to kafka: .*this is a error message for tls test/]
+--- no_error_log
+failed to do SSL handshake
+--- wait: 3

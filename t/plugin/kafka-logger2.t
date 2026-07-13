@@ -1186,3 +1186,117 @@ done
 --- response_body
 property "tls" validation failed: property "verify" validation failed: wrong type: expected boolean, got string
 done
+
+
+
+=== TEST 31: set route with tls config to SSL port
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins":{
+                        "kafka-logger":{
+                            "brokers":[
+                            {
+                                "host":"127.0.0.1",
+                                "port":9093
+                            }],
+                            "kafka_topic":"test2",
+                            "producer_type":"sync",
+                            "key":"key1",
+                            "timeout":1,
+                            "batch_max_size":1,
+                            "include_req_body": true,
+                            "tls":{"verify":false}
+                        }
+                    },
+                    "upstream":{
+                        "nodes":{
+                            "127.0.0.1:1980":1
+                        },
+                        "type":"roundrobin"
+                    },
+                    "uri":"/hello"
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 32: hit route, send data to kafka via TLS successfully
+--- request
+POST /hello?name=qwerty
+abcdef
+--- response_body
+hello world
+--- error_log eval
+qr/send data to kafka: \{.*"body":"abcdef"/
+--- no_error_log
+[error]
+--- wait: 2
+
+
+
+=== TEST 33: set route with tls verify enabled against self-signed broker
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins":{
+                        "kafka-logger":{
+                            "brokers":[
+                            {
+                                "host":"127.0.0.1",
+                                "port":9093
+                            }],
+                            "kafka_topic":"test2",
+                            "producer_type":"sync",
+                            "key":"key1",
+                            "timeout":1,
+                            "batch_max_size":1,
+                            "include_req_body": true,
+                            "tls":{"verify":true}
+                        }
+                    },
+                    "upstream":{
+                        "nodes":{
+                            "127.0.0.1:1980":1
+                        },
+                        "type":"roundrobin"
+                    },
+                    "uri":"/hello"
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 34: hit route, tls verify rejects the self-signed certificate
+--- request
+POST /hello?name=qwerty
+abcdef
+--- response_body
+hello world
+--- error_log
+failed to do SSL handshake with 127.0.0.1:9093
+--- wait: 2
