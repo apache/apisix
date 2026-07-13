@@ -1123,3 +1123,66 @@ hello world
 --- error_log eval
 qr/send data to kafka: \{.*"body":"abcdef"/
 --- wait: 2
+
+
+
+=== TEST 28: tls schema validation - valid tls config
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.kafka-logger")
+            local ok, err = plugin.check_schema({
+                brokers = {{host = "127.0.0.1", port = 9093}},
+                kafka_topic = "test",
+                tls = { verify = false }
+            })
+            if not ok then
+                ngx.say(err)
+            end
+            ngx.say("done")
+        }
+    }
+--- response_body
+done
+
+
+
+=== TEST 29: tls schema validation - without tls (backward compatibility)
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.kafka-logger")
+            local ok, err = plugin.check_schema({
+                brokers = {{host = "127.0.0.1", port = 9092}},
+                kafka_topic = "test"
+            })
+            if not ok then
+                ngx.say(err)
+            end
+            ngx.say("done")
+        }
+    }
+--- response_body
+done
+
+
+
+=== TEST 30: tls schema validation - wrong type for verify
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.kafka-logger")
+            local ok, err = plugin.check_schema({
+                brokers = {{host = "127.0.0.1", port = 9093}},
+                kafka_topic = "test",
+                tls = { verify = "abc" }
+            })
+            if not ok then
+                ngx.say(err)
+            end
+            ngx.say("done")
+        }
+    }
+--- response_body
+property "tls" validation failed: property "verify" validation failed: wrong type: expected boolean, got string
+done
