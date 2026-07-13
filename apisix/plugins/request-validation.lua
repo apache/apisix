@@ -18,6 +18,7 @@ local core          = require("apisix.core")
 local secret        = require("apisix.secret")
 local plugin_name   = "request-validation"
 local ngx           = ngx
+local type          = type
 
 local schema = {
     type = "object",
@@ -89,9 +90,10 @@ function _M.rewrite(conf, ctx)
         end
 
         local body_is_json = true
-        if headers["content-type"]
+        local content_type = headers["content-type"]
+        if type(content_type) == "string"
             and core.string.has_prefix(
-                headers["content-type"]:lower(),
+                content_type:lower(),
                 "application/x-www-form-urlencoded"
             )
         then

@@ -1786,11 +1786,25 @@ qr/101-hello/
 
 
 
-=== TEST 53: test urlencoded post data with charset header
+=== TEST 53: test urlencoded post data with charset and mixed-case media type
 --- more_headers
-Content-Type: application/x-www-form-urlencoded; charset=utf-8
+Content-Type: Application/X-WWW-Form-Urlencoded; charset=utf-8
 --- request eval
 "POST /echo
 " . "a=b&" x 101 . "required_payload=101-hello"
 --- response_body eval
 qr/101-hello/
+
+
+
+=== TEST 54: duplicated Content-Type header must not error
+--- more_headers
+Content-Type: application/x-www-form-urlencoded
+Content-Type: application/json
+--- request
+POST /echo
+{"required_payload": "hello54"}
+--- response_body eval
+qr/hello54/
+--- no_error_log
+[error]
