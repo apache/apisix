@@ -1797,14 +1797,72 @@ qr/101-hello/
 
 
 
-=== TEST 54: duplicated Content-Type header must not error
+=== TEST 54: add route for duplicated Content-Type validation
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "request-validation": {
+                            "body_schema": {
+                                "type": "object",
+                                "required": ["required_payload"],
+                                "properties": {
+                                    "required_payload": {"type": "string"}
+                                }
+                            },
+                            "rejected_code": 400,
+                            "rejected_msg": "duplicated content-type"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/echo"
+                }]])
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 55: duplicated Content-Type header is rejected (urlencoded, json)
 --- more_headers
 Content-Type: application/x-www-form-urlencoded
 Content-Type: application/json
 --- request
 POST /echo
-{"required_payload": "hello54"}
---- response_body eval
-qr/hello54/
---- no_error_log
-[error]
+{"required_payload": "hello"}
+--- error_code: 400
+--- response_body chomp
+duplicated content-type
+--- error_log
+duplicated Content-Type header
+
+
+
+=== TEST 56: duplicated Content-Type header is rejected (json, urlencoded)
+--- more_headers
+Content-Type: application/json
+Content-Type: application/x-www-form-urlencoded
+--- request
+POST /echo
+{"required_payload": "hello"}
+--- error_code: 400
+--- response_body chomp
+duplicated content-type
+--- error_log
+duplicated Content-Type header

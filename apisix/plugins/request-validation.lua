@@ -91,6 +91,13 @@ function _M.rewrite(conf, ctx)
 
         local body_is_json = true
         local content_type = headers["content-type"]
+        -- a duplicated Content-Type is ambiguous: APISIX and the upstream may
+        -- parse the body differently, bypassing validation. reject it.
+        if type(content_type) == "table" then
+            core.log.error("duplicated Content-Type header")
+            return conf.rejected_code, conf.rejected_msg
+        end
+
         if type(content_type) == "string"
             and core.string.has_prefix(
                 content_type:lower(),
