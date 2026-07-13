@@ -123,6 +123,11 @@ function _M.new(up_nodes, upstream)
             return servers[id]
         end,
         after_balance = function (ctx, before_retry)
+            -- the release is what makes the request stop holding the server, so drop
+            -- the reference here instead of leaving every caller to remember
+            local server = ctx.balancer_server
+            ctx.balancer_server = nil
+
             if not before_retry then
                 if ctx.balancer_tried_servers then
                     core.tablepool.release("balancer_tried_servers", ctx.balancer_tried_servers)
@@ -132,11 +137,15 @@ function _M.new(up_nodes, upstream)
                 return nil
             end
 
+            if not server then
+                return nil
+            end
+
             if not ctx.balancer_tried_servers then
                 ctx.balancer_tried_servers = core.tablepool.fetch("balancer_tried_servers", 0, 2)
             end
 
-            ctx.balancer_tried_servers[ctx.balancer_server] = true
+            ctx.balancer_tried_servers[server] = true
             ctx.balancer_tried_servers_count = (ctx.balancer_tried_servers_count or 0) + 1
         end,
         before_retry_next_priority = function (ctx)
