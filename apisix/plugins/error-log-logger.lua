@@ -195,6 +195,7 @@ local _M = {
 
 function _M.check_schema(conf, schema_type)
     if schema_type == core.schema.TYPE_METADATA then
+        core.utils.check_tls_bool({"kafka.tls.verify"}, conf, plugin_name)
         return core.schema.check(metadata_schema, conf)
     end
 
