@@ -736,6 +736,7 @@ grep apisix.phase.access ci/pod/otelcol-contrib/data-otlp.json | tail -n 1
 qr/otel-meta-change-second/
 
 
+
 === TEST 31: metadata_schema rejects non-scalar resource and collector.request_headers values
 --- config
     location /t {
