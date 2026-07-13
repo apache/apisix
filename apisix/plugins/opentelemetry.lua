@@ -69,7 +69,9 @@ local metadata_schema = {
         resource = {
             type = "object",
             description = "additional resource",
-            additionalProperties = {{type = "boolean"}, {type = "number"}, {type = "string"}},
+            additionalProperties = {
+                oneOf = {{type = "boolean"}, {type = "number"}, {type = "string"}},
+            },
         },
         collector = {
             type = "object",
@@ -81,7 +83,7 @@ local metadata_schema = {
                     type = "object",
                     description = "http headers",
                     additionalProperties = {
-                        one_of = {{type = "boolean"},{type = "number"}, {type = "string"}},
+                        oneOf = {{type = "boolean"}, {type = "number"}, {type = "string"}},
                    },
                 }
             },
