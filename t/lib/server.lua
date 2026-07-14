@@ -323,6 +323,9 @@ function _M.wolf_rbac_access_check()
         ngx.say(json_encode({ok=true,
                             data={ userInfo={nickname="administrator",
                                 username="admin", id="100"} }}))
+    elseif resName == '/hello/no_userinfo' then
+        -- authorized (200) but the backend returns no userInfo
+        ngx.say(json_encode({ok=true, data={}}))
     elseif resName == '/hello/500' then
         ngx.status = 500
         ngx.say(json_encode({ok=false, reason="ERR_SERVER_ERROR"}))
