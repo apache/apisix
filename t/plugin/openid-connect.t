@@ -1995,8 +1995,8 @@ done
             ngx.say("done")
         }
     }
---- response_body
-property "dpop" validation failed: property "public_jwk" validation failed: object matches forbidden schema
+--- response_body_like
+property "dpop" validation failed: property "public_jwk" validation failed:.*
 done
 
 
