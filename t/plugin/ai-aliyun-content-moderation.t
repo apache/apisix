@@ -2281,3 +2281,29 @@ arr_out:arr-out
 anth_str:anth sys
 anth_blk:b1,b2
 bed_blk:bs1,bs2
+
+
+
+=== TEST 73: schema check: deny_code must be within [200, 599]
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.ai-aliyun-content-moderation")
+            local conf = {
+                endpoint = "https://example.com",
+                region_id = "cn-hangzhou",
+                access_key_id = "a",
+                access_key_secret = "s"
+            }
+            for _, code in ipairs({199, 600}) do
+                conf.deny_code = code
+                ngx.say(code, ": ", plugin.check_schema(conf) and "accepted" or "rejected")
+            end
+            conf.deny_code = 403
+            ngx.say("403: ", plugin.check_schema(conf) and "accepted" or "rejected")
+        }
+    }
+--- response_body
+199: rejected
+600: rejected
+403: accepted
