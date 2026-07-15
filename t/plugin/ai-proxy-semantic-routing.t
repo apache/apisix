@@ -729,3 +729,149 @@ Content-Type: application/json
 model-fallback
 --- no_error_log
 [error]
+
+
+
+=== TEST 22: configure a semantic route on the Responses API path
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local function inst(name, model, examples, catchall)
+                local i = {
+                    name = name, provider = "openai", weight = 1,
+                    auth = { header = { Authorization = "Bearer token" } },
+                    options = { model = model },
+                    override = {
+                        endpoint = "http://127.0.0.1:6798/v1/chat/completions",
+                    },
+                }
+                if examples then i.examples = examples end
+                if catchall then i.catchall = true end
+                return i
+            end
+            local conf = {
+                uri = "/llm/v1/responses",
+                plugins = {
+                    ["ai-proxy-multi"] = {
+                        embeddings = {
+                            provider = "openai",
+                            model = "text-embedding-3-small",
+                            endpoint = "http://127.0.0.1:6797/v1/embeddings",
+                            auth = { header = { Authorization = "Bearer token" } },
+                            ssl_verify = false,
+                        },
+                        balancer = {
+                            algorithm = "semantic", threshold = 0.9,
+                            expose_scores = true,
+                        },
+                        instances = {
+                            inst("code", "model-code", {"write python code"}),
+                            inst("cheap", "model-cheap", {"translate this text"}),
+                            inst("default", "model-fallback", nil, true),
+                        },
+                        ssl_verify = false,
+                    },
+                },
+            }
+            local code, body = t('/apisix/admin/routes/2', ngx.HTTP_PUT,
+                                 core.json.encode(conf))
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 23: a Responses request (body.input) is routed, not fallen back
+--- request
+POST /llm/v1/responses
+{"model":"auto","input":"help me debug this python code"}
+--- more_headers
+Content-Type: application/json
+--- response_headers_like
+X-AI-Semantic-Route: code
+X-AI-Semantic-Scores: code:1\.\d+,cheap:0\.\d+
+--- no_error_log
+[error]
+
+
+
+=== TEST 24: configure a semantic route on the Anthropic Messages path
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local function inst(name, model, examples, catchall)
+                local i = {
+                    name = name, provider = "openai", weight = 1,
+                    auth = { header = { Authorization = "Bearer token" } },
+                    options = { model = model },
+                    override = {
+                        endpoint = "http://127.0.0.1:6798/v1/chat/completions",
+                    },
+                }
+                if examples then i.examples = examples end
+                if catchall then i.catchall = true end
+                return i
+            end
+            local conf = {
+                uri = "/llm/v1/messages",
+                plugins = {
+                    ["ai-proxy-multi"] = {
+                        embeddings = {
+                            provider = "openai",
+                            model = "text-embedding-3-small",
+                            endpoint = "http://127.0.0.1:6797/v1/embeddings",
+                            auth = { header = { Authorization = "Bearer token" } },
+                            ssl_verify = false,
+                        },
+                        balancer = {
+                            algorithm = "semantic", threshold = 0.9,
+                            expose_scores = true,
+                        },
+                        instances = {
+                            inst("code", "model-code", {"write python code"}),
+                            inst("cheap", "model-cheap", {"translate this text"}),
+                            inst("default", "model-fallback", nil, true),
+                        },
+                        ssl_verify = false,
+                    },
+                },
+            }
+            local code, body = t('/apisix/admin/routes/3', ngx.HTTP_PUT,
+                                 core.json.encode(conf))
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 25: an Anthropic request (body.system + content) is routed by the last user turn
+--- request
+POST /llm/v1/messages
+{"model":"auto","system":"you are a helpful assistant","messages":[{"role":"user","content":"help me debug this python code"}]}
+--- more_headers
+Content-Type: application/json
+--- response_headers_like
+X-AI-Semantic-Route: code
+X-AI-Semantic-Scores: code:1\.\d+,cheap:0\.\d+

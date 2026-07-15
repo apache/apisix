@@ -44,6 +44,7 @@ local url = require("socket.url")
 local priority_balancer = require("apisix.balancer.priority")
 local semantic = require("apisix.plugins.ai-proxy.semantic")
 local embedding = require("apisix.plugins.ai-proxy.embedding")
+local ai_protocols = require("apisix.plugins.ai-protocols")
 local endpoint_regex = "^(https?)://([^:/]+):?(%d*)/?.*$"
 
 local pickers = {}
@@ -676,20 +677,28 @@ local function pick_target(ctx, conf, ups_tab)
 end
 
 
-local function extract_last_user_message()
+local function extract_last_user_message(ctx)
     local body = core.request.get_json_request_body_table()
-    if not body or type(body.messages) ~= "table" then
+    if not body then
         return nil
     end
-    for i = #body.messages, 1, -1 do
-        local m = body.messages[i]
+    -- Normalize through the protocol adapter instead of reading body.messages
+    -- directly, so the prompt is found for every supported client protocol:
+    -- OpenAI Responses carries it in body.input, Anthropic/Bedrock in structured
+    -- content blocks. get_messages returns canonical {role, content} entries.
+    local messages = ai_protocols.get_messages(body, ctx)
+    for i = #messages, 1, -1 do
+        local m = messages[i]
         if type(m) == "table" and m.role == "user" then
             local content = m.content
             if type(content) == "string" then
-                return content
+                if content ~= "" then
+                    return content
+                end
             elseif type(content) == "table" then
-                -- multimodal content: concatenate the text parts so routing
-                -- still works for {type=text|image_url,...} arrays.
+                -- Some adapters return multimodal content unflattened
+                -- ({type=text|image_url,...}); concatenate the text parts so
+                -- routing still works.
                 local parts = {}
                 for _, p in ipairs(content) do
                     if type(p) == "table" and p.type == "text"
@@ -762,7 +771,7 @@ local function pick_semantic_instance(ctx, conf)
         return semantic_fallback(conf)
     end
 
-    local prompt = extract_last_user_message()
+    local prompt = extract_last_user_message(ctx)
     if not prompt then
         core.log.warn("semantic routing: no user message found, falling back")
         return semantic_fallback(conf)
