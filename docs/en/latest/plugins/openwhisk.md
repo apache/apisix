@@ -37,6 +37,7 @@ This Plugin can be configured on a Route and requests will be send to the config
 
 | Name              | Type    | Required | Default | Valid values | Description                                                                                                |
 | ----------------- | ------- | -------- | ------- | ------------ | ---------------------------------------------------------------------------------------------------------- |
+| max_req_body_size | integer | False | 67108864 | >= 1 | Maximum request body size in bytes buffered into memory. Requests with a larger body are rejected. |
 | api_host          | string  | True     |         |              | OpenWhisk API host address. For example, `https://localhost:3233`.                                         |
 | ssl_verify        | boolean | False    | true    |              | When set to `true` verifies the SSL certificate.                                                           |
 | service_token     | string  | True     |         |              | OpenWhisk service token. The format is `xxx:xxx` and it is passed through basic auth when calling the API. |

@@ -28,6 +28,13 @@ local plugin_name = "ai-prompt-guard"
 local schema = {
     type = "object",
     properties = {
+        max_req_body_size = {
+            type = "integer",
+            minimum = 1,
+            default = 67108864,
+            description = "maximum request body size in bytes buffered into "
+                       .. "memory; larger request bodies are rejected",
+        },
         match_all_roles = {
             type = "boolean",
             default = false,
@@ -98,7 +105,7 @@ end
 
 
 function _M.access(conf, ctx)
-    local body = core.request.get_body()
+    local body = core.request.get_body(conf.max_req_body_size)
     if not body then
         core.log.error("Empty request body")
         return 400, {message = "Empty request body"}
