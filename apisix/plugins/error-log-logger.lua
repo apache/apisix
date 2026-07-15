@@ -195,8 +195,12 @@ local _M = {
 
 function _M.check_schema(conf, schema_type)
     if schema_type == core.schema.TYPE_METADATA then
+        local ok, err = core.schema.check(metadata_schema, conf)
+        if not ok then
+            return nil, err
+        end
         core.utils.check_tls_bool({"kafka.tls.verify"}, conf, plugin_name)
-        return core.schema.check(metadata_schema, conf)
+        return true
     end
 
     local check = {"skywalking.endpoint_addr", "clickhouse.endpoint_addr"}
