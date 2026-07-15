@@ -161,7 +161,7 @@ __DATA__
             -- bracket"), so we keep the inlined Lua short instead.
             local core = require("apisix.core")
             local t = require("lib.test_admin").test
-            local function inst(name, model, examples, catchall)
+            local function inst(name, model, examples)
                 local i = {
                     name = name, provider = "openai", weight = 1,
                     auth = { header = { Authorization = "Bearer token" } },
@@ -171,25 +171,28 @@ __DATA__
                     },
                 }
                 if examples then i.examples = examples end
-                if catchall then i.catchall = true end
                 return i
             end
             local conf = {
                 uri = "/anything",
                 plugins = {
                     ["ai-proxy-multi"] = {
-                        embeddings = {
-                            provider = "openai",
-                            model = "text-embedding-3-small",
-                            endpoint = "http://127.0.0.1:6797/v1/embeddings",
-                            auth = { header = { Authorization = "Bearer token" } },
-                            ssl_verify = false,
+                        balancer = { algorithm = "semantic" },
+                        semantic_opts = {
+                            embeddings = {
+                                provider = "openai",
+                                model = "text-embedding-3-small",
+                                endpoint = "http://127.0.0.1:6797/v1/embeddings",
+                                auth = { header = { Authorization = "Bearer token" } },
+                                ssl_verify = false,
+                            },
+                            threshold = 0.9,
+                            fallback = "default",
                         },
-                        balancer = { algorithm = "semantic", threshold = 0.9 },
                         instances = {
                             inst("code", "model-code", {"write python code"}),
                             inst("cheap", "model-cheap", {"translate this text"}),
-                            inst("default", "model-fallback", nil, true),
+                            inst("default", "model-fallback"),
                         },
                         ssl_verify = false,
                     },
@@ -269,13 +272,13 @@ semantic routing: query embedding failed
 
 
 
-=== TEST 6: reconfigure the route with expose_scores enabled
+=== TEST 6: reconfigure the route with debugging enabled
 --- config
     location /t {
         content_by_lua_block {
             local core = require("apisix.core")
             local t = require("lib.test_admin").test
-            local function inst(name, model, examples, catchall)
+            local function inst(name, model, examples)
                 local i = {
                     name = name, provider = "openai", weight = 1,
                     auth = { header = { Authorization = "Bearer token" } },
@@ -285,28 +288,29 @@ semantic routing: query embedding failed
                     },
                 }
                 if examples then i.examples = examples end
-                if catchall then i.catchall = true end
                 return i
             end
             local conf = {
                 uri = "/anything",
                 plugins = {
                     ["ai-proxy-multi"] = {
-                        embeddings = {
-                            provider = "openai",
-                            model = "text-embedding-3-small",
-                            endpoint = "http://127.0.0.1:6797/v1/embeddings",
-                            auth = { header = { Authorization = "Bearer token" } },
-                            ssl_verify = false,
-                        },
-                        balancer = {
-                            algorithm = "semantic", threshold = 0.9,
-                            expose_scores = true,
+                        balancer = { algorithm = "semantic" },
+                        semantic_opts = {
+                            embeddings = {
+                                provider = "openai",
+                                model = "text-embedding-3-small",
+                                endpoint = "http://127.0.0.1:6797/v1/embeddings",
+                                auth = { header = { Authorization = "Bearer token" } },
+                                ssl_verify = false,
+                            },
+                            threshold = 0.9,
+                            fallback = "default",
+                            debugging = true,
                         },
                         instances = {
                             inst("code", "model-code", {"write python code"}),
                             inst("cheap", "model-cheap", {"translate this text"}),
-                            inst("default", "model-fallback", nil, true),
+                            inst("default", "model-fallback"),
                         },
                         ssl_verify = false,
                     },
@@ -447,7 +451,7 @@ invalid embedding entry at index 0
         content_by_lua_block {
             local core = require("apisix.core")
             local t = require("lib.test_admin").test
-            local function inst(name, model, examples, catchall)
+            local function inst(name, model, examples)
                 local i = {
                     name = name, provider = "openai", weight = 1,
                     auth = { header = { Authorization = "Bearer token" } },
@@ -457,26 +461,29 @@ invalid embedding entry at index 0
                     },
                 }
                 if examples then i.examples = examples end
-                if catchall then i.catchall = true end
                 return i
             end
             local conf = {
                 uri = "/anything",
                 plugins = {
                     ["ai-proxy-multi"] = {
-                        embeddings = {
-                            provider = "openai",
-                            model = "text-embedding-3-small",
-                            endpoint = "http://127.0.0.1:6797/v1/embeddings",
-                            auth = { header = { Authorization = "Bearer token" } },
-                            ssl_verify = false,
+                        balancer = { algorithm = "semantic" },
+                        semantic_opts = {
+                            embeddings = {
+                                provider = "openai",
+                                model = "text-embedding-3-small",
+                                endpoint = "http://127.0.0.1:6797/v1/embeddings",
+                                auth = { header = { Authorization = "Bearer token" } },
+                                ssl_verify = false,
+                            },
+                            threshold = 0.9,
+                            fallback = "default",
                         },
-                        balancer = { algorithm = "semantic", threshold = 0.9 },
                         instances = {
                             -- embedding this instance's examples makes the mock
                             -- fail the whole reference batch
                             inst("code", "model-code", {"servererror example"}),
-                            inst("default", "model-fallback", nil, true),
+                            inst("default", "model-fallback"),
                         },
                         ssl_verify = false,
                     },
@@ -521,7 +528,7 @@ failed to fetch reference embeddings
         content_by_lua_block {
             local core = require("apisix.core")
             local t = require("lib.test_admin").test
-            local function inst(name, model, examples, catchall)
+            local function inst(name, model, examples)
                 local i = {
                     name = name, provider = "openai", weight = 1,
                     auth = { header = { Authorization = "Bearer token" } },
@@ -531,25 +538,28 @@ failed to fetch reference embeddings
                     },
                 }
                 if examples then i.examples = examples end
-                if catchall then i.catchall = true end
                 return i
             end
             local conf = {
                 uri = "/anything",
                 plugins = {
                     ["ai-proxy-multi"] = {
-                        embeddings = {
-                            provider = "azure-openai",
-                            model = "text-embedding-3-small",
-                            endpoint = "http://127.0.0.1:6799/openai/deployments/emb"
-                                       .. "/embeddings?api-version=2024-02-01",
-                            auth = { header = { ["api-key"] = "azure-key" } },
-                            ssl_verify = false,
+                        balancer = { algorithm = "semantic" },
+                        semantic_opts = {
+                            embeddings = {
+                                provider = "azure-openai",
+                                model = "text-embedding-3-small",
+                                endpoint = "http://127.0.0.1:6799/openai/deployments/emb"
+                                           .. "/embeddings?api-version=2024-02-01",
+                                auth = { header = { ["api-key"] = "azure-key" } },
+                                ssl_verify = false,
+                            },
+                            threshold = 0.9,
+                            fallback = "default",
                         },
-                        balancer = { algorithm = "semantic", threshold = 0.9 },
                         instances = {
                             inst("code", "model-code", {"write python code"}),
-                            inst("default", "model-fallback", nil, true),
+                            inst("default", "model-fallback"),
                         },
                         ssl_verify = false,
                     },
@@ -608,14 +618,17 @@ azure-embed-hit api-version=2024-02-01
                 uri = "/anything",
                 plugins = {
                     ["ai-proxy-multi"] = {
-                        embeddings = {
-                            provider = "openai",
-                            model = "text-embedding-3-small",
-                            endpoint = "http://127.0.0.1:6797/v1/embeddings",
-                            auth = { header = { Authorization = "Bearer token" } },
-                            ssl_verify = false,
+                        balancer = { algorithm = "semantic" },
+                        semantic_opts = {
+                            embeddings = {
+                                provider = "openai",
+                                model = "text-embedding-3-small",
+                                endpoint = "http://127.0.0.1:6797/v1/embeddings",
+                                auth = { header = { Authorization = "Bearer token" } },
+                                ssl_verify = false,
+                            },
+                            threshold = 0.9,
                         },
-                        balancer = { algorithm = "semantic", threshold = 0.9 },
                         instances = {
                             inst("first", "model-first", {"write python code"}),
                             inst("second", "model-second", {"translate this text"}),
@@ -666,17 +679,21 @@ no instance cleared threshold
                 uri = "/anything",
                 plugins = {
                     ["ai-proxy-multi"] = {
-                        embeddings = {
-                            provider = "openai",
-                            model = "text-embedding-3-small",
-                            endpoint = "http://127.0.0.1:6797/v1/embeddings",
-                            auth = { header = { Authorization = "Bearer token" } },
-                            ssl_verify = false,
-                        },
                         -- the global threshold is permissive (0.1); the code
                         -- instance raises its own bar to 0.9, so a prompt scoring
                         -- ~0.707 clears the global one but not the instance's
-                        balancer = { algorithm = "semantic", threshold = 0.1 },
+                        balancer = { algorithm = "semantic" },
+                        semantic_opts = {
+                            embeddings = {
+                                provider = "openai",
+                                model = "text-embedding-3-small",
+                                endpoint = "http://127.0.0.1:6797/v1/embeddings",
+                                auth = { header = { Authorization = "Bearer token" } },
+                                ssl_verify = false,
+                            },
+                            threshold = 0.1,
+                            fallback = "default",
+                        },
                         instances = {
                             {
                                 name = "code", provider = "openai", weight = 1,
@@ -695,7 +712,6 @@ no instance cleared threshold
                                 override = {
                                     endpoint = "http://127.0.0.1:6798/v1/chat/completions",
                                 },
-                                catchall = true,
                             },
                         },
                         ssl_verify = false,
@@ -738,7 +754,7 @@ model-fallback
         content_by_lua_block {
             local core = require("apisix.core")
             local t = require("lib.test_admin").test
-            local function inst(name, model, examples, catchall)
+            local function inst(name, model, examples)
                 local i = {
                     name = name, provider = "openai", weight = 1,
                     auth = { header = { Authorization = "Bearer token" } },
@@ -748,28 +764,29 @@ model-fallback
                     },
                 }
                 if examples then i.examples = examples end
-                if catchall then i.catchall = true end
                 return i
             end
             local conf = {
                 uri = "/llm/v1/responses",
                 plugins = {
                     ["ai-proxy-multi"] = {
-                        embeddings = {
-                            provider = "openai",
-                            model = "text-embedding-3-small",
-                            endpoint = "http://127.0.0.1:6797/v1/embeddings",
-                            auth = { header = { Authorization = "Bearer token" } },
-                            ssl_verify = false,
-                        },
-                        balancer = {
-                            algorithm = "semantic", threshold = 0.9,
-                            expose_scores = true,
+                        balancer = { algorithm = "semantic" },
+                        semantic_opts = {
+                            embeddings = {
+                                provider = "openai",
+                                model = "text-embedding-3-small",
+                                endpoint = "http://127.0.0.1:6797/v1/embeddings",
+                                auth = { header = { Authorization = "Bearer token" } },
+                                ssl_verify = false,
+                            },
+                            threshold = 0.9,
+                            fallback = "default",
+                            debugging = true,
                         },
                         instances = {
                             inst("code", "model-code", {"write python code"}),
                             inst("cheap", "model-cheap", {"translate this text"}),
-                            inst("default", "model-fallback", nil, true),
+                            inst("default", "model-fallback"),
                         },
                         ssl_verify = false,
                     },
@@ -812,7 +829,7 @@ X-AI-Semantic-Scores: code:1\.\d+,cheap:0\.\d+
         content_by_lua_block {
             local core = require("apisix.core")
             local t = require("lib.test_admin").test
-            local function inst(name, model, examples, catchall)
+            local function inst(name, model, examples)
                 local i = {
                     name = name, provider = "openai", weight = 1,
                     auth = { header = { Authorization = "Bearer token" } },
@@ -822,28 +839,29 @@ X-AI-Semantic-Scores: code:1\.\d+,cheap:0\.\d+
                     },
                 }
                 if examples then i.examples = examples end
-                if catchall then i.catchall = true end
                 return i
             end
             local conf = {
                 uri = "/llm/v1/messages",
                 plugins = {
                     ["ai-proxy-multi"] = {
-                        embeddings = {
-                            provider = "openai",
-                            model = "text-embedding-3-small",
-                            endpoint = "http://127.0.0.1:6797/v1/embeddings",
-                            auth = { header = { Authorization = "Bearer token" } },
-                            ssl_verify = false,
-                        },
-                        balancer = {
-                            algorithm = "semantic", threshold = 0.9,
-                            expose_scores = true,
+                        balancer = { algorithm = "semantic" },
+                        semantic_opts = {
+                            embeddings = {
+                                provider = "openai",
+                                model = "text-embedding-3-small",
+                                endpoint = "http://127.0.0.1:6797/v1/embeddings",
+                                auth = { header = { Authorization = "Bearer token" } },
+                                ssl_verify = false,
+                            },
+                            threshold = 0.9,
+                            fallback = "default",
+                            debugging = true,
                         },
                         instances = {
                             inst("code", "model-code", {"write python code"}),
                             inst("cheap", "model-cheap", {"translate this text"}),
-                            inst("default", "model-fallback", nil, true),
+                            inst("default", "model-fallback"),
                         },
                         ssl_verify = false,
                     },

@@ -211,20 +211,14 @@ local ai_instance_schema = {
                 description = "Example utterances representing this instance's "
                     .. "intent; each is embedded into its own reference vector "
                     .. "for the semantic algorithm. Required for every instance "
-                    .. "except the catchall, which must not set them.",
+                    .. "except the one named by semantic_opts.fallback.",
             },
             threshold = {
                 type = "number",
                 minimum = -1,
                 maximum = 1,
                 description = "Per-instance minimum cosine similarity for the "
-                    .. "semantic algorithm; overrides balancer.threshold.",
-            },
-            catchall = {
-                type = "boolean",
-                description = "Marks this instance as the semantic fallback, "
-                    .. "used when no instance clears its threshold. It takes no "
-                    .. "part in ranking, so it must not configure examples.",
+                    .. "semantic algorithm; overrides semantic_opts.threshold.",
             },
         },
         required = {"name", "provider", "auth", "weight"},
@@ -271,6 +265,43 @@ local embeddings_schema = {
         ssl_verify = { type = "boolean", default = true },
     },
     required = { "provider", "model", "auth" },
+}
+
+-- All options specific to the semantic balancer live here, so they are grouped
+-- in one place instead of being scattered across balancer/instances/top-level.
+local semantic_opts_schema = {
+    type = "object",
+    properties = {
+        embeddings = embeddings_schema,
+        threshold = {
+            type = "number",
+            minimum = -1,
+            maximum = 1,
+            default = 0,
+            description = "Global minimum cosine similarity for the semantic "
+                .. "algorithm. When no instance clears its threshold the request "
+                .. "falls back to the `fallback` instance, or the first instance "
+                .. "if none is named. The default of 0 admits essentially any "
+                .. "prompt, so the fallback only ever runs if a threshold above 0 "
+                .. "is set.",
+        },
+        fallback = {
+            type = "string",
+            minLength = 1,
+            description = "Name of the instance to route to when no instance "
+                .. "clears its threshold or the embedding request fails. Unlike a "
+                .. "ranked instance it needs no `examples`. Defaults to the first "
+                .. "instance when unset.",
+        },
+        debugging = {
+            type = "boolean",
+            default = false,
+            description = "When true, the semantic algorithm exposes per-instance "
+                .. "scores and the routing decision via X-AI-Semantic-* response "
+                .. "headers, for debugging.",
+        },
+    },
+    required = { "embeddings" },
 }
 
 local logging_schema = {
@@ -374,28 +405,9 @@ _M.ai_proxy_multi_schema = {
                         .. "participate in health checks or fallback_strategy / "
                         .. "retry — an upstream failure on the chosen instance is "
                         .. "returned to the client. It only falls back (to the "
-                        .. "catchall, else the first instance) when no instance "
-                        .. "clears its threshold or embedding fails.",
-                },
-                threshold = {
-                    type = "number",
-                    minimum = -1,
-                    maximum = 1,
-                    default = 0,
-                    description = "Global minimum cosine similarity for the "
-                        .. "semantic algorithm. When no instance clears its "
-                        .. "threshold the request falls back to the catchall "
-                        .. "instance, or the first instance if none is set. "
-                        .. "The default of 0 admits essentially any prompt, so "
-                        .. "the catchall only ever runs if a threshold above 0 "
-                        .. "is set.",
-                },
-                expose_scores = {
-                    type = "boolean",
-                    default = false,
-                    description = "When true, the semantic algorithm exposes "
-                        .. "per-instance scores and the routing decision via "
-                        .. "X-AI-Semantic-* response headers, for debugging.",
+                        .. "semantic_opts.fallback, else the first instance) when "
+                        .. "no instance clears its threshold or embedding fails. "
+                        .. "Configure it under `semantic_opts`.",
                 },
                 hash_on = {
                     type = "string",
@@ -416,7 +428,7 @@ _M.ai_proxy_multi_schema = {
             default = { algorithm = "roundrobin" }
         },
         instances = ai_instance_schema,
-        embeddings = embeddings_schema,
+        semantic_opts = semantic_opts_schema,
         logging = logging_schema,
         fallback_strategy = {
             anyOf = {
@@ -512,8 +524,8 @@ _M.ai_proxy_multi_schema = {
         "instances.auth.gcp.service_account_json",
         "instances.auth.aws.secret_access_key",
         "instances.auth.aws.session_token",
-        "embeddings.auth.header",
-        "embeddings.auth.query",
+        "semantic_opts.embeddings.auth.header",
+        "semantic_opts.embeddings.auth.query",
     },
 }
 

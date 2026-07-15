@@ -173,46 +173,48 @@ function _M.check_schema(conf)
     end
 
     if algo == "semantic" then
-        if not conf.embeddings then
-            return false, "must configure `embeddings` when balancer algorithm is semantic"
+        local semantic_opts = conf.semantic_opts
+        if not semantic_opts or not semantic_opts.embeddings then
+            return false, "must configure `semantic_opts.embeddings` when balancer " ..
+                "algorithm is semantic"
         end
+        local embeddings = semantic_opts.embeddings
         -- Same scheme+host check the instance endpoints get: without it an
         -- endpoint like "host/path" parses to a nil host and every request would
         -- silently fail open, i.e. the route would never work with no signal.
-        local eendpoint = conf.embeddings.endpoint
+        local eendpoint = embeddings.endpoint
         if eendpoint then
             local scheme, host = eendpoint:match(endpoint_regex)
             if not scheme or not host then
-                return false, "invalid `embeddings.endpoint`"
+                return false, "invalid `semantic_opts.embeddings.endpoint`"
             end
         end
-        if conf.embeddings.provider == "azure-openai" then
+        if embeddings.provider == "azure-openai" then
             -- Azure carries the deployment in the URL and declares no default host
             -- or path, so the endpoint must be the full embeddings URL. Without a
-            -- path every request would silently fail open to the catchall.
+            -- path every request would silently fail open to the fallback.
             if not eendpoint then
-                return false, "must configure `embeddings.endpoint` when embeddings " ..
-                    "provider is azure-openai"
+                return false, "must configure `semantic_opts.embeddings.endpoint` " ..
+                    "when embeddings provider is azure-openai"
             end
             local parsed = url.parse(eendpoint)
             local epath = parsed and parsed.path
             if not epath or epath == "" or epath == "/" then
-                return false, "`embeddings.endpoint` for azure-openai must include the " ..
-                    "full deployment path, e.g. https://{resource}.openai.azure.com" ..
+                return false, "`semantic_opts.embeddings.endpoint` for azure-openai " ..
+                    "must include the full deployment path, e.g. " ..
+                    "https://{resource}.openai.azure.com" ..
                     "/openai/deployments/{deployment}/embeddings?api-version=..."
             end
         end
-        local catchall_count = 0
+        -- The `fallback` instance, if named, is the only one exempt from the
+        -- examples requirement: it is reached by fallback, not by ranking. It must
+        -- name an instance that actually exists.
+        local fallback = semantic_opts.fallback
+        local fallback_found = false
         for _, instance in ipairs(conf.instances) do
-            if instance.catchall then
-                catchall_count = catchall_count + 1
-                -- The catchall is the fallback target, never a ranking candidate.
-                -- Allowing examples on it would let it outrank a real match.
-                if instance.examples then
-                    return false, "instance '" .. (instance.name or "?") ..
-                        "': `catchall` instance must not configure `examples`; it is " ..
-                        "the fallback target and does not take part in ranking"
-                end
+            local is_fallback = fallback and instance.name == fallback
+            if is_fallback then
+                fallback_found = true
             else
                 local has_example = false
                 if instance.examples then
@@ -226,12 +228,13 @@ function _M.check_schema(conf)
                 if not has_example then
                     return false, "instance '" .. (instance.name or "?") ..
                         "': must configure non-empty `examples` for the semantic " ..
-                        "algorithm unless `catchall` is set"
+                        "algorithm unless it is named by `semantic_opts.fallback`"
                 end
             end
         end
-        if catchall_count > 1 then
-            return false, "at most one instance may be marked `catchall`"
+        if fallback and not fallback_found then
+            return false, "`semantic_opts.fallback` names unknown instance '" ..
+                fallback .. "'"
         end
     end
 
@@ -731,7 +734,7 @@ local function build_instance_vectors(conf)
         end
     end
 
-    local vecs, err = embedding.fetch(conf.embeddings, texts)
+    local vecs, err = embedding.fetch(conf.semantic_opts.embeddings, texts)
     if not vecs then
         error("failed to fetch reference embeddings: " .. tostring(err))
     end
@@ -748,12 +751,16 @@ local function build_instance_vectors(conf)
 end
 
 
--- Guaranteed fallback: catchall instance if configured, else the first
--- instance. Never fails, so a request always has a target.
+-- Guaranteed fallback: the instance named by semantic_opts.fallback if
+-- configured, else the first instance. Never fails, so a request always has a
+-- target.
 local function semantic_fallback(conf)
-    for _, inst in ipairs(conf.instances) do
-        if inst.catchall then
-            return inst.name, inst
+    local fallback = conf.semantic_opts and conf.semantic_opts.fallback
+    if fallback then
+        for _, inst in ipairs(conf.instances) do
+            if inst.name == fallback then
+                return inst.name, inst
+            end
         end
     end
     local inst = conf.instances[1]
@@ -785,7 +792,8 @@ local function pick_semantic_instance(ctx, conf)
 
     -- pcall, like the reference path above: the embedding response is
     -- provider-controlled, so a raise here must fall back rather than 500.
-    local fetched, qvecs, err = pcall(embedding.fetch, conf.embeddings, { prompt })
+    local fetched, qvecs, err = pcall(embedding.fetch, conf.semantic_opts.embeddings,
+                                      { prompt })
     if not fetched then
         core.log.warn("semantic routing: query embedding error: ", qvecs, ", falling back")
         return semantic_fallback(conf)
@@ -820,8 +828,8 @@ local function pick_semantic_instance(ctx, conf)
     end
     core.table.sort(ranked, function(a, b) return a.score > b.score end)
 
-    local expose_scores = conf.balancer.expose_scores
-    if expose_scores then
+    local debugging = conf.semantic_opts.debugging
+    if debugging then
         local parts = {}
         for _, c in ipairs(ranked) do
             parts[#parts + 1] = c.name .. ":" .. string.format("%.4f", c.score)
@@ -830,12 +838,12 @@ local function pick_semantic_instance(ctx, conf)
     end
 
     -- Highest score first; pick the first instance that clears its own threshold
-    -- (per-instance override, else the global balancer.threshold).
+    -- (per-instance override, else the global semantic_opts.threshold).
     for _, cand in ipairs(ranked) do
         local inst = get_instance_conf(conf.instances, cand.name)
-        local thr = inst.threshold or conf.balancer.threshold or 0
+        local thr = inst.threshold or conf.semantic_opts.threshold or 0
         if cand.score >= thr then
-            if expose_scores then
+            if debugging then
                 core.response.set_header("X-AI-Semantic-Route", cand.name)
             end
             core.log.info("semantic routing picked instance: ", cand.name,
@@ -844,11 +852,11 @@ local function pick_semantic_instance(ctx, conf)
         end
     end
 
-    if expose_scores then
+    if debugging then
         core.response.set_header("X-AI-Semantic-Route", "fallback")
     end
     -- Only on the fallback path: surface why nothing matched, without requiring
-    -- expose_scores. Cheap, because this runs once per unmatched request.
+    -- debugging. Cheap, because this runs once per unmatched request.
     local unmatched = {}
     for _, c in ipairs(ranked) do
         unmatched[#unmatched + 1] = c.name .. ":" .. string.format("%.4f", c.score)

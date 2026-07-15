@@ -42,13 +42,15 @@ __DATA__
                 "uri": "/anything",
                 "plugins": {
                     "ai-proxy-multi": {
-                        "embeddings": {
-                            "provider": "openai",
-                            "model": "text-embedding-3-small",
-                            "auth": { "header": { "Authorization": "Bearer sk-emb" } }
-                        },
-                        "balancer": {
-                            "algorithm": "semantic", "threshold": 0.75
+                        "balancer": { "algorithm": "semantic" },
+                        "semantic_opts": {
+                            "embeddings": {
+                                "provider": "openai",
+                                "model": "text-embedding-3-small",
+                                "auth": { "header": { "Authorization": "Bearer sk-emb" } }
+                            },
+                            "threshold": 0.75,
+                            "fallback": "default"
                         },
                         "instances": [
                             {
@@ -61,8 +63,7 @@ __DATA__
                             {
                                 "name": "default", "provider": "openai", "weight": 1,
                                 "auth": { "header": { "Authorization": "Bearer token" } },
-                                "options": { "model": "gpt-4o-mini" },
-                                "catchall": true
+                                "options": { "model": "gpt-4o-mini" }
                             }
                         ],
                         "ssl_verify": false
@@ -84,7 +85,7 @@ passed
 
 
 
-=== TEST 2: semantic requires examples on non-catchall instance
+=== TEST 2: semantic requires examples on a non-fallback instance
 --- config
     location /t {
         content_by_lua_block {
@@ -93,11 +94,13 @@ passed
                 "uri": "/anything",
                 "plugins": {
                     "ai-proxy-multi": {
-                        "embeddings": {
-                            "provider": "openai", "model": "text-embedding-3-small",
-                            "auth": { "header": { "Authorization": "Bearer sk-emb" } }
-                        },
                         "balancer": { "algorithm": "semantic" },
+                        "semantic_opts": {
+                            "embeddings": {
+                                "provider": "openai", "model": "text-embedding-3-small",
+                                "auth": { "header": { "Authorization": "Bearer sk-emb" } }
+                            }
+                        },
                         "instances": [
                             {
                                 "name": "code", "provider": "openai", "weight": 1,
@@ -118,7 +121,7 @@ passed
 
 
 
-=== TEST 3: semantic requires embeddings config
+=== TEST 3: semantic requires semantic_opts.embeddings config
 --- config
     location /t {
         content_by_lua_block {
@@ -149,7 +152,7 @@ passed
 
 
 
-=== TEST 4: at most one catchall instance
+=== TEST 4: semantic_opts.fallback must name an existing instance
 --- config
     location /t {
         content_by_lua_block {
@@ -158,23 +161,20 @@ passed
                 "uri": "/anything",
                 "plugins": {
                     "ai-proxy-multi": {
-                        "embeddings": {
-                            "provider": "openai", "model": "text-embedding-3-small",
-                            "auth": { "header": { "Authorization": "Bearer sk-emb" } }
-                        },
                         "balancer": { "algorithm": "semantic" },
+                        "semantic_opts": {
+                            "embeddings": {
+                                "provider": "openai", "model": "text-embedding-3-small",
+                                "auth": { "header": { "Authorization": "Bearer sk-emb" } }
+                            },
+                            "fallback": "nope"
+                        },
                         "instances": [
                             {
                                 "name": "a", "provider": "openai", "weight": 1,
                                 "auth": { "header": { "Authorization": "Bearer token" } },
-                                "options": { "model": "gpt-4o-mini" },
-                                "catchall": true
-                            },
-                            {
-                                "name": "b", "provider": "openai", "weight": 1,
-                                "auth": { "header": { "Authorization": "Bearer token" } },
                                 "options": { "model": "gpt-4o" },
-                                "catchall": true
+                                "examples": ["write code"]
                             }
                         ],
                         "ssl_verify": false
@@ -186,7 +186,7 @@ passed
         }
     }
 --- error_code: 400
---- response_body_like: catchall
+--- response_body_like: unknown instance
 
 
 
@@ -199,11 +199,13 @@ passed
                 "uri": "/anything",
                 "plugins": {
                     "ai-proxy-multi": {
-                        "embeddings": {
-                            "provider": "azure-openai", "model": "text-embedding-3-small",
-                            "auth": { "header": { "api-key": "sk-emb" } }
-                        },
                         "balancer": { "algorithm": "semantic" },
+                        "semantic_opts": {
+                            "embeddings": {
+                                "provider": "azure-openai", "model": "text-embedding-3-small",
+                                "auth": { "header": { "api-key": "sk-emb" } }
+                            }
+                        },
                         "instances": [
                             {
                                 "name": "a", "provider": "openai", "weight": 1,
@@ -234,11 +236,13 @@ passed
                 "uri": "/anything",
                 "plugins": {
                     "ai-proxy-multi": {
-                        "embeddings": {
-                            "provider": "openai",
-                            "auth": { "header": { "Authorization": "Bearer sk-emb" } }
-                        },
                         "balancer": { "algorithm": "semantic" },
+                        "semantic_opts": {
+                            "embeddings": {
+                                "provider": "openai",
+                                "auth": { "header": { "Authorization": "Bearer sk-emb" } }
+                            }
+                        },
                         "instances": [
                             {
                                 "name": "a", "provider": "openai", "weight": 1,
@@ -260,7 +264,7 @@ passed
 
 
 
-=== TEST 7: catchall instance must not configure examples
+=== TEST 7: only the named fallback is exempt from the examples requirement
 --- config
     location /t {
         content_by_lua_block {
@@ -269,24 +273,24 @@ passed
                 "uri": "/anything",
                 "plugins": {
                     "ai-proxy-multi": {
-                        "embeddings": {
-                            "provider": "openai", "model": "text-embedding-3-small",
-                            "auth": { "header": { "Authorization": "Bearer sk-emb" } }
-                        },
                         "balancer": { "algorithm": "semantic" },
+                        "semantic_opts": {
+                            "embeddings": {
+                                "provider": "openai", "model": "text-embedding-3-small",
+                                "auth": { "header": { "Authorization": "Bearer sk-emb" } }
+                            },
+                            "fallback": "default"
+                        },
                         "instances": [
                             {
                                 "name": "a", "provider": "openai", "weight": 1,
                                 "auth": { "header": { "Authorization": "Bearer token" } },
-                                "options": { "model": "gpt-4o" },
-                                "examples": ["write code"]
+                                "options": { "model": "gpt-4o" }
                             },
                             {
-                                "name": "fallback", "provider": "openai", "weight": 1,
+                                "name": "default", "provider": "openai", "weight": 1,
                                 "auth": { "header": { "Authorization": "Bearer token" } },
-                                "options": { "model": "gpt-4o-mini" },
-                                "catchall": true,
-                                "examples": ["anything else"]
+                                "options": { "model": "gpt-4o-mini" }
                             }
                         ],
                         "ssl_verify": false
@@ -298,7 +302,7 @@ passed
         }
     }
 --- error_code: 400
---- response_body_like: must not configure
+--- response_body_like: examples
 
 
 
@@ -311,12 +315,14 @@ passed
                 "uri": "/anything",
                 "plugins": {
                     "ai-proxy-multi": {
-                        "embeddings": {
-                            "provider": "azure-openai", "model": "text-embedding-3-small",
-                            "endpoint": "https://my.openai.azure.com",
-                            "auth": { "header": { "api-key": "sk-emb" } }
-                        },
                         "balancer": { "algorithm": "semantic" },
+                        "semantic_opts": {
+                            "embeddings": {
+                                "provider": "azure-openai", "model": "text-embedding-3-small",
+                                "endpoint": "https://my.openai.azure.com",
+                                "auth": { "header": { "api-key": "sk-emb" } }
+                            }
+                        },
                         "instances": [
                             {
                                 "name": "a", "provider": "openai", "weight": 1,
@@ -347,11 +353,13 @@ passed
                 "uri": "/anything",
                 "plugins": {
                     "ai-proxy-multi": {
-                        "embeddings": {
-                            "provider": "openai", "model": "text-embedding-3-small",
-                            "auth": { "gcp": { "service_account_json": "{}" } }
-                        },
                         "balancer": { "algorithm": "semantic" },
+                        "semantic_opts": {
+                            "embeddings": {
+                                "provider": "openai", "model": "text-embedding-3-small",
+                                "auth": { "gcp": { "service_account_json": "{}" } }
+                            }
+                        },
                         "instances": [
                             {
                                 "name": "a", "provider": "openai", "weight": 1,
@@ -382,12 +390,14 @@ passed
                 "uri": "/anything",
                 "plugins": {
                     "ai-proxy-multi": {
-                        "embeddings": {
-                            "provider": "openai", "model": "text-embedding-3-small",
-                            "endpoint": "my.embeddings.host/v1/embeddings",
-                            "auth": { "header": { "Authorization": "Bearer sk" } }
-                        },
                         "balancer": { "algorithm": "semantic" },
+                        "semantic_opts": {
+                            "embeddings": {
+                                "provider": "openai", "model": "text-embedding-3-small",
+                                "endpoint": "my.embeddings.host/v1/embeddings",
+                                "auth": { "header": { "Authorization": "Bearer sk" } }
+                            }
+                        },
                         "instances": [
                             {
                                 "name": "a", "provider": "openai", "weight": 1,
@@ -405,4 +415,4 @@ passed
         }
     }
 --- error_code: 400
---- response_body_like: invalid `embeddings.endpoint`
+--- response_body_like: semantic_opts.embeddings.endpoint
