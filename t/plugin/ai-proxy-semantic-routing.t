@@ -151,7 +151,7 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: configure a semantic route (code / translate / catchall)
+=== TEST 1: configure a semantic route (code / translate / fallback)
 --- config
     location /t {
         content_by_lua_block {
@@ -241,7 +241,7 @@ model-cheap
 
 
 
-=== TEST 4: unrelated prompt clears no threshold, falls back to catchall
+=== TEST 4: unrelated prompt clears no threshold, falls back to the fallback instance
 --- request
 POST /anything
 {"model":"auto","messages":[{"role":"user","content":"what is the weather today"}]}
@@ -256,7 +256,7 @@ qr/no instance cleared threshold \(scores: code:0\.\d+,cheap:0\.\d+\)/
 
 
 
-=== TEST 5: malformed embedding fails open to catchall, not the matching instance
+=== TEST 5: malformed embedding fails open to the fallback, not the matching instance
 --- request
 POST /anything
 {"model":"auto","messages":[{"role":"user","content":"debug this python code, malformed"}]}
@@ -349,7 +349,7 @@ X-AI-Semantic-Scores: code:1\.\d+,cheap:0\.\d+
 
 
 
-=== TEST 8: embedding dimension mismatch fails open to catchall
+=== TEST 8: embedding dimension mismatch fails open to the fallback
 --- request
 POST /anything
 {"model":"auto","messages":[{"role":"user","content":"dimmismatch python code"}]}
@@ -397,7 +397,7 @@ embed-recv-cookie:session=super-secret
 
 
 
-=== TEST 11: non-200 fails open to catchall, without logging the upstream body
+=== TEST 11: non-200 fails open to the fallback, without logging the upstream body
 --- request
 POST /anything
 {"model":"auto","messages":[{"role":"user","content":"servererror python code"}]}
@@ -445,7 +445,7 @@ invalid embedding entry at index 0
 
 
 
-=== TEST 14: reference embedding failure fails open to catchall
+=== TEST 14: reference embedding failure fails open to the fallback
 --- config
     location /t {
         content_by_lua_block {
@@ -506,7 +506,7 @@ passed
 
 
 
-=== TEST 15: request on the broken-reference route still routes to catchall
+=== TEST 15: request on the broken-reference route still routes to the fallback
 --- request
 POST /anything
 {"model":"auto","messages":[{"role":"user","content":"help me debug this python code"}]}
@@ -597,7 +597,7 @@ azure-embed-hit api-version=2024-02-01
 
 
 
-=== TEST 18: no catchall configured -- fallback is the first instance
+=== TEST 18: no fallback configured -- fallback is the first instance
 --- config
     location /t {
         content_by_lua_block {
@@ -735,7 +735,7 @@ passed
 
 
 
-=== TEST 21: a prompt below the per-instance threshold reaches the catchall
+=== TEST 21: a prompt below the per-instance threshold reaches the fallback
 --- request
 POST /anything
 {"model":"auto","messages":[{"role":"user","content":"what is the weather today"}]}

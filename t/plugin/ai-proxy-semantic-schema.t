@@ -416,3 +416,53 @@ passed
     }
 --- error_code: 400
 --- response_body_like: semantic_opts.embeddings.endpoint
+
+
+
+=== TEST 11: the fallback instance may also carry examples and rank
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, [[{
+                "uri": "/anything",
+                "plugins": {
+                    "ai-proxy-multi": {
+                        "balancer": { "algorithm": "semantic" },
+                        "semantic_opts": {
+                            "embeddings": {
+                                "provider": "openai", "model": "text-embedding-3-small",
+                                "auth": { "header": { "Authorization": "Bearer sk-emb" } }
+                            },
+                            "fallback": "generalist"
+                        },
+                        "instances": [
+                            {
+                                "name": "code", "provider": "openai", "weight": 1,
+                                "auth": { "header": { "Authorization": "Bearer token" } },
+                                "options": { "model": "gpt-4o" },
+                                "examples": ["write a python function"]
+                            },
+                            {
+                                "name": "generalist", "provider": "openai", "weight": 1,
+                                "auth": { "header": { "Authorization": "Bearer token" } },
+                                "options": { "model": "gpt-4o-mini" },
+                                "examples": ["answer a general question"]
+                            }
+                        ],
+                        "ssl_verify": false
+                    }
+                }
+            }]])
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+--- no_error_log
+[error]

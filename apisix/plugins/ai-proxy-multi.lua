@@ -62,7 +62,7 @@ local lrucache_semantic_vectors = core.lrucache.new({
 -- The prompt is sent verbatim to a third-party embedding endpoint. Bound it: a
 -- request body may be up to max_req_body_size (64MB by default), and an oversized
 -- input would blow the embedding model's token limit, 400, and silently push every
--- large prompt to the catchall. Routing intent lives in the opening sentences.
+-- large prompt to the fallback. Routing intent lives in the opening sentences.
 local MAX_EMBED_PROMPT_BYTES = 8192
 
 local plugin_name = "ai-proxy-multi"
