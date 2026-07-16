@@ -68,6 +68,7 @@ The `openid-connect` Plugin supports the integration with [OpenID Connect (OIDC)
 | set_refresh_token_header | boolean | False | false | | If true and if the refresh token is available, set the value in the `X-Refresh-Token` request header. |
 | session | object | False | | | Session configuration used when `bearer_only` is `false` and the Plugin uses Authorization Code flow. |
 | session.secret | string | True | | 16 or more characters | Key used for session encryption and HMAC operation when `bearer_only` is `false`. |
+| session.secret_fallbacks | array[string] | False | | each 16 or more characters | List of alternative secrets used for key rotation. Forwarded to lua-resty-session as `secret_fallbacks`. Cookies sealed with any of these secrets still decrypt, while new cookies are sealed with `session.secret`. See [Session key rotation](#session-key-rotation). |
 | session.cookie_name | string | False | | | Session cookie name. Forwarded to [lua-resty-session](https://github.com/bungle/lua-resty-session#configuration) 4.x as `cookie_name`. |
 | session.cookie_path | string | False | | | Cookie path scope. Forwarded to lua-resty-session as `cookie_path`. |
 | session.cookie_domain | string | False | | | Cookie domain scope. Forwarded to lua-resty-session as `cookie_domain`. |
@@ -403,6 +404,44 @@ The following diagram illustrates the interaction between different entities whe
 ![User info flow diagram](https://static.api7.ai/uploads/2026/04/21/WU7wdpMu_7-user-info-flow.webp)
 
 When `set_userinfo_header` is `true` (the default), the Plugin sets user info data in the `X-Userinfo` request header, which the Upstream can use for further processing.
+
+### Session key rotation
+
+When sessions are stored in the cookie (`session.storage` is `cookie`, the default), the cookie is sealed with a key derived from `session.secret`. Rotating `session.secret` on its own invalidates every existing cookie at once, forcing all users to re-authenticate. In a high-availability deployment where several APISIX instances are updated one by one, it also causes a window where an instance carrying the new secret cannot decrypt a cookie issued by an instance still using the old one.
+
+Use `session.secret_fallbacks` to rotate the secret without disrupting active sessions. Cookies sealed with any secret listed in `session.secret_fallbacks` still decrypt, while new cookies are sealed with `session.secret`. Rotate in three stages, completing the rollout of each stage across all instances before starting the next:
+
+1. Pre-seed: keep the current key as `session.secret` and add the new key to `session.secret_fallbacks`. Every instance can now decrypt cookies sealed with either key, but still seals new cookies with the current key.
+
+   ```json
+   {
+     "session": {
+       "secret": "current-secret-at-least-16-characters",
+       "secret_fallbacks": ["new-secret-at-least-16-characters"]
+     }
+   }
+   ```
+
+2. Flip: make the new key the `session.secret` and keep the previous key in `session.secret_fallbacks`. New cookies are sealed with the new key; cookies still sealed with the previous key continue to decrypt and are re-sealed with the new key on their next write.
+
+   ```json
+   {
+     "session": {
+       "secret": "new-secret-at-least-16-characters",
+       "secret_fallbacks": ["current-secret-at-least-16-characters"]
+     }
+   }
+   ```
+
+3. Retire: once no cookie can still be sealed with the previous key (after `session.absolute_timeout` has elapsed), remove it from `session.secret_fallbacks`.
+
+   ```json
+   {
+     "session": {
+       "secret": "new-secret-at-least-16-characters"
+     }
+   }
+   ```
 
 ## Troubleshooting
 
