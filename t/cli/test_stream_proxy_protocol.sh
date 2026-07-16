@@ -36,6 +36,17 @@ block_with_listen() {
     ' conf/nginx.conf
 }
 
+# Open a TCP connection to <port>, announce <claimed client ip> in a PROXY
+# protocol v1 header, and print whatever comes back.
+pp_request() {
+    local port="$1"
+    local claimed_ip="$2"
+    exec 3<>/dev/tcp/127.0.0.1/"$port"
+    printf 'PROXY TCP4 %s 127.0.0.1 56324 %s\r\n' "$claimed_ip" "$port" >&3
+    timeout 3 cat <&3
+    exec 3<&-
+}
+
 # === Default: no PROXY protocol anywhere ===
 echo '
 apisix:
@@ -227,5 +238,143 @@ if block_with_listen 9100 | grep -E "ssl_certificate " > /dev/null; then
     exit 1
 fi
 echo "passed: per-group ssl follows the TLS port into its server block"
+
+# === No trusted addresses by default ===
+echo '
+apisix:
+  proxy_mode: "http&stream"
+  stream_proxy:
+    tcp:
+      - addr: 9100
+        proxy_protocol: true
+' > conf/config.yaml
+make init
+
+if grep -E "set_real_ip_from" conf/nginx.conf > /dev/null; then
+    echo "failed: no address should be trusted by default"
+    exit 1
+fi
+echo "passed: no set_real_ip_from by default"
+
+# === stream.real_ip_from renders one set_real_ip_from per entry ===
+echo '
+apisix:
+  proxy_mode: "http&stream"
+  stream_proxy:
+    tcp:
+      - addr: 9100
+        proxy_protocol: true
+nginx_config:
+  stream:
+    real_ip_from:
+      - 192.168.1.0/24
+      - 127.0.0.1
+' > conf/config.yaml
+make init
+
+if ! grep -E "^\s*set_real_ip_from 192.168.1.0/24;" conf/nginx.conf > /dev/null; then
+    echo "failed: stream.real_ip_from should render the trusted network"
+    exit 1
+fi
+if ! grep -E "^\s*set_real_ip_from 127.0.0.1;" conf/nginx.conf > /dev/null; then
+    echo "failed: stream.real_ip_from should render every entry"
+    exit 1
+fi
+echo "passed: stream.real_ip_from renders set_real_ip_from"
+
+# === End to end: a trusted peer's PROXY header reaches the upstream ===
+# The upstream is a PROXY-protocol-aware stream server that echoes the address
+# it was told about, so this asserts on the header APISIX actually rebuilds
+# rather than on what nginx.conf says.
+echo '
+apisix:
+  proxy_mode: "http&stream"
+  stream_proxy:
+    tcp:
+      - addr: 9100
+        proxy_protocol: true
+        proxy_protocol_to_upstream: true
+nginx_config:
+  stream:
+    real_ip_from:
+      - 127.0.0.1
+  stream_configuration_snippet: |
+    server {
+        listen 9101 proxy_protocol;
+        return "upstream saw $proxy_protocol_addr";
+    }
+' > conf/config.yaml
+make run
+wait_for_tcp 127.0.0.1 9180
+wait_for_tcp 127.0.0.1 9100
+
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+curl -i http://127.0.0.1:9180/apisix/admin/stream_routes/1 \
+    -H "X-API-KEY: $admin_key" -X PUT -d \
+    '{"upstream":{"nodes":{"127.0.0.1:9101":1},"type":"roundrobin"}}'
+
+# Retry under a 10s deadline to cover etcd->stream-worker propagation.
+ok=0
+deadline=$(( $(date +%s) + 10 ))
+{ set +x; } 2>/dev/null
+while [ "$(date +%s)" -lt "$deadline" ]; do
+    if pp_request 9100 198.51.100.7 | grep -q "upstream saw 198.51.100.7"; then
+        ok=1
+        break
+    fi
+    sleep 0.3
+done
+set -x
+if [ "$ok" -ne 1 ]; then
+    echo "failed: upstream should see the client address, not the direct peer"
+    exit 1
+fi
+
+make stop
+echo "passed: trusted peer's client address reaches the upstream"
+
+# === End to end: without a trusted peer the upstream sees the direct peer ===
+echo '
+apisix:
+  proxy_mode: "http&stream"
+  stream_proxy:
+    tcp:
+      - addr: 9100
+        proxy_protocol: true
+        proxy_protocol_to_upstream: true
+nginx_config:
+  stream_configuration_snippet: |
+    server {
+        listen 9101 proxy_protocol;
+        return "upstream saw $proxy_protocol_addr";
+    }
+' > conf/config.yaml
+make run
+wait_for_tcp 127.0.0.1 9180
+wait_for_tcp 127.0.0.1 9100
+
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+curl -i http://127.0.0.1:9180/apisix/admin/stream_routes/1 \
+    -H "X-API-KEY: $admin_key" -X PUT -d \
+    '{"upstream":{"nodes":{"127.0.0.1:9101":1},"type":"roundrobin"}}'
+
+ok=0
+deadline=$(( $(date +%s) + 10 ))
+{ set +x; } 2>/dev/null
+while [ "$(date +%s)" -lt "$deadline" ]; do
+    if pp_request 9100 198.51.100.7 | grep -q "upstream saw 127.0.0.1"; then
+        ok=1
+        break
+    fi
+    sleep 0.3
+done
+set -x
+if [ "$ok" -ne 1 ]; then
+    echo "failed: an untrusted peer's claim must not be adopted"
+    exit 1
+fi
+
+make stop
+echo "passed: untrusted peer's claim is ignored"
 
 echo "All stream PROXY protocol tests passed."

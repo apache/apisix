@@ -268,3 +268,43 @@ apisix:
 ```
 
 接收侧（`proxy_protocol`）是 listen 级别的指令，因此设置不同的端口可以共用一个监听块。上游侧（`proxy_protocol_to_upstream`）是 server 级别的指令，因此 APISIX 会把向上游发送 PROXY 协议的端口渲染到单独的 `server` 块中。UDP 监听永远不会向上游发送 PROXY 协议，因此始终保留在普通的 `server` 块中。
+
+:::warning
+
+只应对期待 PROXY 协议的上游启用 `proxy_protocol_to_upstream`。不支持该协议的上游会把明文的 `PROXY` 行当作应用数据读取，通常会立即关闭连接——例如 TLS 上游无法将其解析为 TLS record。
+
+:::
+
+### 在负载均衡器之后保留客户端地址
+
+`proxy_protocol_to_upstream` 使用 APISIX 实际连接到的对端地址来构造发往上游的头部。当 APISIX 位于一台使用 PROXY 协议的负载均衡器之后时，该地址是负载均衡器的地址，因此仅仅"接收头部并发送头部"并不足以把客户端地址传递到上游。
+
+将 `nginx_config.stream.real_ip_from` 设置为你信任的负载均衡器地址。当连接来自受信任的地址且携带入站 PROXY 协议头部时，APISIX 会用头部中的地址替换客户端地址：
+
+```yaml
+apisix:
+  proxy_mode: http&stream
+  stream_proxy:
+    tcp:
+      - addr: 9100
+        proxy_protocol: true              # 接收来自负载均衡器的头部
+        proxy_protocol_to_upstream: true  # 向上游重建该头部
+nginx_config:
+  stream:
+    real_ip_from:
+      - 192.168.1.0/24                    # 负载均衡器所在网段
+```
+
+此时 APISIX 发往上游的头部携带的是客户端地址，stream 的 `$remote_addr`、访问日志以及基于地址的匹配（如 `ip-restriction` 插件）同样如此。直连对端的地址仍可通过 `$realip_remote_addr` 获取。
+
+`real_ip_from` 默认为空，且仅在接收 PROXY 协议的端口上、且仅对与之匹配的对端生效。请只信任你自己掌控的负载均衡器：受信任的对端可以声称自己是任意客户端。
+
+### 如何选择配置
+
+具体选择哪种组合，取决于谁需要看到客户端地址：
+
+| 配置 | `proxy_protocol` | `proxy_protocol_to_upstream` | `real_ip_from` | 效果 |
+|---|---|---|---|---|
+| 透传 | 关闭 | 关闭 | — | APISIX 完全不解析头部，将其作为普通 stream 字节代理到上游。上游能看到客户端，APISIX 看不到。在 APISIX 自身需要读取流内容的端口上不可用，例如 TLS 端口或依赖 preread 数据匹配的路由。 |
+| 终结 | 开启 | 关闭 | — | APISIX 消费头部，并在不携带头部的情况下连接上游。适用于不支持 PROXY 协议的上游。 |
+| 终结并重建 | 开启 | 开启 | 负载均衡器网段 | APISIX 消费头部，并发送携带客户端地址的新头部。APISIX 和上游都能看到客户端。 |
