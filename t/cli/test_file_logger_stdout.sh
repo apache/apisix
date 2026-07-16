@@ -19,13 +19,9 @@
 
 . ./t/cli/common.sh
 
-# file-logger: verify logs are written to the standard output via "/dev/stdout".
-#
-# APISIX in a container runs openresty directly in the foreground
-# (see docker/debian-dev/docker-entrypoint.sh: `openresty -p ... -g 'daemon off;'`),
-# so its stdout is the container's stdout. We replicate that here to capture
-# the process stdout. (`apisix start` launches nginx via io.popen and consumes
-# its stdout, so it cannot be used to observe /dev/stdout output.)
+# file-logger: verify logs are written to stdout via "/dev/stdout".
+# Uses openresty directly (like docker-entrypoint.sh) because `apisix start`
+# consumes stdout via io.popen, making /dev/stdout output unobservable.
 
 echo '
 apisix:
