@@ -317,3 +317,4 @@ Which combination you want depends on who needs to see the client address:
 | Pass through | off | off | — | APISIX never looks at the header and proxies it to the upstream as ordinary stream bytes. The upstream sees the client, APISIX does not. Not usable on ports where APISIX has to read the stream itself, such as TLS ports or routes that match on preread data. |
 | Terminate | on | off | — | APISIX consumes the header and connects to the upstream without one. Use this for upstreams that do not speak the PROXY protocol. |
 | Terminate and rebuild | on | on | load balancer network | APISIX consumes the header and sends a new one carrying the client address. Both APISIX and the upstream see the client. |
+| Terminate and rebuild, nothing trusted | on | on | — | The upstream still gets a header, but it carries the address APISIX is connected to — the load balancer — so the client address is lost. |

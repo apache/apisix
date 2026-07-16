@@ -51,7 +51,9 @@ stream_block() {
 }
 
 # Open a TCP connection to <port>, announce <claimed client ip> in a PROXY
-# protocol v1 header, and print whatever comes back.
+# protocol v1 header, and print whatever comes back. The tests below set
+# `admin_key` explicitly rather than relying on the shipped default, so that
+# the `yq` lookup finds a key whatever the default happens to be.
 pp_request() {
     local port="$1"
     local claimed_ip="$2"
@@ -308,6 +310,12 @@ apisix:
       - addr: 9100
         proxy_protocol: true
         proxy_protocol_to_upstream: true
+deployment:
+  admin:
+    admin_key:
+      - name: admin
+        key: edd1c9f034335f136f87ad84b625c8f1
+        role: admin
 nginx_config:
   stream:
     real_ip_from:
@@ -356,6 +364,12 @@ apisix:
       - addr: 9100
         proxy_protocol: true
         proxy_protocol_to_upstream: true
+deployment:
+  admin:
+    admin_key:
+      - name: admin
+        key: edd1c9f034335f136f87ad84b625c8f1
+        role: admin
 nginx_config:
   stream_configuration_snippet: |
     server {
