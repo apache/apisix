@@ -19,7 +19,13 @@
 
 . ./t/cli/common.sh
 
-# file-logger: write to stdout via /dev/stdout
+# file-logger: verify logs are written to the standard output via "/dev/stdout".
+#
+# APISIX in a container runs openresty directly in the foreground
+# (see docker/debian-dev/docker-entrypoint.sh: `openresty -p ... -g 'daemon off;'`),
+# so its stdout is the container's stdout. We replicate that here to capture
+# the process stdout. (`apisix start` launches nginx via io.popen and consumes
+# its stdout, so it cannot be used to observe /dev/stdout output.)
 
 echo '
 apisix:
@@ -28,9 +34,6 @@ deployment:
   role: data_plane
   role_data_plane:
     config_provider: yaml
-nginx_config:
-  main_configuration_snippet: |
-    daemon off;
 ' > conf/config.yaml
 
 echo '
@@ -47,21 +50,32 @@ routes:
 ' > conf/apisix.yaml
 
 make init
+# `apisix start` would create the logs directory; since we launch openresty
+# directly, create it ourselves so nginx can open its error log.
+mkdir -p logs
 
-./bin/apisix start > stdout.log 2>&1 &
+# run openresty directly in the foreground and capture its stdout
+openresty -p "$PWD" -g 'daemon off;' > stdout.log 2> stderr.log &
 apisix_pid=$!
-sleep 1
+
+# wait until APISIX is ready to serve
+for _ in $(seq 1 20); do
+    if curl -s -o /dev/null http://127.0.0.1:9080/hello; then
+        break
+    fi
+    sleep 0.5
+done
 
 curl -s http://127.0.0.1:9080/hello > /dev/null
-sleep 2
+sleep 1
 
 kill "$apisix_pid" 2>/dev/null || true
 wait "$apisix_pid" 2>/dev/null || true
 
-if ! grep -q "uri.*hello" stdout.log; then
+if ! grep -q '"uri":"/hello"' stdout.log; then
     echo "failed: file-logger did not write to stdout"
     cat stdout.log
     exit 1
 fi
 
-echo "passed: file-logger stdout support"
+echo "passed: file-logger writes to stdout"
