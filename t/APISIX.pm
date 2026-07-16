@@ -628,6 +628,7 @@ _EOC_
 
     lua_shared_dict plugin-limit-req 10m;
     lua_shared_dict plugin-limit-count 10m;
+    lua_shared_dict plugin-limit-count-lock 10m;
     lua_shared_dict plugin-limit-count-reset-header 10m;
     lua_shared_dict plugin-limit-conn 10m;
     lua_shared_dict plugin-ai-rate-limiting 10m;
@@ -717,7 +718,7 @@ _EOC_
         require("apisix").http_exit_worker()
     }
 
-    log_format main escape=default '\$remote_addr - \$remote_user [\$time_local] \$http_host "\$request_line" \$status \$body_bytes_sent \$request_time "\$http_referer" "\$http_user_agent" \$upstream_addr \$upstream_status \$apisix_upstream_response_time "\$upstream_scheme://\$upstream_host\$upstream_uri" \$request_llm_model \$llm_model \$llm_time_to_first_token \$llm_prompt_tokens \$llm_completion_tokens \$llm_total_tokens \$llm_stream \$llm_has_tool_calls \$llm_tool_count \$llm_end_user_id \$llm_cache_read_input_tokens \$llm_cache_creation_input_tokens \$llm_reasoning_tokens "\$rate_limiting_info"';
+    log_format main escape=default '\$remote_addr - \$remote_user [\$time_local] \$http_host "\$request_line" \$status \$body_bytes_sent \$request_time "\$http_referer" "\$http_user_agent" \$upstream_addr \$upstream_status \$apisix_upstream_response_time "\$upstream_scheme://\$upstream_host\$upstream_uri" \$request_llm_model \$llm_model \$llm_time_to_first_token \$llm_prompt_tokens \$llm_completion_tokens \$llm_total_tokens \$llm_stream \$llm_has_tool_calls \$llm_tool_count \$llm_end_user_id \$llm_cache_read_input_tokens \$llm_cache_creation_input_tokens \$llm_reasoning_tokens "\$rate_limiting_info" unresolved_host=\$upstream_unresolved_host';
 
     # fake server, only for test
     server {
@@ -895,6 +896,7 @@ _EOC_
 
             set \$upstream_scheme             'http';
             set \$upstream_host               \$http_host;
+            set \$upstream_unresolved_host    '';
             set \$upstream_uri                '';
             set \$request_line                '';
             set \$ctx_ref                     '';

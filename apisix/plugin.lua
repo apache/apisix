@@ -20,7 +20,6 @@ local config_util   = require("apisix.core.config_util")
 local enable_debug  = require("apisix.debug").enable_debug
 local wasm          = require("apisix.wasm")
 local expr          = require("resty.expr.v1")
-local apisix_ssl    = require("apisix.ssl")
 local secret        = require("apisix.secret")
 
 local ngx           = ngx
@@ -970,15 +969,20 @@ end
 
 
 
-local function check_single_plugin_schema(name, plugin_conf, schema_type, skip_disabled_plugin)
+local function check_single_plugin_schema(name, plugin_conf, schema_type, skip_disabled_plugin,
+                                          ignore_disabled_plugin)
     if type(plugin_conf) ~= "table" then
         return false, "invalid plugin conf " ..
             core.json.encode(plugin_conf, true) ..
-            " for plugin [" .. name .. "]"
+            " for plugin [" .. tostring(name) .. "]"
     end
 
     local plugin_obj = local_plugins_hash[name]
     if not plugin_obj then
+        if ignore_disabled_plugin then
+            return true
+        end
+
         if skip_disabled_plugin then
             core.log.warn("skipping check schema for disabled or unknown plugin [",
                                     name, "]. Enable the plugin or modify configuration")
@@ -1078,7 +1082,7 @@ local function process_encrypt_field(conf, key_path, operation, plugin_name, op_
         end
 
         if type(val) == "string" then
-            local result, err = operation(val, "data_encrypt")
+            local result, err = operation(val)
             if not result then
                 log_func("failed to ", op_name, " the conf of plugin [",
                          plugin_name, "] key [", key_path, "], err: ", err, hint)
@@ -1091,7 +1095,7 @@ local function process_encrypt_field(conf, key_path, operation, plugin_name, op_
                 -- array of strings
                 for i, item in ipairs(val) do
                     if type(item) == "string" then
-                        local result, err = operation(item, "data_encrypt")
+                        local result, err = operation(item)
                         if not result then
                             log_func("failed to ", op_name, " the conf of plugin [",
                                      plugin_name, "] key [", key_path,
@@ -1105,7 +1109,7 @@ local function process_encrypt_field(conf, key_path, operation, plugin_name, op_
                 -- map of strings
                 for k, v in pairs(val) do
                     if type(v) == "string" then
-                        local result, err = operation(v, "data_encrypt")
+                        local result, err = operation(v)
                         if not result then
                             log_func("failed to ", op_name, " the conf of plugin [",
                                      plugin_name, "] key [", key_path,
@@ -1156,7 +1160,7 @@ local function decrypt_conf(name, conf, schema_type)
 
     if schema.encrypt_fields and not core.table.isempty(schema.encrypt_fields) then
         for _, key in ipairs(schema.encrypt_fields) do
-            process_encrypt_field(conf, key, apisix_ssl.aes_decrypt_pkey, name, "decrypt")
+            process_encrypt_field(conf, key, core.data_encryption.decrypt, name, "decrypt")
         end
     end
 end
@@ -1175,7 +1179,7 @@ local function encrypt_conf(name, conf, schema_type)
 
     if schema.encrypt_fields and not core.table.isempty(schema.encrypt_fields) then
         for _, key in ipairs(schema.encrypt_fields) do
-            process_encrypt_field(conf, key, apisix_ssl.aes_encrypt_pkey, name, "encrypt")
+            process_encrypt_field(conf, key, core.data_encryption.encrypt, name, "encrypt")
         end
     end
 end
@@ -1183,9 +1187,16 @@ _M.encrypt_conf = encrypt_conf
 
 
 check_plugin_metadata = function(item)
+    -- A plugin_metadata entry takes no effect until its plugin is enabled,
+    -- so entries of disabled or unknown plugins are ignored silently. This
+    -- also covers the entries of the other subsystem's plugins: the
+    -- plugin_metadata directory is watched by both the http and the stream
+    -- subsystems, while each of them only loads its own plugins.
     local ok, err = check_single_plugin_schema(item.id, item,
-                                               core.schema.TYPE_METADATA, true)
-    if ok and enable_gde() then
+                                               core.schema.TYPE_METADATA, false, true)
+    -- the schema of an unloaded plugin is unavailable, so decrypting its
+    -- metadata would only produce a "failed to get schema" warning
+    if ok and enable_gde() and local_plugins_hash[item.id] then
         decrypt_conf(item.id, item, core.schema.TYPE_METADATA)
     end
 
@@ -1284,6 +1295,16 @@ local function run_meta_pre_function(conf, api_ctx, name)
     end
 end
 
+-- mark a plugin to be skipped for the rest of the request, so a plugin run as
+-- a workflow action does not run again in the normal plugin chain
+function _M.skip_plugin(ctx, plugin_name)
+    if not ctx._skip_plugins then
+        ctx._skip_plugins = {}
+    end
+    ctx._skip_plugins[plugin_name] = true
+end
+
+
 function _M.run_plugin(phase, plugins, api_ctx)
     local plugin_run = false
     api_ctx = api_ctx or ngx.ctx.api_ctx
@@ -1312,6 +1333,11 @@ function _M.run_plugin(phase, plugins, api_ctx)
             if phase_func then
                 local conf = plugins[i + 1]
                 if not meta_filter(api_ctx, plugins[i]["name"], conf)then
+                    goto CONTINUE
+                end
+
+                -- skip a plugin already run as a workflow action, before any meta hooks
+                if api_ctx._skip_plugins and api_ctx._skip_plugins[plugins[i]["name"]] then
                     goto CONTINUE
                 end
 
@@ -1353,6 +1379,10 @@ function _M.run_plugin(phase, plugins, api_ctx)
         local phase_func = plugins[i][phase]
         local conf = plugins[i + 1]
         if phase_func and meta_filter(api_ctx, plugins[i]["name"], conf) then
+            -- skip a plugin already run as a workflow action, before any meta hooks
+            if api_ctx._skip_plugins and api_ctx._skip_plugins[plugins[i]["name"]] then
+                goto CONTINUE
+            end
             plugin_run = true
             run_meta_pre_function(conf, api_ctx, plugins[i]["name"])
             api_ctx._plugin_name = plugins[i]["name"]
@@ -1362,6 +1392,8 @@ function _M.run_plugin(phase, plugins, api_ctx)
             span:finish(api_ctx.ngx_ctx)
             api_ctx._plugin_name = nil
         end
+
+        ::CONTINUE::
     end
 
     return api_ctx, plugin_run

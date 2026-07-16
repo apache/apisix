@@ -23,13 +23,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-
-	"github.com/OpenFunction/functions-framework-go/functions"
 )
-
-func init() {
-	functions.HTTP("HelloWorld", HelloWorld)
-}
 
 func HelloWorld(w http.ResponseWriter, r *http.Request) {
 	body, _ := io.ReadAll(r.Body)

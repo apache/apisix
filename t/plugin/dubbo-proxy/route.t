@@ -81,7 +81,7 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: ignore route's dubbo configuration if dubbo is disable globally
+=== TEST 1: route referencing a globally-disabled plugin is rejected
 --- disable_dubbo
 --- apisix_yaml
 routes:
@@ -96,8 +96,11 @@ routes:
         nodes:
             "127.0.0.1:1980": 1
         type: roundrobin
+--- error_code: 404
 --- response_body
-hello world
+{"error_msg":"404 Route Not Found"}
+--- error_log
+unknown plugin [dubbo-proxy]
 
 
 

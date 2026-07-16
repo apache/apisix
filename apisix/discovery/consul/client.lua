@@ -394,7 +394,9 @@ function _M.fetch_services_from_server(consul_server, options)
             local nodes_uniq = {}
             for _, node in ipairs(result.body) do
                 if not node.Service then
-                    goto CONTINUE
+                    log.warn("invalid consul service entry without Service field, ",
+                        "skip it: ", json_delay_encode(node))
+                    goto CONTINUE_NODE
                 end
 
                 local svc_address, svc_port = node.Service.Address, node.Service.Port
@@ -422,6 +424,7 @@ function _M.fetch_services_from_server(consul_server, options)
                     core.table.insert(nodes, n)
                     nodes_uniq[service_id] = true
                 end
+                :: CONTINUE_NODE ::
             end
 
             if nodes then

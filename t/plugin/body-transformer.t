@@ -1272,3 +1272,212 @@ GET /t
 ok
 --- no_error_log
 [error]
+
+
+
+=== TEST 19: all namespaced keys are renamed (many siblings + repeated elements)
+--- config
+    location /demo {
+        content_by_lua_block {
+            local fields = {
+                "orderId", "customerName", "customerEmail", "shippingAddress",
+                "billingAddress", "paymentMethod", "totalAmount", "currencyCode",
+                "orderDate", "deliveryDate", "trackingNumber", "carrierName",
+                "productCount", "discountCode", "taxAmount", "shippingFee",
+                "orderStatus", "lastModified", "createdBy", "approvedBy",
+                "departmentCode", "warehouseId", "priorityLevel", "remarks",
+            }
+            local parts = {}
+            for i, f in ipairs(fields) do
+                parts[i] = string.format("<ns2:%s>v%d</ns2:%s>", f, i, f)
+            end
+            ngx.print(string.format(
+                [[<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns2="http://example.com/order"><soapenv:Body><ns2:getOrderResponse>%s<ns2:items><ns2:item><ns2:sku>first</ns2:sku></ns2:item><ns2:item><ns2:sku>second</ns2:sku></ns2:item></ns2:items><ns2:tags><ns2:tag>red</ns2:tag><ns2:tag>green</ns2:tag><ns2:tag>blue</ns2:tag></ns2:tags></ns2:getOrderResponse></soapenv:Body></soapenv:Envelope>]],
+                table.concat(parts)))
+        }
+    }
+
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin")
+
+            local rsp_template = ngx.encode_base64[[{*_escape_json(Envelope.Body)*}]]
+
+            local code, body = t.test('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                string.format([[{
+                    "uri": "/ws",
+                    "plugins": {
+                        "proxy-rewrite": {
+                            "uri": "/demo"
+                        },
+                        "body-transformer": {
+                            "response": {
+                                "input_format": "xml",
+                                "template": "%s"
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:%d": 1
+                        }
+                    }
+                }]], rsp_template, ngx.var.server_port)
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                return
+            end
+            ngx.sleep(0.5)
+
+            local core = require("apisix.core")
+            local http = require("resty.http")
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/ws"
+            local httpc = http.new()
+            local res = httpc:request_uri(uri, {method = "GET"})
+            assert(res.status == 200)
+            local data = core.json.decode(res.body)
+            assert(data and data.getOrderResponse, "Body.getOrderResponse not found: " .. res.body)
+            local resp = data.getOrderResponse
+
+            local fields = {
+                "orderId", "customerName", "customerEmail", "shippingAddress",
+                "billingAddress", "paymentMethod", "totalAmount", "currencyCode",
+                "orderDate", "deliveryDate", "trackingNumber", "carrierName",
+                "productCount", "discountCode", "taxAmount", "shippingFee",
+                "orderStatus", "lastModified", "createdBy", "approvedBy",
+                "departmentCode", "warehouseId", "priorityLevel", "remarks",
+            }
+            for i, f in ipairs(fields) do
+                assert(resp[f] == "v" .. i,
+                       string.format("field %s not renamed or wrong: %s", f, tostring(resp[f])))
+            end
+
+            -- repeated complex elements: array preserved and keys inside
+            -- array elements renamed too
+            local items = resp.items and resp.items.item
+            assert(type(items) == "table" and #items == 2
+                   and items[1].sku == "first" and items[2].sku == "second",
+                   "repeated complex elements broken: " .. core.json.encode(resp.items))
+
+            -- repeated simple elements: array preserved
+            local tags = resp.tags and resp.tags.tag
+            assert(type(tags) == "table" and #tags == 3
+                   and tags[1] == "red" and tags[2] == "green" and tags[3] == "blue",
+                   "repeated simple elements broken: " .. core.json.encode(resp.tags))
+
+            -- no key anywhere may keep its namespace prefix
+            local function scan(tbl, path)
+                for k, v in pairs(tbl) do
+                    if type(k) == "string" then
+                        assert(not k:find(":"),
+                               "leftover namespaced key: " .. path .. "." .. k)
+                    end
+                    if type(v) == "table" then
+                        scan(v, path .. "." .. tostring(k))
+                    end
+                end
+            end
+            scan(data, "Body")
+
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 20: key renaming must not depend on table layout (varied key sets)
+--- config
+    location /demo {
+        content_by_lua_block {
+            -- echo the request body so each request controls the XML
+            -- the response transformer has to parse
+            ngx.print(require("apisix.core").request.get_body())
+        }
+    }
+
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin")
+
+            local rsp_template = ngx.encode_base64[[{*_escape_json(Envelope.Body.Resp)*}]]
+
+            local code, body = t.test('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                string.format([[{
+                    "uri": "/ws",
+                    "plugins": {
+                        "proxy-rewrite": {
+                            "uri": "/demo"
+                        },
+                        "body-transformer": {
+                            "response": {
+                                "input_format": "xml",
+                                "template": "%s"
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:%d": 1
+                        }
+                    }
+                }]], rsp_template, ngx.var.server_port)
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                return
+            end
+            ngx.sleep(0.5)
+
+            local core = require("apisix.core")
+            local http = require("resty.http")
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/ws"
+            local httpc = http.new()
+
+            -- LuaJIT randomizes its string hash seed per process, so a
+            -- traversal-order bug shows up only for some key sets in any
+            -- given process. Sweep many sibling counts and several naming
+            -- schemes to cover many table layouts.
+            local schemes = {
+                function (n, i) return "k" .. i end,
+                function (n, i) return "longFieldName" .. i .. "x" .. n end,
+                function (n, i) return "f" .. i .. string.rep("z", i % 7) end,
+            }
+            for n = 4, 64, 2 do
+                for si, scheme in ipairs(schemes) do
+                    local names, parts = {}, {}
+                    for i = 1, n do
+                        names[i] = scheme(n, i)
+                        parts[i] = string.format("<ns:%s>v%d</ns:%s>",
+                                                 names[i], i, names[i])
+                    end
+                    local xml = string.format(
+                        [[<env:Envelope xmlns:env="http://e" xmlns:ns="http://n"><env:Body><ns:Resp>%s</ns:Resp></env:Body></env:Envelope>]],
+                        table.concat(parts))
+                    local res = httpc:request_uri(uri, {method = "POST", body = xml})
+                    assert(res.status == 200)
+                    local data = core.json.decode(res.body)
+                    assert(data, string.format(
+                        "n=%d scheme=%d: transform failed, body: %s", n, si, res.body))
+                    for i = 1, n do
+                        assert(data[names[i]] == "v" .. i, string.format(
+                            "n=%d scheme=%d: key %s lost or not renamed",
+                            n, si, names[i]))
+                    end
+                end
+            end
+
+            ngx.say("passed")
+        }
+    }
+--- timeout: 30
+--- response_body
+passed

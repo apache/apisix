@@ -38,9 +38,11 @@ import TabItem from '@theme/TabItem';
 
 ## 描述
 
-`ai-aws-content-moderation` 插件集成了 [AWS Comprehend](https://aws.amazon.com/comprehend/)，用于在代理请求到 LLM 时检查请求体中的有害内容，例如亵渎、仇恨言论、侮辱、骚扰、暴力等，如果评估结果超过配置的阈值则拒绝请求。
+`ai-aws-content-moderation` 插件集成了 [AWS Comprehend](https://aws.amazon.com/comprehend/)，用于在代理请求到 LLM 时检查请求内容中的有害内容，例如亵渎、仇恨言论、侮辱、骚扰、暴力等，如果评估结果超过配置的阈值则拒绝请求。
 
-此插件只能在代理请求到 LLM 的路由中使用。
+该插件是协议感知的：它会从 LLM 请求中提取提示内容（例如 `messages[].content`），仅审核解码后的文本，而不是原始请求体。
+
+`ai-aws-content-moderation` 插件应与 [`ai-proxy`](./ai-proxy.md) 或 [`ai-proxy-multi`](./ai-proxy-multi.md) 插件一起使用，以代理 LLM 请求。
 
 ## 插件属性
 
@@ -54,6 +56,10 @@ import TabItem from '@theme/TabItem';
 | `comprehend.ssl_verify` | boolean | 否 | true | | 如果为 true，则启用 TLS 证书验证。 |
 | `moderation_categories` | object | 否 | | | 审核类别及其对应阈值的键值对。在每个键值对中，键应为 `PROFANITY`、`HATE_SPEECH`、`INSULT`、`HARASSMENT_OR_ABUSE`、`SEXUAL` 或 `VIOLENCE_OR_THREAT` 之一；阈值应在 0 到 1 之间（包含）。 |
 | `moderation_threshold` | number | 否 | 0.5 | 0 - 1 | 整体毒性阈值。值越高，允许的有害内容越多。此选项与 `moderation_categories` 中的单独类别阈值不同。例如，如果 `moderation_categories` 中设置了 `PROFANITY` 阈值为 `0.5`，而请求的 `PROFANITY` 分数为 `0.1`，则请求不会超过类别阈值。但如果请求的其他类别（如 `SEXUAL` 或 `VIOLENCE_OR_THREAT`）超过了 `moderation_threshold`，则请求将被拒绝。 |
+| `check_request` | boolean | 否 | `true` | | 如果为 `true`，则审核请求内容。 |
+| `deny_code` | integer | 否 | `200` | [200, 599] | 请求被拒绝时返回的 HTTP 状态码。默认为 `200`，使兼容 provider 的拒绝响应在客户端 SDK 中被解析为正常补全；设置为 4xx 可将拒绝暴露为 HTTP 错误。 |
+| `deny_message` | string | 否 | | | 请求被拒绝时返回的消息。未设置时，返回审核原因（例如 `request body exceeds toxicity threshold`）。 |
+| `fail_mode` | string | 否 | `skip` | `skip`、`warn`、`error` | 当请求未经过 `ai-proxy`/`ai-proxy-multi`，因而无法作为 AI 请求进行审核时的处理行为。`skip`：放行请求且不做检查；`warn`：放行并记录 warning 日志；`error`：拒绝请求。 |
 
 ## 使用示例
 
@@ -104,7 +110,8 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
         },
         "moderation_categories": {
           "PROFANITY": 0.1
-        }
+        },
+        "deny_code": 400
       },
       "ai-proxy": {
         "provider": "openai",
@@ -143,6 +150,7 @@ services:
               region: us-east-1
             moderation_categories:
               PROFANITY: 0.1
+            deny_code: 400
           ai-proxy:
             provider: openai
             auth:
@@ -182,6 +190,7 @@ spec:
           region: us-east-1
         moderation_categories:
           PROFANITY: 0.1
+        deny_code: 400
     - name: ai-proxy
       config:
         provider: openai
@@ -243,6 +252,7 @@ spec:
               region: us-east-1
             moderation_categories:
               PROFANITY: 0.1
+            deny_code: 400
         - name: ai-proxy
           enable: true
           config:
@@ -279,10 +289,23 @@ curl -i "http://127.0.0.1:9080/post" -X POST \
   }'
 ```
 
-您应该收到 `HTTP/1.1 400 Bad Request` 响应，并看到以下消息：
+您应该收到 `HTTP/1.1 400 Bad Request` 响应。审核原因会以与提供商兼容的格式返回在响应体中，从而不会破坏 AI 客户端：
 
-```text
-request body exceeds PROFANITY threshold
+```json
+{
+  ...,
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "request body exceeds PROFANITY threshold"
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  ...
+}
 ```
 
 向路由发送另一个包含正常问题的请求：
@@ -344,7 +367,8 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
         "moderation_categories": {
           "PROFANITY": 1
         },
-        "moderation_threshold": 0.2
+        "moderation_threshold": 0.2,
+        "deny_code": 400
       },
       "ai-proxy": {
         "provider": "openai",
@@ -384,6 +408,7 @@ services:
             moderation_categories:
               PROFANITY: 1
             moderation_threshold: 0.2
+            deny_code: 400
           ai-proxy:
             provider: openai
             auth:
@@ -424,6 +449,7 @@ spec:
         moderation_categories:
           PROFANITY: 1
         moderation_threshold: 0.2
+        deny_code: 400
     - name: ai-proxy
       config:
         provider: openai
@@ -486,6 +512,7 @@ spec:
             moderation_categories:
               PROFANITY: 1
             moderation_threshold: 0.2
+            deny_code: 400
         - name: ai-proxy
           enable: true
           config:
@@ -522,10 +549,23 @@ curl -i "http://127.0.0.1:9080/post" -X POST \
   }'
 ```
 
-您应该收到 `HTTP/1.1 400 Bad Request` 响应，并看到以下消息：
+您应该收到 `HTTP/1.1 400 Bad Request` 响应。审核原因会以与提供商兼容的格式返回在响应体中，从而不会破坏 AI 客户端：
 
-```text
-request body exceeds toxicity threshold
+```json
+{
+  ...,
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "request body exceeds toxicity threshold"
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  ...
+}
 ```
 
 向路由发送另一个不含亵渎词汇的请求：

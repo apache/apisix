@@ -38,8 +38,13 @@ apisix:
   # proxy_protocol:                    # PROXY Protocol configuration
   #   listen_http_port: 9181           # APISIX listening port for HTTP traffic with PROXY protocol.
   #   listen_https_port: 9182          # APISIX listening port for HTTPS traffic with PROXY protocol.
-  #   enable_tcp_pp: true              # Enable the PROXY protocol when stream_proxy.tcp is set.
-  #   enable_tcp_pp_to_upstream: true  # Enable the PROXY protocol.
+  #   enable_tcp_pp: true              # Accept the PROXY protocol on every stream_proxy.tcp port.
+  #                                    # Acts as the default; override per port with the
+  #                                    # `proxy_protocol` field on a stream_proxy.tcp entry.
+  #   enable_tcp_pp_to_upstream: true  # Send the PROXY protocol to the upstream on every
+  #                                    # stream_proxy.tcp port. Acts as the default; override
+  #                                    # per port with `proxy_protocol_to_upstream` on a
+  #                                    # stream_proxy.tcp entry.
 
   enable_server_tokens: true           # If true, show APISIX version in the `Server` response header.
   extra_lua_path: ""                   # Extend lua_package_path to load third-party code.
@@ -65,6 +70,13 @@ apisix:
   delete_uri_tail_slash: false        # Delete the '/' at the end of the URI
   normalize_uri_like_servlet: false   # If true, use the same path normalization rules as the Java
                                       # servlet specification. See https://github.com/jakartaee/servlet/blob/master/spec/src/main/asciidoc/servlet-spec-body.adoc#352-uri-path-canonicalization, which is used in Tomcat.
+  match_uri_encoded_slash: false       # If true, keep an URL-encoded slash (%2F) encoded when matching
+                                      # routes, so it is treated as part of a path parameter instead of a
+                                      # path separator. Plugins in the rewrite/access phases still read the
+                                      # normalized (decoded) URI from ctx.var.uri; nginx forwards the
+                                      # original request line, so the upstream receives %2F unchanged.
+  max_post_args_readable_size: 64     # Cap (in MB) on the request body read when matching `post_arg.*`
+                                      # route predicates for JSON and multipart requests. Set to 0 to disable the limit.
 
   router:
     http: radixtree_host_uri    # radixtree_host_uri: match route by host and URI
@@ -79,6 +91,10 @@ apisix:
   #     - addr: 9100              # Set the TCP proxy listening ports.
   #       tls: true
   #     - addr: "127.0.0.1:9101"
+  #       proxy_protocol: true              # Accept the PROXY protocol on this port only.
+  #       proxy_protocol_to_upstream: true  # Send the PROXY protocol to the upstream on this
+  #                                         # port only. Both override the global
+  #                                         # proxy_protocol.enable_tcp_pp* defaults.
   #     - "2000-2100"              # port range (nginx native support)
   #     - addr: "3000-3100"        # port range in table form
   #     - addr: "127.0.0.1:4000-4100"  # address with port range in table form
@@ -145,8 +161,13 @@ apisix:
                                         # When set to true, it overrides all upstream healthcheck configurations and globally disabling healthchecks.
 # trusted_addresses:              # When configured, APISIX will trust the `X-Forwarded-*` Headers
 #   - 127.0.0.1                   # passed in requests from the IP/CIDR in the list.
-#   - 172.18.0.0/16               # CAUTION: When not configured or the request from an untrusted address,
-                                  # APISIX will override `X-Forwarded-*` headers with trusted values.
+#   - 172.18.0.0/16               # CAUTION: When not configured or the request is from an untrusted
+                                  # address, APISIX overrides `X-Forwarded-Proto/Host/Port` with trusted
+                                  # values and clears the `Forwarded` header. For `X-Forwarded-For`: when
+                                  # `trusted_addresses` is configured and the request is from an untrusted
+                                  # address, it is reset so the upstream only sees the APISIX-observed
+                                  # connection IP; when `trusted_addresses` is not configured, it is
+                                  # preserved and the connection IP is appended (compatible default).
   # fine tune the parameters of LRU cache for some features like secret
   lru:
     secret:
@@ -294,6 +315,7 @@ nginx_config:                     # Config for render the template to generate n
       balancer-ewma-locks: 10m
       balancer-ewma-last-touched-at: 10m
       plugin-limit-req-redis-cluster-slot-lock: 1m
+      plugin-limit-count-lock: 10m
       plugin-limit-count-redis-cluster-slot-lock: 1m
       plugin-limit-conn-redis-cluster-slot-lock: 1m
       plugin-graphql-limit-count: 10m
@@ -528,8 +550,10 @@ plugins:                           # plugin list (sorted by priority)
   - ai-aws-content-moderation      # priority: 1050
   - ai-proxy-multi                 # priority: 1041
   - ai-proxy                       # priority: 1040
+  - ai-cache                       # priority: 1035
   - ai-rate-limiting               # priority: 1030
   - ai-aliyun-content-moderation   # priority: 1029
+  - ai-lakera-guard                # priority: 1028
   - proxy-mirror                   # priority: 1010
   - graphql-proxy-cache            # priority: 1009
   - proxy-rewrite                  # priority: 1008

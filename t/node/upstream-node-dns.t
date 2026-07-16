@@ -556,3 +556,134 @@ GET /t
 --- grep_error_log eval
 qr/parse route which contain domain: .+("dns_value":.+){3}/
 --- grep_error_log_out
+
+
+
+=== TEST 17: upstream recovers after DNS failure when DNS returns to the same IP
+--- init_by_lua_block
+    require "resty.core"
+    apisix = require("apisix")
+    core = require("apisix.core")
+    apisix.http_init()
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        local code, body = t('/apisix/admin/upstreams/1',
+             ngx.HTTP_PUT,
+             [[{
+                "nodes": {
+                    "test1.com:1980": 1
+                },
+                "type": "roundrobin",
+                "desc": "new upstream"
+            }]]
+            )
+        if code >= 300 then
+            ngx.status = code
+            ngx.say(body)
+            return
+        end
+
+        code, body = t('/apisix/admin/routes/1',
+             ngx.HTTP_PUT,
+             [[{
+                    "uri": "/hello",
+                    "upstream_id": "1"
+            }]]
+            )
+        if code >= 300 then
+            ngx.status = code
+            ngx.say(body)
+            return
+        end
+
+        local utils = require("apisix.core.utils")
+        local original_dns_parse = utils.dns_parse
+        local count = 0
+        utils.dns_parse = function (domain)
+            if domain == "test1.com" then
+                count = count + 1
+                if count == 1 or count == 3 then
+                    return {address = "127.0.0.1"}
+                end
+
+                return nil, "dns server error: 3 name error"
+            end
+
+            error("unknown domain: " .. domain)
+        end
+
+        local code1 = t('/hello', ngx.HTTP_GET)
+        local code2 = t('/hello', ngx.HTTP_GET)
+        local code3 = t('/hello', ngx.HTTP_GET)
+        utils.dns_parse = original_dns_parse
+        core.log.warn("codes: ", code1, ",", code2, ",", code3)
+        ngx.say(code1, ",", code2, ",", code3)
+    }
+}
+--- request
+GET /t
+--- response_body
+200,503,200
+--- ignore_error_log
+
+
+
+=== TEST 18: route recovers after DNS failure when DNS returns to the same IP
+--- init_by_lua_block
+    require "resty.core"
+    apisix = require("apisix")
+    core = require("apisix.core")
+    apisix.http_init()
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        local code, body = t('/apisix/admin/routes/1',
+            ngx.HTTP_PUT,
+            [[{
+                "upstream": {
+                    "nodes": {
+                        "test1.com:1980": 1
+                    },
+                    "type": "roundrobin"
+                },
+                "uri": "/hello"
+            }]]
+            )
+        if code >= 300 then
+            ngx.status = code
+            ngx.say(body)
+            return
+        end
+
+        local utils = require("apisix.core.utils")
+        local original_dns_parse = utils.dns_parse
+        local count = 0
+        utils.dns_parse = function (domain)
+            if domain == "test1.com" then
+                count = count + 1
+                if count == 1 or count == 3 then
+                    return {address = "127.0.0.1"}
+                end
+
+                return nil, "dns server error: 3 name error"
+            end
+
+            error("unknown domain: " .. domain)
+        end
+
+        local code1 = t('/hello', ngx.HTTP_GET)
+        local code2 = t('/hello', ngx.HTTP_GET)
+        local code3 = t('/hello', ngx.HTTP_GET)
+        utils.dns_parse = original_dns_parse
+        core.log.warn("codes: ", code1, ",", code2, ",", code3)
+        ngx.say(code1, ",", code2, ",", code3)
+    }
+}
+--- request
+GET /t
+--- response_body
+200,503,200
+--- ignore_error_log

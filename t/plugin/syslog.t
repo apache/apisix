@@ -20,6 +20,42 @@ repeat_each(1);
 no_long_string();
 no_root_location();
 
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    # The plugin no longer logs the rfc5424 payload; reproduce the
+    # observability the tests rely on by logging each batch entry from a
+    # test-only hook.
+    my $log_hook = <<_EOC_;
+    do
+        local bp_manager = require("apisix.utils.batch-processor-manager")
+        local core = require("apisix.core")
+        local function log_collect_data(entry)
+            local data = type(entry) == "table" and core.json.encode(entry) or entry
+            core.log.info("collect_data:", data)
+        end
+        local _orig_add = bp_manager.add_entry
+        bp_manager.add_entry = function(self, conf, entry, max_pending_entries)
+            local ok = _orig_add(self, conf, entry, max_pending_entries)
+            if ok then
+                log_collect_data(entry)
+            end
+            return ok
+        end
+        local _orig_new = bp_manager.add_entry_to_new_processor
+        bp_manager.add_entry_to_new_processor = function(self, conf, entry, ctx, func, max_pending_entries)
+            local ok = _orig_new(self, conf, entry, ctx, func, max_pending_entries)
+            if ok then
+                log_collect_data(entry)
+            end
+            return ok
+        end
+    end
+_EOC_
+    $block->set_value("extra_init_by_lua",
+                      ($block->extra_init_by_lua // '') . $log_hook);
+});
+
 run_tests;
 
 __DATA__

@@ -249,7 +249,20 @@ function create_consume_cache(consumers_conf, key_attr)
     for _, consumer in ipairs(consumers_conf.nodes) do
         local new_consumer = consumer_lrucache(consumer, nil,
                                 fill_consumer_secret, consumer)
-        consumer_names[new_consumer.auth_conf[key_attr]] = new_consumer
+        local key_value = new_consumer.auth_conf[key_attr]
+        -- fail closed: skip if the credential is unset or an unresolved secret ref,
+        -- else a client could auth with the literal $ENV://... reference string
+        if key_value == nil then
+            core.log.error("missing consumer auth credential '", key_attr,
+                           "', skipping consumer: ", new_consumer.consumer_name)
+
+        elseif secret.has_secret_ref(new_consumer.auth_conf) then
+            core.log.error("failed to resolve secret reference in consumer auth ",
+                           "credential, skipping consumer: ", new_consumer.consumer_name)
+
+        else
+            consumer_names[key_value] = new_consumer
+        end
     end
 
     return consumer_names

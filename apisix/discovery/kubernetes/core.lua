@@ -26,7 +26,6 @@ local unpack        = unpack
 local string        = string
 local tonumber      = tonumber
 local tostring      = tostring
-local os            = os
 local pcall         = pcall
 local setmetatable  = setmetatable
 
@@ -68,7 +67,11 @@ function _M.read_env(key)
             local last = string.byte(key, #key)
             if last == string.byte('}') then
                 local env = string.sub(key, 3, #key - 1)
-                local value = os.getenv(env)
+                -- Use core.env.get for exact-match lookup, avoiding the
+                -- os.getenv prefix-collision bug in the worker init phase
+                -- (e.g. KUBERNETES_CLIENT_TOKEN vs KUBERNETES_CLIENT_TOKEN_FILE).
+                -- See apache/apisix#13055.
+                local value = core.env.get(env)
                 if not value then
                     return nil, "not found environment variable " .. env
                 end

@@ -18,6 +18,7 @@
 local core            = require("apisix.core")
 local plugin          = require("apisix.plugin")
 local tostring        = tostring
+local pairs           = pairs
 local http            = require("resty.http")
 local log_util        = require("apisix.utils.log-util")
 local bp_manager_mod  = require("apisix.utils.batch-processor-manager")
@@ -98,6 +99,7 @@ local schema = {
             default = "apisix.apache.org%2Flogs"
         },
         log_format = {type = "object"},
+        log_format_extra = {type = "object"},
     },
     oneOf = {
         { required = { "auth_config" } },
@@ -109,6 +111,9 @@ local schema = {
 local metadata_schema = {
     type = "object",
     properties = {
+        log_format_extra = {
+            type = "object"
+        },
         log_format = {
             type = "object"
         },
@@ -190,7 +195,7 @@ end
 
 
 local function get_logger_entry(conf, ctx, oauth)
-    local entry, customized = log_util.get_log_entry(plugin_name, conf, ctx)
+    local entry, customized, extra = log_util.get_log_entry(plugin_name, conf, ctx)
     local google_entry
     if not customized then
         google_entry = {
@@ -210,6 +215,14 @@ local function get_logger_entry(conf, ctx, oauth)
                 service_id = entry.service_id,
             },
         }
+        -- the fixed payload above drops everything else, so add log_format_extra
+        if extra then
+            for k, v in pairs(extra) do
+                if google_entry.jsonPayload[k] == nil then
+                    google_entry.jsonPayload[k] = v
+                end
+            end
+        end
     else
         google_entry = {
             jsonPayload = entry,

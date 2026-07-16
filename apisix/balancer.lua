@@ -34,6 +34,9 @@ local pickers = {}
 local lrucache_server_picker = core.lrucache.new({
     ttl = 300, count = 256
 })
+local lrucache_health_status = core.lrucache.new({
+    ttl = 300, count = 256
+})
 local lrucache_addr = core.lrucache.new({
     ttl = 300, count = 1024 * 4
 })
@@ -60,38 +63,83 @@ local function transform_node(new_nodes, node)
 end
 
 
-local function fetch_health_nodes(upstream, checker)
+local function fetch_all_nodes(upstream)
     local nodes = upstream.nodes
-    if not checker then
-        local new_nodes = core.table.new(0, #nodes)
-        for _, node in ipairs(nodes) do
-            new_nodes = transform_node(new_nodes, node)
-        end
-        return new_nodes
+    local new_nodes = core.table.new(0, #nodes)
+    for _, node in ipairs(nodes) do
+        new_nodes = transform_node(new_nodes, node)
     end
+    return new_nodes
+end
 
+
+local function create_health_status(upstream, checker)
+    local nodes = upstream.nodes
     local host = upstream.checks and upstream.checks.active and upstream.checks.active.host
     local port = upstream.checks and upstream.checks.active and upstream.checks.active.port
-    local up_nodes = core.table.new(0, #nodes)
+    local health_status = core.table.new(0, #nodes)
+    local has_healthy_node = false
+
     for _, node in ipairs(nodes) do
         local ok, err = healthcheck_manager.fetch_node_status(checker,
                                              node.host, port or node.port, host)
+        local addr = node.host .. ":" .. node.port
         if ok then
-            up_nodes = transform_node(up_nodes, node)
-        elseif err then
-            core.log.warn("failed to get health check target status, addr: ",
-                node.host, ":", port or node.port, ", host: ", host, ", err: ", err)
+            health_status[addr] = true
+            has_healthy_node = true
+        else
+            health_status[addr] = false
+            if err then
+                core.log.warn("failed to get health check target status, addr: ",
+                    node.host, ":", port or node.port, ", host: ", host, ", err: ", err)
+            end
         end
     end
 
-    if core.table.nkeys(up_nodes) == 0 then
+    if not has_healthy_node then
         core.log.warn("all upstream nodes is unhealthy, use default")
-        for _, node in ipairs(nodes) do
+        return {all_unhealthy = true}
+    end
+
+    return {status = health_status}
+end
+
+
+-- Build the picker node set from the healthy subset, reusing create_health_status
+-- so the per-node health lookup lives in exactly one place.
+local function fetch_health_nodes(upstream, checker)
+    if not checker then
+        return fetch_all_nodes(upstream)
+    end
+
+    local health_status = create_health_status(upstream, checker)
+    if health_status.all_unhealthy then
+        return fetch_all_nodes(upstream)
+    end
+
+    local up_nodes = core.table.new(0, #upstream.nodes)
+    for _, node in ipairs(upstream.nodes) do
+        if health_status.status[node.host .. ":" .. node.port] then
             up_nodes = transform_node(up_nodes, node)
         end
     end
 
     return up_nodes
+end
+
+
+local function fetch_health_status(upstream, checker, key, version)
+    if not checker then
+        return nil
+    end
+
+    local health_status = lrucache_health_status(key, version .. "#" .. checker.status_ver,
+                                                 create_health_status, upstream, checker)
+    if not health_status or health_status.all_unhealthy then
+        return nil
+    end
+
+    return health_status.status
 end
 
 
@@ -112,7 +160,12 @@ local function create_server_picker(upstream, checker)
             end
         end
 
-        local up_nodes = fetch_health_nodes(upstream, checker)
+        local up_nodes
+        if upstream.type == "chash" then
+            up_nodes = fetch_all_nodes(upstream)
+        else
+            up_nodes = fetch_health_nodes(upstream, checker)
+        end
 
         if #up_nodes._priority_index > 1 then
             core.log.info("upstream nodes: ", core.json.delay_encode(up_nodes))
@@ -199,6 +252,11 @@ local function pick_server(route, ctx)
         local node = up_conf.nodes[1]
         ctx.balancer_ip = node.host
         ctx.balancer_port = node.port
+        ctx.upstream_unresolved_host = node.domain or node.host
+        -- also expose it as an nginx var so it can be used in the access log (http only)
+        if is_http and ctx.var then
+            ctx.var.upstream_unresolved_host = ctx.upstream_unresolved_host
+        end
         node.upstream_host = parse_server_for_upstream_host(node, ctx.upstream_scheme)
         return node
     end
@@ -229,7 +287,12 @@ local function pick_server(route, ctx)
         end
     end
 
-    if checker then
+    local health_status
+    if checker and up_conf.type == "chash" then
+        health_status = fetch_health_status(up_conf, checker, key, version)
+    end
+
+    if checker and up_conf.type ~= "chash" then
         version = version .. "#" .. checker.status_ver
     end
 
@@ -243,10 +306,29 @@ local function pick_server(route, ctx)
         return nil, "failed to fetch server picker"
     end
 
-    local server, err = server_picker.get(ctx)
+    local server, err
+    for _ = 1, nodes_count do
+        server, err = server_picker.get(ctx)
+        if not server then
+            err = err or "no valid upstream node"
+            return nil, "failed to find valid upstream server, " .. err
+        end
+
+        if not health_status or health_status[server] then
+            break
+        end
+
+        ctx.balancer_server = server
+        if not server_picker.after_balance then
+            return nil, "failed to skip unhealthy upstream server: after_balance is unavailable"
+        end
+
+        server_picker.after_balance(ctx, true)
+        server = nil
+    end
+
     if not server then
-        err = err or "no valid upstream node"
-        return nil, "failed to find valid upstream server, " .. err
+        return nil, "failed to find valid upstream server, all upstream servers tried"
     end
     ctx.balancer_server = server
 
@@ -260,6 +342,11 @@ local function pick_server(route, ctx)
     res.domain = domain
     ctx.balancer_ip = res.host
     ctx.balancer_port = res.port
+    ctx.upstream_unresolved_host = res.domain or res.host
+    -- also expose it as an nginx var so it can be used in the access log (http only)
+    if is_http and ctx.var then
+        ctx.var.upstream_unresolved_host = ctx.upstream_unresolved_host
+    end
     ctx.server_picker = server_picker
     res.upstream_host = parse_server_for_upstream_host(res, ctx.upstream_scheme)
 
@@ -311,8 +398,12 @@ do
                 local sni = ctx.var.upstream_host
                 pool = pool .. "#" .. sni
 
+                -- separate the pool by client cert so referenced SSL objects
+                -- don't share a connection
                 if up_conf.tls and up_conf.tls.client_cert then
                     pool = pool .. "#" .. up_conf.tls.client_cert
+                elseif up_conf.tls and up_conf.tls.client_cert_id then
+                    pool = pool .. "#" .. up_conf.tls.client_cert_id
                 end
             end
             pool_opt.pool = pool

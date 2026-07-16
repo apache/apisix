@@ -4,7 +4,7 @@ keywords:
   - Apache APISIX
   - API Gateway
   - Limit Count
-description: The limit-count plugin uses a fixed window algorithm to limit the rate of requests by the number of requests within a given time interval. Requests exceeding the configured quota will be rejected.
+description: The limit-count plugin uses fixed or sliding window algorithms to limit the rate of requests by the number of requests within a given time interval. Requests exceeding the configured quota will be rejected.
 ---
 
 <!--
@@ -35,7 +35,7 @@ import TabItem from '@theme/TabItem';
 
 ## Description
 
-The `limit-count` plugin uses a fixed window algorithm to limit the rate of requests by the number of requests within a given time interval. Requests exceeding the configured quota will be rejected.
+The `limit-count` plugin uses fixed or sliding window algorithms to limit the rate of requests by the number of requests within a given time interval. Requests exceeding the configured quota will be rejected.
 
 You may see the following rate limiting headers in the response:
 
@@ -47,35 +47,46 @@ You may see the following rate limiting headers in the response:
 
 | Name                    | Type    | Required                                  | Default       | Valid values                           | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | ----------------------- | ------- | ----------------------------------------- | ------------- | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| count                   | integer or string | False                                     |               | > 0                              | The maximum number of requests allowed within a given time interval. Required if `rules` is not configured. Supports [lua-resty-expr](https://github.com/api7/lua-resty-expr) from APISIX 3.16.0.                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| time_window             | integer or string | False                                     |               | > 0                        | The time interval corresponding to the rate limiting `count` in seconds. Required if `rules` is not configured. Supports [lua-resty-expr](https://github.com/api7/lua-resty-expr) from APISIX 3.16.0.                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| rules                   | array[object] | False                               |               |                            | A list of rate limiting rules. Each rule is an object containing `count`, `time_window`, and `key`.                                                                                                                                                                                                                                                                                                |
-| rules.count             | integer or string | True                                      |               | > 0                        | The maximum number of requests allowed within a given time interval. Supports [lua-resty-expr](https://github.com/api7/lua-resty-expr).                                                                                                                                                                                                                                             |
-| rules.time_window       | integer or string | True                                      |               | > 0                        | The time interval corresponding to the rate limiting `count` in seconds. Supports [lua-resty-expr](https://github.com/api7/lua-resty-expr).                                                                                                                                                                                                                                         |
-| rules.key               | string  | True                                      |               |                            | The key to count requests by. If the configured key does not exist, the rule will not be executed. The `key` is interpreted as a combination of variables, for example: `$http_custom_a $http_custom_b`.                                                                                                                                                                                                                                                                   |
-| rules.header_prefix     | string  | False                                     |               |                            | Prefix for rate limit headers. If configured, the response will include `X-{header_prefix}-RateLimit-Limit`, `X-{header_prefix}-RateLimit-Remaining`, and `X-{header_prefix}-RateLimit-Reset` headers. If not configured, the index of the rule in the rules array is used as the prefix. For example, headers for the first rule will be `X-1-RateLimit-Limit`, `X-1-RateLimit-Remaining`, and `X-1-RateLimit-Reset`.                                                                                                                                                                                                                                                                  |
-| key_type                | string  | False                                     | var         | ["var","var_combination","constant"] | The type of key. If the `key_type` is `var`, the `key` is interpreted a variable. If the `key_type` is `var_combination`, the `key` is interpreted as a combination of variables. If the `key_type` is `constant`, the `key` is interpreted as a constant.                  |
-| key                     | string  | False                                     | remote_addr |                                        | The key to count requests by. If the `key_type` is `var`, the `key` is interpreted a variable. The variable does not need to be prefixed by a dollar sign (`$`). If the `key_type` is `var_combination`, the `key` is interpreted as a combination of variables. All variables should be prefixed by dollar signs (`$`). For example, to configure the `key` to use a combination of two request headers `custom-a` and `custom-b`, the `key` should be configured as `$http_custom_a $http_custom_b`. If the `key_type` is `constant`, the `key` is interpreted as a constant value. |
-| rejected_code           | integer | False                                     | 503           | [200,...,599]                          | The HTTP status code returned when a request is rejected for exceeding the threshold.                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| rejected_msg            | string  | False                                     |               | non-empty                              | The response body returned when a request is rejected for exceeding the threshold.                                                                                                                                                                                                                                                                                                                                                                                                                |
-| policy                  | string  | False                                     | local       | ["local","redis","redis-cluster"]    | The policy for rate limiting counter. If it is `local`, the counter is stored in memory locally. If it is `redis`, the counter is stored on a Redis instance. If it is `redis-cluster`, the counter is stored in a Redis cluster.                                                                                                            |
-| allow_degradation       | boolean | False                                     | false         |                                        | If true, allow APISIX to continue handling requests without the plugin when the plugin or its dependencies become unavailable.                                                                                                                                                                                                                                                                                             |
-| show_limit_quota_header | boolean | False                                     | true          |                                        | If true, include `X-RateLimit-Limit` to show the total quota and `X-RateLimit-Remaining` to show the remaining quota in the response header.                                                                                                                                                                                                                                                                                                                                   |
-| group                   | string  | False                                     |               | non-empty                              | The `group` ID for the plugin, such that routes of the same `group` can share the same rate limiting counter.                                                                                                                                                                                                                                                                                                                                                                   |
-| redis_host              | string  | False         |               |                                        | The address of the Redis node. Required when `policy` is `redis`.                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| redis_port              | integer | False                                     | 6379          | [1,...]                                | The port of the Redis node when `policy` is `redis`.                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| redis_username          | string  | False                                     |               |                                        | The username for Redis if Redis ACL is used. If you use the legacy authentication method `requirepass`, configure only the `redis_password`. Used when `policy` is `redis`.                                                                                                                                                                                                                                                                                                                                                                                                          |
-| redis_password          | string  | False                                     |               |                                        | The password of the Redis node when `policy` is `redis` or `redis-cluster`.                                                                                                                                                                                                                                                                                                                                                                                                           |
-| redis_ssl               | boolean | False                                     | false         |                                        | If true, use SSL to connect to Redis cluster when `policy` is `redis`.                                                                                                                                                                                                                                                                                                                                                                                                         |
-| redis_ssl_verify        | boolean | False                                     | false         |                                        | If true, verify the server SSL certificate when `policy` is `redis`.                                                                                                                                                                                                                                                                                                                                                                                         |
-| redis_database          | integer | False                                     | 0             | >= 0                    | The database number in Redis when `policy` is `redis`.                                                                                                                                                                                                                                                                                                                       |
-| redis_timeout           | integer | False                                     | 1000          | [1,...]                                | The Redis timeout value in milliseconds when `policy` is `redis` or `redis-cluster`.                                                                                                                                                                                                                                                                                                                                                        |
-| redis_keepalive_timeout       | integer | False                                     | 10000         | ≥ 1000                                 | Keepalive timeout in milliseconds for redis when `policy` is `redis` or `redis-cluster`.                                      |
-| redis_keepalive_pool          | integer | False                                     | 100           | ≥ 1                                    | Keepalive pool size for redis when `policy` is `redis` or `redis-cluster`.                                                    |
-| redis_cluster_nodes     | array[string]   | False |               |                                        | The list of Redis cluster nodes with at least one address. Required when `policy` is `redis-cluster`.                                                                                                                                                                                                                                                                                                                                                                                                       |
-| redis_cluster_name      | string  | False |               |                                        | The name of the Redis cluster. Required when `policy` is `redis-cluster`.                                                                                                                                                                                                                                                                                                                                                                                                |
-| redis_cluster_ssl      | boolean  |  False |     false         |                                        | If true, use SSL to connect to Redis cluster when `policy` is `redis-cluster`.                                                                                                                                                                                                                                                                                                                                                                               |
-| redis_cluster_ssl_verify      | boolean  | False |    false      |                                        | If true, verify the server SSL certificate when `policy` is `redis-cluster`.                                                                                                                                                                                                                                                                                                                                                                                               |
+| count                   | integer or string | False                                     |               | > 0                              | The maximum number of requests allowed within a given time interval. Required if `rules` is not configured. Supports [lua-resty-expr](https://github.com/api7/lua-resty-expr) from APISIX 3.16.0. |
+| time_window             | integer or string | False                                     |               | > 0                        | The time interval corresponding to the rate limiting `count` in seconds. Required if `rules` is not configured. Supports [lua-resty-expr](https://github.com/api7/lua-resty-expr) from APISIX 3.16.0. |
+| window_type             | string            | False                                     | fixed         | ["fixed","sliding"]              | The window algorithm used by the plugin. |
+| rules                   | array[object]     | False                                     |               |                            | A list of rate limiting rules. Each rule is an object containing `count`, `time_window`, and `key`. |
+| rules.count             | integer or string | True                                      |               | > 0                        | The maximum number of requests allowed within a given time interval. Supports [lua-resty-expr](https://github.com/api7/lua-resty-expr). |
+| rules.time_window       | integer or string | True                                      |               | > 0                        | The time interval corresponding to the rate limiting `count` in seconds. Supports [lua-resty-expr](https://github.com/api7/lua-resty-expr). |
+| rules.key               | string            | True                                      |               |                            | The key to count requests by. If the configured key does not exist, the rule will not be executed. The `key` is interpreted as a combination of variables, for example: `$http_custom_a $http_custom_b`. |
+| rules.header_prefix     | string            | False                                     |               |                            | Prefix for rate limit headers. If configured, the response will include `X-{header_prefix}-RateLimit-Limit`, `X-{header_prefix}-RateLimit-Remaining`, and `X-{header_prefix}-RateLimit-Reset` headers. If not configured, the index of the rule in the rules array is used as the prefix. |
+| key_type                | string            | False                                     | var           | ["var","var_combination","constant"] | The type of key. If the `key_type` is `var`, the `key` is interpreted as a variable. If the `key_type` is `var_combination`, the `key` is interpreted as a combination of variables. If the `key_type` is `constant`, the `key` is interpreted as a constant. |
+| key                     | string            | False                                     | remote_addr   |                            | The key to count requests by. If the `key_type` is `var`, the `key` is interpreted as a variable. The variable does not need to be prefixed by a dollar sign (`$`). If the `key_type` is `var_combination`, the `key` is interpreted as a combination of variables. All variables should be prefixed by dollar signs (`$`). If the `key_type` is `constant`, the `key` is interpreted as a constant value. |
+| rejected_code           | integer           | False                                     | 503           | [200,...,599]              | The HTTP status code returned when a request is rejected for exceeding the threshold. |
+| rejected_msg            | string            | False                                     |               | non-empty                  | The response body returned when a request is rejected for exceeding the threshold. |
+| policy                  | string            | False                                     | local         | ["local","redis","redis-cluster","redis-sentinel"] | The policy for the rate limiting counter. If it is `local`, the counter is stored in local memory. If it is `redis`, the counter is stored on a Redis instance. If it is `redis-cluster`, the counter is stored in a Redis cluster. If it is `redis-sentinel`, the counter is stored on the Redis master discovered through Sentinel. |
+| allow_degradation       | boolean           | False                                     | false         |                            | If true, allow APISIX to continue handling requests without the plugin when the plugin or its dependencies become unavailable. |
+| show_limit_quota_header | boolean           | False                                     | true          |                            | If true, include `X-RateLimit-Limit` to show the total quota and `X-RateLimit-Remaining` to show the remaining quota in the response header. |
+| sync_interval           | number            | False                                     |               | -1 or >= 0.1               | The delayed synchronization interval in seconds for Redis-based policies. Set to `-1` to disable delayed synchronization explicitly. |
+| group                   | string            | False                                     |               | non-empty                  | The `group` ID for the plugin, such that routes of the same `group` can share the same rate limiting counter. |
+| redis_host              | string            | False                                     |               |                            | The address of the Redis node. Required when `policy` is `redis`. |
+| redis_port              | integer           | False                                     | 6379          | [1,...]                    | The port of the Redis node when `policy` is `redis`. |
+| redis_username          | string            | False                                     |               |                            | The username for Redis if Redis ACL is used. If you use the legacy authentication method `requirepass`, configure only the `redis_password`. Used when `policy` is `redis` or `redis-sentinel`. |
+| redis_password          | string            | False                                     |               |                            | The password of the Redis node when `policy` is `redis`, `redis-cluster`, or `redis-sentinel`. |
+| redis_ssl               | boolean           | False                                     | false         |                            | If true, use SSL to connect to Redis when `policy` is `redis`. |
+| redis_ssl_verify        | boolean           | False                                     | false         |                            | If true, verify the server SSL certificate when `policy` is `redis`. |
+| redis_database          | integer           | False                                     | 0             | >= 0                       | The database number in Redis when `policy` is `redis` or `redis-sentinel`. |
+| redis_timeout           | integer           | False                                     | 1000          | [1,...]                    | The Redis timeout value in milliseconds when `policy` is `redis` or `redis-cluster`. |
+| redis_keepalive_timeout | integer           | False                                     | 10000         | ≥ 1000                     | Keepalive timeout in milliseconds for Redis when `policy` is `redis` or `redis-cluster`. |
+| redis_keepalive_pool    | integer           | False                                     | 100           | ≥ 1                        | Keepalive pool size for Redis when `policy` is `redis` or `redis-cluster`. |
+| redis_cluster_nodes     | array[string]     | False                                     |               |                            | The list of Redis cluster nodes with at least one address. Required when `policy` is `redis-cluster`. |
+| redis_cluster_name      | string            | False                                     |               |                            | The name of the Redis cluster. Required when `policy` is `redis-cluster`. |
+| redis_cluster_ssl       | boolean           | False                                     | false         |                            | If true, use SSL to connect to Redis when `policy` is `redis-cluster`. |
+| redis_cluster_ssl_verify| boolean           | False                                     | false         |                            | If true, verify the server SSL certificate when `policy` is `redis-cluster`. |
+| redis_sentinels         | array[object]     | False                                     |               |                            | The list of Sentinel nodes. Required when `policy` is `redis-sentinel`. Each item must contain `host` and `port`. |
+| redis_master_name       | string            | False                                     |               |                            | The Redis master name monitored by Sentinel. Required when `policy` is `redis-sentinel`. |
+| redis_role              | string            | False                                     | master        | ["master","slave"]      | The Redis role selected through Sentinel. |
+| redis_connect_timeout   | integer           | False                                     | 1000          | [1,...]                    | The Redis connection timeout in milliseconds when `policy` is `redis-sentinel`. |
+| redis_read_timeout      | integer           | False                                     | 1000          | [1,...]                    | The Redis read timeout in milliseconds when `policy` is `redis-sentinel`. |
+| sentinel_username       | string            | False                                     |               |                            | The username for Redis Sentinel if Sentinel ACL is enabled. |
+| sentinel_password       | string            | False                                     |               |                            | The password for Redis Sentinel if Sentinel ACL is enabled. |
+
+NOTE: `encrypt_fields = {"redis_password", "sentinel_password"}` is also defined in the schema, which means that the fields will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
 
 ## Examples
 
@@ -1379,6 +1390,142 @@ curl -i "http://127.0.0.1:9080/get"
 You should see an `HTTP/1.1 200 OK` response with the corresponding response body.
 
 Send the same request to a different APISIX instance within the same 30-second time interval, you should receive an `HTTP/1.1 429 Too Many Requests` response, verifying routes configured in different APISIX nodes share the same quota.
+
+### Share Quota Among APISIX Nodes with Redis Sentinel
+
+The following example demonstrates rate limiting across multiple APISIX nodes using Redis with [Sentinel](https://redis.io/docs/management/sentinel/) for high availability. Sentinel monitors the Redis master and promotes a replica if the master fails. APISIX discovers the current master through the configured Sentinel nodes, so the shared quota survives a failover without configuration changes.
+
+On each APISIX instance, create a Route with the following configurations. Adjust the Admin API address, Sentinel nodes, master name, and credentials accordingly:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "limit-count-route",
+    "uri": "/get",
+    "plugins": {
+      "limit-count": {
+        "count": 1,
+        "time_window": 30,
+        "rejected_code": 429,
+        "key": "remote_addr",
+        "policy": "redis-sentinel",
+        "redis_sentinels": [
+          { "host": "192.168.xxx.xxx", "port": 26379 },
+          { "host": "192.168.xxx.xxx", "port": 26380 },
+          { "host": "192.168.xxx.xxx", "port": 26381 }
+        ],
+        "redis_master_name": "mymaster",
+        "redis_password": "p@ssw0rd",
+        "sentinel_password": "s3ntinelp@ss",
+        "redis_database": 1
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
+    }
+  }'
+```
+
+If Sentinel ACL is not enabled, omit `sentinel_password`. For ACL-based authentication, use `redis_username`/`redis_password` for the Redis data nodes and `sentinel_username`/`sentinel_password` for the Sentinel nodes.
+
+Send a request to an APISIX instance:
+
+```shell
+curl -i "http://127.0.0.1:9080/get"
+```
+
+You should see an `HTTP/1.1 200 OK` response. Sending the same request again within the 30-second window returns `HTTP/1.1 429 Too Many Requests`. If the Redis master fails over, Sentinel promotes a replica and APISIX continues enforcing the shared quota against the new master.
+
+### Apply Sliding Window Rate Limiting
+
+By default, `limit-count` uses a fixed window, where the counter resets at the start of each `time_window`. Around a window boundary this can allow up to twice the configured rate, since a client may exhaust the quota at the end of one window and again at the start of the next.
+
+Set `window_type` to `sliding` to use a sliding window, which weights the previous window's count to smooth enforcement across boundaries. `window_type` works with all policies (`local`, `redis`, `redis-cluster`, and `redis-sentinel`).
+
+Create a Route with the following configurations:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "limit-count-route",
+    "uri": "/get",
+    "plugins": {
+      "limit-count": {
+        "count": 10,
+        "time_window": 60,
+        "rejected_code": 429,
+        "key": "remote_addr",
+        "window_type": "sliding"
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
+    }
+  }'
+```
+
+Send requests to the Route:
+
+```shell
+curl -i "http://127.0.0.1:9080/get"
+```
+
+The first 10 requests within 60 seconds return `HTTP/1.1 200 OK` and the 11th returns `HTTP/1.1 429 Too Many Requests`. Unlike a fixed window, the quota does not fully reset at the 60-second boundary; the window slides continuously, preventing a burst of up to twice the rate around the boundary.
+
+### Reduce Redis Round Trips with Delayed Synchronization
+
+For Redis-based policies (`redis`, `redis-cluster`, and `redis-sentinel`), APISIX synchronizes the counter with Redis on every request by default. On high-traffic routes, this adds a Redis round trip to each request.
+
+Set `sync_interval` (in seconds) to synchronize in batches instead: between intervals the counter is served from local memory and reconciled with Redis once per interval. This reduces Redis round trips and tail latency, at the cost of the global count lagging by up to one interval's local delta. Set `sync_interval` to `-1` (the default behavior) to synchronize on every request.
+
+Create a Route with the following configurations. Adjust the Redis connection settings accordingly:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "limit-count-route",
+    "uri": "/get",
+    "plugins": {
+      "limit-count": {
+        "count": 1000,
+        "time_window": 60,
+        "rejected_code": 429,
+        "key": "remote_addr",
+        "policy": "redis",
+        "redis_host": "192.168.xxx.xxx",
+        "redis_port": 6379,
+        "redis_password": "p@ssw0rd",
+        "redis_database": 1,
+        "sync_interval": 1
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
+    }
+  }'
+```
+
+`sync_interval` must be at least `0.1` and smaller than `time_window`. Delayed synchronization uses the `plugin-limit-count-lock` shared dictionary, which is provisioned by default, so no additional configuration is required.
+
+Send requests to the Route:
+
+```shell
+curl -i "http://127.0.0.1:9080/get"
+```
+
+Requests are counted locally and reconciled with Redis every second. Once the quota of 1000 requests within 60 seconds is reached, further requests return `HTTP/1.1 429 Too Many Requests`.
 
 ### Rate Limit with Anonymous Consumer
 

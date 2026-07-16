@@ -1,5 +1,5 @@
 {
-  "version": "3.16.0",
+  "version": "3.17.0",
   "sidebar": [
     {
       "type": "category",
@@ -73,10 +73,12 @@
           "items": [
             "plugins/ai-proxy",
             "plugins/ai-proxy-multi",
+            "plugins/ai-cache",
             "plugins/ai-rate-limiting",
             "plugins/ai-prompt-guard",
             "plugins/ai-aws-content-moderation",
             "plugins/ai-aliyun-content-moderation",
+            "plugins/ai-lakera-guard",
             "plugins/ai-prompt-decorator",
             "plugins/ai-prompt-template",
             "plugins/ai-rag",
@@ -250,7 +252,8 @@
             "plugins/dubbo-proxy",
             "plugins/mqtt-proxy",
             "plugins/kafka-proxy",
-            "plugins/http-dubbo"
+            "plugins/http-dubbo",
+            "plugins/mcp-bridge"
           ]
         }
       ]

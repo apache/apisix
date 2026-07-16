@@ -605,7 +605,6 @@ Please modify "admin_key" in conf/config.yaml .
     yaml_conf.apisix.ssl.ssl_cert = "cert/ssl_PLACE_HOLDER.crt"
     yaml_conf.apisix.ssl.ssl_cert_key = "cert/ssl_PLACE_HOLDER.key"
 
-    local tcp_enable_ssl
     -- compatible with the original style which only has the addr
     if enable_stream and yaml_conf.apisix.stream_proxy and yaml_conf.apisix.stream_proxy.tcp then
         local tcp = yaml_conf.apisix.stream_proxy.tcp
@@ -615,9 +614,6 @@ Please modify "admin_key" in conf/config.yaml .
                 local ok, verr = validate_port_or_range(item.addr)
                 if not ok then
                     util.die("invalid stream_proxy.tcp entry: ", verr, "\n")
-                end
-                if item.tls then
-                    tcp_enable_ssl = true
                 end
                 table_insert(normalized_tcp, item)
             else
@@ -639,6 +635,47 @@ Please modify "admin_key" in conf/config.yaml .
                 util.die("invalid stream_proxy.udp entry: ", verr, "\n")
             end
         end
+    end
+
+    -- Split stream listens into nginx server blocks. `proxy_protocol_to_upstream`
+    -- (sending the PROXY protocol toward the upstream) is a server-level directive,
+    -- so TCP listens that enable it need a dedicated server block. The accept-side
+    -- `proxy_protocol` and `ssl` are per-listen directives and coexist in one block.
+    -- Per-listen settings fall back to the global `proxy_protocol` options; UDP never
+    -- sends the PROXY protocol upstream and always joins the plain block.
+    if enable_stream and yaml_conf.apisix.stream_proxy then
+        local stream_proxy = yaml_conf.apisix.stream_proxy
+        local pp = yaml_conf.apisix.proxy_protocol or {}
+        local plain = {
+            tcp = {}, udp = stream_proxy.udp or {},
+            proxy_protocol_to_upstream = false, tcp_enable_ssl = false,
+        }
+        local to_upstream = {
+            tcp = {}, udp = {},
+            proxy_protocol_to_upstream = true, tcp_enable_ssl = false,
+        }
+        for _, item in ipairs(stream_proxy.tcp or {}) do
+            if item.proxy_protocol == nil then
+                item.proxy_protocol = pp.enable_tcp_pp
+            end
+            local up = item.proxy_protocol_to_upstream
+            if up == nil then
+                up = pp.enable_tcp_pp_to_upstream
+            end
+            local group = up and to_upstream or plain
+            if item.tls then
+                group.tcp_enable_ssl = true
+            end
+            table_insert(group.tcp, item)
+        end
+        local servers = {}
+        if #plain.tcp > 0 or #plain.udp > 0 then
+            table_insert(servers, plain)
+        end
+        if #to_upstream.tcp > 0 then
+            table_insert(servers, to_upstream)
+        end
+        stream_proxy.servers = servers
     end
 
     local dubbo_upstream_multiplex_count = 32
@@ -691,7 +728,6 @@ Please modify "admin_key" in conf/config.yaml .
         enabled_stream_plugins = enabled_stream_plugins,
         dubbo_upstream_multiplex_count = dubbo_upstream_multiplex_count,
         status_server_addr = status_server_addr,
-        tcp_enable_ssl = tcp_enable_ssl,
         admin_server_addr = admin_server_addr,
         control_server_addr = control_server_addr,
         prometheus_server_addr = prometheus_server_addr,
@@ -872,7 +908,7 @@ Please modify "admin_key" in conf/config.yaml .
         end
 
         local consul_conf = yaml_conf.discovery["consul"]
-        sys_conf["discovery_shared_dicts"]["consul"] = consul_conf.shared_size or "10m"
+        sys_conf["discovery_shared_dicts"]["consul"] = consul_conf.shared_size or "64m"
     end
 
     -- fix up lua path

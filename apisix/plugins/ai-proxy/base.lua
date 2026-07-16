@@ -55,6 +55,21 @@ local function resolve_cap(cap_entry, key, conf, ctx)
     return val
 end
 
+
+-- Read the upstream error response body (429/5xx) so the provider's error
+-- details are not discarded: they are logged on fallback and returned to the
+-- client when no retry happens. Error bodies are small, so a single read_body()
+-- is enough. Sets res._upstream_bytes for upstream-state accounting.
+local function read_upstream_error_body(res)
+    local body, err = res:read_body()
+    if not body then
+        core.log.warn("failed to read upstream error response body: ", err)
+        return nil
+    end
+    res._upstream_bytes = #body
+    return body
+end
+
 function _M.set_logging(ctx, summaries, payloads)
     if summaries then
         ctx.llm_summary = {
@@ -65,6 +80,14 @@ function _M.set_logging(ctx, summaries, payloads)
             completion_tokens = ctx.var.llm_completion_tokens,
             total_tokens = ctx.var.llm_total_tokens,
             upstream_response_time = ctx.var.apisix_upstream_response_time,
+            stream = ctx.var.llm_stream,
+            tool_count = ctx.var.llm_tool_count,
+            has_tool_calls = ctx.var.llm_has_tool_calls,
+            end_user_id = ctx.var.llm_end_user_id,
+            cache_read_input_tokens = ctx.var.llm_cache_read_input_tokens,
+            cache_creation_input_tokens = ctx.var.llm_cache_creation_input_tokens,
+            reasoning_tokens = ctx.var.llm_reasoning_tokens,
+            content_risk_level = ctx.var.llm_content_risk_level,
         }
     end
     if payloads then
@@ -298,15 +321,24 @@ function _M.before_proxy(conf, ctx, on_error)
             core.response.set_response_source(ctx, "upstream")
 
             if res.status == 429 or (res.status >= 500 and res.status < 600) then
+                -- Read the upstream error body before closing so the provider's
+                -- error details survive: logged on fallback (see retry_on_error)
+                -- and returned to the client when no retry happens.
+                local error_body = read_upstream_error_body(res)
+                local content_type = res.headers["Content-Type"]
+                if content_type then
+                    core.response.set_header("Content-Type", content_type)
+                end
                 if res._t0 then
                     apisix_upstream.update_upstream_state({
                         response_time = (ngx_now() - res._t0) * 1000,
+                        response_length = res._upstream_bytes or 0,
                     })
                 end
                 if res._httpc then
                     res._httpc:close()
                 end
-                return res.status
+                return res.status, error_body
             end
 
             local body_reader = res.body_reader
@@ -380,7 +412,7 @@ function _M.before_proxy(conf, ctx, on_error)
             return 500
         end
         if code_or_err and on_error then
-            local abort_code = on_error(ctx, conf, code_or_err)
+            local abort_code = on_error(ctx, conf, code_or_err, body)
             if abort_code then
                 return abort_code, body
             end

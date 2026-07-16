@@ -179,3 +179,89 @@ env ngx_env=apisix-nice;
 GET /t
 --- response_body
 apisix-nice
+
+
+
+=== TEST 10: env directives sharing a common prefix must not collide (#13055)
+--- main_config
+env KUBERNETES_CLIENT_TOKEN=some-token;
+env KUBERNETES_CLIENT_TOKEN_FILE=/path/to/token;
+--- config
+    location /t {
+        content_by_lua_block {
+            local env = require("apisix.core.env")
+            ngx.say(env.fetch_by_uri("$ENV://KUBERNETES_CLIENT_TOKEN"))
+            ngx.say(env.fetch_by_uri("$ENV://KUBERNETES_CLIENT_TOKEN_FILE"))
+        }
+    }
+--- request
+GET /t
+--- response_body
+some-token
+/path/to/token
+
+
+
+=== TEST 11: longer-named directive declared first must not collide (#13055)
+--- main_config
+env KUBERNETES_CLIENT_TOKEN_FILE=/path/to/token;
+env KUBERNETES_CLIENT_TOKEN=some-token;
+--- config
+    location /t {
+        content_by_lua_block {
+            local env = require("apisix.core.env")
+            ngx.say(env.fetch_by_uri("$ENV://KUBERNETES_CLIENT_TOKEN"))
+            ngx.say(env.fetch_by_uri("$ENV://KUBERNETES_CLIENT_TOKEN_FILE"))
+        }
+    }
+--- request
+GET /t
+--- response_body
+some-token
+/path/to/token
+
+
+
+=== TEST 12: core.env.get resolves prefix-colliding directives exactly (#13055)
+--- main_config
+env COLLIDE_PREFIX=prefix-value;
+env COLLIDE_PREFIX_LONGER=longer-value;
+--- config
+    location /t {
+        content_by_lua_block {
+            local env = require("apisix.core.env")
+            ngx.say(env.get("COLLIDE_PREFIX"))
+            ngx.say(env.get("COLLIDE_PREFIX_LONGER"))
+        }
+    }
+--- request
+GET /t
+--- response_body
+prefix-value
+longer-value
+
+
+
+=== TEST 13: resolve prefix-colliding directives during worker init phase (#13055)
+--- main_config
+env INIT_COLLIDE_TOKEN=some-token;
+env INIT_COLLIDE_TOKEN_FILE=/path/to/token;
+--- extra_init_worker_by_lua
+    local env = require("apisix.core.env")
+    package.loaded["test_init_env"] = {
+        token = env.get("INIT_COLLIDE_TOKEN"),
+        token_file = env.get("INIT_COLLIDE_TOKEN_FILE"),
+    }
+--- config
+    location /t {
+        content_by_lua_block {
+            local result = package.loaded["test_init_env"]
+            ngx.say(result.token)
+            ngx.say(result.token_file)
+        }
+    }
+--- request
+GET /t
+--- response_body
+some-token
+/path/to/token

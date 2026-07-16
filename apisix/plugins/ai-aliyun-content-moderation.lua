@@ -19,6 +19,7 @@ local ngx_ok    = ngx.OK
 local os        = os
 local pairs     = pairs
 local ipairs    = ipairs
+local next      = next
 local table     = table
 local string    = string
 local type      = type
@@ -28,6 +29,7 @@ local core      = require("apisix.core")
 local http      = require("resty.http")
 local uuid      = require("resty.jit-uuid")
 local protocols = require("apisix.plugins.ai-protocols")
+local binding   = require("apisix.plugins.ai-protocols.binding")
 local sse       = require("apisix.plugins.ai-transport.sse")
 
 local schema = {
@@ -57,17 +59,51 @@ local schema = {
         region_id = {type ="string", minLength = 1},
         access_key_id = {type = "string", minLength = 1},
         access_key_secret = {type ="string", minLength = 1},
+        fail_mode = binding.schema_property("skip"),
         check_request = {type = "boolean", default = true},
         check_response = {type = "boolean", default = false},
+        request_check_mode = {
+            type = "string",
+            enum = {"last", "all"},
+            default = "last",
+            description = [[
+            which user/tool messages to moderate: last (only the latest consecutive
+            block of selected-role messages) | all (every selected-role message).
+            Does not apply to the system role, which is always checked.
+            ]]
+        },
+        request_check_roles = {
+            type = "array",
+            items = {type = "string", enum = {"user", "tool", "system"}},
+            minItems = 1,
+            uniqueItems = true,
+            default = {"user"},
+            description = [[
+            which message roles to moderate on the request side. user/tool follow
+            request_check_mode; system is checked on every request because it can
+            be poisoned by malicious ToolCall arguments. Note: tool-result
+            moderation applies to OpenAI-compatible formats where the tool output
+            is a distinct "tool" role/item; for Anthropic/Bedrock (tool results
+            are nested blocks inside user messages) tool content is not extracted.
+            ]]
+        },
         request_check_service = {type = "string", minLength = 1, default = "llm_query_moderation"},
-        request_check_length_limit = {type = "number", default = 2000},
+        request_check_length_limit = {type = "integer", minimum = 1, default = 2000},
         response_check_service = {type = "string", minLength = 1,
                                   default = "llm_response_moderation"},
-        response_check_length_limit = {type = "number", default = 5000},
+        response_check_length_limit = {type = "integer", minimum = 1, default = 5000},
         risk_level_bar = {type = "string",
                           enum = {"none", "low", "medium", "high", "max"},
                           default = "high"},
-        deny_code = {type = "number", default = 200},
+        deny_code = {
+            type = "integer",
+            minimum = 200,
+            maximum = 599,
+            default = 200,
+            description = "HTTP status returned on a deny. Defaults to 200 so the " ..
+                          "provider-compatible refusal parses as a normal completion in " ..
+                          "client SDKs; set a 4xx to surface denies as HTTP errors instead.",
+        },
         deny_message = {type = "string"},
         timeout = {
             type = "integer",
@@ -110,21 +146,21 @@ local function risk_level_to_int(risk_level)
 end
 
 
--- openresty ngx.escape_uri don't escape some sub-delimis in rfc 3986 but aliyun do it,
--- in order to we can calculate same signature with aliyun, we need escape those chars manually
+-- OpenResty's ngx.escape_uri doesn't escape some RFC 3986 sub-delimiters that aliyun does,
+-- so to compute the same signature as aliyun we escape those characters manually.
+-- A single JIT-compiled PCRE pass is ~20x faster than five Lua string.gsub passes over the
+-- encoded text, which is the hottest per-chunk operation in the signing path.
 local sub_delims_rfc3986 = {
-    ["!"] = "%%21",
-    ["'"] = "%%27",
-    ["%("] = "%%28",
-    ["%)"] = "%%29",
-    ["*"] = "%%2A",
+    ["!"] = "%21",
+    ["'"] = "%27",
+    ["("] = "%28",
+    [")"] = "%29",
+    ["*"] = "%2A",
 }
 local function url_encoding(raw_str)
-    local encoded_str = ngx.escape_uri(raw_str)
-    for k, v in pairs(sub_delims_rfc3986) do
-        encoded_str = string.gsub(encoded_str, k, v)
-    end
-    return encoded_str
+    return (ngx.re.gsub(ngx.escape_uri(raw_str), "[!'()*]", function(m)
+        return sub_delims_rfc3986[m[0]]
+    end, "jo"))
 end
 
 
@@ -163,20 +199,27 @@ local function check_single_content(ctx, conf, content, service_name)
     }
     params["Signature"] = calculate_sign(params, conf.access_key_secret .. "&")
 
-    local httpc = http.new()
-    httpc:set_timeout(conf.timeout)
-
-    local parsed_url = url.parse(conf.endpoint)
-    local ok, err = httpc:connect({
-        scheme = parsed_url and parsed_url.scheme or "https",
-        host = parsed_url and parsed_url.host,
-        port = parsed_url and parsed_url.port,
-        ssl_verify = conf.ssl_verify,
-        ssl_server_name = parsed_url and parsed_url.host,
-        pool_size = conf.keepalive and conf.keepalive_pool,
-    })
-    if not ok then
-        return nil, "failed to connect: " .. err
+    -- Reuse one httpc across all moderation calls of a request (realtime fires
+    -- many): cached on ctx, returned to the keepalive pool once at request end.
+    local httpc = conf.keepalive and ctx.aliyun_cm_httpc
+    if not httpc then
+        httpc = http.new()
+        httpc:set_timeout(conf.timeout)
+        local parsed_url = url.parse(conf.endpoint)
+        local ok, err = httpc:connect({
+            scheme = parsed_url and parsed_url.scheme or "https",
+            host = parsed_url and parsed_url.host,
+            port = parsed_url and parsed_url.port,
+            ssl_verify = conf.ssl_verify,
+            ssl_server_name = parsed_url and parsed_url.host,
+            pool_size = conf.keepalive and conf.keepalive_pool,
+        })
+        if not ok then
+            return nil, "failed to connect: " .. err
+        end
+        if conf.keepalive then
+            ctx.aliyun_cm_httpc = httpc
+        end
     end
 
     local body = ngx.encode_args(params)
@@ -189,17 +232,18 @@ local function check_single_content(ctx, conf, content, service_name)
         }
     }
     if not res then
+        ctx.aliyun_cm_httpc = nil
+        httpc:close()
         return nil, "failed to request: " .. err
     end
     local raw_res_body, err = res:read_body()
     if not raw_res_body then
+        ctx.aliyun_cm_httpc = nil
+        httpc:close()
         return nil, "failed to read response body: " .. err
     end
-    if conf.keepalive then
-        local ok, err = httpc:set_keepalive(conf.keepalive_timeout, conf.keepalive_pool)
-        if not ok then
-            core.log.warn("failed to keepalive connection: ", err)
-        end
+    if not conf.keepalive then
+        httpc:close()
     end
     if res.status ~= 200 then
         return nil, "failed to request aliyun text moderation service, status: " .. res.status
@@ -249,6 +293,19 @@ local function deny_message(ctx, message)
 end
 
 
+local function release_cm_httpc(ctx, conf)
+    local httpc = ctx.aliyun_cm_httpc
+    if not httpc then
+        return
+    end
+    ctx.aliyun_cm_httpc = nil
+    local ok, err = httpc:set_keepalive(conf.keepalive_timeout, conf.keepalive_pool)
+    if not ok then
+        core.log.warn("failed to keepalive connection: ", err)
+    end
+end
+
+
 local function content_moderation(ctx, conf, content, length_limit, service_name)
     if not ctx.session_id then
         ctx.session_id = uuid.generate_v4()
@@ -265,21 +322,28 @@ local function content_moderation(ctx, conf, content, length_limit, service_name
         return
     end
 
-    local index = 1
-    while true do
-        if index > #content then
-            return
-        end
-        local hit, err = check_single_content(ctx, conf,
-                                                utf8.sub(content, index, index + length_limit - 1),
-                                                service_name)
-        index = index + length_limit
+    -- Walk the content with a byte cursor. utf8.offset(content, length_limit + 1,
+    -- cur) returns the byte position length_limit characters ahead of cur,
+    -- scanning only that window, so slicing with byte-based string.sub keeps the
+    -- whole loop O(n). The previous utf8.sub(content, index, ...) located the
+    -- index-th character by scanning from the string start on every chunk, which
+    -- made large request/response bodies O(n^2).
+    local cur = 1
+    while cur <= #content do
+        local next_byte = utf8.offset(content, length_limit + 1, cur)
+        local piece = next_byte and string.sub(content, cur, next_byte - 1)
+                                 or string.sub(content, cur)
+        local hit, err = check_single_content(ctx, conf, piece, service_name)
         if hit then
             return conf.deny_code, deny_message(ctx, conf.deny_message or err)
         end
         if err then
             core.log.error("failed to check content: ", err)
         end
+        if not next_byte then
+            return
+        end
+        cur = next_byte
     end
 end
 
@@ -305,17 +369,34 @@ end
 
 function _M.access(conf, ctx)
     if not ctx.picked_ai_instance then
-        return 500, "no ai instance picked, " ..
+        local handled, code, body = binding.on_unsupported(
+            conf.fail_mode, _M.name, ctx,
+            "no ai instance picked (request did not pass through ai-proxy/ai-proxy-multi)",
+            500, "no ai instance picked, " ..
                 "ai-aliyun-content-moderation plugin must be used with " ..
-                "ai-proxy or ai-proxy-multi plugin"
+                "ai-proxy or ai-proxy-multi plugin")
+        if handled then
+            return code, body
+        end
+        return
     end
     if not conf.check_request then
         core.log.info("skip request check for this request")
         return
     end
     local ct = core.request.header(ctx, "Content-Type")
+    -- media types are case-insensitive, normalize before matching
+    ct = ct and ct:lower()
     if ct and not core.string.has_prefix(ct, "application/json") then
-        return 400, "unsupported content-type: " .. ct .. ", only application/json is supported"
+        local handled, code, body = binding.on_unsupported(
+            conf.fail_mode, _M.name, ctx,
+            "unsupported content-type: " .. ct,
+            400, "unsupported content-type: " .. ct
+                .. ", only application/json is supported")
+        if handled then
+            return code, body
+        end
+        return
     end
     local request_tab, err = core.request.get_json_request_body_table()
     if not request_tab then
@@ -324,20 +405,74 @@ function _M.access(conf, ctx)
 
     local proto = protocols.get(ctx.ai_client_protocol)
     if not proto or not proto.extract_request_content then
-        return 500, "unsupported protocol: " .. (ctx.ai_client_protocol or "unknown")
+        local handled, code, body = binding.on_unsupported(
+            conf.fail_mode, _M.name, ctx,
+            "unsupported protocol: " .. (ctx.ai_client_protocol or "unknown"),
+            500, "unsupported protocol: " .. (ctx.ai_client_protocol or "unknown"))
+        if handled then
+            return code, body
+        end
+        return
     end
 
-    local contents = proto.extract_request_content(request_tab)
-    local content_to_check = table.concat(contents, " ")
-
-    local code, message = request_content_moderation(ctx, conf, content_to_check)
-    if code then
-        local stream = ctx.var.request_type == "ai_stream"
-        if stream then
+    local function set_deny_content_type()
+        if ctx.var.request_type == "ai_stream" then
             core.response.set_header("Content-Type", "text/event-stream")
         else
             core.response.set_header("Content-Type", "application/json")
         end
+    end
+
+    local roles = {}
+    for _, r in ipairs(conf.request_check_roles) do
+        roles[r] = true
+    end
+    local turn_roles = {}
+    if roles.user then turn_roles.user = true end
+    if roles.tool then turn_roles.tool = true end
+
+    -- A configured role whose extractor this protocol doesn't implement would
+    -- otherwise pass unmoderated. Route that through fail_mode instead of
+    -- silently skipping the configured moderation.
+    if (roles.system and not proto.extract_system_content)
+            or (next(turn_roles) and not proto.extract_turn_content) then
+        local handled, code, body = binding.on_unsupported(
+            conf.fail_mode, _M.name, ctx,
+            "protocol cannot extract configured request_check_roles",
+            500, "protocol " .. (ctx.ai_client_protocol or "unknown")
+                .. " cannot moderate the configured request_check_roles")
+        if handled then
+            return code, body
+        end
+        return
+    end
+
+    -- Collect the text to moderate from all configured roles and send it in a
+    -- single request. The Aliyun service takes a flat `content` string with no
+    -- role field, so there is nothing to gain from separate per-role calls.
+    -- system is always included (every request, not subject to request_check_mode,
+    -- because it can be poisoned by malicious ToolCall arguments); user/tool
+    -- follow request_check_mode ("last" = latest turn, "all" = every message).
+    local contents = {}
+    if roles.system then
+        local system_texts = proto.extract_system_content(request_tab)
+        for i = 1, #system_texts do
+            contents[#contents + 1] = system_texts[i]
+        end
+    end
+    if next(turn_roles) then
+        local turn_texts = proto.extract_turn_content(request_tab,
+                                                      conf.request_check_mode, turn_roles)
+        for i = 1, #turn_texts do
+            contents[#contents + 1] = turn_texts[i]
+        end
+    end
+    local content_to_check = table.concat(contents, " ")
+
+    local code, message = request_content_moderation(ctx, conf, content_to_check)
+    release_cm_httpc(ctx, conf)
+    if code then
+        set_deny_content_type()
         return code, message
     end
 end
@@ -357,7 +492,9 @@ function _M.lua_body_filter(conf, ctx, headers, body)
 
     if request_type == "ai_chat" then
         local content = ctx.var.llm_response_text
-        return response_content_moderation(ctx, conf, content)
+        local code, message = response_content_moderation(ctx, conf, content)
+        release_cm_httpc(ctx, conf)
+        return code, message
     end
 
     local proto = protocols.get(ctx.ai_client_protocol)
@@ -366,7 +503,11 @@ function _M.lua_body_filter(conf, ctx, headers, body)
         if not ctx.var.llm_response_text then
             return
         end
-        response_content_moderation(ctx, conf, ctx.var.llm_response_text)
+        if not ctx.ai_aliyun_response_moderated then
+            response_content_moderation(ctx, conf, ctx.var.llm_response_text)
+            release_cm_httpc(ctx, conf)
+            ctx.ai_aliyun_response_moderated = true
+        end
         local events = sse.decode(body)
         for _, event in ipairs(events) do
             if proto and proto.is_data_event(event) then
@@ -389,10 +530,10 @@ function _M.lua_body_filter(conf, ctx, headers, body)
             end
             table.insert(raw_events, sse.encode(event))
         end
-        if not contains_done_event and proto then
+        if not contains_done_event and proto and ctx.var.llm_request_done then
             table.insert(raw_events, proto.build_done_event())
         end
-        return ngx_ok, table.concat(raw_events, "\n")
+        return nil, table.concat(raw_events, "\n")
     end
 
     if conf.stream_check_mode == "realtime" then
@@ -409,6 +550,9 @@ function _M.lua_body_filter(conf, ctx, headers, body)
         end
         ctx.last_moderate_time = now_time
         local _, message = response_content_moderation(ctx, conf, ctx.content_moderation_cache)
+        if message or ctx.var.llm_request_done then
+            release_cm_httpc(ctx, conf)
+        end
         if message then
             return ngx_ok, message
         end

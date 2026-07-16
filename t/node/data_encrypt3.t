@@ -503,7 +503,7 @@ apisix:
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugin")
-            local ssl = require("apisix.ssl")
+            local core = require("apisix.core")
 
             -- Simulate array-of-strings encryption (e.g., secret_fallbacks)
             local conf = {
@@ -511,7 +511,7 @@ apisix:
             }
 
             -- Encrypt
-            plugin.process_encrypt_field(conf, "secrets", ssl.aes_encrypt_pkey, "test", "encrypt")
+            plugin.process_encrypt_field(conf, "secrets", core.data_encryption.encrypt, "test", "encrypt")
 
             -- Verify all elements are encrypted (not plaintext)
             for i, v in ipairs(conf.secrets) do
@@ -520,7 +520,7 @@ apisix:
             end
 
             -- Decrypt
-            plugin.process_encrypt_field(conf, "secrets", ssl.aes_decrypt_pkey, "test", "decrypt")
+            plugin.process_encrypt_field(conf, "secrets", core.data_encryption.decrypt, "test", "decrypt")
 
             -- Verify all elements are restored
             ngx.say("decrypted[1]: ", conf.secrets[1])
@@ -535,3 +535,30 @@ encrypted[3] differs: true
 decrypted[1]: secret-one
 decrypted[2]: secret-two
 decrypted[3]: secret-three
+
+
+
+=== TEST 8: data_encryption.decrypt of a non-base64 value returns the error to the caller without self-logging it
+--- yaml_config
+apisix:
+    data_encryption:
+        enable_encrypt_fields: true
+        keyring:
+            - edd1c9f0985e76a2
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+
+            -- A value that was stored as plaintext before its field was added to
+            -- encrypt_fields: it is not valid base64, so decryption cannot decode it.
+            local val, err = core.data_encryption.decrypt("sk-proj-abc-123!")
+            ngx.say("val: ", val)
+            ngx.say("err: ", err)
+        }
+    }
+--- response_body
+val: nil
+err: base64 decode failed
+--- no_error_log
+base64 decode failed

@@ -42,13 +42,23 @@ else
 end
 
 local set_stream_upstream_tls
+local set_stream_upstream_cert_and_key
 if not is_http then
     local ok, apisix_ngx_stream_upstream = pcall(require, "resty.apisix.stream.upstream")
     if ok then
         set_stream_upstream_tls = apisix_ngx_stream_upstream.set_tls
-    else
+        set_stream_upstream_cert_and_key = apisix_ngx_stream_upstream.set_cert_and_key
+    end
+    -- guard each function independently: an older runtime may expose the module
+    -- (set_tls) without the newer mTLS C-API (set_cert_and_key)
+    if not set_stream_upstream_tls then
         set_stream_upstream_tls = function ()
             return nil, "need to build APISIX-Runtime to support TLS over TCP upstream"
+        end
+    end
+    if not set_stream_upstream_cert_and_key then
+        set_stream_upstream_cert_and_key = function ()
+            return nil, "need to build APISIX-Runtime to support upstream mTLS over TCP"
         end
     end
 end
@@ -160,6 +170,54 @@ local function fill_node_info(up_conf, scheme, is_stream)
 end
 
 
+-- Set upstream client certificate (mTLS) for the stream (L4) subsystem.
+-- Mirrors the http subsystem: the cert/key are parsed and cached once (the key
+-- is AES-decrypted at rest by fetch_pkey) and applied to the upstream SSL
+-- handshake through the apisix-nginx-module stream C API, so the plaintext key
+-- is never stringified into an nginx variable.
+local function set_stream_upstream_client_cert(api_ctx, up_conf)
+    local tls = up_conf.tls
+    if not (tls and (tls.client_cert or tls.client_cert_id)) then
+        return true
+    end
+
+    local client_cert, client_key
+    if tls.client_cert_id then
+        if not api_ctx.upstream_ssl then
+            return nil, "failed to find upstream ssl object for client_cert_id"
+        end
+        client_cert = api_ctx.upstream_ssl.cert
+        client_key = api_ctx.upstream_ssl.key
+    else
+        client_cert = tls.client_cert
+        client_key = tls.client_key
+    end
+
+    if not (client_cert and client_key) then
+        return nil, "missing client certificate or key for upstream mTLS"
+    end
+
+    -- the sni here is just for logging
+    local sni = api_ctx.var.upstream_host
+    local cert, err = apisix_ssl.fetch_cert(sni, client_cert)
+    if not cert then
+        return nil, err
+    end
+
+    local key, err = apisix_ssl.fetch_pkey(sni, client_key)
+    if not key then
+        return nil, err
+    end
+
+    local ok, err = set_stream_upstream_cert_and_key(cert, key)
+    if not ok then
+        return nil, err
+    end
+
+    return true
+end
+
+
 function _M.set_by_route(route, api_ctx)
     if api_ctx.upstream_conf then
         -- upstream_conf has been set by traffic-split plugin
@@ -245,6 +303,11 @@ function _M.set_by_route(route, api_ctx)
             local sni = apisix_ssl.server_name()
             if sni then
                 ngx_var.upstream_sni = sni
+            end
+
+            local ok, err = set_stream_upstream_client_cert(api_ctx, up_conf)
+            if not ok then
+                return 503, err
             end
         end
         local node_ver = resource.get_nodes_ver(up_conf.resource_key)

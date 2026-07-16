@@ -553,3 +553,107 @@ a_1=MISS
 a_2=HIT
 b_1=MISS
 b_2=HIT
+
+
+
+=== TEST 16: PURGE clears every Vary variant, not just the base key
+--- extra_yaml_config
+plugins:
+    - graphql-proxy-cache
+    - public-api
+--- http_config
+    lua_shared_dict memory_cache 50m;
+
+    server {
+        listen 1986;
+        server_tokens off;
+
+        location = /graphql-vary-purge {
+            content_by_lua_block {
+                ngx.header["Vary"] = "X-Variant"
+                ngx.say('{"data":{"variant":"', ngx.var.http_x_variant or "none", '"}}')
+            }
+        }
+    }
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local http = require("resty.http")
+
+            local code, res_body = t('/apisix/admin/routes/gql-vary-purge', ngx.HTTP_PUT, [[{
+                "uri": "/graphql-vary-purge",
+                "plugins": {
+                    "graphql-proxy-cache": {
+                        "cache_zone": "memory_cache",
+                        "cache_strategy": "memory",
+                        "cache_ttl": 300
+                    }
+                },
+                "upstream": {
+                    "nodes": {"127.0.0.1:1986": 1},
+                    "type": "roundrobin"
+                }
+            }]])
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(res_body)
+                return
+            end
+
+            local code = t('/apisix/admin/routes/graphql-purge', ngx.HTTP_PUT, [[{
+                "uri": "/apisix/plugin/graphql-proxy-cache/*",
+                "plugins": {"public-api": {}}
+            }]])
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("failed to set purge route")
+                return
+            end
+
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/graphql-vary-purge"
+            local body = '{"query":"query{persons{id}}"}'
+
+            local function fetch(variant)
+                local res, err = http.new():request_uri(uri, {
+                    method = "POST",
+                    body = body,
+                    headers = {
+                        ["X-Variant"] = variant,
+                        ["Content-Type"] = "application/json",
+                    },
+                })
+                if not res then
+                    return nil, err
+                end
+                return res.headers["Apisix-Cache-Status"], res.headers["APISIX-Cache-Key"]
+            end
+
+            -- Populate two distinct variants under the same base key.
+            local a1 = fetch("a")
+            local _, cache_key = fetch("a")
+            local b1 = fetch("b")
+            local b2 = fetch("b")
+            ngx.say("a_miss=", a1)
+            ngx.say("b_miss=", b1)
+            ngx.say("b_hit=", b2)
+
+            -- PURGE the base key once; the fix must clear both variants.
+            local purge_code = t('/apisix/plugin/graphql-proxy-cache/memory/gql-vary-purge/'
+                                 .. cache_key, "PURGE")
+            ngx.say("purge=", purge_code)
+
+            -- Both variants must MISS again now that the index + variants are gone.
+            ngx.say("a_after=", (fetch("a")))
+            ngx.say("b_after=", (fetch("b")))
+        }
+    }
+--- request
+GET /t
+--- response_body
+a_miss=MISS
+b_miss=MISS
+b_hit=HIT
+purge=200
+a_after=MISS
+b_after=MISS

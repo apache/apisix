@@ -28,6 +28,41 @@ add_block_preprocessor(sub {
     }
 });
 
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    # The plugin no longer logs the payload; reproduce the observability the
+    # tests rely on by logging each batch entry from a test-only hook.
+    my $extra_init_by_lua = <<_EOC_;
+    local bp_manager = require("apisix.utils.batch-processor-manager")
+    local core = require("apisix.core")
+    local function log_send_data(entry)
+        local data = type(entry) == "table" and core.json.encode(entry) or entry
+        core.log.info("send data to kafka: ", data)
+    end
+    local old_add = bp_manager.add_entry
+    bp_manager.add_entry = function(self, conf, entry, max_pending_entries)
+        local ok = old_add(self, conf, entry, max_pending_entries)
+        if ok then
+            log_send_data(entry)
+        end
+        return ok
+    end
+    local old_new = bp_manager.add_entry_to_new_processor
+    bp_manager.add_entry_to_new_processor = function(self, conf, entry, ctx, func, max_pending_entries)
+        local ok = old_new(self, conf, entry, ctx, func, max_pending_entries)
+        if ok then
+            log_send_data(entry)
+        end
+        return ok
+    end
+_EOC_
+
+    if (!defined $block->extra_init_by_lua) {
+        $block->set_value("extra_init_by_lua", $extra_init_by_lua);
+    }
+});
+
 run_tests;
 
 __DATA__
@@ -840,3 +875,114 @@ passed
 qr/creating new batch processor with config.*/
 --- grep_error_log_out eval
 qr/creating new batch processor with config.*/
+
+
+
+=== TEST 28: check api_version schema: 2 is accepted, 3 is rejected
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.kafka-logger")
+            local ok, err = plugin.check_schema({
+                broker_list = {
+                    ["127.0.0.1"] = 9092
+                },
+                kafka_topic = "test",
+                api_version = 2
+            })
+            if not ok then
+                ngx.say(err)
+            end
+
+            local ok, err = plugin.check_schema({
+                broker_list = {
+                    ["127.0.0.1"] = 9092
+                },
+                kafka_topic = "test",
+                api_version = 3
+            })
+            if not ok then
+                ngx.say(err)
+            end
+            ngx.say("done")
+        }
+    }
+--- response_body
+property "api_version" validation failed: matches none of the enum values
+done
+
+
+
+=== TEST 29: report log to kafka with api_version = 2, the broker should store the message timestamp
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "kafka-logger": {
+                                "broker_list" : {
+                                    "127.0.0.1":9092
+                                },
+                                "kafka_topic" : "test2",
+                                "producer_type": "sync",
+                                "timeout" : 1,
+                                "batch_max_size": 1,
+                                "api_version": 2
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            ngx.sleep(0.5)
+
+            -- record the current end offset of the topic before sending the log
+            local bconsumer = require("resty.kafka.basic-consumer")
+            local pconsumer = require("resty.kafka.protocol.consumer")
+            local broker_list = {{host = "127.0.0.1", port = 9092}}
+            local consumer = bconsumer:new(broker_list, {})
+            local offset, err = consumer:list_offset("test2", 0,
+                                                     pconsumer.LIST_OFFSET_TIMESTAMP_LAST)
+            if not offset then
+                ngx.say("failed to list offset: ", err)
+                return
+            end
+            offset = tonumber(tostring(offset):match("^%-?%d+"))
+
+            -- hit the route to send the log to kafka
+            t('/hello', ngx.HTTP_GET)
+            ngx.sleep(2)
+
+            local data, err = consumer:fetch("test2", 0, offset)
+            if not data then
+                ngx.say("failed to fetch message: ", err)
+                return
+            end
+            local message = data.records[1]
+            if not message then
+                ngx.say("no message fetched")
+                return
+            end
+            if tonumber(message.timestamp) > 0 then
+                ngx.say("message timestamp is stored")
+            else
+                ngx.say("invalid message timestamp: ", tostring(message.timestamp))
+            end
+        }
+    }
+--- timeout: 10
+--- response_body
+message timestamp is stored
