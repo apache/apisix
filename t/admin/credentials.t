@@ -569,6 +569,16 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
+            -- the duplicate check runs against the locally synced consumer
+            -- data, wait until the watcher catches up with the previous write
+            local find_consumer = require("apisix.consumer").find_consumer
+            for _ = 1, 100 do
+                if find_consumer("key-auth", "key", "the-key-of-alex") then
+                    break
+                end
+                ngx.sleep(0.05)
+            end
+
             local code, body = t('/apisix/admin/consumers/bob/credentials/cred-bob-a',
                 ngx.HTTP_PUT,
                 [[{
@@ -597,6 +607,16 @@ GET /t
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
+            -- the duplicate check runs against the locally synced consumer
+            -- data, wait until the watcher catches up with the previous write
+            local find_consumer = require("apisix.consumer").find_consumer
+            for _ = 1, 100 do
+                if find_consumer("key-auth", "key", "the-key-of-bob") then
+                    break
+                end
+                ngx.sleep(0.05)
+            end
+
             local code, body = t('/apisix/admin/consumers/alex/credentials/cred-alex-b',
                 ngx.HTTP_PUT,
                 [[{
@@ -625,6 +645,16 @@ GET /t
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
+            -- the duplicate check runs against the locally synced consumer
+            -- data, wait until the watcher catches up with the previous write
+            local find_consumer = require("apisix.consumer").find_consumer
+            for _ = 1, 100 do
+                if find_consumer("key-auth", "key", "the-key-of-alex") then
+                    break
+                end
+                ngx.sleep(0.05)
+            end
+
             local code, body = t('/apisix/admin/consumers',
                 ngx.HTTP_PUT,
                 [[{
@@ -684,6 +714,16 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
+            -- the duplicate check runs against the locally synced consumer
+            -- data, wait until the watcher catches up with the previous write
+            local find_consumer = require("apisix.consumer").find_consumer
+            for _ = 1, 100 do
+                if find_consumer("key-auth", "key", "the-key-of-alex") then
+                    break
+                end
+                ngx.sleep(0.05)
+            end
+
             local code, body = t('/apisix/admin/consumers/alex/credentials/cred-alex-c',
                 ngx.HTTP_PUT,
                 [[{
@@ -712,6 +752,16 @@ GET /t
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
+            -- the duplicate check runs against the locally synced consumer
+            -- data, wait until the watcher catches up with the previous write
+            local find_consumer = require("apisix.consumer").find_consumer
+            for _ = 1, 100 do
+                if find_consumer("key-auth", "key", "the-key-of-bob") then
+                    break
+                end
+                ngx.sleep(0.05)
+            end
+
             local code, body = t('/apisix/admin/consumers/bob/credentials/cred-bob-b',
                 ngx.HTTP_PUT,
                 [[{
