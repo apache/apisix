@@ -190,6 +190,11 @@ true
 
 
 === TEST 3: mixing set custom and default values
+# This block only compares the resolved configuration. Unlike the blocks around
+# it, the custom host does not point at the apiserver the CI port-forwards to
+# 127.0.0.1, so the informer's connect fails and logs an [error]. Whether that
+# lands inside this block's window depends on how long resolving the host takes,
+# so the default `no_error_log: [error]` would make this block flaky.
 --- yaml_config
 apisix:
   node_listen: 1984
@@ -223,6 +228,8 @@ GET /compare
 Content-type: application/json
 --- response_body
 true
+--- no_error_log
+[alert]
 
 
 
