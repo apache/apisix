@@ -36,6 +36,20 @@ block_with_listen() {
     ' conf/nginx.conf
 }
 
+# Print the top-level stream{} block. `set_real_ip_from` is rendered into the
+# http block too, so assertions about the stream side have to be scoped.
+stream_block() {
+    awk '
+    /^stream[ \t]*\{/ { depth = 0; inblock = 1 }
+    inblock {
+        print
+        depth += gsub(/\{/, "{")
+        depth -= gsub(/\}/, "}")
+        if (depth == 0) { inblock = 0 }
+    }
+    ' conf/nginx.conf
+}
+
 # Open a TCP connection to <port>, announce <claimed client ip> in a PROXY
 # protocol v1 header, and print whatever comes back.
 pp_request() {
@@ -250,7 +264,7 @@ apisix:
 ' > conf/config.yaml
 make init
 
-if grep -E "set_real_ip_from" conf/nginx.conf > /dev/null; then
+if stream_block | grep -E "set_real_ip_from" > /dev/null; then
     echo "failed: no address should be trusted by default"
     exit 1
 fi
@@ -268,15 +282,15 @@ nginx_config:
   stream:
     real_ip_from:
       - 192.168.1.0/24
-      - 127.0.0.1
+      - 10.0.0.0/8
 ' > conf/config.yaml
 make init
 
-if ! grep -E "^\s*set_real_ip_from 192.168.1.0/24;" conf/nginx.conf > /dev/null; then
+if ! stream_block | grep -E "^\s*set_real_ip_from 192\.168\.1\.0/24;" > /dev/null; then
     echo "failed: stream.real_ip_from should render the trusted network"
     exit 1
 fi
-if ! grep -E "^\s*set_real_ip_from 127.0.0.1;" conf/nginx.conf > /dev/null; then
+if ! stream_block | grep -E "^\s*set_real_ip_from 10\.0\.0\.0/8;" > /dev/null; then
     echo "failed: stream.real_ip_from should render every entry"
     exit 1
 fi
