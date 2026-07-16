@@ -61,7 +61,7 @@ else
     sudo apt-get -y update --fix-missing
     sudo apt-get install -y build-essential gcc g++ cpanminus libxml2-dev libxslt-dev
 
-    if [ "$APISIX_RUNTIME" != "1.3.10" ]; then
+    if [ "$APISIX_RUNTIME" != "1.3.11" ]; then
         echo "Please update the apisix-runtime-debug checksum for APISIX_RUNTIME=$APISIX_RUNTIME" >&2
         exit 1
     fi
@@ -69,11 +69,11 @@ else
     case "$ARCH" in
         x86_64|amd64)
             DEB_ARCH="amd64"
-            EXPECTED_SHA256="b3b776c1ce007fa885f408f2e2b20c57443a989f4abad60547b41764fd1ea17b"
+            EXPECTED_SHA256="6c03f0a47a80e84c595c7e067f7d05fc69890237f9191af55108a284b356c4ee"
             ;;
         arm64|aarch64)
             DEB_ARCH="arm64"
-            EXPECTED_SHA256="1d15972b68d6f0260a244c466ca301283abd8eb49a2d534988e0004118acd705"
+            EXPECTED_SHA256="cdc124262a1acb2de170f12a2180cdc357ba867d6447cd08a9ba1639994d4e50"
             ;;
         *)
             echo "Unsupported architecture: $ARCH" >&2
