@@ -188,17 +188,8 @@ function _M.build_request(self, ctx, conf, request_body, opts)
             .. "includes a path", 400
     end
 
-    -- Forward the downstream request's headers only on the proxy path. A
-    -- self-contained internal request (skip_client_headers, e.g. the embedding
-    -- sidecar call) carries its own credentials and must not leak the client's
-    -- Authorization/Cookie to a third-party endpoint. Resolving them here keeps
-    -- the transport free of any ctx dependency.
-    local client_headers
-    if not opts.skip_client_headers then
-        client_headers = core.request.headers(ctx)
-    end
-    local headers = transport_http.construct_forward_headers(auth.header or {},
-                                                             client_headers)
+    local headers = transport_http.construct_forward_headers(auth.header or {}, ctx,
+                                                             opts.skip_client_headers)
     if opts.host_header then
         headers["Host"] = opts.host_header
     end
