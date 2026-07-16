@@ -59,6 +59,16 @@ sleep 2
 curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:7085/status/ready | grep 200 \
 || (echo "failed: status/ready api didn't return 200"; exit 1)
 
+# The status server listens with enable_process=privileged_agent. On a buggy
+# runtime the privileged agent closes an already-closed listen fd during startup
+# and logs "[emerg] ... Bad file descriptor" (apisix-nginx-module#116). A clean
+# start must not contain it.
+if grep -q "Bad file descriptor" logs/error.log; then
+    echo "failed: privileged agent hit EBADF on a listen fd (apisix-nginx-module#116)"
+    exit 1
+fi
+echo "passed: no 'Bad file descriptor' from the privileged agent listener"
+
 # stop two etcd endpoints but status api should return 200 as all workers are synced
 docker stop ${ETCD_NAME_0}
 docker stop ${ETCD_NAME_1}

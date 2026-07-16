@@ -463,3 +463,93 @@ X-Global-Consumer-Company: api7
 X-Global-Consumer-Department: devops
 --- no_error_log
 [error]
+
+
+
+=== TEST 16: add a no-label consumer and a route that echoes upstream-received headers
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "bob"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body = t('/apisix/admin/consumers/bob/credentials/a',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "key-auth": {
+                            "key": "key-bob"
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body = t('/apisix/admin/routes/2',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/print_request_received",
+                    "plugins": {
+                        "key-auth": {},
+                        "attach-consumer-label": {
+                            "headers": {
+                                "X-Consumer-Role": "$role"
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 17: client-supplied configured header is dropped at the upstream when the consumer has no labels
+# the upstream body must contain the authenticated consumer marker
+# (x-consumer-username: bob) AND must not contain the client-supplied
+# x-consumer-role, proving it was stripped before proxying upstream
+--- request
+GET /print_request_received
+--- more_headers
+apikey: key-bob
+X-Consumer-Role: admin
+--- response_body_like eval
+qr/(?s)^(?!.*x-consumer-role).*x-consumer-username: bob/
+--- no_error_log
+[error]

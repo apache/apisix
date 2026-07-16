@@ -284,13 +284,28 @@ function _M.rewrite(conf, ctx)
 
     local upstream_uri = ctx.var.uri
     local separator_escaped = false
+
+    -- resolve_var() below drops the query string, so keep the original one from
+    -- real_request_uri to re-append it when conf.uri is set.
+    local query_string = ""
     if conf.use_real_request_uri_unsafe then
         upstream_uri = ctx.var.real_request_uri
+        local index = str_find(upstream_uri, "?")
+        query_string = index and sub_str(upstream_uri, index) or ""
     end
 
     if conf.uri ~= nil then
         separator_escaped = true
         upstream_uri = core.utils.resolve_var(conf.uri, ctx.var, escape_separator)
+        if query_string ~= "" then
+            -- merge with '&' when conf.uri already carries its own query string,
+            -- otherwise append the original query string as-is
+            if str_find(upstream_uri, "?") then
+                upstream_uri = upstream_uri .. "&" .. sub_str(query_string, 2)
+            else
+                upstream_uri = upstream_uri .. query_string
+            end
+        end
 
     elseif conf.regex_uri ~= nil then
         if not str_find(upstream_uri, "?") then

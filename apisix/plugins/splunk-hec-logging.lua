@@ -25,6 +25,7 @@ local plugin          = require("apisix.plugin")
 local table_insert    = core.table.insert
 local table_concat    = core.table.concat
 local ipairs          = ipairs
+local pairs           = pairs
 
 
 local DEFAULT_SPLUNK_HEC_ENTRY_SOURCE = "apache-apisix-splunk-hec-logging"
@@ -67,6 +68,7 @@ local schema = {
             default = true
         },
         log_format = {type = "object"},
+        log_format_extra = {type = "object"},
     },
     encrypt_fields = {"endpoint.token"},
     required = { "endpoint" },
@@ -75,6 +77,9 @@ local schema = {
 local metadata_schema = {
     type = "object",
     properties = {
+        log_format_extra = {
+            type = "object"
+        },
         log_format = {
             type = "object"
         },
@@ -105,7 +110,7 @@ end
 
 
 local function get_logger_entry(conf, ctx)
-    local entry, customized = log_util.get_log_entry(plugin_name, conf, ctx)
+    local entry, customized, extra = log_util.get_log_entry(plugin_name, conf, ctx)
     local splunk_entry = {
         time = ngx_now(),
         source = DEFAULT_SPLUNK_HEC_ENTRY_SOURCE,
@@ -126,6 +131,14 @@ local function get_logger_entry(conf, ctx)
             latency = entry.latency,
             upstream = entry.upstream,
         }
+        -- the fixed event above drops everything else, so add log_format_extra
+        if extra then
+            for k, v in pairs(extra) do
+                if splunk_entry.event[k] == nil then
+                    splunk_entry.event[k] = v
+                end
+            end
+        end
     else
         splunk_entry.host = core.utils.gethostname()
         splunk_entry.event = entry

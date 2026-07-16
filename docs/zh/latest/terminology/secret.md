@@ -23,10 +23,10 @@ title: Secret
 
 ## 描述
 
-密钥是指 APISIX 运行过程中所需的任何敏感信息，它可能是核心配置的一部分（如 etcd 的密码），也可能是插件中的一些敏感信息。APISIX 中常见的密钥类型包括：
+密钥是指 APISIX 运行过程中所需的任何敏感信息，它可能是核心配置的一部分（如 etcd 的密码）、加密材料，也可能是插件中的一些敏感信息。APISIX 中常见的密钥类型包括：
 
 - 一些组件（etcd、Redis、Kafka 等）的用户名、密码
-- 证书的私钥
+- 公钥证书、私钥和 CA 证书
 - API 密钥
 - 敏感的插件配置字段，通常用于身份验证、hash、签名或加密
 
@@ -226,6 +226,8 @@ $secret://$manager/$id/$secret_name/$key
 - APISIX Secret 资源 ID，需要与添加 APISIX Secret 资源时指定的 ID 保持一致
 - secret_name: 密钥管理服务中的密钥名称
 - key：当密钥的值是 JSON 字符串时，获取某个属性的值
+
+注意：AWS Secrets Manager 中的密钥名称本身可以包含斜杠（例如 `john/secret`），因此 `secret_name` 与 `key` 之间的边界存在歧义。APISIX 会优先尝试最长的密钥名称：先将剩余路径整体作为密钥名称查询，如果返回 `ResourceNotFoundException`，则从右侧逐段将路径移入 `key` 位置，直到查询成功。例如 `$secret://aws/1/john/secret/john-key-auth` 会先尝试名为 `john/secret/john-key-auth` 的密钥，再尝试名为 `john/secret` 的密钥并取其中的 `john-key-auth` 字段，最后尝试名为 `john` 的密钥并取其中的 `secret/john-key-auth` 字段。当存在多种可能的解释时，最长匹配的密钥名称优先。
 
 ### 相关参数
 

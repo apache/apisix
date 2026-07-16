@@ -32,6 +32,28 @@ add_block_preprocessor(sub {
 
 });
 
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    # The plugin no longer logs uri/body; reproduce the observability the
+    # tests rely on by wrapping the HTTP client from a test-only hook. This
+    # wraps whatever request_uri is in place (the real one or a per-block
+    # mock), so it composes with the existing mocks.
+    my $log_wrap = <<_EOC_;
+    do
+        local http = require("resty.http")
+        local core = require("apisix.core")
+        local _orig_request_uri = http.request_uri
+        http.request_uri = function(self, uri, params)
+            core.log.info("uri: ", uri, ", body: ", params and params.body or "")
+            return _orig_request_uri(self, uri, params)
+        end
+    end
+_EOC_
+    $block->set_value("extra_init_by_lua",
+                      ($block->extra_init_by_lua // '') . $log_wrap);
+});
+
 run_tests();
 
 __DATA__
@@ -992,3 +1014,70 @@ GET /hello
 hello world
 --- error_log
 Batch Processor[elasticsearch-logger] successfully processed the entries
+
+
+
+=== TEST 27: data encryption for headers
+--- yaml_config
+apisix:
+    data_encryption:
+        enable_encrypt_fields: true
+        keyring:
+            - edd1c9f0985e76a2
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, {
+                uri = "/hello",
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:1980"] = 1
+                    }
+                },
+                plugins = {
+                    ["elasticsearch-logger"] = {
+                        endpoint_addr = "http://127.0.0.1:9201",
+                        field = {
+                            index = "services"
+                        },
+                        headers = {
+                            Authorization = "Basic ZWxhc3RpYzoxMjM0NTY="
+                        },
+                        batch_max_size = 1,
+                        inactive_timeout = 1
+                    }
+                }
+            })
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            ngx.sleep(0.1)
+
+            -- get plugin conf from admin api, header is decrypted
+            local code, message, res = t('/apisix/admin/routes/1',
+                ngx.HTTP_GET
+            )
+            res = json.decode(res)
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(message)
+                return
+            end
+
+            ngx.say(res.value.plugins["elasticsearch-logger"].headers.Authorization)
+
+            -- get plugin conf from etcd, header is encrypted
+            local etcd = require("apisix.core.etcd")
+            local res = assert(etcd.get('/routes/1'))
+            ngx.say(res.body.node.value.plugins["elasticsearch-logger"].headers.Authorization)
+        }
+    }
+--- response_body
+Basic ZWxhc3RpYzoxMjM0NTY=
+8xFrqM3Y8W1eaQ5b6vIPlyOS+HvOyI4agcFeoe47abo=

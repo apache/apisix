@@ -225,10 +225,45 @@ function _M.access(conf, ctx)
         if conf.external_user_label_field_key then
             label_key = conf.external_user_label_field_key
         end
-        local label_value = jp.value(ctx.external_user, conf.external_user_label_field)
+        -- jp.query() returns nil (not {}) when ctx.external_user is not a table,
+        -- so guard before taking its length.
+        local label_values = jp.query(ctx.external_user, conf.external_user_label_field) or {}
+        local label_value
+        if #label_values <= 1 then
+            -- 0 or 1 match: preserve the original jp.value() semantics and let the
+            -- configured parser run on the single value (a single matched value may
+            -- itself be a table, which the json/segmented_text parser is expected to
+            -- reject). label_values[1] is nil when there are no matches.
+            label_value = label_values[1]
+            parser = conf.external_user_label_field_parser
+            sep = conf.external_user_label_field_separator
+        else
+            -- Multi-match: apply the configured parser to EACH matched value and
+            -- merge the results, so allow/deny matching still sees the fully parsed
+            -- sub-values (e.g. a match like "infra|qa" with segmented_text). Passing
+            -- the raw list straight to the string parsers would otherwise crash
+            -- (re_split over a table) or silently skip parsing and miss denied
+            -- labels. The merged list is already parsed, so parser/sep stay unset.
+            local cfg_parser = conf.external_user_label_field_parser
+            local cfg_sep = conf.external_user_label_field_separator
+            local merged = {}
+            for _, v in ipairs(label_values) do
+                local parsed
+                if cfg_parser and type(v) == "string" then
+                    parsed = extra_values_with_parser(v, cfg_parser, cfg_sep)
+                else
+                    -- A matched value that is itself a table is already a list of
+                    -- labels; route it through the type-aware path instead of the
+                    -- string parser (segmented_text's re_split cannot handle a table).
+                    parsed = extra_values_without_parser(v)
+                end
+                for _, pv in ipairs(parsed) do
+                    merged[#merged + 1] = pv
+                end
+            end
+            label_value = merged
+        end
         labels = { [label_key] = label_value }
-        parser = conf.external_user_label_field_parser
-        sep = conf.external_user_label_field_separator
     else
         return 401, { message = "Missing authentication."}
     end

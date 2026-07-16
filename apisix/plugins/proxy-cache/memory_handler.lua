@@ -571,4 +571,10 @@ function _M.body_filter(conf, ctx)
 end
 
 
+-- Expose the variant-aware purge so callers reusing this strategy (e.g.
+-- graphql-proxy-cache's PURGE handler) can clear the index and every Vary
+-- variant instead of only the legacy base-key entry.
+_M.purge_all_variants = purge_all_variants
+
+
 return _M

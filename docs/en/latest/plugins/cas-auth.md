@@ -98,6 +98,8 @@ Once this is done, the user is redirected to the original URL they wanted to vis
 
 Later, the user could visit `logout_uri` to start logout process. The user would be redirected to `idp_uri` to do logout.
 
+The IdP may also send a single logout (SLO) `POST` request to `cas_callback_uri`. The Plugin handles such requests itself (invalidating the matching session) and never forwards them to the upstream.
+
 Note that, `cas_callback_uri` and `logout_uri` should be
 either full qualified address (e.g. `http://127.0.0.1:9080/anything/logout`),
 or path only (e.g. `/anything/logout`), but it is recommended to be path only to keep consistent.

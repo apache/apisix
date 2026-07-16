@@ -196,6 +196,50 @@ will match both `/blog/dog` and `/blog/cat`.
 
 For more details, see https://github.com/api7/lua-resty-radixtree/#parameters-in-path.
 
+By default, an URL-encoded slash (`%2F`) inside a parameter is decoded by Nginx
+into a real `/` before route matching, so a request like `/blog/cat%2Fdog` is
+treated as `/blog/cat/dog` and does not match `/blog/:name`. To keep `%2F`
+encoded during matching (so it is treated as part of the parameter value rather
+than a path separator), enable `match_uri_encoded_slash`:
+
+```yaml
+apisix:
+    match_uri_encoded_slash: true
+    router:
+        http: 'radixtree_uri_with_parameter'
+```
+
+With this enabled, `/blog/cat%2Fdog` matches `/blog/:name` with `name` being
+`cat%2Fdog`. The encoded slash is kept only for route matching and parameter
+capture: plugins in the rewrite/access phases still read the normalized
+(decoded) URI from `ctx.var.uri`. The request line nginx forwards to the
+upstream is the original one, so the upstream receives `%2F` unchanged.
+
+This option is global and changes how every route is matched. Because the
+matching URI keeps `%2F` encoded, an exact route such as `/blog/cat/dog` will no
+longer match a request like `/blog/cat%2Fdog` that used to match after Nginx
+decoded the slash. Enable it only when you rely on `%2F` inside path parameters.
+
+To stay safe, APISIX does not re-implement Nginx's URI normalization. It keeps
+`%2F` encoded only when a plain full decode of the request path already equals
+the normalized `$uri` — i.e. when Nginx applied nothing beyond percent-decoding.
+If the request also required normalization (dot segments such as `..%2F..%2F` or
+`%2e%2e`, merged consecutive slashes, an absolute-form request line, etc.), the
+matching URI falls back to the normalized `$uri`. Such requests therefore never
+become an encoded-slash match and cannot bypass route rules via path traversal.
+
+The kept slash is always normalized to upper-case `%2F`, and radixtree compares
+byte-for-byte, so a route whose URI is authored with a lower-case `%2f` (e.g.
+`/blog/a%2fb`) will not match. Write the encoded slash as upper-case `%2F` in
+route URIs.
+
+This option gives way to `delete_uri_tail_slash` and `normalize_uri_like_servlet`:
+the equivalence check compares against the URI those options already produced, so
+when either actually rewrites the URI (a stripped trailing slash, a servlet-style
+`;` parameter) the check no longer holds and the request falls back to normal
+matching without keeping `%2F`. The fallback is safe; the encoded-slash match
+simply does not apply to such requests.
+
 ### How to filter route by Nginx built-in variable?
 
 Nginx provides a variety of built-in variables that can be used to filter routes based on certain criteria. Here is an example of how to filter routes by Nginx built-in variables:
@@ -413,3 +457,12 @@ curl -X POST http://127.0.0.1:9180/_post \
 }'
 
 ```
+
+:::note
+
+Matching `post_arg.*` against JSON or multipart bodies requires APISIX to read and parse the
+request body during route matching. To avoid exhausting worker memory on large bodies, the read
+is capped by `apisix.max_post_args_readable_size` in `config.yaml` (default `64` MB). Bodies larger
+than this cap are not matched. Set it to `0` to disable the limit.
+
+:::

@@ -32,6 +32,28 @@ add_block_preprocessor(sub {
 
 });
 
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    # The plugin no longer logs uri/body; reproduce the observability the
+    # tests rely on by wrapping the HTTP client from a test-only hook. This
+    # wraps whatever request_uri is in place (the real one or a per-block
+    # mock), so it composes with the existing mocks.
+    my $log_wrap = <<_EOC_;
+    do
+        local http = require("resty.http")
+        local core = require("apisix.core")
+        local _orig_request_uri = http.request_uri
+        http.request_uri = function(self, uri, params)
+            core.log.info("uri: ", uri, ", body: ", params and params.body or "")
+            return _orig_request_uri(self, uri, params)
+        end
+    end
+_EOC_
+    $block->set_value("extra_init_by_lua",
+                      ($block->extra_init_by_lua // '') . $log_wrap);
+});
+
 run_tests();
 
 __DATA__
@@ -442,3 +464,27 @@ qr/body: \{"index":\{"_index":"services-myservice-\d\d\d\d\.\d\d\.\d\d"\}\}/
 --- no_error_log
 failed to parse time format
 --- timeout: 5
+
+
+
+=== TEST 10: non-string time format (os.date "*t" returns a table) falls back
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.elasticsearch-logger")
+            -- "*t"/"!*t" make os.date return a table instead of a string;
+            -- replace_time must reject it rather than stringify a garbage index.
+            for _, fmt in ipairs({"*t", "!*t"}) do
+                local new = plugin._resolve_index_vars("prefix{" .. fmt .. "}suffix")
+                if new ~= "prefixsuffix" then
+                    ngx.say("error: " .. new)
+                    return
+                end
+            end
+            ngx.say("ok")
+        }
+    }
+--- response_body
+ok
+--- error_log
+failed to parse time format

@@ -23,7 +23,9 @@ local tonumber = tonumber
 
 local _M = {}
 
-local DEFAULT_PORTS = {6379, 5000, 5001, 5002, 5003, 5004, 5005, 5006}
+-- 6479 is the sentinel master used by the redis-sentinel policies; leftover
+-- counters there survive CI re-runs if it is not flushed
+local DEFAULT_PORTS = {6379, 6479, 5000, 5001, 5002, 5003, 5004, 5005, 5006}
 local DEFAULT_HOST = "127.0.0.1"
 
 local function log_warn(...)

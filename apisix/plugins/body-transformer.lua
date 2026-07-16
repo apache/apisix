@@ -79,24 +79,30 @@ local function escape_json(s)
 end
 
 
+-- Build a new table instead of renaming keys in place: inserting keys into
+-- the table being traversed by pairs() is undefined behavior in Lua, and
+-- can nondeterministically skip keys, leaving some keys not renamed.
 local function remove_namespace(tbl)
+    local res = {}
     for k, v in pairs(tbl) do
-        if type(v) == "table" and next(v) == nil then
-            v = ""
-            tbl[k] = v
+        if type(v) == "table" then
+            if next(v) == nil then
+                v = ""
+            else
+                v = remove_namespace(v)
+            end
         end
+        -- strip the namespace prefix from string keys, e.g. "ns:key" -> "key";
+        -- numeric keys (array part, i.e. repeated XML elements) are kept as is
         if type(k) == "string" then
             local newk = k:match(".*:(.*)")
             if newk then
-                tbl[newk] = v
-                tbl[k] = nil
-            end
-            if type(v) == "table" then
-                remove_namespace(v)
+                k = newk
             end
         end
+        res[k] = v
     end
-    return tbl
+    return res
 end
 
 

@@ -58,8 +58,10 @@ local ipairs          = ipairs
 local ngx_now         = ngx.now
 local ngx_var         = ngx.var
 local re_split        = require("ngx.re").split
+local re_gsub         = ngx.re.gsub
 local str_byte        = string.byte
 local str_sub         = string.sub
+local str_char        = string.char
 local tonumber        = tonumber
 local type            = type
 local pairs           = pairs
@@ -120,6 +122,12 @@ function _M.http_init_worker()
     -- for testing only
     core.log.info("random test in [1, 10000]: ", math.random(1, 10000))
 
+    -- Re-read the environment in the worker phase: nginx applies
+    -- `env NAME=VALUE;` directives to `environ` at worker start (in
+    -- ngx_set_environment), after the init phase. This rebuild ensures
+    -- directive-assigned values are captured with exact keys. See #13055.
+    core.env.init()
+
     require("apisix.events").init_worker()
 
     core.lrucache.init_worker()
@@ -168,6 +176,12 @@ function _M.http_init_worker()
     plugin.init_prometheus()
 
     trusted_addresses_util.init_worker()
+
+    local process = require("ngx.process")
+    if process.type() == "privileged agent" then
+        -- start the redis cluster node health checker timer
+        require("resty.rediscluster").init()
+    end
 end
 
 
@@ -475,6 +489,42 @@ local function normalize_uri_like_servlet(uri)
 end
 
 
+-- Percent-decode every %XX in the path. When keep_slash is true, an encoded
+-- slash (%2F/%2f) is left as the literal text "%2F" instead of being turned
+-- into a real path separator -- Nginx decodes it into '/' in $uri, which makes
+-- it indistinguishable from a real separator and breaks path parameter
+-- matching (see issue #11810). The kept slash is always emitted upper-case so
+-- an exact route written with %2F matches regardless of the client's casing.
+local function percent_decode(path, keep_slash)
+    local decoded = re_gsub(path, [[%([0-9a-fA-F][0-9a-fA-F])]], function(m)
+        local hex = m[1]
+        if keep_slash and (hex == "2f" or hex == "2F") then
+            return "%2F"
+        end
+        return str_char(tonumber(hex, 16))
+    end, "jo")
+    return decoded
+end
+
+
+-- Build the route matching uri that keeps the encoded slash (%2F) encoded,
+-- using Nginx's already normalized $uri as an oracle instead of re-doing its
+-- normalization in Lua. If a plain full decode of the raw path reproduces
+-- current_uri ($uri) exactly, Nginx only decoded the request -- it applied no
+-- dot-segment resolution, no slash merging, no fragment stripping and it was
+-- not an absolute-form request line. Only then is it safe to keep %2F encoded,
+-- and the result provably differs from $uri solely by showing some '/' as
+-- "%2F". Anything else (path traversal, consecutive slashes, %00, exotic
+-- request lines) fails the equivalence check and returns nil so the caller
+-- keeps matching on $uri -- no bypass is possible even if the decode is wrong.
+local function build_match_uri_keep_encoded_slash(path, current_uri)
+    if percent_decode(path, false) ~= current_uri then
+        return nil
+    end
+    return percent_decode(path, true)
+end
+
+
 local function common_phase(phase_name)
     local api_ctx = ngx.ctx.api_ctx
     if not api_ctx then
@@ -490,6 +540,39 @@ local function common_phase(phase_name)
     end
 
     return plugin.run_plugin(phase_name, nil, api_ctx)
+end
+
+
+-- Resolve the upstream client certificate referenced by `tls.client_cert_id`
+-- into `api_ctx.upstream_ssl`. Shared by the http and stream subsystems.
+-- Returns false on error (invalid/missing referenced ssl object).
+local function resolve_upstream_client_cert(api_ctx)
+    if not (api_ctx.matched_upstream and api_ctx.matched_upstream.tls and
+            api_ctx.matched_upstream.tls.client_cert_id) then
+        return true
+    end
+
+    local cert_id = api_ctx.matched_upstream.tls.client_cert_id
+    local upstream_ssl = router.router_ssl.get_by_id(cert_id)
+    if not upstream_ssl or upstream_ssl.type ~= "client" then
+        local err = upstream_ssl and
+            "ssl type should be 'client'" or
+            "ssl id [" .. cert_id .. "] not exits"
+        core.log.error("failed to get ssl cert: ", err)
+        return false
+    end
+
+    core.log.info("matched upstream client ssl object, id: ", cert_id,
+                  ", type: ", upstream_ssl.type)
+
+    -- avoid the per-request deepcopy done by fetch_secrets when the ssl object
+    -- holds plain cert/key
+    if apisix_secret.has_secret_ref(upstream_ssl) then
+        upstream_ssl = apisix_secret.fetch_secrets(upstream_ssl, true) or upstream_ssl
+    end
+
+    api_ctx.upstream_ssl = upstream_ssl
+    return true
 end
 
 
@@ -537,27 +620,12 @@ function _M.handle_upstream(api_ctx, route, enable_websocket)
         api_ctx.matched_upstream = route_val.upstream
     end
 
-    if api_ctx.matched_upstream and api_ctx.matched_upstream.tls and
-        api_ctx.matched_upstream.tls.client_cert_id then
-
-        local cert_id = api_ctx.matched_upstream.tls.client_cert_id
-        local upstream_ssl = router.router_ssl.get_by_id(cert_id)
-        if not upstream_ssl or upstream_ssl.type ~= "client" then
-            local err  = upstream_ssl and
-                "ssl type should be 'client'" or
-                "ssl id [" .. cert_id .. "] not exits"
-            core.log.error("failed to get ssl cert: ", err)
-
-            if is_http then
-                return core.response.exit(502)
-            end
-
-            return ngx_exit(1)
+    local ok = resolve_upstream_client_cert(api_ctx)
+    if not ok then
+        if is_http then
+            return core.response.exit(502)
         end
-
-        core.log.info("matched ssl: ",
-                  core.json.delay_encode(upstream_ssl, true))
-        api_ctx.upstream_ssl = upstream_ssl
+        return ngx_exit(1)
     end
 
     if enable_websocket then
@@ -637,7 +705,8 @@ local function handle_x_forwarded_headers(api_ctx)
         -- making them highly credible.
         local proto = api_ctx.var.scheme
         local http_host = api_ctx.var.http_host or api_ctx.var.host
-        local _, port_from_host = http_host:match("^(.+):(%d+)$")
+        -- parse_addr handles IPv6 literals and bracketed host:port correctly.
+        local _, port_from_host = core.utils.parse_addr(http_host)
         local host = http_host
         local port = port_from_host or api_ctx.var.server_port
 
@@ -647,10 +716,18 @@ local function handle_x_forwarded_headers(api_ctx)
         core.request.set_header(api_ctx, "X-Forwarded-Proto", proto)
         core.request.set_header(api_ctx, "X-Forwarded-Host", host)
         core.request.set_header(api_ctx, "X-Forwarded-Port", port)
-        -- later processed in ngx_tpl by `$proxy_add_x_forwarded_for`.
-        core.request.set_header(api_ctx, "X-Forwarded-For", nil)
         -- Clear RFC 7239 Forwarded header to prevent forgery.
         core.request.set_header(api_ctx, "Forwarded", nil)
+
+        -- X-Forwarded-For: when a trust boundary is configured but this peer is
+        -- untrusted, reset it so the upstream only sees the APISIX-observed
+        -- connection IP via `$proxy_add_x_forwarded_for`, dropping the spoofable
+        -- inbound chain. When `trusted_addresses` is unset, keep the compatible
+        -- default of preserving the inbound chain (the connection IP is appended).
+        if trusted_addresses_util.is_configured() then
+            core.request.set_header(api_ctx, "X-Forwarded-For", nil)
+            api_ctx.var.http_x_forwarded_for = nil
+        end
 
         -- update the cached value in http_x_forwarded_* to the trusted ones.
         -- make sure that the correct values ​​are obtained
@@ -658,7 +735,6 @@ local function handle_x_forwarded_headers(api_ctx)
         api_ctx.var.http_x_forwarded_proto = proto
         api_ctx.var.http_x_forwarded_host = host
         api_ctx.var.http_x_forwarded_port = port
-        api_ctx.var.http_x_forwarded_for = nil
         api_ctx.var.http_forwarded = nil
     end
 end
@@ -753,8 +829,34 @@ function _M.http_access_phase()
 
     handle_x_forwarded_headers(api_ctx)
 
+    -- When match_uri_encoded_slash is on, match the route against a uri that
+    -- keeps the encoded slash (%2F) so it is treated as part of a path
+    -- parameter. This is a router-match-only value: it is swapped in just for
+    -- dispatch and restored right after, so the rewrite/access phases, plugins
+    -- and the upstream keep seeing the normalized ctx.var.uri. Only the matched
+    -- route and its captured params (uri_param_*) retain the encoded slash.
+    local match_uri
+    if local_conf.apisix and local_conf.apisix.match_uri_encoded_slash then
+        local path = api_ctx.var.real_request_uri
+        local args_pos = core.string.find(path, "?")
+        if args_pos then
+            path = str_sub(path, 1, args_pos - 1)
+        end
+        if core.string.find(path, "%2f") or core.string.find(path, "%2F") then
+            match_uri = build_match_uri_keep_encoded_slash(path, api_ctx.var.uri)
+        end
+    end
+
     local match_span = tracer.start(ngx_ctx, "http_router_match", tracer.kind.internal)
-    router.router_http.match(api_ctx)
+    if match_uri then
+        local normalized_uri = api_ctx.var.uri
+        api_ctx.var.uri = match_uri
+        router.router_http.match(api_ctx)
+        -- restore so downstream phases never observe the encoded-slash uri
+        api_ctx.var.uri = normalized_uri
+    else
+        router.router_http.match(api_ctx)
+    end
 
     local route = api_ctx.matched_route
     if not route then
@@ -867,9 +969,11 @@ function _M.http_access_phase()
     end
     span:finish(ngx_ctx)
 
-    _M.handle_upstream(api_ctx, route, enable_websocket)
-
+    -- set before handle_upstream: grpc/dubbo/disable_proxy_buffering exit via
+    -- ngx.exec() and never return, so the trusted values must be applied first.
     set_upstream_x_forwarded_headers(api_ctx)
+
+    _M.handle_upstream(api_ctx, route, enable_websocket)
 end
 
 
@@ -1244,6 +1348,12 @@ function _M.stream_init_worker()
     -- for testing only
     core.log.info("random stream test in [1, 10000]: ", math.random(1, 10000))
 
+    -- The stream subsystem runs in its own Lua VM, so the env snapshot built in
+    -- http_init_worker is not visible here. Rebuild it before any consumer (e.g.
+    -- kubernetes discovery's read_env) runs, otherwise core.env.get falls back to
+    -- the buggy os.getenv shim. See #13055.
+    core.env.init()
+
     core.lrucache.init_worker()
 
     if core.config.init_worker then
@@ -1383,6 +1493,11 @@ function _M.stream_preread_phase()
     if matched_route.value.protocol then
         xrpc.run_protocol(matched_route.value.protocol, api_ctx)
         return
+    end
+
+    local ok = resolve_upstream_client_cert(api_ctx)
+    if not ok then
+        return ngx_exit(1)
     end
 
     local code, err = set_upstream(matched_route, api_ctx)

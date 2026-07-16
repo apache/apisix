@@ -5,7 +5,7 @@ keywords:
   - API 网关
   - Limit Count
   - 速率限制
-description: limit-count 插件使用固定窗口算法，通过给定时间间隔内的请求数量来限制请求速率。超过配置配额的请求将被拒绝。
+description: limit-count 插件使用固定窗口或滑动窗口算法，通过给定时间间隔内的请求数量来限制请求速率。超过配置配额的请求将被拒绝。
 ---
 
 <!--
@@ -36,7 +36,7 @@ import TabItem from '@theme/TabItem';
 
 ## 描述
 
-`limit-count` 插件使用固定窗口算法，通过给定时间间隔内的请求数量来限制请求速率。超过配置配额的请求将被拒绝。
+`limit-count` 插件使用固定窗口或滑动窗口算法，通过给定时间间隔内的请求数量来限制请求速率。超过配置配额的请求将被拒绝。
 
 你可能会在响应中看到以下速率限制标头：
 
@@ -50,33 +50,44 @@ import TabItem from '@theme/TabItem';
 | ------------------- | ------- | ---------- | ------------- | --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | count | integer 或 string | 否 | | > 0 | 给定时间间隔内允许的最大请求数。如果未配置 `rules`，则此项必填。支持从 APISIX 3.16.0 起使用 [lua-resty-expr](https://github.com/api7/lua-resty-expr)。 |
 | time_window | integer 或 string | 否 | | > 0 | 速率限制 `count` 对应的时间间隔（以秒为单位）。如果未配置 `rules`，则此项必填。支持从 APISIX 3.16.0 起使用 [lua-resty-expr](https://github.com/api7/lua-resty-expr)。 |
+| window_type | string | 否 | fixed | ["fixed","sliding"] | 插件使用的窗口算法。 |
 | rules | array[object] | 否 | | | 速率限制规则列表。每个规则是一个包含 `count`、`time_window` 和 `key` 的对象。如果配置了 `rules`，则顶层的 `count` 和 `time_window` 将被忽略。 |
 | rules.count | integer 或 string | 是 | | > 0 | 给定时间间隔内允许的最大请求数。支持 [lua-resty-expr](https://github.com/api7/lua-resty-expr)。 |
 | rules.time_window | integer 或 string | 是 | | > 0 | 速率限制 `count` 对应的时间间隔（以秒为单位）。支持 [lua-resty-expr](https://github.com/api7/lua-resty-expr)。 |
-| rules.key | string | 是 | | | 用于统计请求的键。如果配置的键不存在，则不会执行该规则。`key` 被解释为变量的组合，例如：`$http_custom_a $http_custom_b`。|
-| rules.header_prefix | string | 否 | | | 速率限制标头的前缀。如果已配置，响应将包含 `X-{header_prefix}-RateLimit-Limit`、`X-{header_prefix}-RateLimit-Remaining` 和 `X-{header_prefix}-RateLimit-Reset` 标头。如果未配置，则使用规则数组中规则的索引作为前缀。例如，第一个规则的标头将是 `X-1-RateLimit-Limit`、`X-1-RateLimit-Remaining` 和 `X-1-RateLimit-Reset`。|
-| key_type | string | 否 | var | ["var","var_combination","constant"] | key 的类型。如果`key_type` 为 `var`，则 `key` 将被解释为变量。如果 `key_type` 为 `var_combination`，则 `key` 将被解释为变量的组合。如果 `key_type` 为 `constant`，则 `key` 将被解释为常量。 |
-| key | string | 否 | remote_addr | | 用于计数请求的 key。如果 `key_type` 为 `var`，则 `key` 将被解释为变量。变量不需要以美元符号（`$`）为前缀。如果 `key_type` 为 `var_combination`，则 `key` 会被解释为变量的组合。所有变量都应该以美元符号 (`$`) 为前缀。例如，要配置 `key` 使用两个请求头 `custom-a` 和 `custom-b` 的组合，则 `key` 应该配置为 `$http_custom_a $http_custom_b`。如果 `key_type` 为 `constant`，则 `key` 会被解释为常量值。|
-| rejected_code | integer | 否 | 503 | [200,...,599] | 请求因超出阈值而被拒绝时返回的 HTTP 状态代码。|
-| rejection_msg | string | 否 | | 非空 | 请求因超出阈值而被拒绝时返回的响应主体。|
-| policy | string | 否 | local | ["local","re​​dis","re​​dis-cluster"] | 速率限制计数器的策略。如果是 `local`，则计数器存储在本地内存中。如果是 `redis`，则计数器存储在 Redis 实例上。如果是 `redis-cluster`，则计数器存储在 Redis 集群中。|
-| allow_degradation | boolean | 否 | false | | 如果为 true，则允许 APISIX 在插件或其依赖项不可用时继续处理没有插件的请求。|
-| show_limit_quota_header | boolean | 否 | true | | 如果为 true，则在响应标头中包含 `X-RateLimit-Limit` 以显示总配额和 `X-RateLimit-Remaining` 以显示剩余配额。|
+| rules.key | string | 是 | | | 用于统计请求的键。如果配置的键不存在，则不会执行该规则。`key` 被解释为变量的组合，例如：`$http_custom_a $http_custom_b`。 |
+| rules.header_prefix | string | 否 | | | 速率限制标头的前缀。如果已配置，响应将包含 `X-{header_prefix}-RateLimit-Limit`、`X-{header_prefix}-RateLimit-Remaining` 和 `X-{header_prefix}-RateLimit-Reset` 标头。如果未配置，则使用规则数组中规则的索引作为前缀。 |
+| key_type | string | 否 | var | ["var","var_combination","constant"] | key 的类型。如果 `key_type` 为 `var`，则 `key` 将被解释为变量。如果 `key_type` 为 `var_combination`，则 `key` 将被解释为变量的组合。如果 `key_type` 为 `constant`，则 `key` 将被解释为常量。 |
+| key | string | 否 | remote_addr | | 用于计数请求的 key。如果 `key_type` 为 `var`，则 `key` 将被解释为变量。变量不需要以美元符号（`$`）为前缀。如果 `key_type` 为 `var_combination`，则 `key` 会被解释为变量的组合。所有变量都应该以美元符号 (`$`) 为前缀。如果 `key_type` 为 `constant`，则 `key` 会被解释为常量值。 |
+| rejected_code | integer | 否 | 503 | [200,...,599] | 请求因超出阈值而被拒绝时返回的 HTTP 状态代码。 |
+| rejected_msg | string | 否 | | 非空 | 请求因超出阈值而被拒绝时返回的响应主体。 |
+| policy | string | 否 | local | ["local","redis","redis-cluster","redis-sentinel"] | 速率限制计数器的策略。如果是 `local`，则计数器存储在本地内存中。如果是 `redis`，则计数器存储在 Redis 实例上。如果是 `redis-cluster`，则计数器存储在 Redis 集群中。如果是 `redis-sentinel`，则计数器存储在通过 Sentinel 发现的 Redis 主节点上。 |
+| allow_degradation | boolean | 否 | false | | 如果为 true，则允许 APISIX 在插件或其依赖项不可用时继续处理没有插件的请求。 |
+| show_limit_quota_header | boolean | 否 | true | | 如果为 true，则在响应标头中包含 `X-RateLimit-Limit` 以显示总配额和 `X-RateLimit-Remaining` 以显示剩余配额。 |
+| sync_interval | number | 否 | | -1 或 >= 0.1 | Redis 类策略的延迟同步间隔，单位为秒。设置为 `-1` 可显式禁用延迟同步。 |
 | group | string | 否 | | 非空 | 插件的 `group` ID，以便同一 `group` 的路由可以共享相同的速率限制计数器。 |
 | redis_host | string | 否 | | | Redis 节点的地址。当 `policy` 为 `redis` 时必填。 |
 | redis_port | integer | 否 | 6379 | [1,...] | 当 `policy` 为 `redis` 时，Redis 节点的端口。 |
-| redis_username | string | 否 | | | 如果使用 Redis ACL，则为 Redis 的用户名。如果使用旧式身份验证方法 `requirepass`，则仅配置 `redis_password`。当 `policy` 为 `redis` 时使用。 |
-| redis_password | string | 否 | | | 当 `policy` 为 `redis` 或 `redis-cluster` 时，Redis 节点的密码。 |
-| redis_ssl | boolean | 否 | false |如果为 true，则在 `policy` 为 `redis` 时使用 SSL 连接到 Redis 集群。|
-| redis_ssl_verify | boolean | 否 | false | | 如果为 true，则在 `policy` 为 `redis` 时验证服务器 SSL 证书。|
-| redis_database | integer | 否 | 0 | >= 0 | 当 `policy` 为 `redis` 时，Redis 中的数据库编号。|
+| redis_username | string | 否 | | | 如果使用 Redis ACL，则为 Redis 的用户名。如果使用旧式身份验证方法 `requirepass`，则仅配置 `redis_password`。当 `policy` 为 `redis` 或 `redis-sentinel` 时使用。 |
+| redis_password | string | 否 | | | 当 `policy` 为 `redis`、`redis-cluster` 或 `redis-sentinel` 时，Redis 节点的密码。 |
+| redis_ssl | boolean | 否 | false | | 如果为 true，则在 `policy` 为 `redis` 时使用 SSL 连接 Redis。 |
+| redis_ssl_verify | boolean | 否 | false | | 如果为 true，则在 `policy` 为 `redis` 时验证服务器 SSL 证书。 |
+| redis_database | integer | 否 | 0 | >= 0 | 当 `policy` 为 `redis` 或 `redis-sentinel` 时，Redis 中的数据库编号。 |
 | redis_timeout | integer | 否 | 1000 | [1,...] | 当 `policy` 为 `redis` 或 `redis-cluster` 时，Redis 超时值（以毫秒为单位）。 |
-| redis_keepalive_timeout | integer | 否 | 10000 | ≥ 1000 | 当 `policy` 为 `redis` 或 `redis-cluster` 时，与 `redis` 或 `redis-cluster` 的空闲连接超时时间，单位为毫秒。|
-| redis_keepalive_pool | integer | 否 | 100 | ≥ 1 | 当 `policy` 为 `redis` 或 `redis-cluster` 时，与 `redis` 或 `redis-cluster` 的连接池最大连接数。|
-| redis_cluster_nodes | array[string] | 否 | | | 具有至少一个地址的 Redis 群集节点列表。当 policy 为 redis-cluster 时必填。 |
-| redis_cluster_name | string | 否 | | | Redis 集群的名称。当 `policy` 为 `redis-cluster` 时必须使用。|
-| redis_cluster_ssl | boolean | 否 | false | | 如果为 `true`，当 `policy` 为 `redis-cluster`时，使用 SSL 连接 Redis 集群。|
-| redis_cluster_ssl_verify | boolean | 否 | false | | 如果为 `true`，当 `policy` 为 `redis-cluster` 时，验证服务器 SSL 证书。  |
+| redis_keepalive_timeout | integer | 否 | 10000 | ≥ 1000 | 当 `policy` 为 `redis` 或 `redis-cluster` 时，与 Redis 的空闲连接超时时间，单位为毫秒。 |
+| redis_keepalive_pool | integer | 否 | 100 | ≥ 1 | 当 `policy` 为 `redis` 或 `redis-cluster` 时，与 Redis 的连接池最大连接数。 |
+| redis_cluster_nodes | array[string] | 否 | | | 具有至少一个地址的 Redis 集群节点列表。当 `policy` 为 `redis-cluster` 时必填。 |
+| redis_cluster_name | string | 否 | | | Redis 集群的名称。当 `policy` 为 `redis-cluster` 时必填。 |
+| redis_cluster_ssl | boolean | 否 | false | | 如果为 `true`，当 `policy` 为 `redis-cluster` 时，使用 SSL 连接 Redis 集群。 |
+| redis_cluster_ssl_verify | boolean | 否 | false | | 如果为 `true`，当 `policy` 为 `redis-cluster` 时，验证服务器 SSL 证书。 |
+| redis_sentinels | array[object] | 否 | | | Sentinel 节点列表。当 `policy` 为 `redis-sentinel` 时必填。每一项都必须包含 `host` 和 `port`。 |
+| redis_master_name | string | 否 | | | Sentinel 监控的 Redis 主节点名称。当 `policy` 为 `redis-sentinel` 时必填。 |
+| redis_role | string | 否 | master | ["master","slave"] | 通过 Sentinel 选择的 Redis 角色。 |
+| redis_connect_timeout | integer | 否 | 1000 | [1,...] | 当 `policy` 为 `redis-sentinel` 时，Redis 连接超时值（毫秒）。 |
+| redis_read_timeout | integer | 否 | 1000 | [1,...] | 当 `policy` 为 `redis-sentinel` 时，Redis 读取超时值（毫秒）。 |
+| sentinel_username | string | 否 | | | 如果启用了 Sentinel ACL，则为 Sentinel 用户名。 |
+| sentinel_password | string | 否 | | | 如果启用了 Sentinel ACL，则为 Sentinel 密码。 |
+
+注意：schema 中还定义了 `encrypt_fields = {"redis_password", "sentinel_password"}`，这意味着这些字段将会被加密存储在 etcd 中。具体参考[加密存储字段](../plugin-develop.md#加密存储字段)。
 
 ## 示例
 
@@ -1380,6 +1391,142 @@ curl -i "http://127.0.0.1:9080/get"
 你应该会看到一个 `HTTP/1.1 200 OK` 响应以及相应的响应主体。
 
 在相同的 30 秒时间间隔内向不同的 APISIX 实例发送相同的请求，你应该会收到一个 `HTTP/1.1 429 Too Many Requests` 响应，验证在不同 APISIX 节点中配置的路由是否共享相同的配额。
+
+### 使用 Redis Sentinel 在 APISIX 节点之间共享配额
+
+以下示例演示如何使用带 [Sentinel](https://redis.io/docs/management/sentinel/) 的 Redis 在多个 APISIX 节点之间进行速率限制，以实现高可用。Sentinel 监控 Redis 主节点，并在主节点故障时将一个副本提升为主节点。APISIX 通过配置的 Sentinel 节点发现当前主节点，因此共享配额可以在故障转移后无需修改配置继续生效。
+
+在每个 APISIX 实例上，使用以下配置创建一个路由。请相应调整 Admin API 地址、Sentinel 节点、主节点名称和凭据：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "limit-count-route",
+    "uri": "/get",
+    "plugins": {
+      "limit-count": {
+        "count": 1,
+        "time_window": 30,
+        "rejected_code": 429,
+        "key": "remote_addr",
+        "policy": "redis-sentinel",
+        "redis_sentinels": [
+          { "host": "192.168.xxx.xxx", "port": 26379 },
+          { "host": "192.168.xxx.xxx", "port": 26380 },
+          { "host": "192.168.xxx.xxx", "port": 26381 }
+        ],
+        "redis_master_name": "mymaster",
+        "redis_password": "p@ssw0rd",
+        "sentinel_password": "s3ntinelp@ss",
+        "redis_database": 1
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
+    }
+  }'
+```
+
+如果未启用 Sentinel ACL，可省略 `sentinel_password`。若使用基于 ACL 的认证，请为 Redis 数据节点配置 `redis_username`/`redis_password`，为 Sentinel 节点配置 `sentinel_username`/`sentinel_password`。
+
+向某个 APISIX 实例发送请求：
+
+```shell
+curl -i "http://127.0.0.1:9080/get"
+```
+
+你应当收到 `HTTP/1.1 200 OK` 响应。在 30 秒窗口内再次发送相同请求将返回 `HTTP/1.1 429 Too Many Requests`。如果 Redis 主节点发生故障转移，Sentinel 会提升一个副本，APISIX 将继续针对新的主节点强制执行共享配额。
+
+### 应用滑动窗口速率限制
+
+默认情况下，`limit-count` 使用固定窗口，计数器在每个 `time_window` 开始时重置。在窗口边界附近，这可能允许达到配置速率的两倍，因为客户端可能在一个窗口结束时耗尽配额，又在下一个窗口开始时再次耗尽配额。
+
+将 `window_type` 设置为 `sliding` 可使用滑动窗口，它通过对上一个窗口的计数加权来平滑边界处的限流。`window_type` 适用于所有 policy（`local`、`redis`、`redis-cluster` 和 `redis-sentinel`）。
+
+使用以下配置创建一个路由：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "limit-count-route",
+    "uri": "/get",
+    "plugins": {
+      "limit-count": {
+        "count": 10,
+        "time_window": 60,
+        "rejected_code": 429,
+        "key": "remote_addr",
+        "window_type": "sliding"
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
+    }
+  }'
+```
+
+向路由发送请求：
+
+```shell
+curl -i "http://127.0.0.1:9080/get"
+```
+
+60 秒内的前 10 个请求返回 `HTTP/1.1 200 OK`，第 11 个返回 `HTTP/1.1 429 Too Many Requests`。与固定窗口不同，配额不会在 60 秒边界处完全重置；窗口持续滑动，从而避免边界附近出现两倍速率的突发。
+
+### 通过延迟同步减少 Redis 往返
+
+对于基于 Redis 的 policy（`redis`、`redis-cluster` 和 `redis-sentinel`），APISIX 默认在每个请求时与 Redis 同步计数器。在高流量路由上，这会为每个请求增加一次 Redis 往返。
+
+设置 `sync_interval`（单位：秒）可改为批量同步：在两次同步之间，计数由本地内存提供，并每隔一个间隔与 Redis 对账一次。这可以减少 Redis 往返和尾延迟，代价是全局计数最多滞后一个间隔的本地增量。将 `sync_interval` 设置为 `-1`（默认行为）则在每个请求时同步。
+
+使用以下配置创建一个路由，请相应调整 Redis 连接设置：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "limit-count-route",
+    "uri": "/get",
+    "plugins": {
+      "limit-count": {
+        "count": 1000,
+        "time_window": 60,
+        "rejected_code": 429,
+        "key": "remote_addr",
+        "policy": "redis",
+        "redis_host": "192.168.xxx.xxx",
+        "redis_port": 6379,
+        "redis_password": "p@ssw0rd",
+        "redis_database": 1,
+        "sync_interval": 1
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
+    }
+  }'
+```
+
+`sync_interval` 必须不小于 `0.1` 且小于 `time_window`。延迟同步使用 `plugin-limit-count-lock` 共享字典，该字典默认已配置，因此无需额外配置。
+
+向路由发送请求：
+
+```shell
+curl -i "http://127.0.0.1:9080/get"
+```
+
+请求在本地计数，并每秒与 Redis 对账一次。一旦达到 60 秒内 1000 个请求的配额，后续请求将返回 `HTTP/1.1 429 Too Many Requests`。
 
 ### 使用匿名消费者进行速率限制
 

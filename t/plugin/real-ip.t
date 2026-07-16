@@ -473,8 +473,7 @@ X-Forwarded-For: 1.1.1.1, 192.128.1.1, 127.0.0.1
 
 
 
-=== TEST 24: trusted in real-ip, but not trusted by `apisix.trusted_addresses`
-should be rejected
+=== TEST 24: untrusted by `apisix.trusted_addresses`, forged X-Forwarded-For is stripped before real-ip
 --- yaml_config
 apisix:
     node_listen: 1984

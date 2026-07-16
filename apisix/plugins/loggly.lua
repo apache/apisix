@@ -95,6 +95,7 @@ local schema = {
             default = true
         },
         log_format = {type = "object"},
+        log_format_extra = {type = "object"},
         severity_map = {
             type = "object",
             description = "upstream response code vs syslog severity mapping",
@@ -142,6 +143,9 @@ local metadata_schema = {
             type = "integer",
             minimum = 1,
             default= defaults.timeout
+        },
+        log_format_extra = {
+            type = "object"
         },
         log_format = {
             type = "object",
@@ -305,9 +309,7 @@ local function send_bulk_over_http(message, metadata, conf)
 end
 
 
-local handle_http_payload
-
-local function handle_log(entries)
+local function handle_log(entries, conf)
     local metadata = plugin.plugin_metadata(plugin_name)
     core.log.info("metadata: ", core.json.delay_encode(metadata))
 
@@ -326,11 +328,12 @@ local function handle_log(entries)
                 return false, err, i
             end
         end
-    else
-        return handle_http_payload(entries, metadata)
+        return true
     end
 
-    return true
+    -- loggly bulk endpoint expects entries concatenated in newline("\n")
+    local message = tab_concat(entries, "\n")
+    return send_bulk_over_http(message, metadata, conf)
 end
 
 
@@ -340,17 +343,16 @@ function _M.log(conf, ctx)
         return
     end
 
-    handle_http_payload = function (entries, metadata)
-        -- loggly bulk endpoint expects entries concatenated in newline("\n")
-        local message = tab_concat(entries, "\n")
-        return send_bulk_over_http(message, metadata, conf)
-    end
-
     if batch_processor_manager:add_entry(conf, log_data) then
         return
     end
 
-    batch_processor_manager:add_entry_to_new_processor(conf, log_data, ctx, handle_log)
+    -- bind conf once per batch processor instead of per request
+    local function func(entries)
+        return handle_log(entries, conf)
+    end
+
+    batch_processor_manager:add_entry_to_new_processor(conf, log_data, ctx, func)
 end
 
 

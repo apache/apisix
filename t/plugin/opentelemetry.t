@@ -644,3 +644,338 @@ opentracing
 tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
 --- response_body eval
 qr/.*x-injected-by-plugin.*test-value.*/
+
+
+
+=== TEST 29: updating plugin_metadata rebuilds the cached tracer on a warm worker
+--- extra_yaml_config
+apisix:
+    tracing: true
+plugins:
+    - opentelemetry
+--- config
+    location /setup_first {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local plugin = require("apisix.plugin")
+            local code, body = t('/apisix/admin/plugin_metadata/opentelemetry', ngx.HTTP_PUT,
+                [[{"batch_span_processor":{"max_export_batch_size":1,"inactive_timeout":0.5},"collector":{"address":"127.0.0.1:4318"},"resource":{"service.name":"otel-meta-change-first"}}]])
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT,
+                [[{"plugins":{"opentelemetry":{"sampler":{"name":"always_on"}}},"upstream":{"nodes":{"127.0.0.1:1980":1},"type":"roundrobin"},"uri":"/opentracing"}]])
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            -- wait until this worker sees the metadata so the warm-up span uses it
+            local seen
+            for _ = 1, 50 do
+                local m = plugin.plugin_metadata("opentelemetry")
+                if m and m.value and m.value.resource
+                    and m.value.resource["service.name"] == "otel-meta-change-first" then
+                    seen = true
+                    break
+                end
+                ngx.sleep(0.1)
+            end
+            if not seen then
+                ngx.status = 500
+                ngx.say("metadata did not propagate")
+                return
+            end
+            ngx.say("ok")
+        }
+    }
+    location /setup_second {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local plugin = require("apisix.plugin")
+            local code, body = t('/apisix/admin/plugin_metadata/opentelemetry', ngx.HTTP_PUT,
+                [[{"batch_span_processor":{"max_export_batch_size":1,"inactive_timeout":0.5},"collector":{"address":"127.0.0.1:4318"},"resource":{"service.name":"otel-meta-change-second"}}]])
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            -- wait until this worker sees the updated metadata before the next span
+            local seen
+            for _ = 1, 50 do
+                local m = plugin.plugin_metadata("opentelemetry")
+                if m and m.value and m.value.resource
+                    and m.value.resource["service.name"] == "otel-meta-change-second" then
+                    seen = true
+                    break
+                end
+                ngx.sleep(0.1)
+            end
+            if not seen then
+                ngx.status = 500
+                ngx.say("metadata did not propagate")
+                return
+            end
+            ngx.say("ok")
+        }
+    }
+--- pipelined_requests eval
+["GET /setup_first", "GET /opentracing", "GET /setup_second", "GET /opentracing"]
+--- response_body eval
+["ok\n", "opentracing\n", "ok\n", "opentracing\n"]
+--- wait: 3
+
+
+
+=== TEST 30: core span from inject_core_spans must carry the updated service.name
+--- exec
+grep apisix.phase.access ci/pod/otelcol-contrib/data-otlp.json | tail -n 1
+--- response_body eval
+qr/otel-meta-change-second/
+
+
+
+=== TEST 31: reset metadata trace_id_source = x-request-id
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/opentelemetry',
+                ngx.HTTP_PUT,
+                [[{
+                    "batch_span_processor": {
+                        "max_export_batch_size": 1,
+                        "inactive_timeout": 0.5
+                    },
+                    "trace_id_source": "x-request-id",
+                    "resource": {
+                        "service.name": "APISIX"
+                    },
+                    "collector": {
+                        "address": "127.0.0.1:4318",
+                        "request_timeout": 3
+                    }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+
+
+
+=== TEST 32: reset route for x-request-id validation
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "name": "route_name",
+                    "plugins": {
+                        "opentelemetry": {
+                            "sampler": {
+                                "name": "always_on"
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/opentracing"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+
+
+
+=== TEST 33: invalid (UUID) x-request-id should not crash
+--- request
+GET /opentracing
+--- more_headers
+X-Request-Id: 550e8400-e29b-41d4-a716-446655440000
+--- wait: 2
+--- response_body
+opentracing
+--- no_error_log
+[error]
+
+
+
+=== TEST 34: invalid x-request-id still exports a valid random trace id
+--- exec
+tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
+--- response_body eval
+qr/"traceId"\s*:\s*"[0-9a-f]{32}"/
+
+
+
+=== TEST 35: all-zero x-request-id must not be used as trace id
+--- request
+GET /opentracing
+--- more_headers
+X-Request-Id: 00000000000000000000000000000000
+--- wait: 2
+--- response_body
+opentracing
+
+
+
+=== TEST 36: all-zero id is replaced by a non-zero random trace id
+--- exec
+tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
+--- response_body eval
+qr/"traceId"\s*:\s*"(?!0{32})[0-9a-f]{32}"/
+
+
+
+=== TEST 37: uppercase 32-hex x-request-id is used
+--- request
+GET /opentracing
+--- more_headers
+X-Request-Id: 550E8400E29B41D4A716446655440000
+--- wait: 2
+--- response_body
+opentracing
+
+
+
+=== TEST 38: uppercase 32-hex is lowercased and used as trace id
+--- exec
+tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
+--- response_body eval
+qr/"traceId"\s*:\s*"550e8400e29b41d4a716446655440000"/
+
+
+
+=== TEST 39: duplicated x-request-id header should not crash
+--- request
+GET /opentracing
+--- more_headers
+X-Request-Id: 550e8400e29b41d4a716446655440000
+X-Request-Id: aabbccddeeff00112233445566778899
+--- wait: 2
+--- response_body
+opentracing
+--- no_error_log
+[error]
+
+
+
+=== TEST 40: missing x-request-id falls back to default generator
+--- request
+GET /opentracing
+--- wait: 2
+--- response_body
+opentracing
+
+
+
+=== TEST 41: missing x-request-id still exports a valid trace id
+--- exec
+tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
+--- response_body eval
+qr/"traceId"\s*:\s*"[0-9a-f]{32}"/
+
+
+
+=== TEST 42: non-hex x-request-id falls back to default generator
+--- request
+GET /opentracing
+--- more_headers
+X-Request-Id: zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz
+--- wait: 2
+--- response_body
+opentracing
+
+
+
+=== TEST 43: non-hex x-request-id still exports a valid trace id
+--- exec
+tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
+--- response_body eval
+qr/"traceId"\s*:\s*"[0-9a-f]{32}"/
+
+
+
+=== TEST 44: empty x-request-id falls back to default generator
+--- request
+GET /opentracing
+--- more_headers
+X-Request-Id:
+--- wait: 2
+--- response_body
+opentracing
+--- no_error_log
+[error]
+
+
+
+=== TEST 45: empty x-request-id still exports a valid trace id
+--- exec
+tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
+--- response_body eval
+qr/"traceId"\s*:\s*"[0-9a-f]{32}"/
+
+
+
+=== TEST 46: switch metadata trace_id_source back to random
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/opentelemetry',
+                ngx.HTTP_PUT,
+                [[{
+                    "batch_span_processor": {
+                        "max_export_batch_size": 1,
+                        "inactive_timeout": 0.5
+                    },
+                    "trace_id_source": "random",
+                    "resource": {
+                        "service.name": "APISIX"
+                    },
+                    "collector": {
+                        "address": "127.0.0.1:4318",
+                        "request_timeout": 3
+                    }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+
+
+
+=== TEST 47: after switching to random, send a valid 32-hex x-request-id
+--- request
+GET /opentracing
+--- more_headers
+X-Request-Id: 550e8400e29b41d4a716446655440000
+--- wait: 2
+--- response_body
+opentracing
+
+
+
+=== TEST 48: x-request-id must be ignored once trace_id_source is random
+--- exec
+tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
+--- response_body eval
+qr/"traceId"\s*:\s*"(?!550e8400e29b41d4a716446655440000)[0-9a-f]{32}"/

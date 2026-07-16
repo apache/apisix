@@ -241,3 +241,39 @@ curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H "X-API-KEY: $admin_ke
 By setting the `scheme` to `tls`, APISIX will do TLS handshake with the upstream.
 
 When the client is also speaking TLS over TCP, the SNI from the client will pass through to the upstream. Otherwise, a dummy SNI `apisix_backend` will be used.
+
+## PROXY protocol
+
+APISIX can accept the [PROXY protocol](https://www.haproxy.org/download/1.8/doc/proxy-protocol.txt) on TCP stream ports and forward it to the upstream.
+
+The `apisix.proxy_protocol` options set the default for **all** TCP stream ports:
+
+```yaml
+apisix:
+  proxy_protocol:
+    enable_tcp_pp: true              # accept the PROXY protocol from the client
+    enable_tcp_pp_to_upstream: true  # send the PROXY protocol to the upstream
+  proxy_mode: http&stream
+  stream_proxy:
+    tcp:
+      - 9100
+      - 9101
+```
+
+To control the PROXY protocol per port, set `proxy_protocol` and/or `proxy_protocol_to_upstream` on a `stream_proxy.tcp` entry. The per-port value overrides the global default for that port:
+
+```yaml
+apisix:
+  proxy_protocol:
+    enable_tcp_pp: true              # default for ports that don't set `proxy_protocol`
+  proxy_mode: http&stream
+  stream_proxy:
+    tcp:
+      - addr: 9100                          # accepts the PROXY protocol (inherits the global default)
+      - addr: 9101
+        proxy_protocol: false               # opt this port out of accepting the PROXY protocol
+      - addr: 9102
+        proxy_protocol_to_upstream: true    # also send the PROXY protocol to the upstream
+```
+
+The accept side (`proxy_protocol`) is a per-listen directive, so ports with different settings can share one listener. The upstream side (`proxy_protocol_to_upstream`) is a server-level directive, so APISIX renders ports that send the PROXY protocol upstream into a separate `server` block. UDP listens never send the PROXY protocol upstream, so they always stay in the plain `server` block.

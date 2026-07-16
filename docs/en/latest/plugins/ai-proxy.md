@@ -93,7 +93,9 @@ When `provider` is set to `bedrock`, the Plugin expects requests in the [Bedrock
 | logging        | object  | False    |         |                                          | Logging configurations. Does not affect `error.log`. |
 | logging.summaries | boolean | False | false |                                          | If true, logs request LLM model, duration, request, and response tokens. |
 | logging.payloads  | boolean | False | false |                                          | If true, logs request and response payload. |
-| timeout        | integer | False    | 30000    | 1 - 600000                               | Request timeout in milliseconds when requesting the LLM service. |
+| timeout        | integer | False    | 30000    | 1 - 600000                               | Request timeout in milliseconds when requesting the LLM service. Applied per socket operation (connect / send / read block); does not cap the total duration of a streaming response. |
+| max_stream_duration_ms | integer | False |        | ≥ 1                                      | Maximum wall-clock duration (in milliseconds) for a streaming AI response. If the upstream keeps sending data past this deadline, the gateway closes the connection. Unset means no cap. Use this to protect the gateway from upstream bugs that produce tokens indefinitely. When the limit is hit mid-stream, the downstream SSE stream is truncated (no protocol-specific terminator such as `[DONE]`, `message_stop`, or `response.completed`); well-behaved clients should treat a missing terminator as an incomplete response. |
+| max_response_bytes     | integer | False |        | ≥ 1                                      | Maximum total bytes read from the upstream for a single AI response (streaming or non-streaming). If exceeded, the gateway closes the connection. For non-streaming responses with `Content-Length`, the check is performed before reading the body; for chunked (no-`Content-Length`) non-streaming responses and for streaming responses, the cap is enforced incrementally as bytes are received. Unset means no cap. |
 | max_req_body_size | integer | False | 67108864 | >= 1 | Maximum request body size in bytes that the plugin reads into memory. Requests whose body exceeds this limit are rejected with `413`. Prevents unbounded memory buffering of large request bodies. |
 | keepalive      | boolean | False    | true   |                                          | If true, keeps the connection alive when requesting the LLM service. |
 | keepalive_timeout | integer | False | 60000  | ≥ 1000                                   | Keepalive timeout in milliseconds when connecting to the LLM service. |
@@ -136,6 +138,16 @@ Priority between client request and override is controlled by `override.request_
 - `true`: the override value forcefully overwrites the client field.
 
 When both `llm_options` and `request_body` are configured, `llm_options` is applied first (always force), then `request_body` deep-merges on top. This means `request_body` can override fields set by `llm_options`.
+
+## Request Header Forwarding
+
+By default, `ai-proxy` forwards the incoming client request headers to the configured LLM upstream. Only `Host`, `Content-Length`, and `Accept-Encoding` are dropped, and `Content-Type` is forced to `application/json`. Headers configured under `auth.header` are merged on top and take precedence over client headers of the same name.
+
+Because the LLM upstream is often a third-party service, be aware that any header the client sends (for example `Authorization`, `Cookie`, or internal application headers) is forwarded to that provider unless it is overridden by `auth.header`. If the client should not expose certain headers to the LLM provider, strip them before the request reaches `ai-proxy`, for example with the [`proxy-rewrite`](./proxy-rewrite.md) plugin.
+
+## Upstream Error Responses
+
+When the LLM upstream returns a `429` or `5xx` status, `ai-proxy` reads the upstream error body and returns it to the client together with the upstream status code and `Content-Type`, so provider-side error details (such as rate-limit information or validation errors) are not discarded.
 
 ## Examples
 
@@ -2069,7 +2081,18 @@ The following example demonstrates how you can log LLM request related informati
 * `llm_time_to_first_token`: Duration from request sending to the first token received from the LLM service, in milliseconds.
 * `llm_model`: LLM model.
 * `llm_prompt_tokens`: Number of tokens in the prompt.
-* `llm_completion_tokens`: Number of chat completion tokens in the prompt.
+* `llm_completion_tokens`: Number of chat completion tokens in the response.
+* `llm_total_tokens`: Total number of tokens used (prompt plus completion).
+* `llm_cache_read_input_tokens`: Number of input tokens read from cache.
+* `llm_cache_creation_input_tokens`: Number of input tokens written to cache.
+* `llm_reasoning_tokens`: Number of reasoning tokens generated.
+* `llm_stream`: Whether the request is a streaming request (`true` or `false`).
+* `llm_tool_count`: Number of tools provided in the request.
+* `llm_has_tool_calls`: `true` when the response contains tool calls.
+* `llm_end_user_id`: End user identifier extracted from the request (e.g., the OpenAI `user` field).
+* `llm_content_risk_level`: Content risk level reported by content moderation.
+
+When `logging.summaries` is enabled, these variables are also emitted in the `llm_summary` log object (using the names without the `llm_` prefix), so logger plugins can consume them without additional configuration.
 
 In addition, the following standard nginx upstream variables are automatically populated when `ai-proxy` sends requests via cosocket transport:
 

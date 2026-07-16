@@ -161,14 +161,18 @@ local function modify_header(ctx, header_name, header_value, override)
         -- we can only update part of the cache instead of invalidating the whole
         a6_request.clear_request_header()
         if ctx and ctx.headers then
-            if override or not ctx.headers[header_name] then
-                ctx.headers[header_name] = header_value
+            -- the cached table from ngx.req.get_headers() stores keys in
+            -- lower case, so normalize the key to avoid leaving a stale
+            -- entry when the passed name uses a different case
+            local cache_key = str_lower(header_name)
+            if override or not ctx.headers[cache_key] then
+                ctx.headers[cache_key] = header_value
             else
-                local values = ctx.headers[header_name]
+                local values = ctx.headers[cache_key]
                 if type(values) == "table" then
                     table_insert(values, header_value)
                 else
-                    ctx.headers[header_name] = {values, header_value}
+                    ctx.headers[cache_key] = {values, header_value}
                 end
             end
         end

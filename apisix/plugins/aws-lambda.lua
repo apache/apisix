@@ -21,6 +21,10 @@ local resty_sha256 = require("resty.sha256")
 local str_strip = require("pl.stringx").strip
 local norm_path = require("pl.path").normpath
 local pairs = pairs
+local ipairs = ipairs
+local type = type
+local str_format = string.format
+local str_byte = string.byte
 local tab_concat = table.concat
 local tab_sort = table.sort
 local os = os
@@ -41,6 +45,14 @@ local function sha256(msg)
     hash:update(msg)
     local digest = hash:final()
     return hex_encode(digest)
+end
+
+-- URI-encode a string per the AWS SigV4 spec: percent-encode every character
+-- except the RFC3986 unreserved characters A-Z, a-z, 0-9, "-", "_", "." and "~"
+local function uri_encode(s)
+    return (s:gsub("[^A-Za-z0-9%-_.~]", function(c)
+        return str_format("%%%02X", str_byte(c))
+    end))
 end
 
 local function get_signature_key(key, datestamp, region, service)
@@ -120,16 +132,43 @@ local function request_processor(conf, ctx, params)
         end
     end
 
-    -- computing canonical query string
-    local canonical_qs = {}
-    local canonical_qs_i = 0
+    -- computing canonical query string: URI-encode the name and value of
+    -- every pair, then sort the pairs by encoded name and encoded value.
+    -- params.query holds the percent-decoded args: a table value means the
+    -- arg appears multiple times and a true value means an arg without value
+    local query_pairs = {}
+    local query_pairs_i = 0
     for k, v in pairs(params.query) do
-        canonical_qs_i = canonical_qs_i + 1
-        canonical_qs[canonical_qs_i] = ngx.unescape_uri(k) .. "=" .. ngx.unescape_uri(v)
+        local name = uri_encode(k)
+        if type(v) ~= "table" then
+            v = {v}
+        end
+        for _, value in ipairs(v) do
+            if value == true then
+                value = ""
+            end
+            query_pairs_i = query_pairs_i + 1
+            query_pairs[query_pairs_i] = {name, uri_encode(value)}
+        end
     end
 
-    tab_sort(canonical_qs)
+    tab_sort(query_pairs, function(a, b)
+        if a[1] ~= b[1] then
+            return a[1] < b[1]
+        end
+        return a[2] < b[2]
+    end)
+
+    local canonical_qs = {}
+    for i = 1, query_pairs_i do
+        canonical_qs[i] = query_pairs[i][1] .. "=" .. query_pairs[i][2]
+    end
     canonical_qs = tab_concat(canonical_qs, "&")
+
+    -- send exactly the query string that gets signed: lua-resty-http passes
+    -- a string through unmodified, while a table would be re-encoded by
+    -- ngx.encode_args whose output may differ from the signed string
+    params.query = canonical_qs
 
     -- computing canonical and signed headers
 

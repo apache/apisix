@@ -32,6 +32,7 @@ local ipairs = ipairs
 local type = type
 local error = error
 local pcall = pcall
+local tostring = tostring
 
 local default_claims = {
     "nbf",
@@ -223,8 +224,28 @@ end
 
 
 function _M.verify_signature(self, key)
-    return alg_verify[self.header.alg](self.raw_header .. "." ..
-               self.raw_payload, base64_decode(self.signature), key)
+    local verifier = alg_verify[self.header.alg]
+    if not verifier then
+        return false, "unsupported algorithm: " .. tostring(self.header.alg)
+    end
+
+    local signature = base64_decode(self.signature)
+    if not signature then
+        return false, "failed to decode signature"
+    end
+
+    -- the per-algorithm verifiers assert on signature length and key validity,
+    -- so guard with pcall to turn a malformed token into a clean rejection
+    -- instead of letting the error propagate as a 500 response
+    local ok, verified, verify_err = pcall(verifier,
+        self.raw_header .. "." .. self.raw_payload, signature, key)
+    if not ok then
+        -- verifier raised: `verified` holds the caught error message
+        return false, verified
+    end
+
+    -- preserve the verifier's own (verified, err) return contract
+    return verified, verify_err
 end
 
 

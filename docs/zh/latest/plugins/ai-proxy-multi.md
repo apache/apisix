@@ -132,6 +132,12 @@ import TabItem from '@theme/TabItem';
 | keepalive_pool                      | integer        | 否    | 30                              |              | 连接 LLM 服务时的保活池大小。 |
 | ssl_verify                          | boolean        | 否    | true                            |              | 如果为 true，验证 LLM 服务的证书。 |
 
+## 请求头转发
+
+默认情况下，`ai-proxy-multi` 会将传入的客户端请求头转发到所选的 LLM 上游。仅 `Host`、`Content-Length` 和 `Accept-Encoding` 会被丢弃，并且 `Content-Type` 会被强制设置为 `application/json`。配置在某个实例的 `auth.header` 中的请求头会在其之上合并，并优先于同名的客户端请求头。
+
+由于 LLM 上游通常是第三方服务，请注意客户端发送的任何请求头（例如 `Authorization`、`Cookie` 或内部应用请求头）都会被转发到该服务商，除非被 `auth.header` 覆盖。如果不希望客户端将某些请求头暴露给 LLM 服务商，请在请求到达 `ai-proxy-multi` 之前将其移除，例如使用 [`proxy-rewrite`](./proxy-rewrite.md) 插件。
+
 ## 示例
 
 以下示例演示了如何为不同场景配置 `ai-proxy-multi`。
@@ -2709,7 +2715,18 @@ curl "http://127.0.0.1:9080/anything" -X POST \
 * `llm_time_to_first_token`：从发送请求到从 LLM 服务接收第一个令牌的持续时间（毫秒）。
 * `llm_model`：LLM 模型。
 * `llm_prompt_tokens`：提示中的令牌数量。
-* `llm_completion_tokens`：提示中的聊天完成令牌数量。
+* `llm_completion_tokens`：响应中的聊天完成令牌数量。
+* `llm_total_tokens`：使用的总令牌数（提示加完成）。
+* `llm_cache_read_input_tokens`：从缓存读取的输入令牌数量。
+* `llm_cache_creation_input_tokens`：写入缓存的输入令牌数量。
+* `llm_reasoning_tokens`：生成的推理令牌数量。
+* `llm_stream`：请求是否为流式请求（`true` 或 `false`）。
+* `llm_tool_count`：请求中提供的工具数量。
+* `llm_has_tool_calls`：当响应包含工具调用时为 `true`。
+* `llm_end_user_id`：从请求中提取的终端用户标识（例如 OpenAI 的 `user` 字段）。
+* `llm_content_risk_level`：内容审核报告的内容风险等级。
+
+当启用 `logging.summaries` 时，这些变量也会写入 `llm_summary` 日志对象（使用去掉 `llm_` 前缀的名称），日志插件无需额外配置即可使用。
 
 在配置文件中更新访问日志格式以包含其他 LLM 相关变量：
 

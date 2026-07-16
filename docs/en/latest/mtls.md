@@ -208,3 +208,8 @@ curl http://127.0.0.1:9180/apisix/admin/upstreams/1 \
     }
 }'
 ```
+
+This also works in the stream (L4) subsystem: when an upstream uses the `tls`
+scheme and configures `tls.client_cert`/`tls.client_key` (or
+`tls.client_cert_id`), APISIX presents the client certificate while
+establishing the TLS connection to the upstream.

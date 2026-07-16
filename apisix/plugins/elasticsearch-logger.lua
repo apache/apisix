@@ -24,6 +24,8 @@ local ngx_re          = ngx.re
 local str_format      = core.string.format
 local math_random     = math.random
 local os_date         = os.date
+local pcall           = pcall
+local type            = type
 local pairs           = pairs
 
 local plugin_name = "elasticsearch-logger"
@@ -53,6 +55,7 @@ local schema = {
             required = {"index"}
         },
         log_format = {type = "object"},
+        log_format_extra = {type = "object"},
         auth = {
             type = "object",
             properties = {
@@ -108,7 +111,7 @@ local schema = {
         max_req_body_bytes = { type = "integer", minimum = 1, default = 524288 },
         max_resp_body_bytes = { type = "integer", minimum = 1, default = 524288 },
     },
-    encrypt_fields = {"auth.password"},
+    encrypt_fields = {"auth.password", "headers"},
     oneOf = {
         {required = {"endpoint_addr", "field"}},
         {required = {"endpoint_addrs", "field"}}
@@ -119,6 +122,9 @@ local schema = {
 local metadata_schema = {
     type = "object",
     properties = {
+        log_format_extra = {
+            type = "object"
+        },
         log_format = {
             type = "object"
         },
@@ -204,8 +210,12 @@ end
 
 local function replace_time(m)
     local time_format = m[1]
-    local time = os_date(time_format)
-    if not time then
+    -- os.date returns a *table* (not a string) for the "*t"/"!*t" formats, and
+    -- on non-LuaJIT runtimes can raise on a bad strftime escape. Either way the
+    -- result would be stringified into a garbage index name, so require a
+    -- string and fall back to an empty replacement otherwise.
+    local ok, time = pcall(os_date, time_format)
+    if not ok or type(time) ~= "string" then
         core.log.error("failed to parse time format: ", time_format)
         return ""
     end
@@ -293,8 +303,6 @@ local function send_to_elasticsearch(conf, entries)
             headers[k] = v
         end
     end
-
-    core.log.info("uri: ", uri, ", body: ", body)
 
     httpc:set_timeout(conf.timeout * 1000)
     local resp, err = httpc:request_uri(uri, {

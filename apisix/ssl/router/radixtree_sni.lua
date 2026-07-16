@@ -251,9 +251,9 @@ function _M.set(matched_ssl, sni)
         return false, err
     end
 
-    if matched_ssl.value.client then
-        local ca_cert = matched_ssl.value.client.ca
-        local depth = matched_ssl.value.client.depth
+    if new_ssl_value.client then
+        local ca_cert = new_ssl_value.client.ca
+        local depth = new_ssl_value.client.depth
         if apisix_ssl.support_client_verification() then
             local parsed_cert, err = apisix_ssl.fetch_cert(sni, ca_cert)
             if not parsed_cert then
@@ -262,7 +262,7 @@ function _M.set(matched_ssl, sni)
 
             local reject_in_handshake =
                 (ngx.config.subsystem == "stream") or
-                (matched_ssl.value.client.skip_mtls_uri_regex == nil)
+                (new_ssl_value.client.skip_mtls_uri_regex == nil)
             -- TODO: support passing `trusted_certs` (3rd arg, keep it nil for now)
             local ok, err = ngx_ssl.verify_client(parsed_cert, depth, nil,
                 reject_in_handshake)

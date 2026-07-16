@@ -55,7 +55,15 @@ const IGNORE_PRS = [
     // 3.15.0
     12761, 12805, 12844, 12863, 12829, 12725, 12948,
     // 3.16.0
-    12958, 13053, 13148, 13100, 13094, 13081,
+    12958, 13053, 13148,
+    // 3.17.0
+    // 13386 (add configurable request JSON library) + 13407 (qjson error fix) were
+    // fully reverted by 13449 within this release, so they net to a no-op and are
+    // not user-facing. The rest are test-only / CI-only / docs-only changes whose
+    // subject prefix (e.g. "fix ", "fix(ci)", "feat(seo)", "feat(test)") dodges the
+    // docs/chore/test/ci type filter but which do not belong in a user changelog.
+    13386, 13407, 13449, 13485,
+    13139, 13156, 13157, 13158, 13222, 13234,
 ];
 
 

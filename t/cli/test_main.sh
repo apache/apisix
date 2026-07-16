@@ -1002,3 +1002,64 @@ if ! grep "access-tokens 2m;" conf/nginx.conf > /dev/null; then
 fi
 
 echo "passed: found the http lua_shared_dict related parameter in nginx.conf"
+
+# check proxy_protocol IPv6 listen directives
+echo '
+apisix:
+  enable_ipv6: true
+  proxy_protocol:
+    listen_http_port: 9181
+    listen_https_port: 9182
+' > conf/config.yaml
+
+make init
+
+if ! grep "listen 9181 default_server proxy_protocol;" conf/nginx.conf > /dev/null; then
+    echo "failed: proxy_protocol listen_http_port not in nginx.conf"
+    exit 1
+fi
+
+if ! grep "listen \[::\]:9181 default_server proxy_protocol;" conf/nginx.conf > /dev/null; then
+    echo "failed: proxy_protocol IPv6 listen_http_port not in nginx.conf"
+    exit 1
+fi
+
+if ! grep "listen 9182 ssl default_server proxy_protocol;" conf/nginx.conf > /dev/null; then
+    echo "failed: proxy_protocol listen_https_port not in nginx.conf"
+    exit 1
+fi
+
+if ! grep "listen \[::\]:9182 ssl default_server proxy_protocol;" conf/nginx.conf > /dev/null; then
+    echo "failed: proxy_protocol IPv6 listen_https_port not in nginx.conf"
+    exit 1
+fi
+
+echo "passed: proxy_protocol IPv6 listen directives are correct"
+
+# check proxy_protocol without IPv6
+echo '
+apisix:
+  enable_ipv6: false
+  proxy_protocol:
+    listen_http_port: 9181
+    listen_https_port: 9182
+' > conf/config.yaml
+
+make init
+
+if ! grep "listen 9181 default_server proxy_protocol;" conf/nginx.conf > /dev/null; then
+    echo "failed: proxy_protocol listen_http_port not in nginx.conf when ipv6 disabled"
+    exit 1
+fi
+
+if grep "listen \[::\]:9181 default_server proxy_protocol;" conf/nginx.conf > /dev/null; then
+    echo "failed: proxy_protocol IPv6 listen_http_port should not be in nginx.conf when ipv6 disabled"
+    exit 1
+fi
+
+if grep "listen \[::\]:9182 ssl default_server proxy_protocol;" conf/nginx.conf > /dev/null; then
+    echo "failed: proxy_protocol IPv6 listen_https_port should not be in nginx.conf when ipv6 disabled"
+    exit 1
+fi
+
+echo "passed: proxy_protocol without IPv6 is correct"

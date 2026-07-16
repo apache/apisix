@@ -232,3 +232,39 @@ curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H "X-API-KEY: $admin_ke
 通过设置 `scheme` 为 `tls`，APISIX 将与上游进行 TLS 握手。
 
 当客户端也使用基于 TCP 的 TLS 上游时，客户端发送的 SNI 将传递给上游。否则，将使用一个假的 SNI `apisix_backend`。
+
+## PROXY 协议
+
+APISIX 可以在 TCP stream 端口上接收 [PROXY 协议](https://www.haproxy.org/download/1.8/doc/proxy-protocol.txt)，并将其转发给上游。
+
+`apisix.proxy_protocol` 选项为**所有** TCP stream 端口设置默认值：
+
+```yaml
+apisix:
+  proxy_protocol:
+    enable_tcp_pp: true              # 接收来自客户端的 PROXY 协议
+    enable_tcp_pp_to_upstream: true  # 向上游发送 PROXY 协议
+  proxy_mode: http&stream
+  stream_proxy:
+    tcp:
+      - 9100
+      - 9101
+```
+
+如需按端口控制 PROXY 协议，可在 `stream_proxy.tcp` 条目上设置 `proxy_protocol` 和/或 `proxy_protocol_to_upstream`。端口级别的设置会覆盖该端口的全局默认值：
+
+```yaml
+apisix:
+  proxy_protocol:
+    enable_tcp_pp: true              # 未设置 `proxy_protocol` 的端口的默认值
+  proxy_mode: http&stream
+  stream_proxy:
+    tcp:
+      - addr: 9100                          # 接收 PROXY 协议（继承全局默认值）
+      - addr: 9101
+        proxy_protocol: false               # 该端口不接收 PROXY 协议
+      - addr: 9102
+        proxy_protocol_to_upstream: true    # 该端口同时向上游发送 PROXY 协议
+```
+
+接收侧（`proxy_protocol`）是 listen 级别的指令，因此设置不同的端口可以共用一个监听块。上游侧（`proxy_protocol_to_upstream`）是 server 级别的指令，因此 APISIX 会把向上游发送 PROXY 协议的端口渲染到单独的 `server` 块中。UDP 监听永远不会向上游发送 PROXY 协议，因此始终保留在普通的 `server` 块中。

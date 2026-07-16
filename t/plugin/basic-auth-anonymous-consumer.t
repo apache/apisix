@@ -222,3 +222,25 @@ GET /hello
 failed to get anonymous consumer not-found-anonymous
 --- response_body
 {"message":"Invalid user authorization"}
+
+
+
+=== TEST 8: anonymous_consumer must be a non-empty string
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.basic-auth")
+            local values = {123, true, {}, ""}
+            for _, value in ipairs(values) do
+                local ok, err = plugin.check_schema({anonymous_consumer = value})
+                ngx.say(ok, " ", err)
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+false property "anonymous_consumer" validation failed: wrong type: expected string, got number
+false property "anonymous_consumer" validation failed: wrong type: expected string, got boolean
+false property "anonymous_consumer" validation failed: wrong type: expected string, got table
+false property "anonymous_consumer" validation failed: string too short, expected at least 1, got 0
