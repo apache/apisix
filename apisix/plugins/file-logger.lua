@@ -162,11 +162,6 @@ if is_apisix_or then
     end
 
     function open_file_cache(conf)
-        local std_file = std_files[conf.path]
-        if std_file then
-            return std_file
-        end
-
         local last_reopen_time = process.get_last_reopen_ms()
 
         local handler, err = path_to_file(conf.path, 0, open_file_handler, conf, {})
