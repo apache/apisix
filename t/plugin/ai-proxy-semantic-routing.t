@@ -63,6 +63,13 @@ add_block_preprocessor(sub {
                             ngx.status = 200
                             ngx.say('{"data":[1,2,3]}')
                             return
+                        elseif string.lower(t):find("naninf") then
+                            -- 200 with a non-finite embedding component
+                            -- (1e999 decodes to inf): must be rejected rather
+                            -- than normalized to NaN and poisoning every score
+                            ngx.status = 200
+                            ngx.say('{"data":[{"index":0,"embedding":[1e999,0]}]}')
+                            return
                         end
                     end
                     local function vec(text)
@@ -893,3 +900,81 @@ Content-Type: application/json
 --- response_headers_like
 X-AI-Semantic-Route: code
 X-AI-Semantic-Scores: code:1\.\d+,cheap:0\.\d+
+
+
+
+=== TEST 26: configure a route to exercise the non-finite-component guard
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local conf = {
+                uri = "/anything",
+                plugins = {
+                    ["ai-proxy-multi"] = {
+                        balancer = { algorithm = "semantic" },
+                        semantic_opts = {
+                            embeddings = {
+                                provider = "openai",
+                                model = "text-embedding-3-small",
+                                endpoint = "http://127.0.0.1:6797/v1/embeddings",
+                                auth = { header = { Authorization = "Bearer token" } },
+                                ssl_verify = false,
+                            },
+                            threshold = 0.9,
+                            fallback = "default",
+                        },
+                        instances = {
+                            {
+                                name = "code", provider = "openai", weight = 1,
+                                auth = { header = { Authorization = "Bearer token" } },
+                                options = { model = "model-code" },
+                                override = {
+                                    endpoint = "http://127.0.0.1:6798/v1/chat/completions",
+                                },
+                                examples = {"write python code"},
+                            },
+                            {
+                                name = "default", provider = "openai", weight = 1,
+                                auth = { header = { Authorization = "Bearer token" } },
+                                options = { model = "model-fallback" },
+                                override = {
+                                    endpoint = "http://127.0.0.1:6798/v1/chat/completions",
+                                },
+                            },
+                        },
+                        ssl_verify = false,
+                    },
+                },
+            }
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT,
+                                 core.json.encode(conf))
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 27: a non-finite embedding component fails open instead of poisoning scores
+--- request
+POST /anything
+{"model":"auto","messages":[{"role":"user","content":"naninf please route me"}]}
+--- more_headers
+Content-Type: application/json
+--- error_code: 200
+--- response_body chomp
+model-fallback
+--- error_log
+non-numeric embedding component
+--- no_error_log
+[error]

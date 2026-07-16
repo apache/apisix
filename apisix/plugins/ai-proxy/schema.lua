@@ -259,8 +259,12 @@ local embeddings_schema = {
         timeout = {
             type = "integer",
             minimum = 1,
-            default = 10000,
-            description = "Embedding request timeout in milliseconds.",
+            default = 3000,
+            description = "Embedding request timeout in milliseconds. The query "
+                .. "prompt is embedded synchronously on every request, so this "
+                .. "bounds the latency added to each request when the embedding "
+                .. "endpoint is slow or down (the request then fails open to the "
+                .. "fallback).",
         },
         ssl_verify = { type = "boolean", default = true },
     },

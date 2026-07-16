@@ -85,7 +85,7 @@ function _M.fetch(conf, texts)
     }
     local req_conf = {
         ssl_verify = conf.ssl_verify ~= false,
-        timeout = conf.timeout or 10000,
+        timeout = conf.timeout or 3000,
         keepalive = true,
     }
 

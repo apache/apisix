@@ -784,8 +784,6 @@ local function pick_semantic_instance(ctx, conf)
         return semantic_fallback(conf)
     end
 
-    -- pcall, like the reference path above: the embedding response is
-    -- provider-controlled, so a raise here must fall back rather than 500.
     if #prompt > MAX_EMBED_PROMPT_BYTES then
         prompt = sub(prompt, 1, MAX_EMBED_PROMPT_BYTES)
     end

@@ -137,7 +137,7 @@ import TabItem from '@theme/TabItem';
 | semantic_opts.embeddings.auth       | object         | 是    |                                   |              | 嵌入服务的认证配置。 |
 | semantic_opts.embeddings.auth.header | object        | 否    |                                   |              | 认证请求头。加密存储。 |
 | semantic_opts.embeddings.auth.query | object         | 否    |                                   |              | 认证查询参数。加密存储。 |
-| semantic_opts.embeddings.timeout    | integer        | 否    | 10000                           | 最小值为 1  | 嵌入请求的超时时间（毫秒）。 |
+| semantic_opts.embeddings.timeout    | integer        | 否    | 3000                            | 最小值为 1  | 嵌入请求的超时时间（毫秒）。每个请求都会同步嵌入查询提示词，因此该值限定了当嵌入端点变慢或不可用时每个请求增加的延迟上限（随后请求会 fail-open 到回退实例）。 |
 | semantic_opts.embeddings.ssl_verify | boolean        | 否    | true                            |              | 如果为 true，验证嵌入服务的证书。 |
 | timeout                             | integer        | 否    | 30000                           | 大于或等于 1 | 请求 LLM 服务时的请求超时时间（毫秒）。应用于单次 socket 操作（连接 / 发送 / 读取块），不限制流式响应的总时长。 |
 | max_stream_duration_ms              | integer        | 否    |                                 | 大于或等于 1 | 流式 AI 响应的总墙钟时长上限（毫秒）。若上游在此时间后仍持续发送数据，网关将关闭连接。未设置时不限制。用于防护上游持续输出 token 导致网关 CPU 被打满的异常情况。中途触发上限时，下游 SSE 流会被截断（不再发送协议特定的终止标记，例如 `[DONE]`、`message_stop` 或 `response.completed`），客户端应将缺失的终止标记视为响应未完成。 |
