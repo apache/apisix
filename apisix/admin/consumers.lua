@@ -38,11 +38,9 @@ local function check_conf(username, conf, need_username, schema, opts)
             return nil, {error_msg = "invalid plugins configuration: " .. err}
         end
 
-        if not opts.skip_references_check then
-            ok, err = apisix_consumer.check_duplicate_key(conf.plugins, conf.username)
-            if not ok then
-                return nil, {error_msg = err}
-            end
+        ok, err = apisix_consumer.check_duplicate_key(conf.plugins, conf.username)
+        if not ok then
+            return nil, {error_msg = err}
         end
     end
 

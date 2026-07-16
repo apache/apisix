@@ -47,7 +47,7 @@ local function check_conf(id, conf, _need_id, schema, opts)
 
         -- opts.sub_path is in the form of {consumer_name}/credentials or
         -- {consumer_name}/credentials/{credential_id}
-        if not opts.skip_references_check and opts.sub_path then
+        if opts.sub_path then
             local consumer_name = core.utils.split_uri(opts.sub_path)[1]
             ok, err = apisix_consumer.check_duplicate_key(conf.plugins, consumer_name, id)
             if not ok then
