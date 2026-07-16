@@ -56,6 +56,9 @@ end
 function _M.redact_extra_opts(extra_opts)
     local redacted = core.table.deepcopy(extra_opts)
     redacted.auth = nil
+    -- client_headers are the raw downstream request headers forwarded on the
+    -- proxy path; they can carry Authorization/Cookie and must not be logged.
+    redacted.client_headers = nil
     return redacted
 end
 

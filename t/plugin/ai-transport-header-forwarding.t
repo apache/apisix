@@ -33,14 +33,16 @@ add_block_preprocessor(sub {
         server {
             listen 6820;
             default_type 'application/json';
-            # Mock LLM endpoint. It logs whether the client's Cookie reached it,
-            # so tests can distinguish the transparent proxy path (ai-proxy, which
-            # SHOULD forward client headers) from a self-contained internal request
-            # (ai-request-rewrite, which must NOT leak them to a third party).
+            # Mock LLM endpoint. It logs which of the client's Cookie / Authorization
+            # reached it, so tests can distinguish the transparent proxy path
+            # (ai-proxy, which SHOULD forward client headers) from a self-contained
+            # internal request (ai-request-rewrite, which must NOT leak them).
             location /v1/chat/completions {
                 content_by_lua_block {
                     ngx.log(ngx.WARN, "llm-recv-cookie:",
                             ngx.var.http_cookie or "none")
+                    ngx.log(ngx.WARN, "llm-recv-auth:",
+                            ngx.var.http_authorization or "none")
                     ngx.req.read_body()
                     ngx.status = 200
                     ngx.say('{"choices":[{"message":{"content":"rewritten body"}}]}')
@@ -107,19 +109,22 @@ passed
 
 
 
-=== TEST 2: ai-request-rewrite's internal LLM call must not receive the client Cookie
+=== TEST 2: ai-request-rewrite's internal LLM call uses its own creds, not the client's
 --- request
 POST /anything
 some content to rewrite
 --- more_headers
 Content-Type: text/plain
 Cookie: session=super-secret
+Authorization: Bearer client-secret-abc
 --- response_body
 upstream-ok
 --- error_log
 llm-recv-cookie:none
+llm-recv-auth:Bearer llm-key
 --- no_error_log
 llm-recv-cookie:session=super-secret
+client-secret-abc
 
 
 
@@ -163,14 +168,16 @@ passed
 
 
 
-=== TEST 4: ai-proxy is a transparent proxy and DOES forward the client Cookie
+=== TEST 4: ai-proxy-multi is a transparent proxy and DOES forward the client Cookie
 --- request
 POST /chat
 {"messages":[{"role":"user","content":"hello"}]}
 --- more_headers
 Content-Type: application/json
 Cookie: session=proxy-secret
+Authorization: Bearer client-secret-xyz
 --- error_log
 llm-recv-cookie:session=proxy-secret
 --- no_error_log
 [error]
+client-secret-xyz
