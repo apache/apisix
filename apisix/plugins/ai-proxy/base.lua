@@ -178,6 +178,10 @@ function _M.before_proxy(conf, ctx, on_error)
             auth = ai_instance.auth,
             host_header = ai_instance._resolved_host_header,
             ssl_server_name = ai_instance._resolved_ssl_server_name,
+            -- ai-proxy is a transparent proxy, so it forwards the client's
+            -- request headers to the LLM. Internal callers (ai-request-rewrite,
+            -- embeddings, ...) omit this and never forward client headers.
+            client_headers = core.request.headers(ctx),
             override_llm_options =
                 core.table.try_read_attr(ai_instance, "override", "llm_options"),
             request_body_override_map =

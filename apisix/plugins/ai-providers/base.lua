@@ -188,7 +188,12 @@ function _M.build_request(self, ctx, conf, request_body, opts)
             .. "includes a path", 400
     end
 
-    local headers = transport_http.construct_forward_headers(auth.header or {}, ctx)
+    -- Only the proxy path (ai-proxy / ai-proxy-multi) forwards the downstream
+    -- request's headers, and it passes them in via opts.client_headers. A
+    -- self-contained internal request (ai-request-rewrite, embeddings, ...)
+    -- passes none, so its own credentials — not the client's — reach the LLM.
+    local headers = transport_http.construct_forward_headers(auth.header or {},
+                                                             opts.client_headers)
     if opts.host_header then
         headers["Host"] = opts.host_header
     end
