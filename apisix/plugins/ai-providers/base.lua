@@ -100,10 +100,13 @@ end
 
 --- Build HTTP request parameters from driver config and extra_opts.
 --
--- This is a pure client: it never reads the downstream request. Everything
--- derived from it is passed in through `opts` by the caller — client_headers,
--- client_args and method (proxy path only), raw_request_body, a resolved
--- access_token, the target_protocol and an optional header_transform.
+-- This is a pure client: it never reads the downstream request. Everything taken
+-- from that request is grouped under `opts.client` and supplied by the caller —
+-- its presence is what marks this as proxying an inbound request. A
+-- self-contained internal call (ai-request-rewrite, embeddings, ...) omits
+-- `opts.client` entirely, so nothing of the client's can reach the LLM or the
+-- logs. Request state the caller resolves for us arrives as opts.access_token /
+-- opts.target_protocol / opts.header_transform.
 --
 -- Protocol conversion is deliberately NOT done here: converters carry state on
 -- the request ctx for the response side to read back, so the caller converts and
@@ -176,12 +179,12 @@ function _M.build_request(self, conf, request_body, opts)
             .. "includes a path", 400
     end
 
-    -- Only the proxy path (ai-proxy / ai-proxy-multi) forwards the downstream
-    -- request's headers, and it passes them in via opts.client_headers. A
-    -- self-contained internal request (ai-request-rewrite, embeddings, ...)
-    -- passes none, so its own credentials — not the client's — reach the LLM.
+    -- Everything below that comes from the downstream request lives on
+    -- opts.client; an internal call leaves it nil and therefore forwards none of
+    -- the client's headers, query or body.
+    local client = opts.client
     local headers = transport_http.construct_forward_headers(auth.header or {},
-                                                             opts.client_headers)
+                                                             client and client.headers)
     if opts.host_header then
         headers["Host"] = opts.host_header
     end
@@ -196,14 +199,14 @@ function _M.build_request(self, conf, request_body, opts)
         opts.header_transform(headers)
     end
 
-    -- The caller forwards the downstream method and query string only when it
+    -- The caller passes the downstream method and query string only when it
     -- wants them proxied verbatim (the passthrough protocol). Otherwise this is
     -- a plain POST with provider-specific query args.
-    local method = opts.method or "POST"
-    if type(opts.client_args) == "table" then
+    local method = client and client.method or "POST"
+    if client and type(client.args) == "table" then
         -- client query overrides the endpoint query, but configured
         -- auth.query credentials must stay non-overridable by the caller
-        for k, v in pairs(opts.client_args) do
+        for k, v in pairs(client.args) do
             if not (auth.query and auth.query[k] ~= nil) then
                 query_params[k] = v
             end
@@ -263,12 +266,11 @@ function _M.build_request(self, conf, request_body, opts)
     end
 
     -- Send the downstream body verbatim when nothing above modified it, so a
-    -- pure passthrough stays byte-identical. The caller supplies
-    -- opts.raw_request_body only when it has not transformed the body itself
-    -- (i.e. no protocol conversion ran); an internal caller omits it and always
-    -- sends the body it built.
-    if not body_changed and type(opts.raw_request_body) == "string" then
-        params.body = opts.raw_request_body
+    -- pure passthrough stays byte-identical. The caller sets client.raw_body only
+    -- when it has not transformed the body itself (i.e. no protocol conversion
+    -- ran); an internal call has no client at all and always sends what it built.
+    if not body_changed and client and type(client.raw_body) == "string" then
+        params.body = client.raw_body
     else
         params.body = request_body
     end

@@ -313,7 +313,7 @@ table body
                 conf = {},
                 target_protocol = "openai-chat",
                 target_path = "/v1/chat/completions",
-                raw_request_body = '{"messages":[]}',
+                client = { raw_body = '{"messages":[]}' },
             }
 
             local params = assert(provider:build_request({ssl_verify = false},

@@ -171,7 +171,7 @@ passed
 === TEST 4: ai-proxy-multi is a transparent proxy and DOES forward the client Cookie
 --- request
 POST /chat
-{"messages":[{"role":"user","content":"hello"}]}
+{"messages":[{"role":"user","content":"super-secret-prompt"}]}
 --- more_headers
 Content-Type: application/json
 Cookie: session=proxy-secret
@@ -181,3 +181,4 @@ llm-recv-cookie:session=proxy-secret
 --- no_error_log
 [error]
 client-secret-xyz
+super-secret-prompt

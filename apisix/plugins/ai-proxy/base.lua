@@ -179,10 +179,6 @@ function _M.before_proxy(conf, ctx, on_error)
             auth = ai_instance.auth,
             host_header = ai_instance._resolved_host_header,
             ssl_server_name = ai_instance._resolved_ssl_server_name,
-            -- ai-proxy is a transparent proxy, so it forwards the client's
-            -- request headers to the LLM. Internal callers (ai-request-rewrite,
-            -- embeddings, ...) omit this and never forward client headers.
-            client_headers = core.request.headers(ctx),
             override_llm_options =
                 core.table.try_read_attr(ai_instance, "override", "llm_options"),
             request_body_override_map =
@@ -264,12 +260,19 @@ function _M.before_proxy(conf, ctx, on_error)
             extra_opts.access_token = token
         end
 
+        -- ai-proxy is a transparent proxy of an inbound request, so it hands the
+        -- transport everything taken from that request under one `client` key.
+        -- Internal callers omit it entirely and thus forward nothing of the
+        -- client's -- see ai-providers/base.lua build_request.
+        local client = { headers = core.request.headers(ctx) }
+        extra_opts.client = client
+
         -- passthrough proxies the client's method and query string verbatim.
         if target_proto == "passthrough" then
-            extra_opts.method = core.request.get_method()
+            client.method = core.request.get_method()
             local client_args = ctx.var.args and core.string.decode_args(ctx.var.args)
             if type(client_args) == "table" then
-                extra_opts.client_args = client_args
+                client.args = client_args
             end
         end
 
@@ -287,7 +290,7 @@ function _M.before_proxy(conf, ctx, on_error)
             -- earlier plugin (ai-request-rewrite marks that on ctx) -- so the
             -- client's verbatim bytes can be reused, keeping a pure passthrough
             -- byte-identical and skipping a re-encode.
-            extra_opts.raw_request_body = core.request.get_body()
+            client.raw_body = core.request.get_body()
         end
 
         local do_request = function()
