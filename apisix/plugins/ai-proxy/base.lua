@@ -338,6 +338,8 @@ function _M.before_proxy(conf, ctx, on_error)
                 if res._httpc then
                     res._httpc:close()
                 end
+                core.log.warn("upstream AI service returned status: ", res.status,
+                             ", body: ", error_body or "")
                 return res.status, error_body
             end
 
