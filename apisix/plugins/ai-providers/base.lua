@@ -98,37 +98,84 @@ local function merge_usage(ctx, parsed)
 end
 
 
---- Build HTTP request parameters from driver config and extra_opts.
+--- Shape the request body for the target protocol and this provider.
 --
--- This is a pure client: it never reads the downstream request. Everything taken
--- from that request is grouped under `opts.client` and supplied by the caller —
--- its presence is what marks this as proxying an inbound request. A
--- self-contained internal call (ai-request-rewrite, embeddings, ...) omits
--- `opts.client` entirely, so nothing of the client's can reach the LLM or the
--- logs. Request state the caller resolves for us arrives as opts.access_token /
--- opts.target_protocol / opts.header_transform.
---
--- Protocol conversion is deliberately NOT done here: converters carry state on
+-- Pure: no ctx, no downstream request, no network -- body in, body out. This is
+-- where the target protocol matters; build_request below does not know protocols
+-- exist. Protocol *conversion* is not done here either: converters carry state on
 -- the request ctx for the response side to read back, so the caller converts and
--- passes the already-converted body.
--- @return table params HTTP parameters ready for transport_http.request()
--- @return string|nil err Error message
-function _M.build_request(self, conf, request_body, opts)
-    local body_changed = false
+-- hands us the converted body.
+-- @return table body The body to send
+-- @return boolean changed Whether anything here modified it. The caller uses this
+--   to decide whether the client's verbatim bytes may still be reused.
+function _M.build_body(self, request_body, opts)
+    local changed = false
+    local target_protocol = opts.target_protocol
 
     -- Inject target-protocol-specific parameters (e.g. stream_options for OpenAI).
-    -- This runs after the caller's conversion so it covers both passthrough and
-    -- convert scenarios.
-    local target_protocol = opts.target_protocol
     if target_protocol then
         local target_proto = protocols.get(target_protocol)
         if target_proto and target_proto.prepare_outgoing_request then
             if target_proto.prepare_outgoing_request(request_body) then
-                body_changed = true
+                changed = true
             end
         end
     end
 
+    -- Inject model options (flat overwrite)
+    if opts.model_options then
+        for opt, val in pairs(opts.model_options) do
+            if request_body[opt] ~= nil then
+                core.log.info("model_options overwriting request field '", opt, "'")
+            end
+            request_body[opt] = val
+            changed = true
+        end
+    end
+
+    -- Apply llm_options via provider capability hook (always force-overwrites)
+    if opts.override_llm_options then
+        local cap = self.capabilities and self.capabilities[target_protocol]
+        if cap and cap.rewrite_request_body then
+            cap.rewrite_request_body(request_body, opts.override_llm_options, true)
+            if next(opts.override_llm_options) ~= nil then
+                changed = true
+            end
+        end
+    end
+
+    -- Apply per-target-protocol request body override (deep merge)
+    if opts.request_body_override_map then
+        local patch = opts.request_body_override_map[target_protocol]
+        if patch then
+            core.log.info("applying request_body override for target protocol '",
+                          target_protocol, "'")
+            request_body = deep_merge(request_body, patch, opts.request_body_force_override)
+            changed = true
+        end
+    end
+
+    if self.remove_model and request_body.model ~= nil then
+        request_body.model = nil
+        changed = true
+    end
+
+    return request_body, changed
+end
+
+
+--- Assemble the outbound HTTP request: endpoint, auth, headers, query, and --
+-- last -- signing.
+--
+-- Pure and protocol-agnostic: `body` arrives already shaped (see build_body) and
+-- is passed through untouched, so a string goes out verbatim and a table is
+-- encoded by the transport. Everything taken from the downstream request lives on
+-- `opts.client`; its presence is what marks this as proxying an inbound request.
+-- A self-contained internal call omits it, so nothing of the client's can reach
+-- the LLM or the logs.
+-- @return table params HTTP parameters ready for transport_http.request()
+-- @return string|nil err Error message
+function _M.build_request(self, conf, body, opts)
     core.log.info("request extra_opts to LLM server: ",
                   core.json.delay_encode(log_sanitize.redact_extra_opts(opts), true))
 
@@ -225,55 +272,10 @@ function _M.build_request(self, conf, request_body, opts)
         ssl_server_name = opts.ssl_server_name
                           or parsed_url and parsed_url.host
                           or opts.target_host or self.host,
+        -- Passed through as given: a string goes out verbatim (the client's own
+        -- bytes), a table is encoded by the transport.
+        body = body,
     }
-
-    -- Inject model options (flat overwrite)
-    if opts.model_options then
-        for opt, val in pairs(opts.model_options) do
-            if request_body[opt] ~= nil then
-                core.log.info("model_options overwriting request field '", opt, "'")
-            end
-            request_body[opt] = val
-            body_changed = true
-        end
-    end
-
-    -- Apply llm_options via provider capability hook (always force-overwrites)
-    if opts.override_llm_options then
-        local cap = self.capabilities and self.capabilities[target_protocol]
-        if cap and cap.rewrite_request_body then
-            cap.rewrite_request_body(request_body, opts.override_llm_options, true)
-            if next(opts.override_llm_options) ~= nil then
-                body_changed = true
-            end
-        end
-    end
-
-    -- Apply per-target-protocol request body override (deep merge)
-    if opts.request_body_override_map then
-        local patch = opts.request_body_override_map[target_protocol]
-        if patch then
-            core.log.info("applying request_body override for target protocol '",
-                          target_protocol, "'")
-            request_body = deep_merge(request_body, patch, opts.request_body_force_override)
-            body_changed = true
-        end
-    end
-
-    if self.remove_model and request_body.model ~= nil then
-        request_body.model = nil
-        body_changed = true
-    end
-
-    -- Send the downstream body verbatim when nothing above modified it, so a
-    -- pure passthrough stays byte-identical. The caller sets client.raw_body only
-    -- when it has not transformed the body itself (i.e. no protocol conversion
-    -- ran); an internal call has no client at all and always sends what it built.
-    if not body_changed and client and type(client.raw_body) == "string" then
-        params.body = client.raw_body
-    else
-        params.body = request_body
-    end
 
     -- AWS SigV4 signing (must be last — signs the finalized body)
     if self.aws_sigv4 and auth.aws then
@@ -789,10 +791,12 @@ end
 -- @return string|nil Raw response body (JSON string)
 -- @return string|nil Error message
 --- Send a self-contained request to an LLM and return its raw response.
--- Fully decoupled from the downstream request: internal callers (ai-request-rewrite,
--- embeddings, ...) use this as a plain client and parse the body themselves.
+-- Shapes the body, assembles the HTTP request, sends it. Fully decoupled from the
+-- downstream request: internal callers (ai-request-rewrite, embeddings, ...) use
+-- this as a plain client and parse the body themselves.
 function _M.request(self, conf, request_table, extra_opts)
-    local params, err = self:build_request(conf, request_table, extra_opts)
+    local body = self:build_body(request_table, extra_opts)
+    local params, err = self:build_request(conf, body, extra_opts)
     if not params then
         core.log.error("failed to build request: ", err)
         return 500, nil, err

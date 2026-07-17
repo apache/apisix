@@ -276,30 +276,39 @@ function _M.before_proxy(conf, ctx, on_error)
             end
         end
 
-        -- Step 2.5: protocol conversion. It lives here rather than in the
-        -- transport because converters stash state on ctx for the response side.
+        -- Step 2.5: protocol conversion. It lives here rather than in the provider
+        -- because converters stash state on ctx for the response side to read back.
         local body_for_llm = request_body
+        local converted = false
         if converter and converter.convert_request then
-            local converted, conv_err = converter.convert_request(request_body, ctx)
-            if not converted then
+            local new_body, conv_err = converter.convert_request(request_body, ctx)
+            if not new_body then
                 return 400, {error_msg = conv_err or "invalid protocol"}
             end
-            body_for_llm = converted
-        elseif not ctx.ai_request_body_changed then
-            -- Nothing has rewritten the body -- neither a converter here nor an
-            -- earlier plugin (ai-request-rewrite marks that on ctx) -- so the
-            -- client's verbatim bytes can be reused, keeping a pure passthrough
-            -- byte-identical and skipping a re-encode.
-            client.raw_body = core.request.get_body()
+            body_for_llm = new_body
+            converted = true
         end
 
         local do_request = function()
             ctx.llm_request_start_time = ngx.now()
             ctx.var.llm_request_body = request_body
 
-            -- Step 3: Build HTTP request params
+            -- Step 3: shape the body for the target protocol, then decide which
+            -- bytes actually go out. When nothing has touched the body -- no
+            -- conversion above, no shaping just now, and no earlier plugin rewrite
+            -- (ai-request-rewrite marks that on ctx) -- the client's verbatim bytes
+            -- are reused, keeping a pure passthrough byte-identical.
+            local body, shaped = ai_provider:build_body(body_for_llm, extra_opts)
+            if not shaped and not converted and not ctx.ai_request_body_changed then
+                local raw = core.request.get_body()
+                if type(raw) == "string" then
+                    body = raw
+                end
+            end
+
+            -- Step 4: assemble the HTTP request
             local params, build_err, code = ai_provider:build_request(
-                conf, body_for_llm, extra_opts)
+                conf, body, extra_opts)
             if not params then
                 local body = {error_msg = build_err}
                 if code then
