@@ -62,6 +62,9 @@ local policy_to_additional_properties = {
                     type = "string", minLength = 2, maxLength = 100
                 },
             },
+            redis_username = {
+                type = "string", minLength = 1,
+            },
             redis_password = {
                 type = "string", minLength = 0,
             },
