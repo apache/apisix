@@ -1567,6 +1567,8 @@ GET /hello
 x-multi: origin
 --- response_body_like eval
 qr/x-multi: val1\nx-multi: val2/
+--- response_body_unlike eval
+qr/x-multi: origin/
 
 
 
