@@ -336,3 +336,59 @@ accept 1 count 1
 accept 1 count 2
 accept 0 count 2
 stored: 2
+
+
+
+=== TEST 9: commit() reports the window-weighted remaining, like incoming()
+# regression: commit() used to report limit - current_count, ignoring the
+# previous window's weighted share. Delayed sync caches that value as the
+# global quota, so every new window started from a full budget and the
+# sliding window degraded into a fixed window.
+--- timeout: 10
+--- config
+    location /t {
+        content_by_lua_block {
+            local sliding_window =
+                require("apisix.plugins.limit-count.sliding-window.sliding-window")
+            local redis_store =
+                require("apisix.plugins.limit-count.sliding-window.store.redis")
+            local redis_cli = require("apisix.plugins.limit-count.util").redis_cli
+            local conf = {
+                redis_host = "127.0.0.1",
+                redis_port = 6379,
+                redis_database = 1,
+            }
+            local limit, window = 400, 3
+            local lim, err = sliding_window.new_with_red_cli_factory(
+                redis_store, limit, window, redis_cli, conf)
+            if not lim then
+                ngx.say("failed to create limiter: ", err)
+                return
+            end
+
+            -- wait for the first 0.5s of a window so the previous window's
+            -- weight stays within a known band during the call below
+            while ngx.now() % window >= 0.5 do
+                ngx.sleep(0.05)
+            end
+            ngx.update_time()
+
+            local now = ngx.now()
+            local key = "ut-commit-weight-" .. now
+            local last_wid = math.floor((now - window) / window)
+            local red = redis_cli(conf)
+            red:set(("%s.%s.counter"):format(key, last_wid), 300, "EX", 60)
+
+            local _, remaining = lim:commit(key, 20)
+            -- remaining_time is in (2.5, 3], so the previous window weighs
+            -- 300 / 3 * remaining_time = 250..300 and the remaining must be
+            -- 400 - 20 - (250..300) = 80..130
+            if remaining >= 80 and remaining <= 130 then
+                ngx.say("ok")
+            else
+                ngx.say("unexpected remaining: ", remaining)
+            end
+        }
+    }
+--- response_body
+ok
