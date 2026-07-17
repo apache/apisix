@@ -366,9 +366,10 @@ stored: 2
                 return
             end
 
-            -- wait for the first 0.5s of a window so the previous window's
-            -- weight stays within a known band during the call below
-            while ngx.now() % window >= 0.5 do
+            -- wait for the first 0.4s of a window so the previous window's
+            -- weight stays within a known band during the call below, with
+            -- headroom for the redis round trips before commit() reads time
+            while ngx.now() % window >= 0.4 do
                 ngx.sleep(0.05)
             end
             ngx.update_time()
@@ -380,9 +381,10 @@ stored: 2
             red:set(("%s.%s.counter"):format(key, last_wid), 300, "EX", 60)
 
             local _, remaining = lim:commit(key, 20)
-            -- remaining_time is in (2.5, 3], so the previous window weighs
-            -- 300 / 3 * remaining_time = 250..300 and the remaining must be
-            -- 400 - 20 - (250..300) = 80..130
+            -- remaining_time is in (2.6, 3], so the previous window weighs
+            -- 300 / 3 * remaining_time = 260..300 and the remaining must be
+            -- 400 - 20 - (260..300) = 80..120; assert up to 130 to keep
+            -- headroom for scheduling delay between the wait and the call
             if remaining >= 80 and remaining <= 130 then
                 ngx.say("ok")
             else
