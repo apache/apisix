@@ -258,7 +258,44 @@ same body
 
 
 
-=== TEST 5c: build_request does not reuse raw body after an earlier rewrite
+=== TEST 5c: build_request sends the parsed body when the caller offers no raw body
+--- config
+    location /t {
+        content_by_lua_block {
+            -- The caller withholds raw_request_body whenever the body is no longer
+            -- the client's original -- a converter ran, or an earlier plugin
+            -- rewrote it (ai-request-rewrite marks that on ctx). build_request
+            -- then sends the parsed table.
+            local base = require("apisix.plugins.ai-providers.base")
+            local provider = base.new({
+                capabilities = {
+                    ["openai-chat"] = {
+                        path = "/v1/chat/completions",
+                        host = "localhost",
+                    },
+                },
+            })
+            local opts = {
+                auth = {},
+                conf = {},
+                target_protocol = "openai-chat",
+                target_path = "/v1/chat/completions",
+            }
+
+            local request_body = {messages = {{role = "user", content = "changed"}}}
+            local params = assert(provider:build_request({ssl_verify = false},
+                                                         request_body, opts))
+            ngx.say(type(params.body))
+            ngx.say(params.body == request_body and "table body" or "raw body")
+        }
+    }
+--- response_body
+table
+table body
+
+
+
+=== TEST 5d: build_request reuses the caller's raw body when nothing changes it
 --- config
     location /t {
         content_by_lua_block {
@@ -271,28 +308,21 @@ same body
                     },
                 },
             })
-            local ctx = {
-                ai_target_protocol = "openai-chat",
-                ai_request_body_changed = true,
-                var = {},
-            }
             local opts = {
                 auth = {},
                 conf = {},
-                raw_request_body = '{"messages":[]}',
+                target_protocol = "openai-chat",
                 target_path = "/v1/chat/completions",
+                raw_request_body = '{"messages":[]}',
             }
 
-            local request_body = {messages = {{role = "user", content = "changed"}}}
-            local params = assert(provider:build_request(ctx, {ssl_verify = false},
-                                                         request_body, opts))
-            ngx.say(type(params.body))
-            ngx.say(params.body == request_body and "table body" or "raw body")
+            local params = assert(provider:build_request({ssl_verify = false},
+                                                         {messages = {}}, opts))
+            ngx.say(params.body)
         }
     }
 --- response_body
-table
-table body
+{"messages":[]}
 
 
 

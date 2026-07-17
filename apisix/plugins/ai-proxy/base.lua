@@ -26,6 +26,7 @@ local table   = table
 local exporter = require("apisix.plugins.prometheus.exporter")
 local protocols = require("apisix.plugins.ai-protocols")
 local transport_http = require("apisix.plugins.ai-transport.http")
+local transport_auth = require("apisix.plugins.ai-transport.auth")
 local log_sanitize = require("apisix.utils.log-sanitize")
 local apisix_upstream = require("resty.apisix.upstream")
 
@@ -244,6 +245,50 @@ function _M.before_proxy(conf, ctx, on_error)
 
         extra_opts.target_path = target_path
         extra_opts.target_host = target_host
+        extra_opts.target_protocol = target_proto
+        -- The transport is a pure client, so everything below that depends on the
+        -- downstream request or on ctx is resolved here and handed over via
+        -- extra_opts.
+        extra_opts.header_transform = converter and converter.convert_headers
+
+        -- Credentials that need request state (GCP token cache is keyed on ctx).
+        local instance_auth = ai_instance.auth
+        if instance_auth and instance_auth.gcp then
+            local token, token_err = transport_auth.fetch_gcp_access_token(
+                ctx, ai_instance.name, instance_auth.gcp)
+            if not token then
+                core.log.error("failed to get gcp access token: ", token_err)
+                return 500, {error_msg = "failed to get gcp access token: "
+                                         .. (token_err or "unknown")}
+            end
+            extra_opts.access_token = token
+        end
+
+        -- passthrough proxies the client's method and query string verbatim.
+        if target_proto == "passthrough" then
+            extra_opts.method = core.request.get_method()
+            local client_args = ctx.var.args and core.string.decode_args(ctx.var.args)
+            if type(client_args) == "table" then
+                extra_opts.client_args = client_args
+            end
+        end
+
+        -- Step 2.5: protocol conversion. It lives here rather than in the
+        -- transport because converters stash state on ctx for the response side.
+        local body_for_llm = request_body
+        if converter and converter.convert_request then
+            local converted, conv_err = converter.convert_request(request_body, ctx)
+            if not converted then
+                return 400, {error_msg = conv_err or "invalid protocol"}
+            end
+            body_for_llm = converted
+        elseif not ctx.ai_request_body_changed then
+            -- Nothing has rewritten the body -- neither a converter here nor an
+            -- earlier plugin (ai-request-rewrite marks that on ctx) -- so the
+            -- client's verbatim bytes can be reused, keeping a pure passthrough
+            -- byte-identical and skipping a re-encode.
+            extra_opts.raw_request_body = core.request.get_body()
+        end
 
         local do_request = function()
             ctx.llm_request_start_time = ngx.now()
@@ -251,7 +296,7 @@ function _M.before_proxy(conf, ctx, on_error)
 
             -- Step 3: Build HTTP request params
             local params, build_err, code = ai_provider:build_request(
-                ctx, conf, request_body, extra_opts)
+                conf, body_for_llm, extra_opts)
             if not params then
                 local body = {error_msg = build_err}
                 if code then
