@@ -295,7 +295,7 @@ table body
 
 
 
-=== TEST 5d: build_request reuses the caller's raw body when nothing changes it
+=== TEST 6d: build_request reuses the caller's raw body when nothing changes it
 --- config
     location /t {
         content_by_lua_block {
@@ -326,7 +326,7 @@ table body
 
 
 
-=== TEST 6: llm_options: openai provider maps max_tokens to max_completion_tokens
+=== TEST 7: llm_options: openai provider maps max_tokens to max_completion_tokens
 --- config
     location /t {
         content_by_lua_block {
@@ -369,7 +369,7 @@ max_completion_tokens=555
 
 
 
-=== TEST 7: llm_options: openai-compatible provider maps max_tokens to max_tokens
+=== TEST 8: llm_options: openai-compatible provider maps max_tokens to max_tokens
 --- config
     location /t {
         content_by_lua_block {
@@ -412,7 +412,7 @@ max_tokens=444
 
 
 
-=== TEST 8: llm_options: openai responses API maps max_tokens to max_output_tokens
+=== TEST 9: llm_options: openai responses API maps max_tokens to max_output_tokens
 --- config
     location /t {
         content_by_lua_block {
@@ -455,7 +455,7 @@ max_output_tokens=333
 
 
 
-=== TEST 9: llm_options: ai-proxy-multi per-instance override
+=== TEST 10: llm_options: ai-proxy-multi per-instance override
 --- config
     location /t {
         content_by_lua_block {
@@ -502,7 +502,7 @@ max_completion_tokens=222
 
 
 
-=== TEST 10: llm_options always force-overwrites client value
+=== TEST 11: llm_options always force-overwrites client value
 --- config
     location /t {
         content_by_lua_block {
@@ -547,7 +547,7 @@ max_tokens=555
 
 
 
-=== TEST 11: request_body: openai-chat override writes fields on outgoing body
+=== TEST 12: request_body: openai-chat override writes fields on outgoing body
 --- config
     location /t {
         content_by_lua_block {
@@ -595,7 +595,7 @@ max_tokens=555 temperature=0.1
 
 
 
-=== TEST 12: request_body: non-force deep merge fills missing nested keys without overwriting existing
+=== TEST 13: request_body: non-force deep merge fills missing nested keys without overwriting existing
 --- config
     location /t {
         content_by_lua_block {
@@ -644,7 +644,7 @@ include_usage=true extra=1
 
 
 
-=== TEST 13: request_body: array values are replaced wholesale (stop sequences)
+=== TEST 14: request_body: array values are replaced wholesale (stop sequences)
 --- config
     location /t {
         content_by_lua_block {
@@ -690,7 +690,7 @@ stop=["a","b"]
 
 
 
-=== TEST 14: request_body: override keyed by non-matching target protocol is ignored
+=== TEST 15: request_body: override keyed by non-matching target protocol is ignored
 --- config
     location /t {
         content_by_lua_block {
@@ -733,7 +733,7 @@ max_tokens=nil
 
 
 
-=== TEST 15: request_body: default mode - client value takes priority
+=== TEST 16: request_body: default mode - client value takes priority
 --- config
     location /t {
         content_by_lua_block {
@@ -778,7 +778,7 @@ max_tokens=999
 
 
 
-=== TEST 16: request_body: force_override mode - override overwrites client fields
+=== TEST 17: request_body: force_override mode - override overwrites client fields
 --- config
     location /t {
         content_by_lua_block {
@@ -824,7 +824,7 @@ max_tokens=555
 
 
 
-=== TEST 17: request_body: override applies to target protocol after converter
+=== TEST 18: request_body: override applies to target protocol after converter
 --- config
     location /t {
         content_by_lua_block {
@@ -871,7 +871,7 @@ max_tokens=77 has_messages=true
 
 
 
-=== TEST 18: ai-proxy-multi per-instance request_body override
+=== TEST 19: ai-proxy-multi per-instance request_body override
 --- config
     location /t {
         content_by_lua_block {
@@ -919,7 +919,7 @@ max_tokens=321
 
 
 
-=== TEST 19: both llm_options and request_body coexist, request_body wins
+=== TEST 20: both llm_options and request_body coexist, request_body wins
 --- config
     location /t {
         content_by_lua_block {
