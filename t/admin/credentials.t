@@ -110,7 +110,7 @@ passed
                      "desc": "basic-auth for jack",
                      "plugins": {
                          "basic-auth": {
-                             "username": "the-user",
+                             "username": "the-new-user",
                              "password": "the-password"
                          }
                      }
@@ -119,7 +119,7 @@ passed
                     "value":{
                         "desc":"basic-auth for jack",
                         "id":"credential_a",
-                        "plugins":{"basic-auth":{"username":"the-user","password":"WvF5kpaLvIzjuk4GNIMTJg=="}}
+                        "plugins":{"basic-auth":{"username":"the-new-user","password":"WvF5kpaLvIzjuk4GNIMTJg=="}}
                     },
                     "key":"/apisix/consumers/jack/credentials/credential_a"
                 }]]
@@ -492,3 +492,315 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"missing credential id"}
+
+
+
+=== TEST 17: prepare consumers for duplicate key checks
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{ "username": "alex" }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                     "username": "bob",
+                     "plugins": {
+                         "key-auth": {
+                             "key": "the-key-of-bob"
+                         }
+                     }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 18: create a credential with key-auth for consumer alex
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers/alex/credentials/cred-alex-a',
+                ngx.HTTP_PUT,
+                [[{
+                     "plugins": {
+                         "key-auth": {
+                             "key": "the-key-of-alex"
+                         }
+                     }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 19: credential of another consumer duplicates the credential key, should fail
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            -- the duplicate check runs against the locally synced consumer
+            -- data, wait until the watcher catches up with the previous write
+            local find_consumer = require("apisix.consumer").find_consumer
+            for _ = 1, 100 do
+                if find_consumer("key-auth", "key", "the-key-of-alex") then
+                    break
+                end
+                ngx.sleep(0.05)
+            end
+
+            local code, body = t('/apisix/admin/consumers/bob/credentials/cred-bob-a',
+                ngx.HTTP_PUT,
+                [[{
+                     "plugins": {
+                         "key-auth": {
+                             "key": "the-key-of-alex"
+                         }
+                     }
+                }]]
+            )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"duplicate key of plugin key-auth found with credential: cred-alex-a of consumer: alex"}
+
+
+
+=== TEST 20: credential duplicates the key of another consumer, should fail
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            -- the duplicate check runs against the locally synced consumer
+            -- data, wait until the watcher catches up with the previous write
+            local find_consumer = require("apisix.consumer").find_consumer
+            for _ = 1, 100 do
+                if find_consumer("key-auth", "key", "the-key-of-bob") then
+                    break
+                end
+                ngx.sleep(0.05)
+            end
+
+            local code, body = t('/apisix/admin/consumers/alex/credentials/cred-alex-b',
+                ngx.HTTP_PUT,
+                [[{
+                     "plugins": {
+                         "key-auth": {
+                             "key": "the-key-of-bob"
+                         }
+                     }
+                }]]
+            )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"duplicate key of plugin key-auth found with consumer: bob"}
+
+
+
+=== TEST 21: consumer duplicates the key of an existing credential, should fail
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            -- the duplicate check runs against the locally synced consumer
+            -- data, wait until the watcher catches up with the previous write
+            local find_consumer = require("apisix.consumer").find_consumer
+            for _ = 1, 100 do
+                if find_consumer("key-auth", "key", "the-key-of-alex") then
+                    break
+                end
+                ngx.sleep(0.05)
+            end
+
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                     "username": "carol",
+                     "plugins": {
+                         "key-auth": {
+                             "key": "the-key-of-alex"
+                         }
+                     }
+                }]]
+            )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"duplicate key of plugin key-auth found with credential: cred-alex-a of consumer: alex"}
+
+
+
+=== TEST 22: update the credential with its own key unchanged, should success
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers/alex/credentials/cred-alex-a',
+                ngx.HTTP_PUT,
+                [[{
+                     "desc": "new description",
+                     "plugins": {
+                         "key-auth": {
+                             "key": "the-key-of-alex"
+                         }
+                     }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 23: sibling credential of the same consumer duplicates the key, should fail
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            -- the duplicate check runs against the locally synced consumer
+            -- data, wait until the watcher catches up with the previous write
+            local find_consumer = require("apisix.consumer").find_consumer
+            for _ = 1, 100 do
+                if find_consumer("key-auth", "key", "the-key-of-alex") then
+                    break
+                end
+                ngx.sleep(0.05)
+            end
+
+            local code, body = t('/apisix/admin/consumers/alex/credentials/cred-alex-c',
+                ngx.HTTP_PUT,
+                [[{
+                     "plugins": {
+                         "key-auth": {
+                             "key": "the-key-of-alex"
+                         }
+                     }
+                }]]
+            )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"duplicate key of plugin key-auth found with credential: cred-alex-a of consumer: alex"}
+
+
+
+=== TEST 24: credential duplicates the key of its own consumer, should fail
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            -- the duplicate check runs against the locally synced consumer
+            -- data, wait until the watcher catches up with the previous write
+            local find_consumer = require("apisix.consumer").find_consumer
+            for _ = 1, 100 do
+                if find_consumer("key-auth", "key", "the-key-of-bob") then
+                    break
+                end
+                ngx.sleep(0.05)
+            end
+
+            local code, body = t('/apisix/admin/consumers/bob/credentials/cred-bob-b',
+                ngx.HTTP_PUT,
+                [[{
+                     "plugins": {
+                         "key-auth": {
+                             "key": "the-key-of-bob"
+                         }
+                     }
+                }]]
+            )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"duplicate key of plugin key-auth found with consumer: bob"}
+
+
+
+=== TEST 25: clean up consumers and credentials
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            for _, name in ipairs({"alex", "bob", "jack"}) do
+                local code, body = t('/apisix/admin/consumers/' .. name, ngx.HTTP_DELETE)
+                if code >= 300 then
+                    ngx.say("failed to delete consumer ", name, ": ", body)
+                    return
+                end
+            end
+            ngx.say("passed")
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed

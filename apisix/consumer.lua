@@ -24,6 +24,7 @@ local error          = error
 local ipairs         = ipairs
 local pairs          = pairs
 local type           = type
+local tostring       = tostring
 local string_sub     = string.sub
 local consumers
 
@@ -289,6 +290,114 @@ function _M.find_consumer(plugin_name, key, key_value)
     local consumers = _M.consumers_kv(plugin_name, consumer_conf, key)
     consumer = consumers[key_value]
     return consumer, consumer_conf
+end
+
+
+-- The auth plugins below match the consumer by a unique key attribute, which is
+-- the attribute that find_consumer() is called with at runtime. Duplicating such
+-- keys across consumers/credentials makes the runtime matching ambiguous: the
+-- last loaded consumer silently wins.
+local plugin_unique_key_attrs = {
+    ["key-auth"]   = "key",
+    ["basic-auth"] = "username",
+    ["jwt-auth"]   = "key",
+    ["hmac-auth"]  = "key_id",
+    ["ldap-auth"]  = "user_dn",
+}
+
+
+local function get_auth_unique_keys(plugins_conf)
+    local keys
+    for plugin_name, plugin_conf in pairs(plugins_conf) do
+        local key_attr = plugin_unique_key_attrs[plugin_name]
+        if key_attr and type(plugin_conf) == "table" then
+            local key_value = plugin_conf[key_attr]
+            if type(key_value) == "string" then
+                if secret.is_secret_ref(key_value) then
+                    core.log.info("skip duplicate check for the ", key_attr,
+                                  " of plugin ", plugin_name,
+                                  ": secret reference cannot be resolved at write time")
+                else
+                    keys = keys or {}
+                    keys[plugin_name] = key_value
+                end
+            end
+        end
+    end
+
+    return keys
+end
+
+
+-- Reject the write when an auth plugin key in plugins_conf is already used by
+-- another consumer or credential, since the runtime consumer matching can not
+-- distinguish them.
+--
+-- The lookup goes through find_consumer(), i.e. the consumer data that this
+-- process has already watched and synced from etcd -- the same view the
+-- runtime uses for auth matching -- instead of pulling the full /consumers
+-- range from etcd on every admin write. The tradeoff is that the local view
+-- may lag the latest writes by one sync cycle, so a duplicate written moments
+-- earlier can slip through under rapid successive or concurrent writes. This
+-- is accepted: the check is best-effort protection against misconfiguration,
+-- and the authoritative behavior at runtime remains last-loaded-wins.
+--
+-- When writing a consumer, consumer_name is its username and credential_id is
+-- nil: a key owned by the consumer itself (inline or by its credentials) is
+-- not treated as a duplicate. When writing a credential, both consumer_name
+-- and credential_id are set: only the credential itself is skipped.
+function _M.check_duplicate_key(plugins_conf, consumer_name, credential_id)
+    if not plugins_conf then
+        return true
+    end
+
+    -- the /consumers watcher may not be initialized yet, e.g. the write
+    -- arrives right after the worker starts: degrade to allow, consistent
+    -- with the best-effort nature of this check
+    if not consumers then
+        return true
+    end
+
+    local in_keys = get_auth_unique_keys(plugins_conf)
+    if not in_keys then
+        return true
+    end
+
+    -- the credential id may come from the request payload as a number, while
+    -- the cached credential_id is taken from the etcd key as a string
+    if credential_id then
+        credential_id = tostring(credential_id)
+    end
+
+    for plugin_name, key_value in pairs(in_keys) do
+        local key_attr = plugin_unique_key_attrs[plugin_name]
+        local owner = _M.find_consumer(plugin_name, key_attr, key_value)
+        if owner then
+            local is_self
+            if credential_id then
+                -- a credential does not conflict with itself
+                is_self = owner.consumer_name == consumer_name
+                          and owner.credential_id == credential_id
+            else
+                -- a consumer does not conflict with itself or its own credentials
+                is_self = owner.consumer_name == consumer_name
+            end
+
+            if not is_self then
+                local owner_desc
+                if owner.credential_id then
+                    owner_desc = "credential: " .. owner.credential_id ..
+                                 " of consumer: " .. owner.consumer_name
+                else
+                    owner_desc = "consumer: " .. owner.consumer_name
+                end
+                return nil, "duplicate " .. key_attr .. " of plugin " .. plugin_name
+                            .. " found with " .. owner_desc
+            end
+        end
+    end
+
+    return true
 end
 
 
