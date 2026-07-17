@@ -193,6 +193,42 @@ function _M.extract_end_user_id(body)
 end
 
 
+-- Append an input item's text into `contents`. An item may be a plain string, a
+-- message object ({content = string | {parts}}), or a bare content part
+-- ({text = "..."}); text parts are flattened so consumers get plain strings.
+local function append_item_text(contents, item)
+    if type(item) == "string" then
+        core.table.insert(contents, item)
+        return
+    end
+    if type(item) ~= "table" then
+        return
+    end
+    local content = item.content
+    if type(content) == "string" then
+        core.table.insert(contents, content)
+    elseif type(content) == "table" then
+        for _, part in ipairs(content) do
+            if type(part) == "table" and type(part.text) == "string" then
+                core.table.insert(contents, part.text)
+            end
+        end
+    elseif content == nil and type(item.text) == "string" then
+        core.table.insert(contents, item.text)
+    elseif content == nil and type(item.output) == "string" then
+        -- Responses-API tool result (function_call_output)
+        core.table.insert(contents, item.output)
+    elseif content == nil and type(item.output) == "table" then
+        -- function_call_output.output may be an array of content parts
+        for _, part in ipairs(item.output) do
+            if type(part) == "table" and type(part.text) == "string" then
+                core.table.insert(contents, part.text)
+            end
+        end
+    end
+end
+
+
 --- Extract all text content from a request body for moderation.
 function _M.extract_request_content(body)
     local contents = {}
@@ -201,40 +237,47 @@ function _M.extract_request_content(body)
         core.table.insert(contents, input)
     elseif type(input) == "table" then
         for _, item in ipairs(input) do
-            if type(item) == "string" then
-                core.table.insert(contents, item)
-            elseif type(item) == "table" and item.content then
-                if type(item.content) == "string" then
-                    core.table.insert(contents, item.content)
-                elseif type(item.content) == "table" then
-                    for _, part in ipairs(item.content) do
-                        if type(part) == "table" and part.text then
-                            core.table.insert(contents, part.text)
-                        end
-                    end
-                end
-            end
+            append_item_text(contents, item)
         end
     end
-    if body.instructions then
+    if type(body.instructions) == "string" then
         core.table.insert(contents, body.instructions)
     end
     return contents
 end
 
 
--- Extract user input text for request moderation. A plain-string `input` is the
--- user's content. For an `input` array, only user-role items are considered
--- (mode "last" = latest user turn, "all" = every user item); `instructions` (the
--- system prompt) and non-user items are ignored.
-local function is_user_item(item)
-    return type(item) == "string" or (type(item) == "table" and item.role == "user")
+-- Whether an input item belongs to a selected turn role. A bare string is user
+-- text; a role item matches when its role is in `roles`; a Responses-API tool
+-- result (`function_call_output`, which has no role) matches when tool is selected.
+local function turn_item_matches(item, roles)
+    if type(item) == "string" then
+        return roles.user and true or false
+    end
+    if type(item) ~= "table" then
+        return false
+    end
+    if item.role ~= nil then
+        return roles[item.role] and true or false
+    end
+    if roles.tool and item.type == "function_call_output" then
+        return true
+    end
+    return false
 end
-function _M.extract_user_content(body, mode)
+
+
+-- Extract turn-role (user/tool) input text for request moderation. A plain-string
+-- `input` is user content. For an `input` array, mode "last" = the latest
+-- consecutive block of selected-role items, "all" = every selected-role item.
+-- `instructions` (the system prompt) is handled by extract_system_content.
+function _M.extract_turn_content(body, mode, roles)
     local contents = {}
     local input = body.input
     if type(input) == "string" then
-        core.table.insert(contents, input)
+        if roles.user then
+            core.table.insert(contents, input)
+        end
         return contents
     end
     if type(input) ~= "table" then
@@ -244,7 +287,7 @@ function _M.extract_user_content(body, mode)
     if mode ~= "all" then
         start_idx = nil
         for i = #input, 1, -1 do
-            if is_user_item(input[i]) then
+            if turn_item_matches(input[i], roles) then
                 start_idx = i
             else
                 break
@@ -255,18 +298,25 @@ function _M.extract_user_content(body, mode)
         end
     end
     for i = start_idx, #input do
-        local item = input[i]
-        if type(item) == "string" then
-            core.table.insert(contents, item)
-        elseif type(item) == "table" and item.role == "user" and item.content then
-            if type(item.content) == "string" then
-                core.table.insert(contents, item.content)
-            elseif type(item.content) == "table" then
-                for _, part in ipairs(item.content) do
-                    if type(part) == "table" and part.text then
-                        core.table.insert(contents, part.text)
-                    end
-                end
+        if turn_item_matches(input[i], roles) then
+            append_item_text(contents, input[i])
+        end
+    end
+    return contents
+end
+
+
+-- Extract system-role text for request moderation. Responses API carries the
+-- system prompt in `instructions`; an `input` array may also hold system items.
+function _M.extract_system_content(body)
+    local contents = {}
+    if type(body.instructions) == "string" then
+        core.table.insert(contents, body.instructions)
+    end
+    if type(body.input) == "table" then
+        for _, item in ipairs(body.input) do
+            if type(item) == "table" and item.role == "system" then
+                append_item_text(contents, item)
             end
         end
     end
@@ -286,14 +336,17 @@ function _M.get_messages(body)
         core.table.insert(messages, {role = "user", content = input})
     elseif type(input) == "table" then
         for _, item in ipairs(input) do
-            if type(item) == "string" then
-                core.table.insert(messages, {role = "user", content = item})
-            elseif type(item) == "table" then
-                local role = item.role or "user"
-                local content = item.content or item.text
-                if type(content) == "string" then
-                    core.table.insert(messages, {role = role, content = content})
-                end
+            local role = "user"
+            if type(item) == "table" and type(item.role) == "string" then
+                role = item.role
+            end
+            local texts = {}
+            append_item_text(texts, item)
+            if #texts > 0 then
+                core.table.insert(messages, {
+                    role = role,
+                    content = table.concat(texts, " "),
+                })
             end
         end
     end

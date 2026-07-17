@@ -573,3 +573,173 @@ apisix:
     }
 --- response_body
 ["bar","test"]
+
+
+
+=== TEST 14: limit-count redis_password is encrypted in etcd
+--- yaml_config
+apisix:
+    data_encryption:
+        enable_encrypt_fields: true
+        keyring:
+            - edd1c9f0985e76a2
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "limit-count": {
+                            "count": 1,
+                            "time_window": 60,
+                            "policy": "redis",
+                            "redis_host": "127.0.0.1",
+                            "redis_password": "foobar"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {"127.0.0.1:1980": 1},
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.sleep(0.1)
+
+            -- admin API returns the decrypted value
+            local code, message, res = t('/apisix/admin/routes/1', ngx.HTTP_GET)
+            res = json.decode(res)
+            ngx.say(res.value.plugins["limit-count"].redis_password)
+
+            -- etcd stores the encrypted value
+            local etcd = require("apisix.core.etcd")
+            local res = assert(etcd.get('/routes/1'))
+            local stored = res.body.node.value.plugins["limit-count"].redis_password
+            ngx.say(stored == "foobar" and "plaintext" or "encrypted")
+        }
+    }
+--- response_body
+foobar
+encrypted
+
+
+
+=== TEST 15: limit-req redis_password is encrypted in etcd
+--- yaml_config
+apisix:
+    data_encryption:
+        enable_encrypt_fields: true
+        keyring:
+            - edd1c9f0985e76a2
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "limit-req": {
+                            "rate": 1,
+                            "burst": 0,
+                            "key": "remote_addr",
+                            "policy": "redis",
+                            "redis_host": "127.0.0.1",
+                            "redis_password": "foobar"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {"127.0.0.1:1980": 1},
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.sleep(0.1)
+
+            local code, message, res = t('/apisix/admin/routes/1', ngx.HTTP_GET)
+            res = json.decode(res)
+            ngx.say(res.value.plugins["limit-req"].redis_password)
+
+            local etcd = require("apisix.core.etcd")
+            local res = assert(etcd.get('/routes/1'))
+            local stored = res.body.node.value.plugins["limit-req"].redis_password
+            ngx.say(stored == "foobar" and "plaintext" or "encrypted")
+        }
+    }
+--- response_body
+foobar
+encrypted
+
+
+
+=== TEST 16: limit-conn redis_password is encrypted in etcd
+--- yaml_config
+apisix:
+    data_encryption:
+        enable_encrypt_fields: true
+        keyring:
+            - edd1c9f0985e76a2
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "limit-conn": {
+                            "conn": 1,
+                            "burst": 0,
+                            "default_conn_delay": 0.1,
+                            "key": "remote_addr",
+                            "policy": "redis",
+                            "redis_host": "127.0.0.1",
+                            "redis_password": "foobar"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {"127.0.0.1:1980": 1},
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.sleep(0.1)
+
+            local code, message, res = t('/apisix/admin/routes/1', ngx.HTTP_GET)
+            res = json.decode(res)
+            ngx.say(res.value.plugins["limit-conn"].redis_password)
+
+            local etcd = require("apisix.core.etcd")
+            local res = assert(etcd.get('/routes/1'))
+            local stored = res.body.node.value.plugins["limit-conn"].redis_password
+            ngx.say(stored == "foobar" and "plaintext" or "encrypted")
+        }
+    }
+--- response_body
+foobar
+encrypted

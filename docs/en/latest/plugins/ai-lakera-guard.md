@@ -47,11 +47,7 @@ The `ai-lakera-guard` Plugin should be used with either the [`ai-proxy`](./ai-pr
 
 Requests that did not pass through `ai-proxy`/`ai-proxy-multi` (for example plain HTTP traffic when the Plugin is bound at the Consumer or Service level) cannot be inspected. By default such requests are passed through unchecked; this is configurable via `fail_mode`.
 
-:::note
-
-This release scans **requests** only (`direction: input`). Response and streaming scanning are added in later releases.
-
-:::
+The Plugin can scan the request prompt (`direction: input`), the LLM response (`direction: output`), or both (`direction: both`), for non-streaming and streaming (SSE) traffic alike. See [Scanning direction](#scanning-direction) for the behavior of each, including how streamed responses are buffered before they reach the client.
 
 ## Attributes
 
@@ -60,7 +56,7 @@ This release scans **requests** only (`direction: input`). Response and streamin
 | api_key | string | True | | | Lakera Guard API key, sent as `Authorization: Bearer`. The value is encrypted with AES before being stored in etcd, and supports [secret references](../terminology/secret.md) (`$secret://`) and environment variables (`$env://`). |
 | lakera_endpoint | string | False | `https://api.lakera.ai/v2/guard` | | Lakera Guard v2 endpoint. Override for regional or self-hosted instances. |
 | project_id | string | False | | | Lakera project whose policy (detectors and thresholds) to apply. If unset, the account default policy is used. |
-| direction | string | False | `input` | `input` | Which traffic to scan. Only `input` (request) is supported in this release. |
+| direction | string | False | `input` | `input`, `output`, `both` | Which traffic to scan. `input` scans the request prompt; `output` scans the LLM response; `both` scans the request and then, only if the request passed, the response. See [Scanning direction](#scanning-direction). |
 | action | string | False | `block` | `block`, `alert` | How a flagged verdict is handled. `block` denies the request; `alert` is a log-only shadow mode that passes flagged requests through. This only governs flagged verdicts — Lakera API errors/timeouts are still controlled by `fail_open` even in `alert` mode. |
 | fail_open | boolean | False | `false` | | Behavior when Lakera cannot be reached (timeout, connection error, non-2xx, decode failure). `false` (fail-closed) blocks the request; `true` (fail-open) allows it. A successful `flagged: false` always passes. |
 | fail_mode | string | False | `"skip"` | `skip`, `warn`, `error` | Behavior when the request is not a recognized AI request that this Plugin can inspect (for example, plain HTTP traffic on a Consumer-bound Plugin, or a request that did not pass through `ai-proxy`). `skip`: let the request pass through unchecked; `warn`: pass through and log a warning; `error`: reject the request. Distinct from `fail_open`, which governs Lakera API failures. |
@@ -69,6 +65,29 @@ This release scans **requests** only (`direction: input`). Response and streamin
 | reveal_failure_categories | boolean | False | `false` | | If `true`, append the matched Lakera `detector_type`s (with their confidence result) to the deny message returned to the client. The full per-detector `breakdown` is always requested from Lakera and written to the gateway logs regardless of this setting; this flag only controls client-facing exposure. |
 | deny_code | integer | False | `200` | 200 - 599 | HTTP status code returned when a request is blocked. Defaults to `200` so the body — a provider-compatible chat completion (or SSE) carrying `request_failure_message` — parses as a normal refusal in client SDKs (matching how Lakera Guard itself returns `200` with a verdict). Set a 4xx (e.g. `403`) if you prefer blocks to surface as HTTP errors. |
 | request_failure_message | string | False | `Request blocked by Lakera Guard` | | Refusal text returned (as the assistant message of a provider-compatible response) when a request is blocked. |
+| response_failure_message | string | False | `Response blocked by Lakera Guard` | | Refusal text returned (as the assistant message of a provider-compatible response) when an LLM response is blocked (`direction` `output` or `both`). |
+
+## Scanning direction
+
+The `direction` attribute controls which traffic Lakera scans:
+
+- **`input`** (default): the request prompt is scanned before it reaches the LLM. A flagged request is never forwarded; the deny carries `request_failure_message`.
+- **`output`**: the request is forwarded unscanned, and the LLM response is scanned before it reaches the client. A flagged response is replaced with a deny carrying `response_failure_message`.
+- **`both`**: the request is scanned first; if it passes, the response is scanned too. A flagged request is blocked before the LLM is called (carrying `request_failure_message`), saving an upstream call; otherwise a flagged response is blocked afterwards (carrying `response_failure_message`).
+
+Response scanning (`output`/`both`) requires `ai-proxy`/`ai-proxy-multi`, which assembles the completion text the Plugin sends to Lakera.
+
+### Streaming responses
+
+When the response is streamed (`stream: true`) in `block` mode, the Plugin **buffers the full SSE response, scans the assembled completion once, and only then releases it** to the client. This is required to enforce a block: partial flagged tokens must never reach the client. A clean response is forwarded with its original SSE framing intact; a flagged response is replaced with a provider-compatible deny SSE terminated by `data: [DONE]`. In `alert` mode, buffering follows `fail_open`: with `fail_open: true` chunks flow through live, token by token (nothing can block); with `fail_open: false` (the default) the stream is buffered like `block` mode so a Lakera error/timeout still fails closed, while a flagged verdict is released and only logged (see [Roll Out in Shadow Mode First](#roll-out-in-shadow-mode-first)).
+
+:::note
+
+In `block` mode the Plugin holds the whole streamed response until scanning finishes, then releases it. The client receives it in one piece after the check rather than token by token. A blocked stream is always returned as the deny message in the response body — once a stream has started, the `deny_code` status can no longer be applied.
+
+Some LLM providers stream responses in a way the Plugin cannot reassemble for scanning. When a response cannot be scanned, the Plugin cannot confirm it is safe, so it follows `fail_open`: by default (fail-closed) the response is blocked; with `fail_open: true` it is passed through unscanned and a warning is logged. The same applies when the gateway aborts a stream via `ai-proxy`'s `max_stream_duration_ms` or `max_response_bytes` safeguards, or when the upstream ends the stream without a terminal event: the buffered content has no assembled completion to scan and is handled per `fail_open` above. Only a client disconnect leaves the held content undelivered. A response the Plugin *can* reassemble but that contains no assistant text — for example a tool-call-only turn — has nothing to scan and is released unscanned, matching the non-streaming path (tool-call arguments themselves are not sent to Lakera).
+
+:::
 
 ## Examples
 
@@ -333,6 +352,22 @@ curl -i "http://127.0.0.1:9080/anything" -X POST \
 ```
 
 You should receive an `HTTP/1.1 200 OK` response with the model output, since Lakera did not flag the request.
+
+### Scan Responses as Well as Requests
+
+To also scan what the LLM returns such as catching leaked PII, policy violations, or injection payloads echoed back in the completion, set `direction` to `both` (or `output` to scan only the response). A flagged response is replaced with a provider-compatible deny carrying `response_failure_message`; streamed responses are buffered, scanned, and then released (see [Scanning direction](#scanning-direction)).
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes/ai-lakera-guard-route" -X PATCH \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "plugins": {
+      "ai-lakera-guard": {
+        "direction": "both"
+      }
+    }
+  }'
+```
 
 ### Roll Out in Shadow Mode First
 

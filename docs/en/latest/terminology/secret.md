@@ -23,10 +23,10 @@ title: Secret
 
 ## Description
 
-Secrets refer to any sensitive information required during the running process of APISIX, which may be part of the core configuration (such as the etcd's password) or some sensitive information in the plugin. Common types of Secrets in APISIX include:
+Secrets refer to any sensitive information required during the running process of APISIX, which may be part of the core configuration (such as the etcd's password), cryptographic material or some sensitive information in the plugin. Common types of Secrets in APISIX include:
 
 - username, the password for some components (etcd, Redis, Kafka, etc.)
-- the private key of the certificate
+- the public certificate, private key and ca certificates
 - API key
 - Sensitive plugin configuration fields, typically used for authentication, hashing, signing, or encryption
 

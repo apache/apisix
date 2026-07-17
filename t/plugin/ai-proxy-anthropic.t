@@ -331,7 +331,7 @@ output_config do NOT appear in the converted request.
                 ngx.say("LEAKED: thinking (raw)")
                 return
             end
-            if result.reasoning_effort ~= "medium" then
+            if result.reasoning_effort ~= "high" then
                 ngx.say("reasoning_effort wrong: " .. tostring(result.reasoning_effort))
                 return
             end
@@ -443,37 +443,32 @@ OK
             local converter = require("apisix.plugins.ai-protocols.converters.anthropic-messages-to-openai-chat")
             local ctx = { var = {} }
 
-            -- low: < 4096
-            local r = converter.convert_request({
-                model = "m", max_tokens = 100,
-                messages = {{ role = "user", content = "hi" }},
-                thinking = { type = "enabled", budget_tokens = 2000 },
-            }, ctx)
-            assert(r.reasoning_effort == "low", "low: " .. tostring(r.reasoning_effort))
+            local function effort_of(thinking)
+                local r = converter.convert_request({
+                    model = "m", max_tokens = 100,
+                    messages = {{ role = "user", content = "hi" }},
+                    thinking = thinking,
+                }, ctx)
+                return r.reasoning_effort
+            end
 
-            -- medium: 4096 <= x < 16384
-            r = converter.convert_request({
-                model = "m", max_tokens = 100,
-                messages = {{ role = "user", content = "hi" }},
-                thinking = { type = "enabled", budget_tokens = 8000 },
-            }, ctx)
-            assert(r.reasoning_effort == "medium", "medium: " .. tostring(r.reasoning_effort))
+            -- budget buckets: < 1024 minimal, < 2048 low, < 4096 medium, else high
+            local cases = {
+                { 0, "minimal" }, { 1023, "minimal" },
+                { 1024, "low" }, { 2047, "low" },
+                { 2048, "medium" }, { 4095, "medium" },
+                { 4096, "high" }, { 32000, "high" },
+            }
+            for _, c in ipairs(cases) do
+                local got = effort_of({ type = "enabled", budget_tokens = c[1] })
+                assert(got == c[2], c[1] .. " => " .. tostring(got))
+            end
 
-            -- high: >= 16384
-            r = converter.convert_request({
-                model = "m", max_tokens = 100,
-                messages = {{ role = "user", content = "hi" }},
-                thinking = { type = "enabled", budget_tokens = 32000 },
-            }, ctx)
-            assert(r.reasoning_effort == "high", "high: " .. tostring(r.reasoning_effort))
+            -- enabled without budget_tokens is treated as a zero budget
+            assert(effort_of({ type = "enabled" }) == "minimal", "no budget")
 
             -- disabled: no reasoning_effort
-            r = converter.convert_request({
-                model = "m", max_tokens = 100,
-                messages = {{ role = "user", content = "hi" }},
-                thinking = { type = "disabled" },
-            }, ctx)
-            assert(r.reasoning_effort == nil, "disabled should be nil")
+            assert(effort_of({ type = "disabled" }) == nil, "disabled should be nil")
 
             ngx.say("OK")
         }
@@ -626,7 +621,7 @@ OK
 
 
 
-=== TEST 23: response_format from output_config (json_schema)
+=== TEST 23: response_format from output_config.format (json_schema)
 --- config
     location /t {
         content_by_lua_block {
@@ -634,20 +629,68 @@ OK
             local converter = require("apisix.plugins.ai-protocols.converters.anthropic-messages-to-openai-chat")
             local ctx = { var = {} }
 
+            local schema = {
+                type = "object",
+                properties = { a = { type = "string" }, b = { type = "string" } },
+                required = { "a" },
+            }
             local r = converter.convert_request({
                 model = "m", max_tokens = 100,
                 messages = {{ role = "user", content = "hi" }},
                 output_config = {
-                    type = "json_schema",
-                    json_schema = { name = "response", schema = { type = "object" } },
+                    effort = "high",
+                    format = { type = "json_schema", schema = schema },
                 },
             }, ctx)
 
             assert(r.response_format ~= nil, "response_format missing")
             assert(r.response_format.type == "json_schema", "type: " .. r.response_format.type)
-            assert(r.response_format.json_schema.name == "response", "schema name")
+            assert(r.response_format.json_schema.name == "structured_output", "schema name")
+            assert(r.response_format.json_schema.strict == true, "strict")
+
+            -- strict mode: additionalProperties false, every property required
+            local out = r.response_format.json_schema.schema
+            assert(out.additionalProperties == false, "additionalProperties false")
+            assert(#out.required == 2, "all properties required, got " .. #out.required)
+
+            -- the client's schema must not be mutated in place
+            assert(schema.additionalProperties == nil, "input schema mutated")
+            assert(#schema.required == 1, "input required mutated")
+
             -- output_config should NOT leak
             assert(r.output_config == nil, "output_config leaked")
+
+            -- an object with no properties still needs `required` to be a JSON
+            -- array, and every nested sub-schema has to be normalized too
+            local r2 = converter.convert_request({
+                model = "m", max_tokens = 100,
+                messages = {{ role = "user", content = "hi" }},
+                output_format = { type = "json_schema", schema = {
+                    type = "object",
+                    properties = {
+                        empty = { type = "object", properties = {} },
+                        list = { type = "array", items = {
+                            type = "object", properties = { k = { type = "string" } },
+                        }},
+                        choice = { anyOf = {
+                            { type = "object", properties = { m = { type = "string" } } },
+                        }},
+                        ref = { ["$ref"] = "#/$defs/Inner" },
+                    },
+                    ["$defs"] = {
+                        Inner = { type = "object", properties = { z = { type = "boolean" } } },
+                    },
+                }},
+            }, ctx)
+            local out2 = r2.response_format.json_schema.schema
+            local encoded = core.json.encode(out2)
+            assert(encoded:find('"required":%[%]'), "empty required must encode as []: " .. encoded)
+            assert(out2.properties.empty.additionalProperties == false, "nested empty object")
+            assert(out2.properties.list.items.additionalProperties == false, "array items")
+            assert(out2.properties.choice.anyOf[1].additionalProperties == false, "anyOf branch")
+            assert(out2["$defs"].Inner.additionalProperties == false, "$defs entry")
+            assert(out2["$defs"].Inner.required[1] == "z", "$defs required")
+
             ngx.say("OK")
         }
     }
@@ -658,22 +701,38 @@ OK
 
 
 
-=== TEST 24: response_format from output_format (json_object)
+=== TEST 24: only json_schema output formats become response_format
 --- config
     location /t {
         content_by_lua_block {
             local converter = require("apisix.plugins.ai-protocols.converters.anthropic-messages-to-openai-chat")
             local ctx = { var = {} }
 
+            -- `json_object` is not an Anthropic output format, so nothing is emitted
             local r = converter.convert_request({
                 model = "m", max_tokens = 100,
                 messages = {{ role = "user", content = "hi" }},
                 output_format = { type = "json_object" },
             }, ctx)
-
-            assert(r.response_format ~= nil, "response_format missing")
-            assert(r.response_format.type == "json_object", "type")
+            assert(r.response_format == nil, "json_object should not map to response_format")
             assert(r.output_format == nil, "output_format leaked")
+
+            -- json_schema without a schema is incomplete, so nothing is emitted either
+            r = converter.convert_request({
+                model = "m", max_tokens = 100,
+                messages = {{ role = "user", content = "hi" }},
+                output_format = { type = "json_schema" },
+            }, ctx)
+            assert(r.response_format == nil, "schema-less json_schema")
+
+            -- an empty schema carries nothing to enforce
+            r = converter.convert_request({
+                model = "m", max_tokens = 100,
+                messages = {{ role = "user", content = "hi" }},
+                output_format = { type = "json_schema", schema = {} },
+            }, ctx)
+            assert(r.response_format == nil, "empty json_schema")
+
             ngx.say("OK")
         }
     }
@@ -1176,7 +1235,7 @@ OK
 
 
 
-=== TEST 36: text alongside tool_results → text message + tool messages
+=== TEST 36: text alongside tool_results → tool messages first, then text message
 --- config
     location /t {
         content_by_lua_block {
@@ -1195,12 +1254,12 @@ OK
                 }},
             }, ctx)
 
-            -- text message first, then tool message
+            -- tool message first, then text message
             assert(#r.messages == 2, "expected 2 messages, got " .. #r.messages)
-            assert(r.messages[1].role == "user", "msg 1 role")
-            assert(r.messages[1].content == "Here are the results:", "msg 1 text")
-            assert(r.messages[2].role == "tool", "msg 2 role")
-            assert(r.messages[2].tool_call_id == "call_1", "msg 2 id")
+            assert(r.messages[1].role == "tool", "msg 1 role")
+            assert(r.messages[1].tool_call_id == "call_1", "msg 1 id")
+            assert(r.messages[2].role == "user", "msg 2 role")
+            assert(r.messages[2].content[1].text == "Here are the results:", "msg 2 text")
             ngx.say("OK")
         }
     }
@@ -1314,7 +1373,8 @@ OK
             }, ctx)
             msg = r.messages[1]
             -- Only text should remain (image skipped)
-            assert(msg.content == "Describe this", "empty url skipped: " .. tostring(msg.content))
+            assert(#msg.content == 1, "empty url skipped: " .. #msg.content)
+            assert(msg.content[1].text == "Describe this", "text kept")
 
             -- nil URL source - should be skipped
             r = converter.convert_request({
@@ -1328,7 +1388,8 @@ OK
                 }},
             }, ctx)
             msg = r.messages[1]
-            assert(msg.content == "Test", "nil url skipped: " .. tostring(msg.content))
+            assert(#msg.content == 1, "nil url skipped: " .. #msg.content)
+            assert(msg.content[1].text == "Test", "text kept")
 
             ngx.say("OK")
         }
@@ -1404,8 +1465,9 @@ OK
             assert(r.messages[1].role == "system", "system role")
             assert(type(r.messages[1].content) == "string", "system is string: " .. type(r.messages[1].content))
 
-            -- User message: should be flattened string, no cache_control
-            assert(r.messages[2].content == "Hello", "user content flattened")
+            -- User message: content array without cache_control
+            assert(r.messages[2].content[1].text == "Hello", "user text kept")
+            assert(r.messages[2].content[1].cache_control == nil, "no cache_control in message")
 
             -- Tool: no cache_control field
             local encoded = core.json.encode(r.tools[1])
@@ -1530,6 +1592,16 @@ OK
             local converter = require("apisix.plugins.ai-protocols.converters.anthropic-messages-to-openai-chat")
             local ctx = { var = { llm_model = "gpt-4o" } }
 
+            -- A name that already fits is forwarded untouched, with no mapping
+            local ctx0 = { var = {} }
+            local r0 = converter.convert_request({
+                model = "m", max_tokens = 100,
+                messages = {{ role = "user", content = "Hi" }},
+                tools = {{ name = string.rep("a", 64), input_schema = { type = "object" } }},
+            }, ctx0)
+            assert(r0.tools[1]["function"].name == string.rep("a", 64), "64 chars is fine")
+            assert(ctx0.anthropic_tool_name_map == nil, "no map when nothing is renamed")
+
             -- Tool name with 70 chars (exceeds 64 limit)
             local long_name = string.rep("a", 70)
             local r = converter.convert_request({
@@ -1542,8 +1614,10 @@ OK
                 }},
             }, ctx)
 
-            -- Should be truncated to 64 chars
+            -- <55-char prefix>_<8 hex chars of sha256(name)>, byte-for-byte what
+            -- LiteLLM's truncate_tool_name() produces for the same input
             local oai_name = r.tools[1]["function"].name
+            assert(oai_name == string.rep("a", 55) .. "_6bd5e503", "hashed: " .. oai_name)
             assert(#oai_name == 64, "truncated to 64: " .. #oai_name)
 
             -- Mapping stored in ctx
@@ -1946,3 +2020,462 @@ the empty-object fallback and log "not a JSON object".
 OK
 --- error_log
 not a JSON object
+
+
+
+=== TEST 56: tool_results precede the trailing text message (parallel tool_calls)
+--- config
+    location /t {
+        content_by_lua_block {
+            local converter = require("apisix.plugins.ai-protocols.converters.anthropic-messages-to-openai-chat")
+            local ctx = { var = {} }
+
+            -- assistant emits 2 parallel tool_use blocks, the next user message
+            -- carries both tool_results plus extra text (what Claude Code sends
+            -- when a system-reminder or a queued prompt rides along).
+            local r = converter.convert_request({
+                model = "m", max_tokens = 100,
+                messages = {
+                    { role = "user", content = "start" },
+                    { role = "assistant", content = {
+                        { type = "tool_use", id = "call_a", name = "get_a", input = {} },
+                        { type = "tool_use", id = "call_b", name = "get_b", input = {} },
+                    }},
+                    { role = "user", content = {
+                        { type = "tool_result", tool_use_id = "call_a", content = "a" },
+                        { type = "tool_result", tool_use_id = "call_b", content = "b" },
+                        { type = "text", text = "also explain briefly" },
+                    }},
+                },
+            }, ctx)
+
+            -- every tool message must immediately follow the assistant tool_calls
+            assert(#r.messages == 5, "expected 5 messages, got " .. #r.messages)
+            assert(r.messages[2].role == "assistant", "assistant")
+            assert(#r.messages[2].tool_calls == 2, "2 tool_calls")
+            assert(r.messages[3].role == "tool", "msg 3 role: " .. r.messages[3].role)
+            assert(r.messages[3].tool_call_id == "call_a", "msg 3 id")
+            assert(r.messages[4].role == "tool", "msg 4 role: " .. r.messages[4].role)
+            assert(r.messages[4].tool_call_id == "call_b", "msg 4 id")
+            assert(r.messages[5].role == "user", "msg 5 role")
+            assert(r.messages[5].content[1].text == "also explain briefly", "msg 5 text")
+            ngx.say("OK")
+        }
+    }
+--- response_body
+OK
+--- no_error_log
+[error]
+
+
+
+=== TEST 57: media alongside tool_results is preserved after the tool messages
+--- config
+    location /t {
+        content_by_lua_block {
+            local converter = require("apisix.plugins.ai-protocols.converters.anthropic-messages-to-openai-chat")
+            local ctx = { var = {} }
+
+            local r = converter.convert_request({
+                model = "m", max_tokens = 100,
+                messages = {{
+                    role = "user",
+                    content = {
+                        { type = "tool_result", tool_use_id = "call_1", content = "done" },
+                        { type = "text", text = "look at this" },
+                        { type = "image", source = {
+                            type = "base64", media_type = "image/png", data = "img",
+                        }},
+                    }
+                }},
+            }, ctx)
+
+            assert(#r.messages == 2, "expected 2 messages, got " .. #r.messages)
+            assert(r.messages[1].role == "tool", "tool message first")
+            local content = r.messages[2].content
+            assert(r.messages[2].role == "user", "user message second")
+            assert(type(content) == "table", "multimodal content kept as array")
+            assert(content[1].type == "text", "text part")
+            assert(content[2].type == "image_url", "image part kept")
+            assert(content[2].image_url.url == "data:image/png;base64,img", "image url")
+            ngx.say("OK")
+        }
+    }
+--- response_body
+OK
+--- no_error_log
+[error]
+
+
+
+=== TEST 58: tool_result only (no extra content) emits no trailing message
+--- config
+    location /t {
+        content_by_lua_block {
+            local converter = require("apisix.plugins.ai-protocols.converters.anthropic-messages-to-openai-chat")
+            local ctx = { var = {} }
+
+            local r = converter.convert_request({
+                model = "m", max_tokens = 100,
+                messages = {{
+                    role = "user",
+                    content = {
+                        { type = "tool_result", tool_use_id = "call_1", content = "done" },
+                    }
+                }},
+            }, ctx)
+
+            assert(#r.messages == 1, "expected 1 message, got " .. #r.messages)
+            assert(r.messages[1].role == "tool", "tool message only")
+
+            -- an empty text block is still a block: it becomes a trailing message
+            r = converter.convert_request({
+                model = "m", max_tokens = 100,
+                messages = {{
+                    role = "user",
+                    content = {
+                        { type = "tool_result", tool_use_id = "call_1", content = "done" },
+                        { type = "text", text = "" },
+                    }
+                }},
+            }, ctx)
+            assert(#r.messages == 2, "expected 2 messages, got " .. #r.messages)
+            assert(r.messages[2].content[1].text == "", "empty text block kept")
+            ngx.say("OK")
+        }
+    }
+--- response_body
+OK
+--- no_error_log
+[error]
+
+
+
+=== TEST 59: adaptive thinking → reasoning_effort from output_config.effort
+--- config
+    location /t {
+        content_by_lua_block {
+            local converter = require("apisix.plugins.ai-protocols.converters.anthropic-messages-to-openai-chat")
+
+            local function effort_of(thinking, output_config)
+                local r = converter.convert_request({
+                    model = "m", max_tokens = 100,
+                    messages = {{ role = "user", content = "hi" }},
+                    thinking = thinking,
+                    output_config = output_config,
+                }, { var = {} })
+                return r.reasoning_effort
+            end
+
+            -- output_config.effort is forwarded verbatim: Chat Completions takes
+            -- the same labels (none/minimal/low/medium/high/xhigh)
+            local adaptive = { type = "adaptive" }
+            assert(effort_of(adaptive, { effort = "low" }) == "low", "low")
+            assert(effort_of(adaptive, { effort = "high" }) == "high", "high")
+            assert(effort_of(adaptive, { effort = "xhigh" }) == "xhigh", "xhigh")
+            assert(effort_of(adaptive, { effort = "max" }) == "max", "max")
+            -- adaptive without an explicit effort falls back to medium
+            assert(effort_of(adaptive, nil) == "medium", "default medium")
+            assert(effort_of(adaptive, {}) == "medium", "empty output_config -> medium")
+            assert(effort_of(adaptive, { effort = "" }) == "medium", "empty effort -> medium")
+            -- output_config.effort alone does not enable reasoning
+            assert(effort_of(nil, { effort = "high" }) == nil, "no thinking, no effort")
+            ngx.say("OK")
+        }
+    }
+--- response_body
+OK
+--- no_error_log
+[error]
+
+
+
+=== TEST 60: response_format from output_format (json_schema, beta shape)
+--- config
+    location /t {
+        content_by_lua_block {
+            local converter = require("apisix.plugins.ai-protocols.converters.anthropic-messages-to-openai-chat")
+            local ctx = { var = {} }
+
+            local schema = { type = "object", additionalProperties = false }
+            local r = converter.convert_request({
+                model = "m", max_tokens = 100,
+                messages = {{ role = "user", content = "hi" }},
+                output_format = { type = "json_schema", schema = schema },
+            }, ctx)
+
+            assert(r.response_format.type == "json_schema", "type")
+            assert(r.response_format.json_schema.strict == true, "strict")
+            assert(r.response_format.json_schema.schema.type == "object", "schema forwarded")
+            assert(r.output_format == nil, "output_format leaked")
+
+            -- an absent/empty output_format falls back to output_config.format
+            local r2 = converter.convert_request({
+                model = "m", max_tokens = 100,
+                messages = {{ role = "user", content = "hi" }},
+                output_config = { format = { type = "json_schema", schema = { type = "object" } } },
+            }, { var = {} })
+            assert(r2.response_format ~= nil, "output_config.format used")
+            assert(r2.response_format.json_schema.strict == true, "strict")
+
+            -- the top-level output_format wins when both carry a schema
+            local r3 = converter.convert_request({
+                model = "m", max_tokens = 100,
+                messages = {{ role = "user", content = "hi" }},
+                output_format = { type = "json_schema", schema = { type = "object", title = "beta" } },
+                output_config = { format = { type = "json_schema", schema = { type = "object", title = "ga" } } },
+            }, { var = {} })
+            assert(r3.response_format.json_schema.schema.title == "beta", "output_format wins")
+            ngx.say("OK")
+        }
+    }
+--- response_body
+OK
+--- no_error_log
+[error]
+
+
+
+=== TEST 61: tool_use in history uses the same sanitized name as the tool definition
+--- config
+    location /t {
+        content_by_lua_block {
+            local converter = require("apisix.plugins.ai-protocols.converters.anthropic-messages-to-openai-chat")
+            local ctx = { var = { llm_model = "gpt-4o" } }
+
+            local long_name = string.rep("a", 70)
+            local r = converter.convert_request({
+                model = "m", max_tokens = 100,
+                tools = {
+                    { name = long_name, description = "Long", input_schema = { type = "object" } },
+                    { name = "my tool!x", description = "Invalid chars", input_schema = { type = "object" } },
+                },
+                messages = {
+                    { role = "user", content = "hi" },
+                    { role = "assistant", content = {
+                        { type = "tool_use", id = "call_1", name = long_name, input = {} },
+                        { type = "tool_use", id = "call_2", name = "my tool!x", input = {} },
+                    }},
+                    { role = "user", content = {
+                        { type = "tool_result", tool_use_id = "call_1", content = "ok" },
+                        { type = "tool_result", tool_use_id = "call_2", content = "ok" },
+                    }},
+                },
+            }, ctx)
+
+            local declared_1 = r.tools[1]["function"].name
+            local declared_2 = r.tools[2]["function"].name
+            local called_1 = r.messages[2].tool_calls[1]["function"].name
+            local called_2 = r.messages[2].tool_calls[2]["function"].name
+            assert(called_1 == declared_1, "call 1: " .. called_1 .. " vs " .. declared_1)
+            assert(called_2 == declared_2, "call 2: " .. called_2 .. " vs " .. declared_2)
+            assert(not called_2:find("[^a-zA-Z0-9_%-]"), "valid chars: " .. called_2)
+
+            -- a tool_use whose definition is absent still gets a valid name and
+            -- is restored on the response
+            local ctx2 = { var = { llm_model = "gpt-4o" } }
+            local r2 = converter.convert_request({
+                model = "m", max_tokens = 100,
+                messages = {{ role = "assistant", content = {
+                    { type = "tool_use", id = "call_1", name = "orphan tool!", input = {} },
+                }}},
+            }, ctx2)
+            local orphan = r2.messages[1].tool_calls[1]["function"].name
+            assert(not orphan:find("[^a-zA-Z0-9_%-]"), "orphan sanitized: " .. orphan)
+            assert(ctx2.anthropic_tool_name_map[orphan] == "orphan tool!", "orphan mapped")
+
+            local res = converter.convert_response({
+                id = "msg_1",
+                choices = {{ message = { tool_calls = {{
+                    id = "call_1", type = "function",
+                    ["function"] = { name = orphan, arguments = "{}" },
+                }}}, finish_reason = "tool_calls" }},
+                usage = { prompt_tokens = 10, completion_tokens = 5 },
+            }, ctx2)
+            assert(res.content[1].name == "orphan tool!", "restored: " .. res.content[1].name)
+            ngx.say("OK")
+        }
+    }
+--- response_body
+OK
+--- no_error_log
+[error]
+
+
+
+=== TEST 62: a rewritten tool name does not take a name another tool already owns
+--- config
+    location /t {
+        content_by_lua_block {
+            local converter = require("apisix.plugins.ai-protocols.converters.anthropic-messages-to-openai-chat")
+            local ctx = { var = { llm_model = "gpt-4o" } }
+
+            -- "get weather" sanitizes to "get_weather", which is also a literal
+            -- tool name here; the tool that owns it verbatim must keep it
+            local r = converter.convert_request({
+                model = "m", max_tokens = 100,
+                tools = {
+                    { name = "get weather", description = "A", input_schema = { type = "object" } },
+                    { name = "get_weather", description = "B", input_schema = { type = "object" } },
+                },
+                messages = {
+                    { role = "user", content = "hi" },
+                    { role = "assistant", content = {
+                        { type = "tool_use", id = "c1", name = "get weather", input = {} },
+                        { type = "tool_use", id = "c2", name = "get_weather", input = {} },
+                    }},
+                },
+            }, ctx)
+
+            local n1 = r.tools[1]["function"].name
+            local n2 = r.tools[2]["function"].name
+            assert(n1 ~= n2, "tool names must be unique: " .. n1 .. " vs " .. n2)
+            assert(n2 == "get_weather", "valid name kept: " .. n2)
+            -- history tool_use follows the same mapping
+            assert(r.messages[2].tool_calls[1]["function"].name == n1, "call 1")
+            assert(r.messages[2].tool_calls[2]["function"].name == n2, "call 2")
+
+            -- each openai name restores to the right original
+            local function restore(oai_name)
+                local res = converter.convert_response({
+                    id = "msg_1",
+                    choices = {{ message = { tool_calls = {{
+                        id = "c", type = "function",
+                        ["function"] = { name = oai_name, arguments = "{}" },
+                    }}}, finish_reason = "tool_calls" }},
+                    usage = { prompt_tokens = 1, completion_tokens = 1 },
+                }, ctx)
+                return res.content[1].name
+            end
+            assert(restore(n1) == "get weather", "restore n1: " .. restore(n1))
+            assert(restore(n2) == "get_weather", "restore n2: " .. restore(n2))
+
+            -- a 70-char name truncates onto a 64-char name owned by another tool
+            local ctx2 = { var = { llm_model = "gpt-4o" } }
+            local name64 = string.rep("a", 64)
+            local name70 = string.rep("a", 70)
+            local r2 = converter.convert_request({
+                model = "m", max_tokens = 100,
+                tools = {
+                    { name = name64, description = "A", input_schema = { type = "object" } },
+                    { name = name70, description = "B", input_schema = { type = "object" } },
+                },
+                messages = {{ role = "user", content = "hi" }},
+            }, ctx2)
+            local m1 = r2.tools[1]["function"].name
+            local m2 = r2.tools[2]["function"].name
+            assert(m1 == name64, "64-char name kept as is")
+            assert(m2 ~= m1, "truncated name must not collide: " .. m2)
+            assert(#m2 <= 64, "still within the limit: " .. #m2)
+            assert(ctx2.anthropic_tool_name_map[m2] == name70, "truncated name maps back")
+            assert(ctx2.anthropic_tool_name_map[m1] == nil, "untouched name needs no mapping")
+
+            -- two long names that share their first 64 chars: the hash suffix is
+            -- what keeps them apart
+            local ctx3 = { var = { llm_model = "gpt-4o" } }
+            local prefix = "mcp__server__" .. string.rep("a", 55)
+            local r3 = converter.convert_request({
+                model = "m", max_tokens = 100,
+                tools = {
+                    { name = prefix .. "_one", input_schema = { type = "object" } },
+                    { name = prefix .. "_two", input_schema = { type = "object" } },
+                },
+                messages = {{ role = "user", content = "hi" }},
+            }, ctx3)
+            local p1 = r3.tools[1]["function"].name
+            local p2 = r3.tools[2]["function"].name
+            assert(p1 ~= p2, "shared prefix must not collide: " .. p1)
+            assert(ctx3.anthropic_tool_name_map[p1] == prefix .. "_one", "prefix map 1")
+            assert(ctx3.anthropic_tool_name_map[p2] == prefix .. "_two", "prefix map 2")
+            ngx.say("OK")
+        }
+    }
+--- response_body
+OK
+--- no_error_log
+[error]
+
+
+
+=== TEST 63: content block shaping depends on the role
+--- config
+    location /t {
+        content_by_lua_block {
+            local converter = require("apisix.plugins.ai-protocols.converters.anthropic-messages-to-openai-chat")
+            local ctx = { var = {} }
+
+            local r = converter.convert_request({
+                model = "m", max_tokens = 100,
+                messages = {
+                    -- a user turn keeps its blocks as an array, even a single one
+                    { role = "user", content = {{ type = "text", text = "a" }} },
+                    -- an assistant turn only carries text, so it becomes a string
+                    { role = "assistant", content = {
+                        { type = "text", text = "x" },
+                        { type = "text", text = "y" },
+                    }},
+                    { role = "user", content = {
+                        { type = "text", text = "b" },
+                        { type = "text", text = "c" },
+                    }},
+                    -- a plain string is forwarded as is, whatever the role
+                    { role = "assistant", content = "z" },
+                },
+            }, ctx)
+
+            assert(type(r.messages[1].content) == "table", "user single block is an array")
+            assert(#r.messages[1].content == 1, "one part")
+            assert(r.messages[1].content[1].type == "text", "part type")
+            assert(r.messages[1].content[1].text == "a", "part text")
+
+            assert(r.messages[2].content == "xy", "assistant blocks concatenated: "
+                   .. tostring(r.messages[2].content))
+
+            assert(#r.messages[3].content == 2, "user keeps both blocks")
+            assert(r.messages[4].content == "z", "string content untouched")
+            ngx.say("OK")
+        }
+    }
+--- response_body
+OK
+--- no_error_log
+[error]
+
+
+
+=== TEST 64: tool_choice follows the declared tool name
+--- config
+    location /t {
+        content_by_lua_block {
+            local converter = require("apisix.plugins.ai-protocols.converters.anthropic-messages-to-openai-chat")
+            local ctx = { var = {} }
+
+            local r = converter.convert_request({
+                model = "m", max_tokens = 100,
+                messages = {{ role = "user", content = "hi" }},
+                tools = {{ name = "my tool!x", input_schema = { type = "object" } }},
+                tool_choice = { type = "tool", name = "my tool!x" },
+            }, ctx)
+            local declared = r.tools[1]["function"].name
+            assert(r.tool_choice["function"].name == declared,
+                   "tool_choice must name the declared tool: " .. r.tool_choice["function"].name)
+            assert(ctx.anthropic_tool_name_map[declared] == "my tool!x", "declared tool mapped")
+
+            -- a tool_choice naming a tool that was never declared is left alone,
+            -- and must not invent a mapping the upstream can never produce
+            local ctx2 = { var = {} }
+            local r2 = converter.convert_request({
+                model = "m", max_tokens = 100,
+                messages = {{ role = "user", content = "hi" }},
+                tools = {{ name = "real_tool", input_schema = { type = "object" } }},
+                tool_choice = { type = "tool", name = "ghost tool" },
+            }, ctx2)
+            assert(r2.tool_choice["function"].name == "ghost tool", "undeclared name untouched")
+            assert(ctx2.anthropic_tool_name_map == nil, "no mapping for an undeclared tool")
+            ngx.say("OK")
+        }
+    }
+--- response_body
+OK
+--- no_error_log
+[error]

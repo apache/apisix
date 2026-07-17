@@ -70,6 +70,13 @@ apisix:
   delete_uri_tail_slash: false        # Delete the '/' at the end of the URI
   normalize_uri_like_servlet: false   # If true, use the same path normalization rules as the Java
                                       # servlet specification. See https://github.com/jakartaee/servlet/blob/master/spec/src/main/asciidoc/servlet-spec-body.adoc#352-uri-path-canonicalization, which is used in Tomcat.
+  match_uri_encoded_slash: false       # If true, keep an URL-encoded slash (%2F) encoded when matching
+                                      # routes, so it is treated as part of a path parameter instead of a
+                                      # path separator. Plugins in the rewrite/access phases still read the
+                                      # normalized (decoded) URI from ctx.var.uri; nginx forwards the
+                                      # original request line, so the upstream receives %2F unchanged.
+  max_post_args_readable_size: 64     # Cap (in MB) on the request body read when matching `post_arg.*`
+                                      # route predicates for JSON and multipart requests. Set to 0 to disable the limit.
 
   router:
     http: radixtree_host_uri    # radixtree_host_uri: match route by host and URI
@@ -154,8 +161,13 @@ apisix:
                                         # When set to true, it overrides all upstream healthcheck configurations and globally disabling healthchecks.
 # trusted_addresses:              # When configured, APISIX will trust the `X-Forwarded-*` Headers
 #   - 127.0.0.1                   # passed in requests from the IP/CIDR in the list.
-#   - 172.18.0.0/16               # CAUTION: When not configured or the request from an untrusted address,
-                                  # APISIX will override `X-Forwarded-*` headers with trusted values.
+#   - 172.18.0.0/16               # CAUTION: When not configured or the request is from an untrusted
+                                  # address, APISIX overrides `X-Forwarded-Proto/Host/Port` with trusted
+                                  # values and clears the `Forwarded` header. For `X-Forwarded-For`: when
+                                  # `trusted_addresses` is configured and the request is from an untrusted
+                                  # address, it is reset so the upstream only sees the APISIX-observed
+                                  # connection IP; when `trusted_addresses` is not configured, it is
+                                  # preserved and the connection IP is appended (compatible default).
   # fine tune the parameters of LRU cache for some features like secret
   lru:
     secret:
@@ -538,6 +550,7 @@ plugins:                           # plugin list (sorted by priority)
   - ai-aws-content-moderation      # priority: 1050
   - ai-proxy-multi                 # priority: 1041
   - ai-proxy                       # priority: 1040
+  - ai-cache                       # priority: 1035
   - ai-rate-limiting               # priority: 1030
   - ai-aliyun-content-moderation   # priority: 1029
   - ai-lakera-guard                # priority: 1028

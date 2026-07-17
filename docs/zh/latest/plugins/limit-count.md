@@ -87,6 +87,8 @@ import TabItem from '@theme/TabItem';
 | sentinel_username | string | 否 | | | 如果启用了 Sentinel ACL，则为 Sentinel 用户名。 |
 | sentinel_password | string | 否 | | | 如果启用了 Sentinel ACL，则为 Sentinel 密码。 |
 
+注意：schema 中还定义了 `encrypt_fields = {"redis_password", "sentinel_password"}`，这意味着这些字段将会被加密存储在 etcd 中。具体参考[加密存储字段](../plugin-develop.md#加密存储字段)。
+
 ## 示例
 
 下面的示例演示了如何在不同情况下配置 `limit-count` 。

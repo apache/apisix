@@ -244,11 +244,18 @@ function _M.extract_request_content(body)
 end
 
 
--- Extract text from user-role messages for request moderation.
--- mode "last" (default): only the last consecutive block of user messages (the
--- latest user turn); mode "all": every user message. Non-user roles are ignored
--- (the Anthropic system prompt lives in body.system, not in messages).
-function _M.extract_user_content(body, mode)
+local function is_turn_role(message, roles)
+    return type(message) == "table" and message.role ~= nil and roles[message.role]
+end
+
+
+-- Extract text from turn-role messages (user/tool) for request moderation.
+-- `roles` is a set such as {user = true, tool = true} selecting which roles to
+-- collect. mode "last" (default): only the last consecutive block of messages
+-- whose role is in `roles` (the latest turn); mode "all": every such message.
+-- The Anthropic system prompt lives in body.system and is handled separately by
+-- extract_system_content.
+function _M.extract_turn_content(body, mode, roles)
     local contents = {}
     if type(body.messages) ~= "table" then
         return contents
@@ -258,7 +265,7 @@ function _M.extract_user_content(body, mode)
     if mode ~= "all" then
         start_idx = nil
         for i = #messages, 1, -1 do
-            if type(messages[i]) == "table" and messages[i].role == "user" then
+            if is_turn_role(messages[i], roles) then
                 start_idx = i
             else
                 break
@@ -269,8 +276,26 @@ function _M.extract_user_content(body, mode)
         end
     end
     for i = start_idx, #messages do
-        if type(messages[i]) == "table" and messages[i].role == "user" then
+        if is_turn_role(messages[i], roles) then
             append_message_text(contents, messages[i])
+        end
+    end
+    return contents
+end
+
+
+-- Extract system-role text for request moderation. Anthropic carries the system
+-- prompt in body.system (a string or an array of text blocks), not in messages.
+function _M.extract_system_content(body)
+    local contents = {}
+    if type(body.system) == "string" then
+        core.table.insert(contents, body.system)
+    elseif type(body.system) == "table" then
+        for _, block in ipairs(body.system) do
+            if type(block) == "table" and block.type == "text"
+                    and type(block.text) == "string" then
+                core.table.insert(contents, block.text)
+            end
         end
     end
     return contents
@@ -286,22 +311,13 @@ function _M.get_messages(body)
     end
     if type(body.messages) == "table" then
         for _, message in ipairs(body.messages) do
-            local content = message.content
-            if type(content) == "string" then
-                core.table.insert(messages, {role = message.role, content = content})
-            elseif type(content) == "table" then
-                local texts = {}
-                for _, block in ipairs(content) do
-                    if type(block) == "table" and block.type == "text" then
-                        core.table.insert(texts, block.text)
-                    end
-                end
-                if #texts > 0 then
-                    core.table.insert(messages, {
-                        role = message.role,
-                        content = table.concat(texts, " "),
-                    })
-                end
+            local texts = {}
+            append_message_text(texts, message)
+            if #texts > 0 then
+                core.table.insert(messages, {
+                    role = message.role,
+                    content = table.concat(texts, " "),
+                })
             end
         end
     end

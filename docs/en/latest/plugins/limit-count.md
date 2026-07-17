@@ -86,6 +86,8 @@ You may see the following rate limiting headers in the response:
 | sentinel_username       | string            | False                                     |               |                            | The username for Redis Sentinel if Sentinel ACL is enabled. |
 | sentinel_password       | string            | False                                     |               |                            | The password for Redis Sentinel if Sentinel ACL is enabled. |
 
+NOTE: `encrypt_fields = {"redis_password", "sentinel_password"}` is also defined in the schema, which means that the fields will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
+
 ## Examples
 
 The examples below demonstrate how you can configure `limit-count` in different scenarios.

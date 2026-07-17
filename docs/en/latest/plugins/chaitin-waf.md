@@ -90,7 +90,7 @@ The examples below demonstrate how you can configure chaitin-waf Plugin for diff
 Before proceeding, make sure you have installed [Chaitin WAF (SafeLine)](https://docs.waf.chaitin.com/en/GetStarted/Deploy).
 
 :::note
-Only `X-Forwarded-*` headers sent from addresses in the `apisix.trusted_addresses` configuration (supports IP and CIDR) will be trusted and passed to plugins or upstream. If `apisix.trusted_addresses` is not configured or the IP is not within the configured address range, all `X-Forwarded-*` headers will be overridden with trusted values.
+Only `X-Forwarded-*` headers sent from addresses in the `apisix.trusted_addresses` configuration (supports IP and CIDR) will be trusted and passed to plugins or upstream. If `apisix.trusted_addresses` is not configured or the IP is not within the configured address range, the `X-Forwarded-Proto`, `X-Forwarded-Host`, and `X-Forwarded-Port` headers are overridden with trusted values and the `Forwarded` header is cleared. The `X-Forwarded-For` header is reset to the APISIX-observed connection IP only when `apisix.trusted_addresses` is configured and the request comes from an untrusted address; when `apisix.trusted_addresses` is not configured, it is preserved and the connection IP is appended as the compatible default.
 :::
 
 :::note

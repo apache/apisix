@@ -64,6 +64,7 @@
           "items": [
             "plugins/ai-proxy",
             "plugins/ai-proxy-multi",
+            "plugins/ai-cache",
             "plugins/ai-rate-limiting",
             "plugins/ai-prompt-guard",
             "plugins/ai-aws-content-moderation",

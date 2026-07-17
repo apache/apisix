@@ -36,9 +36,11 @@ import TabItem from '@theme/TabItem';
 
 ## Description
 
-The `ai-aws-content-moderation` Plugin integrates with [AWS Comprehend](https://aws.amazon.com/comprehend/) to check request bodies for toxicity when proxying to LLMs, such as profanity, hate speech, insult, harassment, violence, and more, rejecting requests if the evaluated outcome exceeds the configured threshold.
+The `ai-aws-content-moderation` Plugin integrates with [AWS Comprehend](https://aws.amazon.com/comprehend/) to check request content for toxicity when proxying to LLMs, such as profanity, hate speech, insult, harassment, violence, and more, rejecting requests if the evaluated outcome exceeds the configured threshold.
 
-This Plugin must be used in Routes that proxy requests to LLMs only.
+The Plugin is protocol-aware: it extracts the prompt content from the LLM request (for example `messages[].content`) and moderates only that decoded text, rather than the raw request body.
+
+The `ai-aws-content-moderation` Plugin should be used with either [`ai-proxy`](./ai-proxy.md) or [`ai-proxy-multi`](./ai-proxy-multi.md) Plugin for proxying LLM requests.
 
 ## Plugin Attributes
 
@@ -52,7 +54,10 @@ This Plugin must be used in Routes that proxy requests to LLMs only.
 | `comprehend.ssl_verify` | boolean | False | true | | If true, enable TLS certificate verification. |
 | `moderation_categories` | object | False | | | Key-value pairs of moderation category and their corresponding threshold. In each pair, the key should be one of `PROFANITY`, `HATE_SPEECH`, `INSULT`, `HARASSMENT_OR_ABUSE`, `SEXUAL`, or `VIOLENCE_OR_THREAT`; and the threshold value should be between 0 and 1 (inclusive). |
 | `moderation_threshold` | number | False | 0.5 | 0 - 1 | Overall toxicity threshold. A higher value means more toxic content allowed. This option differs from the individual category thresholds in `moderation_categories`. For example, if `moderation_categories` is set with a `PROFANITY` threshold of `0.5`, and a request has a `PROFANITY` score of `0.1`, the request will not exceed the category threshold. However, if the request has other categories like `SEXUAL` or `VIOLENCE_OR_THREAT` exceeding the `moderation_threshold`, the request will be rejected. |
-| `fail_mode` | string | False | `skip` | `skip`, `warn`, `error` | Behavior when the request body is not a recognized AI request that this plugin can inspect (for example, a non-JSON `multipart/form-data` upload on a Consumer-bound plugin, or a request that did not pass through `ai-proxy`). `skip`: let the request pass through unchecked; `warn`: pass through and log a warning; `error`: reject the request. |
+| `check_request` | boolean | False | `true` | | If `true`, moderate the request content. |
+| `deny_code` | integer | False | `200` | [200, 599] | HTTP status code returned when a request is rejected. Defaults to `200` so the provider-compatible refusal parses as a normal completion in client SDKs; set a 4xx to surface denies as HTTP errors instead. |
+| `deny_message` | string | False | | | Message returned when a request is rejected. If unset, the moderation reason (for example `request body exceeds toxicity threshold`) is returned. |
+| `fail_mode` | string | False | `skip` | `skip`, `warn`, `error` | Behavior when the request did not pass through `ai-proxy`/`ai-proxy-multi` and therefore cannot be moderated as an AI request. `skip`: let the request pass through unchecked; `warn`: pass through and log a warning; `error`: reject the request. |
 
 ## Examples
 
@@ -103,7 +108,8 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
         },
         "moderation_categories": {
           "PROFANITY": 0.1
-        }
+        },
+        "deny_code": 400
       },
       "ai-proxy": {
         "provider": "openai",
@@ -142,6 +148,7 @@ services:
               region: us-east-1
             moderation_categories:
               PROFANITY: 0.1
+            deny_code: 400
           ai-proxy:
             provider: openai
             auth:
@@ -181,6 +188,7 @@ spec:
           region: us-east-1
         moderation_categories:
           PROFANITY: 0.1
+        deny_code: 400
     - name: ai-proxy
       config:
         provider: openai
@@ -242,6 +250,7 @@ spec:
               region: us-east-1
             moderation_categories:
               PROFANITY: 0.1
+            deny_code: 400
         - name: ai-proxy
           enable: true
           config:
@@ -278,10 +287,23 @@ curl -i "http://127.0.0.1:9080/post" -X POST \
   }'
 ```
 
-You should receive an `HTTP/1.1 400 Bad Request` response and see the following message:
+You should receive an `HTTP/1.1 400 Bad Request` response. The moderation reason is returned in the response body in a provider-compatible format, so AI clients are not broken:
 
-```text
-request body exceeds PROFANITY threshold
+```json
+{
+  ...,
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "request body exceeds PROFANITY threshold"
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  ...
+}
 ```
 
 Send another request to the Route with a typical question in the request body:
@@ -343,7 +365,8 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
         "moderation_categories": {
           "PROFANITY": 1
         },
-        "moderation_threshold": 0.2
+        "moderation_threshold": 0.2,
+        "deny_code": 400
       },
       "ai-proxy": {
         "provider": "openai",
@@ -383,6 +406,7 @@ services:
             moderation_categories:
               PROFANITY: 1
             moderation_threshold: 0.2
+            deny_code: 400
           ai-proxy:
             provider: openai
             auth:
@@ -423,6 +447,7 @@ spec:
         moderation_categories:
           PROFANITY: 1
         moderation_threshold: 0.2
+        deny_code: 400
     - name: ai-proxy
       config:
         provider: openai
@@ -485,6 +510,7 @@ spec:
             moderation_categories:
               PROFANITY: 1
             moderation_threshold: 0.2
+            deny_code: 400
         - name: ai-proxy
           enable: true
           config:
@@ -521,10 +547,23 @@ curl -i "http://127.0.0.1:9080/post" -X POST \
   }'
 ```
 
-You should receive an `HTTP/1.1 400 Bad Request` response and see the following message:
+You should receive an `HTTP/1.1 400 Bad Request` response. The moderation reason is returned in the response body in a provider-compatible format, so AI clients are not broken:
 
-```text
-request body exceeds toxicity threshold
+```json
+{
+  ...,
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "request body exceeds toxicity threshold"
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  ...
+}
 ```
 
 Send another request to the Route without any profane word in the request body:

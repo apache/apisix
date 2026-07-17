@@ -27,6 +27,7 @@ local C         = ffi.C
 local pcall = pcall
 local select = select
 local type = type
+local tostring = tostring
 local prometheus
 local prometheus_bkp
 local router = require("apisix.router")
@@ -45,6 +46,7 @@ local latency_details = require("apisix.utils.log-util").latency_details_in_ms
 local xrpc = require("apisix.stream.xrpc")
 local unpack = unpack
 local next = next
+local str_sub = string.sub
 local process = require("ngx.process")
 local tonumber = tonumber
 local shdict_prometheus_cache = ngx.shared["prometheus-cache"]
@@ -64,6 +66,25 @@ local DEFAULT_BUCKETS = {1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 1
 -- sizes) with the upper bound raised to 1M to cover large-context models.
 local DEFAULT_TOKEN_BUCKETS = {1, 10, 50, 100, 200, 500, 1000, 2000, 5000, 10000,
                                20000, 50000, 100000, 200000, 500000, 1000000}
+
+-- Max byte length for model-name labels. Model names are client-supplied, so
+-- cap them to stop arbitrarily long strings from exhausting the metrics shm.
+-- Non-scalar values become "<non-scalar>" so pointer strings never enter the index.
+local MAX_MODEL_LABEL_LEN = 128
+
+local function model_to_label(val)
+    if val == nil then
+        return nil
+    end
+    local t = type(val)
+    if t == "string" then
+        return str_sub(val, 1, MAX_MODEL_LABEL_LEN)
+    elseif t == "number" then
+        return str_sub(tostring(val), 1, MAX_MODEL_LABEL_LEN)
+    else
+        return "<non-scalar>"
+    end
+end
 -- Default refresh interval
 local DEFAULT_REFRESH_INTERVAL = 15
 
@@ -137,6 +158,14 @@ local metric_label_map = {
         "request_type", "request_llm_model", "llm_model"},
     llm_completion_tokens_dist = {"route_id", "service_id", "consumer", "node",
         "request_type", "request_llm_model", "llm_model"},
+    ai_cache_hits_total = {"layer", "route", "route_id", "service", "service_id",
+        "consumer", "node", "request_type", "request_llm_model", "llm_model"},
+    ai_cache_misses_total = {"route", "route_id", "service", "service_id",
+        "consumer", "node", "request_type", "request_llm_model", "llm_model"},
+    ai_cache_bypasses_total = {"route", "route_id", "service", "service_id",
+        "consumer", "node", "request_type", "request_llm_model", "llm_model"},
+    ai_cache_embedding_latency = {"route", "route_id", "service", "service_id",
+        "consumer", "node", "request_type", "request_llm_model", "llm_model"},
 }
 
 
@@ -261,6 +290,14 @@ function _M.http_init(prometheus_enabled_in_stream)
                                                             "llm_prompt_tokens_dist", "expire")
     local llm_completion_tokens_dist_exptime = core.table.try_read_attr(attr, "metrics",
                                                             "llm_completion_tokens_dist", "expire")
+    local ai_cache_hits_exptime = core.table.try_read_attr(attr, "metrics",
+                                                            "ai_cache_hits_total", "expire")
+    local ai_cache_misses_exptime = core.table.try_read_attr(attr, "metrics",
+                                                            "ai_cache_misses_total", "expire")
+    local ai_cache_bypasses_exptime = core.table.try_read_attr(attr, "metrics",
+                                                            "ai_cache_bypasses_total", "expire")
+    local ai_cache_embedding_latency_exptime = core.table.try_read_attr(attr, "metrics",
+                                                            "ai_cache_embedding_latency", "expire")
 
     prometheus = base_prometheus.init("prometheus-metrics", metric_prefix)
 
@@ -374,6 +411,35 @@ function _M.http_init(prometheus_enabled_in_stream)
         llm_completion_tokens_buckets,
         llm_completion_tokens_dist_exptime)
 
+    metrics.ai_cache_hits_total = prometheus:counter("ai_cache_hits_total",
+            "Total AI cache hits served, per cache layer",
+            append_tables(metric_label_map.ai_cache_hits_total,
+                          extra_labels("ai_cache_hits_total")),
+            ai_cache_hits_exptime)
+
+    metrics.ai_cache_misses_total = prometheus:counter("ai_cache_misses_total",
+            "Total AI cache misses",
+            append_tables(metric_label_map.ai_cache_misses_total,
+                          extra_labels("ai_cache_misses_total")),
+            ai_cache_misses_exptime)
+
+    metrics.ai_cache_bypasses_total = prometheus:counter("ai_cache_bypasses_total",
+            "Total AI cache bypassed requests",
+            append_tables(metric_label_map.ai_cache_bypasses_total,
+                          extra_labels("ai_cache_bypasses_total")),
+            ai_cache_bypasses_exptime)
+
+    local ai_cache_embedding_latency_buckets = DEFAULT_BUCKETS
+    if attr and attr.ai_cache_embedding_latency_buckets then
+        ai_cache_embedding_latency_buckets = attr.ai_cache_embedding_latency_buckets
+    end
+    metrics.ai_cache_embedding_latency = prometheus:histogram("ai_cache_embedding_latency",
+            "Latency of AI cache embedding calls in milliseconds",
+            append_tables(metric_label_map.ai_cache_embedding_latency,
+                          extra_labels("ai_cache_embedding_latency")),
+            ai_cache_embedding_latency_buckets,
+            ai_cache_embedding_latency_exptime)
+
     if prometheus_enabled_in_stream then
         init_stream_metrics()
     end
@@ -401,6 +467,55 @@ function _M.stream_init()
     prometheus = base_prometheus.init("prometheus-metrics", metric_prefix)
 
     init_stream_metrics()
+end
+
+
+local AI_CACHE_STATUS_METRICS = {
+    HIT    = "ai_cache_hits_total",
+    MISS   = "ai_cache_misses_total",
+    BYPASS = "ai_cache_bypasses_total",
+}
+
+
+-- `layer` is only registered on ai_cache_hits_total, where it leads the label list
+local function ai_cache_label_values(name, ctx, layer)
+    local vars = ctx.var
+
+    local route_id = ""
+    local route_name = ""
+    local balancer_ip = ctx.balancer_ip or ""
+    local service_id = ""
+    local service_name = ""
+    local consumer_name = ctx.consumer_name or ""
+
+    local matched_route = ctx.matched_route and ctx.matched_route.value
+    if matched_route then
+        route_id = matched_route.id
+        route_name = matched_route.name or ""
+        service_id = matched_route.service_id or ""
+        if service_id ~= "" then
+            local fetched_service = service_fetch(service_id)
+            service_name = fetched_service and fetched_service.value.name or ""
+        end
+    end
+
+    local disabled_label_metric_map = get_disabled_label_metric_map()
+
+    if layer then
+        return get_enabled_label_values_for_metric(name, disabled_label_metric_map,
+            layer, route_name, route_id, service_name, service_id,
+            consumer_name, balancer_ip,
+            vars.request_type, model_to_label(vars.request_llm_model),
+            model_to_label(vars.llm_model),
+            unpack(extra_labels(name, ctx)))
+    end
+
+    return get_enabled_label_values_for_metric(name, disabled_label_metric_map,
+        route_name, route_id, service_name, service_id,
+        consumer_name, balancer_ip,
+        vars.request_type, model_to_label(vars.request_llm_model),
+        model_to_label(vars.llm_model),
+        unpack(extra_labels(name, ctx)))
 end
 
 
@@ -435,11 +550,17 @@ function _M.http_log(conf, ctx)
 
     local response_source = core.response.get_response_source(ctx)
 
+    -- Truncate model names before they become label values. vars.request_llm_model /
+    -- vars.llm_model keep their full values for other consumers; only the metrics path
+    -- is capped.
+    local request_llm_model_label = model_to_label(vars.request_llm_model)
+    local llm_model_label = model_to_label(vars.llm_model)
+
     metrics.status:inc(1,
         get_enabled_label_values_for_metric("http_status", disabled_label_metric_map,
             vars.status, route_id, matched_uri, matched_host,
             service_id, consumer_name, balancer_ip,
-            vars.request_type, vars.request_llm_model, vars.llm_model,
+            vars.request_type, request_llm_model_label, llm_model_label,
             response_source,
             unpack(extra_labels("http_status", ctx))))
 
@@ -450,21 +571,21 @@ function _M.http_log(conf, ctx)
     metrics.latency:observe(latency,
         get_enabled_label_values_for_metric("http_latency", disabled_label_metric_map,
             "request", route_id, service_id, consumer_name, balancer_ip,
-            vars.request_type, vars.request_llm_model, vars.llm_model,
+            vars.request_type, request_llm_model_label, llm_model_label,
             unpack(latency_extra_label_values)))
 
     if upstream_latency then
         metrics.latency:observe(upstream_latency,
             get_enabled_label_values_for_metric("http_latency", disabled_label_metric_map,
                 "upstream", route_id, service_id, consumer_name, balancer_ip,
-                vars.request_type, vars.request_llm_model, vars.llm_model,
+                vars.request_type, request_llm_model_label, llm_model_label,
                 unpack(latency_extra_label_values)))
     end
 
     metrics.latency:observe(apisix_latency,
         get_enabled_label_values_for_metric("http_latency", disabled_label_metric_map,
             "apisix", route_id, service_id, consumer_name, balancer_ip,
-            vars.request_type, vars.request_llm_model, vars.llm_model,
+            vars.request_type, request_llm_model_label, llm_model_label,
             unpack(latency_extra_label_values)))
 
     local bandwidth_extra_label_values = extra_labels("bandwidth", ctx)
@@ -472,13 +593,13 @@ function _M.http_log(conf, ctx)
     metrics.bandwidth:inc(vars.request_length,
         get_enabled_label_values_for_metric("bandwidth", disabled_label_metric_map,
             "ingress", route_id, service_id, consumer_name, balancer_ip,
-            vars.request_type, vars.request_llm_model, vars.llm_model,
+            vars.request_type, request_llm_model_label, llm_model_label,
             unpack(bandwidth_extra_label_values)))
 
     metrics.bandwidth:inc(vars.bytes_sent,
         get_enabled_label_values_for_metric("bandwidth", disabled_label_metric_map,
             "egress", route_id, service_id, consumer_name, balancer_ip,
-            vars.request_type, vars.request_llm_model, vars.llm_model,
+            vars.request_type, request_llm_model_label, llm_model_label,
             unpack(bandwidth_extra_label_values)))
 
     if vars.request_type == "ai_stream" or vars.request_type == "ai_chat" then
@@ -491,7 +612,7 @@ function _M.http_log(conf, ctx)
             metrics.llm_latency:observe(tonumber(vars.apisix_upstream_response_time),
                 get_enabled_label_values_for_metric("llm_latency", disabled_label_metric_map,
                     "total", route_id, service_id, consumer_name, balancer_ip,
-                    vars.request_type, vars.request_llm_model, vars.llm_model,
+                    vars.request_type, request_llm_model_label, llm_model_label,
                     unpack(extra_labels("llm_latency", ctx))))
 
             -- type="ttft": time to first token, only streaming exposes a real one.
@@ -499,7 +620,7 @@ function _M.http_log(conf, ctx)
                 metrics.llm_latency:observe(tonumber(llm_time_to_first_token),
                     get_enabled_label_values_for_metric("llm_latency", disabled_label_metric_map,
                         "ttft", route_id, service_id, consumer_name, balancer_ip,
-                        vars.request_type, vars.request_llm_model, vars.llm_model,
+                        vars.request_type, request_llm_model_label, llm_model_label,
                         unpack(extra_labels("llm_latency", ctx))))
             end
         end
@@ -507,28 +628,46 @@ function _M.http_log(conf, ctx)
         metrics.llm_prompt_tokens:inc(tonumber(vars.llm_prompt_tokens),
             get_enabled_label_values_for_metric("llm_prompt_tokens", disabled_label_metric_map,
                 route_id, service_id, consumer_name, balancer_ip,
-                vars.request_type, vars.request_llm_model, vars.llm_model,
+                vars.request_type, request_llm_model_label, llm_model_label,
                 unpack(extra_labels("llm_prompt_tokens", ctx))))
 
         metrics.llm_prompt_tokens_dist:observe(tonumber(vars.llm_prompt_tokens),
             get_enabled_label_values_for_metric("llm_prompt_tokens_dist",
                 disabled_label_metric_map,
                 route_id, service_id, consumer_name, balancer_ip,
-                vars.request_type, vars.request_llm_model, vars.llm_model,
+                vars.request_type, request_llm_model_label, llm_model_label,
                 unpack(extra_labels("llm_prompt_tokens_dist", ctx))))
 
         metrics.llm_completion_tokens:inc(tonumber(vars.llm_completion_tokens),
             get_enabled_label_values_for_metric("llm_completion_tokens", disabled_label_metric_map,
                 route_id, service_id, consumer_name, balancer_ip,
-                vars.request_type, vars.request_llm_model, vars.llm_model,
+                vars.request_type, request_llm_model_label, llm_model_label,
                 unpack(extra_labels("llm_completion_tokens", ctx))))
 
         metrics.llm_completion_tokens_dist:observe(tonumber(vars.llm_completion_tokens),
             get_enabled_label_values_for_metric("llm_completion_tokens_dist",
                 disabled_label_metric_map,
                 route_id, service_id, consumer_name, balancer_ip,
-                vars.request_type, vars.request_llm_model, vars.llm_model,
+                vars.request_type, request_llm_model_label, llm_model_label,
                 unpack(extra_labels("llm_completion_tokens_dist", ctx))))
+    end
+
+    local ai_cache_metric = ctx.ai_cache_status
+                            and AI_CACHE_STATUS_METRICS[ctx.ai_cache_status]
+    if ai_cache_metric then
+        if ctx.ai_cache_status == "HIT" then
+            metrics[ai_cache_metric]:inc(1,
+                ai_cache_label_values(ai_cache_metric, ctx,
+                                      ctx.ai_cache_hit_layer or "exact"))
+        else
+            metrics[ai_cache_metric]:inc(1,
+                ai_cache_label_values(ai_cache_metric, ctx))
+        end
+    end
+
+    if ctx.ai_cache_embedding_latency then
+        metrics.ai_cache_embedding_latency:observe(ctx.ai_cache_embedding_latency,
+            ai_cache_label_values("ai_cache_embedding_latency", ctx))
     end
 end
 
@@ -931,7 +1070,8 @@ local function inc_llm_active_connections(ctx, value)
         get_enabled_label_values_for_metric("llm_active_connections", disabled_label_metric_map,
             route_name, route_id, matched_uri,
             matched_host, service_name, service_id, consumer_name, balancer_ip,
-            vars.request_type, vars.request_llm_model, vars.llm_model,
+            vars.request_type, model_to_label(vars.request_llm_model),
+            model_to_label(vars.llm_model),
             unpack(extra_labels("llm_active_connections", ctx)))
     )
 end
@@ -945,6 +1085,7 @@ end
 function _M.dec_llm_active_connections(ctx)
     inc_llm_active_connections(ctx, -1)
 end
+
 
 function _M.get_prometheus()
     return prometheus

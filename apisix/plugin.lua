@@ -1295,6 +1295,16 @@ local function run_meta_pre_function(conf, api_ctx, name)
     end
 end
 
+-- mark a plugin to be skipped for the rest of the request, so a plugin run as
+-- a workflow action does not run again in the normal plugin chain
+function _M.skip_plugin(ctx, plugin_name)
+    if not ctx._skip_plugins then
+        ctx._skip_plugins = {}
+    end
+    ctx._skip_plugins[plugin_name] = true
+end
+
+
 function _M.run_plugin(phase, plugins, api_ctx)
     local plugin_run = false
     api_ctx = api_ctx or ngx.ctx.api_ctx
@@ -1323,6 +1333,11 @@ function _M.run_plugin(phase, plugins, api_ctx)
             if phase_func then
                 local conf = plugins[i + 1]
                 if not meta_filter(api_ctx, plugins[i]["name"], conf)then
+                    goto CONTINUE
+                end
+
+                -- skip a plugin already run as a workflow action, before any meta hooks
+                if api_ctx._skip_plugins and api_ctx._skip_plugins[plugins[i]["name"]] then
                     goto CONTINUE
                 end
 
@@ -1364,6 +1379,10 @@ function _M.run_plugin(phase, plugins, api_ctx)
         local phase_func = plugins[i][phase]
         local conf = plugins[i + 1]
         if phase_func and meta_filter(api_ctx, plugins[i]["name"], conf) then
+            -- skip a plugin already run as a workflow action, before any meta hooks
+            if api_ctx._skip_plugins and api_ctx._skip_plugins[plugins[i]["name"]] then
+                goto CONTINUE
+            end
             plugin_run = true
             run_meta_pre_function(conf, api_ctx, plugins[i]["name"])
             api_ctx._plugin_name = plugins[i]["name"]
@@ -1373,6 +1392,8 @@ function _M.run_plugin(phase, plugins, api_ctx)
             span:finish(api_ctx.ngx_ctx)
             api_ctx._plugin_name = nil
         end
+
+        ::CONTINUE::
     end
 
     return api_ctx, plugin_run

@@ -47,7 +47,7 @@ GET /hello
 --- response_body
 hello world
 --- error_log
-use config_provider: yaml
+use config_provider: json
 
 
 
@@ -73,7 +73,7 @@ use config_provider: yaml
 GET /hello
 --- error_code: 404
 --- error_log
-use config_provider: yaml
+use config_provider: json
 
 
 
@@ -158,8 +158,11 @@ property "uri" validation failed
 }
 --- request
 GET /hello
+--- error_code: 404
 --- response_body
-hello world
+{"error_msg":"404 Route Not Found"}
+--- error_log
+failed to check item data of [routes] err:unknown plugin
 
 
 
@@ -172,7 +175,7 @@ apisix:
 deployment:
     role: data_plane
     role_data_plane:
-        config_provider: yaml
+        config_provider: json
 --- apisix_json
 {
   "routes": [
@@ -210,7 +213,7 @@ apisix:
 deployment:
     role: data_plane
     role_data_plane:
-        config_provider: yaml
+        config_provider: json
 --- apisix_json
 {
   "routes": [
@@ -248,7 +251,7 @@ apisix:
 deployment:
     role: data_plane
     role_data_plane:
-        config_provider: yaml
+        config_provider: json
 --- apisix_json
 {
   "routes": [
@@ -282,7 +285,7 @@ apisix:
 deployment:
     role: data_plane
     role_data_plane:
-        config_provider: yaml
+        config_provider: json
 --- apisix_json
 {
   "routes": [

@@ -182,19 +182,34 @@ function _M.rewrite(plugin_conf, ctx)
 
     local wire_context = tracer:extract("http_headers", ctx)
 
-    local start_timestamp = ngx.req.start_time()
-    local request_span = tracer:start_span("apisix.request", {
-        child_of = wire_context,
-        start_timestamp = start_timestamp,
+    -- Decide sampling before building the span. The reporter drops unsampled
+    -- spans, so skip tag construction and remote-addr lookups for them.
+    if sampled == "1" or sampled == "true" then
+        per_req_sample_ratio = 1
+    elseif sampled == "0" or sampled == "false" then
+        per_req_sample_ratio = 0
+    end
+    local sample = tracer.sampler:sample(per_req_sample_ratio or conf.sample_ratio)
+    ctx.opentracing_sample = sample
+
+    local tags
+    if sample then
         tags = {
             component = "apisix",
             ["span.kind"] = "server",
             ["http.method"] = ctx.var.request_method,
             ["http.url"] = ctx.var.request_uri,
-             -- TODO: support ipv6
+            -- TODO: support ipv6
             ["peer.ipv4"] = core.request.get_remote_client_ip(ctx),
             ["peer.port"] = core.request.get_remote_client_port(ctx),
         }
+    end
+
+    local start_timestamp = ngx.req.start_time()
+    local request_span = tracer:start_span("apisix.request", {
+        child_of = wire_context,
+        start_timestamp = start_timestamp,
+        tags = tags,
     })
 
     ctx.opentracing = {
@@ -203,18 +218,10 @@ function _M.rewrite(plugin_conf, ctx)
         request_span = request_span,
     }
 
-    -- Process sampled
-    if sampled == "1" or sampled == "true" then
-        per_req_sample_ratio = 1
-    elseif sampled == "0" or sampled == "false" then
-        per_req_sample_ratio = 0
-    end
-
-    ctx.opentracing_sample = tracer.sampler:sample(per_req_sample_ratio or conf.sample_ratio)
-    if not ctx.opentracing_sample then
-        request_span:set_baggage_item("x-b3-sampled","0")
+    if not sample then
+        request_span:set_baggage_item("x-b3-sampled", "0")
     else
-       request_span:set_baggage_item("x-b3-sampled","1")
+        request_span:set_baggage_item("x-b3-sampled", "1")
     end
 
     if plugin_info.set_ngx_var then
@@ -227,11 +234,10 @@ function _M.rewrite(plugin_conf, ctx)
         ngx_var.zipkin_span_id = to_hex(span_context.span_id)
     end
 
-    if not ctx.opentracing_sample then
+    if not sample then
         return
     end
 
-    local request_span = ctx.opentracing.request_span
     if conf.span_version == ZIPKIN_SPAN_VER_1 then
         ctx.opentracing.rewrite_span = request_span:start_child_span("apisix.rewrite",
                                                                      start_timestamp)
@@ -245,9 +251,9 @@ end
 
 function _M.access(conf, ctx)
     local opentracing = ctx.opentracing
-    local tracer = opentracing.tracer
 
-    if conf.span_version == ZIPKIN_SPAN_VER_1 then
+    if ctx.opentracing_sample and conf.span_version == ZIPKIN_SPAN_VER_1 then
+        local tracer = opentracing.tracer
         opentracing.access_span = opentracing.request_span:start_child_span(
             "apisix.access", ctx.REWRITE_END_TIME)
 

@@ -20,6 +20,7 @@ local client     = require("apisix.plugins.ai-lakera-guard.client")
 local protocols  = require("apisix.plugins.ai-protocols")
 local binding    = require("apisix.plugins.ai-protocols.binding")
 
+local ngx    = ngx
 local ipairs = ipairs
 local type   = type
 local concat = table.concat
@@ -82,39 +83,24 @@ local function deny_message(ctx, conf, message, breakdown)
 end
 
 
--- Normalize a protocol's canonical {role, content} messages into the shape
--- Lakera /v2/guard accepts: role preserved, content coerced to a plain string.
--- Some adapters (e.g. openai-chat) return body.messages verbatim, so a message's
--- content can be a multimodal array or nil (tool-call turns); flatten the text
--- parts and drop messages that carry no text.
+-- get_messages returns canonical {role, content} with content already flattened
+-- to a string; drop turns without a role or with nothing for Lakera to scan.
 local function normalize_messages(messages)
     local out = {}
-    for _, message in ipairs(messages or {}) do
-        if type(message) == "table" and type(message.role) == "string" then
-            local content = message.content
-            local text
-            if type(content) == "string" then
-                text = content
-            elseif type(content) == "table" then
-                local parts = {}
-                for _, part in ipairs(content) do
-                    if type(part) == "table" and part.type == "text"
-                            and type(part.text) == "string" then
-                        core.table.insert(parts, part.text)
-                    end
-                end
-                text = concat(parts, " ")
-            end
-            if text and text ~= "" then
-                core.table.insert(out, { role = message.role, content = text })
-            end
+    for _, message in ipairs(messages) do
+        if type(message.role) == "string" and message.content ~= "" then
+            core.table.insert(out, message)
         end
     end
     return out
 end
 
 
-local function request_content_moderation(ctx, conf, messages)
+-- Scan a conversation with Lakera and decide what to do. Shared by the request
+-- (input) and response (output) paths; `label` ("request"/"response") tailors the
+-- logs and `failure_message` selects the direction-specific deny text. Returns
+-- (deny_code, deny_body) when the traffic must be blocked, or nothing to allow.
+local function moderate(ctx, conf, messages, label, failure_message)
     if not messages or #messages == 0 then
         return
     end
@@ -122,11 +108,11 @@ local function request_content_moderation(ctx, conf, messages)
     local result, err = client.scan(conf, messages)
     if err then
         if conf.fail_open then
-            core.log.warn("ai-lakera-guard: ", err, "; fail_open=true, allowing request")
+            core.log.warn("ai-lakera-guard: ", err, "; fail_open=true, allowing ", label)
             return
         end
-        core.log.error("ai-lakera-guard: ", err, "; fail_open=false, blocking request")
-        return conf.deny_code, deny_message(ctx, conf, conf.request_failure_message)
+        core.log.error("ai-lakera-guard: ", err, "; fail_open=false, blocking ", label)
+        return conf.deny_code, deny_message(ctx, conf, failure_message)
     end
 
     if not result.flagged then
@@ -134,8 +120,8 @@ local function request_content_moderation(ctx, conf, messages)
     end
 
     -- Log Lakera's full per-detector verdict (every entry, detected or not) so
-    -- both alert mode and blocked requests are auditable.
-    core.log.warn("ai-lakera-guard: request flagged by Lakera Guard",
+    -- both alert mode and blocked traffic are auditable.
+    core.log.warn("ai-lakera-guard: ", label, " flagged by Lakera Guard",
                   ", breakdown: ", core.json.encode(result.breakdown),
                   ", request_uuid: ", result.request_uuid or "")
 
@@ -143,7 +129,13 @@ local function request_content_moderation(ctx, conf, messages)
         return
     end
 
-    return conf.deny_code, deny_message(ctx, conf, conf.request_failure_message, result.breakdown)
+    return conf.deny_code, deny_message(ctx, conf, failure_message, result.breakdown)
+end
+
+
+local function moderate_response(ctx, conf, text)
+    return moderate(ctx, conf, { { role = "assistant", content = text } },
+                    "response", conf.response_failure_message)
 end
 
 
@@ -157,6 +149,10 @@ function _M.access(conf, ctx)
         if handled then
             return code, body
         end
+        return
+    end
+
+    if conf.direction == "output" then
         return
     end
 
@@ -194,7 +190,7 @@ function _M.access(conf, ctx)
         end
     end
 
-    local code, message = request_content_moderation(ctx, conf, messages)
+    local code, message = moderate(ctx, conf, messages, "request", conf.request_failure_message)
     if code then
         if ctx.var.request_type == "ai_stream" then
             core.response.set_header("Content-Type", "text/event-stream")
@@ -202,6 +198,97 @@ function _M.access(conf, ctx)
             core.response.set_header("Content-Type", "application/json")
         end
         return code, message
+    end
+end
+
+
+function _M.lua_body_filter(conf, ctx, headers, body)
+    if conf.direction ~= "output" and conf.direction ~= "both" then
+        return
+    end
+
+    if ngx.status >= 400 then
+        return
+    end
+
+    -- Non-streaming: ai-proxy hands us the fully-assembled completion text.
+    if ctx.var.request_type == "ai_chat" then
+        local text = ctx.var.llm_response_text
+        if not text or text == "" then
+            return
+        end
+        return moderate_response(ctx, conf, text)
+    end
+
+    if ctx.var.request_type == "ai_stream" then
+        if conf.action == "alert" and conf.fail_open then
+            if ctx.var.llm_request_done and not ctx.lakera_response_decided then
+                ctx.lakera_response_decided = "clean"
+                local text = ctx.var.llm_response_text
+                if text and text ~= "" then
+                    moderate_response(ctx, conf, text)
+                else
+                    core.log.info("ai-lakera-guard: alert mode could not scan the ",
+                                  "streamed response (no assembled completion)")
+                end
+            end
+            return
+        end
+
+        -- block mode
+        local buffer = ctx.lakera_response_buffer
+        if not buffer then
+            buffer = {}
+            ctx.lakera_response_buffer = buffer
+        end
+
+        if ctx.lakera_response_decided then
+            if ctx.lakera_response_decided == "blocked" then
+                return nil, ":\n\n"
+            end
+            return
+        end
+
+        buffer[#buffer + 1] = body or ""
+
+        if not ctx.var.llm_request_done then
+            -- Withhold this chunk until end-of-stream, replacing it with an SSE
+            -- keep-alive comment. Not "" (nginx treats an empty body as nothing
+            -- to flush) and not nil (which would let the original chunk reach
+            -- the client) -- the keep-alive holds the content back while keeping
+            -- the connection open.
+            return nil, ":\n\n"
+        end
+
+        local text = ctx.var.llm_response_text
+        if text == "" then
+            ctx.lakera_response_decided = "clean"
+            return nil, concat(buffer)
+        end
+        if not text then
+            if conf.fail_open then
+                core.log.warn("ai-lakera-guard: streamed response ended without ",
+                              "an assembled completion (no upstream usage event?); ",
+                              "fail_open=true, releasing unscanned")
+                ctx.lakera_response_decided = "clean"
+                return nil, concat(buffer)
+            end
+            core.log.error("ai-lakera-guard: streamed response ended without ",
+                           "an assembled completion (no upstream usage event?); ",
+                           "fail_open=false, blocking response")
+            ctx.lakera_response_decided = "blocked"
+            return ngx.OK, deny_message(ctx, conf, conf.response_failure_message)
+        end
+
+        local code, message = moderate_response(ctx, conf, text)
+        if code then
+            ctx.lakera_response_decided = "blocked"
+            return ngx.OK, message
+        end
+
+        -- Clean: release the buffered stream verbatim, preserving SSE framing.
+        ctx.lakera_response_decided = "clean"
+        return nil, concat(buffer)
     end
 end
 

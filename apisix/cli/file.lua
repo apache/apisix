@@ -102,25 +102,8 @@ end
 
 
 local function resolve_conf_var(conf)
-    local new_keys = {}
+    local renamed_keys
     for key, val in pairs(conf) do
-        -- avoid re-iterating the table for already iterated key
-        if new_keys[key] then
-            goto continue
-        end
-        -- substitute environment variables from conf keys
-        if type(key) == "string" then
-            local new_key, _, err = var_sub(key)
-            if err then
-                return nil, err
-            end
-            if new_key ~= key then
-                new_keys[new_key] = "dummy" -- we only care about checking the key
-                conf.key = nil
-                conf[new_key] = val
-                key = new_key
-            end
-        end
         if type(val) == "table" then
             local ok, err = resolve_conf_var(val)
             if not ok then
@@ -146,7 +129,27 @@ local function resolve_conf_var(conf)
 
             conf[key] = new_val
         end
-        ::continue::
+
+        -- substitute environment variables from conf keys. The rename is
+        -- deferred because inserting a new key while iterating with pairs()
+        -- is undefined behavior.
+        if type(key) == "string" then
+            local new_key, _, err = var_sub(key)
+            if err then
+                return nil, err
+            end
+            if new_key ~= key then
+                renamed_keys = renamed_keys or {}
+                renamed_keys[key] = new_key
+            end
+        end
+    end
+
+    if renamed_keys then
+        for key, new_key in pairs(renamed_keys) do
+            conf[new_key] = conf[key]
+            conf[key] = nil
+        end
     end
 
     return true
@@ -342,7 +345,7 @@ function _M.read_yaml_conf(apisix_home)
             -- Therefore we need to check the absolute version instead
             local cert_path = pl_path.abspath(apisix_ssl.ssl_trusted_certificate)
             if not pl_path.exists(cert_path) then
-                util.die("certificate path", cert_path, "doesn't exist\n")
+                util.die("certificate path ", cert_path, " doesn't exist\n")
             end
             apisix_ssl.ssl_trusted_certificate = cert_path
         end

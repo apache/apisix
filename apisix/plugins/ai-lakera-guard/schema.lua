@@ -38,10 +38,9 @@ local schema = {
         },
         direction = {
             type = "string",
-            -- input only in this phase; output/both are added in later phases.
-            enum = { "input" },
+            enum = { "input", "output", "both" },
             default = "input",
-            description = "Which traffic to scan.",
+            description = "Which traffic to scan: input (request), output (response), or both.",
         },
         action = {
             type = "string",
@@ -89,6 +88,11 @@ local schema = {
             type = "string",
             default = "Request blocked by Lakera Guard",
             description = "Message returned when a request is blocked.",
+        },
+        response_failure_message = {
+            type = "string",
+            default = "Response blocked by Lakera Guard",
+            description = "Message returned when an LLM response is blocked.",
         },
     },
     encrypt_fields = { "api_key" },

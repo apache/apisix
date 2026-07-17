@@ -105,9 +105,10 @@ ai-prompt-guard
 ai-prompt-template
 ai-prompt-decorator
 ai-rag
-ai-aws-content-moderation
 ai-proxy-multi
 ai-proxy
+ai-cache
+ai-aws-content-moderation
 ai-rate-limiting
 ai-aliyun-content-moderation
 ai-lakera-guard
