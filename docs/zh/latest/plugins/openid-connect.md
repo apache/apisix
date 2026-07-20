@@ -412,6 +412,16 @@ OpenID Connect (OIDC) 中的 UserInfo 端点在 [OpenID Connect Core 1.0 第 5.3
 
 如果 APISIX 无法解析或连接到 OpenID 提供商，请检查配置文件 `config.yaml` 中的 DNS 设置并根据需要进行修改。
 
+### 授权回调中的 state 不匹配
+
+会话中只保存一次登录流程的 state。如果同一浏览器在前一次流程完成之前又发起了新的流程（例如在另一个标签页中打开受保护页面），新流程会覆盖 state，此时第一个标签页的回调携带的 state 已不再匹配：
+
+```text
+state from argument does not match state restored from session
+```
+
+对于 `GET` 回调，插件会返回 `302` 重定向回用户最初访问的地址，从那里重新发起一次认证流程。当身份提供商仍保有 SSO 会话时，整个过程对用户无感。使用其他请求方法的回调，以及完全不携带会话的回调，仍然返回 `500`。
+
 ### 未找到会话状态
 
 如果在使用[授权码流程](#授权码流程)时，日志中出现 `500 internal server error` 和以下消息，可能有多种原因。

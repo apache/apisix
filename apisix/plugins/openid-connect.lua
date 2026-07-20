@@ -32,6 +32,12 @@ local ngx_encode_base64 = ngx.encode_base64
 
 local plugin_name       = "openid-connect"
 
+-- returned verbatim by resty.openidc when the state in the authorization
+-- callback does not match the one restored from the session; the string is
+-- identical in lua-resty-openidc 1.8.0 and 1.9.0
+local STATE_MISMATCH_ERR =
+    "state from argument does not match state restored from session"
+
 
 -- Session config is passed as-is to resty.session.start(); the only
 -- translation is the legacy session.cookie.lifetime alias from the
@@ -757,7 +763,7 @@ function _M.rewrite(plugin_conf, ctx)
         end
     end
 
-    local response, err, session, _
+    local response, err, session
 
     if conf.bearer_only or conf.introspection_endpoint or conf.public_key or conf.use_jwks then
         -- An introspection endpoint or a public key has been configured. Try to
@@ -860,7 +866,8 @@ function _M.rewrite(plugin_conf, ctx)
         -- provider's authorization endpoint to initiate the Relying Party flow.
         -- This code path also handles when the ID provider then redirects to
         -- the configured redirect URI after successful authentication.
-        response, err, _, session  = openidc.authenticate(conf, nil, unauth_action,
+        local target_url
+        response, err, target_url, session = openidc.authenticate(conf, nil, unauth_action,
                                                           build_session_opts(conf.session))
 
         if err then
@@ -873,6 +880,23 @@ function _M.rewrite(plugin_conf, ctx)
                 end
                 return 401
             end
+
+            -- Stale authorization callback: the state in the callback does not
+            -- match the one in the session, e.g. the same browser started
+            -- another login flow in a second tab and overwrote the state, or an
+            -- already completed callback was replayed. The client is a browser
+            -- mid-navigation, so instead of a dead-end 500, send it back to the
+            -- original URL that resty.openidc returns alongside the error: a
+            -- fresh flow starts from there and completes without any user
+            -- interaction while the ID provider still holds an SSO session.
+            if err == STATE_MISMATCH_ERR and target_url
+               and ngx.req.get_method() == "GET" then
+                core.log.warn("OIDC state mismatch (concurrent login flows or ",
+                              "replayed callback), redirecting to: ", target_url)
+                core.response.set_header("Location", target_url)
+                return 302
+            end
+
             core.log.error("OIDC authentication failed: ", err)
             return 500
         end

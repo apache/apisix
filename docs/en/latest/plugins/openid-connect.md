@@ -412,6 +412,16 @@ This section covers a few commonly seen issues when working with this Plugin to 
 
 If APISIX fails to resolve or cannot connect to the OpenID provider, double check the DNS settings in your configuration file `config.yaml` and modify as needed.
 
+### State Mismatch in the Authorization Callback
+
+The session holds the state of a single login flow. If the same browser starts a second flow before the first one completes — for example by opening a protected page in another tab — the second flow overwrites the state, and the first tab's callback arrives with a state that no longer matches:
+
+```text
+state from argument does not match state restored from session
+```
+
+For a `GET` callback, the Plugin responds with `302` back to the URL the user was originally trying to reach, so a fresh authentication flow starts from there. When the OpenID provider still holds an SSO session, this completes without any user interaction. Callbacks using other request methods, and callbacks carrying no session at all, still fail with `500`.
+
 ### No Session State Found
 
 If you encounter a `500 internal server error` with the following message in the log when working with [authorization code flow](#authorization-code-flow), there could be a number of reasons.
