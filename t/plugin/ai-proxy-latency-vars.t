@@ -252,6 +252,7 @@ passed
 
 
 === TEST 9: only the served response is observed in llm_latency
+--- timeout: 20
 --- config
     location /t {
         content_by_lua_block {
