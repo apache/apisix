@@ -1786,9 +1786,9 @@ qr/101-hello/
 
 
 
-=== TEST 53: test urlencoded post data with charset header
+=== TEST 53: test urlencoded post data with charset and mixed-case media type
 --- more_headers
-Content-Type: application/x-www-form-urlencoded; charset=utf-8
+Content-Type: Application/X-WWW-Form-Urlencoded; charset=utf-8
 --- request eval
 "POST /echo
 " . "a=b&" x 101 . "required_payload=101-hello"
@@ -1797,7 +1797,79 @@ qr/101-hello/
 
 
 
-=== TEST 54: add route with a small max_req_body_size
+=== TEST 54: add route for duplicated Content-Type validation
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "request-validation": {
+                            "body_schema": {
+                                "type": "object",
+                                "required": ["required_payload"],
+                                "properties": {
+                                    "required_payload": {"type": "string"}
+                                }
+                            },
+                            "rejected_code": 400,
+                            "rejected_msg": "duplicated content-type"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/echo"
+                }]])
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 55: duplicated Content-Type header is rejected (urlencoded, json)
+--- more_headers
+Content-Type: application/x-www-form-urlencoded
+Content-Type: application/json
+--- request
+POST /echo
+{"required_payload": "hello"}
+--- error_code: 400
+--- response_body chomp
+duplicated content-type
+--- error_log
+duplicated Content-Type header
+
+
+
+=== TEST 56: duplicated Content-Type header is rejected (json, urlencoded)
+--- more_headers
+Content-Type: application/json
+Content-Type: application/x-www-form-urlencoded
+--- request
+POST /echo
+{"required_payload": "hello"}
+--- error_code: 400
+--- response_body chomp
+duplicated content-type
+--- error_log
+duplicated Content-Type header
+
+
+
+=== TEST 57: add route with a small max_req_body_size
 --- config
     location /t {
         content_by_lua_block {
@@ -1838,7 +1910,7 @@ passed
 
 
 
-=== TEST 55: body larger than max_req_body_size is rejected
+=== TEST 58: body larger than max_req_body_size is rejected
 --- more_headers
 Content-Type: application/json
 --- request

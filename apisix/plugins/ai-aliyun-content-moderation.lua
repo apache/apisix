@@ -95,7 +95,15 @@ local schema = {
         risk_level_bar = {type = "string",
                           enum = {"none", "low", "medium", "high", "max"},
                           default = "high"},
-        deny_code = {type = "number", default = 200},
+        deny_code = {
+            type = "integer",
+            minimum = 200,
+            maximum = 599,
+            default = 200,
+            description = "HTTP status returned on a deny. Defaults to 200 so the " ..
+                          "provider-compatible refusal parses as a normal completion in " ..
+                          "client SDKs; set a 4xx to surface denies as HTTP errors instead.",
+        },
         deny_message = {type = "string"},
         timeout = {
             type = "integer",

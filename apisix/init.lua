@@ -1541,6 +1541,10 @@ function _M.stream_log_phase()
 
     healthcheck_passive(api_ctx)
 
+    if api_ctx.server_picker and api_ctx.server_picker.after_balance then
+        api_ctx.server_picker.after_balance(api_ctx, false)
+    end
+
     core.ctx.release_vars(api_ctx)
     if api_ctx.plugins then
         core.tablepool.release("plugins", api_ctx.plugins)

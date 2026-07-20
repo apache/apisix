@@ -386,6 +386,30 @@ end
 _M.websocket_handshake_route = _M.websocket_handshake
 
 
+-- keep the session open until the peer goes away, so that the request stays in
+-- flight in the balancer the way a real WebSocket session does. An idle timeout is
+-- the normal state of such a session, not an error: keep waiting, and only give up
+-- once the peer closes or the connection breaks
+function _M.websocket_hold()
+    local websocket = require "resty.websocket.server"
+    local wb, err = websocket:new({timeout = 30000})
+    if not wb then
+        ngx.log(ngx.ERR, "failed to new websocket: ", err)
+        return ngx.exit(400)
+    end
+
+    while true do
+        local _, typ, err = wb:recv_frame()
+        if typ == "close" then
+            return
+        end
+        if not typ and not string.find(err or "", "timeout", 1, true) then
+            return
+        end
+    end
+end
+
+
 function _M.api_breaker()
     ngx.exit(tonumber(ngx.var.arg_code))
 end
