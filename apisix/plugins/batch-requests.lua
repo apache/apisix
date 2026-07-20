@@ -226,9 +226,11 @@ end
 
 
 -- When the request is received on a unix domain socket, $server_port is an
--- empty string, so we fall back to the first TCP port in `apisix.node_listen`.
+-- empty string, so we fall back to a TCP port from `apisix.node_listen`.
 -- The value read from the local conf is not normalized by the CLI, so it can
 -- be a plain port number, or an array of port numbers or `{ip, port}` tables.
+-- An entry bound to a specific address is only used as a last resort, as the
+-- loopback connect below targets 127.0.0.1 and would otherwise be refused.
 local function get_loopback_port()
     local server_port = ngx.var.server_port
     if server_port and server_port ~= "" then
@@ -242,6 +244,7 @@ local function get_loopback_port()
     end
 
     if type(node_listen) == "table" then
+        local bound_port
         for _, value in ipairs(node_listen) do
             if type(value) == "number" then
                 return value
@@ -249,9 +252,17 @@ local function get_loopback_port()
 
             if type(value) == "table" then
                 -- the port defaults to 9080 if not set, see `apisix/cli/ops.lua`
-                return value.port or 9080
+                local port = value.port or 9080
+                local ip = value.ip
+                if ip == nil or ip == "0.0.0.0" or ip == "127.0.0.1" then
+                    return port
+                end
+
+                bound_port = bound_port or port
             end
         end
+
+        return bound_port
     end
 
     return nil
