@@ -79,4 +79,4 @@ cd t && pnpm test plugin/lago.spec.mts 2>&1
 failed to execute the script with status
 --- response_body eval
 qr/PASS plugin\/lago.spec.mts/
---- SKIP
+--- SKIP: needs a live Lago stack cloned and started from the network (#12904)
