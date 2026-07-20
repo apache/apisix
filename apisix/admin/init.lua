@@ -27,11 +27,20 @@ local ngx = ngx
 local get_method = ngx.req.get_method
 local ngx_time = ngx.time
 local ngx_timer_at = ngx.timer.at
+local ngx_timer_every = ngx.timer.every
 local ngx_worker_id = ngx.worker.id
 local tonumber = tonumber
 local tostring = tostring
 local str_lower = string.lower
 local reload_event = "/apisix/admin/plugins/reload"
+local is_http = ngx.config.subsystem == "http"
+-- declared unconditionally for the http subsystem in ngx_tpl.lua, and already a
+-- hard dependency of the server-info plugin; absent in the stream subsystem
+local plugins_conf_ver_dict = is_http and ngx.shared["internal-status"]
+local PLUGINS_CONF_VERSION_KEY = "plugins_conf_version"
+-- plugins conf version this process has applied, compared against the shared
+-- dict by the reconciliation timer registered in init_worker()
+local applied_plugins_conf_version = 0
 local ipairs = ipairs
 local error = error
 local type = type
@@ -288,6 +297,17 @@ end
 local function post_reload_plugins()
     set_ctx_and_check_token()
 
+    if plugins_conf_ver_dict then
+        -- bump the version before broadcasting, so that a process which never
+        -- receives the event (e.g. the privileged agent while it is
+        -- reconnecting to the events broker) still converges through the
+        -- periodic reconciliation below
+        local _, err = plugins_conf_ver_dict:incr(PLUGINS_CONF_VERSION_KEY, 1, 0)
+        if err then
+            core.log.error("failed to increase plugins conf version: ", err)
+        end
+    end
+
     local success, err = events:post(reload_event, get_method(), ngx_time())
     if not success then
         core.response.exit(503, err)
@@ -375,7 +395,20 @@ end
 
 local function reload_plugins(data, event, source, pid)
     core.log.info("start to hot reload plugins")
+
+    -- sample the version before loading: if another reload is accepted while
+    -- plugin.load() runs, the versions stay unequal and the reconciliation
+    -- timer applies one more round
+    local ver
+    if plugins_conf_ver_dict then
+        ver = plugins_conf_ver_dict:get(PLUGINS_CONF_VERSION_KEY)
+    end
+
     plugin.load()
+
+    if ver then
+        applied_plugins_conf_version = ver
+    end
 
     if ngx_worker_id() == 0 then
         sync_local_conf_to_etcd()
@@ -508,6 +541,30 @@ function _M.init_worker()
     -- register reload plugin handler
     events = require("apisix.events")
     events:register(reload_plugins, reload_event, "PUT")
+
+    if plugins_conf_ver_dict and not is_yaml_config_provider then
+        -- The events broadcast has no delivery guarantee: a process that is
+        -- (re)connecting to the events broker loses the event for good, which
+        -- leaves it running e.g. the timers of plugins that were removed.
+        -- Reconcile against the version in the shared dict, the same pattern
+        -- admin/standalone.lua uses for the same reason.
+        applied_plugins_conf_version =
+            plugins_conf_ver_dict:get(PLUGINS_CONF_VERSION_KEY) or 0
+
+        local ok, err = ngx_timer_every(1, function (premature)
+            if premature then
+                return
+            end
+
+            local ver = plugins_conf_ver_dict:get(PLUGINS_CONF_VERSION_KEY) or 0
+            if ver ~= applied_plugins_conf_version then
+                reload_plugins()
+            end
+        end)
+        if not ok then
+            core.log.error("failed to create plugins reconciliation timer: ", err)
+        end
+    end
 
     if ngx_worker_id() == 0 then
         -- check if admin_key is required
