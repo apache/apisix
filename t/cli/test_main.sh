@@ -286,6 +286,21 @@ if ! echo "$out" | grep "failed to validate config"; then
     exit 1
 fi
 
+# entries synthesized by kubernetes discovery bypass the config schema, so the
+# control-character check must also run on the final list
+cat > conf/config.yaml <<'EOF'
+discovery:
+    kubernetes:
+        client:
+            token_file: "${A\nB}"
+EOF
+
+out=$(make init 2>&1 || true)
+if ! echo "$out" | grep "control characters are not allowed"; then
+    echo "failed: synthesized env entry with control chars should be rejected"
+    exit 1
+fi
+
 echo "passed: env value quoting (#11467)"
 
 # support environment variables

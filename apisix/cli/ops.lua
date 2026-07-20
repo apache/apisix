@@ -914,8 +914,16 @@ Please modify "admin_key" in conf/config.yaml .
     -- env entries are rendered as double-quoted nginx directive parameters
     -- (`env "{*name*}";` in ngx_tpl.lua), so embedded `\` and `"` must be
     -- escaped; nginx unescapes them when reading the quoted token
+    -- entries synthesized after schema validation (kubernetes discovery copies
+    -- whatever sits between `${` and `}`) never went through the schema
+    -- pattern, so re-check them here rather than emitting a conf that nginx
+    -- rejects with an error pointing at a line the user never wrote
     if sys_conf["envs"] then
         for i, cfg_env in ipairs(sys_conf["envs"]) do
+            if cfg_env:find("%c") then
+                util.die("invalid environment variable entry: ",
+                         "control characters are not allowed\n")
+            end
             sys_conf["envs"][i] = cfg_env:gsub('[\\"]', '\\%0')
         end
     end
