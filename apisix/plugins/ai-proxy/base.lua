@@ -26,7 +26,6 @@ local table   = table
 local exporter = require("apisix.plugins.prometheus.exporter")
 local protocols = require("apisix.plugins.ai-protocols")
 local transport_http = require("apisix.plugins.ai-transport.http")
-local transport_auth = require("apisix.plugins.ai-transport.auth")
 local log_sanitize = require("apisix.utils.log-sanitize")
 local apisix_upstream = require("resty.apisix.upstream")
 
@@ -247,51 +246,41 @@ function _M.before_proxy(conf, ctx, on_error)
         -- extra_opts.
         extra_opts.header_transform = converter and converter.convert_headers
 
-        -- Credentials that need request state (GCP token cache is keyed on ctx).
-        local instance_auth = ai_instance.auth
-        if instance_auth and instance_auth.gcp then
-            local token, token_err = transport_auth.fetch_gcp_access_token(
-                ctx, ai_instance.name, instance_auth.gcp)
-            if not token then
-                core.log.error("failed to get gcp access token: ", token_err)
-                return 500, {error_msg = "failed to get gcp access token: "
-                                         .. (token_err or "unknown")}
-            end
-            extra_opts.access_token = token
-        end
-
         -- ai-proxy is a transparent proxy of an inbound request, so it hands the
-        -- transport everything taken from that request under one `client` key.
+        -- provider everything taken from that request under one `downstream` key.
         -- Internal callers omit it entirely and thus forward nothing of the
         -- client's -- see ai-providers/base.lua build_request.
-        local client = { headers = core.request.headers(ctx) }
-        extra_opts.client = client
+        local downstream = { headers = core.request.headers(ctx) }
+        extra_opts.downstream = downstream
 
         -- passthrough proxies the client's method and query string verbatim.
         if target_proto == "passthrough" then
-            client.method = core.request.get_method()
+            downstream.method = core.request.get_method()
             local client_args = ctx.var.args and core.string.decode_args(ctx.var.args)
             if type(client_args) == "table" then
-                client.args = client_args
+                downstream.args = client_args
             end
-        end
-
-        -- Step 2.5: protocol conversion. It lives here rather than in the provider
-        -- because converters stash state on ctx for the response side to read back.
-        local body_for_llm = request_body
-        local converted = false
-        if converter and converter.convert_request then
-            local new_body, conv_err = converter.convert_request(request_body, ctx)
-            if not new_body then
-                return 400, {error_msg = conv_err or "invalid protocol"}
-            end
-            body_for_llm = new_body
-            converted = true
         end
 
         local do_request = function()
             ctx.llm_request_start_time = ngx.now()
             ctx.var.llm_request_body = request_body
+
+            -- Step 2.5: protocol conversion. It runs in the provider's stead --
+            -- converters stash state on ctx for the response side to read back --
+            -- but stays inside do_request so the pcall below still bounds it: a
+            -- converter fed hostile-but-valid JSON can raise (e.g. an Anthropic
+            -- image block whose "source" is not an object).
+            local body_for_llm = request_body
+            local converted = false
+            if converter and converter.convert_request then
+                local new_body, conv_err = converter.convert_request(request_body, ctx)
+                if not new_body then
+                    return 400, {error_msg = conv_err or "invalid protocol"}
+                end
+                body_for_llm = new_body
+                converted = true
+            end
 
             -- Step 3: shape the body for the target protocol, then decide which
             -- bytes actually go out. When nothing has touched the body -- no

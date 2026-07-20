@@ -23,6 +23,7 @@ local google_oauth = require("apisix.utils.google-cloud-oauth")
 local lrucache = require("resty.lrucache")
 local type = type
 local os = os
+local ngx_crc32_long = ngx.crc32_long
 
 local _M = {}
 
@@ -30,13 +31,20 @@ local gcp_access_token_cache = lrucache.new(1024 * 4)
 
 
 --- Fetch (or retrieve from cache) a GCP OAuth2 access token.
--- @param ctx table Request context
+--
+-- Keyed on the credentials themselves rather than on the request ctx: the token
+-- depends only on the service account, so identical credentials share one token
+-- across routes, and callers need no ctx to ask for one.
 -- @param name string Cache key name (driver instance name)
 -- @param gcp_conf table GCP configuration (service_account_json, expire_early_secs, max_ttl)
 -- @return string|nil Access token
 -- @return string|nil Error message
-function _M.fetch_gcp_access_token(ctx, name, gcp_conf)
-    local key = core.lrucache.plugin_ctx_id(ctx, name)
+function _M.fetch_gcp_access_token(name, gcp_conf)
+    -- The credentials may arrive as a secret ref resolved per request, so key on
+    -- the resolved value; hash it so the cache never holds the raw JSON.
+    local sa = type(gcp_conf) == "table" and gcp_conf.service_account_json
+               or os.getenv("GCP_SERVICE_ACCOUNT")
+    local key = ngx_crc32_long(sa or "") .. "#" .. (name or "")
     local access_token = gcp_access_token_cache:get(key)
     if not access_token then
         local auth_conf = {}

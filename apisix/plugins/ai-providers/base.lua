@@ -31,6 +31,7 @@ local url  = require("socket.url")
 local sse  = require("apisix.plugins.ai-transport.sse")
 local aws_eventstream = require("apisix.plugins.ai-transport.aws-eventstream")
 local transport_http = require("apisix.plugins.ai-transport.http")
+local transport_auth = require("apisix.plugins.ai-transport.auth")
 local log_sanitize = require("apisix.utils.log-sanitize")
 local protocols = require("apisix.plugins.ai-protocols")
 local deep_merge = require("apisix.plugins.ai-proxy.merge").deep_merge
@@ -169,10 +170,10 @@ end
 --
 -- Pure and protocol-agnostic: `body` arrives already shaped (see build_body) and
 -- is passed through untouched, so a string goes out verbatim and a table is
--- encoded by the transport. Everything taken from the downstream request lives on
--- `opts.client`; its presence is what marks this as proxying an inbound request.
--- A self-contained internal call omits it, so nothing of the client's can reach
--- the LLM or the logs.
+-- encoded by the transport. Everything taken from the inbound request lives on
+-- `opts.downstream`; its presence is what marks this as proxying one. A
+-- self-contained internal call omits it, so nothing of the client's can reach the
+-- LLM or the logs.
 -- @return table params HTTP parameters ready for transport_http.request()
 -- @return string|nil err Error message
 function _M.build_request(self, conf, body, opts)
@@ -226,19 +227,23 @@ function _M.build_request(self, conf, body, opts)
             .. "includes a path", 400
     end
 
-    -- Everything below that comes from the downstream request lives on
-    -- opts.client; an internal call leaves it nil and therefore forwards none of
-    -- the client's headers, query or body.
-    local client = opts.client
+    -- Everything below that comes from the inbound request lives on
+    -- opts.downstream; an internal call leaves it nil and therefore forwards none
+    -- of the client's headers or query.
+    local downstream = opts.downstream
     local headers = transport_http.construct_forward_headers(auth.header or {},
-                                                             client and client.headers)
+                                                             downstream and downstream.headers)
     if opts.host_header then
         headers["Host"] = opts.host_header
     end
-    -- The caller resolves credentials that need request state (e.g. a GCP
-    -- access token) and hands the finished token over.
-    if opts.access_token then
-        headers["authorization"] = "Bearer " .. opts.access_token
+    -- GCP tokens are fetched here: the lookup is keyed on the credentials, not on
+    -- the request, so it needs no ctx and no caller has to repeat it.
+    if auth.gcp then
+        local token, token_err = transport_auth.fetch_gcp_access_token(opts.name, auth.gcp)
+        if not token then
+            return nil, "failed to get gcp access token: " .. (token_err or "unknown")
+        end
+        headers["authorization"] = "Bearer " .. token
     end
 
     -- Optional header transformation (e.g. the Anthropic → OpenAI converter's).
@@ -249,11 +254,11 @@ function _M.build_request(self, conf, body, opts)
     -- The caller passes the downstream method and query string only when it
     -- wants them proxied verbatim (the passthrough protocol). Otherwise this is
     -- a plain POST with provider-specific query args.
-    local method = client and client.method or "POST"
-    if client and type(client.args) == "table" then
+    local method = downstream and downstream.method or "POST"
+    if downstream and type(downstream.args) == "table" then
         -- client query overrides the endpoint query, but configured
         -- auth.query credentials must stay non-overridable by the caller
-        for k, v in pairs(client.args) do
+        for k, v in pairs(downstream.args) do
             if not (auth.query and auth.query[k] ~= nil) then
                 query_params[k] = v
             end

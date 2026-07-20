@@ -17,7 +17,6 @@
 local core = require("apisix.core")
 local ai_providers_schema = require("apisix.plugins.ai-providers.schema")
 local protocols = require("apisix.plugins.ai-protocols")
-local transport_auth = require("apisix.plugins.ai-transport.auth")
 local require = require
 local pcall = pcall
 local next = next
@@ -126,18 +125,8 @@ local function request_to_llm(conf, request_table, ctx, target_path)
         model_options = conf.options,
         target_path = target_path,
     }
-    -- The provider is a pure client, so resolve here whatever needs the request
-    -- ctx. Nothing downstream-derived is handed over: no client headers, no
-    -- verbatim client body -- this call carries its own credentials and body.
-    if conf.auth and conf.auth.gcp then
-        local token, token_err = transport_auth.fetch_gcp_access_token(ctx, plugin_name,
-                                                                       conf.auth.gcp)
-        if not token then
-            return nil, nil, "failed to get gcp access token: " .. (token_err or "unknown")
-        end
-        extra_opts.access_token = token
-    end
-
+    -- Nothing downstream-derived is handed over: no client headers, no verbatim
+    -- client body -- this call carries its own credentials and its own body.
     ctx.llm_request_start_time = ngx.now()
     ctx.var.llm_request_body = request_table
     return ai_provider:request(conf, request_table, extra_opts)

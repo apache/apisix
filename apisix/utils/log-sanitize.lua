@@ -56,11 +56,10 @@ end
 function _M.redact_extra_opts(extra_opts)
     local redacted = core.table.deepcopy(extra_opts)
     redacted.auth = nil
-    -- Everything taken from the downstream request is grouped under `client`:
-    -- its headers (Authorization/Cookie), its query args and its verbatim body
-    -- (the user's prompt). None of it belongs in a log line, and dropping the
-    -- one key drops all of it.
-    redacted.client = nil
+    -- Everything taken from the inbound request is grouped under `downstream`:
+    -- its headers (Authorization/Cookie) and query args. None of it belongs in a
+    -- log line, and dropping the one key drops all of it.
+    redacted.downstream = nil
     return redacted
 end
 

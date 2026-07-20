@@ -1247,8 +1247,10 @@ got token usage from ai service:
                 conf = {},
             }
 
-            provider:build_request(conf, {messages = {{role="user", content="hi"}}}, opts)
-            provider:build_request(conf, {messages = {{role="user", content="hi"}}}, opts)
+            -- assert both builds: a build failure would otherwise leave auth_query
+            -- untouched and the test would still report OK
+            assert(provider:build_request(conf, {messages = {{role="user", content="hi"}}}, opts))
+            assert(provider:build_request(conf, {messages = {{role="user", content="hi"}}}, opts))
 
             if auth_query["extra"] then
                 ngx.say("FAIL: auth.query was mutated, extra=" .. auth_query["extra"])
