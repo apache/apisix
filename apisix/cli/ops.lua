@@ -281,22 +281,14 @@ local function init(env)
     end
 
     -- check the Admin API token
-    local checked_admin_key = false
-    local allow_admin = yaml_conf.deployment.admin and
-        yaml_conf.deployment.admin.allow_admin
-    if yaml_conf.apisix.enable_admin and allow_admin
-       and #allow_admin == 1 and allow_admin[1] == "127.0.0.0/24" then
-        checked_admin_key = true
-    end
-    -- check if admin_key is required
-    if yaml_conf.deployment.admin.admin_key_required == false then
-        checked_admin_key = true
+    local admin_key_required = yaml_conf.deployment.admin.admin_key_required ~= false
+    if not admin_key_required then
         print("Warning! Admin key is bypassed! "
                 .. "If you are deploying APISIX in a production environment, "
                 .. "please enable `admin_key_required` and set a secure admin key!")
     end
 
-    if yaml_conf.apisix.enable_admin and not checked_admin_key then
+    if yaml_conf.apisix.enable_admin and admin_key_required then
         local help = [[
 
 %s
@@ -308,25 +300,29 @@ Please modify "admin_key" in conf/config.yaml .
             admin_key = admin_key.admin_key
         end
 
-        if type(admin_key) ~= "table" or #admin_key == 0
-        then
-            util.die(help:format("ERROR: missing valid Admin API token."))
-        end
-
-        for _, admin in ipairs(admin_key) do
-            if type(admin.key) == "table" then
+        -- A declared but empty admin key is not a usable credential. APISIX used to
+        -- generate one on the fly and write it back to conf/config.yaml, which silently
+        -- rewrote the user's config file. Fail fast instead.
+        for _, admin in ipairs(admin_key or {}) do
+            if type(admin.key) == "table" or admin.key == nil then
                 admin.key = ""
             else
                 admin.key = tostring(admin.key)
             end
 
             if admin.key == "" then
-                stderr:write(
-                    help:format([[WARNING: using empty Admin API.
-                    This will trigger APISIX to automatically generate a random Admin API token.]]),
-                    "\n"
-                )
+                util.die(help:format([[ERROR: empty Admin API token.
+APISIX no longer generates a random token automatically. Set a key explicitly, or set
+"admin_key_required: false" to run the Admin API without authentication.]]))
             end
+        end
+
+        local allow_admin = yaml_conf.deployment.admin.allow_admin
+        local admin_on_localhost_only = allow_admin and #allow_admin == 1
+            and allow_admin[1] == "127.0.0.0/24"
+        if (type(admin_key) ~= "table" or #admin_key == 0)
+           and not admin_on_localhost_only then
+            util.die(help:format("ERROR: missing valid Admin API token."))
         end
     end
 

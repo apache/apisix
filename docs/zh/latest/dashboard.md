@@ -73,7 +73,7 @@ deployment:
       -
         name: admin
         role: admin
-        # 设置安全的 Admin API Key。如果留空，APISIX 会在初始化时自动生成并写回此文件。
+        # 设置安全的 Admin API Key。如果留空，APISIX 会拒绝启动。
         key: your-admin-key
 ```
 
