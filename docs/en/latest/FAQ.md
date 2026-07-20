@@ -317,6 +317,16 @@ If there is no change in the directory being monitored, the process will be bloc
 
 If there are changes in the directory being monitored, etcd will return this new data within milliseconds and Apache APISIX will update the cache memory.
 
+## Why should I lower the etcd watch progress notification interval?
+
+Apache APISIX creates its watch with `progress_notify` enabled. etcd then sends periodic notifications on the watch stream telling APISIX which revision the stream is synced up to, which lets APISIX keep the start revision of the next watch fresh even while nothing changes under the watched prefix. A fresh start revision means the watch is not cancelled with a `compacted` error after an etcd compaction, and APISIX does not have to reload the whole configuration to recover.
+
+etcd sends those notifications every 10 minutes by default, while an idle APISIX watch stream only lives for `deployment.etcd.watch_timeout` (50 seconds by default), so with the default etcd settings APISIX rarely sees one. If your etcd compacts frequently and you want to avoid the resulting full reloads, set the notification interval below `watch_timeout` on the etcd side:
+
+```shell
+etcd --experimental-watch-progress-notify-interval=30s
+```
+
 ## How do I customize the Apache APISIX instance id?
 
 By default, Apache APISIX reads the instance id from `conf/apisix.uid`. If this is not found and no id is configured, Apache APISIX will generate a `uuid` for the instance id.

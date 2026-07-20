@@ -197,17 +197,17 @@ local function do_run_watch(premature)
     opts.need_cancel = true
     opts.start_revision = watch_ctx.rev
 
-    -- get latest revision
-    local res, err = watch_ctx.cli:readdir(watch_ctx.prefix .. "/phantomkey")
-    if err then
-        log.error("failed to get latest revision, err: ", err)
-    end
-    local latest_rev
-    if res and res.body and res.body.header and res.body.header.revision then
-        latest_rev = tonumber(res.body.header.revision)
-    else
-        log.error("failed to get latest revision, res: ", json.delay_encode(res))
-    end
+    -- Ask etcd to send progress notifications, i.e. watch responses without
+    -- events. etcd only sends them to watchers that are fully synced, so the
+    -- revision they carry is an in-stream guarantee: every event up to that
+    -- revision has already been delivered on this very stream. They are what
+    -- keeps start_revision fresh while the watched prefix is idle. Sampling
+    -- the latest revision out of band instead, as we used to, cannot tell an
+    -- idle prefix apart from a stream that silently died, and skips the events
+    -- such a stream never delivered (#13067).
+    -- The notification interval is a server side setting,
+    -- --experimental-watch-progress-notify-interval, 10 minutes by default.
+    opts.progress_notify = true
 
     log.info("restart watchdir: start_revision=", opts.start_revision)
 
@@ -227,12 +227,6 @@ local function do_run_watch(premature)
                 err ~= "broken pipe"
             then
                 log.error("wait watch event: ", err)
-            end
-            if err == "timeout" then
-                if latest_rev and watch_ctx.rev < latest_rev + 1 then
-                    watch_ctx.rev = latest_rev + 1
-                    log.info("etcd watch timeout, upgrade revision to ", watch_ctx.rev)
-                end
             end
             cancel_watch(http_cli)
             break
@@ -301,6 +295,23 @@ local function do_run_watch(premature)
             log.warn("receive a invalid revision header, header: ", inspect(res.result.header))
             cancel_watch(http_cli)
             break
+        end
+
+        -- A watch response without events is a progress notification. etcd
+        -- only sends it once this watcher is fully synced, so every event up
+        -- to res.result.header.revision has already been delivered on this
+        -- stream and the next start_revision can safely move past it.
+        -- This must come before the "smaller revision" check below: on an idle
+        -- prefix watch_ctx.rev is the revision of the last event plus one,
+        -- while a notification carries the current store revision, so rev is
+        -- watch_ctx.rev - 1 and would be mistaken for an etcd restart.
+        local events = res.result.events
+        if not events or #events == 0 then
+            if rev >= watch_ctx.rev then
+                watch_ctx.rev = rev + 1
+                log.info("etcd progress notify, upgrade revision to ", watch_ctx.rev)
+            end
+            goto watch_event
         end
 
         if rev < watch_ctx.rev then
