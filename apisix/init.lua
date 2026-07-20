@@ -1051,9 +1051,12 @@ function _M.http_header_filter_phase()
     end
 
     if enable_debug() then
-        -- the executed plugin phase functions in the execution order; the
-        -- ones executed from now on can not be reported via the response
-        -- header and are logged as a warn log instead
+        -- report the plugin phase functions in the execution order: the ones
+        -- executed so far were traced at execution time, while the
+        -- body_filter/log ones of the matched plugins have not run yet and
+        -- are inferred, so they may not fully match the real execution
+        plugin.trace_expected_plugins_for_debug(api_ctx)
+
         local debug_plugins = api_ctx.debug_plugins
         if debug_plugins then
             core.response.set_header("Apisix-Plugins",

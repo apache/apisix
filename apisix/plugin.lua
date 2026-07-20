@@ -498,6 +498,34 @@ local function trace_plugin_exec_for_debug(ctx, plugin_name, phase)
 end
 
 
+local POST_RESP_HEADER_PHASES = {"body_filter", "log"}
+-- The phase functions running after the response header is sent can not be
+-- traced at execution time and reported in the Apisix-Plugins response
+-- header. Instead, infer them from the filtered plugin list right before
+-- the response header is generated: a plugin carrying such a phase function
+-- is expected to execute it. The inferred entries may not fully match the
+-- real execution, e.g. a plugin skipped at runtime by its `_meta.filter`
+-- is still reported.
+function _M.trace_expected_plugins_for_debug(api_ctx)
+    if not enable_debug() then
+        return
+    end
+
+    local plugins = api_ctx.plugins
+    if not plugins then
+        return
+    end
+
+    for _, phase in ipairs(POST_RESP_HEADER_PHASES) do
+        for i = 1, #plugins, 2 do
+            if plugins[i][phase] then
+                trace_plugin_exec_for_debug(api_ctx, plugins[i].name, phase)
+            end
+        end
+    end
+end
+
+
 local function meta_filter(ctx, plugin_name, plugin_conf)
     local filter = plugin_conf._meta and plugin_conf._meta.filter
     if not filter then

@@ -187,8 +187,8 @@ GET /hello
 --- response_body
 hello world
 --- response_headers
-Apisix-Plugins: limit-conn#access, limit-count#access
---- error_log
+Apisix-Plugins: limit-conn#access, limit-count#access, limit-conn#log
+--- no_error_log
 Apisix-Plugins: limit-conn#log
 
 
@@ -223,17 +223,16 @@ passed
 
 
 
-=== TEST 7: plugins executed after the response header is sent are logged as warn
+=== TEST 7: phases which can be neither traced nor inferred are logged as warn
 --- debug_config eval: $::debug_config
 --- request
 GET /hello
 --- response_body
 yes
 --- response_headers
-Apisix-Plugins: limit-conn#access, limit-count#access, response-rewrite#header_filter
+Apisix-Plugins: limit-conn#access, limit-count#access, response-rewrite#header_filter, limit-conn#log
 --- error_log
 Apisix-Plugins: response-rewrite#body_filter
-Apisix-Plugins: limit-conn#log
 
 
 
