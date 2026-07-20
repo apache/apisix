@@ -14,10 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-use t::APISIX;
+use t::APISIX 'no_plan';
 
-# This test cannot be executed normally at the moment, so it will be temporarily skipped and fixed in a later PR.
-plan(skip_all => 'skip test case');
+# TEST 2 clones the Lago repository and brings up its docker compose stack, which
+# makes it flaky in CI. It stays marked with `--- SKIP` until #12904 is resolved;
+# the schema tests below have no external dependency and always run.
 
 repeat_each(1);
 no_long_string();
@@ -78,3 +79,4 @@ cd t && pnpm test plugin/lago.spec.mts 2>&1
 failed to execute the script with status
 --- response_body eval
 qr/PASS plugin\/lago.spec.mts/
+--- SKIP
