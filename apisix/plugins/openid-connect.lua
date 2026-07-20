@@ -892,7 +892,7 @@ function _M.rewrite(plugin_conf, ctx)
             if err == STATE_MISMATCH_ERR and target_url
                and ngx.req.get_method() == "GET" then
                 core.log.warn("OIDC state mismatch (concurrent login flows or ",
-                              "replayed callback), redirecting to: ", target_url)
+                              "replayed callback), restarting the authentication flow")
                 core.response.set_header("Location", target_url)
                 return 302
             end
