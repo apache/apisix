@@ -277,3 +277,44 @@ apisix:
 ```
 
 The accept side (`proxy_protocol`) is a per-listen directive, so ports with different settings can share one listener. The upstream side (`proxy_protocol_to_upstream`) is a server-level directive, so APISIX renders ports that send the PROXY protocol upstream into a separate `server` block. UDP listens never send the PROXY protocol upstream, so they always stay in the plain `server` block.
+
+:::warning
+
+Only enable `proxy_protocol_to_upstream` for upstreams that expect the PROXY protocol. An upstream that does not will read the plaintext `PROXY` line as application data and typically close the connection immediately — a TLS upstream, for example, cannot parse it as a TLS record.
+
+:::
+
+### Preserving the client address behind a load balancer
+
+`proxy_protocol_to_upstream` builds the outbound header from the address APISIX is connected to. When APISIX sits behind a load balancer that speaks the PROXY protocol, that is the load balancer's address, so accepting a header and sending one is not by itself enough to carry the client address through to the upstream.
+
+Set `nginx_config.stream.real_ip_from` to the addresses of the load balancers you trust. On a connection from a trusted address that carries an inbound PROXY protocol header, APISIX replaces the client address with the one from the header:
+
+```yaml
+apisix:
+  proxy_mode: http&stream
+  stream_proxy:
+    tcp:
+      - addr: 9100
+        proxy_protocol: true              # accept the header from the load balancer
+        proxy_protocol_to_upstream: true  # rebuild it toward the upstream
+nginx_config:
+  stream:
+    real_ip_from:
+      - 192.168.1.0/24                    # the load balancer's network
+```
+
+The header APISIX then sends upstream carries the client address, and so do the stream `$remote_addr`, the access log, and address-based matching such as the `ip-restriction` plugin. The directly connected address stays available as `$realip_remote_addr`.
+
+`real_ip_from` is empty by default and only takes effect on ports that accept the PROXY protocol, and only for peers that match it. Trust only load balancers you control: a peer you trust can claim to be any client.
+
+### Choosing a configuration
+
+Which combination you want depends on who needs to see the client address:
+
+| Configuration | `proxy_protocol` | `proxy_protocol_to_upstream` | `real_ip_from` | Result |
+|---|---|---|---|---|
+| Pass through | off | off | — | APISIX never looks at the header and proxies it to the upstream as ordinary stream bytes. The upstream sees the client, APISIX does not. Not usable on ports where APISIX has to read the stream itself, such as TLS ports or routes that match on preread data. |
+| Terminate | on | off | — | APISIX consumes the header and connects to the upstream without one. Use this for upstreams that do not speak the PROXY protocol. |
+| Terminate and rebuild | on | on | load balancer network | APISIX consumes the header and sends a new one carrying the client address. Both APISIX and the upstream see the client. |
+| Terminate and rebuild, nothing trusted | on | on | — | The upstream still gets a header, but it carries the address APISIX is connected to — the load balancer — so the client address is lost. |

@@ -173,6 +173,12 @@ stream {
     lua_ssl_trusted_certificate {* ssl.ssl_trusted_certificate *};
     {% end %}
 
+    {% if stream.real_ip_from then %}
+    {% for _, real_ip in ipairs(stream.real_ip_from) do %}
+    set_real_ip_from {*real_ip*};
+    {% end %}
+    {% end %}
+
     # for stream logs, off by default
     {% if stream.enable_access_log == true then %}
     log_format main escape={* stream.access_log_format_escape *} '{* stream.access_log_format *}';
