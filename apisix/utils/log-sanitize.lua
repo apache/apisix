@@ -18,6 +18,7 @@
 local core = require("apisix.core")
 
 local pairs = pairs
+local ipairs = ipairs
 
 local _M = {}
 
@@ -53,13 +54,21 @@ function _M.redact_params(params)
 end
 
 
+-- extra_opts fields carrying data taken from the inbound request: its headers
+-- (Authorization/Cookie) and query args. None of it belongs in a log line. Add
+-- any new client-derived option here.
+local CLIENT_DERIVED_FIELDS = {
+    "client_headers",
+    "client_args",
+}
+
+
 function _M.redact_extra_opts(extra_opts)
     local redacted = core.table.deepcopy(extra_opts)
     redacted.auth = nil
-    -- Everything taken from the inbound request is grouped under `downstream`:
-    -- its headers (Authorization/Cookie) and query args. None of it belongs in a
-    -- log line, and dropping the one key drops all of it.
-    redacted.downstream = nil
+    for _, field in ipairs(CLIENT_DERIVED_FIELDS) do
+        redacted[field] = nil
+    end
     return redacted
 end
 

@@ -170,10 +170,9 @@ end
 --
 -- Pure and protocol-agnostic: `body` arrives already shaped (see build_body) and
 -- is passed through untouched, so a string goes out verbatim and a table is
--- encoded by the transport. Everything taken from the inbound request lives on
--- `opts.downstream`; its presence is what marks this as proxying one. A
--- self-contained internal call omits it, so nothing of the client's can reach the
--- LLM or the logs.
+-- encoded by the transport. Anything taken from the inbound request reaches us
+-- as an explicit opts.client_* field; a self-contained internal call sets none of
+-- them, so nothing of the client's can reach the LLM or the logs.
 -- @return table params HTTP parameters ready for transport_http.request()
 -- @return string|nil err Error message
 function _M.build_request(self, conf, body, opts)
@@ -227,12 +226,11 @@ function _M.build_request(self, conf, body, opts)
             .. "includes a path", 400
     end
 
-    -- Everything below that comes from the inbound request lives on
-    -- opts.downstream; an internal call leaves it nil and therefore forwards none
-    -- of the client's headers or query.
-    local downstream = opts.downstream
+    -- opts.client_* is whatever the caller took from the inbound request; an
+    -- internal call sets none of it and therefore forwards none of the client's
+    -- headers or query.
     local headers = transport_http.construct_forward_headers(auth.header or {},
-                                                             downstream and downstream.headers)
+                                                             opts.client_headers)
     if opts.host_header then
         headers["Host"] = opts.host_header
     end
@@ -254,11 +252,11 @@ function _M.build_request(self, conf, body, opts)
     -- The caller passes the downstream method and query string only when it
     -- wants them proxied verbatim (the passthrough protocol). Otherwise this is
     -- a plain POST with provider-specific query args.
-    local method = downstream and downstream.method or "POST"
-    if downstream and type(downstream.args) == "table" then
+    local method = opts.client_method or "POST"
+    if type(opts.client_args) == "table" then
         -- client query overrides the endpoint query, but configured
         -- auth.query credentials must stay non-overridable by the caller
-        for k, v in pairs(downstream.args) do
+        for k, v in pairs(opts.client_args) do
             if not (auth.query and auth.query[k] ~= nil) then
                 query_params[k] = v
             end

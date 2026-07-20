@@ -246,19 +246,19 @@ function _M.before_proxy(conf, ctx, on_error)
         -- extra_opts.
         extra_opts.header_transform = converter and converter.convert_headers
 
-        -- ai-proxy is a transparent proxy of an inbound request, so it hands the
-        -- provider everything taken from that request under one `downstream` key.
-        -- Internal callers omit it entirely and thus forward nothing of the
-        -- client's -- see ai-providers/base.lua build_request.
-        local downstream = { headers = core.request.headers(ctx) }
-        extra_opts.downstream = downstream
+        -- ai-proxy is a transparent proxy of an inbound request, so it passes what
+        -- it takes from that request as client_* options. Internal callers set
+        -- none of them and thus forward nothing of the client's -- see
+        -- ai-providers/base.lua build_request. Keep the names in sync with
+        -- log-sanitize's CLIENT_DERIVED_FIELDS so they stay out of the logs.
+        extra_opts.client_headers = core.request.headers(ctx)
 
         -- passthrough proxies the client's method and query string verbatim.
         if target_proto == "passthrough" then
-            downstream.method = core.request.get_method()
+            extra_opts.client_method = core.request.get_method()
             local client_args = ctx.var.args and core.string.decode_args(ctx.var.args)
             if type(client_args) == "table" then
-                downstream.args = client_args
+                extra_opts.client_args = client_args
             end
         end
 
