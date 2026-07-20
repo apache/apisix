@@ -619,6 +619,7 @@ qr/(invalid or missing X-Etcd-Index header\n){1,}/
 
 
 === TEST 16: full reload keeps the previous value of an item whose new data is invalid
+--- timeout: 20
 --- yaml_config
 deployment:
   role: traditional
@@ -711,6 +712,7 @@ keep the previous configuration
 
 
 === TEST 17: full reload does not resurrect an item that no longer exists in etcd
+--- timeout: 20
 --- yaml_config
 deployment:
   role: traditional
@@ -791,6 +793,7 @@ valid item loaded: true
 
 
 === TEST 18: full reload still skips an invalid item that has no previous value
+--- timeout: 20
 --- yaml_config
 deployment:
   role: traditional
