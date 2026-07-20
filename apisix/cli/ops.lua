@@ -911,6 +911,15 @@ Please modify "admin_key" in conf/config.yaml .
         sys_conf["discovery_shared_dicts"]["consul"] = consul_conf.shared_size or "64m"
     end
 
+    -- env entries are rendered as double-quoted nginx directive parameters
+    -- (`env "{*name*}";` in ngx_tpl.lua), so embedded `\` and `"` must be
+    -- escaped; nginx unescapes them when reading the quoted token
+    if sys_conf["envs"] then
+        for i, cfg_env in ipairs(sys_conf["envs"]) do
+            sys_conf["envs"][i] = cfg_env:gsub('[\\"]', '\\%0')
+        end
+    end
+
     -- fix up lua path
     sys_conf["extra_lua_path"] = get_lua_path(yaml_conf.apisix.extra_lua_path)
     sys_conf["extra_lua_cpath"] = get_lua_path(yaml_conf.apisix.extra_lua_cpath)
