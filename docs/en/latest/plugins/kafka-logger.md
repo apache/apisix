@@ -49,6 +49,8 @@ It might take some time to receive the log data. It will be automatically sent a
 | brokers.sasl_config.mechanism    | string  | False    | "PLAIN"        | ["PLAIN", "SCRAM-SHA-256", "SCRAM-SHA-512"]       | The mechanism of SASL config.                                                                                                                                                                                                                                                                                                                    |
 | brokers.sasl_config.user         | string  | True     |                |                                                   | The user of `sasl_config`. Required if `sasl_config` is configured.                                                                                                                                                                                                                                                                              |
 | brokers.sasl_config.password     | string  | True     |                |                                                   | The password of `sasl_config`. Required if `sasl_config` is configured.                                                                                                                                                                                                                                                                          |
+| tls                              | object  | False    |                |                                                   | TLS configuration for connecting to Kafka brokers.                                                                                                                                                                                                                                                                                               |
+| tls.verify                       | boolean | False    | false          |                                                   | If true, verify the Kafka broker TLS certificate.                                                                                                                                                                                                                                                                                                |
 | kafka_topic                      | string  | True     |                |                                                   | Target topic to push the logs.                                                                                                                                                                                                                                                                                                                   |
 | producer_type                    | string  | False    | async          | ["async", "sync"]                                 | Message sending mode of the producer.                                                                                                                                                                                                                                                                                                            |
 | required_acks                    | integer | False    | 1              | [1, -1]                                           | Number of acknowledgements the leader needs to receive for the producer to consider the request complete. This controls the durability of the sent records. The attribute follows the same configuration as the Kafka `acks` attribute. `required_acks` cannot be 0. See [Apache Kafka documentation](https://kafka.apache.org/documentation/#producerconfigs_acks) for more. |
@@ -487,3 +489,50 @@ If you have customized the `log_format` in addition to setting `include_req_body
 ```
 
 :::
+
+### Log to TLS-Enabled Kafka Brokers
+
+The following example demonstrates how to connect to TLS-enabled Kafka brokers, such as AWS MSK.
+
+Create a Route with `kafka-logger` and configure the `tls` attribute to connect to the TLS-enabled Kafka broker:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "kafka-logger-tls-route",
+    "uri": "/get",
+    "plugins": {
+      "kafka-logger": {
+        "brokers": [
+          {
+            "host": "kafka.example.com",
+            "port": 9093
+          }
+        ],
+        "kafka_topic": "test2",
+        "key": "key1",
+        "batch_max_size": 1,
+        "tls": {
+          "verify": true
+        }
+      }
+    },
+    "upstream": {
+      "nodes": {
+        "httpbin.org:80": 1
+      },
+      "type": "roundrobin"
+    }
+  }'
+```
+
+When using self-signed certificates, set `tls.verify` to `false` to skip certificate verification:
+
+```json
+{
+  "tls": {
+    "verify": false
+  }
+}
+```

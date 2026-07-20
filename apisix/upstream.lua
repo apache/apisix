@@ -113,6 +113,22 @@ local scheme_to_port = {
 _M.scheme_to_port = scheme_to_port
 
 
+-- A bare (unbracketed) IPv6 host makes the "host:port" key the balancer and the
+-- health checker build ambiguous (parse_addr reads the whole thing as an address
+-- with no port). The Admin API rejects such hosts and check_upstream_conf brackets
+-- them for configured upstreams, but service discovery returns nodes that reach
+-- here without going through either.
+--
+-- Only a node that carries its own port is bracketed. A host given without one is
+-- itself ambiguous - the map key "::1:1980" is a valid IPv6 literal as much as it
+-- is host ::1 port 1980 - so it is left to the existing malformed-config handling.
+-- Discovery endpoints always carry a port, so nothing real is missed.
+local function needs_ipv6_bracket(node)
+    return node.port and core.utils.parse_ipv6(node.host)
+                     and str_byte(node.host, 1) ~= str_byte("[")
+end
+
+
 local function fill_node_info(up_conf, scheme, is_stream)
     local nodes = up_conf.nodes
     if up_conf.nodes_ref == nodes then
@@ -135,6 +151,10 @@ local function fill_node_info(up_conf, scheme, is_stream)
         if not n.priority then
             need_filled = true
         end
+
+        if needs_ipv6_bracket(n) then
+            need_filled = true
+        end
     end
 
     if not need_filled then
@@ -148,10 +168,12 @@ local function fill_node_info(up_conf, scheme, is_stream)
     -- keep the original nodes for slow path in `compare_upstream_node()`,
     -- can't use `core.table.deepcopy()` for whole `nodes` array here,
     -- because `compare_upstream_node()` compare `metadata` of node by address.
+    -- The original (bare) host is preserved there, so bracketing below does not
+    -- make discovery re-fetches look like a node change.
     up_conf.original_nodes = core.table.new(#nodes, 0)
     for i, n in ipairs(nodes) do
         up_conf.original_nodes[i] = core.table.clone(n)
-        if not n.port or not n.priority then
+        if not n.port or not n.priority or needs_ipv6_bracket(n) then
             nodes[i] = core.table.clone(n)
 
             if not is_stream and not n.port then
@@ -161,6 +183,10 @@ local function fill_node_info(up_conf, scheme, is_stream)
             -- fix priority for non-array nodes and nodes from service discovery
             if not n.priority then
                 nodes[i].priority = 0
+            end
+
+            if needs_ipv6_bracket(n) then
+                nodes[i].host = "[" .. n.host .. "]"
             end
         end
     end

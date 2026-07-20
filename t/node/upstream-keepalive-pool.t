@@ -137,7 +137,7 @@ hello world
 --- grep_error_log eval
 qr/lua balancer: keepalive .*/
 --- grep_error_log_out eval
-qr/^lua balancer: keepalive create pool, crc32: \S+, size: 4
+qr/^lua balancer: keepalive create pool, name: \S+, size: 4
 lua balancer: keepalive no free connection, cpool: \S+
 lua balancer: keepalive saving connection \S+, cpool: \S+, connections: 1
 lua balancer: keepalive reusing connection \S+, requests: 1, cpool: \S+
@@ -201,13 +201,13 @@ hello world
 --- grep_error_log eval
 qr/lua balancer: keepalive .*/
 --- grep_error_log_out eval
-qr/^lua balancer: keepalive create pool, crc32: \S+, size: 1
+qr/^lua balancer: keepalive create pool, name: (\S+), size: 1
 lua balancer: keepalive no free connection, cpool: \S+
 lua balancer: keepalive saving connection \S+, cpool: \S+, connections: 1
 lua balancer: keepalive reusing connection \S+, requests: 1, cpool: \S+
 lua balancer: keepalive not saving connection \S+, cpool: \S+, connections: 0
-lua balancer: keepalive free pool \S+, crc32: \S+
-lua balancer: keepalive create pool, crc32: \S+, size: 1
+lua balancer: keepalive free pool \S+, name: \1
+lua balancer: keepalive create pool, name: \1, size: 1
 lua balancer: keepalive no free connection, cpool: \S+
 lua balancer: keepalive saving connection \S+, cpool: \S+, connections: 1
 $/
@@ -263,7 +263,7 @@ hello world
 --- grep_error_log eval
 qr/lua balancer: keepalive .*/
 --- grep_error_log_out eval
-qr/^lua balancer: keepalive create pool, crc32: \S+, size: 320
+qr/^lua balancer: keepalive create pool, name: \S+, size: 320
 lua balancer: keepalive no free connection, cpool: \S+
 lua balancer: keepalive saving connection \S+, cpool: \S+, connections: 1
 lua balancer: keepalive reusing connection \S+, requests: 1, cpool: \S+
@@ -628,8 +628,8 @@ $/
 --- grep_error_log eval
 qr/lua balancer: keepalive create pool, .*/
 --- grep_error_log_out eval
-qr/^lua balancer: keepalive create pool, crc32: \S+, size: 8
-lua balancer: keepalive create pool, crc32: \S+, size: 4
+qr/^lua balancer: keepalive create pool, name: \S+#b\.com, size: 8
+lua balancer: keepalive create pool, name: \S+#a\.com, size: 4
 $/
 
 
@@ -731,8 +731,8 @@ $/
 --- grep_error_log eval
 qr/lua balancer: keepalive create pool, .*/
 --- grep_error_log_out eval
-qr/^lua balancer: keepalive create pool, crc32: \S+, size: 4
-lua balancer: keepalive create pool, crc32: \S+, size: 8
+qr/^lua balancer: keepalive create pool, name: \S+#a\.com, size: 4
+lua balancer: keepalive create pool, name: http#\S+, size: 8
 $/
 
 
