@@ -33,7 +33,8 @@ basic:
 
 注意：在 APISIX 2.10 之前，开启基本调试模式曾经是设置 `conf/config.yaml` 中的 `apisix.enable_debug` 为 `true`。
 
-比如对 `/hello` 开启了 `limit-conn` 和 `limit-count` 插件，这时候应答头中会有 `Apisix-Plugins: limit-conn, limit-count`。
+比如对 `/hello` 开启了 `limit-conn` 和 `limit-count` 插件，这时候应答头中会有 `Apisix-Plugins: limit-conn#access, limit-count#access`。
+应答头中的每一项都是 `插件名#执行阶段` 的形式，并且严格按照插件阶段函数在运行时的实际执行顺序排列。
 
 ```shell
 $ curl http://127.0.0.1:1984/hello -i
@@ -41,7 +42,7 @@ HTTP/1.1 200 OK
 Content-Type: text/plain
 Transfer-Encoding: chunked
 Connection: keep-alive
-Apisix-Plugins: limit-conn, limit-count
+Apisix-Plugins: limit-conn#access, limit-count#access
 X-RateLimit-Limit: 2
 X-RateLimit-Remaining: 1
 Server: openresty
@@ -49,8 +50,9 @@ Server: openresty
 hello world
 ```
 
-如果这个信息无法通过 HTTP 应答头传递，比如插件在 stream 子系统里面执行，
-那么这个信息会以 warn 等级日志写入到错误日志中。
+受限于 HTTP 协议，`Apisix-Plugins` 应答头只能包含在应答头生成之前执行的插件阶段函数
+（如 `rewrite`、`access`、`header_filter`）。在这之后执行的插件阶段函数（如 `body_filter`、`log`）
+无法出现在应答头中，它们会以 warn 等级日志写入到错误日志中，例如 `Apisix-Plugins: http-logger#log`。
 
 ### 高级调试模式
 

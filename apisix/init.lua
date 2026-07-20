@@ -40,6 +40,7 @@ local apisix_secret   = require("apisix.secret")
 local set_upstream    = apisix_upstream.set_by_route
 local apisix_ssl      = require("apisix.ssl")
 local apisix_global_rules    = require("apisix.global_rules")
+local enable_debug    = require("apisix.debug").enable_debug
 local upstream_util   = require("apisix.utils.upstream")
 local xrpc            = require("apisix.stream.xrpc")
 local ctxdump         = require("resty.ctxdump")
@@ -1049,13 +1050,17 @@ function _M.http_header_filter_phase()
         return
     end
 
-    local debug_headers = api_ctx.debug_headers
-    if debug_headers then
-        local deduplicate = core.table.new(core.table.nkeys(debug_headers), 0)
-        for k, v in pairs(debug_headers) do
-            core.table.insert(deduplicate, k)
+    if enable_debug() then
+        -- the executed plugin phase functions in the execution order; the
+        -- ones executed from now on can not be reported via the response
+        -- header and are logged as a warn log instead
+        local debug_plugins = api_ctx.debug_plugins
+        if debug_plugins then
+            core.response.set_header("Apisix-Plugins",
+                                     core.table.concat(debug_plugins, ", "))
+        else
+            core.response.set_header("Apisix-Plugins", "no plugin")
         end
-        core.response.set_header("Apisix-Plugins", core.table.concat(deduplicate, ", "))
     end
     span:finish(ngx_ctx)
 

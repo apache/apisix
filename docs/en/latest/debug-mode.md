@@ -47,7 +47,7 @@ For APISIX releases prior to v2.10, basic debug mode is enabled by setting `apis
 
 :::
 
-If you have configured two Plugins `limit-conn` and `limit-count` on the Route `/hello`, you will receive a response with the header `Apisix-Plugins: limit-conn, limit-count` when you enable the basic debug mode.
+If you have configured two Plugins `limit-conn` and `limit-count` on the Route `/hello`, you will receive a response with the header `Apisix-Plugins: limit-conn#access, limit-count#access` when you enable the basic debug mode. Each entry in the header is in the form `plugin-name#phase`, and the entries are listed strictly in the order in which the plugin phase functions were executed at runtime.
 
 ```shell
 curl http://127.0.0.1:1984/hello -i
@@ -58,7 +58,7 @@ HTTP/1.1 200 OK
 Content-Type: text/plain
 Transfer-Encoding: chunked
 Connection: keep-alive
-Apisix-Plugins: limit-conn, limit-count
+Apisix-Plugins: limit-conn#access, limit-count#access
 X-RateLimit-Limit: 2
 X-RateLimit-Remaining: 1
 Server: openresty
@@ -68,7 +68,7 @@ hello world
 
 :::info IMPORTANT
 
-If the debug information cannot be included in a response header (for example, when the Plugin is in a stream subsystem), the debug information will be logged as an error log at a `warn` level.
+Restricted by the HTTP protocol, the `Apisix-Plugins` response header can only report the plugin phase functions executed before the response header is generated (such as `rewrite`, `access` and `header_filter`). The phase functions executed after that (such as `body_filter` and `log`) cannot be included in the response header, and are logged as an error log at a `warn` level instead, for example `Apisix-Plugins: http-logger#log`.
 
 :::
 
