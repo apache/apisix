@@ -201,3 +201,83 @@ POST /anything
 --- error_code: 500
 --- error_log eval
 qr/LATENCYVARS status=500 aurt=\d+(?![\.\d]) ttft=0(?![\.\d])/
+
+
+
+=== TEST 8: set up a route with prometheus enabled, plus the metrics endpoint
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "prometheus": {},
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": {"header": {"Authorization": "Bearer token"}},
+                            "options": {"model": "gpt-4"},
+                            "override": {"endpoint": "http://localhost:18724"},
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("route failed")
+                return
+            end
+
+            code = t('/apisix/admin/routes/metrics',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/apisix/prometheus/metrics",
+                    "plugins": {"public-api": {}}
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("metrics route failed")
+                return
+            end
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 9: only the served response is observed in llm_latency
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local base = "http://127.0.0.1:" .. ngx.var.server_port
+            local body = [[{ "messages": [ { "role": "user", "content": "hi"} ] }]]
+
+            local function call(status_hdr)
+                local headers = {["Content-Type"] = "application/json"}
+                if status_hdr then
+                    headers["x-test-status"] = status_hdr
+                end
+                local res = http.new():request_uri(base .. "/anything",
+                    {method = "POST", body = body, headers = headers})
+                return res.status
+            end
+
+            local s_ok = call(nil)
+            local s_500 = call("500")
+            local s_429 = call("429")
+            ngx.sleep(0.5)
+
+            local res = http.new():request_uri(base .. "/apisix/prometheus/metrics")
+            local count = res.body:match("apisix_llm_latency_count%b{}%s+(%d+)")
+            ngx.say(s_ok, " ", s_500, " ", s_429, " llm_latency_count=", tostring(count))
+        }
+    }
+--- response_body
+200 500 429 llm_latency_count=1
