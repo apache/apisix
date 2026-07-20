@@ -23,6 +23,7 @@ local pcall   = pcall
 local pairs   = pairs
 local type    = type
 local table   = table
+local math_floor = math.floor
 local exporter = require("apisix.plugins.prometheus.exporter")
 local protocols = require("apisix.plugins.ai-protocols")
 local transport_http = require("apisix.plugins.ai-transport.http")
@@ -69,6 +70,23 @@ local function read_upstream_error_body(res)
     res._upstream_bytes = #body
     return body
 end
+
+
+-- Fill the AI latency vars in MILLISECONDS on the early-exit paths, using the
+-- same clock as the success path (ctx.llm_request_start_time, reset at the
+-- start of every attempt). Without this the log phase falls back to nginx
+-- $upstream_response_time, which is in seconds, so a 429/5xx would report a
+-- value 1000x off from a 200 for the same upstream latency.
+local function set_error_latency_vars(ctx, upstream_responded)
+    local elapsed_ms = math_floor((ngx_now() - ctx.llm_request_start_time) * 1000)
+    ctx.var.apisix_upstream_response_time = elapsed_ms
+    if upstream_responded then
+        -- the error response is the only payload the upstream produced, so the
+        -- time until we knew it answered is this request's time to first token
+        ctx.var.llm_time_to_first_token = elapsed_ms
+    end
+end
+
 
 function _M.set_logging(ctx, summaries, payloads)
     if summaries then
@@ -297,6 +315,7 @@ function _M.before_proxy(conf, ctx, on_error)
                         })
                     end
                 end
+                set_error_latency_vars(ctx, false)
                 return transport_http.handle_error(transport_err)
             end
 
@@ -338,6 +357,7 @@ function _M.before_proxy(conf, ctx, on_error)
                 if res._httpc then
                     res._httpc:close()
                 end
+                set_error_latency_vars(ctx, true)
                 return res.status, error_body
             end
 
@@ -352,6 +372,7 @@ function _M.before_proxy(conf, ctx, on_error)
                 if res._httpc then
                     res._httpc:close()
                 end
+                set_error_latency_vars(ctx, true)
                 return 500
             end
 
