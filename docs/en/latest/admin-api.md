@@ -1473,6 +1473,14 @@ The interface of getting properties of all plugins via `/apisix/admin/plugins?al
 
 :::
 
+:::note
+
+If the new plugin list cannot be loaded, for instance because the `init()` function of
+one of the plugins fails, `/apisix/admin/plugins/reload` returns `500` together with the
+error message and every worker keeps serving with its previous plugin set.
+
+:::
+
 ### Request Body Parameters
 
 The Plugin ({plugin_name}) of the data structure.
