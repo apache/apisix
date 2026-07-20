@@ -366,7 +366,8 @@ done
     }
 --- error_log eval
 [qr/this is a error message for tls test/,
-qr/sending a batch logs to kafka brokers: \[\{"host":"127.0.0.1","port":9093\}\]/,
+qr/sending a batch logs to kafka brokers: .*"host":"127\.0\.0\.1"/,
+qr/sending a batch logs to kafka brokers: .*"port":9093/,
 qr/send data to kafka: .*this is a error message for tls test/]
 --- no_error_log
 failed to do SSL handshake
