@@ -1017,7 +1017,7 @@ local function check_single_plugin_schema(name, plugin_conf, schema_type, skip_d
     if plugin_obj.check_schema then
         local ok, err = plugin_obj.check_schema(plugin_conf, schema_type)
         if not ok then
-            if not check_disable(plugin_conf) then
+            if check_disable(plugin_conf) ~= true then
                 return false, "failed to check the configuration of plugin "
                     .. name .. " err: " .. err
             end
@@ -1270,7 +1270,7 @@ local function stream_check_schema(plugins_conf, schema_type, skip_disabled_plug
         if plugin_obj.check_schema then
             local ok, err = plugin_obj.check_schema(plugin_conf, schema_type)
             if not ok then
-                if not check_disable(plugin_conf) then
+                if check_disable(plugin_conf) ~= true then
                     return false, "failed to check the configuration of "
                                   .. "stream plugin [" .. name .. "]: " .. err
                 end
