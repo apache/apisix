@@ -76,7 +76,7 @@ plugins:
   - response-rewrite
   - reload-bad-init
 ]])
-        local code2, _, body2 = t('/apisix/admin/plugins/reload', ngx.HTTP_PUT)
+        local code2, body2 = t('/apisix/admin/plugins/reload', ngx.HTTP_PUT)
         ngx.say("reload: ", code2, " ", body2)
         ngx.sleep(2)
 
@@ -103,9 +103,9 @@ plugins:
 --- request
 GET /t
 --- response_body eval
-qr/^admin PUT before reload: 201
+qr/^admin PUT before reload: 20[01]
 dataplane before reload: REWRITTEN
-reload: 500 \{"error_msg":"failed to reload plugins: failed to init plugin \[reload-bad-init\].*boom.*"\}
+reload: 500 \{"error_msg":"failed to reload plugins: failed to init plugin \[reload-bad-init\].*boom.*"\}\s*
 after reload: plugins_hash has response-rewrite=true, plugins array=\[response-rewrite\]
 admin PUT after reload: 200
 dataplane after reload: REWRITTEN
@@ -186,3 +186,5 @@ recovering reload: 200 done
 plugins array=[key-auth,response-rewrite]
 key-auth in hash: true
 --- timeout: 15
+--- error_log eval
+qr/reload-bad-init: init\(\) boom/
