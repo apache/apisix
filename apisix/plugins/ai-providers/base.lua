@@ -176,8 +176,13 @@ end
 -- @return table params HTTP parameters ready for transport_http.request()
 -- @return string|nil err Error message
 function _M.build_request(self, conf, body, opts)
-    core.log.info("request extra_opts to LLM server: ",
-                  core.json.delay_encode(log_sanitize.redact_extra_opts(opts), true))
+    -- Name the few options worth tracing rather than dumping opts wholesale: the
+    -- resolved endpoint, path and headers are already logged from `params` below,
+    -- and serialising an open-ended options bag is how credentials and client data
+    -- end up in logs.
+    core.log.info("building LLM request: instance=", opts.name,
+                  ", target_protocol=", opts.target_protocol,
+                  ", model=", opts.model_options and opts.model_options.model)
 
     local auth = opts.auth or {}
 

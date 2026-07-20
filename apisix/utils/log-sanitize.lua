@@ -17,7 +17,6 @@
 
 
 local pairs = pairs
-local ipairs = ipairs
 
 local _M = {}
 
@@ -50,35 +49,6 @@ function _M.redact_params(params)
 
     -- return a raw table; call sites wrap it once in delay_encode
     return redacted
-end
-
-
--- extra_opts fields that are safe to log: connection/routing shape and
--- non-secret provider config. Deliberately an allowlist, like redact_params
--- below -- anything added to extra_opts later (credentials, client headers, a
--- verbatim request body) stays out of the logs unless it is named here.
-local LOGGABLE_EXTRA_OPTS = {
-    "name",
-    "endpoint",
-    "target_host",
-    "target_path",
-    "target_protocol",
-    "host_header",
-    "ssl_server_name",
-    "model_options",
-    "override_llm_options",
-    "request_body_override_map",
-    "request_body_force_override",
-    "conf",
-}
-
-
-function _M.redact_extra_opts(extra_opts)
-    local safe = {}
-    for _, field in ipairs(LOGGABLE_EXTRA_OPTS) do
-        safe[field] = extra_opts[field]
-    end
-    return safe
 end
 
 
