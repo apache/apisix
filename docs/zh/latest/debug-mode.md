@@ -34,7 +34,7 @@ basic:
 注意：在 APISIX 2.10 之前，开启基本调试模式曾经是设置 `conf/config.yaml` 中的 `apisix.enable_debug` 为 `true`。
 
 比如对 `/hello` 开启了 `limit-conn` 和 `limit-count` 插件，这时候应答头中会有 `Apisix-Plugins: limit-conn#access, limit-count#access, limit-conn#log`。
-应答头中的每一项都是 `插件名#执行阶段` 的形式，并且严格按照插件阶段函数在运行时的执行顺序排列。
+应答头中的每一项都是 `插件名#执行阶段` 的形式，按照插件阶段函数在运行时的执行顺序排列（应答头生成之后才执行的阶段按预期执行顺序给出，见下方说明）。
 
 ```shell
 $ curl http://127.0.0.1:1984/hello -i

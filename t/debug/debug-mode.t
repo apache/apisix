@@ -190,6 +190,7 @@ hello world
 Apisix-Plugins: limit-conn#access, limit-count#access, limit-conn#log
 --- no_error_log
 Apisix-Plugins: limit-conn#log
+[error]
 
 
 

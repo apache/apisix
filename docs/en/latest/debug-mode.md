@@ -47,7 +47,7 @@ For APISIX releases prior to v2.10, basic debug mode is enabled by setting `apis
 
 :::
 
-If you have configured two Plugins `limit-conn` and `limit-count` on the Route `/hello`, you will receive a response with the header `Apisix-Plugins: limit-conn#access, limit-count#access, limit-conn#log` when you enable the basic debug mode. Each entry in the header is in the form `plugin-name#phase`, and the entries are listed strictly in the order in which the plugin phase functions are executed at runtime.
+If you have configured two Plugins `limit-conn` and `limit-count` on the Route `/hello`, you will receive a response with the header `Apisix-Plugins: limit-conn#access, limit-count#access, limit-conn#log` when you enable the basic debug mode. Each entry in the header is in the form `plugin-name#phase`, and the entries are listed in the runtime execution order of the plugin phase functions (for the phases running after the response header is generated, the expected execution order — see the note below).
 
 ```shell
 curl http://127.0.0.1:1984/hello -i

@@ -464,8 +464,7 @@ end
 -- Record an executed plugin phase function as "name#phase" in
 -- ctx.debug_plugins, keeping the execution order. The entries collected
 -- before the response header is sent are reported via the Apisix-Plugins
--- response header, the rest (and the ones in the stream subsystem, which
--- has no response header at all) are logged as a warn log instead.
+-- response header, the rest are logged as a warn log instead.
 local function trace_plugin_exec_for_debug(ctx, plugin_name, phase)
     if not enable_debug() then
         return
@@ -498,7 +497,7 @@ local function trace_plugin_exec_for_debug(ctx, plugin_name, phase)
 end
 
 
-local POST_RESP_HEADER_PHASES = {"body_filter", "log"}
+local POST_RESP_HEADER_PHASES = {"body_filter", "delayed_body_filter", "log"}
 -- The phase functions running after the response header is sent can not be
 -- traced at execution time and reported in the Apisix-Plugins response
 -- header. Instead, infer them from the filtered plugin list right before

@@ -40,7 +40,6 @@ local apisix_secret   = require("apisix.secret")
 local set_upstream    = apisix_upstream.set_by_route
 local apisix_ssl      = require("apisix.ssl")
 local apisix_global_rules    = require("apisix.global_rules")
-local enable_debug    = require("apisix.debug").enable_debug
 local upstream_util   = require("apisix.utils.upstream")
 local xrpc            = require("apisix.stream.xrpc")
 local ctxdump         = require("resty.ctxdump")
@@ -1050,11 +1049,11 @@ function _M.http_header_filter_phase()
         return
     end
 
-    if enable_debug() then
+    if debug.enable_debug() then
         -- report the plugin phase functions in the execution order: the ones
         -- executed so far were traced at execution time, while the
-        -- body_filter/log ones of the matched plugins have not run yet and
-        -- are inferred, so they may not fully match the real execution
+        -- post-header ones of the matched plugins have not run yet and are
+        -- inferred, so they may not fully match the real execution
         plugin.trace_expected_plugins_for_debug(api_ctx)
 
         local debug_plugins = api_ctx.debug_plugins
