@@ -1049,13 +1049,20 @@ function _M.http_header_filter_phase()
         return
     end
 
-    local debug_headers = api_ctx.debug_headers
-    if debug_headers then
-        local deduplicate = core.table.new(core.table.nkeys(debug_headers), 0)
-        for k, v in pairs(debug_headers) do
-            core.table.insert(deduplicate, k)
+    if debug.enable_debug() then
+        -- report the plugin phase functions in the execution order: the ones
+        -- executed so far were traced at execution time, while the
+        -- post-header ones of the matched plugins have not run yet and are
+        -- inferred, so they may not fully match the real execution
+        plugin.trace_expected_plugins_for_debug(api_ctx)
+
+        local debug_plugins = api_ctx.debug_plugins
+        if debug_plugins then
+            core.response.set_header("Apisix-Plugins",
+                                     core.table.concat(debug_plugins, ", "))
+        else
+            core.response.set_header("Apisix-Plugins", "no plugin")
         end
-        core.response.set_header("Apisix-Plugins", core.table.concat(deduplicate, ", "))
     end
     span:finish(ngx_ctx)
 
