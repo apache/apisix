@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 
+local core = require("apisix.core")
 
 local pairs = pairs
 
@@ -48,6 +49,13 @@ function _M.redact_params(params)
     end
 
     -- return a raw table; call sites wrap it once in delay_encode
+    return redacted
+end
+
+
+function _M.redact_extra_opts(extra_opts)
+    local redacted = core.table.deepcopy(extra_opts)
+    redacted.auth = nil
     return redacted
 end
 
