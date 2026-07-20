@@ -272,10 +272,18 @@ passed
             local s_ok = call(nil)
             local s_500 = call("500")
             local s_429 = call("429")
-            ngx.sleep(0.5)
 
-            local res = http.new():request_uri(base .. "/apisix/prometheus/metrics")
-            local count = res.body:match("apisix_llm_latency_count%b{}%s+(%d+)")
+            -- the prometheus counters are buffered per worker and only reach
+            -- the shared dict on the sync interval, so poll rather than guess
+            local count
+            for _ = 1, 20 do
+                ngx.sleep(0.3)
+                local res = http.new():request_uri(base .. "/apisix/prometheus/metrics")
+                count = res.body:match("apisix_llm_latency_count%b{}%s+(%d+)")
+                if count then
+                    break
+                end
+            end
             ngx.say(s_ok, " ", s_500, " ", s_429, " llm_latency_count=", tostring(count))
         }
     }
