@@ -23,7 +23,8 @@ local google_oauth = require("apisix.utils.google-cloud-oauth")
 local lrucache = require("resty.lrucache")
 local type = type
 local os = os
-local ngx_crc32_long = ngx.crc32_long
+local tostring = tostring
+local ngx_md5 = ngx.md5
 
 local _M = {}
 
@@ -41,22 +42,25 @@ local gcp_access_token_cache = lrucache.new(1024 * 4)
 -- @return string|nil Error message
 function _M.fetch_gcp_access_token(name, gcp_conf)
     -- The credentials may arrive as a secret ref resolved per request, so key on
-    -- the resolved value; hash it so the cache never holds the raw JSON.
-    local sa = type(gcp_conf) == "table" and gcp_conf.service_account_json
-               or os.getenv("GCP_SERVICE_ACCOUNT")
-    local key = ngx_crc32_long(sa or "") .. "#" .. (name or "")
+    -- the resolved value; hash it so the cache never holds the raw JSON. Include
+    -- the fields that change how long the token is cached (expire_early_secs,
+    -- max_ttl) so that identical credentials under different TTL policies do not
+    -- share an entry, and use a 128-bit digest instead of a 32-bit CRC so that
+    -- distinct credentials cannot collide onto the wrong cached token.
+    local conf = type(gcp_conf) == "table" and gcp_conf or {}
+    local sa = conf.service_account_json or os.getenv("GCP_SERVICE_ACCOUNT")
+    local key = ngx_md5((sa or "") .. "\0"
+                        .. tostring(conf.expire_early_secs or "") .. "\0"
+                        .. tostring(conf.max_ttl or "")) .. "#" .. (name or "")
     local access_token = gcp_access_token_cache:get(key)
     if not access_token then
         local auth_conf = {}
-        gcp_conf = type(gcp_conf) == "table" and gcp_conf or {}
-        local service_account_json = gcp_conf.service_account_json or
-                                        os.getenv("GCP_SERVICE_ACCOUNT")
-        if type(service_account_json) == "string" and service_account_json ~= "" then
-            local conf, err = core.json.decode(service_account_json)
-            if not conf then
+        if type(sa) == "string" and sa ~= "" then
+            local decoded, err = core.json.decode(sa)
+            if not decoded then
                 return nil, "invalid gcp service account json: " .. (err or "unknown error")
             end
-            auth_conf = conf
+            auth_conf = decoded
         end
         local oauth = google_oauth.new(auth_conf)
         access_token = oauth:generate_access_token()
@@ -64,11 +68,11 @@ function _M.fetch_gcp_access_token(name, gcp_conf)
             return nil, "failed to get google oauth token"
         end
         local ttl = oauth.access_token_ttl or 3600
-        if gcp_conf.expire_early_secs and ttl > gcp_conf.expire_early_secs then
-            ttl = ttl - gcp_conf.expire_early_secs
+        if conf.expire_early_secs and ttl > conf.expire_early_secs then
+            ttl = ttl - conf.expire_early_secs
         end
-        if gcp_conf.max_ttl and ttl > gcp_conf.max_ttl then
-            ttl = gcp_conf.max_ttl
+        if conf.max_ttl and ttl > conf.max_ttl then
+            ttl = conf.max_ttl
         end
         gcp_access_token_cache:set(key, access_token, ttl)
         core.log.debug("set gcp access token in cache with ttl: ", ttl, ", key: ", key)
