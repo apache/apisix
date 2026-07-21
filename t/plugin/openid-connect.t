@@ -937,7 +937,7 @@ OIDC introspection failed: invalid token
         }
     }
 --- response_body
-{"accept_none_alg":false,"accept_unsupported_alg":true,"access_token_expires_leeway":0,"access_token_in_authorization_header":false,"bearer_only":false,"client_id":"kbyuFDidLLm280LIwVFiazOqjO3ty8KH","client_jwt_assertion_expires_in":60,"client_secret":"60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa","discovery":"http://127.0.0.1:1980/.well-known/openid-configuration","force_reauthorize":false,"iat_slack":120,"introspection_endpoint_auth_method":"client_secret_basic","introspection_interval":0,"jwk_expires_in":86400,"jwt_verification_cache_ignore":false,"logout_path":"/logout","realm":"apisix","renew_access_token_on_expiry":true,"revoke_tokens_on_logout":false,"scope":"openid","session":{"secret":"jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK","storage":"cookie"},"set_access_token_header":true,"set_enc_id_token_header":false,"set_id_token_header":true,"set_refresh_token_header":false,"set_userinfo_header":true,"ssl_verify":true,"timeout":3,"token_endpoint_auth_method":"client_secret_basic","unauth_action":"auth","use_jwks":false,"use_nonce":false,"use_pkce":false}
+{"accept_none_alg":false,"accept_unsupported_alg":true,"access_token_expires_leeway":0,"access_token_in_authorization_header":false,"bearer_only":false,"client_id":"kbyuFDidLLm280LIwVFiazOqjO3ty8KH","client_jwt_assertion_expires_in":60,"client_secret":"60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa","discovery":"http://127.0.0.1:1980/.well-known/openid-configuration","force_reauthorize":false,"iat_slack":120,"introspection_endpoint_auth_method":"client_secret_basic","introspection_interval":0,"jwk_expires_in":86400,"jwt_verification_cache_ignore":false,"logout_path":"/logout","realm":"apisix","renew_access_token_on_expiry":true,"revoke_tokens_on_logout":false,"scope":"openid","session":{"secret":"jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK","storage":"cookie"},"set_access_token_header":true,"set_id_token_header":true,"set_raw_id_token_header":false,"set_refresh_token_header":false,"set_userinfo_header":true,"ssl_verify":true,"timeout":3,"token_endpoint_auth_method":"client_secret_basic","unauth_action":"auth","use_jwks":false,"use_nonce":false,"use_pkce":false}
 
 
 
@@ -2052,7 +2052,7 @@ passed
 
 
 
-=== TEST 55: Configure plugin with set_enc_id_token_header enabled.
+=== TEST 55: Configure plugin with set_raw_id_token_header enabled.
 --- config
     location /t {
         content_by_lua_block {
@@ -2072,7 +2072,7 @@ passed
                                 "set_access_token_header": false,
                                 "set_id_token_header": false,
                                 "set_userinfo_header": false,
-                                "set_enc_id_token_header": true,
+                                "set_raw_id_token_header": true,
                                 "session": {
                                     "secret": "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK"
                                 }
@@ -2099,7 +2099,7 @@ passed
 
 
 
-=== TEST 56: Full OIDC login sets X-Enc-ID-Token with the raw signed JWT; other auth headers are absent.
+=== TEST 56: Full OIDC login sets X-Raw-ID-Token with the raw signed JWT; other auth headers are absent.
 --- config
     location /t {
         content_by_lua_block {
@@ -2136,10 +2136,10 @@ passed
                 return
             end
 
-            -- X-Enc-ID-Token must be present and contain a JWT (starts with "ey").
-            if not res.body:find("x-enc-id-token: ey", 1, true) then
+            -- X-Raw-ID-Token must be present and contain a JWT (starts with "ey").
+            if not res.body:find("x-raw-id-token: ey", 1, true) then
                 ngx.status = 500
-                ngx.say("expected x-enc-id-token header with a JWT value, body: " .. res.body)
+                ngx.say("expected x-raw-id-token header with a JWT value, body: " .. res.body)
                 return
             end
 

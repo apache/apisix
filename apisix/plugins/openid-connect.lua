@@ -316,9 +316,9 @@ local schema = {
             type = "boolean",
             default = true
         },
-        set_enc_id_token_header = {
+        set_raw_id_token_header = {
             description = "Whether the raw signed ID token JWT should be added in the " ..
-                "X-Enc-ID-Token header to the request for downstream.",
+                "X-Raw-ID-Token header to the request for downstream.",
             type = "boolean",
             default = false
         },
@@ -717,7 +717,7 @@ function _M.rewrite(plugin_conf, ctx)
     core.request.set_header(ctx, "X-Userinfo", nil)
     core.request.set_header(ctx, "X-ID-Token", nil)
     core.request.set_header(ctx, "X-Refresh-Token", nil)
-    core.request.set_header(ctx, "X-Enc-ID-Token", nil)
+    core.request.set_header(ctx, "X-Raw-ID-Token", nil)
 
     -- Previously, we multiply conf.timeout before storing it in etcd.
     -- If the timeout is too large, we should not multiply it again.
@@ -861,11 +861,11 @@ function _M.rewrite(plugin_conf, ctx)
             unauth_action = "deny"
         end
 
-        -- When set_enc_id_token_header is enabled and the user has explicitly restricted
+        -- When set_raw_id_token_header is enabled and the user has explicitly restricted
         -- session_contents, ensure enc_id_token is included so session:get("enc_id_token")
         -- returns the raw signed JWT. When session_contents is nil, lua-resty-openidc stores
         -- all session data by default (including enc_id_token), so no action is needed.
-        if conf.set_enc_id_token_header and conf.session_contents then
+        if conf.set_raw_id_token_header and conf.session_contents then
             conf.session_contents = core.table.clone(conf.session_contents)
             conf.session_contents.enc_id_token = true
         end
@@ -927,10 +927,10 @@ function _M.rewrite(plugin_conf, ctx)
                 core.request.set_header(ctx, "X-Refresh-Token", refresh_token)
             end
 
-            -- Add X-Enc-ID-Token header, maybe.
+            -- Add X-Raw-ID-Token header, maybe.
             local enc_id_token = session:get("enc_id_token")
-            if enc_id_token and conf.set_enc_id_token_header then
-                core.request.set_header(ctx, "X-Enc-ID-Token", enc_id_token)
+            if enc_id_token and conf.set_raw_id_token_header then
+                core.request.set_header(ctx, "X-Raw-ID-Token", enc_id_token)
             end
         end
     end
