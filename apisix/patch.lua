@@ -395,6 +395,24 @@ end
 
 
 function _M.patch()
+    -- deps/ precedes OpenResty's lualib in package.cpath, so a lua-cjson pulled
+    -- into deps/ by an unpinned transitive dependency (e.g. an openapi-validator
+    -- rockspec) shadows the cjson bundled with OpenResty. That copy re-encodes
+    -- empty arrays as invalid JSON on arm64 (apache/apisix#13593). Move the
+    -- lualib entries ahead of deps/ so the require() just below loads the
+    -- bundled copy. Done here because this is the first require of cjson.
+    local head, rest = {}, {}
+    for seg in package.cpath:gmatch("[^;]+") do
+        if seg:find("/lualib/", 1, true) then
+            head[#head + 1] = seg
+        else
+            rest[#rest + 1] = seg
+        end
+    end
+    if #head > 0 then
+        package.cpath = concat_tab(head, ";") .. ";" .. concat_tab(rest, ";")
+    end
+
     patch_cjson(require("cjson"))
     patch_cjson(require("cjson.safe"))
 
