@@ -56,10 +56,7 @@ passed
             local t = require("lib.test_admin").test
             t('/apisix/admin/consumers', ngx.HTTP_PUT,
                 [[{ "username": "alice", "plugins": { "key-auth": { "key": "alice-key" } } }]])
-            -- ghost is created here (before TEST 3's first auth request) and never
-            -- updated, so its key_value map entry is produced by the initial full
-            -- build, not by an incremental upsert. It is deleted in TEST 17 to prove
-            -- the full-build path is also removable.
+            -- ghost exists before the first request (full-build path); deleted in TEST 17
             local code = t('/apisix/admin/consumers', ngx.HTTP_PUT,
                 [[{ "username": "ghost", "plugins": { "key-auth": { "key": "ghost-key" } } }]])
             if code >= 300 then ngx.status = code end
@@ -252,9 +249,8 @@ hello world
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            -- two creates + one delete in the same sync window: the total count
-            -- goes up, so a delete detector keyed on "count decreased" would miss
-            -- this. The delete must still take effect.
+            -- two creates + one delete: net count rises, so a count-decrease
+            -- delete detector would miss it; the delete must still take effect
             t('/apisix/admin/consumers', ngx.HTTP_PUT,
                 [[{ "username": "filler_a", "plugins": { "key-auth": { "key": "filler-a-key" } } }]])
             t('/apisix/admin/consumers', ngx.HTTP_PUT,
@@ -300,3 +296,143 @@ GET /hello
 --- more_headers
 apikey: ghost-key
 --- error_code: 401
+
+
+
+=== TEST 19: consumer with all auth plugins removed
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            t('/apisix/admin/consumers', ngx.HTTP_PUT,
+                [[{ "username": "zoe", "plugins": { "key-auth": { "key": "zoe-key" } } }]])
+            -- remove every auth plugin: the old key must stop working
+            local code = t('/apisix/admin/consumers', ngx.HTTP_PUT,
+                [[{ "username": "zoe", "plugins": {} }]])
+            if code >= 300 then ngx.status = code end
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 20: key of a consumer whose auth plugins were all removed is rejected
+--- request
+GET /hello
+--- more_headers
+apikey: zoe-key
+--- error_code: 401
+
+
+
+=== TEST 21: two consumers sharing the same credential leaf id "cred-1"
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            t('/apisix/admin/consumers', ngx.HTTP_PUT, [[{ "username": "jack" }]])
+            t('/apisix/admin/consumers/jack/credentials/cred-1', ngx.HTTP_PUT,
+                [[{ "plugins": { "key-auth": { "key": "jack-cred1" } } }]])
+            t('/apisix/admin/consumers', ngx.HTTP_PUT, [[{ "username": "mary" }]])
+            local code = t('/apisix/admin/consumers/mary/credentials/cred-1', ngx.HTTP_PUT,
+                [[{ "plugins": { "key-auth": { "key": "mary-cred1" } } }]])
+            if code >= 300 then ngx.status = code end
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 22: both duplicate-leaf-id credentials authenticate independently
+--- pipelined_requests eval
+["GET /hello", "GET /hello"]
+--- more_headers eval
+["apikey: jack-cred1", "apikey: mary-cred1"]
+--- response_body eval
+["hello world\n", "hello world\n"]
+
+
+
+=== TEST 23: delete jack's credential; mary's same-leaf-id credential is unaffected
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code = t('/apisix/admin/consumers/jack/credentials/cred-1', ngx.HTTP_DELETE)
+            if code >= 300 then ngx.status = code end
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 24: jack's credential is rejected, mary's still works (no cross-consumer collision)
+--- pipelined_requests eval
+["GET /hello", "GET /hello"]
+--- more_headers eval
+["apikey: jack-cred1", "apikey: mary-cred1"]
+--- error_code eval
+[401, 200]
+
+
+
+=== TEST 25: parent consumer group change propagates to credential-authenticated requests
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            t('/apisix/admin/consumer_groups/cg-a', ngx.HTTP_PUT,
+                [[{ "plugins": { "response-rewrite": { "headers": { "set": { "X-Grp": "A" } } } } }]])
+            t('/apisix/admin/consumer_groups/cg-b', ngx.HTTP_PUT,
+                [[{ "plugins": { "response-rewrite": { "headers": { "set": { "X-Grp": "B" } } } } }]])
+            t('/apisix/admin/consumers', ngx.HTTP_PUT, [[{ "username": "pat", "group_id": "cg-a" }]])
+            local code = t('/apisix/admin/consumers/pat/credentials/c1', ngx.HTTP_PUT,
+                [[{ "plugins": { "key-auth": { "key": "pat-key" } } }]])
+            if code >= 300 then ngx.status = code end
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 26: credential request sees parent's original group
+--- request
+GET /hello
+--- more_headers
+apikey: pat-key
+--- response_headers
+X-Grp: A
+
+
+
+=== TEST 27: move the parent to a different group; credential request must reflect it
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code = t('/apisix/admin/consumers', ngx.HTTP_PUT,
+                [[{ "username": "pat", "group_id": "cg-b" }]])
+            if code >= 300 then ngx.status = code end
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 28: credential-authenticated request now reflects the parent's new group
+--- request
+GET /hello
+--- more_headers
+apikey: pat-key
+--- response_headers
+X-Grp: B

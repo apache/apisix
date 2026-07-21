@@ -32,10 +32,6 @@ local _M = {
     version = 0.3,
 }
 
-local lrucache = core.lrucache.new({
-    ttl = 300, count = 512
-})
-
 -- Please calculate and set the value of the "consumers_count_for_lrucache"
 -- variable based on the number of consumers in the current environment,
 -- taking into account the appropriate adjustment coefficient.
@@ -176,6 +172,11 @@ function plugin_consumer()
                     goto CONTINUE
                 end
 
+                -- Stamp the canonical entity id (relative to /consumers, e.g.
+                -- "jack" or "jack/credentials/cred-1") so the incremental index
+                -- and the full-build index agree on ids for consumers AND
+                -- credentials (avoids cross-consumer credential-id collisions).
+                consumer._eid = val.value.id
                 plugins[name].len = plugins[name].len + 1
                 core.table.insert(plugins[name].nodes, plugins[name].len,
                                     consumer)
@@ -207,6 +208,23 @@ local entry_plugins = {}        -- eid -> { [plugin_name] = true }
 local pending_set = {}          -- eid -> consumer item (from filter callback)
 local has_pending = false
 local pending_delete = false    -- a delete event was seen; reconcile removed ids
+local cred_by_consumer = {}     -- consumer_name -> { credential_entity_id -> true }
+local KV_TTL = 300              -- seconds; refresh bound for secret-backed auth values
+
+-- Entity ids are the key relative to /consumers: "jack" for a consumer,
+-- "jack/credentials/cred-1" for a credential. These helpers let the parent
+-- consumer refresh its child credential entries on update.
+local function is_credential_id(eid)
+    return type(eid) == "string" and eid:find("/credentials/", 1, true) ~= nil
+end
+
+local function parent_consumer_name(eid)
+    local i = eid:find("/credentials/", 1, true)
+    if i then
+        return eid:sub(1, i - 1)
+    end
+    return eid
+end
 local tracked_count = 0         -- count of consumers.values at last sync
 local FULL_SYNC_INTERVAL = 30   -- seconds between background consistency checks
 
@@ -278,6 +296,14 @@ local function remove_consumer_entries(eid)
         end
     end
     entry_plugins[eid] = nil
+    if is_credential_id(eid) then
+        local pc = parent_consumer_name(eid)
+        local set = cred_by_consumer[pc]
+        if set then
+            set[eid] = nil
+            if next(set) == nil then cred_by_consumer[pc] = nil end
+        end
+    end
 end
 
 -- Add a consumer/credential to the appropriate auth plugin nodes.
@@ -312,6 +338,11 @@ local function add_consumer_entry(val)
         kv_upsert(pd, consumer)
         ::next_plugin::
     end
+    if is_credential_id(eid) then
+        local pc = parent_consumer_name(eid)
+        cred_by_consumer[pc] = cred_by_consumer[pc] or {}
+        cred_by_consumer[pc][eid] = true
+    end
 end
 
 -- Full rebuild: construct entire tree and build indexes from scratch.
@@ -319,14 +350,19 @@ local function full_rebuild()
     cached_plugins = plugin_consumer()
     node_index = {}
     entry_plugins = {}
+    core.table.clear(cred_by_consumer)
     for pname, pd in pairs(cached_plugins) do
         for i = 1, pd.len do
             local c = pd.nodes[i]
-            local eid = c.credential_id or c.consumer_name
-            c._eid = eid
+            local eid = c._eid   -- canonical id stamped by plugin_consumer()
             node_index[pname .. "\0" .. eid] = i
             if not entry_plugins[eid] then entry_plugins[eid] = {} end
             entry_plugins[eid][pname] = true
+            if is_credential_id(eid) then
+                local pc = parent_consumer_name(eid)
+                cred_by_consumer[pc] = cred_by_consumer[pc] or {}
+                cred_by_consumer[pc][eid] = true
+            end
         end
     end
     tracked_count = consumers.values and #consumers.values or 0
@@ -344,6 +380,25 @@ local function apply_incremental()
     for eid, val in pairs(pending_set) do
         remove_consumer_entries(eid)
         add_consumer_entry(val)
+        -- Credentials clone their parent consumer (group_id, labels, custom_id),
+        -- so a parent change must refresh every child credential entry too, or
+        -- credential-authenticated requests keep stale group policy/headers.
+        if not is_credential_id(eid) then
+            local creds = cred_by_consumer[eid]
+            if creds then
+                local list = {}
+                for cred_eid in pairs(creds) do
+                    list[#list + 1] = cred_eid
+                end
+                for _, cred_eid in ipairs(list) do
+                    local citem = consumers:get(cred_eid)
+                    if citem then
+                        remove_consumer_entries(cred_eid)
+                        add_consumer_entry(citem)
+                    end
+                end
+            end
+        end
     end
     core.table.clear(pending_set)
 
@@ -479,14 +534,22 @@ function _M.consumers_kv(plugin_name, consumer_conf, key_attr)
     -- consumer map is cached on it and maintained incrementally by kv_upsert/
     -- kv_remove, so it is not rebuilt on every conf_version change. Rebuild only on
     -- first use, a key_attr change, or a version gap the incremental path missed.
+    -- Rebuild on first use, a key_attr change, a version gap the incremental path
+    -- did not cover, or once the TTL lapses. The TTL preserves the refresh bound
+    -- the previous global lru-cache provided: /secrets or external secret changes
+    -- do not bump conf_version, so secret-backed auth values are re-derived at
+    -- least every KV_TTL seconds.
+    local now = ngx.now()
     if consumer_conf.kv and consumer_conf.key_attr == key_attr
-       and consumer_conf.kv_version == consumer_conf.conf_version then
+       and consumer_conf.kv_version == consumer_conf.conf_version
+       and (now - (consumer_conf.kv_built_at or 0)) < KV_TTL then
         return consumer_conf.kv
     end
 
     consumer_conf.kv = create_consume_cache(consumer_conf, key_attr)
     consumer_conf.key_attr = key_attr
     consumer_conf.kv_version = consumer_conf.conf_version
+    consumer_conf.kv_built_at = now
     return consumer_conf.kv
 end
 
@@ -532,12 +595,13 @@ local function filter(consumer)
         return
     end
 
-    if not consumer.value.plugins then
-        return
+    if consumer.value.plugins then
+        plugin.set_plugins_meta_parent(consumer.value.plugins, consumer)
     end
-    plugin.set_plugins_meta_parent(consumer.value.plugins, consumer)
 
-    -- Track changed consumer for incremental rebuild
+    -- Enqueue the entity even when it now has no plugins, so removing all of a
+    -- consumer's auth plugins removes its old auth entries instead of leaving
+    -- the previous key valid.
     if cached_plugins and consumer.value.id then
         pending_set[consumer.value.id] = consumer
         has_pending = true
