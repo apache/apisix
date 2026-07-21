@@ -285,8 +285,21 @@ local function unsupported_methods_reload_plugin()
 end
 
 
+-- defined after sync_local_conf_to_etcd
+local reload_plugins_and_sync
+
+
 local function post_reload_plugins()
     set_ctx_and_check_token()
+
+    -- reload on this worker first: if the new plugin set cannot be loaded,
+    -- report the error to the operator instead of an unconditional "done",
+    -- and don't broadcast the event to the other workers
+    local ok, err = reload_plugins_and_sync()
+    if not ok then
+        core.log.error("failed to hot reload plugins: ", err)
+        core.response.exit(500, {error_msg = "failed to reload plugins: " .. err})
+    end
 
     local success, err = events:post(reload_event, get_method(), ngx_time())
     if not success then
@@ -373,12 +386,32 @@ local function sync_local_conf_to_etcd(reset)
 end
 
 
-local function reload_plugins(data, event, source, pid)
+function reload_plugins_and_sync()
     core.log.info("start to hot reload plugins")
-    plugin.load()
+    local ok, err = plugin.load()
+    if not ok then
+        return nil, err
+    end
 
     if ngx_worker_id() == 0 then
         sync_local_conf_to_etcd()
+    end
+
+    return true
+end
+
+
+local function reload_plugins(data, event, source, wid)
+    if wid == ngx_worker_id() then
+        -- this worker has already reloaded synchronously while serving the
+        -- Admin API request, see post_reload_plugins()
+        return
+    end
+
+    local ok, err = reload_plugins_and_sync()
+    if not ok then
+        core.log.error("failed to hot reload plugins: ", err,
+                       ", this worker keeps the old plugin set")
     end
 end
 

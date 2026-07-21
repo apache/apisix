@@ -409,6 +409,15 @@ function _M.dump_plugin_metadata()
 end
 
 function _M.post_reload_plugins()
+    -- reload on this worker first so that a plugin set which cannot be loaded
+    -- is reported to the caller instead of being broadcast
+    core.log.info("start to hot reload plugins")
+    local ok, err = plugin.load()
+    if not ok then
+        core.log.error("failed to hot reload plugins: ", err)
+        core.response.exit(500, {error_msg = "failed to reload plugins: " .. err})
+    end
+
     local success, err = events:post(_M.RELOAD_EVENT, ngx.req.get_method(), ngx.time())
     if not success then
         core.response.exit(503, err)

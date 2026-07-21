@@ -486,6 +486,10 @@ Triggers a hot reload of the plugins.
 curl "http://127.0.0.1:9090/v1/plugins/reload" -X PUT
 ```
 
+If the new plugin list cannot be loaded, for instance because the `init()` function of one
+of the plugins fails, the endpoint returns `500` together with the error message and every
+worker keeps serving with its previous plugin set.
+
 ### GET /v1/discovery/{service}/dump
 
 Get memory dump of discovered service endpoints and configuration details:
