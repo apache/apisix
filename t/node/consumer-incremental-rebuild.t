@@ -44,6 +44,8 @@ __DATA__
             ngx.say(body)
         }
     }
+--- request
+GET /t
 --- response_body
 passed
 
@@ -63,6 +65,8 @@ passed
             ngx.say("passed")
         }
     }
+--- request
+GET /t
 --- response_body
 passed
 
@@ -96,6 +100,8 @@ consumer plugin tree fully rebuilt
             ngx.say(body)
         }
     }
+--- request
+GET /t
 --- response_body
 passed
 
@@ -127,6 +133,8 @@ passed
             ngx.say(body)
         }
     }
+--- request
+GET /t
 --- response_body
 passed
 
@@ -161,6 +169,8 @@ hello world
             ngx.say(body)
         }
     }
+--- request
+GET /t
 --- response_body
 passed
 
@@ -201,6 +211,8 @@ apikey: bob-key
             ngx.say("passed")
         }
     }
+--- request
+GET /t
 --- response_body
 passed
 
@@ -229,6 +241,8 @@ X-Group: cg1
             ngx.say("passed")
         }
     }
+--- request
+GET /t
 --- response_body
 passed
 
@@ -260,6 +274,8 @@ hello world
             ngx.say("passed")
         }
     }
+--- request
+GET /t
 --- response_body
 passed
 
@@ -285,6 +301,8 @@ passed
             ngx.say("passed")
         }
     }
+--- request
+GET /t
 --- response_body
 passed
 
@@ -313,6 +331,8 @@ apikey: ghost-key
             ngx.say("passed")
         }
     }
+--- request
+GET /t
 --- response_body
 passed
 
@@ -342,6 +362,8 @@ apikey: zoe-key
             ngx.say("passed")
         }
     }
+--- request
+GET /t
 --- response_body
 passed
 
@@ -367,6 +389,8 @@ passed
             ngx.say("passed")
         }
     }
+--- request
+GET /t
 --- response_body
 passed
 
@@ -398,6 +422,8 @@ passed
             ngx.say("passed")
         }
     }
+--- request
+GET /t
 --- response_body
 passed
 
@@ -424,6 +450,8 @@ X-Grp: A
             ngx.say("passed")
         }
     }
+--- request
+GET /t
 --- response_body
 passed
 
