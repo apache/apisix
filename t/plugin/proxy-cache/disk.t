@@ -790,6 +790,8 @@ hello world!
        }
 --- request
 GET /t
+--- response_body
+passed
 --- error_log
 failed to check the configuration of disabled plugin proxy-cache
 

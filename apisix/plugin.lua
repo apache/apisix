@@ -1026,7 +1026,7 @@ local function check_single_plugin_schema(name, plugin_conf, schema_type, skip_d
             -- executed: an environment dependent failure (e.g. proxy-cache
             -- cache_zone not found on this node) must not invalidate the item
             core.log.warn("failed to check the configuration of disabled plugin ",
-                          name, ", accept it anyway, err: ", err)
+                          name, ", accepting it anyway")
         end
 
         if plugin_conf._meta then
@@ -1276,7 +1276,7 @@ local function stream_check_schema(plugins_conf, schema_type, skip_disabled_plug
                 end
 
                 core.log.warn("failed to check the configuration of disabled ",
-                              "stream plugin [", name, "], accept it anyway: ", err)
+                              "stream plugin [", name, "], accepting it anyway")
             end
         end
 
