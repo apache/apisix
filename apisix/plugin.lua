@@ -339,12 +339,14 @@ local function load(plugin_names, wasm_plugin_names)
 
     -- phase 1: build the new plugin set in a local table. The tables read by
     -- the request path (local_plugins / local_plugins_hash) keep serving and
-    -- stay untouched if anything below fails. Drop the cached modules first
-    -- so that require() re-reads the code from disk, and keep a snapshot of
-    -- them for the rollback.
+    -- stay untouched if anything below fails. Drop the cached modules of the
+    -- currently loaded plugins so require() re-reads their code from disk on a
+    -- reload, and snapshot them for the rollback. Only the already-loaded set
+    -- is dropped: on the first load there is nothing to drop, so the modules
+    -- initialized in init_by_lua are reused as-is.
     local pkg_snapshot = {}
-    for name, value in pairs(processed) do
-        if type(value) ~= "table" then
+    for name, old_plugin in pairs(local_plugins_hash) do
+        if old_plugin.type ~= "wasm" then
             local pkg_name = plugin_pkg_name(name, PLUGIN_TYPE_HTTP)
             pkg_snapshot[pkg_name] = pkg_loaded[pkg_name] or false
             pkg_loaded[pkg_name] = nil
@@ -450,10 +452,12 @@ local function load_stream(plugin_names)
 
     core.log.warn("new plugins: ", core.json.delay_encode(processed))
 
-    -- the three phases below mirror load(), see the comments there
+    -- the three phases below mirror load(), see the comments there. Only the
+    -- already-loaded stream plugins are dropped, so the first load reuses the
+    -- modules initialized in init_by_lua.
     local pkg_snapshot = {}
     if has_lifecycle(PLUGIN_TYPE_STREAM) then
-        for name in pairs(processed) do
+        for name in pairs(stream_local_plugins_hash) do
             local pkg_name = plugin_pkg_name(name, PLUGIN_TYPE_STREAM)
             pkg_snapshot[pkg_name] = pkg_loaded[pkg_name] or false
             pkg_loaded[pkg_name] = nil
