@@ -21,6 +21,7 @@ local socket = require("socket")
 local unix_socket = require("socket.unix")
 local ssl = require("ssl")
 local ngx = ngx
+local package = package
 local get_phase = ngx.get_phase
 local ngx_socket = ngx.socket
 local original_tcp = ngx.socket.tcp

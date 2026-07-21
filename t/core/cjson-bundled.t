@@ -16,6 +16,8 @@
 #
 use t::APISIX 'no_plan';
 
+repeat_each(1);
+no_long_string();
 no_root_location();
 
 run_tests();
@@ -27,7 +29,9 @@ __DATA__
     location /t {
         content_by_lua_block {
             local path = package.searchpath("cjson", package.cpath)
-            if path and path:find("/deps/", 1, true) then
+            if not path then
+                ngx.say("BAD: cjson could not be resolved")
+            elseif path:find("/deps/", 1, true) then
                 ngx.say("BAD: cjson resolved from deps: ", path)
             else
                 ngx.say("OK: cjson resolved from bundled")
