@@ -64,7 +64,11 @@ failed to increase plugins conf version
             -- ahead of what this process applied. Reproduce exactly that state
             -- without going through the events layer.
             local dict = ngx.shared["internal-status"]
-            dict:incr("plugins_conf_version", 1, 0)
+            local newver, incr_err = dict:incr("plugins_conf_version", 1, 0)
+            if not newver then
+                ngx.say("failed to bump version: ", incr_err)
+                return
+            end
 
             -- the reconciliation timer runs once a second
             ngx.sleep(2.5)

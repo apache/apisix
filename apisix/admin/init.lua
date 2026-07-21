@@ -304,7 +304,11 @@ local function post_reload_plugins()
         -- periodic reconciliation below
         local _, err = plugins_conf_ver_dict:incr(PLUGINS_CONF_VERSION_KEY, 1, 0)
         if err then
+            -- if the version cannot be bumped the reconciliation timer will
+            -- never notice a change, so a worker that misses the broadcast
+            -- would stay stale forever; fail loud instead of pretending success
             core.log.error("failed to increase plugins conf version: ", err)
+            core.response.exit(503, {error_msg = "failed to record plugins reload"})
         end
     end
 
