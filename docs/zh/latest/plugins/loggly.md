@@ -38,7 +38,7 @@ description: API 网关 Apache APISIX loggly 插件可用于将日志转发到 S
 | 名称                   | 类型          | 必选项 | 默认值 | 描述                                                                                                                                                                                                              |
 |------------------------|---------------|----------|---------|---------------------------------------------------------------------------------------------------------------------------------------------------|
 | customer_token         | string        | 是      |         | 将日志发送到 Loggly 时使用的唯一标识符，以确保将日志发送到正确的组织帐户。                                                                                                       |
-| severity               | string (enum) | 否      | INFO    | Syslog 日志事件的严重性级别。包括：`DEBUG`、`INFO`、`NOTICE`、`WARNING`、`ERR`、`CRIT`、`ALERT` 和 `EMEGR`。                                         |
+| severity               | string (enum) | 否      | INFO    | Syslog 日志事件的严重性级别。包括：`DEBUG`、`INFO`、`NOTICE`、`WARNING`、`ERR`、`CRIT`、`ALERT` 和 `EMERG`。                                         |
 | severity_map           | object        | 否      | nil     | 一种将上游 HTTP 响应代码映射到 Syslog 中的方法。 `key-value`，其中 `key` 是 HTTP 响应代码，`value`是 Syslog 严重级别。例如`{"410": "CRIT"}`。                |
 | tags                   | array         | 否      |         | 元数据将包含在任何事件日志中，以帮助进行分段和过滤。                                                                                                        |
 | log_format             | object  | 否   |          |         | 日志格式以 JSON 的键值对声明。值支持字符串和嵌套对象（最多五层，超出部分将被截断）。字符串中可通过在前面加上 `$` 来引用 [APISIX 变量](../apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
