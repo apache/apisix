@@ -61,6 +61,7 @@ The `openid-connect` Plugin supports the integration with [OpenID Connect (OIDC)
 | use_jwks | boolean | False | false | | If true and if `public_key` is not set, use the JWKS to verify JWT signature and skip token introspection in client credentials flow. The JWKS endpoint is parsed from the discovery document. |
 | use_pkce | boolean | False | false | | If true, use the Proof Key for Code Exchange (PKCE) for Authorization Code Flow as defined in [RFC 7636](https://datatracker.ietf.org/doc/html/rfc7636). |
 | token_signing_alg_values_expected | string | False | | | Algorithm used for signing JWT, such as `RS256`. |
+| hide_credentials | boolean | False | false | | If true, clear the inbound `Authorization` header carrying the bearer token so it is not forwarded to the upstream. The `X-Access-Token` header supplied by the client is always cleared regardless of this option. Works independently of `set_access_token_header`: when both are enabled, the original credential is removed and the validated access token is added back as a fresh, plugin-controlled header. |
 | set_access_token_header | boolean | False | true | | If true, set the access token in a request header. By default, the `X-Access-Token` header is used. |
 | access_token_in_authorization_header | boolean | False | false | | If true and if `set_access_token_header` is also true, set the access token in the `Authorization` header. |
 | set_id_token_header | boolean | False | true | | If true and if the ID token is available, set the value in the `X-ID-Token` request header. |

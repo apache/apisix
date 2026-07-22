@@ -304,6 +304,14 @@ local schema = {
             type = "boolean",
             default = false
         },
+        hide_credentials = {
+            description = "Whether to clear the inbound Authorization header carrying the " ..
+                "bearer token so it is not forwarded to the upstream. The client-supplied " ..
+                "X-Access-Token header is always cleared regardless of this option. Works " ..
+                "independently of set_access_token_header.",
+            type = "boolean",
+            default = false
+        },
         set_access_token_header = {
             description = "Whether the access token should be added as a header to the request " ..
                 "for downstream",
@@ -838,6 +846,15 @@ function _M.rewrite(plugin_conf, ctx)
                         '", error="invalid_token", error_description="' .. err .. '"'
                     return ngx.HTTP_UNAUTHORIZED
                 end
+            end
+
+            -- Hide the inbound bearer credential from the upstream if
+            -- configured. This is done after validation because
+            -- lua-resty-openidc re-reads the Authorization header while
+            -- verifying the token. set_access_token_header may add the
+            -- validated token back as a fresh, plugin-controlled header below.
+            if conf.hide_credentials then
+                core.request.set_header(ctx, "Authorization", nil)
             end
 
             -- Add configured access token header, maybe.
