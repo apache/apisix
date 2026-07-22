@@ -48,6 +48,8 @@ You must either specify the `model_path`, `policy_path`, and the `username` attr
 
 If you wish to use a global Casbin configuration, you can first specify `model` and `policy` attributes in the Plugin metadata and only the `username` attribute in the Plugin configuration. All Routes will use the Plugin configuration this way.
 
+The `username` attribute names the request header used as the Casbin subject. APISIX does not rewrite or verify this header against an authenticated consumer. If clients can send this header directly, make sure a trusted component at the edge strips, rewrites, or sets it before `authz-casbin` evaluates the request.
+
 :::
 
 ## Metadata
