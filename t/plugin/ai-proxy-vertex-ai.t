@@ -446,7 +446,7 @@ X-AI-Fixture: openai/chat-basic.json
 qr/"content"\s*:\s*"1 \+ 1 = 2\."/
 --- error_log
 creating healthchecker for upstream
-request head: GET /status/gpt4
+request: GET /status/gpt4
 
 
 

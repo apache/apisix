@@ -1121,3 +1121,129 @@ trying to increment a target that is not in the list
 host: 127.0.0.1
 port: 443
 passed
+
+
+=== TEST 15: create a ai-proxy-multi plugin that use post method as health check
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/ai",
+                    "plugins": {
+                        "ai-proxy-multi": {
+                            "fallback_strategy": "instance_health_and_rate_limiting",
+                            "instances": [
+                                {
+                                    "name": "openai-gpt4",
+                                    "provider": "openai",
+                                    "weight": 1,
+                                    "priority": 1,
+                                    "auth": {
+                                        "header": {
+                                            "Authorization": "Bearer token"
+                                        },
+                                        "query": {
+                                            "apikey": "token_in_query"
+                                        }
+                                    },
+                                    "options": {
+                                        "model": "gpt-4"
+                                    },
+                                    "override": {
+                                        "endpoint": "http://127.0.0.1:16724"
+                                    },
+                                    "checks": {
+                                        "active": {
+                                            "timeout": 5,
+                                            "http_method": "POST",
+                                            "http_path": "/post",
+                                            "http_req_body": "{\"model\":\"gpt-4o-mini\",\"messages\":[{\"role\":\"user\",\"content\":\"write a haiku about ai\"}],\"stream\":false}",
+                                            "host": "foo.com",
+                                            "healthy": {
+                                                "interval": 1,
+                                                "successes": 1
+                                            },
+                                            "req_headers": ["User-Agent: curl/7.29.0"]
+                                        }
+                                    }
+                                },
+                                {
+                                    "name": "openai-gpt3",
+                                    "provider": "openai",
+                                    "weight": 1,
+                                    "priority": 1,
+                                    "auth": {
+                                        "header": {
+                                            "Authorization": "Bearer token"
+                                        }
+                                    },
+                                    "options": {
+                                        "model": "gpt-3"
+                                    },
+                                    "override": {
+                                        "endpoint": "http://127.0.0.1:16724"
+                                    }
+                                }
+                            ],
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 16: check if the health check works
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local core = require("apisix.core")
+
+            local send_request = function()
+                local code, _, body = t("/ai",
+                    ngx.HTTP_POST,
+                    [[{
+                        "messages": [
+                            { "role": "system", "content": "You are a mathematician" },
+                            { "role": "user", "content": "What is 1+1?" }
+                        ]
+                    }]],
+                    nil,
+                    {
+                        ["Content-Type"] = "application/json",
+                    }
+                )
+                assert(code == 200, "request should be successful")
+                return body
+            end
+
+            -- trigger the health check
+            send_request()
+            ngx.sleep(3)
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+--- error_log
+probe method: POST
+probe authorization header: Bearer token
+probe apikey query: token_in_query
+probe content-length: 102
+probe body: {"model":"gpt-4o-mini","messages":[{"role":"user","content":"write a haiku about ai"}],"stream":false}
+
+
+
