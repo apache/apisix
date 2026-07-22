@@ -18,6 +18,7 @@ BEGIN {
     $ENV{TEST_HOST} = "test.example.com";
     $ENV{TEST_URI} = "/hello";
     $ENV{TEST_HEADER_VALUE} = "from-env";
+    $ENV{TEST_NOT_BASE64} = "@@@ not valid base64 @@@";
 }
 
 use t::APISIX 'no_plan';
@@ -374,3 +375,54 @@ openid-connect has required field client_secret that must be a string.
     }
 --- response_body
 success
+
+
+
+=== TEST 13: response-rewrite body_base64 with a secret-ref resolving to non-base64
+The config-time base64 check is skipped for secret references, so this only
+fails at runtime; the response body must be left unchanged rather than emptied.
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/rr-b64-secret",
+                    "plugins": {
+                        "proxy-rewrite": {
+                            "uri": "/hello"
+                        },
+                        "response-rewrite": {
+                            "body": "$env://TEST_NOT_BASE64",
+                            "body_base64": true
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                return ngx.say(body)
+            end
+            ngx.say("success")
+        }
+    }
+--- response_body
+success
+
+
+
+=== TEST 14: invalid base64 secret leaves the upstream body unchanged and logs an error
+--- request
+GET /rr-b64-secret
+--- response_body
+hello world
+--- error_log
+its value is not valid base64
