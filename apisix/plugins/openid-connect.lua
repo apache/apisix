@@ -101,6 +101,16 @@ local schema = {
                     description = "the key used for the encrypt and HMAC calculation",
                     minLength = 16,
                 },
+                secret_fallbacks = {
+                    type = "array",
+                    items = {
+                        type = "string",
+                        minLength = 16,
+                    },
+                    description = "List of alternative secrets used when doing key "
+                        .. "rotation. Cookies sealed with a previous secret still "
+                        .. "decrypt while new cookies are sealed with `secret`.",
+                },
                 cookie_name = {
                     type = "string",
                     description = "session cookie name",
@@ -471,7 +481,8 @@ local schema = {
         }
     },
     encrypt_fields = {"client_secret", "client_rsa_private_key",
-                      "session.secret", "session.redis.password"},
+                      "session.secret", "session.secret_fallbacks",
+                      "session.redis.password"},
     required = {"client_id", "discovery"}
 }
 
