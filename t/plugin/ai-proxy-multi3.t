@@ -1129,71 +1129,48 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                    "uri": "/ai",
-                    "plugins": {
-                        "ai-proxy-multi": {
-                            "fallback_strategy": "instance_health_and_rate_limiting",
-                            "instances": [
-                                {
-                                    "name": "openai-gpt4",
-                                    "provider": "openai",
-                                    "weight": 1,
-                                    "priority": 1,
-                                    "auth": {
-                                        "header": {
-                                            "Authorization": "Bearer token"
-                                        },
-                                        "query": {
-                                            "apikey": "token_in_query"
-                                        }
-                                    },
-                                    "options": {
-                                        "model": "gpt-4"
-                                    },
-                                    "override": {
-                                        "endpoint": "http://127.0.0.1:16724"
-                                    },
-                                    "checks": {
-                                        "active": {
-                                            "timeout": 5,
-                                            "http_method": "POST",
-                                            "http_path": "/post",
-                                            "http_req_body": "{\"model\":\"gpt-4o-mini\",\"messages\":[{\"role\":\"user\",\"content\":\"write a haiku about ai\"}],\"stream\":false}",
-                                            "host": "foo.com",
-                                            "healthy": {
-                                                "interval": 1,
-                                                "successes": 1
-                                            },
-                                            "req_headers": ["User-Agent: curl/7.29.0"]
-                                        }
-                                    }
+            local core = require("apisix.core")
+            -- build the route as a Lua table + core.json.encode: an inline [[..]]
+            -- JSON this large trips OpenResty 1.29's config-parser long-bracket buffer
+            local route = {
+                uri = "/ai",
+                plugins = {
+                    ["ai-proxy-multi"] = {
+                        fallback_strategy = "instance_health_and_rate_limiting",
+                        instances = {
+                            {
+                                name = "openai-gpt4", provider = "openai", weight = 1, priority = 1,
+                                auth = {
+                                    header = { Authorization = "Bearer token" },
+                                    query = { apikey = "token_in_query" },
                                 },
-                                {
-                                    "name": "openai-gpt3",
-                                    "provider": "openai",
-                                    "weight": 1,
-                                    "priority": 1,
-                                    "auth": {
-                                        "header": {
-                                            "Authorization": "Bearer token"
-                                        }
+                                options = { model = "gpt-4" },
+                                override = { endpoint = "http://127.0.0.1:16724" },
+                                checks = {
+                                    active = {
+                                        timeout = 5,
+                                        http_method = "POST",
+                                        http_path = "/post",
+                                        http_req_body = "{\"model\":\"gpt-4o-mini\",\"messages\":[{\"role\":\"user\",\"content\":\"write a haiku about ai\"}],\"stream\":false}",
+                                        host = "foo.com",
+                                        healthy = { interval = 1, successes = 1 },
+                                        req_headers = { "User-Agent: curl/7.29.0" },
                                     },
-                                    "options": {
-                                        "model": "gpt-3"
-                                    },
-                                    "override": {
-                                        "endpoint": "http://127.0.0.1:16724"
-                                    }
-                                }
-                            ],
-                            "ssl_verify": false
-                        }
-                    }
-                }]]
-            )
+                                },
+                            },
+                            {
+                                name = "openai-gpt3", provider = "openai", weight = 1, priority = 1,
+                                auth = { header = { Authorization = "Bearer token" } },
+                                options = { model = "gpt-3" },
+                                override = { endpoint = "http://127.0.0.1:16724" },
+                            },
+                        },
+                        ssl_verify = false,
+                    },
+                },
+            }
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT,
+                                 core.json.encode(route))
 
             if code >= 300 then
                 ngx.status = code
