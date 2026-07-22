@@ -41,6 +41,7 @@ APISIX currently supports storing secrets in the following ways:
 - [HashiCorp Vault](#use-hashicorp-vault-to-manage-secrets)
 - [AWS Secrets Manager](#use-aws-secrets-manager-to-manage-secrets)
 - [GCP Secrets Manager](#use-gcp-secrets-manager-to-manage-secrets)
+- [Kubernetes Secrets](#use-kubernetes-secrets-to-manage-secrets)
 
 You can use APISIX Secret functions by specifying format variables in the consumer configuration or the plugin configuration of any plugin, as well as in SSL certificate configurations.
 
@@ -363,3 +364,130 @@ curl http://127.0.0.1:9180/apisix/admin/secrets/gcp/1 \
 }'
 
 ```
+
+## Use Kubernetes Secrets to manage secrets
+
+When APISIX is running inside a Kubernetes cluster, it can read secrets directly
+from the Kubernetes API server using the pod's ServiceAccount credentials. This
+allows you to manage APISIX plugin credentials through standard Kubernetes Secrets
+without requiring an external secrets management service.
+
+### Prerequisites
+
+The ServiceAccount used by the APISIX pod must have RBAC permissions to read
+the target Secrets. Create a `ClusterRole` and bind it to the APISIX ServiceAccount:
+
+```yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: apisix-secret-reader
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: apisix-secret-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: apisix-secret-reader
+subjects:
+  - kind: ServiceAccount
+    name: apisix
+    namespace: apisix
+```
+
+### Usage
+
+```
+$secret://kubernetes/{manager-id}/{namespace}/{secret-name}/{data-key}
+```
+
+- `manager-id`: the ID of the Kubernetes secret manager instance registered via Admin API
+- `namespace`: the Kubernetes namespace where the Secret lives
+- `secret-name`: the name of the Kubernetes Secret
+- `data-key`: the key within `Secret.data` (the value will be base64-decoded automatically)
+
+### Configuration via Admin API
+
+Register a Kubernetes secret manager instance. All fields are optional and default
+to standard in-cluster values:
+
+```bash
+curl -X PUT http://127.0.0.1:9180/apisix/admin/secrets/kubernetes/my-k8s \
+  -H "X-API-KEY: $ADMIN_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "service_account_file": "/var/run/secrets/kubernetes.io/serviceaccount/token",
+    "kubernetes_host": "kubernetes.default.svc",
+    "kubernetes_port": "443",
+    "ssl_verify": true
+  }'
+```
+
+| Field | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `service_account_file` | string | No | `/var/run/secrets/kubernetes.io/serviceaccount/token` | Path to the ServiceAccount token file |
+| `kubernetes_host` | string | No | `$KUBERNETES_SERVICE_HOST` env var | Kubernetes API server hostname or IP |
+| `kubernetes_port` | string | No | `$KUBERNETES_SERVICE_PORT` env var | Kubernetes API server port |
+| `endpoint` | string | No | derived from `kubernetes_host`/`kubernetes_port` | Full base URL of the API server (e.g. `https://kubernetes.default.svc:443`). Overrides `kubernetes_host` and `kubernetes_port` when set |
+| `ssl_verify` | boolean | No | `true` | Verify the Kubernetes API server TLS certificate |
+
+#### TLS configuration for in-cluster usage
+
+When `ssl_verify` is `true` (the default), TLS verification uses the nginx-level
+`lua_ssl_trusted_certificate` bundle. The cluster CA that signs the kube-apiserver
+certificate is **not** in the system CA bundle, so you must add it explicitly in
+`config.yaml`:
+
+```yaml
+apisix:
+  ssl:
+    ssl_trusted_certificate: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+```
+
+Without this setting the TLS handshake will fail. Alternatively, set `ssl_verify: false`,
+but this is not recommended in production because the ServiceAccount token is sent
+to an unverified endpoint.
+
+### Example: protect plugin credentials with Kubernetes Secrets
+
+Suppose you have a Kubernetes Secret in the `my-app` namespace:
+
+```bash
+kubectl create secret generic keycloak-creds \
+  --namespace my-app \
+  --from-literal=client_id=my-client-id \
+  --from-literal=client_secret=my-client-secret
+```
+
+You can reference these values in the `authz-keycloak` plugin configuration:
+
+```bash
+curl -X PUT http://127.0.0.1:9180/apisix/admin/routes/1 \
+  -H "X-API-KEY: $ADMIN_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "uri": "/api/*",
+    "plugins": {
+      "authz-keycloak": {
+        "discovery": "https://keycloak.example.com/auth/realms/my-realm/.well-known/uma2-configuration",
+        "client_id": "$secret://kubernetes/my-k8s/my-app/keycloak-creds/client_id",
+        "client_secret": "$secret://kubernetes/my-k8s/my-app/keycloak-creds/client_secret",
+        "policy_enforcement_mode": "ENFORCING"
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {"backend-service:8080": 1}
+    }
+  }'
+```
+
+APISIX resolves `$secret://kubernetes/...` references at request time by calling
+the Kubernetes API, so secret rotations in Kubernetes are picked up automatically
+without restarting APISIX.
