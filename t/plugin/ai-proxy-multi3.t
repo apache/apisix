@@ -1123,6 +1123,7 @@ port: 443
 passed
 
 
+
 === TEST 15: create a ai-proxy-multi plugin that use post method as health check
 --- config
     location /t {
@@ -1244,6 +1245,3 @@ probe authorization header: Bearer token
 probe apikey query: token_in_query
 probe content-length: 102
 probe body: {"model":"gpt-4o-mini","messages":[{"role":"user","content":"write a haiku about ai"}],"stream":false}
-
-
-
