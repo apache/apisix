@@ -19,6 +19,7 @@ local core              = require("apisix.core")
 local secret            = require("apisix.secret")
 local ngx_re            = require("ngx.re")
 local openidc           = require("resty.openidc")
+local fetch_secrets     = require("apisix.secret").fetch_secrets
 local jsonschema        = require('jsonschema')
 local string            = string
 local ngx               = ngx
@@ -29,6 +30,7 @@ local pcall             = pcall
 local concat            = table.concat
 
 local ngx_encode_base64 = ngx.encode_base64
+local ngx_decode_base64 = ngx.decode_base64
 
 local plugin_name       = "openid-connect"
 
@@ -64,6 +66,24 @@ local schema = {
         client_id = {type = "string"},
         client_secret = {type = "string"},
         discovery = {type = "string"},
+        realms = {
+            type = "array",
+            description = "Multi-issuer configuration. When set, the plugin selects the " ..
+                "matching realm by the 'iss' claim in the bearer token. " ..
+                "top-level client_id/client_secret/discovery are not required when this is set.",
+            items = {
+                type = "object",
+                properties = {
+                    issuer      = {type = "string"},
+                    discovery   = {type = "string"},
+                    client_id   = {type = "string"},
+                    client_secret = {type = "string"},
+                },
+                required = {"issuer", "discovery", "client_id", "client_secret"},
+                additionalProperties = false,
+            },
+            minItems = 1,
+        },
         scope = {
             type = "string",
             default = "openid",
@@ -472,7 +492,15 @@ local schema = {
     },
     encrypt_fields = {"client_secret", "client_rsa_private_key",
                       "session.secret", "session.redis.password"},
-    required = {"client_id", "discovery"}
+    ["if"] = {
+        ["not"] = { required = {"realms"} }
+    },
+    ["then"] = {
+        required = {"client_id", "client_secret", "discovery"}
+    },
+    ["else"] = {
+        required = {"realms"}
+    }
 }
 
 
@@ -534,6 +562,33 @@ function _M.check_schema(conf)
     return true
 end
 
+local function decode_jwt_iss(token)
+    local parts = ngx_re.split(token, "\\.", nil, nil, 3)
+    if not parts or #parts < 2 then
+        return nil
+    end
+
+    local payload = parts[2]
+    payload = payload:gsub("-", "+"):gsub("_", "/")
+    local remainder = #payload % 4
+    if remainder > 0 then
+        payload = payload .. string.rep("=", 4 - remainder)
+    end
+
+    local decoded = ngx_decode_base64(payload)
+    if not decoded then
+        return nil
+    end
+
+    local ok, claims = pcall(core.json.decode, decoded)
+    if not ok or type(claims) ~= "table" then
+        return nil
+    end
+
+    return claims.iss
+end
+
+
 local function get_bearer_access_token(ctx)
     -- Get Authorization header, maybe.
     local auth_header = core.request.header(ctx, "Authorization")
@@ -566,6 +621,36 @@ local function get_bearer_access_token(ctx)
     end
 
     return false, nil, nil
+end
+
+
+local function select_realm(ctx, conf)
+    if not conf.realms then
+        return conf
+    end
+
+    local has_token, token = get_bearer_access_token(ctx)
+    if not has_token or not token then
+        return nil
+    end
+
+    local iss = decode_jwt_iss(token)
+    if not iss then
+        return nil
+    end
+
+    for _, realm in ipairs(conf.realms) do
+        if realm.issuer == iss then
+            local realm_conf = core.table.clone(conf)
+            realm_conf.discovery     = realm.discovery
+            realm_conf.client_id     = realm.client_id
+            realm_conf.client_secret = realm.client_secret
+            realm_conf.realms        = nil
+            return realm_conf
+        end
+    end
+
+    return nil
 end
 
 
@@ -722,6 +807,13 @@ function _M.rewrite(plugin_conf, ctx)
     -- If the timeout is too large, we should not multiply it again.
     if not (conf.timeout >= 1000 and conf.timeout % 1000 == 0) then
         conf.timeout = conf.timeout * 1000
+    end
+
+    if conf.realms then
+        conf = select_realm(ctx, conf)
+        if not conf then
+            return ngx.HTTP_UNAUTHORIZED
+        end
     end
 
     local path = ctx.var.request_uri

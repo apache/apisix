@@ -1877,7 +1877,6 @@ done
                         "uri": "/*"
                 }]]
                 )
-
             if code >= 300 then
                 ngx.status = code
             end
@@ -2049,3 +2048,113 @@ passed
 --- timeout: 20
 --- response_body
 passed
+
+
+
+=== TEST 55: Schema valid with `realms` — no top-level client_id/client_secret/discovery required.
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local ok, err = plugin.check_schema({
+                bearer_only = true,
+                realms = {
+                    {
+                        issuer        = "https://idp.example.com/realms/tenantA",
+                        discovery     = "https://idp.example.com/realms/tenantA/.well-known/openid-configuration",
+                        client_id     = "client-a",
+                        client_secret = "secret-a",
+                    },
+                },
+            })
+            if not ok then
+                ngx.say(err)
+            end
+            ngx.say("done")
+        }
+    }
+--- response_body
+done
+
+
+
+=== TEST 56: Schema rejects realm entry missing `client_id`.
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local ok, err = plugin.check_schema({
+                bearer_only = true,
+                realms = {
+                    {
+                        issuer        = "https://idp.example.com/realms/tenantA",
+                        discovery     = "https://idp.example.com/realms/tenantA/.well-known/openid-configuration",
+                        client_secret = "secret-a",
+                    },
+                },
+            })
+            if not ok then
+                ngx.say(err)
+            end
+            ngx.say("done")
+        }
+    }
+--- response_body
+property "client_id" is required
+done
+
+
+
+=== TEST 57: Set up route with `realms` multi-issuer config.
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "openid-connect": {
+                            "bearer_only": true,
+                            "realms": [
+                                {
+                                    "issuer":        "https://idp.example.com/realms/tenantA",
+                                    "discovery":     "http://127.0.0.1:1980/.well-known/openid-configuration",
+                                    "client_id":     "client-a",
+                                    "client_secret": "secret-a"
+                                },
+                                {
+                                    "issuer":        "https://idp.example.com/realms/tenantB",
+                                    "discovery":     "http://127.0.0.1:1980/.well-known/openid-configuration",
+                                    "client_id":     "client-b",
+                                    "client_secret": "secret-b"
+                                }
+                            ]
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {"127.0.0.1:1980": 1},
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 58: `realms` — unrecognized issuer returns plain 401 with no body.
+--- timeout: 10s
+--- request
+GET /hello
+--- more_headers
+Authorization: Bearer eyJhbGciOiAibm9uZSIsICJ0eXAiOiAiSldUIn0.eyJpc3MiOiAiaHR0cHM6Ly9ldmlsLmNvbS9pc3N1ZXIiLCAic3ViIjogInVzZXIxIiwgImV4cCI6IDk5OTk5OTk5OTl9.
+--- error_code: 401
+--- response_body
