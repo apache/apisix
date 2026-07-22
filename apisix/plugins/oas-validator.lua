@@ -31,6 +31,9 @@ local tab_concat = table.concat
 local plugin_name = "oas-validator"
 
 local DEFAULT_SPEC_URL_TTL = 3600
+-- Cache fetch/compile failures for a short window so a persistently failing
+-- spec_url is not re-fetched on every request (failure amplification).
+local SPEC_URL_NEG_TTL = 5
 
 local schema = {
     type = "object",
@@ -131,6 +134,8 @@ local function get_spec_url_lrucache()
         spec_url_lrucache = core.lrucache.new({
             ttl = ttl,
             count = 512,
+            neg_ttl = SPEC_URL_NEG_TTL,
+            neg_count = 512,
             invalid_stale = true,
             refresh_stale = true,
             serial_creating = true,
