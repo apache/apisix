@@ -233,7 +233,9 @@ local function fetch(uri, use_cache)
         return val
     end
 
-    return secrets_cache(uri, "", fetch_by_uri, uri)
+    -- pass the secrets conf_version so the cache re-resolves when /secrets changes
+    local version = secrets and secrets.conf_version or ""
+    return secrets_cache(uri, version, fetch_by_uri, uri)
 end
 
 local function retrieve_refs(refs, use_cache)

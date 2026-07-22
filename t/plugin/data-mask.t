@@ -667,7 +667,184 @@ success
 
 
 
-=== TEST 15: create route for access log masking test
+=== TEST 15: create route for multi-value query param masking
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "data-mask": {
+                                "request": [
+                                    {
+                                        "action": "regex",
+                                        "name": "token",
+                                        "regex": ".",
+                                        "type": "query",
+                                        "value": "*"
+                                    }
+                                ]
+                            },
+                            "file-logger": {
+                                "path": "mask-multi-query.log"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+
+
+
+=== TEST 16: verify multi-value query param regex masking does not crash and masks all values
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+
+            -- send request with the same param appearing twice
+            local code = t("/hello?token=abc&token=def", ngx.HTTP_GET)
+
+            local fd, err = io.open("mask-multi-query.log", "r")
+            if not fd then
+                core.log.error("failed to open file: ", err)
+                return
+            end
+            local line = fd:read()
+            local log = core.json.decode(line)
+            local token = log.request.querystring.token
+            os.remove("mask-multi-query.log")
+
+            -- token should be masked: regex "." replaces the first char with "*"
+            local ok = false
+            if type(token) == "string" then
+                ok = token:sub(1, 1) == "*"
+            elseif type(token) == "table" then
+                ok = true
+                for _, v in ipairs(token) do
+                    if v:sub(1, 1) ~= "*" then
+                        ok = false
+                        break
+                    end
+                end
+            end
+            if ok then
+                ngx.say("success")
+            else
+                ngx.say("token not fully masked: " .. core.json.encode(token))
+            end
+        }
+    }
+--- response_body
+success
+
+
+
+=== TEST 17: create route for non-string JSON field regex masking
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "data-mask": {
+                                "request": [
+                                    {
+                                        "action": "regex",
+                                        "body_format": "json",
+                                        "name": "$.count",
+                                        "regex": "\\d+",
+                                        "type": "body",
+                                        "value": "[REDACTED]"
+                                    },
+                                    {
+                                        "action": "replace",
+                                        "body_format": "json",
+                                        "name": "$.name",
+                                        "type": "body",
+                                        "value": "***"
+                                    }
+                                ]
+                            },
+                            "file-logger": {
+                                "include_req_body": true,
+                                "path": "mask-nonstring-json.log"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+
+
+
+=== TEST 18: verify non-string JSON field regex is skipped without crash
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+
+            local code = t("/hello", ngx.HTTP_POST, [[{"count": 42, "name": "Alice"}]])
+
+            local fd, err = io.open("mask-nonstring-json.log", "r")
+            if not fd then
+                core.log.error("failed to open file: ", err)
+                return
+            end
+            local line = fd:read()
+            local log = core.json.decode(line)
+            local body = core.json.decode(log.request.body)
+            os.remove("mask-nonstring-json.log")
+
+            -- $.count is a number; regex should be skipped, value unchanged
+            if body.count ~= 42 then
+                ngx.say("expected count=42, got: " .. tostring(body.count))
+                return
+            end
+            -- $.name is a string; replace should work
+            if body.name ~= "***" then
+                ngx.say("expected name=***, got: " .. tostring(body.name))
+                return
+            end
+            ngx.say("success")
+        }
+    }
+--- response_body
+success
+
+
+
+=== TEST 19: create route for access log masking test
 --- config
     location /t {
         content_by_lua_block {
@@ -711,7 +888,7 @@ success
 
 
 
-=== TEST 16: verify access log masks sensitive query parameters
+=== TEST 20: verify access log masks sensitive query parameters
 --- extra_yaml_config
 nginx_config:
     http:

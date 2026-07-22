@@ -461,38 +461,66 @@ function _M.exit_worker()
 end
 
 
-local function trace_plugins_info_for_debug(ctx, plugins)
+-- Record an executed plugin phase function as "name#phase" in
+-- ctx.debug_plugins, keeping the execution order. The entries collected
+-- before the response header is sent are reported via the Apisix-Plugins
+-- response header, the rest are logged as a warn log instead.
+local function trace_plugin_exec_for_debug(ctx, plugin_name, phase)
     if not enable_debug() then
         return
     end
 
-    if not plugins then
-        if is_http and not ngx.headers_sent then
-            core.response.add_header("Apisix-Plugins", "no plugin")
-        else
-            core.log.warn("Apisix-Plugins: no plugin")
-        end
-
+    if not ctx then
         return
     end
 
-    local t = {}
-    for i = 1, #plugins, 2 do
-        core.table.insert(t, plugins[i].name)
-    end
-    if is_http and not ngx.headers_sent then
-        if ctx then
-            local debug_headers = ctx.debug_headers
-            if not debug_headers then
-                debug_headers = core.table.new(0, 5)
-            end
-            for i, v in ipairs(t) do
-                debug_headers[v] = true
-            end
-            ctx.debug_headers = debug_headers
-        end
+    local item = plugin_name .. "#" .. phase
+    local debug_plugins = ctx.debug_plugins
+    if not debug_plugins then
+        debug_plugins = core.table.new(4, 0)
+        ctx.debug_plugins = debug_plugins
     else
-        core.log.warn("Apisix-Plugins: ", core.table.concat(t, ", "))
+        -- a phase function may run more than once, e.g. the body_filter
+        -- one runs per response chunk, so record it only once
+        for i = 1, #debug_plugins do
+            if debug_plugins[i] == item then
+                return
+            end
+        end
+    end
+
+    core.table.insert(debug_plugins, item)
+
+    if not is_http or ngx.headers_sent then
+        core.log.warn("Apisix-Plugins: ", item)
+    end
+end
+
+
+local POST_RESP_HEADER_PHASES = {"body_filter", "delayed_body_filter", "log"}
+-- The phase functions running after the response header is sent can not be
+-- traced at execution time and reported in the Apisix-Plugins response
+-- header. Instead, infer them from the filtered plugin list right before
+-- the response header is generated: a plugin carrying such a phase function
+-- is expected to execute it. The inferred entries may not fully match the
+-- real execution, e.g. a plugin skipped at runtime by its `_meta.filter`
+-- is still reported.
+function _M.trace_expected_plugins_for_debug(api_ctx)
+    if not enable_debug() then
+        return
+    end
+
+    local plugins = api_ctx.plugins
+    if not plugins then
+        return
+    end
+
+    for _, phase in ipairs(POST_RESP_HEADER_PHASES) do
+        for i = 1, #plugins, 2 do
+            if plugins[i][phase] then
+                trace_plugin_exec_for_debug(api_ctx, plugins[i].name, phase)
+            end
+        end
     end
 end
 
@@ -538,7 +566,6 @@ function _M.filter(ctx, conf, plugins, route_conf, phase)
     local user_plugin_conf = conf.value.plugins
     if user_plugin_conf == nil or
        core.table.nkeys(user_plugin_conf) == 0 then
-        trace_plugins_info_for_debug(nil, nil)
         -- when 'plugins' is given, always return 'plugins' itself instead
         -- of another one
         return plugins or core.tablepool.fetch("plugins", 0, 0)
@@ -586,8 +613,6 @@ function _M.filter(ctx, conf, plugins, route_conf, phase)
 
         ::continue::
     end
-
-    trace_plugins_info_for_debug(ctx, plugins)
 
     if custom_sort then
         local tmp_plugin_objs = core.tablepool.fetch("tmp_plugin_objs", 0, #plugins / 2)
@@ -641,7 +666,6 @@ function _M.stream_filter(user_route, plugins)
     plugins = plugins or core.table.new(#stream_local_plugins * 2, 0)
     local user_plugin_conf = user_route.value.plugins
     if user_plugin_conf == nil then
-        trace_plugins_info_for_debug(nil, nil)
         return plugins
     end
 
@@ -655,8 +679,6 @@ function _M.stream_filter(user_route, plugins)
             core.table.insert(plugins, plugin_conf)
         end
     end
-
-    trace_plugins_info_for_debug(nil, plugins)
 
     -- resolve $secret:// and $env:// references in stream plugin confs
     for i = 2, #plugins, 2 do
@@ -1322,14 +1344,16 @@ function _M.run_plugin(phase, plugins, api_ctx)
         and phase ~= "body_filter"
         and phase ~= "delayed_body_filter"
     then
+        -- in the "rewrite_in_consumer" phase, the executed functions
+        -- are the "rewrite" ones
+        local exec_phase = phase == "rewrite_in_consumer" and "rewrite" or phase
         for i = 1, #plugins, 2 do
 
             if phase == "rewrite_in_consumer" and plugins[i + 1]._skip_rewrite_in_consumer then
                 goto CONTINUE
             end
 
-            local phase_func = phase == "rewrite_in_consumer" and plugins[i]["rewrite"]
-                               or plugins[i][phase]
+            local phase_func = plugins[i][exec_phase]
             if phase_func then
                 local conf = plugins[i + 1]
                 if not meta_filter(api_ctx, plugins[i]["name"], conf)then
@@ -1344,6 +1368,7 @@ function _M.run_plugin(phase, plugins, api_ctx)
                 run_meta_pre_function(conf, api_ctx, plugins[i]["name"])
                 plugin_run = true
                 api_ctx._plugin_name = plugins[i]["name"]
+                trace_plugin_exec_for_debug(api_ctx, plugins[i]["name"], exec_phase)
                 local code, body = phase_func(conf, api_ctx)
                 api_ctx._plugin_name = nil
                 if code or body then
@@ -1386,6 +1411,7 @@ function _M.run_plugin(phase, plugins, api_ctx)
             plugin_run = true
             run_meta_pre_function(conf, api_ctx, plugins[i]["name"])
             api_ctx._plugin_name = plugins[i]["name"]
+            trace_plugin_exec_for_debug(api_ctx, plugins[i]["name"], phase)
             local span = tracer.start(api_ctx.ngx_ctx, "apisix.phase." .. phase
                                         .. ".plugins." .. api_ctx._plugin_name)
             phase_func(conf, api_ctx)
@@ -1515,6 +1541,7 @@ function _M.lua_response_filter(api_ctx, headers, body, no_flush, wait)
                 end
 
                 run_meta_pre_function(conf, api_ctx, plugins[i]["name"])
+                trace_plugin_exec_for_debug(api_ctx, plugins[i]["name"], "lua_body_filter")
                 local code, new_body = phase_func(conf, api_ctx, headers, body)
                 if code then
                     if code ~= ngx_ok then
