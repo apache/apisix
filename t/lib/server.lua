@@ -913,6 +913,54 @@ function _M.v1_chat_completions()
 end
 
 function _M.v1_messages()
+    local json = require("cjson.safe")
+    local test_type = ngx.req.get_headers()["test-type"]
+    if test_type then
+        ngx.req.read_body()
+        local body = json.decode(ngx.req.get_body_data() or "")
+
+        if test_type == "anthropic-system" then
+            -- The OpenAI system-role message must become a top-level `system`
+            -- field, and no system role may remain inside messages[].
+            if not body or type(body.system) ~= "string" then
+                ngx.status = 400
+                ngx.say([[{"error":"system not converted to top-level field"}]])
+                return
+            end
+            for _, msg in ipairs(body.messages or {}) do
+                if msg.role == "system" then
+                    ngx.status = 400
+                    ngx.say([[{"error":"system role still present in messages"}]])
+                    return
+                end
+            end
+        elseif test_type == "anthropic-tools" then
+            local tool = body and body.tools and body.tools[1]
+            if not tool or tool.name ~= "get_weather" or not tool.input_schema then
+                ngx.status = 400
+                ngx.say([[{"error":"tool not converted to anthropic format"}]])
+                return
+            end
+        elseif test_type == "anthropic-tool-result" then
+            -- OpenAI tool-role messages must become user-role tool_result blocks.
+            local found
+            for _, msg in ipairs(body and body.messages or {}) do
+                if msg.role == "user" and type(msg.content) == "table" then
+                    for _, block in ipairs(msg.content) do
+                        if type(block) == "table" and block.type == "tool_result" then
+                            found = true
+                        end
+                    end
+                end
+            end
+            if not found then
+                ngx.status = 400
+                ngx.say([[{"error":"tool result not converted to tool_result block"}]])
+                return
+            end
+        end
+    end
+
     ai_fixture_dispatch()
 end
 
