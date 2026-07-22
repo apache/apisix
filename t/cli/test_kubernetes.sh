@@ -30,17 +30,17 @@ discovery:
 
 make init
 
-if ! grep "env HOST_ENV" conf/nginx.conf; then
+if ! grep 'env "HOST_ENV"' conf/nginx.conf; then
   echo "kubernetes discovery env inject failed"
   exit 1
 fi
 
-if ! grep "env KUBERNETES_SERVICE_PORT" conf/nginx.conf; then
+if ! grep 'env "KUBERNETES_SERVICE_PORT"' conf/nginx.conf; then
   echo "kubernetes discovery env inject failed"
   exit 1
 fi
 
-if ! grep "env TOKEN_ENV" conf/nginx.conf; then
+if ! grep 'env "TOKEN_ENV"' conf/nginx.conf; then
   echo "kubernetes discovery env inject failed"
   exit 1
 fi
@@ -70,32 +70,32 @@ discovery:
 
 make init
 
-if ! grep "env DEV_HOST" conf/nginx.conf; then
+if ! grep 'env "DEV_HOST"' conf/nginx.conf; then
   echo "kubernetes discovery env inject failed"
   exit 1
 fi
 
-if ! grep "env DEV_PORT" conf/nginx.conf; then
+if ! grep 'env "DEV_PORT"' conf/nginx.conf; then
   echo "kubernetes discovery env inject failed"
   exit 1
 fi
 
-if ! grep "env DEV_TOKEN" conf/nginx.conf; then
+if ! grep 'env "DEV_TOKEN"' conf/nginx.conf; then
   echo "kubernetes discovery env inject failed"
   exit 1
 fi
 
-if ! grep "env PRO_HOST" conf/nginx.conf; then
+if ! grep 'env "PRO_HOST"' conf/nginx.conf; then
   echo "kubernetes discovery env inject failed"
   exit 1
 fi
 
-if ! grep "env PRO_PORT" conf/nginx.conf; then
+if ! grep 'env "PRO_PORT"' conf/nginx.conf; then
   echo "kubernetes discovery env inject failed"
   exit 1
 fi
 
-if ! grep "env PRO_TOKEN" conf/nginx.conf; then
+if ! grep 'env "PRO_TOKEN"' conf/nginx.conf; then
   echo "kubernetes discovery env inject failed"
   exit 1
 fi
