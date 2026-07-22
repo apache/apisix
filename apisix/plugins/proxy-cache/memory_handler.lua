@@ -530,7 +530,7 @@ function _M.body_filter(conf, ctx)
         return
     end
 
-    if #res_body >= conf.max_resp_body_size then
+    if conf.max_resp_body_size and #res_body >= conf.max_resp_body_size then
         -- response exceeds the buffering cap; stream it through without
         -- caching so we never store a truncated body
         ctx.cache = nil
