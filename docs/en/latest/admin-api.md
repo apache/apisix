@@ -54,7 +54,7 @@ deployment:
     admin:
         admin_key:
         - name: admin
-            key: your-admin-key  # set a secure Admin API key; if left empty, APISIX will generate one during initialization and write it back to this file
+            key: your-admin-key  # set a secure Admin API key; APISIX refuses to start if it is left empty
             role: admin
         allow_admin:                    # http://nginx.org/en/docs/http/ngx_http_access_module.html#allow
             - 127.0.0.0/24
