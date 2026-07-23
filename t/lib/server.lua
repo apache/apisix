@@ -79,6 +79,10 @@ function _M.hello()
 end
 
 
+-- upstream target for the dpop plugin's strict_htu tests (/strict-hello)
+_M.strict_hello = _M.hello
+
+
 function _M.hello_chunked()
     ngx.print("hell")
     ngx.flush(true)
