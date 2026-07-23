@@ -32,6 +32,13 @@ local plugin_name = "http-dubbo"
 local schema = {
     type = "object",
     properties = {
+        max_req_body_size = {
+            type = "integer",
+            minimum = 1,
+            default = 67108864,
+            description = "maximum request body size in bytes buffered into "
+                       .. "memory; larger request bodies are rejected",
+        },
         service_name = {
             type = "string",
             minLength = 1,
@@ -174,7 +181,12 @@ local function get_dubbo_request(conf, ctx)
         serialized = serialization_header == "true"
     end
     if serialized then
-        params = core.request.get_body()
+        local body, err = core.request.get_body(conf.max_req_body_size)
+        if err then
+            core.log.error("failed to get request body: ", err)
+            return nil, 413
+        end
+        params = body
         if params then
             local end_of_params = core.string.sub(params, -1)
             if end_of_params ~= "\n" then
@@ -182,7 +194,11 @@ local function get_dubbo_request(conf, ctx)
             end
         end
     else
-        local body_data = core.request.get_body()
+        local body_data, err = core.request.get_body(conf.max_req_body_size)
+        if err then
+            core.log.error("failed to get request body: ", err)
+            return nil, 413
+        end
         if body_data then
             local lua_object = core.json.decode(body_data);
             for _, v in pairs(lua_object) do
@@ -231,7 +247,11 @@ function _M.before_proxy(conf, ctx)
         core.log.error("failed to connect to upstream ", err)
         return 502
     end
-    local request = get_dubbo_request(conf, ctx)
+    local request, err_code = get_dubbo_request(conf, ctx)
+    if not request then
+        sock:close()
+        return err_code
+    end
     local bytes, _ = sock:send(request)
     if bytes > 0 then
         local header, _ = sock:receiveany(16);

@@ -44,6 +44,7 @@ The Plugin supports authentication and authorization with AWS via IAM user crede
 
 | Name                         | Type    | Required | Default       | Valid values | Description                                                                                                                                                        |
 |------------------------------|---------|----------|---------------|--------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| max_req_body_size | integer | False | 67108864 | >= 1 | Maximum request body size in bytes buffered into memory. Requests with a larger body are rejected. |
 | function_uri                 | string  | True     |               |              | AWS Lambda function URL or Amazon API Gateway endpoint that triggers the Lambda function.                                                                          |
 | authorization                | object  | False    |               |              | Credentials used in authentication and authorization on AWS to invoke Lambda function.                                                                             |
 | authorization.apikey         | string  | False    |               |              | API key for the REST API Gateway when API key is selected as the security mechanism.                                                                               |
