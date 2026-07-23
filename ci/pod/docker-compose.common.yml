@@ -35,6 +35,16 @@ services:
       - "6379:6379"
       - "6380:6380"
 
+  ## Valkey
+  # No TLS/ACL config is needed here (unlike apisix_redis) because the Valkey
+  # tests only cover the plaintext, non-auth path. Add a command/volumes block
+  # mirroring apisix_redis if TLS or ACL coverage is introduced later.
+  apisix_valkey:
+    image: valkey/valkey:8
+    restart: unless-stopped
+    ports:
+      - "6381:6379"
+
   ## Etcd
   etcd_old:
     image: bitnamilegacy/etcd:3.3.8
@@ -92,13 +102,6 @@ services:
     volumes:
       - ./t/certs:/certs
 
-
-  ## Valkey
-  apisix_valkey:
-    image: valkey/valkey:8
-    restart: unless-stopped
-    ports:
-      - "6381:6379"
 
   ## Redis cluster
   redis-cluster:
