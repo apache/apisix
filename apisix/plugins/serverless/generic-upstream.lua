@@ -32,6 +32,13 @@ return function(plugin_name, version, priority, request_processor, authz_schema,
     local schema = {
         type = "object",
         properties = {
+            max_req_body_size = {
+                type = "integer",
+                minimum = 1,
+                default = 67108864,
+                description = "maximum request body size in bytes buffered into "
+                           .. "memory; larger request bodies are rejected",
+            },
             function_uri = {type = "string"},
             authorization = authz_schema,
             timeout = {type = "integer", minimum = 100, default = 3000},
@@ -62,7 +69,7 @@ return function(plugin_name, version, priority, request_processor, authz_schema,
         local uri_args = core.request.get_uri_args(ctx)
         local headers = core.request.headers(ctx) or {}
 
-        local req_body, err = core.request.get_body()
+        local req_body, err = core.request.get_body(conf.max_req_body_size)
 
         if err then
             core.log.error("error while reading request body: ", err)

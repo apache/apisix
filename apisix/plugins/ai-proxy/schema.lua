@@ -348,7 +348,7 @@ _M.ai_proxy_schema = {
             minimum = 1,
             default = 67108864,
             description = "maximum request body size in bytes the plugin reads "
-                       .. "into memory; larger requests are rejected with 413. "
+                       .. "into memory; larger request bodies are rejected. "
                        .. "Prevents unbounded memory buffering of large bodies.",
         },
         max_stream_duration_ms = {
@@ -482,7 +482,7 @@ _M.ai_proxy_multi_schema = {
             minimum = 1,
             default = 67108864,
             description = "maximum request body size in bytes the plugin reads "
-                       .. "into memory; larger requests are rejected with 413. "
+                       .. "into memory; larger request bodies are rejected. "
                        .. "Prevents unbounded memory buffering of large bodies.",
         },
         max_stream_duration_ms = {

@@ -93,7 +93,19 @@ local schema = {
                                 ["^[^:]+$"] = {
                                     oneOf = {
                                         { type = "string" },
-                                        { type = "number" }
+                                        { type = "number" },
+                                        {
+                                            -- multiple values for the same
+                                            -- header name, e.g. ["v1", "v2"]
+                                            type = "array",
+                                            minItems = 1,
+                                            items = {
+                                                oneOf = {
+                                                    { type = "string" },
+                                                    { type = "number" },
+                                                }
+                                            }
+                                        }
                                     }
                                 }
                             },
@@ -106,6 +118,18 @@ local schema = {
                                     oneOf = {
                                         { type = "string" },
                                         { type = "number" },
+                                        {
+                                            -- replace the header with multiple
+                                            -- values, e.g. ["v1", "v2"]
+                                            type = "array",
+                                            minItems = 1,
+                                            items = {
+                                                oneOf = {
+                                                    { type = "string" },
+                                                    { type = "number" },
+                                                }
+                                            }
+                                        }
                                     }
                                 }
                             },
@@ -275,6 +299,13 @@ do
     end
 
 
+    local function resolve_header_value(value, ctx)
+        local val = core.utils.resolve_var_with_captures(value,
+                                        ctx.proxy_rewrite_regex_uri_captures)
+        return core.utils.resolve_var(val, ctx.var)
+    end
+
+
 function _M.rewrite(conf, ctx)
     for _, name in ipairs(upstream_names) do
         if conf[name] then
@@ -384,22 +415,51 @@ function _M.rewrite(conf, ctx)
 
         local field_cnt = #hdr_op.add
         for i = 1, field_cnt, 2 do
-            local val = core.utils.resolve_var_with_captures(hdr_op.add[i + 1],
-                                            ctx.proxy_rewrite_regex_uri_captures)
-            val = core.utils.resolve_var(val, ctx.var)
-            -- A nil or empty table value will cause add_header function to throw an error.
-            if val then
-                local header = hdr_op.add[i]
-                core.request.add_header(ctx, header, val)
+            local header = hdr_op.add[i]
+            local value = hdr_op.add[i + 1]
+            -- an array value adds the header once per element (multiple
+            -- headers with the same name); a scalar adds it once.
+            if type(value) == "table" then
+                for j = 1, #value do
+                    local val = resolve_header_value(value[j], ctx)
+                    -- guard nil only: add_header throws on nil, while an empty
+                    -- string is a valid value kept to preserve the existing
+                    -- behavior for an unresolved variable/capture.
+                    if val then
+                        core.request.add_header(ctx, header, val)
+                    end
+                end
+            else
+                local val = resolve_header_value(value, ctx)
+                if val then
+                    core.request.add_header(ctx, header, val)
+                end
             end
         end
 
         local field_cnt = #hdr_op.set
         for i = 1, field_cnt, 2 do
-            local val = core.utils.resolve_var_with_captures(hdr_op.set[i + 1],
-                                            ctx.proxy_rewrite_regex_uri_captures)
-            val = core.utils.resolve_var(val, ctx.var)
-            core.request.set_header(ctx, hdr_op.set[i], val)
+            local header = hdr_op.set[i]
+            local value = hdr_op.set[i + 1]
+            -- an array value replaces the header with multiple values in a
+            -- single set; a scalar sets a single value.
+            if type(value) == "table" then
+                local vals = {}
+                local n = 0
+                for j = 1, #value do
+                    local val = resolve_header_value(value[j], ctx)
+                    if val then
+                        n = n + 1
+                        vals[n] = val
+                    end
+                end
+                if n > 0 then
+                    core.request.set_header(ctx, header, vals)
+                end
+            else
+                local val = resolve_header_value(value, ctx)
+                core.request.set_header(ctx, header, val)
+            end
         end
 
         local field_cnt = #hdr_op.remove

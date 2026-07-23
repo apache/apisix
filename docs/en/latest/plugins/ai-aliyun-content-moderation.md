@@ -65,7 +65,7 @@ The `ai-aliyun-content-moderation` Plugin should be used with either [`ai-proxy`
 | response_check_service | string | False | `"llm_response_moderation"` | | Aliyun service for response moderation. |
 | response_check_length_limit | number | False | `5000` | >= 1 | Response content length limit. If exceeded, the content is sent to Aliyun in chunks. For instance, if the response content is 250 characters and `response_check_length_limit` is set to `100`, the content is sent in 3 requests to Aliyun. |
 | risk_level_bar | string | False | `"high"` | `none`, `low`, `medium`, `high`, `max` | If the evaluated risk level is lower than the `risk_level_bar`, the request or response will be passed through to Upstream LLM or client respectively. |
-| deny_code | number | False | `200` | | Rejection HTTP status code. |
+| deny_code | integer | False | `200` | [200, 599] | Rejection HTTP status code. Defaults to `200` so the provider-compatible refusal parses as a normal completion in client SDKs; set a 4xx to surface denies as HTTP errors instead. |
 | deny_message | string | False | | | Rejection message. |
 | timeout | integer | False | `10000` | >= 1 | Timeout in milliseconds. |
 | keepalive | boolean | False | `true` | | If `true`, enable HTTP connection keepalive to Aliyun. |

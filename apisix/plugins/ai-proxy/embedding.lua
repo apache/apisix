@@ -70,18 +70,15 @@ function _M.fetch(conf, texts)
 
     local target_path = embeddings_target_path(ai_provider)
 
-    -- The embedding call is a self-contained sidecar request; use a throwaway
-    -- ctx so it never reads or mutates the in-flight request's ai_* fields.
-    -- ai_request_body_changed = true tells build_request to send our
-    -- { model, input } body instead of reusing the client's request body.
-    local ctx = { ai_request_body_changed = true }
+    -- The embedding call is a self-contained sidecar request. It sets none of the
+    -- opts.client_* fields, so build_request forwards none of the client's headers
+    -- (Authorization, Cookie, ...) or query to the embedding provider, and the pure
+    -- request client always sends our { model, input } body rather than the
+    -- client's request body.
     local extra_opts = {
         endpoint = conf.endpoint,
         auth = conf.auth,
         target_path = target_path,
-        -- This call carries its own credentials; never forward the client's
-        -- headers (Authorization, Cookie, ...) to the embedding provider.
-        skip_client_headers = true,
     }
     local req_conf = {
         ssl_verify = conf.ssl_verify ~= false,
@@ -89,7 +86,7 @@ function _M.fetch(conf, texts)
         keepalive = true,
     }
 
-    local status, raw_body, err = ai_provider:request(ctx, req_conf,
+    local status, raw_body, err = ai_provider:request(req_conf,
         { model = conf.model, input = texts }, extra_opts)
     -- The upstream body never reaches a log line or a returned error. It is
     -- untrusted third-party content that may echo the prompt back, be arbitrarily

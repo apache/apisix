@@ -57,7 +57,7 @@ import TabItem from '@theme/TabItem';
 | `moderation_categories` | object | 否 | | | 审核类别及其对应阈值的键值对。在每个键值对中，键应为 `PROFANITY`、`HATE_SPEECH`、`INSULT`、`HARASSMENT_OR_ABUSE`、`SEXUAL` 或 `VIOLENCE_OR_THREAT` 之一；阈值应在 0 到 1 之间（包含）。 |
 | `moderation_threshold` | number | 否 | 0.5 | 0 - 1 | 整体毒性阈值。值越高，允许的有害内容越多。此选项与 `moderation_categories` 中的单独类别阈值不同。例如，如果 `moderation_categories` 中设置了 `PROFANITY` 阈值为 `0.5`，而请求的 `PROFANITY` 分数为 `0.1`，则请求不会超过类别阈值。但如果请求的其他类别（如 `SEXUAL` 或 `VIOLENCE_OR_THREAT`）超过了 `moderation_threshold`，则请求将被拒绝。 |
 | `check_request` | boolean | 否 | `true` | | 如果为 `true`，则审核请求内容。 |
-| `deny_code` | number | 否 | `200` | | 请求被拒绝时返回的 HTTP 状态码。 |
+| `deny_code` | integer | 否 | `200` | [200, 599] | 请求被拒绝时返回的 HTTP 状态码。默认为 `200`，使兼容 provider 的拒绝响应在客户端 SDK 中被解析为正常补全；设置为 4xx 可将拒绝暴露为 HTTP 错误。 |
 | `deny_message` | string | 否 | | | 请求被拒绝时返回的消息。未设置时，返回审核原因（例如 `request body exceeds toxicity threshold`）。 |
 | `fail_mode` | string | 否 | `skip` | `skip`、`warn`、`error` | 当请求未经过 `ai-proxy`/`ai-proxy-multi`，因而无法作为 AI 请求进行审核时的处理行为。`skip`：放行请求且不做检查；`warn`：放行并记录 warning 日志；`error`：拒绝请求。 |
 
