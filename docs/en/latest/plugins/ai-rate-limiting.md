@@ -40,6 +40,10 @@ import TabItem from '@theme/TabItem';
 
 The `ai-rate-limiting` Plugin enforces token-based rate limiting for requests sent to LLM services. It helps manage API usage by controlling the number of tokens consumed within a specified time frame, ensuring fair resource allocation and preventing excessive load on the service. It is often used with [`ai-proxy`](./ai-proxy.md) or [`ai-proxy-multi`](./ai-proxy-multi.md) Plugin.
 
+## Valkey Compatibility
+
+[Valkey](https://valkey.io/) is fully compatible with this Plugin. Because Valkey implements the Redis serialization protocol (RESP), you can use a Valkey instance as a drop-in replacement wherever a Redis instance is configured. No code or schema changes are required — configure the same `redis_host`, `redis_port`, `redis_password`, and other Redis attributes to point to your Valkey deployment.
+
 ## Attributes
 
 | Name | Type | Required | Default | Valid values | Description |

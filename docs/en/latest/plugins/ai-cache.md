@@ -63,6 +63,12 @@ Even with `cache_key.share_across_routes` enabled, the cache key identifies the 
 
 :::
 
+## Valkey Compatibility
+
+[Valkey](https://valkey.io/) works as a drop-in replacement for the exact (L1) cache layer. Because Valkey implements the Redis serialization protocol (RESP), no code or schema changes are required — configure the same `redis_host`, `redis_port`, `redis_password`, and other Redis attributes to point to your Valkey deployment.
+
+The semantic (L2) layer is an exception: it requires the RediSearch module (available in [Redis Stack](https://redis.io/docs/stack/)), which Valkey does not provide. Use Valkey only when `layers` is omitted or contains only `"exact"`.
+
 ## Attributes
 
 | Name | Type | Required | Default | Valid values | Description |

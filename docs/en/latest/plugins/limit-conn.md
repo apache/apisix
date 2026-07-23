@@ -37,6 +37,10 @@ import TabItem from '@theme/TabItem';
 
 The `limit-conn` Plugin limits the rate of requests by the number of concurrent connections. Requests exceeding the threshold will be delayed or rejected based on the configuration, ensuring controlled resource usage and preventing overload.
 
+## Valkey Compatibility
+
+[Valkey](https://valkey.io/) is fully compatible with this Plugin. Because Valkey implements the Redis serialization protocol (RESP), you can use a Valkey instance as a drop-in replacement wherever a Redis instance is configured. No code or schema changes are required — configure the same `redis_host`, `redis_port`, `redis_password`, and other Redis attributes to point to your Valkey deployment.
+
 ## Attributes
 
 | Name | Type | Required | Default | Valid values | Description |

@@ -93,6 +93,13 @@ services:
       - ./t/certs:/certs
 
 
+  ## Valkey
+  apisix_valkey:
+    image: valkey/valkey:8
+    restart: unless-stopped
+    ports:
+      - "6381:6379"
+
   ## Redis cluster
   redis-cluster:
     image: vishnunair/docker-redis-cluster:latest

@@ -45,6 +45,10 @@ The `limit-req` Plugin supports two modes of rate limiting:
 * **Local rate limiting**: Limits are enforced independently on each gateway instance. Each instance maintains its own counters, so the effective limit is roughly (limit × number of instances) when traffic is spread across instances. This is the default when no `policy` is set or when `policy` is `local`.
 * **Redis-based rate limiting**: Limits are shared across all gateway instances through Redis. All instances share the same quota, so the configured limit applies to all gateway instances.
 
+## Valkey Compatibility
+
+[Valkey](https://valkey.io/) is fully compatible with this Plugin. Because Valkey implements the Redis serialization protocol (RESP), you can use a Valkey instance as a drop-in replacement wherever a Redis instance is configured. No code or schema changes are required — configure the same `redis_host`, `redis_port`, `redis_password`, and other Redis attributes to point to your Valkey deployment.
+
 ## Attributes
 
 | Name | Type | Required | Default | Valid values | Description |

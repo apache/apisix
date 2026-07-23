@@ -48,6 +48,10 @@ You may see the following rate limiting headers in the response:
 - `X-RateLimit-Remaining`: the remaining quota
 - `X-RateLimit-Reset`: number of seconds left for the counter to reset
 
+## Valkey Compatibility
+
+[Valkey](https://valkey.io/) is fully compatible with this Plugin. Because Valkey implements the Redis serialization protocol (RESP), you can use a Valkey instance as a drop-in replacement wherever a Redis instance is configured. No code or schema changes are required — configure the same `redis_host`, `redis_port`, `redis_password`, and other Redis attributes to point to your Valkey deployment.
+
 ## Attributes
 
 This Plugin shares the same schema as the [limit-count](./limit-count.md) Plugin. Refer to that page for the full attribute reference. Key attributes are listed below.

@@ -38,6 +38,10 @@ import TabItem from '@theme/TabItem';
 
 The `openid-connect` Plugin supports the integration with [OpenID Connect (OIDC)](https://openid.net/connect/) identity providers, such as Keycloak, Auth0, Microsoft Entra ID, Google, Okta, and more. It allows APISIX to authenticate clients and obtain their information from the identity provider before allowing or denying their access to upstream protected resources.
 
+## Valkey Compatibility
+
+[Valkey](https://valkey.io/) is fully compatible with this Plugin's Redis session storage. Because Valkey implements the Redis serialization protocol (RESP), you can use a Valkey instance as a drop-in replacement wherever a Redis instance is configured. No code or schema changes are required — when `session.storage` is `redis`, point `session.redis.host`, `session.redis.port`, `session.redis.password`, and the other `session.redis.*` attributes at your Valkey deployment.
+
 ## Attributes
 
 | Name | Type | Required | Default | Valid values | Description |
