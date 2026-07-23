@@ -126,6 +126,9 @@ done
                                 "timeout": 10,
                                 "scope": "apisix",
                                 "use_pkce": false,
+                                "dpop": {
+                                    "private_key": "dpop-private-key"
+                                },
                                 "session": {
                                     "secret": "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK"
                                 }
@@ -152,23 +155,24 @@ passed
 
 
 
-=== TEST 5: verify encrypted field
+=== TEST 5: verify encrypted fields
 --- config
     location /t {
         content_by_lua_block {
-            local json = require("toolkit.json")
-            local t = require("lib.test_admin").test
-
-
-            -- get plugin conf from etcd, client_rsa_private_key is encrypted
+            -- get plugin conf from etcd, private key fields are encrypted
             local etcd = require("apisix.core.etcd")
             local res = assert(etcd.get('/routes/1'))
-            ngx.say(res.body.node.value.plugins["openid-connect"].client_rsa_private_key)
+            local conf = res.body.node.value.plugins["openid-connect"]
+            ngx.say(type(conf.client_rsa_private_key) == "string"
+                    and conf.client_rsa_private_key ~= "89ae4c8edadf1cd1c9f034335f136f87ad84b625c8f1")
+            ngx.say(type(conf.dpop.private_key) == "string"
+                    and conf.dpop.private_key ~= "dpop-private-key")
 
         }
     }
 --- response_body
-qO8TJbXcxCUnkkaTs3PxWDk5a54lv7FmngKQaxuXV4cL+7Kp1R4D8NS4w88so4e+
+true
+true
 
 
 
@@ -1845,7 +1849,278 @@ done
 
 
 
-=== TEST 51: Configure plugin with a custom session.cookie_name.
+=== TEST 51a: Accept PAR, DPoP, and client assertion algorithm options.
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local ok, err = plugin.check_schema({
+                client_id = "a",
+                discovery = "https://example.com/.well-known/openid-configuration",
+                bearer_only = false,
+                use_pkce = true,
+                par = {
+                    enabled = true,
+                    endpoint = "https://example.com/par",
+                    endpoint_auth_method = "private_key_jwt",
+                },
+                dpop = {
+                    enabled = true,
+                    signing_alg = "PS256",
+                    private_key = "-----BEGIN PRIVATE KEY-----\nMIIEowIBAAK\n-----END PRIVATE KEY-----",
+                    public_jwk = {
+                        kty = "RSA",
+                        e = "AQAB",
+                        n = "abc",
+                    },
+                },
+                token_endpoint_auth_method = "private_key_jwt",
+                client_rsa_private_key = "-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAK\n-----END RSA PRIVATE KEY-----",
+                client_jwt_assertion_alg = "PS256",
+                client_jwt_assertion_audience = "https://issuer.example.com/token",
+                session = { secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK" },
+            })
+            if not ok then
+                ngx.say(err)
+            end
+            ngx.say("done")
+        }
+    }
+--- response_body
+done
+
+
+
+=== TEST 52b: Reject unsupported DPoP signing algorithm in schema.
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local ok, err = plugin.check_schema({
+                client_id = "a",
+                client_secret = "b",
+                discovery = "https://example.com/.well-known/openid-configuration",
+                dpop = {
+                    signing_alg = "HS256",
+                },
+                session = { secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK" },
+            })
+            if not ok then
+                ngx.say(err)
+            end
+            ngx.say("done")
+        }
+    }
+--- response_body
+property "dpop" validation failed: property "signing_alg" validation failed: matches none of the enum values
+done
+
+
+
+=== TEST 53c: Accept PAR enabled without endpoint in schema.
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local ok, err = plugin.check_schema({
+                client_id = "a",
+                client_secret = "b",
+                discovery = "https://example.com/.well-known/openid-configuration",
+                par = {
+                    enabled = true,
+                },
+                session = { secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK" },
+            })
+            if not ok then
+                ngx.say(err)
+            end
+            ngx.say("done")
+        }
+    }
+--- response_body
+done
+
+
+
+=== TEST 54d: Reject DPoP enabled without key material in schema.
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local ok, err = plugin.check_schema({
+                client_id = "a",
+                client_secret = "b",
+                discovery = "https://example.com/.well-known/openid-configuration",
+                dpop = {
+                    enabled = true,
+                },
+                session = { secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK" },
+            })
+            if not ok then
+                ngx.say(err)
+            end
+            ngx.say("done")
+        }
+    }
+--- response_body
+property "dpop" validation failed: then clause did not match
+done
+
+
+
+=== TEST 55e: Reject private key material in DPoP public JWK.
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local ok, err = plugin.check_schema({
+                client_id = "a",
+                client_secret = "b",
+                discovery = "https://example.com/.well-known/openid-configuration",
+                dpop = {
+                    enabled = true,
+                    private_key = "-----BEGIN PRIVATE KEY-----\nMIIEowIBAAK\n-----END PRIVATE KEY-----",
+                    public_jwk = {
+                        kty = "RSA",
+                        e = "AQAB",
+                        n = "abc",
+                        d = "private-exponent",
+                    },
+                },
+                session = { secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK" },
+            })
+            if not ok then
+                ngx.say(err)
+            end
+            ngx.say("done")
+        }
+    }
+--- response_body_like
+property "dpop" validation failed: property "public_jwk" validation failed:.*
+done
+
+
+
+=== TEST 56: PAR runtime mapping sends authorization parameters through PAR.
+--- http_config
+    server {
+        listen 16969;
+        server_name localhost;
+
+        location /.well-known/openid-configuration {
+            content_by_lua_block {
+                ngx.header.content_type = "application/json"
+                ngx.say([[{
+                    "issuer": "http://127.0.0.1:16969",
+                    "authorization_endpoint": "http://127.0.0.1:16969/authorize",
+                    "token_endpoint": "http://127.0.0.1:16969/token",
+                    "userinfo_endpoint": "http://127.0.0.1:16969/userinfo",
+                    "jwks_uri": "http://127.0.0.1:16969/jwks"
+                }]])
+            }
+        }
+
+        location /par {
+            content_by_lua_block {
+                ngx.req.read_body()
+                local args = ngx.req.get_post_args()
+                if args.scope ~= "openid email" or not args.state then
+                    ngx.status = 400
+                    ngx.say([[{"error":"invalid_request"}]])
+                    return
+                end
+
+                ngx.header.content_type = "application/json"
+                ngx.say([[{
+                    "request_uri": "urn:ietf:params:oauth:request_uri:par-runtime",
+                    "expires_in": 60
+                }]])
+            }
+        }
+    }
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local http = require("resty.http")
+
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [=[{
+                    "plugins": {
+                        "openid-connect": {
+                            "client_id": "test_client",
+                            "client_secret": "test_secret",
+                            "discovery": "http://127.0.0.1:16969/.well-known/openid-configuration",
+                            "redirect_uri": "http://127.0.0.1:]=] .. ngx.var.server_port .. [=[/callback",
+                            "ssl_verify": false,
+                            "timeout": 10,
+                            "scope": "openid email",
+                            "par": {
+                                "enabled": true,
+                                "endpoint": "http://127.0.0.1:16969/par",
+                                "endpoint_auth_method": "client_secret_post"
+                            },
+                            "session": {
+                                "secret": "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK"
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/par-runtime"
+                }]=])
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/par-runtime"
+            local res, err = httpc:request_uri(uri, {method = "GET"})
+            if not res then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+
+            ngx.status = res.status
+            local location = res.headers["Location"] or ""
+            local query = string.match(location, "^http://127%.0%.0%.1:16969/authorize%?(.*)$")
+            local args = query and ngx.decode_args(query) or {}
+            local core = require("apisix.core")
+
+            ngx.say(query ~= nil)
+            ngx.say(core.table.nkeys(args) == 2)
+            ngx.say(args.client_id == "test_client")
+            ngx.say(args.request_uri == "urn:ietf:params:oauth:request_uri:par-runtime")
+            ngx.say(args.scope == nil)
+            ngx.say(args.state == nil)
+            ngx.say(args.response_type == nil)
+            ngx.say(args.redirect_uri == nil)
+        }
+    }
+--- timeout: 10s
+--- response_body
+true
+true
+true
+true
+true
+true
+true
+true
+--- error_code: 302
+
+
+
+=== TEST 57: Configure plugin with a custom session.cookie_name.
 --- config
     location /t {
         content_by_lua_block {
@@ -1889,7 +2164,7 @@ passed
 
 
 
-=== TEST 52: Full OIDC login issues the session cookie under the configured cookie_name.
+=== TEST 58: Full OIDC login issues the session cookie under the configured cookie_name.
 --- config
     location /t {
         content_by_lua_block {
@@ -1941,7 +2216,7 @@ passed
 
 
 
-=== TEST 53: Configure plugin with a short session.absolute_timeout.
+=== TEST 59: Configure plugin with a short session.absolute_timeout.
 --- config
     location /t {
         content_by_lua_block {
@@ -1985,7 +2260,7 @@ passed
 
 
 
-=== TEST 54: Session is rejected once absolute_timeout elapses, re-initiating authentication.
+=== TEST 60: Session is rejected once absolute_timeout elapses, re-initiating authentication.
 --- config
     location /t {
         content_by_lua_block {

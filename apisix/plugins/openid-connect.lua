@@ -58,6 +58,25 @@ local function build_session_opts(session_conf)
 end
 
 
+local function flatten_openidc_options(conf)
+    if conf.par then
+        conf.use_par = conf.par.enabled
+        conf.pushed_authorization_request_endpoint = conf.par.endpoint
+        conf.pushed_authorization_request_endpoint_auth_method =
+            conf.par.endpoint_auth_method
+        conf.par = nil
+    end
+
+    if conf.dpop then
+        conf.use_dpop = conf.dpop.enabled
+        conf.dpop_signing_alg = conf.dpop.signing_alg
+        conf.dpop_private_key = conf.dpop.private_key
+        conf.dpop_public_jwk = conf.dpop.public_jwk
+        conf.dpop = nil
+    end
+end
+
+
 local schema = {
     type = "object",
     properties = {
@@ -304,6 +323,70 @@ local schema = {
             type = "boolean",
             default = false
         },
+        par = {
+            description = "Pushed Authorization Requests (PAR) configuration.",
+            type = "object",
+            properties = {
+                enabled = {
+                    description = "When true, use Pushed Authorization Requests (PAR).",
+                    type = "boolean",
+                    default = false,
+                },
+                endpoint = {
+                    description = "URL of the Pushed Authorization Requests endpoint.",
+                    type = "string",
+                },
+                endpoint_auth_method = {
+                    description = "Authentication method for the PAR endpoint.",
+                    type = "string",
+                },
+            },
+            additionalProperties = false,
+        },
+        dpop = {
+            description = "Demonstrating Proof-of-Possession (DPoP) configuration.",
+            type = "object",
+            properties = {
+                enabled = {
+                    description = "When true, use DPoP proof JWTs.",
+                    type = "boolean",
+                    default = false,
+                },
+                signing_alg = {
+                    description = "DPoP proof JWT signing algorithm.",
+                    type = "string",
+                    enum = {"ES256", "RS256", "PS256"},
+                    default = "ES256",
+                },
+                private_key = {
+                    description = "Private key used to sign DPoP proof JWTs.",
+                    type = "string",
+                },
+                public_jwk = {
+                    description = "Public JWK matching dpop.private_key.",
+                    type = "object",
+                    ["not"] = {anyOf = {
+                        {required = {"d"}},
+                        {required = {"p"}},
+                        {required = {"q"}},
+                        {required = {"dp"}},
+                        {required = {"dq"}},
+                        {required = {"qi"}},
+                        {required = {"oth"}},
+                        {required = {"k"}},
+                    }},
+                },
+            },
+            ["if"] = {
+                properties = {
+                    enabled = { const = true },
+                },
+            },
+            ["then"] = {
+                required = {"private_key", "public_jwk"},
+            },
+            additionalProperties = false,
+        },
         set_access_token_header = {
             description = "Whether the access token should be added as a header to the request " ..
                 "for downstream",
@@ -376,6 +459,14 @@ local schema = {
             description = "Life duration of the signed JWT in seconds.",
             type = "integer",
             default = 60
+        },
+        client_jwt_assertion_alg = {
+            description = "Signing algorithm for the client assertion JWT.",
+            type = "string"
+        },
+        client_jwt_assertion_audience = {
+            description = "Audience for the client assertion JWT.",
+            type = "string"
         },
         renew_access_token_on_expiry = {
             description = "Whether to attempt silently renewing the access token.",
@@ -470,7 +561,7 @@ local schema = {
             default = nil,
         }
     },
-    encrypt_fields = {"client_secret", "client_rsa_private_key",
+    encrypt_fields = {"client_secret", "client_rsa_private_key", "dpop.private_key",
                       "session.secret", "session.redis.password"},
     required = {"client_id", "discovery"}
 }
@@ -515,7 +606,8 @@ function _M.check_schema(conf)
     end
 
     local check = {"discovery", "introspection_endpoint", "redirect_uri",
-                    "post_logout_redirect_uri", "proxy_opts.http_proxy", "proxy_opts.https_proxy"}
+                    "post_logout_redirect_uri", "par.endpoint", "proxy_opts.http_proxy",
+                    "proxy_opts.https_proxy"}
     core.utils.check_https(check, conf, plugin_name)
     core.utils.check_tls_bool({"ssl_verify"}, conf, plugin_name)
 
@@ -707,6 +799,7 @@ end
 
 function _M.rewrite(plugin_conf, ctx)
     local conf = core.table.clone(plugin_conf)
+    flatten_openidc_options(conf)
 
     -- Snapshot the client-supplied X-Access-Token (it doubles as a bearer
     -- input via get_bearer_access_token) and clear the four headers this
