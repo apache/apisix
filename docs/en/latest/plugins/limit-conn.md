@@ -41,6 +41,19 @@ The `limit-conn` Plugin limits the rate of requests by the number of concurrent 
 
 [Valkey](https://valkey.io/) is fully compatible with this Plugin. Because Valkey implements the Redis serialization protocol (RESP), you can use a Valkey instance as a drop-in replacement wherever a Redis instance is configured. No code or schema changes are required — configure the same `redis_host`, `redis_port`, `redis_password`, and other Redis attributes to point to your Valkey deployment.
 
+For example, to point the `redis` policy at a Valkey instance:
+
+```json
+{
+  "policy": "redis",
+  "redis_host": "valkey.example.com",
+  "redis_port": 6379,
+  "redis_password": "secret",
+  "redis_database": 0,
+  "redis_timeout": 1000
+}
+```
+
 ## Attributes
 
 | Name | Type | Required | Default | Valid values | Description |

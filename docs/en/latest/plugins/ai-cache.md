@@ -69,6 +69,19 @@ Even with `cache_key.share_across_routes` enabled, the cache key identifies the 
 
 The semantic (L2) layer is an exception: it requires the RediSearch module (available in [Redis Stack](https://redis.io/docs/stack/)), which Valkey does not provide. Use Valkey only when `layers` is omitted or contains only `"exact"`.
 
+For example, to back the exact (L1) cache with a Valkey instance:
+
+```json
+{
+  "layers": ["exact"],
+  "redis_host": "valkey.example.com",
+  "redis_port": 6379,
+  "redis_password": "secret",
+  "redis_database": 0,
+  "redis_timeout": 1000
+}
+```
+
 ## Attributes
 
 | Name | Type | Required | Default | Valid values | Description |

@@ -42,6 +42,23 @@ The `openid-connect` Plugin supports the integration with [OpenID Connect (OIDC)
 
 [Valkey](https://valkey.io/) is fully compatible with this Plugin's Redis session storage. Because Valkey implements the Redis serialization protocol (RESP), you can use a Valkey instance as a drop-in replacement wherever a Redis instance is configured. No code or schema changes are required — when `session.storage` is `redis`, point `session.redis.host`, `session.redis.port`, `session.redis.password`, and the other `session.redis.*` attributes at your Valkey deployment.
 
+For example, to store sessions in a Valkey instance:
+
+```json
+{
+  "session": {
+    "secret": "your-session-secret-min-16-chars",
+    "storage": "redis",
+    "redis": {
+      "host": "valkey.example.com",
+      "port": 6379,
+      "password": "secret",
+      "database": 0
+    }
+  }
+}
+```
+
 ## Attributes
 
 | Name | Type | Required | Default | Valid values | Description |
