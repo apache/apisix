@@ -44,6 +44,20 @@ import TabItem from '@theme/TabItem';
 
 ## 请求格式
 
+### OpenAI 请求协议检测
+
+对于 OpenAI 和 OpenAI 兼容请求，插件会先检测客户端协议，再选择对应的上游端点：
+
+| 客户端协议 | 检测条件 | 路由 URI |
+| --- | --- | --- |
+| Chat Completions | 请求体包含 `messages` 数组。 | 路由匹配的任意 URI。 |
+| Responses API | 请求体包含 `input`，并且请求 URI 以 `/v1/responses` 结尾。 | URI 可以包含自定义前缀，但必须保留 `/v1/responses` 后缀。 |
+| Embeddings | 请求体包含 `input`，并且 Responses API 和 Chat Completions 规则均未匹配。 | 路由匹配的任意 URI。 |
+
+插件按表中顺序检查规则。Responses 和 Embeddings 请求都使用 `input`，因此包含 `input` 但不包含 `messages` 的请求会被识别为 Embeddings，除非其 URI 以 `/v1/responses` 结尾。
+
+### Chat Completions 请求格式
+
 | 名称               | 类型   | 必选项 | 描述                                         |
 | ------------------ | ------ | -------- | --------------------------------------------------- |
 | `messages`         | Array  | 是      | 消息对象数组。                        |
@@ -67,7 +81,7 @@ import TabItem from '@theme/TabItem';
 
 | 名称               | 类型    | 必选项 | 默认值 | 有效值                              | 描述 |
 |--------------------|--------|----------|---------|------------------------------------------|-------------|
-| provider          | string  | 是     |         | [openai, deepseek, azure-openai, aimlapi, anthropic, openrouter, gemini, vertex-ai, bedrock, openai-compatible] | LLM 服务提供商。当设置为 `openai` 时，插件将代理请求到 `https://api.openai.com/chat/completions`。当设置为 `deepseek` 时，插件将代理请求到 `https://api.deepseek.com/chat/completions`。当设置为 `aimlapi` 时，插件使用 OpenAI 兼容驱动程序，默认将请求代理到 `https://api.aimlapi.com/v1/chat/completions`。当设置为 `anthropic` 时，插件将代理请求到 `https://api.anthropic.com/v1/chat/completions`。当设置为 `openrouter` 时，插件使用 OpenAI 兼容驱动程序，默认将请求代理到 `https://openrouter.ai/api/v1/chat/completions`。当设置为 `gemini` 时，插件使用 OpenAI 兼容驱动程序，默认将请求代理到 `https://generativelanguage.googleapis.com/v1beta/openai/chat/completions`。当设置为 `vertex-ai` 时，插件默认将请求代理到 `https://aiplatform.googleapis.com`，需要配置 `provider_conf` 或 `override`。当设置为 `bedrock` 时，插件将代理请求到 AWS Bedrock Converse API（`https://bedrock-runtime.<region>.amazonaws.com`），并使用 AWS SigV4 对请求进行签名。当设置为 `openai-compatible` 时，插件将代理请求到在 `override` 中配置的自定义端点。当设置为 `azure-openai` 时，插件同样将请求代理到 `override` 中配置的自定义端点，并会额外移除用户请求中的 `model` 参数。 |
+| provider          | string  | 是     |         | [openai, deepseek, azure-openai, aimlapi, anthropic, openrouter, gemini, vertex-ai, bedrock, openai-compatible] | LLM 服务提供商。当设置为 `openai` 时，插件会将检测到的 Chat Completions、Responses 和 Embeddings 请求发送到对应的 OpenAI 端点。当设置为 `deepseek` 时，插件将代理请求到 `https://api.deepseek.com/chat/completions`。当设置为 `aimlapi` 时，插件使用 OpenAI 兼容驱动程序，默认将请求代理到 `https://api.aimlapi.com/v1/chat/completions`。当设置为 `anthropic` 时，插件将代理请求到 `https://api.anthropic.com/v1/chat/completions`。当设置为 `openrouter` 时，插件使用 OpenAI 兼容驱动程序，默认将请求代理到 `https://openrouter.ai/api/v1/chat/completions`。当设置为 `gemini` 时，插件使用 OpenAI 兼容驱动程序，默认将请求代理到 `https://generativelanguage.googleapis.com/v1beta/openai/chat/completions`。当设置为 `vertex-ai` 时，插件默认将请求代理到 `https://aiplatform.googleapis.com`，需要配置 `provider_conf` 或 `override`。当设置为 `bedrock` 时，插件将代理请求到 AWS Bedrock Converse API（`https://bedrock-runtime.<region>.amazonaws.com`），并使用 AWS SigV4 对请求进行签名。当设置为 `openai-compatible` 时，插件将代理请求到在 `override` 中配置的自定义端点。当设置为 `azure-openai` 时，插件同样将请求代理到 `override` 中配置的自定义端点，并会额外移除用户请求中的 `model` 参数。 |
 | provider_conf     | object  | 否     |         |                                          | 特定提供商的配置。当 `provider` 设置为 `vertex-ai` 且未配置 `override` 时必填。当 `provider` 设置为 `bedrock` 时必填。 |
 | provider_conf.project_id | string | 是 |       |                                          | Google Cloud 项目 ID。 |
 | provider_conf.region | string | 视提供商而定 |         | minLength = 1（Bedrock 时）              | 当 `provider` 为 `vertex-ai` 时，此项为 Google Cloud 区域。当 `provider` 为 `bedrock` 时，此项为用于构造 Bedrock 端点并使用 SigV4 对请求进行签名的 AWS 区域（必填，不能为空）。 |
@@ -911,9 +925,56 @@ curl "http://127.0.0.1:9080/bedrock/converse" -X POST \
   }' --output -
 ```
 
+### 代理 OpenAI Responses API
+
+以下示例配置 `ai-proxy` 插件以代理 OpenAI Responses API 请求。Responses 和 Embeddings 请求都包含 `input`，因此路由 URI 必须以 `/v1/responses` 结尾，插件才能将请求识别为 Responses。
+
+获取 [OpenAI API 密钥](https://platform.openai.com/api-keys)并保存到环境变量：
+
+```shell
+export OPENAI_API_KEY=<your-api-key>
+```
+
+创建 URI 为 `/v1/responses` 的路由：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "ai-proxy-responses-route",
+    "uri": "/v1/responses",
+    "methods": ["POST"],
+    "plugins": {
+      "ai-proxy": {
+        "provider": "openai",
+        "auth": {
+          "header": {
+            "Authorization": "Bearer '"$OPENAI_API_KEY"'"
+          }
+        },
+        "options": {
+          "model": "gpt-4.1"
+        }
+      }
+    }
+  }'
+```
+
+使用 Responses API 格式发送请求：
+
+```shell
+curl "http://127.0.0.1:9080/v1/responses" -X POST \
+  -H "Content-Type: application/json" \
+  -d '{
+    "input": "用一句话解释 API 网关。"
+  }'
+```
+
+插件会将请求发送到 OpenAI Responses 端点，并以 Responses API 格式返回响应。如需流式响应，请在请求体中添加 `"stream": true`，并使用 `curl --no-buffer`。
+
 ### 代理到 OpenAI 嵌入模型
 
-以下示例演示了如何配置 `ai-proxy` 插件以将请求代理到嵌入模型。此示例将使用 OpenAI 嵌入模型端点。
+以下示例演示如何配置 `ai-proxy` 插件以代理对 OpenAI 嵌入模型的请求。插件会检测 `input` 字段并选择 OpenAI Embeddings 端点。
 
 获取 OpenAI [API 密钥](https://openai.com/blog/openai-api)并保存到环境变量：
 
@@ -932,7 +993,7 @@ values={[
 
 <TabItem value="admin-api">
 
-创建路由并配置 `ai-proxy` 插件，将 `provider` 设置为 `openai`，指定嵌入模型名称，添加 `encoding_format` 参数以配置返回的嵌入向量为浮点数列表，并使用 `override` 将默认端点覆盖为 [嵌入 API 端点](https://platform.openai.com/docs/api-reference/embeddings)：
+创建路由并配置 `ai-proxy` 插件，将 `provider` 设置为 `openai`，指定嵌入模型名称，并添加 `encoding_format` 参数，将返回的嵌入向量配置为浮点数列表：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -952,9 +1013,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
         "options":{
           "model": "text-embedding-3-small",
           "encoding_format": "float"
-        },
-        "override": {
-          "endpoint": "https://api.openai.com/v1/embeddings"
         }
       }
     }
@@ -965,7 +1023,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 
 <TabItem value="adc">
 
-创建包含 `ai-proxy` 插件配置的路由，将 `provider` 设置为 `openai`，指定嵌入模型名称，添加 `encoding_format` 参数，并使用 `override` 将默认端点覆盖为 [嵌入 API 端点](https://platform.openai.com/docs/api-reference/embeddings)：
+创建包含 `ai-proxy` 插件配置的路由，将 `provider` 设置为 `openai`，指定嵌入模型名称，并添加 `encoding_format` 参数：
 
 ```yaml title="adc.yaml"
 services:
@@ -985,8 +1043,6 @@ services:
             options:
               model: text-embedding-3-small
               encoding_format: float
-            override:
-              endpoint: "https://api.openai.com/v1/embeddings"
 ```
 
 将配置同步到网关：
@@ -1026,8 +1082,6 @@ spec:
         options:
           model: text-embedding-3-small
           encoding_format: float
-        override:
-          endpoint: "https://api.openai.com/v1/embeddings"
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
@@ -1081,8 +1135,6 @@ spec:
           options:
             model: text-embedding-3-small
             encoding_format: float
-          override:
-            endpoint: "https://api.openai.com/v1/embeddings"
 ```
 
 </TabItem>
