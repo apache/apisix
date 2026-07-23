@@ -169,3 +169,5 @@ GET /t
 --- response_body
 value
 $secret://vault/lru/lru-key/jack/key
+--- error_log
+failed to resolve secret reference: $secret://vault/lru/lru-key/jack/key, field: key
