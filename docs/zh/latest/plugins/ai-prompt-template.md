@@ -38,6 +38,8 @@ import TabItem from '@theme/TabItem';
 
 `ai-prompt-template` 插件支持预先配置提示词模板，这些模板仅接受用户在指定的模板变量中输入，采用"填空"的方式。它简化了对 OpenAI、Anthropic 等大语言模型提供商及其模型的访问，让你可以定义可复用的提示词结构。
 
+该插件会生成包含 `messages` 数组的 Chat Completions 请求。它不会生成 Responses API 或 Embeddings 请求。
+
 ## 插件属性
 
 | 名称 | 类型 | 必选项 | 默认值 | 有效值 | 描述 |

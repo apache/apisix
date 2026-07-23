@@ -38,6 +38,8 @@ import TabItem from '@theme/TabItem';
 
 The `ai-prompt-template` Plugin supports pre-configuring prompt templates that only accept user inputs in designated template variables, in a "fill in the blank" fashion. It simplifies access to LLM providers, such as OpenAI and Anthropic, by letting you define reusable prompt structures.
 
+The Plugin generates a Chat Completions request containing a `messages` array. It does not generate Responses API or Embeddings requests.
+
 ## Plugin Attributes
 
 | Name | Type | Required | Default | Valid values | Description |

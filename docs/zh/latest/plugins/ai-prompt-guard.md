@@ -40,6 +40,8 @@ import TabItem from '@theme/TabItem';
 
 当同时配置了 `allow_patterns` 和 `deny_patterns` 时，插件首先确保至少匹配一个 `allow_patterns`。如果没有匹配，请求将被拒绝。如果匹配了允许的模式，它会继续检查是否存在任何拒绝模式的匹配。
 
+该插件支持 Chat Completions 和 Responses API 请求。对于 Responses，它会检查 `input` 中的用户内容；当 `match_all_roles` 为 `true` 时，还会检查 `instructions` 中的系统内容。对于 Embeddings，它会在 `input` 为字符串时进行检查；字符串数组形式的输入不会被检查。
+
 ## 插件属性
 
 | 名称 | 类型 | 必选项 | 默认值 | 有效值 | 描述 |

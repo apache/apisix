@@ -45,6 +45,8 @@ import TabItem from '@theme/TabItem';
 
 `ai-aliyun-content-moderation` 插件应与 [`ai-proxy`](./ai-proxy.md) 或 [`ai-proxy-multi`](./ai-proxy-multi.md) 插件配合使用以代理 LLM 请求。
 
+该插件支持 Chat Completions、Responses API 和 Embeddings 请求。对于 Responses，它会审核 `input`，并以 Responses API 格式返回被拦截的非流式或流式请求。对于 Embeddings，它会审核 `input` 中的字符串或字符串数组，并以 OpenAI 风格的错误响应返回被拒绝的请求。
+
 ## 属性
 
 | 名称 | 类型 | 必选项 | 默认值 | 有效值 | 描述 |

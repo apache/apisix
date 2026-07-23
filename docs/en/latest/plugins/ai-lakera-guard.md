@@ -43,7 +43,9 @@ The `ai-lakera-guard` Plugin integrates with the [Lakera Guard API (v2)](https:/
 
 Which detectors run and at what thresholds are controlled entirely by the **Lakera project policy**, selected with `project_id`. There is no gateway-side detector list; Lakera returns a single verdict per call.
 
-The `ai-lakera-guard` Plugin should be used with either the [`ai-proxy`](./ai-proxy.md) or [`ai-proxy-multi`](./ai-proxy-multi.md) Plugin for proxying LLM requests. It relies on the context that `ai-proxy` populates to extract chat content in a protocol-aware way.
+The `ai-lakera-guard` Plugin should be used with either the [`ai-proxy`](./ai-proxy.md) or [`ai-proxy-multi`](./ai-proxy-multi.md) Plugin for proxying LLM requests. It relies on the context that `ai-proxy` populates to extract request content in a protocol-aware way.
+
+Request scanning supports Chat Completions, Responses API, and Embeddings requests. For Responses, the Plugin converts `instructions` and text from `input` into conversation messages. For Embeddings, it scans text from `input`. Response scanning applies to protocols that return generated text, including Chat Completions and Responses; Embeddings responses contain vectors rather than text.
 
 Requests that did not pass through `ai-proxy`/`ai-proxy-multi` (for example plain HTTP traffic when the Plugin is bound at the Consumer or Service level) cannot be inspected. By default such requests are passed through unchecked; this is configurable via `fail_mode`.
 
@@ -63,7 +65,7 @@ The Plugin can scan the request prompt (`direction: input`), the LLM response (`
 | timeout | integer | False | `5000` | >= 1 | Lakera request timeout in milliseconds. |
 | ssl_verify | boolean | False | `true` | | If `true`, verify the TLS certificate of the Lakera endpoint. |
 | reveal_failure_categories | boolean | False | `false` | | If `true`, append the matched Lakera `detector_type`s (with their confidence result) to the deny message returned to the client. The full per-detector `breakdown` is always requested from Lakera and written to the gateway logs regardless of this setting; this flag only controls client-facing exposure. |
-| deny_code | integer | False | `200` | 200 - 599 | HTTP status code returned when a request is blocked. Defaults to `200` so the body — a provider-compatible chat completion (or SSE) carrying `request_failure_message` — parses as a normal refusal in client SDKs (matching how Lakera Guard itself returns `200` with a verdict). Set a 4xx (e.g. `403`) if you prefer blocks to surface as HTTP errors. |
+| deny_code | integer | False | `200` | 200 - 599 | HTTP status code returned when a request is blocked. Defaults to `200` so the body in the detected protocol's format carrying `request_failure_message` parses as a normal refusal in client SDKs (matching how Lakera Guard itself returns `200` with a verdict). Set a 4xx (e.g. `403`) if you prefer blocks to surface as HTTP errors. |
 | request_failure_message | string | False | `Request blocked by Lakera Guard` | | Refusal text returned (as the assistant message of a provider-compatible response) when a request is blocked. |
 | response_failure_message | string | False | `Response blocked by Lakera Guard` | | Refusal text returned (as the assistant message of a provider-compatible response) when an LLM response is blocked (`direction` `output` or `both`). |
 

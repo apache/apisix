@@ -42,6 +42,8 @@ The `ai-rag` Plugin provides Retrieval-Augmented Generation (RAG) capabilities w
 
 The Plugin supports using [Azure OpenAI](https://azure.microsoft.com/en-us/products/ai-services/openai-service) and [Azure AI Search](https://azure.microsoft.com/en-us/products/ai-services/ai-search) services for generating embeddings and performing vector search. PRs for introducing support for other service providers are welcomed.
 
+The Plugin enriches Chat Completions and Responses API requests. For Responses, it appends retrieved context to `input`. It does not enrich direct Embeddings API requests. The nested `ai_rag.embeddings` object configures the embedding input used internally for retrieval and is distinct from a top-level Embeddings request.
+
 ## Plugin Attributes
 
 | Name | Type | Required | Default | Valid values | Description |
