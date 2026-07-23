@@ -38,6 +38,8 @@ import TabItem from '@theme/TabItem';
 
 The `ai-request-rewrite` Plugin processes client requests by forwarding them to LLM services for transformation before relaying them to Upstream services. This enables LLM-powered modifications such as data redaction, content enrichment, or reformatting. The Plugin supports integration with OpenAI, DeepSeek, Gemini, Vertex AI, Anthropic, OpenRouter, and other OpenAI-compatible APIs.
 
+The LLM call used for rewriting is separate from the client's request format. With the `openai` provider, the Plugin builds a non-streaming Chat Completions request from the configured prompt and the original request body. It does not use the Chat Completions, Responses API, or Embeddings detection rules of [`ai-proxy`](./ai-proxy.md#openai-request-protocol-detection).
+
 ## Plugin Attributes
 
 | Name | Type | Required | Default | Valid values | Description |
@@ -47,7 +49,7 @@ The `ai-request-rewrite` Plugin processes client requests by forwarding them to 
 | `auth` | object | True | | | Authentication configurations. |
 | `auth.header` | object | False | | | Authentication headers. Key must match pattern `^[a-zA-Z0-9._-]+$`. At least one of `header` and `query` should be configured. |
 | `auth.query` | object | False | | | Authentication query parameters. Key must match pattern `^[a-zA-Z0-9._-]+$`. At least one of `header` and `query` should be configured. |
-| `options` | object | False | | | Model configurations. In addition to `model`, you can configure additional parameters and they will be forwarded to the upstream LLM service in the request body. For instance, if you are working with OpenAI, you can configure additional parameters such as `temperature`, `top_p`, and `stream`. See your LLM provider's API documentation for more available options. |
+| `options` | object | False | | | Model configurations. In addition to `model`, you can configure non-streaming generation parameters, such as `temperature` and `top_p`, which are forwarded to the upstream LLM service. The Plugin must receive a complete JSON response before it can replace the original request body. |
 | `options.model` | string | False | | | Name of the LLM model, such as `gpt-4` or `gpt-3.5`. See your LLM provider's API documentation for more available models. |
 | `override` | object | False | | | Override setting. |
 | `override.endpoint` | string | False | | | LLM provider endpoint. Required when `provider` is `openai-compatible`. |
