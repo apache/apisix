@@ -44,17 +44,19 @@ In addition, the Plugin also supports logging LLM request information in the acc
 
 ## Request Format
 
-### OpenAI Request Protocol Detection
+### Request Protocol Detection
 
-For OpenAI and OpenAI-compatible requests, the Plugin detects the client protocol before selecting the corresponding upstream endpoint:
+The Plugin detects the client request protocol before selecting a compatible upstream endpoint. It checks the following rules in order:
 
 | Client protocol | Detection | Route URI |
 | --- | --- | --- |
-| Chat Completions | The request body contains a `messages` array. | Any URI matched by the Route. |
-| Responses API | The request body contains `input` and the request URI ends in `/v1/responses`. | The URI can have a custom prefix, but it must keep the `/v1/responses` suffix. |
-| Embeddings | The request body contains `input`, and neither the Responses API nor Chat Completions rule matched. | Any URI matched by the Route. |
+| Bedrock Converse | The request body contains a `messages` array and the request URI ends in `/converse`. | The URI can have a custom prefix, but it must keep the `/converse` suffix. |
+| Anthropic Messages | The request body is a JSON object and the request URI ends in `/v1/messages`. | The URI can have a custom prefix, but it must keep the `/v1/messages` suffix. |
+| OpenAI Responses | The request body contains `input` and the request URI ends in `/v1/responses`. | The URI can have a custom prefix, but it must keep the `/v1/responses` suffix. |
+| OpenAI Chat Completions | The request body contains a `messages` array. | Any URI matched by the Route. |
+| OpenAI Embeddings | The request body contains `input`, and no earlier rule matched. | Any URI matched by the Route. |
 
-The Plugin checks the rules in table order. Responses and Embeddings requests both use `input`, so a request containing `input` but not `messages` is identified as Embeddings unless its URI ends in `/v1/responses`.
+The URI-specific rules run before the body-only rules. This prevents Bedrock Converse and Anthropic Messages requests containing `messages` from being identified as Chat Completions. Responses and Embeddings requests both use `input`, so a request containing `input` but not `messages` is identified as Embeddings unless its URI ends in `/v1/responses`. If no rule matches, the Plugin treats the request as passthrough.
 
 ### Chat Completions Request Format
 

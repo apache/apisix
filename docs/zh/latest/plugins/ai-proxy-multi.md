@@ -44,17 +44,19 @@ import TabItem from '@theme/TabItem';
 
 ## 请求格式
 
-### OpenAI 请求协议检测
+### 请求协议检测
 
-对于 OpenAI 和 OpenAI 兼容请求，插件会先检测客户端协议，再选择对应的上游端点：
+插件会先检测客户端请求协议，再选择兼容的上游端点。插件按以下顺序检查规则：
 
 | 客户端协议 | 检测条件 | 路由 URI |
 | --- | --- | --- |
-| Chat Completions | 请求体包含 `messages` 数组。 | 路由匹配的任意 URI。 |
-| Responses API | 请求体包含 `input`，并且请求 URI 以 `/v1/responses` 结尾。 | URI 可以包含自定义前缀，但必须保留 `/v1/responses` 后缀。 |
-| Embeddings | 请求体包含 `input`，并且 Responses API 和 Chat Completions 规则均未匹配。 | 路由匹配的任意 URI。 |
+| Bedrock Converse | 请求体包含 `messages` 数组，并且请求 URI 以 `/converse` 结尾。 | URI 可以包含自定义前缀，但必须保留 `/converse` 后缀。 |
+| Anthropic Messages | 请求体为 JSON 对象，并且请求 URI 以 `/v1/messages` 结尾。 | URI 可以包含自定义前缀，但必须保留 `/v1/messages` 后缀。 |
+| OpenAI Responses | 请求体包含 `input`，并且请求 URI 以 `/v1/responses` 结尾。 | URI 可以包含自定义前缀，但必须保留 `/v1/responses` 后缀。 |
+| OpenAI Chat Completions | 请求体包含 `messages` 数组。 | 路由匹配的任意 URI。 |
+| OpenAI Embeddings | 请求体包含 `input`，并且之前的规则均未匹配。 | 路由匹配的任意 URI。 |
 
-插件按表中顺序检查规则。Responses 和 Embeddings 请求都使用 `input`，因此包含 `input` 但不包含 `messages` 的请求会被识别为 Embeddings，除非其 URI 以 `/v1/responses` 结尾。
+基于 URI 的规则在仅基于请求体的规则之前运行，以免包含 `messages` 的 Bedrock Converse 和 Anthropic Messages 请求被识别为 Chat Completions。Responses 和 Embeddings 请求都使用 `input`，因此包含 `input` 但不包含 `messages` 的请求会被识别为 Embeddings，除非其 URI 以 `/v1/responses` 结尾。如果没有规则匹配，插件会将请求视为透传请求。
 
 ### Chat Completions 请求格式
 

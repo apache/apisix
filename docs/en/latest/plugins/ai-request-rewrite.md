@@ -38,7 +38,7 @@ import TabItem from '@theme/TabItem';
 
 The `ai-request-rewrite` Plugin processes client requests by forwarding them to LLM services for transformation before relaying them to Upstream services. This enables LLM-powered modifications such as data redaction, content enrichment, or reformatting. The Plugin supports integration with OpenAI, DeepSeek, Gemini, Vertex AI, Anthropic, OpenRouter, and other OpenAI-compatible APIs.
 
-The LLM call used for rewriting is separate from the client's request format. With the `openai` provider, the Plugin builds a non-streaming Chat Completions request from the configured prompt and the original request body. It does not use the Chat Completions, Responses API, or Embeddings detection rules of [`ai-proxy`](./ai-proxy.md#openai-request-protocol-detection).
+The LLM call used for rewriting is separate from the client's request format. With the `openai` provider, the Plugin builds a non-streaming Chat Completions request from the configured prompt and the original request body. It does not use [`ai-proxy` request protocol detection](./ai-proxy.md#request-protocol-detection).
 
 ## Plugin Attributes
 

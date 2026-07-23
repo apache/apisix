@@ -45,7 +45,7 @@ import TabItem from '@theme/TabItem';
 
 `ai-lakera-guard` 插件应与 [`ai-proxy`](./ai-proxy.md) 或 [`ai-proxy-multi`](./ai-proxy-multi.md) 插件配合使用以代理 LLM 请求。它依赖 `ai-proxy` 填充的上下文，以协议感知的方式提取请求内容。
 
-请求扫描支持 Chat Completions、Responses API 和 Embeddings 请求。对于 Responses，插件会将 `instructions` 和 `input` 中的文本转换为对话消息。对于 Embeddings，插件会扫描 `input` 中的文本。响应扫描适用于返回生成文本的协议，包括 Chat Completions 和 Responses；Embeddings 响应包含向量而不是文本。
+请求扫描支持 Chat Completions、Responses API、Embeddings、Anthropic Messages 和 Bedrock Converse 请求。对于 Responses，插件会将 `instructions` 和 `input` 中的文本转换为对话消息。对于 Embeddings，插件会扫描 `input` 中的文本。响应扫描适用于返回生成文本的协议；Embeddings 响应包含向量而不是文本。
 
 未经过 `ai-proxy`/`ai-proxy-multi` 的请求（例如插件绑定在 Consumer 或 Service 级别时的普通 HTTP 流量）无法被检查。默认情况下，此类请求会被直接放行而不做检查；该行为可通过 `fail_mode` 配置。
 

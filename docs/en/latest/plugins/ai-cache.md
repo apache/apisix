@@ -45,7 +45,7 @@ This Plugin supports two cache layers:
 - **Exact (L1):** A SHA-256 fingerprint of the effective prompt is used as the Redis key. An identical prompt always hits the same entry.
 - **Semantic (L2):** When L1 misses, the prompt is embedded into a vector and a nearest-neighbour search retrieves a past response whose embedding is within the configured similarity threshold. L2 is disabled by default; enable it by adding `"semantic"` to `layers`.
 
-Exact caching supports detected Chat Completions, Responses API, and Embeddings requests and keeps the protocols in separate cache entries. Semantic caching applies only to Chat Completions requests; Responses and Embeddings requests can use the exact layer but bypass the semantic layer.
+Exact caching supports Chat Completions, Responses API, Embeddings, Anthropic Messages, and Bedrock Converse requests and keeps the protocols in separate cache entries. Semantic caching applies only to Chat Completions requests; the other protocols can use the exact layer but bypass the semantic layer.
 
 The `ai-cache` Plugin must be used with the [`ai-proxy`](./ai-proxy.md) or [`ai-proxy-multi`](./ai-proxy-multi.md) Plugin.
 

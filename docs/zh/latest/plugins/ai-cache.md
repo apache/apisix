@@ -45,7 +45,7 @@ import TabItem from '@theme/TabItem';
 - **精确缓存（L1）：** 对有效提示词计算 SHA-256 指纹并用作 Redis 键。完全相同的提示词始终命中同一条缓存条目。
 - **语义缓存（L2）：** 当 L1 未命中时，将提示词向量化，并通过最近邻搜索检索相似度在阈值以上的历史响应。L2 默认关闭；在 `layers` 中加入 `"semantic"` 即可启用。
 
-精确缓存支持检测到的 Chat Completions、Responses API 和 Embeddings 请求，并将不同协议存储在独立的缓存条目中。语义缓存仅适用于 Chat Completions 请求；Responses 和 Embeddings 请求可以使用精确缓存层，但会绕过语义缓存层。
+精确缓存支持 Chat Completions、Responses API、Embeddings、Anthropic Messages 和 Bedrock Converse 请求，并将不同协议存储在独立的缓存条目中。语义缓存仅适用于 Chat Completions 请求；其他协议可以使用精确缓存层，但会绕过语义缓存层。
 
 `ai-cache` 插件必须与 [`ai-proxy`](./ai-proxy.md) 或 [`ai-proxy-multi`](./ai-proxy-multi.md) 插件一起使用。
 

@@ -45,7 +45,7 @@ Which detectors run and at what thresholds are controlled entirely by the **Lake
 
 The `ai-lakera-guard` Plugin should be used with either the [`ai-proxy`](./ai-proxy.md) or [`ai-proxy-multi`](./ai-proxy-multi.md) Plugin for proxying LLM requests. It relies on the context that `ai-proxy` populates to extract request content in a protocol-aware way.
 
-Request scanning supports Chat Completions, Responses API, and Embeddings requests. For Responses, the Plugin converts `instructions` and text from `input` into conversation messages. For Embeddings, it scans text from `input`. Response scanning applies to protocols that return generated text, including Chat Completions and Responses; Embeddings responses contain vectors rather than text.
+Request scanning supports Chat Completions, Responses API, Embeddings, Anthropic Messages, and Bedrock Converse requests. For Responses, the Plugin converts `instructions` and text from `input` into conversation messages. For Embeddings, it scans text from `input`. Response scanning applies to the protocols that return generated text; Embeddings responses contain vectors rather than text.
 
 Requests that did not pass through `ai-proxy`/`ai-proxy-multi` (for example plain HTTP traffic when the Plugin is bound at the Consumer or Service level) cannot be inspected. By default such requests are passed through unchecked; this is configurable via `fail_mode`.
 

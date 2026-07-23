@@ -42,7 +42,7 @@ import TabItem from '@theme/TabItem';
 
 该插件支持使用 [Azure OpenAI](https://azure.microsoft.com/en-us/products/ai-services/openai-service) 和 [Azure AI Search](https://azure.microsoft.com/en-us/products/ai-services/ai-search) 服务来生成嵌入和执行向量搜索。欢迎提交 PR 以引入对其他服务提供商的支持。
 
-该插件会增强 Chat Completions 和 Responses API 请求。对于 Responses，它会将检索到的上下文追加到 `input`。它不会增强直接的 Embeddings API 请求。嵌套的 `ai_rag.embeddings` 对象用于配置检索过程中内部使用的嵌入输入，与顶层 Embeddings 请求不同。
+该插件使用每种协议的原生提示结构增强 Chat Completions、Responses API、Anthropic Messages 和 Bedrock Converse 请求。对于 Responses，它会将检索到的上下文追加到 `input`。它不会增强直接的 Embeddings API 请求。嵌套的 `ai_rag.embeddings` 对象用于配置检索过程中内部使用的嵌入输入，与顶层 Embeddings 请求不同。
 
 ## 插件属性
 

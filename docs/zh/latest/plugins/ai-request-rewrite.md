@@ -38,7 +38,7 @@ import TabItem from '@theme/TabItem';
 
 `ai-request-rewrite` 插件在将客户端请求转发到上游服务之前，先将请求发送到 LLM 服务进行转换处理。这使得 LLM 能够对请求进行数据脱敏、内容增强或格式转换等修改。该插件支持集成 OpenAI、DeepSeek、Gemini、Vertex AI、Anthropic、OpenRouter 以及其他 OpenAI 兼容的 API。
 
-用于重写的 LLM 调用与客户端请求格式相互独立。使用 `openai` 提供商时，插件会根据配置的提示词和原始请求体构建非流式 Chat Completions 请求。它不会使用 [`ai-proxy`](./ai-proxy.md#openai-请求协议检测) 的 Chat Completions、Responses API 或 Embeddings 检测规则。
+用于重写的 LLM 调用与客户端请求格式相互独立。使用 `openai` 提供商时，插件会根据配置的提示词和原始请求体构建非流式 Chat Completions 请求。它不会使用 [`ai-proxy` 请求协议检测](./ai-proxy.md#请求协议检测)。
 
 ## 插件属性
 

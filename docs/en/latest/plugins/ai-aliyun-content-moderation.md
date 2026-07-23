@@ -45,7 +45,7 @@ Please ensure that the `access_key_secret` is correctly configured in the Plugin
 
 The `ai-aliyun-content-moderation` Plugin should be used with either [`ai-proxy`](./ai-proxy.md) or [`ai-proxy-multi`](./ai-proxy-multi.md) Plugin for proxying LLM requests.
 
-The Plugin supports Chat Completions, Responses API, and Embeddings requests. For Responses, it moderates `input` and returns blocked non-streaming or streaming requests in Responses API format. For Embeddings, it moderates a string or an array of strings in `input` and returns rejected requests as OpenAI-style errors.
+The Plugin moderates Chat Completions, Responses API, Embeddings, Anthropic Messages, and Bedrock Converse requests using each protocol's native content structure. For Responses, it moderates `input` and returns blocked non-streaming or streaming requests in Responses API format. For Embeddings, it moderates a string or an array of strings in `input` and returns rejected requests as OpenAI-style errors.
 
 ## Attributes
 
