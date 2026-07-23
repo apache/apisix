@@ -425,3 +425,112 @@ GET /nginx-error-test
 qr/502 custom/
 --- error_log
 connect() failed (111: Connection refused)
+
+
+=== TEST 21: set plugin metadata with Nginx variables in error page body
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/error-page',
+                ngx.HTTP_PUT,
+                [[{
+                    "enable": true,
+                    "error_404": {"body": "<html><body>rid=$request_id host=$host addr=${remote_addr}</body></html>"},
+                    "error_500": {"body": "<html><body>custom 500</body></html>"},
+                    "error_502": {"body": "<html><body>custom 502</body></html>"},
+                    "error_503": {"body": "<html><body>custom 503</body></html>"}
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 22: Nginx variables in error page body are resolved
+--- request
+GET /hello
+--- more_headers
+X-Test-Status: 404
+--- error_code: 404
+--- response_headers
+content-type: text/html
+--- response_body_like eval
+qr/rid=[0-9a-f]{32} host=localhost addr=127\.0\.0\.1/
+
+
+
+=== TEST 23: variable with default value operator
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/error-page',
+                ngx.HTTP_PUT,
+                [[{
+                    "enable": true,
+                    "error_404": {"body": "<html><body>missing=$nonexistent_var??fallback</body></html>"}
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 24: undefined variable falls back to default value
+--- request
+GET /hello
+--- more_headers
+X-Test-Status: 404
+--- error_code: 404
+--- response_body_like eval
+qr/missing=fallback/
+
+
+
+=== TEST 25: escaped dollar sign is not resolved
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/error-page',
+                ngx.HTTP_PUT,
+                [[{
+                    "enable": true,
+                    "error_404": {"body": "<html><body>price=\$100 rid=$request_id</body></html>"}
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 26: escaped dollar sign stays literal, real variable resolved
+--- request
+GET /hello
+--- more_headers
+X-Test-Status: 404
+--- error_code: 404
+--- response_body_like eval
+qr/price=\\\$100 rid=[0-9a-f]{32}/
