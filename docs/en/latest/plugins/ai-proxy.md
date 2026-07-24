@@ -44,6 +44,22 @@ In addition, the Plugin also supports logging LLM request information in the acc
 
 ## Request Format
 
+### Request Protocol Detection
+
+The Plugin detects the client request protocol before selecting a compatible upstream endpoint. It checks the following rules in order:
+
+| Client protocol | Detection | Route URI |
+| --- | --- | --- |
+| Bedrock Converse | The request body contains a `messages` array and the request URI ends in `/converse`. | The URI can have a custom prefix, but it must keep the `/converse` suffix. |
+| Anthropic Messages | The request body is a JSON object and the request URI ends in `/v1/messages`. | The URI can have a custom prefix, but it must keep the `/v1/messages` suffix. |
+| OpenAI Responses | The request body contains `input` and the request URI ends in `/v1/responses`. | The URI can have a custom prefix, but it must keep the `/v1/responses` suffix. |
+| OpenAI Chat Completions | The request body contains a `messages` array. | Any URI matched by the Route. |
+| OpenAI Embeddings | The request body contains `input`, and no earlier rule matched. | Any URI matched by the Route. |
+
+The URI-specific rules run before the body-only rules. This prevents Bedrock Converse and Anthropic Messages requests containing `messages` from being identified as Chat Completions. Responses and Embeddings requests both use `input`, so a request containing `input` but not `messages` is identified as Embeddings unless its URI ends in `/v1/responses`. If no earlier rule matches, the Plugin treats a non-empty JSON object as passthrough. Empty or invalid request bodies are rejected.
+
+### Chat Completions Request Format
+
 | Name               | Type   | Required | Description                                         |
 | ------------------ | ------ | -------- | --------------------------------------------------- |
 | `messages`         | Array  | True      | An array of message objects.                        |
@@ -67,7 +83,7 @@ When `provider` is set to `bedrock`, the Plugin expects requests in the [Bedrock
 
 | Name               | Type    | Required | Default | Valid values                              | Description |
 |--------------------|--------|----------|---------|------------------------------------------|-------------|
-| provider          | string  | True     |         | [openai, deepseek, azure-openai, aimlapi, anthropic, openrouter, gemini, vertex-ai, bedrock, openai-compatible] | LLM service provider. When set to `openai`, the Plugin will proxy the request to `https://api.openai.com/chat/completions`. When set to `deepseek`, the Plugin will proxy the request to `https://api.deepseek.com/chat/completions`. When set to `aimlapi`, the Plugin uses the OpenAI-compatible driver and proxies the request to `https://api.aimlapi.com/v1/chat/completions` by default. When set to `anthropic`, the Plugin will proxy the request to `https://api.anthropic.com/v1/chat/completions` by default. When set to `openrouter`, the Plugin uses the OpenAI-compatible driver and proxies the request to `https://openrouter.ai/api/v1/chat/completions` by default. When set to `gemini`, the Plugin uses the OpenAI-compatible driver and proxies the request to `https://generativelanguage.googleapis.com/v1beta/openai/chat/completions` by default. When set to `vertex-ai`, the Plugin will proxy the request to `https://aiplatform.googleapis.com` by default and requires `provider_conf` or `override`. When set to `bedrock`, the Plugin will proxy the request to the AWS Bedrock Converse API (`https://bedrock-runtime.<region>.amazonaws.com`) and signs the request with AWS SigV4. When set to `openai-compatible`, the Plugin will proxy the request to the custom endpoint configured in `override`. |
+| provider          | string  | True     |         | [openai, deepseek, azure-openai, aimlapi, anthropic, openrouter, gemini, vertex-ai, bedrock, openai-compatible] | LLM service provider. When set to `openai`, the Plugin sends detected Chat Completions, Responses, and Embeddings requests to the corresponding OpenAI endpoint. When set to `deepseek`, the Plugin will proxy the request to `https://api.deepseek.com/chat/completions`. When set to `aimlapi`, the Plugin uses the OpenAI-compatible driver and proxies the request to `https://api.aimlapi.com/v1/chat/completions` by default. When set to `anthropic`, the Plugin sends detected Chat Completions requests to `https://api.anthropic.com/v1/chat/completions` and native Anthropic Messages requests to `https://api.anthropic.com/v1/messages`. When set to `openrouter`, the Plugin uses the OpenAI-compatible driver and proxies the request to `https://openrouter.ai/api/v1/chat/completions` by default. When set to `gemini`, the Plugin uses the OpenAI-compatible driver and proxies the request to `https://generativelanguage.googleapis.com/v1beta/openai/chat/completions` by default. When set to `vertex-ai`, the Plugin will proxy the request to `https://aiplatform.googleapis.com` by default and requires `provider_conf` or `override`. When set to `bedrock`, the Plugin will proxy the request to the AWS Bedrock Converse API (`https://bedrock-runtime.<region>.amazonaws.com`) and signs the request with AWS SigV4. When set to `openai-compatible`, the Plugin will proxy the request to the custom endpoint configured in `override`. |
 | provider_conf      | object  | False    |         |                                          | Configuration for the specific provider. Required when `provider` is set to `vertex-ai` and `override` is not configured. Required when `provider` is set to `bedrock`. |
 | provider_conf.project_id | string | True |       |                                          | Google Cloud Project ID.  |
 | provider_conf.region | string | True (depending on provider) |         | minLength = 1 (for Bedrock)              | When `provider` is `vertex-ai`, this is the Google Cloud Region. When `provider` is `bedrock`, this is the AWS region used to construct the Bedrock endpoint and to sign the request with SigV4 (required, must be non-empty). |
@@ -916,9 +932,56 @@ curl "http://127.0.0.1:9080/bedrock/converse" -X POST \
   }' --output -
 ```
 
+### Proxy OpenAI Responses API
+
+The following example configures the `ai-proxy` Plugin to proxy OpenAI Responses API requests. Responses and Embeddings requests both contain `input`, so the Route URI must end in `/v1/responses` for the Plugin to identify the request as Responses.
+
+Obtain an [OpenAI API key](https://platform.openai.com/api-keys) and save it to an environment variable:
+
+```shell
+export OPENAI_API_KEY=<your-api-key>
+```
+
+Create a Route with the `/v1/responses` URI:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "ai-proxy-responses-route",
+    "uri": "/v1/responses",
+    "methods": ["POST"],
+    "plugins": {
+      "ai-proxy": {
+        "provider": "openai",
+        "auth": {
+          "header": {
+            "Authorization": "Bearer '"$OPENAI_API_KEY"'"
+          }
+        },
+        "options": {
+          "model": "gpt-4.1"
+        }
+      }
+    }
+  }'
+```
+
+Send a request using the Responses API format:
+
+```shell
+curl "http://127.0.0.1:9080/v1/responses" -X POST \
+  -H "Content-Type: application/json" \
+  -d '{
+    "input": "Explain API gateways in one sentence."
+  }'
+```
+
+The Plugin sends the request to the OpenAI Responses endpoint and returns the response in the Responses API format. To stream the response, add `"stream": true` to the request body and use `curl --no-buffer`.
+
 ### Proxy to OpenAI Embedding Models
 
-The following example demonstrates how you can configure the `ai-proxy` Plugin to proxy requests to embedding models. This example will use the OpenAI embedding model endpoint.
+The following example demonstrates how you can configure the `ai-proxy` Plugin to proxy requests to an OpenAI embedding model. The Plugin detects the `input` field and selects the OpenAI Embeddings endpoint.
 
 Obtain the OpenAI [API key](https://openai.com/blog/openai-api) and save it to an environment variable:
 
@@ -957,9 +1020,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
         "options":{
           "model": "text-embedding-3-small",
           "encoding_format": "float"
-        },
-        "override": {
-          "endpoint": "https://api.openai.com/v1/embeddings"
         }
       }
     }
@@ -990,8 +1050,6 @@ services:
             options:
               model: text-embedding-3-small
               encoding_format: float
-            override:
-              endpoint: "https://api.openai.com/v1/embeddings"
 ```
 
 Synchronize the configuration to the gateway:
@@ -1031,8 +1089,6 @@ spec:
         options:
           model: text-embedding-3-small
           encoding_format: float
-        override:
-          endpoint: "https://api.openai.com/v1/embeddings"
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
@@ -1086,8 +1142,6 @@ spec:
           options:
             model: text-embedding-3-small
             encoding_format: float
-          override:
-            endpoint: "https://api.openai.com/v1/embeddings"
 ```
 
 </TabItem>

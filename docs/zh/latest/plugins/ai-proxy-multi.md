@@ -44,6 +44,22 @@ import TabItem from '@theme/TabItem';
 
 ## 请求格式
 
+### 请求协议检测
+
+插件会先检测客户端请求协议，再选择兼容的上游端点。插件按以下顺序检查规则：
+
+| 客户端协议 | 检测条件 | 路由 URI |
+| --- | --- | --- |
+| Bedrock Converse | 请求体包含 `messages` 数组，并且请求 URI 以 `/converse` 结尾。 | URI 可以包含自定义前缀，但必须保留 `/converse` 后缀。 |
+| Anthropic Messages | 请求体为 JSON 对象，并且请求 URI 以 `/v1/messages` 结尾。 | URI 可以包含自定义前缀，但必须保留 `/v1/messages` 后缀。 |
+| OpenAI Responses | 请求体包含 `input`，并且请求 URI 以 `/v1/responses` 结尾。 | URI 可以包含自定义前缀，但必须保留 `/v1/responses` 后缀。 |
+| OpenAI Chat Completions | 请求体包含 `messages` 数组。 | 路由匹配的任意 URI。 |
+| OpenAI Embeddings | 请求体包含 `input`，并且之前的规则均未匹配。 | 路由匹配的任意 URI。 |
+
+基于 URI 的规则在仅基于请求体的规则之前运行，以免包含 `messages` 的 Bedrock Converse 和 Anthropic Messages 请求被识别为 Chat Completions。Responses 和 Embeddings 请求都使用 `input`，因此包含 `input` 但不包含 `messages` 的请求会被识别为 Embeddings，除非其 URI 以 `/v1/responses` 结尾。如果之前的规则均未匹配，插件会将非空 JSON 对象视为透传请求。空请求体或无效请求体会被拒绝。
+
+### Chat Completions 请求格式
+
 | 名称               | 类型   | 必选项 | 描述                                         |
 | ------------------ | ------ | -------- | --------------------------------------------------- |
 | `messages`         | Array  | 是      | 消息对象数组。                        |
@@ -76,7 +92,7 @@ import TabItem from '@theme/TabItem';
 | balancer.key                       | string         | 否    |                                   |              | 当 `type` 为 `chash` 时使用。当 `hash_on` 设置为 `header` 或 `cookie` 时，需要 `key`。当 `hash_on` 设置为 `consumer` 时，不需要 `key`，因为消费者名称将自动用作键。 |
 | instances                          | array[object]  | 是     |                                   |              | LLM 实例配置。 |
 | instances.name                     | string         | 是     |                                   |              | LLM 服务实例的名称。 |
-| instances.provider                 | string         | 是     |                                   | [openai, deepseek, azure-openai, aimlapi, anthropic, openrouter, gemini, vertex-ai, bedrock, openai-compatible] | LLM 服务提供商。设置为 `openai` 时，插件将代理请求到 `api.openai.com`。设置为 `deepseek` 时，插件将代理请求到 `api.deepseek.com`。设置为 `aimlapi` 时，插件使用 OpenAI 兼容驱动程序，默认将请求代理到 `api.aimlapi.com`。设置为 `anthropic` 时，插件使用 OpenAI 兼容驱动程序，默认将请求代理到 `api.anthropic.com`。设置为 `openrouter` 时，插件使用 OpenAI 兼容驱动程序，默认将请求代理到 `openrouter.ai`。设置为 `gemini` 时，插件使用 OpenAI 兼容驱动程序，默认将请求代理到 `generativelanguage.googleapis.com`。设置为 `vertex-ai` 时，插件默认将请求代理到 `aiplatform.googleapis.com`，且需要配置 `provider_conf` 或 `override`。设置为 `bedrock` 时，插件将代理请求到 AWS Bedrock Converse API（`bedrock-runtime.<region>.amazonaws.com`），并使用 AWS SigV4 对请求进行签名。设置为 `openai-compatible` 时，插件将代理请求到在 `override` 中配置的自定义端点。 |
+| instances.provider                 | string         | 是     |                                   | [openai, deepseek, azure-openai, aimlapi, anthropic, openrouter, gemini, vertex-ai, bedrock, openai-compatible] | LLM 服务提供商。设置为 `openai` 时，插件会将检测到的 Chat Completions、Responses 和 Embeddings 请求发送到 `api.openai.com` 上对应的端点。设置为 `deepseek` 时，插件将代理请求到 `api.deepseek.com`。设置为 `aimlapi` 时，插件使用 OpenAI 兼容驱动程序，默认将请求代理到 `api.aimlapi.com`。设置为 `anthropic` 时，插件会将检测到的 Chat Completions 请求发送到 `api.anthropic.com` 上的 `/v1/chat/completions`，并将原生 Anthropic Messages 请求发送到 `/v1/messages`。设置为 `openrouter` 时，插件使用 OpenAI 兼容驱动程序，默认将请求代理到 `openrouter.ai`。设置为 `gemini` 时，插件使用 OpenAI 兼容驱动程序，默认将请求代理到 `generativelanguage.googleapis.com`。设置为 `vertex-ai` 时，插件默认将请求代理到 `aiplatform.googleapis.com`，且需要配置 `provider_conf` 或 `override`。设置为 `bedrock` 时，插件将代理请求到 AWS Bedrock Converse API（`bedrock-runtime.<region>.amazonaws.com`），并使用 AWS SigV4 对请求进行签名。设置为 `openai-compatible` 时，插件将代理请求到在 `override` 中配置的自定义端点。 |
 | instances.provider_conf            | object         | 否     |                                   |              | 特定提供商的配置。当 `provider` 设置为 `vertex-ai` 且未配置 `override` 时必填。当 `provider` 设置为 `bedrock` 时必填。 |
 | instances.provider_conf.project_id | string         | 是     |                                   |              | Google Cloud 项目 ID。 |
 | instances.provider_conf.region     | string         | 视提供商而定 |                                   | minLength = 1（Bedrock 时） | 当 `provider` 为 `vertex-ai` 时，此项为 Google Cloud 区域。当 `provider` 为 `bedrock` 时，此项为用于构造 Bedrock 端点并使用 SigV4 对请求进行签名的 AWS 区域（必填，不能为空）。 |
@@ -1856,6 +1872,70 @@ https://bedrock-runtime.us-east-1.amazonaws.com/model/arn%3Aaws%3Abedrock%3Aus-e
 
 要启用流式响应，请使用相同的 Converse 请求体，并在其中加上 `"stream": true`。插件会将请求路由到 Bedrock 的 `/model/<model>/converse-stream` 接口，并将 AWS EventStream 帧原样转发给客户端。响应的 `Content-Type` 为 `application/vnd.amazon.eventstream`，客户端需自行解析二进制帧（多数 AWS SDK 已自动处理）。
 
+### 对 Responses API 请求进行负载均衡
+
+以下示例配置 `ai-proxy-multi`，在两个 OpenAI 模型之间分配 Responses API 请求。Responses 和 Embeddings 请求都包含 `input`，因此路由 URI 必须以 `/v1/responses` 结尾，插件才能将请求识别为 Responses。
+
+获取 [OpenAI API 密钥](https://platform.openai.com/api-keys)并保存到环境变量：
+
+```shell
+export OPENAI_API_KEY=<your-api-key>
+```
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "ai-proxy-multi-responses-route",
+    "uri": "/v1/responses",
+    "methods": ["POST"],
+    "plugins": {
+      "ai-proxy-multi": {
+        "instances": [
+          {
+            "name": "openai-responses-primary",
+            "provider": "openai",
+            "weight": 1,
+            "auth": {
+              "header": {
+                "Authorization": "Bearer '"$OPENAI_API_KEY"'"
+              }
+            },
+            "options": {
+              "model": "gpt-4.1"
+            }
+          },
+          {
+            "name": "openai-responses-secondary",
+            "provider": "openai",
+            "weight": 1,
+            "auth": {
+              "header": {
+                "Authorization": "Bearer '"$OPENAI_API_KEY"'"
+              }
+            },
+            "options": {
+              "model": "gpt-4.1-mini"
+            }
+          }
+        ]
+      }
+    }
+  }'
+```
+
+使用 Responses API 格式发送请求：
+
+```shell
+curl "http://127.0.0.1:9080/v1/responses" -X POST \
+  -H "Content-Type: application/json" \
+  -d '{
+    "input": "用一句话解释 API 网关。"
+  }'
+```
+
+请求会被转发到其中一个已配置的 OpenAI 实例，并以 Responses API 格式返回响应。
+
 ### 代理到嵌入模型
 
 以下示例演示了如何配置 `ai-proxy-multi` 插件以代理请求并在嵌入模型之间进行负载均衡。
@@ -1894,9 +1974,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
             },
             "options": {
               "model": "text-embedding-3-small"
-            },
-            "override": {
-              "endpoint": "https://api.openai.com/v1/embeddings"
             }
           },
           {
@@ -1945,8 +2022,6 @@ services:
                     Authorization: "Bearer ${OPENAI_API_KEY}"
                 options:
                   model: text-embedding-3-small
-                override:
-                  endpoint: "https://api.openai.com/v1/embeddings"
               - name: az-openai-instance
                 provider: openai-compatible
                 weight: 0
@@ -1998,8 +2073,6 @@ spec:
                 Authorization: "Bearer your-api-key"
             options:
               model: text-embedding-3-small
-            override:
-              endpoint: "https://api.openai.com/v1/embeddings"
           - name: az-openai-instance
             provider: openai-compatible
             weight: 0
@@ -2065,8 +2138,6 @@ spec:
                     Authorization: "Bearer your-api-key"
                 options:
                   model: text-embedding-3-small
-                override:
-                  endpoint: "https://api.openai.com/v1/embeddings"
               - name: az-openai-instance
                 provider: openai-compatible
                 weight: 0

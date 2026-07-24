@@ -38,7 +38,7 @@ import TabItem from '@theme/TabItem';
 
 The `ai-aws-content-moderation` Plugin integrates with [AWS Comprehend](https://aws.amazon.com/comprehend/) to check request content for toxicity when proxying to LLMs, such as profanity, hate speech, insult, harassment, violence, and more, rejecting requests if the evaluated outcome exceeds the configured threshold.
 
-The Plugin is protocol-aware: it extracts the prompt content from the LLM request (for example `messages[].content`) and moderates only that decoded text, rather than the raw request body.
+The Plugin supports Chat Completions, Responses API, Embeddings, Anthropic Messages, and Bedrock Converse requests. It extracts text using the detected protocol's native content structure and moderates only that decoded text rather than the raw request body. Rejected requests use the detected protocol's response format.
 
 The `ai-aws-content-moderation` Plugin should be used with either [`ai-proxy`](./ai-proxy.md) or [`ai-proxy-multi`](./ai-proxy-multi.md) Plugin for proxying LLM requests.
 

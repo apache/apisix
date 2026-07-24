@@ -44,6 +44,22 @@ In addition, the Plugin also supports logging LLM request information in the acc
 
 ## Request Format
 
+### Request Protocol Detection
+
+The Plugin detects the client request protocol before selecting a compatible upstream endpoint. It checks the following rules in order:
+
+| Client protocol | Detection | Route URI |
+| --- | --- | --- |
+| Bedrock Converse | The request body contains a `messages` array and the request URI ends in `/converse`. | The URI can have a custom prefix, but it must keep the `/converse` suffix. |
+| Anthropic Messages | The request body is a JSON object and the request URI ends in `/v1/messages`. | The URI can have a custom prefix, but it must keep the `/v1/messages` suffix. |
+| OpenAI Responses | The request body contains `input` and the request URI ends in `/v1/responses`. | The URI can have a custom prefix, but it must keep the `/v1/responses` suffix. |
+| OpenAI Chat Completions | The request body contains a `messages` array. | Any URI matched by the Route. |
+| OpenAI Embeddings | The request body contains `input`, and no earlier rule matched. | Any URI matched by the Route. |
+
+The URI-specific rules run before the body-only rules. This prevents Bedrock Converse and Anthropic Messages requests containing `messages` from being identified as Chat Completions. Responses and Embeddings requests both use `input`, so a request containing `input` but not `messages` is identified as Embeddings unless its URI ends in `/v1/responses`. If no earlier rule matches, the Plugin treats a non-empty JSON object as passthrough. Empty or invalid request bodies are rejected.
+
+### Chat Completions Request Format
+
 | Name               | Type   | Required | Description                                         |
 | ------------------ | ------ | -------- | --------------------------------------------------- |
 | `messages`         | Array  | True      | An array of message objects.                        |
@@ -76,7 +92,7 @@ When an instance's `provider` is set to `bedrock`, the Plugin expects requests i
 | balancer.key                       | string         | False    |                                   |              | Used when `type` is `chash`. When `hash_on` is set to `header` or `cookie`, `key` is required. When `hash_on` is set to `consumer`, `key` is not required as the consumer name will be used as the key automatically. |
 | instances                          | array[object]  | True     |                                   |              | LLM instance configurations. |
 | instances.name                     | string         | True     |                                   |              | Name of the LLM service instance. |
-| instances.provider                 | string         | True     |                                   | [openai, deepseek, azure-openai, aimlapi, anthropic, openrouter, gemini, vertex-ai, bedrock, openai-compatible] | LLM service provider. When set to `openai`, the Plugin will proxy the request to `api.openai.com`. When set to `deepseek`, the Plugin will proxy the request to `api.deepseek.com`. When set to `aimlapi`, the Plugin uses the OpenAI-compatible driver and proxies the request to `api.aimlapi.com` by default. When set to `anthropic`, the Plugin will proxy the request to `api.anthropic.com` by default. When set to `openrouter`, the Plugin uses the OpenAI-compatible driver and proxies the request to `openrouter.ai` by default. When set to `gemini`, the Plugin uses the OpenAI-compatible driver and proxies the request to `generativelanguage.googleapis.com` by default. When set to `vertex-ai`, the Plugin will proxy the request to `aiplatform.googleapis.com` by default and requires `provider_conf` or `override`. When set to `bedrock`, the Plugin proxies the request to Amazon Bedrock's Converse API at `bedrock-runtime.{region}.amazonaws.com` and signs the request with AWS SigV4. Requires `provider_conf.region` and `auth.aws`. When set to `openai-compatible`, the Plugin will proxy the request to the custom endpoint configured in `override`. |
+| instances.provider                 | string         | True     |                                   | [openai, deepseek, azure-openai, aimlapi, anthropic, openrouter, gemini, vertex-ai, bedrock, openai-compatible] | LLM service provider. When set to `openai`, the Plugin sends detected Chat Completions, Responses, and Embeddings requests to the corresponding endpoint on `api.openai.com`. When set to `deepseek`, the Plugin will proxy the request to `api.deepseek.com`. When set to `aimlapi`, the Plugin uses the OpenAI-compatible driver and proxies the request to `api.aimlapi.com` by default. When set to `anthropic`, the Plugin sends detected Chat Completions requests to `/v1/chat/completions` and native Anthropic Messages requests to `/v1/messages` on `api.anthropic.com`. When set to `openrouter`, the Plugin uses the OpenAI-compatible driver and proxies the request to `openrouter.ai` by default. When set to `gemini`, the Plugin uses the OpenAI-compatible driver and proxies the request to `generativelanguage.googleapis.com` by default. When set to `vertex-ai`, the Plugin will proxy the request to `aiplatform.googleapis.com` by default and requires `provider_conf` or `override`. When set to `bedrock`, the Plugin proxies the request to Amazon Bedrock's Converse API at `bedrock-runtime.{region}.amazonaws.com` and signs the request with AWS SigV4. Requires `provider_conf.region` and `auth.aws`. When set to `openai-compatible`, the Plugin will proxy the request to the custom endpoint configured in `override`. |
 | instances.provider_conf            | object         | False     |                                   |              | Configuration for the specific provider. Required when `provider` is set to `vertex-ai` and `override` is not configured. Required when `provider` is set to `bedrock`. |
 | instances.provider_conf.project_id | string         | True     |                                   |              | Google Cloud Project ID. |
 | instances.provider_conf.region     | string         | True (depending on provider) |                                   | minLength = 1 (for Bedrock) | When `provider` is `vertex-ai`, this is the Google Cloud Region. When `provider` is `bedrock`, this is the AWS region used to construct the Bedrock endpoint and to sign the request with SigV4 (required, must be non-empty). |
@@ -2051,6 +2067,70 @@ If `auth.aws.session_token` is set, it is used for temporary credentials (e.g., 
 
 To enable streaming, send the same Converse request body with `"stream": true`. The Plugin routes the request to Bedrock's `/model/<model>/converse-stream` endpoint and forwards each AWS EventStream frame to the client unchanged. The response `Content-Type` is `application/vnd.amazon.eventstream`; clients must parse the binary framing themselves (most AWS SDKs do this automatically).
 
+### Load Balance Responses API Requests
+
+The following example configures `ai-proxy-multi` to distribute Responses API requests across two OpenAI models. Responses and Embeddings requests both contain `input`, so the Route URI must end in `/v1/responses` for the Plugin to identify the request as Responses.
+
+Obtain an [OpenAI API key](https://platform.openai.com/api-keys) and save it to an environment variable:
+
+```shell
+export OPENAI_API_KEY=<your-api-key>
+```
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "ai-proxy-multi-responses-route",
+    "uri": "/v1/responses",
+    "methods": ["POST"],
+    "plugins": {
+      "ai-proxy-multi": {
+        "instances": [
+          {
+            "name": "openai-responses-primary",
+            "provider": "openai",
+            "weight": 1,
+            "auth": {
+              "header": {
+                "Authorization": "Bearer '"$OPENAI_API_KEY"'"
+              }
+            },
+            "options": {
+              "model": "gpt-4.1"
+            }
+          },
+          {
+            "name": "openai-responses-secondary",
+            "provider": "openai",
+            "weight": 1,
+            "auth": {
+              "header": {
+                "Authorization": "Bearer '"$OPENAI_API_KEY"'"
+              }
+            },
+            "options": {
+              "model": "gpt-4.1-mini"
+            }
+          }
+        ]
+      }
+    }
+  }'
+```
+
+Send a request using the Responses API format:
+
+```shell
+curl "http://127.0.0.1:9080/v1/responses" -X POST \
+  -H "Content-Type: application/json" \
+  -d '{
+    "input": "Explain API gateways in one sentence."
+  }'
+```
+
+The request is forwarded to one of the configured OpenAI instances and the response is returned in the Responses API format.
+
 ### Proxy to Embedding Models
 
 The following example demonstrates how you can configure the `ai-proxy-multi` Plugin to proxy requests and load balance between embedding models.
@@ -2089,9 +2169,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
             },
             "options": {
               "model": "text-embedding-3-small"
-            },
-            "override": {
-              "endpoint": "https://api.openai.com/v1/embeddings"
             }
           },
           {
@@ -2140,8 +2217,6 @@ services:
                     Authorization: "Bearer ${OPENAI_API_KEY}"
                 options:
                   model: text-embedding-3-small
-                override:
-                  endpoint: "https://api.openai.com/v1/embeddings"
               - name: az-openai-instance
                 provider: azure-openai
                 weight: 0
@@ -2193,8 +2268,6 @@ spec:
                 Authorization: "Bearer your-api-key"
             options:
               model: text-embedding-3-small
-            override:
-              endpoint: "https://api.openai.com/v1/embeddings"
           - name: az-openai-instance
             provider: azure-openai
             weight: 0
@@ -2260,8 +2333,6 @@ spec:
                     Authorization: "Bearer your-api-key"
                 options:
                   model: text-embedding-3-small
-                override:
-                  endpoint: "https://api.openai.com/v1/embeddings"
               - name: az-openai-instance
                 provider: azure-openai
                 weight: 0
