@@ -296,7 +296,23 @@ local config_schema = {
                         -- config source; reject early with a clear error
                         pattern = [[\A[^\x00-\x1f]*\z]],
                     }
-                }
+                },
+                meta = {
+                    type = "object",
+                    properties = {
+                        custom_lua_shared_dict = {
+                            type = "object",
+                        }
+                    }
+                },
+                stream = {
+                    type = "object",
+                    properties = {
+                        custom_lua_shared_dict = {
+                            type = "object",
+                        }
+                    }
+                },
             },
         },
         http = {
