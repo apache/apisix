@@ -19,12 +19,14 @@ require("resty.aws.config") -- to read env vars before initing aws module
 local core      = require("apisix.core")
 local protocols = require("apisix.plugins.ai-protocols")
 local binding   = require("apisix.plugins.ai-protocols.binding")
+local sse       = require("apisix.plugins.ai-transport.sse")
 local aws       = require("resty.aws")
 local aws_instance
 
 local http = require("resty.http")
 
 local ngx     = ngx
+local ngx_ok  = ngx.OK
 local pairs   = pairs
 local unpack  = unpack
 local type    = type
@@ -73,6 +75,27 @@ local schema = {
             default = 0.5
         },
         check_request = { type = "boolean", default = true },
+        check_response = { type = "boolean", default = false },
+        stream_check_mode = {
+            type = "string",
+            enum = { "realtime", "final_packet" },
+            default = "final_packet",
+            description = "realtime: moderate batches while the response streams, replacing " ..
+                          "the rest of the stream on a hit | final_packet: moderate the " ..
+                          "assembled response and annotate the last chunk with risk_level.",
+        },
+        stream_check_cache_size = {
+            type = "integer",
+            minimum = 1,
+            default = 128,
+            description = "max characters per moderation batch in realtime mode",
+        },
+        stream_check_interval = {
+            type = "number",
+            minimum = 0.1,
+            default = 3,
+            description = "seconds between batch checks in realtime mode",
+        },
         deny_code = {
             type = "integer",
             minimum = 200,
@@ -103,10 +126,23 @@ function _M.check_schema(conf)
 end
 
 
+-- Comprehend scores content, it doesn't grade it, so the verdict is binary
+-- against the configured thresholds. Report it through the same ctx var the
+-- aliyun plugin uses so logging and downstream consumers stay uniform.
+local function set_risk_level(ctx, flagged)
+    if flagged then
+        ctx.var.llm_content_risk_level = "high"
+    elseif ctx.var.llm_content_risk_level ~= "high" then
+        ctx.var.llm_content_risk_level = "none"
+    end
+end
+
+
 -- Score content with AWS Comprehend detectToxicContent.
+-- `subject` names the moderated text in the deny reason ("request"/"response" body).
 -- Returns (reason, nil) when a category/toxicity threshold is exceeded,
 -- (nil, err) on a service error, and (nil, nil) when the content is clean.
-local function detect_toxic(conf, content)
+local function detect_toxic(conf, ctx, content, subject)
     local comprehend = conf.comprehend
 
     if not aws_instance then
@@ -151,15 +187,19 @@ local function detect_toxic(conf, content)
             for _, item in pairs(result.Labels) do
                 local threshold = conf.moderation_categories[item.Name]
                 if threshold and item.Score > threshold then
-                    return "request body exceeds " .. item.Name .. " threshold"
+                    set_risk_level(ctx, true)
+                    return subject .. " exceeds " .. item.Name .. " threshold"
                 end
             end
         end
 
         if result.Toxicity > conf.moderation_threshold then
-            return "request body exceeds toxicity threshold"
+            set_risk_level(ctx, true)
+            return subject .. " exceeds toxicity threshold"
         end
     end
+
+    set_risk_level(ctx, false)
 end
 
 
@@ -180,6 +220,61 @@ local function build_deny_message(ctx, conf, reason)
         usage = usage,
         stream = stream,
     })
+end
+
+
+-- Moderate a piece of LLM response text.
+-- Returns (deny_code, deny_body) on a hit, nothing otherwise. A Comprehend
+-- failure is logged and the content passes through: the response side has no
+-- fail-closed option once bytes are on the wire, and buffered responses behave
+-- the same way for consistency.
+local function moderate_response(ctx, conf, content)
+    if not content or content == "" then
+        return
+    end
+
+    local reason, err = detect_toxic(conf, ctx, content, "response body")
+    if err then
+        core.log.error(err)
+        return
+    end
+    if reason then
+        return conf.deny_code, build_deny_message(ctx, conf, reason)
+    end
+end
+
+
+-- Annotate a streamed chunk with the verdict from the assembled response.
+-- The content already reached the client, so all we can do is tag it.
+local function annotate_stream(ctx, body)
+    local proto = protocols.get(ctx.ai_client_protocol)
+    if not proto or not proto.is_data_event then
+        return
+    end
+
+    local events = sse.decode(body)
+    local raw_events = {}
+    local contains_done_event = false
+    for _, event in ipairs(events) do
+        if proto.is_data_event(event) then
+            local data, err = core.json.decode(event.data)
+            if data then
+                data.risk_level = ctx.var.llm_content_risk_level
+                event.data = core.json.encode(data)
+            else
+                core.log.warn("failed to decode SSE data: ", err)
+            end
+        end
+        if proto.is_done_event and proto.is_done_event(event) then
+            contains_done_event = true
+        end
+        table.insert(raw_events, sse.encode(event))
+    end
+
+    if not contains_done_event and proto.build_done_event and ctx.var.llm_request_done then
+        table.insert(raw_events, proto.build_done_event())
+    end
+    return table.concat(raw_events)
 end
 
 
@@ -241,7 +336,7 @@ function _M.access(conf, ctx)
         return
     end
 
-    local reason, err = detect_toxic(conf, content)
+    local reason, err = detect_toxic(conf, ctx, content, "request body")
     if err then
         core.log.error(err)
         return HTTP_INTERNAL_SERVER_ERROR, err
@@ -255,6 +350,64 @@ function _M.access(conf, ctx)
         end
         return conf.deny_code, build_deny_message(ctx, conf, reason)
     end
+end
+
+
+function _M.lua_body_filter(conf, ctx, headers, body)
+    if not conf.check_response then
+        core.log.info("skip response check for this request")
+        return
+    end
+
+    if ngx.status >= 400 then
+        core.log.info("skip response check because upstream returned error status: ", ngx.status)
+        return
+    end
+
+    local request_type = ctx.var.request_type
+
+    -- ai-proxy hands us the fully assembled completion, so one check covers it.
+    if request_type == "ai_chat" then
+        return moderate_response(ctx, conf, ctx.var.llm_response_text)
+    end
+
+    if request_type ~= "ai_stream" then
+        return
+    end
+
+    if conf.stream_check_mode == "final_packet" then
+        -- llm_response_text only appears once the stream is assembled, so
+        -- earlier chunks pass through untouched.
+        if not ctx.var.llm_response_text then
+            return
+        end
+        if not ctx.aws_cm_response_moderated then
+            ctx.aws_cm_response_moderated = true
+            moderate_response(ctx, conf, ctx.var.llm_response_text)
+        end
+        return nil, annotate_stream(ctx, body)
+    end
+
+    -- realtime: moderate batches as they arrive so a hit can cut the stream off
+    ctx.aws_cm_cache = ctx.aws_cm_cache or ""
+    ctx.aws_cm_cache = ctx.aws_cm_cache
+                       .. table.concat(ctx.llm_response_contents_in_chunk or {}, "")
+    local now = ngx.now()
+    ctx.aws_cm_last_check = ctx.aws_cm_last_check or now
+    if #ctx.aws_cm_cache < conf.stream_check_cache_size
+            and now - ctx.aws_cm_last_check < conf.stream_check_interval
+            and not ctx.var.llm_request_done then
+        return
+    end
+
+    ctx.aws_cm_last_check = now
+    -- headers are already sent, so the deny body replaces the rest of the
+    -- stream rather than changing the status code
+    local _, message = moderate_response(ctx, conf, ctx.aws_cm_cache)
+    if message then
+        return ngx_ok, message
+    end
+    ctx.aws_cm_cache = ""
 end
 
 return _M
