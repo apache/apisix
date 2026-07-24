@@ -87,6 +87,7 @@ import TabItem from '@theme/TabItem';
 | instances.auth.query                | object         | 否    |                                   |              | 身份验证查询参数。应配置 `header` 和 `query` 中的至少一个。 |
 | instances.auth.gcp                  | object         | 否    |                                   |              | Google Cloud Platform (GCP) 身份验证配置。 |
 | instances.auth.gcp.service_account_json | string     | 否    |                                   |              | GCP 服务帐户 JSON 文件的内容。也可以通过设置"GCP_SERVICE_ACCOUNT"环境变量来配置。 |
+| instances.auth.gcp.use_metadata_server | boolean    | 否    | false                             |              | 从 GCE/GKE 元数据服务器（应用默认凭据 / Workload Identity）获取访问令牌，而不是使用服务帐户密钥。当未配置服务帐户密钥（既没有 `service_account_json` 也没有 `GCP_SERVICE_ACCOUNT`）时，将自动使用元数据服务器。元数据主机可通过 `GCE_METADATA_HOST` 环境变量覆盖。这使得 APISIX 可以在启用 Workload Identity 的 GKE 上无密钥地向 Vertex AI 进行身份验证。 |
 | instances.auth.gcp.max_ttl          | integer        | 否    |                                   | minimum = 1  | 用于缓存 GCP 访问令牌的最大 TTL（以秒为单位）。 |
 | instances.auth.gcp.expire_early_secs| integer        | 否    | 60                                | minimum = 0  | 在访问令牌实际过期时间之前使其过期的秒数，以避免边缘情况。 |
 | instances.auth.aws                  | object         | 否    |                                   |              | AWS 身份验证配置。当 `provider` 为 `bedrock` 时必填。 |
