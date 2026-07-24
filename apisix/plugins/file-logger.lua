@@ -21,6 +21,8 @@ local plugin       =   require("apisix.plugin")
 local expr         =   require("resty.expr.v1")
 local ngx          =   ngx
 local io_open      =   io.open
+local io_stdout    =   io.stdout
+local io_stderr    =   io.stderr
 local is_apisix_or, process = pcall(require, "resty.apisix.process")
 
 
@@ -87,6 +89,14 @@ local _M = {
     schema = schema,
     metadata_schema = metadata_schema
 }
+
+
+local std_files = {
+    ["/dev/stdout"] = io_stdout,
+    ["/dev/stderr"] = io_stderr,
+}
+io_stdout:setvbuf("no")
+io_stderr:setvbuf("no")
 
 
 local function get_configured_path(conf)
@@ -185,7 +195,10 @@ local function write_file_data(conf, log_message)
 
     local file, err
     local file_conf = conf.path and conf or {path = path}
-    if open_file_cache then
+    local std_file = std_files[path]
+    if std_file then
+        file = std_file
+    elseif open_file_cache then
         file, err = open_file_cache(file_conf)
     else
         file, err = io_open(path, 'a+')
@@ -204,8 +217,9 @@ local function write_file_data(conf, log_message)
             core.log.error("failed to write file: ", path, ", error info: ", err)
         end
 
+        -- stdout/stderr should not be closed
         -- file will be closed by gc, if open_file_cache exists
-        if not open_file_cache then
+        if not open_file_cache and not std_file then
             file:close()
         end
     end
