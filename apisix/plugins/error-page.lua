@@ -37,6 +37,13 @@ local metadata_schema = {
     type = "object",
     properties = {
         enable = {type = "boolean", default = false},
+        error_403 = {
+            type = "object",
+            properties = {
+                body = {type = "string", default = err_body("403 Forbidden")},
+                content_type = {type = "string", default = "text/html"},
+            }
+        },
         error_404 = {
             type = "object",
             properties = {
@@ -94,7 +101,7 @@ local function get_metadata(ctx)
         return nil
     end
 
-    if status < 404 then
+    if status < 403 then
         return nil
     end
 

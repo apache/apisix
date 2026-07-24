@@ -45,6 +45,9 @@ description: error-page 插件允许自定义 APISIX 生成的 HTTP 错误响应
 | 名称 | 类型 | 必选项 | 默认值 | 描述 |
 | ---- | ---- | ------ | ------ | ---- |
 | enable | boolean | 否 | false | 设为 `true` 以启用插件。 |
+| error_403 | object | 否 | | 403 响应的自定义错误页面配置。 |
+| error_403.body | string | 否 | 默认 HTML 页面 | 403 响应的响应体内容。 |
+| error_403.content_type | string | 否 | text/html | 响应体的内容类型。 |
 | error_404 | object | 否 | | 404 响应的自定义错误页面配置。 |
 | error_404.body | string | 否 | 默认 HTML 页面 | 404 响应的响应体内容。 |
 | error_404.content_type | string | 否 | text/html | 响应体的内容类型。 |

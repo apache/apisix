@@ -45,6 +45,9 @@ There are no attributes to configure this Plugin on Routes, Services, or other r
 | Name | Type | Required | Default | Description |
 | ---- | ---- | -------- | ------- | ----------- |
 | enable | boolean | False | false | Set to `true` to enable the Plugin. |
+| error_403 | object | False | | Custom error page for 403 responses. |
+| error_403.body | string | False | Default HTML page | Response body for 403 responses. |
+| error_403.content_type | string | False | text/html | Content type of the response body. |
 | error_404 | object | False | | Custom error page for 404 responses. |
 | error_404.body | string | False | Default HTML page | Response body for 404 responses. |
 | error_404.content_type | string | False | text/html | Content type of the response body. |

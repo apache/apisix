@@ -28,6 +28,7 @@ add_block_preprocessor(sub {
     my $user_yaml_config = <<_EOC_;
 plugins:
   - error-page
+  - ip-restriction
   - serverless-post-function
 _EOC_
     $block->set_value("extra_yaml_config", $user_yaml_config);
@@ -534,3 +535,92 @@ X-Test-Status: 404
 --- error_code: 404
 --- response_body_like eval
 qr/price=\\\$100 rid=[0-9a-f]{32}/
+
+
+
+=== TEST 27: set plugin metadata with custom error page for 403
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/error-page',
+                ngx.HTTP_PUT,
+                [[{
+                    "enable": true,
+                    "error_403": {"body": "<html><body><h1>403 Forbidden</h1></body></html>"}
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 28: custom error page for 403
+--- request
+GET /hello
+--- more_headers
+X-Test-Status: 403
+--- error_code: 403
+--- response_headers
+content-type: text/html
+--- response_body_like eval
+qr/<body><h1>403 Forbidden<\/h1><\/body>/
+
+
+
+=== TEST 29: set metadata and create route with ip-restriction
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/error-page',
+                ngx.HTTP_PUT,
+                [[{
+                    "enable": true,
+                    "error_403": {"body": "<html><body><h1>403 custom</h1></body></html>"}
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            local code2, body2 = t('/apisix/admin/routes/4',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/ip-restriction-test",
+                    "plugins": {
+                        "ip-restriction": {
+                            "whitelist": ["192.0.2.0/24"]
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {"127.0.0.1:1980": 1},
+                        "type": "roundrobin"
+                    }
+                }]]
+                )
+            if code2 >= 300 then
+                ngx.status = code2
+            end
+            ngx.say(body2)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 30: 403 response from ip-restriction is intercepted by error-page plugin
+--- request
+GET /ip-restriction-test
+--- error_code: 403
+--- response_body_like eval
+qr/403 custom/
