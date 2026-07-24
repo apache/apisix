@@ -381,12 +381,30 @@ local admin_schema = {
             }
         },
         admin_listen = {
-            properties = {
-                listen = { type = "string" },
-                port = { type = "integer" },
+            -- compatible with both the single-address object form and the
+            -- multi-address array form (IPv4 + IPv6 dual-stack)
+            oneOf = {
+                {
+                    type = "object",
+                    properties = {
+                        ip = { type = "string" },
+                        port = { type = "integer" },
+                    },
+                },
+                {
+                    type = "array",
+                    minItems = 1,
+                    items = {
+                        type = "object",
+                        properties = {
+                            ip = { type = "string" },
+                            port = { type = "integer" },
+                        },
+                    },
+                },
             },
             default = {
-                listen = "0.0.0.0",
+                ip = "0.0.0.0",
                 port = 9180,
             }
         },

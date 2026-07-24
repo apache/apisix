@@ -426,7 +426,9 @@ Please modify "admin_key" in conf/config.yaml .
                                                 default_port, configured_port)
         local ip = configured_ip or default_ip
         local port = tonumber(configured_port) or default_port
-        if ports_to_check[port] ~= nil then
+        -- allow the same service (e.g. admin) to reuse one port across multiple
+        -- listen addresses, which is required by IPv4 + IPv6 dual-stack listening
+        if ports_to_check[port] ~= nil and ports_to_check[port] ~= port_name then
             util.die(port_name .. " ", port, " conflicts with ", ports_to_check[port], "\n")
         end
         ports_to_check[port] = port_name
@@ -434,12 +436,20 @@ Please modify "admin_key" in conf/config.yaml .
     end
 
     -- listen in admin use a separate port, support specific IP, compatible with the original style
-    local admin_server_addr
+    -- admin_listen supports both a single {ip=, port=} object and an array of them.
+    -- The array form allows listening on multiple addresses, e.g. IPv4 + IPv6 dual-stack.
+    local admin_server_addrs = {}
     if yaml_conf.apisix.enable_admin then
-        local ip = yaml_conf.deployment.admin.admin_listen.ip
-        local port = yaml_conf.deployment.admin.admin_listen.port
-        admin_server_addr = validate_and_get_listen_addr("admin port", "0.0.0.0", ip,
-                                                          9180, port)
+        local admin_listen = yaml_conf.deployment.admin.admin_listen
+        if admin_listen[1] ~= nil then
+            for _, listen in ipairs(admin_listen) do
+                table_insert(admin_server_addrs, validate_and_get_listen_addr(
+                    "admin port", "0.0.0.0", listen.ip, 9180, listen.port))
+            end
+        else
+            table_insert(admin_server_addrs, validate_and_get_listen_addr(
+                "admin port", "0.0.0.0", admin_listen.ip, 9180, admin_listen.port))
+        end
     end
 
     local status_server_addr
@@ -701,9 +711,9 @@ Please modify "admin_key" in conf/config.yaml .
         local role = yaml_conf.deployment.role
         env.deployment_role = role
 
-        if role == "control_plane" and not admin_server_addr then
+        if role == "control_plane" and #admin_server_addrs == 0 then
             local listen = node_listen[1]
-            admin_server_addr = str_format("%s:%s", listen.ip, listen.port)
+            table_insert(admin_server_addrs, str_format("%s:%s", listen.ip, listen.port))
         end
     end
 
@@ -728,7 +738,7 @@ Please modify "admin_key" in conf/config.yaml .
         enabled_stream_plugins = enabled_stream_plugins,
         dubbo_upstream_multiplex_count = dubbo_upstream_multiplex_count,
         status_server_addr = status_server_addr,
-        admin_server_addr = admin_server_addr,
+        admin_server_addrs = admin_server_addrs,
         control_server_addr = control_server_addr,
         prometheus_server_addr = prometheus_server_addr,
         proxy_mirror_timeouts = proxy_mirror_timeouts,
