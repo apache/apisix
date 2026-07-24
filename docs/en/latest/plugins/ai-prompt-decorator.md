@@ -44,6 +44,7 @@ The Plugin decorates Chat Completions, Responses API, Anthropic Messages, and Be
 
 | Name | Type | Required | Default | Valid values | Description |
 | --- | --- | --- | --- | --- | --- |
+| `max_req_body_size` | integer | False | 67108864 | >= 1 | Maximum request body size in bytes buffered into memory. Requests with a larger body are rejected. |
 | `prepend` | array | Conditionally\* | | | An array of prompt objects to be prepended. |
 | `prepend.role` | string | True | | [`system`, `user`, `assistant`] | Role of the message. |
 | `prepend.content` | string | True | | length >= 1 | Content of the message (prompt). |

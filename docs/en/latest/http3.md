@@ -1,5 +1,12 @@
 ---
 title: HTTP/3 Protocol
+keywords:
+  - Apache APISIX
+  - API Gateway
+  - HTTP/3
+  - HTTP 3
+  - QUIC
+description: Learn how to enable experimental HTTP/3 support in Apache APISIX for downstream client connections over QUIC.
 ---
 
 <!--

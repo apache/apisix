@@ -57,11 +57,15 @@ local function compute_targets(up_conf)
     local host = up_conf.checks and up_conf.checks.active and up_conf.checks.active.host
     local port = up_conf.checks and up_conf.checks.active and up_conf.checks.active.port
     local up_hdr = up_conf.pass_host == "rewrite" and up_conf.upstream_host
-    local use_node_hdr = up_conf.pass_host == "node" or nil
 
     local targets = {}
     for _, node in ipairs(up_conf.nodes) do
-        local host_hdr = up_hdr or (use_node_hdr and node.domain) or nil
+        -- A health check has no client; the gateway probes the node by the node's own
+        -- identity (its domain), so use node.domain as the Host header regardless of
+        -- pass_host (except "rewrite", which pins an explicit Host). Otherwise a domain
+        -- node probes with the resolved ip as Host/SNI, breaking HTTPS health checks.
+        -- node.domain is nil for ip nodes.
+        local host_hdr = up_hdr or node.domain
         local target_port = port or node.port
         -- add_target defaults the hostname to the ip when checks.active.host is
         -- unset, so mirror that here to match the shm entry's stored hostname

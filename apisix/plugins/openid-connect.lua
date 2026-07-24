@@ -32,6 +32,12 @@ local ngx_encode_base64 = ngx.encode_base64
 
 local plugin_name       = "openid-connect"
 
+-- returned verbatim by resty.openidc when the state in the authorization
+-- callback does not match the one restored from the session; the string is
+-- identical in lua-resty-openidc 1.8.0 and 1.9.0
+local STATE_MISMATCH_ERR =
+    "state from argument does not match state restored from session"
+
 
 -- Session config is passed as-is to resty.session.start(); the only
 -- translation is the legacy session.cookie.lifetime alias from the
@@ -315,6 +321,12 @@ local schema = {
                 "the request for downstream.",
             type = "boolean",
             default = true
+        },
+        set_raw_id_token_header = {
+            description = "Whether the raw signed ID token JWT should be added in the " ..
+                "X-Raw-ID-Token header to the request for downstream.",
+            type = "boolean",
+            default = false
         },
         set_userinfo_header = {
             description = "Whether the user info token should be added in the X-Userinfo " ..
@@ -703,7 +715,7 @@ function _M.rewrite(plugin_conf, ctx)
     local conf = core.table.clone(plugin_conf)
 
     -- Snapshot the client-supplied X-Access-Token (it doubles as a bearer
-    -- input via get_bearer_access_token) and clear the four headers this
+    -- input via get_bearer_access_token) and clear the five headers this
     -- plugin advertises as outputs so client-supplied values cannot bleed
     -- through to the upstream.
     ctx.openid_connect_client_x_access_token = core.request.header(ctx, "X-Access-Token")
@@ -711,6 +723,7 @@ function _M.rewrite(plugin_conf, ctx)
     core.request.set_header(ctx, "X-Userinfo", nil)
     core.request.set_header(ctx, "X-ID-Token", nil)
     core.request.set_header(ctx, "X-Refresh-Token", nil)
+    core.request.set_header(ctx, "X-Raw-ID-Token", nil)
 
     -- Previously, we multiply conf.timeout before storing it in etcd.
     -- If the timeout is too large, we should not multiply it again.
@@ -757,7 +770,7 @@ function _M.rewrite(plugin_conf, ctx)
         end
     end
 
-    local response, err, session, _
+    local response, err, session
 
     if conf.bearer_only or conf.introspection_endpoint or conf.public_key or conf.use_jwks then
         -- An introspection endpoint or a public key has been configured. Try to
@@ -854,13 +867,23 @@ function _M.rewrite(plugin_conf, ctx)
             unauth_action = "deny"
         end
 
+        -- When set_raw_id_token_header is enabled and the user has explicitly restricted
+        -- session_contents, ensure enc_id_token is included so session:get("enc_id_token")
+        -- returns the raw signed JWT. When session_contents is nil, lua-resty-openidc stores
+        -- all session data by default (including enc_id_token), so no action is needed.
+        if conf.set_raw_id_token_header and conf.session_contents then
+            conf.session_contents = core.table.clone(conf.session_contents)
+            conf.session_contents.enc_id_token = true
+        end
+
         -- Authenticate the request. This will validate the access token if it
         -- is stored in a sessions cookie, and also renew the token if required.
         -- If no token can be extracted, the response will redirect to the ID
         -- provider's authorization endpoint to initiate the Relying Party flow.
         -- This code path also handles when the ID provider then redirects to
         -- the configured redirect URI after successful authentication.
-        response, err, _, session  = openidc.authenticate(conf, nil, unauth_action,
+        local target_url
+        response, err, target_url, session = openidc.authenticate(conf, nil, unauth_action,
                                                           build_session_opts(conf.session))
 
         if err then
@@ -873,6 +896,23 @@ function _M.rewrite(plugin_conf, ctx)
                 end
                 return 401
             end
+
+            -- Stale authorization callback: the state in the callback does not
+            -- match the one in the session, e.g. the same browser started
+            -- another login flow in a second tab and overwrote the state, or an
+            -- already completed callback was replayed. The client is a browser
+            -- mid-navigation, so instead of a dead-end 500, send it back to the
+            -- original URL that resty.openidc returns alongside the error: a
+            -- fresh flow starts from there and completes without any user
+            -- interaction while the ID provider still holds an SSO session.
+            if err == STATE_MISMATCH_ERR and target_url
+               and ngx.req.get_method() == "GET" then
+                core.log.warn("OIDC state mismatch (concurrent login flows or ",
+                              "replayed callback), restarting the authentication flow")
+                core.response.set_header("Location", target_url)
+                return 302
+            end
+
             core.log.error("OIDC authentication failed: ", err)
             return 500
         end
@@ -909,6 +949,12 @@ function _M.rewrite(plugin_conf, ctx)
             local refresh_token = session:get("refresh_token")
             if refresh_token and conf.set_refresh_token_header then
                 core.request.set_header(ctx, "X-Refresh-Token", refresh_token)
+            end
+
+            -- Add X-Raw-ID-Token header, maybe.
+            local enc_id_token = session:get("enc_id_token")
+            if enc_id_token and conf.set_raw_id_token_header then
+                core.request.set_header(ctx, "X-Raw-ID-Token", enc_id_token)
             end
         end
     end

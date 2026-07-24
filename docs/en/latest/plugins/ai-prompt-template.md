@@ -44,6 +44,7 @@ The Plugin generates a Chat Completions request containing a `messages` array. I
 
 | Name | Type | Required | Default | Valid values | Description |
 | --- | --- | --- | --- | --- | --- |
+| `max_req_body_size` | integer | False | 67108864 | >= 1 | Maximum request body size in bytes buffered into memory. Requests with a larger body are rejected. |
 | `templates` | array | True | | | An array of template objects. |
 | `templates.name` | string | True | | | Name of the template. When requesting the Route, the request should include the template name that corresponds to the configured template. |
 | `templates.template` | object | True | | | Template specification. |

@@ -323,6 +323,9 @@ function _M.wolf_rbac_access_check()
         ngx.say(json_encode({ok=true,
                             data={ userInfo={nickname="administrator",
                                 username="admin", id="100"} }}))
+    elseif resName == '/hello/no_userinfo' then
+        -- authorized (200) but the backend returns no userInfo
+        ngx.say(json_encode({ok=true, data={}}))
     elseif resName == '/hello/500' then
         ngx.status = 500
         ngx.say(json_encode({ok=false, reason="ERR_SERVER_ERROR"}))
@@ -1293,6 +1296,34 @@ function _M.mock_compressed_upstream_response()
     local s = "compressed_response"
     ngx.header['Content-Encoding'] = 'gzip'
     ngx.say(s)
+end
+
+
+-- echo received request headers, emitting one line per occurrence so that
+-- same-name (multi-value) headers are distinguishable from a single
+-- comma-joined value. A genuine multi-value header arrives as a table from
+-- ngx.req.get_headers() and is printed as repeated "name: value" lines.
+function _M.plugin_proxy_rewrite_multi_header()
+    local headers = ngx.req.get_headers()
+
+    local keys = {}
+    for k in pairs(headers) do
+        if not builtin_hdr_ignore_list[k] then
+            table.insert(keys, k)
+        end
+    end
+    table.sort(keys)
+
+    for _, key in ipairs(keys) do
+        local v = headers[key]
+        if type(v) == "table" then
+            for _, item in ipairs(v) do
+                ngx.say(key, ": ", item)
+            end
+        else
+            ngx.say(key, ": ", v)
+        end
+    end
 end
 
 

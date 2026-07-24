@@ -446,7 +446,7 @@ X-AI-Fixture: openai/chat-basic.json
 qr/"content"\s*:\s*"1 \+ 1 = 2\."/
 --- error_log
 creating healthchecker for upstream
-request head: GET /status/gpt4
+request: GET /status/gpt4
 
 
 
@@ -486,3 +486,39 @@ request head: GET /status/gpt4
 /v1/projects/my-project/locations/us-central1/publishers/google/models/text-embedding-004:predict
 /v1/projects/my-project/locations/us-central1/publishers/google/models/textembedding-gecko:predict
 nil
+
+
+
+=== TEST 13: same credentials under different TTL policies do not share a token
+--- config
+    location /t {
+        content_by_lua_block {
+            local auth = require("apisix.plugins.ai-transport.auth")
+            local google_oauth = require("apisix.utils.google-cloud-oauth")
+            local calls = 0
+            local orig_new = google_oauth.new
+            google_oauth.new = function(conf)
+                return {
+                    access_token_ttl = 3600,
+                    generate_access_token = function()
+                        calls = calls + 1
+                        return "token-" .. calls
+                    end,
+                }
+            end
+
+            local sa = '{"type":"service_account","project_id":"p"}'
+            -- same instance name and credentials, different max_ttl policy:
+            -- must not alias onto one cache entry
+            local t1 = auth.fetch_gcp_access_token("inst", {service_account_json = sa, max_ttl = 100})
+            local t2 = auth.fetch_gcp_access_token("inst", {service_account_json = sa, max_ttl = 200})
+            -- repeating the first policy must hit the cache, no new token
+            local t3 = auth.fetch_gcp_access_token("inst", {service_account_json = sa, max_ttl = 100})
+
+            google_oauth.new = orig_new
+            ngx.say("calls=", calls, " distinct=", tostring(t1 ~= t2),
+                    " cachehit=", tostring(t1 == t3))
+        }
+    }
+--- response_body
+calls=2 distinct=true cachehit=true

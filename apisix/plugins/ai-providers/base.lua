@@ -99,49 +99,92 @@ local function merge_usage(ctx, parsed)
 end
 
 
---- Build HTTP request parameters from driver config and extra_opts.
--- @return table params HTTP parameters ready for transport_http.request()
--- @return string|nil err Error message
-function _M.build_request(self, ctx, conf, request_body, opts)
-    local body_changed = false
-
-    -- Protocol conversion (when a converter bridges client→target protocol)
-    local converter = ctx.ai_converter
-    if converter and converter.convert_request then
-        local converted, err = converter.convert_request(request_body, ctx)
-        if not converted then
-            return nil, err or "invalid protocol", 400
-        end
-        request_body = converted
-        body_changed = true
-    end
+--- Shape the request body for the target protocol and this provider.
+--
+-- Pure: no ctx, no downstream request, no network -- body in, body out. This is
+-- where the target protocol matters; build_request below does not know protocols
+-- exist. Protocol *conversion* is not done here either: converters carry state on
+-- the request ctx for the response side to read back, so the caller converts and
+-- hands us the converted body.
+-- @return table body The body to send
+-- @return boolean changed Whether anything here modified it. The caller uses this
+--   to decide whether the client's verbatim bytes may still be reused.
+function _M.build_body(self, request_body, opts)
+    local changed = false
+    local target_protocol = opts.target_protocol
 
     -- Inject target-protocol-specific parameters (e.g. stream_options for OpenAI).
-    -- This runs after conversion so it covers both passthrough and convert scenarios.
-    local target_protocol = ctx.ai_target_protocol
     if target_protocol then
         local target_proto = protocols.get(target_protocol)
         if target_proto and target_proto.prepare_outgoing_request then
             if target_proto.prepare_outgoing_request(request_body) then
-                body_changed = true
+                changed = true
             end
         end
     end
 
-    core.log.info("request extra_opts to LLM server: ",
-                  core.json.delay_encode(log_sanitize.redact_extra_opts(opts), true))
-
-    -- Auth: GCP token
-    local auth = opts.auth or {}
-    local token
-    if auth.gcp then
-        local access_token, err = transport_auth.fetch_gcp_access_token(ctx, opts.name,
-                                        auth.gcp)
-        if not access_token then
-            return nil, "failed to get gcp access token: " .. (err or "unknown")
+    -- Inject model options (flat overwrite)
+    if opts.model_options then
+        for opt, val in pairs(opts.model_options) do
+            if request_body[opt] ~= nil then
+                core.log.info("model_options overwriting request field '", opt, "'")
+            end
+            request_body[opt] = val
+            changed = true
         end
-        token = access_token
     end
+
+    -- Apply llm_options via provider capability hook (always force-overwrites)
+    if opts.override_llm_options then
+        local cap = self.capabilities and self.capabilities[target_protocol]
+        if cap and cap.rewrite_request_body then
+            cap.rewrite_request_body(request_body, opts.override_llm_options, true)
+            if next(opts.override_llm_options) ~= nil then
+                changed = true
+            end
+        end
+    end
+
+    -- Apply per-target-protocol request body override (deep merge)
+    if opts.request_body_override_map then
+        local patch = opts.request_body_override_map[target_protocol]
+        if patch then
+            core.log.info("applying request_body override for target protocol '",
+                          target_protocol, "'")
+            request_body = deep_merge(request_body, patch, opts.request_body_force_override)
+            changed = true
+        end
+    end
+
+    if self.remove_model and request_body.model ~= nil then
+        request_body.model = nil
+        changed = true
+    end
+
+    return request_body, changed
+end
+
+
+--- Assemble the outbound HTTP request: endpoint, auth, headers, query, and --
+-- last -- signing.
+--
+-- Pure and protocol-agnostic: `body` arrives already shaped (see build_body) and
+-- is passed through untouched, so a string goes out verbatim and a table is
+-- encoded by the transport. Anything taken from the inbound request reaches us
+-- as an explicit opts.client_* field; a self-contained internal call sets none of
+-- them, so nothing of the client's can reach the LLM or the logs.
+-- @return table params HTTP parameters ready for transport_http.request()
+-- @return string|nil err Error message
+function _M.build_request(self, conf, body, opts)
+    -- Name the few options worth tracing rather than dumping opts wholesale: the
+    -- resolved endpoint, path and headers are already logged from `params` below,
+    -- and serialising an open-ended options bag is how credentials and client data
+    -- end up in logs.
+    core.log.info("building LLM request: instance=", opts.name,
+                  ", target_protocol=", opts.target_protocol,
+                  ", model=", opts.model_options and opts.model_options.model)
+
+    local auth = opts.auth or {}
 
     -- Parse endpoint URL
     local endpoint = opts.endpoint
@@ -188,33 +231,39 @@ function _M.build_request(self, ctx, conf, request_body, opts)
             .. "includes a path", 400
     end
 
-    local headers = transport_http.construct_forward_headers(auth.header or {}, ctx)
+    -- opts.client_* is whatever the caller took from the inbound request; an
+    -- internal call sets none of it and therefore forwards none of the client's
+    -- headers or query.
+    local headers = transport_http.construct_forward_headers(auth.header or {},
+                                                             opts.client_headers)
     if opts.host_header then
         headers["Host"] = opts.host_header
     end
-    if token then
+    -- GCP tokens are fetched here: the lookup is keyed on the credentials, not on
+    -- the request, so it needs no ctx and no caller has to repeat it.
+    if auth.gcp then
+        local token, token_err = transport_auth.fetch_gcp_access_token(opts.name, auth.gcp)
+        if not token then
+            return nil, "failed to get gcp access token: " .. (token_err or "unknown")
+        end
         headers["authorization"] = "Bearer " .. token
     end
 
-    -- Protocol converter header transformation (e.g. Anthropic → OpenAI headers)
-    if ctx.ai_converter and ctx.ai_converter.convert_headers then
-        ctx.ai_converter.convert_headers(headers)
+    -- Optional header transformation (e.g. the Anthropic → OpenAI converter's).
+    if opts.header_transform then
+        opts.header_transform(headers)
     end
 
-    -- For the passthrough protocol the gateway acts as a catch-all proxy, so
-    -- forward the client's HTTP method and original query string unchanged.
-    -- Other protocols always issue a POST with provider-specific query args.
-    local method = "POST"
-    if ctx.ai_target_protocol == "passthrough" then
-        method = core.request.get_method()
-        local client_args = ctx.var.args and core.string.decode_args(ctx.var.args)
-        if type(client_args) == "table" then
-            -- client query overrides the endpoint query, but configured
-            -- auth.query credentials must stay non-overridable by the caller
-            for k, v in pairs(client_args) do
-                if not (auth.query and auth.query[k] ~= nil) then
-                    query_params[k] = v
-                end
+    -- The caller passes the downstream method and query string only when it
+    -- wants them proxied verbatim (the passthrough protocol). Otherwise this is
+    -- a plain POST with provider-specific query args.
+    local method = opts.client_method or "POST"
+    if type(opts.client_args) == "table" then
+        -- client query overrides the endpoint query, but configured
+        -- auth.query credentials must stay non-overridable by the caller
+        for k, v in pairs(opts.client_args) do
+            if not (auth.query and auth.query[k] ~= nil) then
+                query_params[k] = v
             end
         end
     end
@@ -231,62 +280,10 @@ function _M.build_request(self, ctx, conf, request_body, opts)
         ssl_server_name = opts.ssl_server_name
                           or parsed_url and parsed_url.host
                           or opts.target_host or self.host,
+        -- Passed through as given: a string goes out verbatim (the client's own
+        -- bytes), a table is encoded by the transport.
+        body = body,
     }
-
-    -- Inject model options (flat overwrite)
-    if opts.model_options then
-        for opt, val in pairs(opts.model_options) do
-            if request_body[opt] ~= nil then
-                core.log.info("model_options overwriting request field '", opt, "'")
-            end
-            request_body[opt] = val
-            body_changed = true
-        end
-    end
-
-    -- Apply llm_options via provider capability hook (always force-overwrites)
-    if opts.override_llm_options then
-        local cap = self.capabilities and self.capabilities[ctx.ai_target_protocol]
-        if cap and cap.rewrite_request_body then
-            cap.rewrite_request_body(request_body, opts.override_llm_options, true)
-            if next(opts.override_llm_options) ~= nil then
-                body_changed = true
-            end
-        end
-    end
-
-    -- Apply per-target-protocol request body override (deep merge)
-    if opts.request_body_override_map then
-        local patch = opts.request_body_override_map[ctx.ai_target_protocol]
-        if patch then
-            core.log.info("applying request_body override for target protocol '",
-                          ctx.ai_target_protocol, "'")
-            request_body = deep_merge(request_body, patch, opts.request_body_force_override)
-            body_changed = true
-        end
-    end
-
-    if self.remove_model and request_body.model ~= nil then
-        request_body.model = nil
-        body_changed = true
-    end
-
-    if body_changed then
-        ctx.ai_request_body_changed = true
-    end
-
-    if not ctx.ai_request_body_changed then
-        if ctx.ai_raw_request_body == nil then
-            ctx.ai_raw_request_body = core.request.get_body()
-        end
-        if type(ctx.ai_raw_request_body) == "string" then
-            params.body = ctx.ai_raw_request_body
-        else
-            params.body = request_body
-        end
-    else
-        params.body = request_body
-    end
 
     -- AWS SigV4 signing (must be last — signs the finalized body)
     if self.aws_sigv4 and auth.aws then
@@ -801,8 +798,13 @@ end
 -- @return number|nil HTTP status code
 -- @return string|nil Raw response body (JSON string)
 -- @return string|nil Error message
-function _M.request(self, ctx, conf, request_table, extra_opts)
-    local params, err = self:build_request(ctx, conf, request_table, extra_opts)
+--- Send a self-contained request to an LLM and return its raw response.
+-- Shapes the body, assembles the HTTP request, sends it. Fully decoupled from the
+-- downstream request: internal callers (ai-request-rewrite, embeddings, ...) use
+-- this as a plain client and parse the body themselves.
+function _M.request(self, conf, request_table, extra_opts)
+    local body = self:build_body(request_table, extra_opts)
+    local params, err = self:build_request(conf, body, extra_opts)
     if not params then
         core.log.error("failed to build request: ", err)
         return 500, nil, err

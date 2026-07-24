@@ -44,6 +44,7 @@ The LLM call used for rewriting is separate from the client's request format. Wi
 
 | Name | Type | Required | Default | Valid values | Description |
 | --- | --- | --- | --- | --- | --- |
+| `max_req_body_size` | integer | False | 67108864 | >= 1 | Maximum request body size in bytes buffered into memory. Requests with a larger body are rejected. |
 | `prompt` | string | True | | | The prompt to send to the LLM service for rewriting the client request. |
 | `provider` | string | True | | [openai, deepseek, azure-openai, aimlapi, gemini, vertex-ai, anthropic, openrouter, openai-compatible] | LLM service provider. When set to `aimlapi`, the Plugin uses the OpenAI-compatible driver and proxies the request to `https://api.aimlapi.com/v1/chat/completions`. When set to `openai-compatible`, the Plugin proxies requests to the custom endpoint configured in `override`. When set to `azure-openai`, the Plugin also proxies requests to the custom endpoint configured in `override` and additionally omits the `model` parameter from the request body sent to Azure OpenAI. |
 | `auth` | object | True | | | Authentication configurations. |

@@ -46,6 +46,7 @@ The Plugin checks Chat Completions, Responses API, Embeddings, Anthropic Message
 
 | Name | Type | Required | Default | Valid values | Description |
 | --- | --- | --- | --- | --- | --- |
+| `max_req_body_size` | integer | False | 67108864 | >= 1 | Maximum request body size in bytes buffered into memory. Requests with a larger body are rejected. |
 | `match_all_roles` | boolean | False | false | | If `true`, validate messages from all roles. If `false`, validate the message from `user` role only. |
 | `match_all_conversation_history` | boolean | False | false | | If `true`, concatenate and check all messages in the conversation history. If `false`, only check the content of the last message. |
 | `allow_patterns` | array | False | [] | | An array of regex patterns that messages should match. When configured, messages must match at least one pattern to be considered valid. |
