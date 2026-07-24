@@ -25,6 +25,13 @@ local schema = {
     properties = {
         header_schema = {type = "object"},
         body_schema = {type = "object"},
+        max_req_body_size = {
+            type = "integer",
+            minimum = 1,
+            default = 67108864,
+            description = "maximum request body size in bytes buffered into "
+                       .. "memory; larger request bodies are rejected",
+        },
         rejected_code = {type = "integer", minimum = 200, maximum = 599, default = 400},
         rejected_msg = {type = "string", minLength = 1, maxLength = 256}
     },
@@ -81,7 +88,7 @@ function _M.rewrite(conf, ctx)
 
     if conf.body_schema then
         local req_body
-        local body, err = core.request.get_body()
+        local body, err = core.request.get_body(conf.max_req_body_size)
         if not body then
             if err then
                 core.log.error("failed to get body: ", err)

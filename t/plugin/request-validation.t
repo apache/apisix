@@ -1866,3 +1866,56 @@ POST /echo
 duplicated content-type
 --- error_log
 duplicated Content-Type header
+
+
+
+=== TEST 57: add route with a small max_req_body_size
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "request-validation": {
+                            "max_req_body_size": 10,
+                            "body_schema": {
+                                "type": "object",
+                                "required": ["required_payload"],
+                                "properties": {
+                                    "required_payload": {"type": "string"}
+                                }
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/echo"
+                }]])
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 58: body larger than max_req_body_size is rejected
+--- more_headers
+Content-Type: application/json
+--- request
+POST /echo
+{"required_payload": "this body is well over ten bytes"}
+--- error_code: 400
+--- error_log
+request size

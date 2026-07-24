@@ -43,6 +43,7 @@ The OpenAPI spec can be provided as an inline JSON string or fetched from a remo
 
 | Name | Type | Required | Default | Valid values | Description |
 |------|------|----------|---------|--------------|-------------|
+| max_req_body_size | integer | False | 67108864 | >= 1 | Maximum request body size in bytes buffered into memory. Requests with a larger body are rejected. |
 | spec | string | No* | | | Inline OpenAPI 3.x specification in JSON format. Required if `spec_url` is not set. |
 | spec_url | string | No* | | `^https?://` | URL to fetch the OpenAPI specification from. Required if `spec` is not set. |
 | spec_url_request_headers | object | No | | | Custom HTTP request headers sent when fetching `spec_url`. Useful for authenticated specification endpoints. |
