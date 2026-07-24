@@ -564,6 +564,26 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
                 ngx.thread.kill(flush_thread)
                 flush_thread = nil
             end
+            if output_sent then
+                -- body_reader() failed mid-stream after response headers (200)
+                -- were already sent. Cannot change HTTP status now (would be
+                -- 504 for timeout, 500 for other errors). Attempting to set a
+                -- different status triggers "attempt to set status 504/500
+                -- after sending out response status 200" nginx error. Instead,
+                -- signal downstream filters via llm_request_done and dispatch
+                -- one final body_filter pass so buffering plugins (e.g.
+                -- ai-lakera-guard) can flush their content. Mirrors the
+                -- max_stream_duration_ms safeguard path. nginx closes the
+                -- connection cleanly; clients detect the incomplete response
+                -- via missing protocol terminator (OpenAI [DONE], Anthropic
+                -- message_stop).
+                ctx.var.llm_request_done = true
+                local ok, flush_err = plugin.lua_response_filter(ctx, res.headers, "", nil, true)
+                if not ok then
+                    abort_on_disconnect(flush_err)
+                end
+                return
+            end
             return transport_http.handle_error(err)
         end
         if not chunk then
