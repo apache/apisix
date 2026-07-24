@@ -954,6 +954,7 @@ local function cleanup(env)
     end
 
     os_remove(profile:customized_yaml_index())
+    os_remove(profile:customized_apisix_yaml_index())
 end
 
 
@@ -1032,11 +1033,13 @@ local function start(env, ...)
     local parser = argparse()
     parser:argument("_", "Placeholder")
     parser:option("-c --config", "location of customized config.yaml")
+    parser:option("--apisix-yaml", "location of customized apisix.yaml")
     -- TODO: more logs for APISIX cli could be added using this feature
     parser:flag("-v --verbose", "show init_etcd debug information")
     local args = parser:parse()
 
     local customized_yaml = args["config"]
+    local customized_apisix_yaml = args["apisix_yaml"] or getenv("APISIX_YAML_PATH")
     if customized_yaml then
         local customized_yaml_path
         local idx = str_find(customized_yaml, "/")
@@ -1060,6 +1063,32 @@ local function start(env, ...)
         end
 
         print("Use customized yaml: ", customized_yaml)
+    end
+
+    if customized_apisix_yaml then
+        local customized_apisix_yaml_path
+        local idx = str_find(customized_apisix_yaml, "/")
+        if idx and idx == 1 then
+            customized_apisix_yaml_path = customized_apisix_yaml
+        else
+            local cur_dir, err = lfs.currentdir()
+            if err then
+                util.die("failed to get current directory")
+            end
+            customized_apisix_yaml_path = cur_dir .. "/" .. customized_apisix_yaml
+        end
+
+        if not util.file_exists(customized_apisix_yaml_path) then
+           util.die("customized apisix.yaml file not exists, path: " .. customized_apisix_yaml_path)
+        end
+
+        local ok, err = util.write_file(profile:customized_apisix_yaml_index(),
+                                        customized_apisix_yaml_path)
+        if not ok then
+            util.die("write customized apisix.yaml index failed, err: " .. err)
+        end
+
+        print("Use customized apisix.yaml: ", customized_apisix_yaml)
     end
 
     init(env)
