@@ -75,11 +75,19 @@ add_block_preprocessor(sub {
                     local function vec(text)
                         text = string.lower(text or "")
                         if text:find("code") or text:find("python") or text:find("debug") then
-                            return {1, 0}
+                            return {1, 0, 0}
                         elseif text:find("translate") or text:find("summar") then
-                            return {0, 1}
+                            return {0, 1, 0}
+                        elseif text:find("weather") or text:find("joke") then
+                            -- the `default` instance's own domain (general chat),
+                            -- so it competes on similarity like any other instance
+                            return {0, 0, 1}
                         end
-                        return {0.6, 0.6}
+                        -- A prompt matching no instance's domain: its components
+                        -- are distinct and none aligns with an axis, so it clears
+                        -- no high threshold and the request falls back. Distinct
+                        -- values also keep the reported score order deterministic.
+                        return {0.7, 0.5, 0.3}
                     end
                     local data = {}
                     for i, t in ipairs(body.input or {}) do
@@ -88,8 +96,8 @@ add_block_preprocessor(sub {
                             -- to exercise fail-open on malformed data
                             data[i] = { index = i - 1, embedding = json.null }
                         elseif string.lower(t):find("dimmismatch") then
-                            -- 3-D vector vs the 2-D reference vectors
-                            data[i] = { index = i - 1, embedding = {1, 0, 0} }
+                            -- 2-D vector vs the 3-D reference vectors
+                            data[i] = { index = i - 1, embedding = {1, 0} }
                         else
                             data[i] = { index = i - 1, embedding = vec(t) }
                         end
@@ -199,7 +207,8 @@ __DATA__
                         instances = {
                             inst("code", "model-code", {"write python code"}),
                             inst("cheap", "model-cheap", {"translate this text"}),
-                            inst("default", "model-fallback"),
+                            inst("default", "model-fallback",
+                                 {"what is the weather today", "tell me a joke"}),
                         },
                         ssl_verify = false,
                     },
@@ -251,13 +260,13 @@ model-cheap
 === TEST 4: unrelated prompt clears no threshold, falls back to the fallback instance
 --- request
 POST /anything
-{"model":"auto","messages":[{"role":"user","content":"what is the weather today"}]}
+{"model":"auto","messages":[{"role":"user","content":"recommend a good hotel in paris"}]}
 --- more_headers
 Content-Type: application/json
 --- response_body chomp
 model-fallback
 --- error_log eval
-qr/no instance cleared threshold \(scores: code:0\.\d+,cheap:0\.\d+\)/
+qr/no instance cleared threshold \(scores: code:0\.\d+,cheap:0\.\d+,default:0\.\d+\)/
 --- no_error_log
 [error]
 
@@ -317,7 +326,8 @@ semantic routing: query embedding failed
                         instances = {
                             inst("code", "model-code", {"write python code"}),
                             inst("cheap", "model-cheap", {"translate this text"}),
-                            inst("default", "model-fallback"),
+                            inst("default", "model-fallback",
+                                 {"what is the weather today", "tell me a joke"}),
                         },
                         ssl_verify = false,
                     },
@@ -349,8 +359,8 @@ Content-Type: application/json
 --- response_body chomp
 model-code
 --- response_headers_like
-X-AI-Semantic-Route: code
-X-AI-Semantic-Scores: code:1\.\d+,cheap:0\.\d+
+X-AI-Semantic-Picked-Instance: code
+X-AI-Semantic-Scores: ^code:1\.\d+
 --- no_error_log
 [error]
 
@@ -490,7 +500,8 @@ invalid embedding entry at index 0
                             -- embedding this instance's examples makes the mock
                             -- fail the whole reference batch
                             inst("code", "model-code", {"servererror example"}),
-                            inst("default", "model-fallback"),
+                            inst("default", "model-fallback",
+                                 {"what is the weather today", "tell me a joke"}),
                         },
                         ssl_verify = false,
                     },
@@ -566,7 +577,8 @@ failed to fetch reference embeddings
                         },
                         instances = {
                             inst("code", "model-code", {"write python code"}),
-                            inst("default", "model-fallback"),
+                            inst("default", "model-fallback",
+                                 {"what is the weather today", "tell me a joke"}),
                         },
                         ssl_verify = false,
                     },
@@ -687,8 +699,9 @@ no instance cleared threshold
                 plugins = {
                     ["ai-proxy-multi"] = {
                         -- the global threshold is permissive (0.1); the code
-                        -- instance raises its own bar to 0.9, so a prompt scoring
-                        -- ~0.707 clears the global one but not the instance's
+                        -- instance raises its own bar to 0.9, so a prompt that
+                        -- partially matches it (~0.77) clears the global threshold
+                        -- but not the instance's, and the request goes to default
                         balancer = { algorithm = "semantic" },
                         semantic_opts = {
                             embeddings = {
@@ -719,6 +732,7 @@ no instance cleared threshold
                                 override = {
                                     endpoint = "http://127.0.0.1:6798/v1/chat/completions",
                                 },
+                                examples = {"what is the weather today", "tell me a joke"},
                             },
                         },
                         ssl_verify = false,
@@ -745,7 +759,7 @@ passed
 === TEST 21: a prompt below the per-instance threshold reaches the fallback
 --- request
 POST /anything
-{"model":"auto","messages":[{"role":"user","content":"what is the weather today"}]}
+{"model":"auto","messages":[{"role":"user","content":"recommend a good hotel in paris"}]}
 --- more_headers
 Content-Type: application/json
 --- response_body chomp
@@ -793,7 +807,8 @@ model-fallback
                         instances = {
                             inst("code", "model-code", {"write python code"}),
                             inst("cheap", "model-cheap", {"translate this text"}),
-                            inst("default", "model-fallback"),
+                            inst("default", "model-fallback",
+                                 {"what is the weather today", "tell me a joke"}),
                         },
                         ssl_verify = false,
                     },
@@ -823,8 +838,8 @@ POST /llm/v1/responses
 --- more_headers
 Content-Type: application/json
 --- response_headers_like
-X-AI-Semantic-Route: code
-X-AI-Semantic-Scores: code:1\.\d+,cheap:0\.\d+
+X-AI-Semantic-Picked-Instance: code
+X-AI-Semantic-Scores: ^code:1\.\d+
 --- no_error_log
 [error]
 
@@ -868,7 +883,8 @@ X-AI-Semantic-Scores: code:1\.\d+,cheap:0\.\d+
                         instances = {
                             inst("code", "model-code", {"write python code"}),
                             inst("cheap", "model-cheap", {"translate this text"}),
-                            inst("default", "model-fallback"),
+                            inst("default", "model-fallback",
+                                 {"what is the weather today", "tell me a joke"}),
                         },
                         ssl_verify = false,
                     },
@@ -898,8 +914,8 @@ POST /llm/v1/messages
 --- more_headers
 Content-Type: application/json
 --- response_headers_like
-X-AI-Semantic-Route: code
-X-AI-Semantic-Scores: code:1\.\d+,cheap:0\.\d+
+X-AI-Semantic-Picked-Instance: code
+X-AI-Semantic-Scores: ^code:1\.\d+
 
 
 
@@ -942,6 +958,7 @@ X-AI-Semantic-Scores: code:1\.\d+,cheap:0\.\d+
                                 override = {
                                     endpoint = "http://127.0.0.1:6798/v1/chat/completions",
                                 },
+                                examples = {"what is the weather today", "tell me a joke"},
                             },
                         },
                         ssl_verify = false,

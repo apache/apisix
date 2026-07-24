@@ -62,8 +62,11 @@ local lrucache_semantic_vectors = core.lrucache.new({
 -- The prompt is sent verbatim to a third-party embedding endpoint. Bound it: a
 -- request body may be up to max_req_body_size (64MB by default), and an oversized
 -- input would blow the embedding model's token limit, 400, and silently push every
--- large prompt to the fallback. Routing intent lives in the opening sentences.
-local MAX_EMBED_PROMPT_BYTES = 8192
+-- large prompt to the fallback. OpenAI-compatible embedding models (which LiteLLM
+-- and others target) cap input at ~8192 tokens; we bound by bytes since counting
+-- tokens needs a tokenizer, using ~2 bytes/token so the cap stays under the token
+-- limit even for multi-byte scripts while keeping the whole routing prompt.
+local MAX_EMBED_PROMPT_BYTES = 16384
 
 local plugin_name = "ai-proxy-multi"
 local _M = {
@@ -206,30 +209,29 @@ function _M.check_schema(conf)
                     "/openai/deployments/{deployment}/embeddings?api-version=..."
             end
         end
-        -- The `fallback` instance, if named, is the only one exempt from the
-        -- examples requirement: it is reached by fallback, not by ranking. It must
-        -- name an instance that actually exists.
+        -- Every instance must declare non-empty `examples`. The `fallback`
+        -- instance is a normal ranked instance too -- it competes on similarity
+        -- like the rest and only additionally serves as the target when nothing
+        -- clears its threshold -- so it is not exempt. A named fallback must point
+        -- at an instance that actually exists.
         local fallback = semantic_opts.fallback
         local fallback_found = false
         for _, instance in ipairs(conf.instances) do
-            local is_fallback = fallback and instance.name == fallback
-            if is_fallback then
+            if fallback and instance.name == fallback then
                 fallback_found = true
-            else
-                local has_example = false
-                if instance.examples then
-                    for _, ex in ipairs(instance.examples) do
-                        if type(ex) == "string" and ex ~= "" then
-                            has_example = true
-                            break
-                        end
+            end
+            local has_example = false
+            if instance.examples then
+                for _, ex in ipairs(instance.examples) do
+                    if type(ex) == "string" and ex ~= "" then
+                        has_example = true
+                        break
                     end
                 end
-                if not has_example then
-                    return false, "instance '" .. (instance.name or "?") ..
-                        "': must configure non-empty `examples` for the semantic " ..
-                        "algorithm unless it is named by `semantic_opts.fallback`"
-                end
+            end
+            if not has_example then
+                return false, "instance '" .. (instance.name or "?") ..
+                    "': must configure non-empty `examples` for the semantic algorithm"
             end
         end
         if fallback and not fallback_found then
@@ -842,7 +844,7 @@ local function pick_semantic_instance(ctx, conf)
         local thr = inst.threshold or conf.semantic_opts.threshold or 0
         if cand.score >= thr then
             if debugging then
-                core.response.set_header("X-AI-Semantic-Route", cand.name)
+                core.response.set_header("X-AI-Semantic-Picked-Instance", cand.name)
             end
             core.log.info("semantic routing picked instance: ", cand.name,
                           ", score: ", cand.score)
@@ -851,7 +853,7 @@ local function pick_semantic_instance(ctx, conf)
     end
 
     if debugging then
-        core.response.set_header("X-AI-Semantic-Route", "fallback")
+        core.response.set_header("X-AI-Semantic-Picked-Instance", "fallback")
     end
     -- Only on the fallback path: surface why nothing matched, without requiring
     -- debugging. Cheap, because this runs once per unmatched request.

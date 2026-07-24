@@ -63,7 +63,8 @@ __DATA__
                             {
                                 "name": "default", "provider": "openai", "weight": 1,
                                 "auth": { "header": { "Authorization": "Bearer token" } },
-                                "options": { "model": "gpt-4o-mini" }
+                                "options": { "model": "gpt-4o-mini" },
+                                "examples": ["what is the weather today", "tell me a joke"]
                             }
                         ],
                         "ssl_verify": false
@@ -264,7 +265,7 @@ passed
 
 
 
-=== TEST 7: only the named fallback is exempt from the examples requirement
+=== TEST 7: the named fallback is not exempt from the examples requirement
 --- config
     location /t {
         content_by_lua_block {
@@ -285,7 +286,8 @@ passed
                             {
                                 "name": "a", "provider": "openai", "weight": 1,
                                 "auth": { "header": { "Authorization": "Bearer token" } },
-                                "options": { "model": "gpt-4o" }
+                                "options": { "model": "gpt-4o" },
+                                "examples": ["write code"]
                             },
                             {
                                 "name": "default", "provider": "openai", "weight": 1,

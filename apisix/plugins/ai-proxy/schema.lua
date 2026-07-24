@@ -211,7 +211,8 @@ local ai_instance_schema = {
                 description = "Example utterances representing this instance's "
                     .. "intent; each is embedded into its own reference vector "
                     .. "for the semantic algorithm. Required for every instance "
-                    .. "except the one named by semantic_opts.fallback.",
+                    .. "when the balancer algorithm is semantic, including the one "
+                    .. "named by semantic_opts.fallback.",
             },
             threshold = {
                 type = "number",
@@ -293,9 +294,9 @@ local semantic_opts_schema = {
             type = "string",
             minLength = 1,
             description = "Name of the instance to route to when no instance "
-                .. "clears its threshold or the embedding request fails. Unlike a "
-                .. "ranked instance it needs no `examples`. Defaults to the first "
-                .. "instance when unset.",
+                .. "clears its threshold or the embedding request fails. It is "
+                .. "otherwise a normal ranked instance and needs `examples` like "
+                .. "the rest. Defaults to the first instance when unset.",
         },
         debugging = {
             type = "boolean",

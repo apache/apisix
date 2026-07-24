@@ -101,7 +101,7 @@ import TabItem from '@theme/TabItem';
 | instances.override.llm_options.max_tokens | integer | 否    |                                   | ≥ 1          | 最大输出 token 数。APISIX 会自动将该值映射为各上游服务商对应的字段名。始终强制覆盖客户端值。 |
 | instances.override.request_body     | object         | 否    |                                   |              | 按目标协议的请求体覆盖配置。请参阅 `ai-proxy` 文档中的[按协议的请求体覆盖](./ai-proxy.md#per-protocol-request-body-override)。 |
 | instances.override.request_body_force_override | boolean | 否 | false |                            | 为 `false`（默认）时，客户端请求体中的字段优先，`instances.override.request_body` 仅补充缺失字段。为 `true` 时，`instances.override.request_body` 的值强制覆盖客户端请求体中的同名字段。不影响 `instances.override.llm_options`。 |
-| instances.examples                  | array[string]  | 否    |                                   | 1 到 64 项 | 当 `algorithm` 为 `semantic` 时使用。代表该实例意图的示例语句；每一条都会被嵌入为独立的参考向量。除被 `semantic_opts.fallback` 指定的实例外均为必填。 |
+| instances.examples                  | array[string]  | 否    |                                   | 1 到 64 项 | 当 `algorithm` 为 `semantic` 时使用。代表该实例意图的示例语句；每一条都会被嵌入为独立的参考向量。当 `algorithm` 为 `semantic` 时每个实例都必填，包括被 `semantic_opts.fallback` 指定的实例。 |
 | instances.threshold                 | number         | 否    |                                   | -1 到 1      | 当 `algorithm` 为 `semantic` 时使用。该实例的最小余弦相似度，覆盖 `semantic_opts.threshold`。 |
 | logging                             | object         | 否    |                                   |              | 日志配置。不影响 `error.log`。 |
 | logging.summaries                   | boolean        | 否    | false                           |              | 如果为 true，记录请求 LLM 模型、持续时间、请求和响应令牌。 |
@@ -128,8 +128,8 @@ import TabItem from '@theme/TabItem';
 | instances.checks.active.unhealthy.timeout     | integer        | 否    | 3                               | 1 到 254（包含） | 定义不健康节点的探测超时次数。 |
 | semantic_opts                       | object         | 否    |                                   |              | `semantic` 均衡器的选项，集中配置在一处。当 `balancer.algorithm` 为 `semantic` 时必填。 |
 | semantic_opts.threshold             | number         | 否    | 0                               | -1 到 1      | 实例被选中所需达到的全局最小余弦相似度。**默认值 0 几乎会接纳任何提示词**（真实嵌入向量很少会不相似到得分低于 0），因此只有把它调到 0 以上，回退实例才会真正生效。当没有实例达到其阈值时，请求回退到 `fallback` 实例；若未指定，则回退到第一个实例。 |
-| semantic_opts.fallback              | string         | 否    |                                   |              | 当没有实例达到其阈值或嵌入请求失败时，路由到的实例名称。与参与排名的实例不同，它无需配置 `examples`。未设置时默认回退到第一个实例。 |
-| semantic_opts.debugging             | boolean        | 否    | false                           |              | 若为 true，通过 `X-AI-Semantic-Scores` 和 `X-AI-Semantic-Route` 响应头暴露各实例的分数和路由决策，用于调试。 |
+| semantic_opts.fallback              | string         | 否    |                                   |              | 当没有实例达到其阈值或嵌入请求失败时，路由到的实例名称。它本身也是一个参与排名的普通实例，同样需要配置 `examples`。未设置时默认回退到第一个实例。 |
+| semantic_opts.debugging             | boolean        | 否    | false                           |              | 若为 true，通过 `X-AI-Semantic-Scores` 和 `X-AI-Semantic-Picked-Instance` 响应头暴露各实例的分数和路由决策，用于调试。 |
 | semantic_opts.embeddings            | object         | 是    |                                   |              | 嵌入服务配置，用于将提示词与各实例的 `examples` 进行相似度打分。 |
 | semantic_opts.embeddings.provider   | string         | 是    |                                   | [openai, azure-openai] | 语义算法使用的嵌入服务提供商。 |
 | semantic_opts.embeddings.model      | string         | 是    |                                   |              | 嵌入模型名称，例如 `text-embedding-3-small`。 |
@@ -2799,7 +2799,7 @@ nginx_config:
 
 以下示例演示了如何使用 `semantic` 算法，根据请求提示词的语义而非权重或哈希来选择实例。每个参与排名的实例通过 `examples` 声明它应当处理的提示词类型；插件使用配置的嵌入模型将这些示例和传入的提示词嵌入为向量，并将请求转发给示例与之最相似的实例。
 
-创建如下路由，并相应地更新 LLM 提供商、嵌入模型和 API 密钥。`code` 实例处理编程类提示词，`translate` 实例处理翻译类提示词，`default` 实例被指定为 `semantic_opts.fallback`，当没有实例达到相似度阈值时使用：
+创建如下路由，并相应地更新 LLM 提供商、嵌入模型和 API 密钥。`code` 实例处理编程类提示词，`translate` 实例处理翻译类提示词，`default` 实例处理通用提示词并被指定为 `semantic_opts.fallback`，当没有实例达到相似度阈值时兜底：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -2871,7 +2871,11 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
             },
             "options": {
               "model": "gpt-4o-mini"
-            }
+            },
+            "examples": [
+              "what is the weather today",
+              "tell me a joke"
+            ]
           }
         ]
       }
@@ -2892,7 +2896,7 @@ curl "http://127.0.0.1:9080/anything" -X POST \
   }'
 ```
 
-该请求应被路由到 `code` 实例，由 `gpt-4o` 处理。如果提示词与任何实例的 `examples` 都不相关（例如 `what is the weather today`），则不会达到任何阈值，请求会被路由到 `default` 这个回退实例。
+该请求应被路由到 `code` 实例，由 `gpt-4o` 处理。像 `what is the weather today` 这样的通用提示词则会匹配到 `default` 实例自己的 `examples`。`default` 同时被指定为 `semantic_opts.fallback`，因此当提示词过于模糊、没有任何实例达到阈值时，也会由它兜底接收。
 
 #### 调试路由决策
 
@@ -2906,17 +2910,17 @@ curl -i "http://127.0.0.1:9080/anything" -X POST \
 
 ```text
 HTTP/1.1 200 OK
-X-AI-Semantic-Route: code
-X-AI-Semantic-Scores: code:0.8213,translate:0.1904
+X-AI-Semantic-Picked-Instance: code
+X-AI-Semantic-Scores: code:0.8213,default:0.2451,translate:0.1904
 ```
 
-`X-AI-Semantic-Scores` 按得分从高到低列出**所有配置了 `examples` 的实例**，因此你不仅能看到胜出者，也能看到其他实例差了多少。没有配置 `examples` 的实例（例如纯回退实例）没有相似度得分，因此不会出现在其中。
+`X-AI-Semantic-Scores` 按得分从高到低列出**所有实例**，因此你不仅能看到胜出者，也能看到其他实例差了多少。`default` 回退实例与其他实例一起参与排名（它同样需要配置 `examples`），并在没有任何实例达到阈值时额外承担兜底。
 
 当没有任何实例达到阈值时，选中结果变为 `fallback`，而得分仍会显示各实例的接近程度：
 
 ```text
-X-AI-Semantic-Route: fallback
-X-AI-Semantic-Scores: code:0.3057,translate:0.2884
+X-AI-Semantic-Picked-Instance: fallback
+X-AI-Semantic-Scores: code:0.3057,translate:0.2884,default:0.2013
 ```
 
 据此可以校准 `threshold`：取一个介于「希望匹配的提示词得分」与「希望落到回退实例的提示词得分」之间的值。

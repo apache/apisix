@@ -95,7 +95,7 @@ When an instance's `provider` is set to `bedrock`, the Plugin expects requests i
 | instances.auth.aws.session_token    | string         | False    |                                   | minLength = 1 | AWS session token for temporary credentials (e.g., from STS assume-role). Encrypted at rest. |
 | instances.options                   | object         | False    |                                   |              | Model configurations. In addition to `model`, you can configure additional parameters and they will be forwarded to the upstream LLM service in the request body. For instance, if you are working with OpenAI, DeepSeek, or AIMLAPI, you can configure additional parameters such as `max_tokens`, `temperature`, `top_p`, and `stream`. See your LLM provider's API documentation for more available options. |
 | instances.options.model             | string         | False    |                                   |              | Name of the LLM model, such as `gpt-4` or `gpt-3.5`. See your LLM provider's API documentation for more available models. For Bedrock, this can be a foundation model ID (e.g., `anthropic.claude-3-5-sonnet-20240620-v1:0`), a cross-region inference profile ID (e.g., `us.anthropic.claude-3-5-sonnet-20240620-v1:0`), or an application inference profile ARN (e.g., `arn:aws:bedrock:us-east-1:123456789012:application-inference-profile/abc123`). |
-| instances.examples                  | array[string]  | False    |                                   | 1 to 64 items | Used when `algorithm` is `semantic`. Example utterances representing this instance's intent; each is embedded into its own reference vector. Required for every instance except the one named by `semantic_opts.fallback`. |
+| instances.examples                  | array[string]  | False    |                                   | 1 to 64 items | Used when `algorithm` is `semantic`. Example utterances representing this instance's intent; each is embedded into its own reference vector. Required for every instance when `algorithm` is `semantic`, including the one named by `semantic_opts.fallback`. |
 | instances.threshold                 | number         | False    |                                   | -1 to 1      | Used when `algorithm` is `semantic`. Per-instance minimum cosine similarity; overrides `semantic_opts.threshold`. |
 | logging                             | object         | False    |                                   |              | Logging configurations. |
 | logging.summaries                   | boolean        | False    | false                           |              | If true, log request LLM model, duration, request, and response tokens. |
@@ -126,8 +126,8 @@ When an instance's `provider` is set to `bedrock`, the Plugin expects requests i
 | instances.checks.active.unhealthy.timeout     | integer        | False    | 3                               | between 1 and 254 inclusive | Number of probe timeouts to define an unhealthy node. |
 | semantic_opts                       | object         | False    |                                   |              | Options for the `semantic` balancer, grouped in one place. Required when `balancer.algorithm` is `semantic`. |
 | semantic_opts.threshold             | number         | False    | 0                               | -1 to 1      | Global minimum cosine similarity an instance must reach to be selected. **The default of 0 admits essentially any prompt** (real embeddings are rarely dissimilar enough to score below 0), so the fallback only ever runs if you raise this above 0. When no instance clears its threshold, the request falls back to the `fallback` instance, or the first instance if none is named. |
-| semantic_opts.fallback              | string         | False    |                                   |              | Name of the instance to route to when no instance clears its threshold or the embedding request fails. Unlike a ranked instance it needs no `examples`. Defaults to the first instance when unset. |
-| semantic_opts.debugging             | boolean        | False    | false                           |              | If true, expose per-instance scores and the routing decision via `X-AI-Semantic-Scores` and `X-AI-Semantic-Route` response headers, for debugging. |
+| semantic_opts.fallback              | string         | False    |                                   |              | Name of the instance to route to when no instance clears its threshold or the embedding request fails. It is otherwise a normal ranked instance and needs `examples` like the rest. Defaults to the first instance when unset. |
+| semantic_opts.debugging             | boolean        | False    | false                           |              | If true, expose per-instance scores and the routing decision via `X-AI-Semantic-Scores` and `X-AI-Semantic-Picked-Instance` response headers, for debugging. |
 | semantic_opts.embeddings            | object         | True     |                                   |              | Embedding service configuration used to score prompts against each instance's `examples`. |
 | semantic_opts.embeddings.provider   | string         | True     |                                   | [openai, azure-openai] | Embedding provider used by the semantic algorithm. |
 | semantic_opts.embeddings.model      | string         | True     |                                   |              | Embedding model name, e.g. `text-embedding-3-small`. |
@@ -2994,7 +2994,7 @@ In the Kafka topic, you should also see a log entry corresponding to the request
 
 The following example demonstrates how you can use the `semantic` algorithm to pick an instance by the meaning of the request prompt, rather than by weight or hash. Each ranked instance declares `examples` that describe the kind of prompt it should handle; the Plugin embeds those examples and the incoming prompt with the configured embedding model, and forwards the request to the instance whose examples are most similar.
 
-Create a Route as such and update the LLM providers, embedding model, and API keys accordingly. The `code` instance handles programming prompts, the `translate` instance handles translation prompts, and the `default` instance is named as the `semantic_opts.fallback`, used when no instance clears the similarity threshold:
+Create a Route as such and update the LLM providers, embedding model, and API keys accordingly. The `code` instance handles programming prompts, the `translate` instance handles translation prompts, and the `default` instance handles general prompts and is named as the `semantic_opts.fallback`, used when no instance clears the similarity threshold:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -3066,7 +3066,11 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
             },
             "options": {
               "model": "gpt-4o-mini"
-            }
+            },
+            "examples": [
+              "what is the weather today",
+              "tell me a joke"
+            ]
           }
         ]
       }
@@ -3087,7 +3091,7 @@ curl "http://127.0.0.1:9080/anything" -X POST \
   }'
 ```
 
-The request should be routed to the `code` instance and served by `gpt-4o`. A prompt unrelated to any instance's `examples` (for example, `what is the weather today`) clears no threshold and is routed to the `default` fallback instance instead.
+The request should be routed to the `code` instance and served by `gpt-4o`. A general prompt such as `what is the weather today` instead matches the `default` instance's own `examples`. The `default` instance is also named as `semantic_opts.fallback`, so it additionally receives any prompt that is ambiguous enough that no instance clears the threshold.
 
 #### Debugging the routing decision
 
@@ -3101,17 +3105,17 @@ curl -i "http://127.0.0.1:9080/anything" -X POST \
 
 ```text
 HTTP/1.1 200 OK
-X-AI-Semantic-Route: code
-X-AI-Semantic-Scores: code:0.8213,translate:0.1904
+X-AI-Semantic-Picked-Instance: code
+X-AI-Semantic-Scores: code:0.8213,default:0.2451,translate:0.1904
 ```
 
-`X-AI-Semantic-Scores` lists every instance that has `examples`, highest score first, so you can see not only the winner but how close the runners-up came. Instances without `examples` — such as a pure fallback — carry no similarity score and therefore do not appear.
+`X-AI-Semantic-Scores` lists every instance, highest score first, so you can see not only the winner but how close the runners-up came. The `default` fallback instance is ranked alongside the others — it needs `examples` too — and additionally receives the request whenever no instance clears its threshold.
 
 When no instance clears its threshold, the pick becomes `fallback` while the scores still show how close each one got:
 
 ```text
-X-AI-Semantic-Route: fallback
-X-AI-Semantic-Scores: code:0.3057,translate:0.2884
+X-AI-Semantic-Picked-Instance: fallback
+X-AI-Semantic-Scores: code:0.3057,translate:0.2884,default:0.2013
 ```
 
 Use this to calibrate `threshold`: pick a value between the scores of the prompts you want matched and the scores of the prompts you want to reach the fallback.
