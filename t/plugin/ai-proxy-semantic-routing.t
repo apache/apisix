@@ -360,7 +360,7 @@ Content-Type: application/json
 model-code
 --- response_headers_like
 X-AI-Semantic-Picked-Instance: code
-X-AI-Semantic-Scores: ^code:1\.\d+
+X-AI-Semantic-Scores: code:1\.\d+(,\w+:0\.\d+){2}
 --- no_error_log
 [error]
 
@@ -839,7 +839,7 @@ POST /llm/v1/responses
 Content-Type: application/json
 --- response_headers_like
 X-AI-Semantic-Picked-Instance: code
-X-AI-Semantic-Scores: ^code:1\.\d+
+X-AI-Semantic-Scores: code:1\.\d+(,\w+:0\.\d+){2}
 --- no_error_log
 [error]
 
@@ -915,7 +915,7 @@ POST /llm/v1/messages
 Content-Type: application/json
 --- response_headers_like
 X-AI-Semantic-Picked-Instance: code
-X-AI-Semantic-Scores: ^code:1\.\d+
+X-AI-Semantic-Scores: code:1\.\d+(,\w+:0\.\d+){2}
 
 
 
