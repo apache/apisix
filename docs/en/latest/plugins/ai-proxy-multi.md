@@ -130,6 +130,12 @@ When an instance's `provider` is set to `bedrock`, the Plugin expects requests i
 | keepalive_timeout                   | integer        | False    | 60000                           | greater than or equal to 1000 | Request timeout in milliseconds when requesting the LLM service. |
 | keepalive_pool                      | integer        | False    | 30                              |              | Keepalive pool size for when connecting with the LLM service. |
 | ssl_verify                          | boolean        | False    | true                            |              | If true, verify the LLM service's certificate. |
+| proxy_opts | object | False | | | Configurations for the proxy server that the AI provider is behind. |
+| proxy_opts.http_proxy | string | False | | | Proxy server address for HTTP requests, such as `http://<proxy_host>:<proxy_port>`. |
+| proxy_opts.http_proxy_authorization | string | False | | | Default `Proxy-Authorization` header value to be used with `http_proxy`. Can be overridden with custom `Proxy-Authorization` request header. |
+| proxy_opts.https_proxy | string | False | | | Proxy server address for HTTPS requests, such as `http://<proxy_host>:<proxy_port>`. |
+| proxy_opts.https_proxy_authorization | string | False | | | Default `Proxy-Authorization` header value to be used with `https_proxy`. Cannot be overridden with custom `Proxy-Authorization` request header since with HTTPS, the authorization is completed when connecting. |
+| proxy_opts.no_proxy | string | False | | | Comma-separated list of hosts that should not be proxied. |
 
 ## Request Header Forwarding
 

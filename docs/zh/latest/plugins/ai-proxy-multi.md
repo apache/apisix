@@ -131,6 +131,12 @@ import TabItem from '@theme/TabItem';
 | keepalive_timeout                   | integer        | 否    | 60000                           | 大于或等于 1000 | 请求 LLM 服务时的请求超时时间（毫秒）。 |
 | keepalive_pool                      | integer        | 否    | 30                              |              | 连接 LLM 服务时的保活池大小。 |
 | ssl_verify                          | boolean        | 否    | true                            |              | 如果为 true，验证 LLM 服务的证书。 |
+| proxy_opts | object | 否 | | | AI 提供商所在代理服务器的配置。 |
+| proxy_opts.http_proxy | string | 否 | | | HTTP 请求的代理服务器地址，例如 `http://<proxy_host>:<proxy_port>`。 |
+| proxy_opts.http_proxy_authorization | string | 否 | | | 与 `http_proxy` 一起使用的默认 `Proxy-Authorization` 头值。可以用自定义 `Proxy-Authorization` 请求头覆盖。 |
+| proxy_opts.https_proxy | string | 否 | | | HTTPS 请求的代理服务器地址，例如 `http://<proxy_host>:<proxy_port>`。 |
+| proxy_opts.https_proxy_authorization | string | 否 | | | 与 `https_proxy` 一起使用的默认 `Proxy-Authorization` 头值。由于 HTTPS 连接时已完成授权，不能用自定义 `Proxy-Authorization` 请求头覆盖。 |
+| proxy_opts.no_proxy | string | 否 | | | 不需要代理的主机列表，以逗号分隔。 |
 
 ## 请求头转发
 
