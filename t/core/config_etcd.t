@@ -521,7 +521,7 @@ main etcd watcher initialised, revision=
 
 
 
-=== TEST 14: watch revision should be upgraded when timeout occurs
+=== TEST 14: watch revision must not be upgraded when the watch times out
 --- yaml_config
 deployment:
   role: traditional
@@ -547,7 +547,8 @@ nginx_config:
                 return
             end
             ngx.sleep(2)
-            -- we will assert 4 lines of revision upgrade log because we have one worker and one privileged agent
+            -- write outside the watched prefix so that the global revision
+            -- moves on while the watch itself stays idle and keeps timing out
             for i = 1, 2 do
                local _, err = etcd_cli:set("/apache", "apisix")
                if err then
@@ -563,10 +564,8 @@ nginx_config:
 GET /t
 --- response_body
 passed
---- grep_error_log eval
-qr/etcd watch timeout, upgrade revision to/
---- grep_error_log_out eval
-qr/(etcd watch timeout, upgrade revision to\n){2,}/
+--- no_error_log
+etcd watch timeout, upgrade revision to
 
 
 
@@ -615,3 +614,74 @@ passed
 qr/invalid or missing X-Etcd-Index header/
 --- grep_error_log_out eval
 qr/(invalid or missing X-Etcd-Index header\n){1,}/
+
+
+
+=== TEST 16: watch revision is upgraded by etcd progress notifications
+# relies on ETCD_EXPERIMENTAL_WATCH_PROGRESS_NOTIFY_INTERVAL=3s in the CI etcd,
+# so that notifications arrive well within the default 50s watch timeout
+--- yaml_config
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  admin:
+    admin_key: null
+  etcd:
+    host:
+      - "http://127.0.0.1:2379"
+    prefix: /apisix
+--- extra_yaml_config
+nginx_config:
+    worker_processes: 1
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local t = require("lib.test_admin").test
+
+            -- keep the watch stream idle long enough to be notified a few times
+            ngx.sleep(10)
+
+            -- events must still be delivered after the notifications moved the
+            -- revision forward
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "uri": "/hello",
+                        "upstream": {
+                            "type": "roundrobin",
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            }
+                        }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                return
+            end
+            ngx.say(body)
+
+            ngx.sleep(0.5)
+
+            local httpc = http.new()
+            local res, err = httpc:request_uri(
+                "http://127.0.0.1:" .. ngx.var.server_port .. "/hello")
+            if not res then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+            ngx.print(res.body)
+        }
+    }
+--- timeout: 20
+--- request
+GET /t
+--- response_body
+passed
+hello world
+--- grep_error_log eval
+qr/etcd progress notify, upgrade revision to/
+--- grep_error_log_out eval
+qr/(etcd progress notify, upgrade revision to\n){1,}/

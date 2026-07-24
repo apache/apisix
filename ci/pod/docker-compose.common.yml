@@ -54,6 +54,9 @@ services:
       - ci/pod/etcd/env/common.env
     environment:
         ETCD_ADVERTISE_CLIENT_URLS: http://0.0.0.0:2379
+        # send watch progress notifications often enough to be observed within
+        # the lifetime of a watch stream, whose default timeout is 50s
+        ETCD_EXPERIMENTAL_WATCH_PROGRESS_NOTIFY_INTERVAL: "3s"
     ports:
       - "2379:2379"
       - "2380:2380"
