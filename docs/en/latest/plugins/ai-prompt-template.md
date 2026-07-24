@@ -38,7 +38,7 @@ import TabItem from '@theme/TabItem';
 
 The `ai-prompt-template` Plugin supports pre-configuring prompt templates that only accept user inputs in designated template variables, in a "fill in the blank" fashion. It simplifies access to LLM providers, such as OpenAI and Anthropic, by letting you define reusable prompt structures.
 
-The Plugin generates a Chat Completions request containing a `messages` array. It does not generate Responses API or Embeddings requests.
+The Plugin replaces the incoming request body with the selected rendered JSON template. A template can use any request format supported by the downstream Plugin, including Chat Completions, Responses API, and Embeddings. Use [`ai-prompt-decorator`](./ai-prompt-decorator.md) instead when you need to add content to an existing request without replacing its body.
 
 ## Plugin Attributes
 
@@ -47,7 +47,7 @@ The Plugin generates a Chat Completions request containing a `messages` array. I
 | `max_req_body_size` | integer | False | 67108864 | >= 1 | Maximum request body size in bytes buffered into memory. Requests with a larger body are rejected. |
 | `templates` | array | True | | | An array of template objects. |
 | `templates.name` | string | True | | | Name of the template. When requesting the Route, the request should include the template name that corresponds to the configured template. |
-| `templates.template` | object | True | | | Template specification. |
+| `templates.template` | object | True | | | JSON request body template. It can contain any fields accepted by the downstream Plugin. |
 | `templates.template.model` | string | False | | | Name of the LLM model, such as `gpt-4` or `gpt-3.5`. See your LLM provider API documentation for more available models. |
 | `templates.template.messages` | array[object] | False | | | Template message specification. |
 | `templates.template.messages.role` | string | True | | [`system`, `user`, `assistant`] | Role of the message. |
@@ -601,5 +601,120 @@ You should receive a response similar to the following:
     }
   ],
   ...
+}
+```
+
+### Configure a Responses API Web Search Template
+
+The following example configures a Responses API template that searches only the official Apache APISIX website. The Route URI can have a custom prefix, but it must end in `/v1/responses` so that `ai-proxy` distinguishes the rendered body from an Embeddings request.
+
+Create a Route with the `ai-proxy` and `ai-prompt-template` Plugins:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes/ai-prompt-template-responses" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "uri": "/template/v1/responses",
+    "methods": ["POST"],
+    "plugins": {
+      "ai-proxy": {
+        "provider": "openai",
+        "auth": {
+          "header": {
+            "Authorization": "Bearer '"$OPENAI_API_KEY"'"
+          }
+        }
+      },
+      "ai-prompt-template": {
+        "templates": [
+          {
+            "name": "Search APISIX documentation",
+            "template": {
+              "model": "gpt-4.1",
+              "tools": [
+                {
+                  "type": "web_search",
+                  "filters": {
+                    "allowed_domains": ["apisix.apache.org"]
+                  }
+                }
+              ],
+              "tool_choice": "required",
+              "input": "Search the official Apache APISIX website for {{topic}} and summarize the result in one sentence."
+            }
+          }
+        ]
+      }
+    }
+  }'
+```
+
+Send the template name and a value for `topic` to the Route:
+
+```shell
+curl "http://127.0.0.1:9080/template/v1/responses" -X POST \
+  -H "Content-Type: application/json" \
+  -d '{
+    "template_name": "Search APISIX documentation",
+    "topic": "what APISIX is"
+  }'
+```
+
+Before `ai-proxy` processes the request, `ai-prompt-template` replaces the incoming body with the rendered template:
+
+```json
+{
+  "model": "gpt-4.1",
+  "tools": [
+    {
+      "type": "web_search",
+      "filters": {
+        "allowed_domains": ["apisix.apache.org"]
+      }
+    }
+  ],
+  "tool_choice": "required",
+  "input": "Search the official Apache APISIX website for what APISIX is and summarize the result in one sentence."
+}
+```
+
+APISIX identifies the rendered request as Responses API from its `input` field and the Route URI suffix. You should receive an HTTP `200` response whose `output` contains a completed web search call and a message with URL citations:
+
+```json
+{
+  "status": "completed",
+  "output": [
+    {
+      "type": "web_search_call",
+      "status": "completed",
+      "action": {
+        "type": "search",
+        "queries": [
+          "site:apisix.apache.org what is Apache APISIX"
+        ],
+        "query": "site:apisix.apache.org what is Apache APISIX"
+      }
+    },
+    {
+      "type": "message",
+      "status": "completed",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "output_text",
+          "text": "Apache APISIX is an open-source, high-performance API and AI gateway for managing traffic at scale through dynamic routing, load balancing, authentication, observability, rate limiting, and over 100 plugins. ([apisix.apache.org](https://apisix.apache.org/?utm_source=openai))",
+          "annotations": [
+            {
+              "type": "url_citation",
+              "start_index": 208,
+              "end_index": 275,
+              "title": "Apache APISIX - Open Source API Gateway & AI Gateway",
+              "url": "https://apisix.apache.org/?utm_source=openai"
+            }
+          ]
+        }
+      ]
+    }
+  ]
 }
 ```

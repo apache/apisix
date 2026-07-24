@@ -47,6 +47,14 @@ import TabItem from '@theme/TabItem';
 
 该插件使用每种协议的原生内容结构审核 Chat Completions、Responses API、Embeddings、Anthropic Messages 和 Bedrock Converse 请求。对于 Responses，它会审核 `input`，并以 Responses API 格式返回被拦截的非流式或流式请求。对于 Embeddings，它会审核 `input` 中的字符串或字符串数组，并以 OpenAI 风格的错误响应返回被拒绝的请求。
 
+APISIX 会先检查基于 URI 的格式，再检查仅基于请求体的格式：
+
+- Bedrock Converse 要求 URI 以 `/converse` 结尾且请求体包含 `messages` 数组。
+- Anthropic Messages 要求 URI 以 `/v1/messages` 结尾。
+- Responses API 要求 URI 以 `/v1/responses` 结尾且请求体包含 `input`。
+- Chat Completions 使用 `messages` 数组。
+- 之前的规则均未匹配时，包含 `input` 的请求会被识别为 Embeddings。
+
 ## 属性
 
 | 名称 | 类型 | 必选项 | 默认值 | 有效值 | 描述 |

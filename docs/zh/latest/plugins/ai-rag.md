@@ -44,6 +44,14 @@ import TabItem from '@theme/TabItem';
 
 该插件使用每种协议的原生提示结构增强 Chat Completions、Responses API、Anthropic Messages 和 Bedrock Converse 请求。对于 Responses，它会将检索到的上下文追加到 `input`。它不会增强直接的 Embeddings API 请求。嵌套的 `ai_rag.embeddings` 对象用于配置检索过程中内部使用的嵌入输入，与顶层 Embeddings 请求不同。
 
+APISIX 会先检查基于 URI 的格式，再检查仅基于请求体的格式：
+
+- Bedrock Converse 要求 URI 以 `/converse` 结尾且请求体包含 `messages` 数组。
+- Anthropic Messages 要求 URI 以 `/v1/messages` 结尾。
+- Responses API 要求 URI 以 `/v1/responses` 结尾且请求体包含 `input`。
+- Chat Completions 使用 `messages` 数组。
+- 之前的规则均未匹配时，包含 `input` 的请求会被识别为 Embeddings。
+
 ## 插件属性
 
 | 名称 | 类型 | 必选项 | 默认值 | 有效值 | 描述 |

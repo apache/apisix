@@ -47,6 +47,14 @@ The `ai-aliyun-content-moderation` Plugin should be used with either [`ai-proxy`
 
 The Plugin moderates Chat Completions, Responses API, Embeddings, Anthropic Messages, and Bedrock Converse requests using each protocol's native content structure. For Responses, it moderates `input` and returns blocked non-streaming or streaming requests in Responses API format. For Embeddings, it moderates a string or an array of strings in `input` and returns rejected requests as OpenAI-style errors.
 
+APISIX checks URI-specific formats before body-only formats:
+
+- Bedrock Converse requires a URI ending in `/converse` and a `messages` array.
+- Anthropic Messages requires a URI ending in `/v1/messages`.
+- Responses API requires a URI ending in `/v1/responses` and an `input` field.
+- Chat Completions uses a `messages` array.
+- Embeddings uses `input` after the earlier rules do not match.
+
 ## Attributes
 
 | Name | Type | Required | Default | Valid values | Description |

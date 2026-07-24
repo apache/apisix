@@ -38,7 +38,7 @@ import TabItem from '@theme/TabItem';
 
 `ai-prompt-template` 插件支持预先配置提示词模板，这些模板仅接受用户在指定的模板变量中输入，采用"填空"的方式。它简化了对 OpenAI、Anthropic 等大语言模型提供商及其模型的访问，让你可以定义可复用的提示词结构。
 
-该插件会生成包含 `messages` 数组的 Chat Completions 请求。它不会生成 Responses API 或 Embeddings 请求。
+该插件会使用选定并渲染后的 JSON 模板替换传入的请求体。模板可以使用下游插件支持的任意请求格式，包括 Chat Completions、Responses API 和 Embeddings。如果需要在不替换请求体的情况下向现有请求添加内容，请改用 [`ai-prompt-decorator`](./ai-prompt-decorator.md)。
 
 ## 插件属性
 
@@ -46,7 +46,7 @@ import TabItem from '@theme/TabItem';
 | --- | --- | --- | --- | --- | --- |
 | `templates` | array | 是 | | | 模板对象数组。 |
 | `templates.name` | string | 是 | | | 模板的名称。在请求路由时，请求中应包含与所配置模板相对应的模板名称。 |
-| `templates.template` | object | 是 | | | 模板规范。 |
+| `templates.template` | object | 是 | | | JSON 请求体模板。它可以包含下游插件接受的任意字段。 |
 | `templates.template.model` | string | 否 | | | LLM 模型的名称，例如 `gpt-4` 或 `gpt-3.5`。更多可用模型请参阅 LLM 提供商的 API 文档。 |
 | `templates.template.messages` | array[object] | 否 | | | 模板消息规范。 |
 | `templates.template.messages.role` | string | 是 | | [`system`, `user`, `assistant`] | 消息的角色。 |
@@ -600,5 +600,120 @@ curl "http://127.0.0.1:9080/openai-chat" -X POST \
     }
   ],
   ...
+}
+```
+
+### 配置 Responses API Web 搜索模板
+
+以下示例配置一个仅搜索 Apache APISIX 官方网站的 Responses API 模板。路由 URI 可以使用自定义前缀，但必须以 `/v1/responses` 结尾，以便 `ai-proxy` 将渲染后的请求体与 Embeddings 请求区分开。
+
+创建一个配置了 `ai-proxy` 和 `ai-prompt-template` 插件的路由：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes/ai-prompt-template-responses" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "uri": "/template/v1/responses",
+    "methods": ["POST"],
+    "plugins": {
+      "ai-proxy": {
+        "provider": "openai",
+        "auth": {
+          "header": {
+            "Authorization": "Bearer '"$OPENAI_API_KEY"'"
+          }
+        }
+      },
+      "ai-prompt-template": {
+        "templates": [
+          {
+            "name": "Search APISIX documentation",
+            "template": {
+              "model": "gpt-4.1",
+              "tools": [
+                {
+                  "type": "web_search",
+                  "filters": {
+                    "allowed_domains": ["apisix.apache.org"]
+                  }
+                }
+              ],
+              "tool_choice": "required",
+              "input": "Search the official Apache APISIX website for {{topic}} and summarize the result in one sentence."
+            }
+          }
+        ]
+      }
+    }
+  }'
+```
+
+向路由发送模板名称和 `topic` 的值：
+
+```shell
+curl "http://127.0.0.1:9080/template/v1/responses" -X POST \
+  -H "Content-Type: application/json" \
+  -d '{
+    "template_name": "Search APISIX documentation",
+    "topic": "what APISIX is"
+  }'
+```
+
+在 `ai-proxy` 处理请求之前，`ai-prompt-template` 会使用渲染后的模板替换传入的请求体：
+
+```json
+{
+  "model": "gpt-4.1",
+  "tools": [
+    {
+      "type": "web_search",
+      "filters": {
+        "allowed_domains": ["apisix.apache.org"]
+      }
+    }
+  ],
+  "tool_choice": "required",
+  "input": "Search the official Apache APISIX website for what APISIX is and summarize the result in one sentence."
+}
+```
+
+APISIX 根据渲染后请求中的 `input` 字段和路由 URI 后缀将其识别为 Responses API 请求。你应该会收到 HTTP `200` 响应，其中的 `output` 包含已完成的 Web 搜索调用和带有 URL 引用的消息：
+
+```json
+{
+  "status": "completed",
+  "output": [
+    {
+      "type": "web_search_call",
+      "status": "completed",
+      "action": {
+        "type": "search",
+        "queries": [
+          "site:apisix.apache.org what is Apache APISIX"
+        ],
+        "query": "site:apisix.apache.org what is Apache APISIX"
+      }
+    },
+    {
+      "type": "message",
+      "status": "completed",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "output_text",
+          "text": "Apache APISIX is an open-source, high-performance API and AI gateway for managing traffic at scale through dynamic routing, load balancing, authentication, observability, rate limiting, and over 100 plugins. ([apisix.apache.org](https://apisix.apache.org/?utm_source=openai))",
+          "annotations": [
+            {
+              "type": "url_citation",
+              "start_index": 208,
+              "end_index": 275,
+              "title": "Apache APISIX - Open Source API Gateway & AI Gateway",
+              "url": "https://apisix.apache.org/?utm_source=openai"
+            }
+          ]
+        }
+      ]
+    }
+  ]
 }
 ```

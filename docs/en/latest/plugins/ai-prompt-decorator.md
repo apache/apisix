@@ -40,6 +40,14 @@ The `ai-prompt-decorator` Plugin modifies user input prompts by prefixing and ap
 
 The Plugin decorates Chat Completions, Responses API, Anthropic Messages, and Bedrock Converse requests using each protocol's native prompt structure. For Responses, content from `prepend` is added to `instructions`, and content from `append` is added to `input`. The Plugin does not modify Embeddings requests because that format has no prompt roles to prepend or append.
 
+APISIX checks URI-specific formats before body-only formats:
+
+- Bedrock Converse requires a URI ending in `/converse` and a `messages` array.
+- Anthropic Messages requires a URI ending in `/v1/messages`.
+- Responses API requires a URI ending in `/v1/responses` and an `input` field.
+- Chat Completions uses a `messages` array.
+- Embeddings uses `input` after the earlier rules do not match.
+
 ## Plugin Attributes
 
 | Name | Type | Required | Default | Valid values | Description |
