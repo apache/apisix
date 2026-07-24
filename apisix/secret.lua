@@ -225,12 +225,7 @@ local function fetch(uri, use_cache)
     end
 
     if not use_cache then
-        local val, err = fetch_by_uri(uri)
-        if err then
-            core.log.error("failed to fetch secret value: ", err)
-            return nil
-        end
-        return val
+        return fetch_by_uri(uri)
     end
 
     -- pass the secrets conf_version so the cache re-resolves when /secrets changes
@@ -242,7 +237,14 @@ local function retrieve_refs(refs, use_cache)
     for k, v in pairs(refs) do
         local typ = type(v)
         if typ == "string" then
-            refs[k] = fetch(v, use_cache) or v
+            local val, err = fetch(v, use_cache)
+            if val == nil and _M.is_secret_ref(v) then
+                -- an unresolved reference is kept as-is, so it would otherwise
+                -- be used verbatim as a password, key or token
+                core.log.error("failed to resolve secret reference: ", v,
+                               ", field: ", k, ", err: ", err or "no value")
+            end
+            refs[k] = val or v
         elseif typ == "table" then
             retrieve_refs(v, use_cache)
         end

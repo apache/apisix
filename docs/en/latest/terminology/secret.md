@@ -62,6 +62,8 @@ When a configuration field uses a secret reference like `$secret://...` or `$env
 
 If a key-value pair `key: "$ENV://ABC"` is configured in APISIX and the value of `$ENV://ABC` is unassigned in the environment variable, `$ENV://ABC` will be interpreted as a string literal, instead of `nil`.
 
+This applies to every secret reference: when a reference cannot be resolved (the secret manager is not configured, the lookup fails, or the environment variable is unset), the literal reference string is used as the field value and an error such as `failed to resolve secret reference: $secret://vault/1/foo/bar, field: password` is written to the error log. Check the error log if a plugin behaves as if its credential were wrong.
+
 :::
 
 ## Use environment variables to manage secrets
