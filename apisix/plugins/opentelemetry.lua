@@ -197,6 +197,12 @@ local schema = {
             },
             default = {name = "always_off", options = {fraction = 0, root = {name = "always_off"}}}
         },
+        span_name_strategy = {
+            type = "string",
+            enum = {"path", "target"},
+            description = "For trace name, either use APISIX Route path or HTTP target / URL.",
+            default = "path",
+        },
         additional_attributes = {
             type = "array",
             items = {
@@ -375,6 +381,18 @@ local function inject_attributes(attributes, wanted_attributes, source, with_pre
 end
 
 
+-- Choose span name depending on the provided config (or use default "route")...
+local function resolve_span_name(conf, api_ctx)
+    local span_name_strategy = conf.span_name_strategy or "route"
+
+    if strategy == "target" then
+        return api_ctx.var.uri
+    end
+
+    return api_ctx.curr_req_matched._path
+end
+
+
 function _M.rewrite(conf, api_ctx)
     local metadata = plugin.plugin_metadata(plugin_name)
     if metadata == nil then
@@ -414,7 +432,8 @@ function _M.rewrite(conf, api_ctx)
         table.insert(attributes, attr.string("apisix.route_id", api_ctx.route_id))
         table.insert(attributes, attr.string("apisix.route_name", api_ctx.route_name))
         table.insert(attributes, attr.string("http.route", api_ctx.curr_req_matched._path))
-        span_name = span_name .. " " .. api_ctx.curr_req_matched._path
+        local span_name_suffix = resolve_span_name_suffix(plugin_info, api_ctx)
+        span_name = span_name .. " " .. api_ctx.curr_req_matched.span_name_suffix
     end
 
     if api_ctx.service_id then
