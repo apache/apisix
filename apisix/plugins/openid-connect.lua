@@ -322,6 +322,12 @@ local schema = {
             type = "boolean",
             default = true
         },
+        set_raw_id_token_header = {
+            description = "Whether the raw signed ID token JWT should be added in the " ..
+                "X-Raw-ID-Token header to the request for downstream.",
+            type = "boolean",
+            default = false
+        },
         set_userinfo_header = {
             description = "Whether the user info token should be added in the X-Userinfo " ..
                 "header to the request for downstream.",
@@ -709,7 +715,7 @@ function _M.rewrite(plugin_conf, ctx)
     local conf = core.table.clone(plugin_conf)
 
     -- Snapshot the client-supplied X-Access-Token (it doubles as a bearer
-    -- input via get_bearer_access_token) and clear the four headers this
+    -- input via get_bearer_access_token) and clear the five headers this
     -- plugin advertises as outputs so client-supplied values cannot bleed
     -- through to the upstream.
     ctx.openid_connect_client_x_access_token = core.request.header(ctx, "X-Access-Token")
@@ -717,6 +723,7 @@ function _M.rewrite(plugin_conf, ctx)
     core.request.set_header(ctx, "X-Userinfo", nil)
     core.request.set_header(ctx, "X-ID-Token", nil)
     core.request.set_header(ctx, "X-Refresh-Token", nil)
+    core.request.set_header(ctx, "X-Raw-ID-Token", nil)
 
     -- Previously, we multiply conf.timeout before storing it in etcd.
     -- If the timeout is too large, we should not multiply it again.
@@ -860,6 +867,15 @@ function _M.rewrite(plugin_conf, ctx)
             unauth_action = "deny"
         end
 
+        -- When set_raw_id_token_header is enabled and the user has explicitly restricted
+        -- session_contents, ensure enc_id_token is included so session:get("enc_id_token")
+        -- returns the raw signed JWT. When session_contents is nil, lua-resty-openidc stores
+        -- all session data by default (including enc_id_token), so no action is needed.
+        if conf.set_raw_id_token_header and conf.session_contents then
+            conf.session_contents = core.table.clone(conf.session_contents)
+            conf.session_contents.enc_id_token = true
+        end
+
         -- Authenticate the request. This will validate the access token if it
         -- is stored in a sessions cookie, and also renew the token if required.
         -- If no token can be extracted, the response will redirect to the ID
@@ -933,6 +949,12 @@ function _M.rewrite(plugin_conf, ctx)
             local refresh_token = session:get("refresh_token")
             if refresh_token and conf.set_refresh_token_header then
                 core.request.set_header(ctx, "X-Refresh-Token", refresh_token)
+            end
+
+            -- Add X-Raw-ID-Token header, maybe.
+            local enc_id_token = session:get("enc_id_token")
+            if enc_id_token and conf.set_raw_id_token_header then
+                core.request.set_header(ctx, "X-Raw-ID-Token", enc_id_token)
             end
         end
     end
