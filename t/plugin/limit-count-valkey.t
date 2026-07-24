@@ -28,6 +28,9 @@ use t::APISIX 'no_plan';
 
 repeat_each(1);
 no_long_string();
+# Tests are order-dependent: route-setup tests precede their assertion tests
+# (TESTs 2/3 depend on TEST 1, TEST 6 on TEST 5, TEST 8 on TEST 7, TEST 10 on TEST 9),
+# so shuffling would break them.
 no_shuffle();
 no_root_location();
 
@@ -192,7 +195,7 @@ passed
 
 
 
-=== TEST 6: verify allow_degradation works (Valkey)
+=== TEST 6: up the limit with allow_degradation set (Valkey)
 --- pipelined_requests eval
 ["GET /hello", "GET /hello", "GET /hello"]
 --- error_code eval
@@ -262,8 +265,16 @@ passed
                 ngx.say("failed to connect: ", err)
                 return
             end
-            red:script("FLUSH")
-            red:flushall()
+            local ok, err = red:script("FLUSH")
+            if not ok then
+                ngx.say("failed to flush scripts: ", err)
+                return
+            end
+            ok, err = red:flushall()
+            if not ok then
+                ngx.say("failed to flushall: ", err)
+                return
+            end
             red:set_keepalive(10000, 100)
             ngx.say("done")
         }
