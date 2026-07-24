@@ -615,3 +615,251 @@ passed
 qr/invalid or missing X-Etcd-Index header/
 --- grep_error_log_out eval
 qr/(invalid or missing X-Etcd-Index header\n){1,}/
+
+
+
+=== TEST 16: full reload keeps the previous value of an item whose new data is invalid
+--- timeout: 20
+--- yaml_config
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
+    host:
+      - "http://127.0.0.1:2379"
+    prefix: /apisix
+--- extra_yaml_config
+nginx_config:
+    worker_processes: 1
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local etcd = require("resty.etcd")
+            local etcd_cli, err = etcd.new({
+                http_host = "http://127.0.0.1:2379",
+            })
+            if not etcd_cli then
+                ngx.say("failed to create etcd client: ", err)
+                return
+            end
+
+            local valid = {
+                id = "1",
+                create_time = 1700000000,
+                update_time = 1700000000,
+                plugins = {
+                    ["response-rewrite"] = {
+                        headers = {
+                            set = {["X-Global-Test"] = "hit"}
+                        }
+                    }
+                }
+            }
+            -- proxy-cache validates cache_zone against the zones declared in
+            -- the local config.yaml, so this value is permanently invalid on
+            -- this node while being perfectly storable in etcd
+            local invalid = core.table.deepcopy(valid)
+            invalid.plugins["proxy-cache"] = {
+                cache_zone = "no_such_zone_for_test",
+                cache_strategy = "disk",
+                cache_key = {"$host", "$request_uri"},
+                cache_method = {"GET"},
+                cache_http_status = {200},
+            }
+
+            local function global_rule(id)
+                local obj = core.config.fetch_created_obj("/global_rules")
+                for _, item in ipairs(obj.values or {}) do
+                    if item and item.value and item.value.id == id then
+                        return item.value
+                    end
+                end
+            end
+
+            etcd_cli:set("/apisix/global_rules/1", valid)
+            ngx.sleep(1)
+            ngx.say("valid loaded: ", global_rule("1") ~= nil)
+
+            etcd_cli:set("/apisix/global_rules/1", invalid)
+            ngx.sleep(1)
+            ngx.say("kept by watch path: ", global_rule("1") ~= nil)
+
+            -- reproduce the state an etcd compaction leaves behind, then write
+            -- again to wake up the sync loop blocked on the watch semaphore
+            core.config.fetch_created_obj("/global_rules").need_reload = true
+            etcd_cli:set("/apisix/global_rules/1", invalid)
+            ngx.sleep(2)
+
+            local rule = global_rule("1")
+            ngx.say("kept by full reload: ",
+                    rule ~= nil and rule.plugins["response-rewrite"] ~= nil)
+
+            etcd_cli:delete("/apisix/global_rules/1")
+            ngx.sleep(1)
+        }
+    }
+--- request
+GET /t
+--- response_body
+valid loaded: true
+kept by watch path: true
+kept by full reload: true
+--- error_log
+keep the previous configuration
+
+
+
+=== TEST 17: full reload does not resurrect an item that no longer exists in etcd
+--- timeout: 20
+--- yaml_config
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
+    host:
+      - "http://127.0.0.1:2379"
+    prefix: /apisix
+--- extra_yaml_config
+nginx_config:
+    worker_processes: 1
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local etcd = require("resty.etcd")
+            local etcd_cli, err = etcd.new({
+                http_host = "http://127.0.0.1:2379",
+            })
+            if not etcd_cli then
+                ngx.say("failed to create etcd client: ", err)
+                return
+            end
+
+            local obj = core.config.fetch_created_obj("/global_rules")
+            obj.values = obj.values or {}
+            obj.values_hash = obj.values_hash or {}
+
+            -- an item that lives in memory but not in etcd, i.e. what the full
+            -- reload is expected to drop
+            local stale = {
+                key = "/apisix/global_rules/ghost",
+                modifiedIndex = 1,
+                clean_handlers = {},
+                value = {id = "ghost", plugins = {}},
+            }
+            core.table.insert(obj.values, stale)
+            obj.values_hash["ghost"] = #obj.values
+
+            obj.need_reload = true
+            etcd_cli:set("/apisix/global_rules/2", {
+                id = "2",
+                create_time = 1700000000,
+                update_time = 1700000000,
+                plugins = {
+                    ["response-rewrite"] = {
+                        headers = {
+                            set = {["X-Global-Test"] = "hit"}
+                        }
+                    }
+                }
+            })
+            ngx.sleep(2)
+
+            local found_ghost, found_2 = false, false
+            for _, item in ipairs(obj.values or {}) do
+                if item and item.value and item.value.id == "ghost" then
+                    found_ghost = true
+                end
+                if item and item.value and item.value.id == "2" then
+                    found_2 = true
+                end
+            end
+            ngx.say("stale item resurrected: ", found_ghost)
+            ngx.say("valid item loaded: ", found_2)
+
+            etcd_cli:delete("/apisix/global_rules/2")
+            ngx.sleep(1)
+        }
+    }
+--- request
+GET /t
+--- response_body
+stale item resurrected: false
+valid item loaded: true
+
+
+
+=== TEST 18: full reload still skips an invalid item that has no previous value
+--- timeout: 20
+--- yaml_config
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
+    host:
+      - "http://127.0.0.1:2379"
+    prefix: /apisix
+--- extra_yaml_config
+nginx_config:
+    worker_processes: 1
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local etcd = require("resty.etcd")
+            local etcd_cli, err = etcd.new({
+                http_host = "http://127.0.0.1:2379",
+            })
+            if not etcd_cli then
+                ngx.say("failed to create etcd client: ", err)
+                return
+            end
+
+            local invalid = {
+                id = "9",
+                create_time = 1700000000,
+                update_time = 1700000000,
+                plugins = {
+                    ["proxy-cache"] = {
+                        cache_zone = "no_such_zone_for_test",
+                        cache_strategy = "disk",
+                        cache_key = {"$host", "$request_uri"},
+                        cache_method = {"GET"},
+                        cache_http_status = {200},
+                    }
+                }
+            }
+
+            local function has_rule(id)
+                local obj = core.config.fetch_created_obj("/global_rules")
+                for _, item in ipairs(obj.values or {}) do
+                    if item and item.value and item.value.id == id then
+                        return true
+                    end
+                end
+                return false
+            end
+
+            etcd_cli:set("/apisix/global_rules/9", invalid)
+            ngx.sleep(1)
+
+            core.config.fetch_created_obj("/global_rules").need_reload = true
+            etcd_cli:set("/apisix/global_rules/9", invalid)
+            ngx.sleep(2)
+
+            ngx.say("invalid new item loaded: ", has_rule("9"))
+
+            etcd_cli:delete("/apisix/global_rules/9")
+            ngx.sleep(1)
+        }
+    }
+--- request
+GET /t
+--- response_body
+invalid new item loaded: false
+--- no_error_log
+keep the previous configuration
