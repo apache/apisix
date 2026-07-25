@@ -937,7 +937,7 @@ OIDC introspection failed: invalid token
         }
     }
 --- response_body
-{"accept_none_alg":false,"accept_unsupported_alg":true,"access_token_expires_leeway":0,"access_token_in_authorization_header":false,"bearer_only":false,"client_id":"kbyuFDidLLm280LIwVFiazOqjO3ty8KH","client_jwt_assertion_expires_in":60,"client_secret":"60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa","discovery":"http://127.0.0.1:1980/.well-known/openid-configuration","force_reauthorize":false,"iat_slack":120,"introspection_endpoint_auth_method":"client_secret_basic","introspection_interval":0,"jwk_expires_in":86400,"jwt_verification_cache_ignore":false,"logout_path":"/logout","realm":"apisix","renew_access_token_on_expiry":true,"revoke_tokens_on_logout":false,"scope":"openid","session":{"secret":"jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK","storage":"cookie"},"set_access_token_header":true,"set_id_token_header":true,"set_refresh_token_header":false,"set_userinfo_header":true,"ssl_verify":true,"timeout":3,"token_endpoint_auth_method":"client_secret_basic","unauth_action":"auth","use_jwks":false,"use_nonce":false,"use_pkce":false}
+{"accept_none_alg":false,"accept_unsupported_alg":true,"access_token_expires_leeway":0,"access_token_in_authorization_header":false,"bearer_only":false,"client_id":"kbyuFDidLLm280LIwVFiazOqjO3ty8KH","client_jwt_assertion_expires_in":60,"client_secret":"60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa","discovery":"http://127.0.0.1:1980/.well-known/openid-configuration","force_reauthorize":false,"iat_slack":120,"introspection_endpoint_auth_method":"client_secret_basic","introspection_interval":0,"jwk_expires_in":86400,"jwt_verification_cache_ignore":false,"logout_path":"/logout","realm":"apisix","renew_access_token_on_expiry":true,"revoke_tokens_on_logout":false,"scope":"openid","session":{"secret":"jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK","storage":"cookie"},"set_access_token_header":true,"set_id_token_header":true,"set_raw_id_token_header":false,"set_refresh_token_header":false,"set_userinfo_header":true,"ssl_verify":true,"timeout":3,"token_endpoint_auth_method":"client_secret_basic","unauth_action":"auth","use_jwks":false,"use_nonce":false,"use_pkce":false}
 
 
 
@@ -2047,5 +2047,113 @@ passed
         }
     }
 --- timeout: 20
+--- response_body
+passed
+
+
+
+=== TEST 55: Configure plugin with set_raw_id_token_header enabled.
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "openid-connect": {
+                                "discovery": "http://127.0.0.1:8080/realms/University/.well-known/openid-configuration",
+                                "realm": "University",
+                                "client_id": "course_management",
+                                "client_secret": "d1ec69e9-55d2-4109-a3ea-befa071579d5",
+                                "redirect_uri": "http://127.0.0.1:]] .. ngx.var.server_port .. [[/authenticated",
+                                "ssl_verify": false,
+                                "timeout": 10,
+                                "set_access_token_header": false,
+                                "set_id_token_header": false,
+                                "set_userinfo_header": false,
+                                "set_raw_id_token_header": true,
+                                "session": {
+                                    "secret": "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK"
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/*"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 56: Full OIDC login sets X-Raw-ID-Token with the raw signed JWT; other auth headers are absent.
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local login_keycloak = require("lib.keycloak").login_keycloak
+            local concatenate_cookies = require("lib.keycloak").concatenate_cookies
+
+            local httpc = http.new()
+
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/uri"
+            local res, err = login_keycloak(uri, "teacher@gmail.com", "123456")
+            if err then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+
+            local cookie_str = concatenate_cookies(res.headers['Set-Cookie'])
+            local redirect_uri = "http://127.0.0.1:" .. ngx.var.server_port .. res.headers['Location']
+            res, err = httpc:request_uri(redirect_uri, {
+                    method = "GET",
+                    headers = {
+                        ["Cookie"] = cookie_str
+                    }
+                })
+
+            if not res then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            elseif res.status ~= 200 then
+                ngx.status = 500
+                ngx.say("Invoking the original URI didn't return the expected result.")
+                return
+            end
+
+            -- X-Raw-ID-Token must be present and contain a JWT (starts with "ey").
+            if not res.body:find("x-raw-id-token: ey", 1, true) then
+                ngx.status = 500
+                ngx.say("expected x-raw-id-token header with a JWT value, body: " .. res.body)
+                return
+            end
+
+            -- The other auth headers must be absent (set_*_header = false).
+            for _, unwanted in ipairs({"x-access-token:", "x-id-token:", "x-userinfo:"}) do
+                if res.body:find(unwanted, 1, true) then
+                    ngx.status = 500
+                    ngx.say("unexpected header found: " .. unwanted)
+                    return
+                end
+            end
+
+            ngx.say("passed")
+        }
+    }
 --- response_body
 passed
