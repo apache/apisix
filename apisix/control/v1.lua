@@ -30,6 +30,11 @@ local str_format = string.format
 local ngx = ngx
 local ngx_var = ngx.var
 local events = require("apisix.events")
+-- Shared with apisix/admin/init.lua: the admin reload path bumps this version and
+-- runs a periodic reconciliation timer that reloads any worker whose applied
+-- version is behind. Keep the dict name and key in sync with admin/init.lua.
+local plugins_conf_ver_dict = ngx.shared["internal-status"]
+local PLUGINS_CONF_VERSION_KEY = "plugins_conf_version"
 
 
 local _M = {}
@@ -409,6 +414,19 @@ function _M.dump_plugin_metadata()
 end
 
 function _M.post_reload_plugins()
+    -- Bump the shared version before broadcasting so that a worker which misses the
+    -- event (the resty.events broker gives no delivery guarantee while a worker is
+    -- reconnecting) still converges through the admin reconciliation timer. This is
+    -- the same guard the admin reload path added in #13714; the control path was
+    -- left out. When the admin is disabled the timer is absent and this is a no-op.
+    if plugins_conf_ver_dict then
+        local _, incr_err = plugins_conf_ver_dict:incr(PLUGINS_CONF_VERSION_KEY, 1, 0)
+        if incr_err then
+            core.log.error("failed to increase plugins conf version: ", incr_err)
+            core.response.exit(503, {error_msg = "failed to record plugins reload"})
+        end
+    end
+
     local success, err = events:post(_M.RELOAD_EVENT, ngx.req.get_method(), ngx.time())
     if not success then
         core.response.exit(503, err)
