@@ -794,3 +794,80 @@ bad mode: rejected
 zero cache size: rejected
 tiny interval: rejected
 defaults: off final_packet 128 3
+
+
+
+=== TEST 31: final_packet annotates an empty streamed response with risk_level none
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.ai-aws-content-moderation")
+            local ctx = {
+                picked_ai_instance = { provider = "openai" },
+                ai_client_protocol = "openai-chat",
+                var = {
+                    request_type = "ai_stream",
+                    llm_response_text = "",
+                    llm_request_done = true,
+                },
+            }
+            local conf = {
+                comprehend = {
+                    access_key_id = "access",
+                    secret_access_key = "secret",
+                    region = "us-east-1",
+                    endpoint = "http://localhost:2668"
+                },
+                check_response = true,
+                stream_check_mode = "final_packet",
+            }
+            plugin.check_schema(conf)
+            local body = 'data: {"choices":[{"delta":{"content":""}}]}\n\n'
+            local code, new_body = plugin.lua_body_filter(conf, ctx, {}, body)
+            ngx.say("code:", code or "nil")
+            ngx.say("risk_level:", ctx.var.llm_content_risk_level or "nil")
+            ngx.say(new_body)
+        }
+    }
+--- response_body_like eval
+qr/code:nil\nrisk_level:none\n.*"risk_level":"none"/s
+
+
+
+=== TEST 32: final_packet leaves a non-object SSE data frame untouched (no crash)
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.ai-aws-content-moderation")
+            local ctx = {
+                picked_ai_instance = { provider = "openai" },
+                ai_client_protocol = "openai-chat",
+                var = {
+                    request_type = "ai_stream",
+                    llm_response_text = "good_request",
+                    llm_request_done = true,
+                },
+            }
+            local conf = {
+                comprehend = {
+                    access_key_id = "access",
+                    secret_access_key = "secret",
+                    region = "us-east-1",
+                    endpoint = "http://localhost:2668"
+                },
+                check_response = true,
+                stream_check_mode = "final_packet",
+            }
+            plugin.check_schema(conf)
+            -- first frame is a bare scalar (not indexable), second is a valid object
+            local body = 'data: 12345\n\n'
+                      .. 'data: {"choices":[{"delta":{"content":"hi"}}]}\n\n'
+            local code, new_body = plugin.lua_body_filter(conf, ctx, {}, body)
+            ngx.say("code:", code or "nil")
+            ngx.say(new_body)
+        }
+    }
+--- response_body_like eval
+qr/code:nil\n.*data: 12345.*"risk_level":"none"/s
+--- no_error_log
+[error]

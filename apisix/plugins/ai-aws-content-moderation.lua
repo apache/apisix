@@ -230,6 +230,9 @@ end
 -- the same way for consistency.
 local function moderate_response(ctx, conf, content)
     if not content or content == "" then
+        -- nothing to score, but keep the risk_level contract satisfied so the
+        -- streamed annotation still reports a verdict
+        set_risk_level(ctx, false)
         return
     end
 
@@ -258,11 +261,13 @@ local function annotate_stream(ctx, body)
     for _, event in ipairs(events) do
         if proto.is_data_event(event) then
             local data, err = core.json.decode(event.data)
-            if data then
+            -- a scalar or cjson.null decode can't be indexed; only annotate
+            -- well-formed JSON object frames and leave anything else untouched
+            if type(data) == "table" then
                 data.risk_level = ctx.var.llm_content_risk_level
                 event.data = core.json.encode(data)
             else
-                core.log.warn("failed to decode SSE data: ", err)
+                core.log.warn("failed to decode SSE data as object: ", err or event.data)
             end
         end
         if proto.is_done_event and proto.is_done_event(event) then
