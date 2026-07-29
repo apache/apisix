@@ -568,7 +568,7 @@ plugins:
         listen 1986;
         server_tokens off;
 
-        location = /graphql {
+        location = /graphql-vary-purge {
             content_by_lua_block {
                 ngx.header["Vary"] = "X-Variant"
                 ngx.say('{"data":{"variant":"', ngx.var.http_x_variant or "none", '"}}')
@@ -582,7 +582,7 @@ plugins:
             local http = require("resty.http")
 
             local code, res_body = t('/apisix/admin/routes/gql-vary-purge', ngx.HTTP_PUT, [[{
-                "uri": "/graphql",
+                "uri": "/graphql-vary-purge",
                 "plugins": {
                     "graphql-proxy-cache": {
                         "cache_zone": "memory_cache",
@@ -611,7 +611,7 @@ plugins:
                 return
             end
 
-            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/graphql"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/graphql-vary-purge"
             local body = '{"query":"query{persons{id}}"}'
 
             local function fetch(variant)

@@ -111,7 +111,7 @@ local schema = {
         max_req_body_bytes = { type = "integer", minimum = 1, default = 524288 },
         max_resp_body_bytes = { type = "integer", minimum = 1, default = 524288 },
     },
-    encrypt_fields = {"auth.password"},
+    encrypt_fields = {"auth.password", "headers"},
     oneOf = {
         {required = {"endpoint_addr", "field"}},
         {required = {"endpoint_addrs", "field"}}

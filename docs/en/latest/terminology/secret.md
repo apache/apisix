@@ -23,10 +23,10 @@ title: Secret
 
 ## Description
 
-Secrets refer to any sensitive information required during the running process of APISIX, which may be part of the core configuration (such as the etcd's password) or some sensitive information in the plugin. Common types of Secrets in APISIX include:
+Secrets refer to any sensitive information required during the running process of APISIX, which may be part of the core configuration (such as the etcd's password), cryptographic material or some sensitive information in the plugin. Common types of Secrets in APISIX include:
 
 - username, the password for some components (etcd, Redis, Kafka, etc.)
-- the private key of the certificate
+- the public certificate, private key and ca certificates
 - API key
 - Sensitive plugin configuration fields, typically used for authentication, hashing, signing, or encryption
 
@@ -61,6 +61,8 @@ When a configuration field uses a secret reference like `$secret://...` or `$env
 :::note
 
 If a key-value pair `key: "$ENV://ABC"` is configured in APISIX and the value of `$ENV://ABC` is unassigned in the environment variable, `$ENV://ABC` will be interpreted as a string literal, instead of `nil`.
+
+This applies to every secret reference: when a reference cannot be resolved (the secret manager is not configured, the lookup fails, or the environment variable is unset), the literal reference string is used as the field value and an error such as `failed to resolve secret reference: $secret://vault/1/foo/bar, field: password` is written to the error log. Check the error log if a plugin behaves as if its credential were wrong.
 
 :::
 

@@ -292,3 +292,105 @@ commit delay: 0, remaining: -3
 --- response_body
 a over limit: rejected
 b independent: 0, remaining: 1
+
+
+
+=== TEST 8: check_and_incr decides and increments atomically, never on reject
+# the accept/reject decision and the increment happen in one atomic step, so
+# concurrent requests cannot all pass the check before any increment lands. an
+# over-limit request must reject and leave the counter untouched.
+--- config
+    location /t {
+        content_by_lua_block {
+            local redis_store =
+                require("apisix.plugins.limit-count.sliding-window.store.redis")
+            local redis_cli = require("apisix.plugins.limit-count.util").redis_cli
+            local conf = {
+                redis_host = "127.0.0.1",
+                redis_port = 6379,
+                redis_database = 1,
+            }
+            local red = redis_cli(conf)
+            local limit, window, remaining_time, expiry = 2, 5, 5, 10
+            local cur = "ut-atomic-cur-" .. ngx.now()
+            local last = "ut-atomic-last-" .. ngx.now()
+
+            local function call(cost)
+                return redis_store.check_and_incr(redis_store, cur, last, cost,
+                                limit, window, remaining_time, expiry, red)
+            end
+
+            local r1 = call(1)
+            ngx.say("accept ", r1[1], " count ", r1[2])
+            local r2 = call(1)
+            ngx.say("accept ", r2[1], " count ", r2[2])
+            -- over the limit now: must reject and not increment
+            local r3 = call(1)
+            ngx.say("accept ", r3[1], " count ", r3[2])
+            local stored = red:get(cur)
+            ngx.say("stored: ", stored)
+        }
+    }
+--- response_body
+accept 1 count 1
+accept 1 count 2
+accept 0 count 2
+stored: 2
+
+
+
+=== TEST 9: commit() reports the window-weighted remaining, like incoming()
+# regression: commit() used to report limit - current_count, ignoring the
+# previous window's weighted share. Delayed sync caches that value as the
+# global quota, so every new window started from a full budget and the
+# sliding window degraded into a fixed window.
+--- timeout: 10
+--- config
+    location /t {
+        content_by_lua_block {
+            local sliding_window =
+                require("apisix.plugins.limit-count.sliding-window.sliding-window")
+            local redis_store =
+                require("apisix.plugins.limit-count.sliding-window.store.redis")
+            local redis_cli = require("apisix.plugins.limit-count.util").redis_cli
+            local conf = {
+                redis_host = "127.0.0.1",
+                redis_port = 6379,
+                redis_database = 1,
+            }
+            local limit, window = 400, 3
+            local lim, err = sliding_window.new_with_red_cli_factory(
+                redis_store, limit, window, redis_cli, conf)
+            if not lim then
+                ngx.say("failed to create limiter: ", err)
+                return
+            end
+
+            -- wait for the first 0.4s of a window so the previous window's
+            -- weight stays within a known band during the call below, with
+            -- headroom for the redis round trips before commit() reads time
+            while ngx.now() % window >= 0.4 do
+                ngx.sleep(0.05)
+            end
+            ngx.update_time()
+
+            local now = ngx.now()
+            local key = "ut-commit-weight-" .. now
+            local last_wid = math.floor((now - window) / window)
+            local red = redis_cli(conf)
+            red:set(("%s.%s.counter"):format(key, last_wid), 300, "EX", 60)
+
+            local _, remaining = lim:commit(key, 20)
+            -- remaining_time is in (2.6, 3], so the previous window weighs
+            -- 300 / 3 * remaining_time = 260..300 and the remaining must be
+            -- 400 - 20 - (260..300) = 80..120; assert up to 130 to keep
+            -- headroom for scheduling delay between the wait and the call
+            if remaining >= 80 and remaining <= 130 then
+                ngx.say("ok")
+            else
+                ngx.say("unexpected remaining: ", remaining)
+            end
+        }
+    }
+--- response_body
+ok

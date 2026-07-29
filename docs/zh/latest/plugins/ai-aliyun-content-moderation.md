@@ -58,12 +58,14 @@ import TabItem from '@theme/TabItem';
 | stream_check_mode | string | 否 | `"final_packet"` | `realtime`、`final_packet` | 流式审核模式。`realtime`：流式传输期间批量检查。`final_packet`：在最后附加风险等级。 |
 | stream_check_cache_size | integer | 否 | `128` | >= 1 | `realtime` 模式下每次审核批次的最大字节数（按 UTF-8 编码后的字节长度计算）。 |
 | stream_check_interval | number | 否 | `3` | >= 0.1 | `realtime` 模式下批次检查之间的间隔秒数。 |
+| request_check_roles | array[string] | 否 | `["user"]` | 取值为 `user`、`tool`、`system` | 请求侧审核哪些消息角色。`user` 与 `tool` 遵循 `request_check_mode`；`system` 每次请求都审核（其可能被恶意 ToolCall 参数覆盖篡改）。默认 `["user"]` 保持既有行为。注意：tool 结果审核适用于 OpenAI 兼容格式（tool 输出为独立的 `tool` 角色/项）；Anthropic、Bedrock 的 tool 结果以嵌套 block 形式存在于 user 消息中，其内容不会被抽取。 |
+| request_check_mode | string | 否 | `"last"` | `last`, `all` | 审核哪些 user/tool 消息。`last`：仅审核最后一段连续的所选角色消息（最新一轮）；`all`：审核所有所选角色消息。不作用于 `system`——只要通过 `request_check_roles` 启用，`system` 每次都审核。 |
 | request_check_service | string | 否 | `"llm_query_moderation"` | | 用于请求审核的阿里云服务。 |
-| request_check_length_limit | number | 否 | `2000` | | 请求内容字节数上限（按 UTF-8 编码后的字节长度计算）。如果超过该限制，内容将被分块发送。对于非 ASCII 内容，可能会比按字符数理解时更早触发分块。例如，如果请求内容按 UTF-8 编码后有 250 个字节，且 `request_check_length_limit` 设置为 `100`，则内容将分 3 次请求发送到阿里云。 |
+| request_check_length_limit | number | 否 | `2000` | >= 1 | 请求内容长度上限。如果超过该限制，内容将分块发送到阿里云。例如，如果请求内容为 250 个字符，且 `request_check_length_limit` 设置为 `100`，则内容将分 3 次请求发送到阿里云。 |
 | response_check_service | string | 否 | `"llm_response_moderation"` | | 用于响应审核的阿里云服务。 |
-| response_check_length_limit | number | 否 | `5000` | | 响应内容字节数上限（按 UTF-8 编码后的字节长度计算）。如果超过该限制，内容将被分块发送。对于非 ASCII 内容，可能会比按字符数理解时更早触发分块。例如，如果响应内容按 UTF-8 编码后有 250 个字节，且 `response_check_length_limit` 设置为 `100`，则内容将分 3 次请求发送到阿里云。 |
+| response_check_length_limit | number | 否 | `5000` | >= 1 | 响应内容长度上限。如果超过该限制，内容将分块发送到阿里云。例如，如果响应内容为 250 个字符，且 `response_check_length_limit` 设置为 `100`，则内容将分 3 次请求发送到阿里云。 |
 | risk_level_bar | string | 否 | `"high"` | `none`、`low`、`medium`、`high`、`max` | 如果评估的风险等级低于 `risk_level_bar`，请求或响应将分别被放行到上游 LLM 或客户端。 |
-| deny_code | number | 否 | `200` | | 拒绝时的 HTTP 状态码。 |
+| deny_code | integer | 否 | `200` | [200, 599] | 拒绝时的 HTTP 状态码。默认为 `200`，使兼容 provider 的拒绝响应在客户端 SDK 中被解析为正常补全；设置为 4xx 可将拒绝暴露为 HTTP 错误。 |
 | deny_message | string | 否 | | | 拒绝时的消息。 |
 | timeout | integer | 否 | `10000` | >= 1 | 超时时间（毫秒）。 |
 | keepalive | boolean | 否 | `true` | | 如果为 `true`，启用到阿里云的 HTTP 连接保活。 |

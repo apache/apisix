@@ -226,13 +226,82 @@ nginx_config:
 
 make init
 
-grep "env TEST;" conf/nginx.conf > /dev/null
+grep 'env "TEST";' conf/nginx.conf > /dev/null
 if [ ! $? -eq 0 ]; then
     echo "failed: failed to update env"
     exit 1
 fi
 
 echo "passed: change default env"
+
+# env value with spaces must be rendered as a quoted directive (#11467)
+echo '
+nginx_config:
+    envs:
+        - TEST=a b
+' > conf/config.yaml
+
+make init
+
+if ! grep 'env "TEST=a b";' conf/nginx.conf > /dev/null; then
+    echo "failed: env value with spaces should be quoted"
+    exit 1
+fi
+
+mkdir -p logs
+if ! openresty -p "$PWD" -c "$PWD/conf/nginx.conf" -t; then
+    echo "failed: nginx rejects generated conf with quoted env"
+    exit 1
+fi
+
+# embedded quote / backslash are escaped
+cat > conf/config.yaml <<'EOF'
+nginx_config:
+    envs:
+        - "TEST=a\"b\\c"
+EOF
+
+make init
+
+if ! grep -F 'env "TEST=a\"b\\c";' conf/nginx.conf > /dev/null; then
+    echo "failed: quote/backslash in env value should be escaped"
+    exit 1
+fi
+
+if ! openresty -p "$PWD" -c "$PWD/conf/nginx.conf" -t; then
+    echo "failed: nginx rejects generated conf with escaped env"
+    exit 1
+fi
+
+# control characters are rejected at schema level
+cat > conf/config.yaml <<'EOF'
+nginx_config:
+    envs:
+        - "TEST=a\nb"
+EOF
+
+out=$(make init 2>&1 || true)
+if ! echo "$out" | grep "failed to validate config"; then
+    echo "failed: env value with control chars should be rejected"
+    exit 1
+fi
+
+# entries synthesized by kubernetes discovery bypass the config schema, so the
+# control-character check must also run on the final list
+cat > conf/config.yaml <<'EOF'
+discovery:
+    kubernetes:
+        client:
+            token_file: "${A\nB}"
+EOF
+
+out=$(make init 2>&1 || true)
+if ! echo "$out" | grep "control characters are not allowed"; then
+    echo "failed: synthesized env entry with control chars should be rejected"
+    exit 1
+fi
+
+echo "passed: env value quoting (#11467)"
 
 # support environment variables
 echo '
@@ -243,7 +312,7 @@ nginx_config:
 
 var_test=TEST FOO=bar make init
 
-if ! grep "env TEST_bar;" conf/nginx.conf > /dev/null; then
+if ! grep 'env "TEST_bar";' conf/nginx.conf > /dev/null; then
     echo "failed: failed to resolve variables"
     exit 1
 fi
@@ -328,7 +397,7 @@ nginx_config:
 
 var_test=TEST FOO=bar make init
 
-if ! grep "env TEST_bar;" conf/nginx.conf > /dev/null; then
+if ! grep 'env "TEST_bar";' conf/nginx.conf > /dev/null; then
     echo "failed: failed to resolve variables wrapped with whitespace"
     exit 1
 fi
@@ -348,7 +417,7 @@ deployment:
 
 ETCD_HOST=127.0.0.1 ETCD_PORT=2379 make init
 
-if ! grep "env ETCD_HOST;" conf/nginx.conf > /dev/null; then
+if ! grep 'env "ETCD_HOST";' conf/nginx.conf > /dev/null; then
     echo "failed: support environment variables in local_conf"
     exit 1
 fi
@@ -369,12 +438,12 @@ nginx_config:
 
 ETCD_HOST=127.0.0.1 ETCD_PORT=2379 make init
 
-if grep "env ETCD_HOST=.*;" conf/nginx.conf > /dev/null; then
+if grep 'env "ETCD_HOST=.*";' conf/nginx.conf > /dev/null; then
     echo "failed: support environment variables in local_conf"
     exit 1
 fi
 
-if ! grep "env ETCD_HOST;" conf/nginx.conf > /dev/null; then
+if ! grep 'env "ETCD_HOST";' conf/nginx.conf > /dev/null; then
     echo "failed: support environment variables in local_conf"
     exit 1
 fi
@@ -394,12 +463,12 @@ nginx_config:
 
 ETCD_HOST=127.0.0.1 ETCD_PORT=2379 make init
 
-if grep "env ETCD_HOST;" conf/nginx.conf > /dev/null; then
+if grep 'env "ETCD_HOST";' conf/nginx.conf > /dev/null; then
     echo "failed: support environment variables in local_conf"
     exit 1
 fi
 
-if ! grep "env ETCD_HOST=1.1.1.1;" conf/nginx.conf > /dev/null; then
+if ! grep 'env "ETCD_HOST=1.1.1.1";' conf/nginx.conf > /dev/null; then
     echo "failed: support environment variables in local_conf"
     exit 1
 fi
@@ -414,7 +483,7 @@ tests:
 
 make init
 
-if ! grep "env TEST_ENV;" conf/nginx.conf > /dev/null; then
+if ! grep 'env "TEST_ENV";' conf/nginx.conf > /dev/null; then
     echo "failed: should use default value when environment not set"
     exit 1
 fi
@@ -426,7 +495,7 @@ tests:
 
 make init
 
-if ! grep "env TEST_ENV;" conf/nginx.conf > /dev/null; then
+if ! grep 'env "TEST_ENV";' conf/nginx.conf > /dev/null; then
     echo "failed: should use default value when environment not set"
     exit 1
 fi
@@ -438,7 +507,7 @@ tests:
 
 TEST_ENV=127.0.0.1 make init
 
-if ! grep "env TEST_ENV;" conf/nginx.conf > /dev/null; then
+if ! grep 'env "TEST_ENV";' conf/nginx.conf > /dev/null; then
     echo "failed: should use environment variable when environment is set"
     exit 1
 fi

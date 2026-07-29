@@ -108,6 +108,16 @@ local metadata_schema = {
                     },
                     uniqueItems = true,
                 },
+                tls = {
+                    type = "object",
+                    description = "tls config for connecting to kafka brokers",
+                    properties = {
+                        verify = {
+                            type = "boolean",
+                            default = false,
+                        },
+                    },
+                },
                 kafka_topic = {type = "string"},
                 producer_type = {
                     type = "string",
@@ -185,7 +195,12 @@ local _M = {
 
 function _M.check_schema(conf, schema_type)
     if schema_type == core.schema.TYPE_METADATA then
-        return core.schema.check(metadata_schema, conf)
+        local ok, err = core.schema.check(metadata_schema, conf)
+        if not ok then
+            return nil, err
+        end
+        core.utils.check_tls_bool({"kafka.tls.verify"}, conf, plugin_name)
+        return true
     end
 
     local check = {"skywalking.endpoint_addr", "clickhouse.endpoint_addr"}
@@ -382,6 +397,10 @@ local function send_to_kafka(log_message)
     broker_config["producer_type"] = config.kafka.producer_type
     broker_config["required_acks"] = config.kafka.required_acks
     broker_config["refresh_interval"] = config.kafka.meta_refresh_interval * 1000
+    if config.kafka.tls then
+        broker_config["ssl"] = true
+        broker_config["ssl_verify"] = config.kafka.tls.verify
+    end
 
     -- reuse producer via kafka_prod_lrucache to avoid unbalanced partitions of messages in kafka
     local prod, err = kafka_prod_lrucache(plugin_name, metadata.modifiedIndex,

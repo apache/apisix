@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core         = require("apisix.core")
+local plugin       = require("apisix.plugin")
 local expr         = require("resty.expr.v1")
 local ipairs       = ipairs
 local setmetatable = setmetatable
@@ -167,6 +168,8 @@ function _M.access(conf, ctx)
         if match_result then
             -- only one action is currently supported
             local action = rule.actions[1]
+            -- skip the action plugin in the chain so it does not run twice
+            plugin.skip_plugin(ctx, action[1])
 
             local action_name = action[1]
             local action_conf = action[2]

@@ -63,6 +63,12 @@ See the configuration file for configuration options available to all Plugins.
 |server_addr | string  | False    |the value of `$server_addr` | IPv4 address | IPv4 address for the Zipkin reporter. For example, you can set this to your external IP address. |
 |span_version | integer | False    | 2             | [1, 2]       | Version of the span type. |
 
+:::tip Performance
+
+The plugin hooks several request phases and builds a span per sampled request, so tracing adds per-request overhead. Sampling is the primary lever to control it: `sample_ratio` is the fraction of requests traced, and unsampled requests skip span tag construction entirely. Lower `sample_ratio` on high-throughput routes to reduce overhead while keeping representative traces.
+
+:::
+
 ## Examples
 
 The examples below show different use cases of the `zipkin` Plugin.
