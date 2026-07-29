@@ -84,7 +84,7 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: consumer jack with limit-conn (conn = 1)
+=== TEST 1: consumer jack with limit-conn (conn = 1, key shared with bob)
 --- config
     location /t {
         content_by_lua_block {
@@ -102,7 +102,7 @@ __DATA__
                             "burst": 0,
                             "default_conn_delay": 0.1,
                             "rejected_code": 503,
-                            "key": "consumer_name"
+                            "key": "remote_addr"
                         }
                     }
                 }]]
@@ -119,7 +119,7 @@ passed
 
 
 
-=== TEST 2: consumer bob with its own limit-conn (conn = 1)
+=== TEST 2: consumer bob with the very same limit-conn config
 --- config
     location /t {
         content_by_lua_block {
@@ -137,7 +137,7 @@ passed
                             "burst": 0,
                             "default_conn_delay": 0.1,
                             "rejected_code": 503,
-                            "key": "consumer_name"
+                            "key": "remote_addr"
                         }
                     }
                 }]]
@@ -216,14 +216,45 @@ GET /concurrent?case=two_routes
 --- response_body
 200,503
 --- error_log eval
-qr/limit key: \/apisix\/consumers\/jack:\d+:jack/
+qr/limit key: \/apisix\/consumers\/jack:\d+:127\.0\.0\.1/
+--- no_error_log
+[error]
 --- timeout: 10
 
 
 
 === TEST 5: different consumers keep their own counter
+jack and bob resolve to the same key value (remote_addr) on the same route, so
+only the parent resource_key keeps them apart.
 --- request
 GET /concurrent?case=two_consumers
 --- response_body
 200,200
+--- error_log eval
+qr/limit key: \/apisix\/consumers\/bob:\d+:127\.0\.0\.1/
 --- timeout: 10
+
+
+
+=== TEST 6: clean up
+The routes and consumers created here would otherwise leak into the next file of
+the same CI job: /limit_conn2 is expected to 404 in t/plugin/workflow3.t.
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            for _, uri in ipairs({"/apisix/admin/routes/1", "/apisix/admin/routes/2",
+                                  "/apisix/admin/consumers/jack",
+                                  "/apisix/admin/consumers/bob"}) do
+                local code = t(uri, ngx.HTTP_DELETE)
+                if code >= 300 then
+                    ngx.status = code
+                    ngx.say("failed to delete ", uri)
+                    return
+                end
+            end
+            ngx.say("done")
+        }
+    }
+--- response_body
+done

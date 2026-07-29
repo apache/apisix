@@ -211,6 +211,9 @@ local function run_limit_conn(conf, rule, ctx)
 
     key = gen_limit_key(conf, ctx, key)
     if not key then
+        if conf.allow_degradation then
+            return
+        end
         return 500
     end
     core.log.info("limit key: ", key)
@@ -246,8 +249,6 @@ end
 
 
 function _M.increase(conf, ctx)
-    core.log.info("ver: ", ctx.conf_version)
-
     local rules, err = get_rules(ctx, conf)
     if not rules or #rules == 0 then
         core.log.error("failed to get limit conn rules: ", err)
