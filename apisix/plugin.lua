@@ -818,7 +818,10 @@ local function merge_consumer_route(route_conf, consumer_conf, consumer_group_co
         return route_conf
     end
 
-    local new_route_conf = core.table.deepcopy(route_conf)
+    -- the plugins subtree is fully overwritten below, so there is no need to
+    -- deep-copy it; shallow-copy that subtree to avoid the wasted work
+    local new_route_conf = core.table.deepcopy(route_conf,
+        { shallow_prefix = "self.value.plugins" })
 
     if has_group_plugins then
         for name, conf in pairs(consumer_group_conf.value.plugins) do

@@ -359,3 +359,37 @@ tab_copied.a.b.c == tab.a.b.c1: true
 tab_copied.a.b.c == t1: true
 tab_copied.x.y == tab.x.y: false
 tab_copied.x.y == t2: false
+
+
+
+=== TEST 13: shallow_prefix
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local deepcopy = core.table.deepcopy
+            local plugin1 = {name = "plugin1"}
+            local plugin2 = {name = "plugin2"}
+            local tab = {
+                plugins = {
+                    p1 = plugin1,
+                    p2 = plugin2,
+                },
+            }
+
+            local tab_copied = deepcopy(tab, { shallow_prefix = "self.plugins" })
+
+            tab_copied.plugins.p1 = {name = "plugin1_new_modified"}
+            tab_copied.plugins.p2.name = "plugin2_modified"
+
+            ngx.say("table copied: ", require("toolkit.json").encode(tab_copied))
+            ngx.say("table original: ", require("toolkit.json").encode(tab))
+        }
+    }
+--- request
+GET /t
+--- response_body
+table copied: {"plugins":{"p1":{"name":"plugin1_new_modified"},"p2":{"name":"plugin2_modified"}}}
+table original: {"plugins":{"p1":{"name":"plugin1"},"p2":{"name":"plugin2_modified"}}}
+--- no_error_log
+[error]

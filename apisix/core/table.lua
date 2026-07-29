@@ -31,6 +31,7 @@ local pairs        = pairs
 local type         = type
 local ngx_re       = require("ngx.re")
 local isarray      = require("table.isarray")
+local str_has_prefix = require("apisix.core.string").has_prefix
 
 
 local _M = {
@@ -130,7 +131,8 @@ do
         copied[orig] = copy
         for orig_key, orig_value in pairs(orig) do
             local path = parent .. "." .. tostring(orig_key)
-            if opts and array_find(opts.shallows, path) then
+            if opts and (array_find(opts.shallows, path) or
+                (opts.shallow_prefix and str_has_prefix(parent, opts.shallow_prefix))) then
                 copy[orig_key] = orig_value
             else
                 if type(orig_value) == "table" then
