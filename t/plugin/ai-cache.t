@@ -225,7 +225,7 @@ qr/1 \+ 1 = 2/
             assert(fp(inst, other_messages) ~= base, "different messages")
             assert(fp(inst, other_model)    ~= base, "different client model")
             assert(fp(inst, other_temp)     ~= base, "different temperature")
-            assert(fp(inst, with_stream)    == base, "the stream flag is stripped, so it must not matter")
+            assert(fp(inst, with_stream)    ~= base, "the stream flag is folded into the fingerprint (streaming and non-streaming cache separately)")
 
             -- instance config that ai-proxy applies upstream: a change flips it too
             local other_provider = { provider = "deepseek", options = {},                       override = {} }
@@ -687,7 +687,7 @@ X-AI-Cache-Status: MISS
 --- response_body_like eval
 qr/1 \+ 1 = 2/
 --- error_log
-ai-cache: redis unavailable, fail-open as MISS
+ai-cache: L1 lookup failed, fail-open as MISS
 
 
 

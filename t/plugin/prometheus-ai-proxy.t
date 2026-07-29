@@ -432,3 +432,150 @@ qr/apisix_llm_latency_bucket\{type="ttft",.*route_id="4",.*,node="openai-gpt4".*
 GET /apisix/prometheus/metrics
 --- response_body eval
 qr/apisix_llm_latency_count\{type="total",.*route_id="4",.*,node="openai-gpt4".*request_type="ai_stream",request_llm_model="gpt-3",llm_model="gpt-4"\} 1/
+
+
+
+=== TEST 21: send a chat request whose model name exceeds the 128-byte label cap
+--- request eval
+"POST /chat\n" .
+qq#{"messages":[{"role":"user","content":"What is 1+1?"}], "model": "@{[ 'a' x 200 ]}"}#
+--- more_headers
+X-AI-Fixture: prometheus/chat-basic.json
+--- error_code: 200
+
+
+
+=== TEST 22: request_llm_model label is truncated to 128 bytes (cardinality DoS guard)
+--- request
+GET /apisix/prometheus/metrics
+--- response_body_like eval
+qr/apisix_llm_prompt_tokens\{.*request_llm_model="a{128}",llm_model="gpt-4"\}/
+--- response_body_unlike eval
+qr/request_llm_model="a{129}"/
+
+
+
+=== TEST 23: disable request_llm_model / llm_model labels via plugin_metadata disabled_labels
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local _, body = t("/apisix/admin/plugin_metadata/prometheus",
+                ngx.HTTP_PUT,
+                [[{
+                    "disabled_labels": {
+                        "llm_prompt_tokens": ["request_llm_model", "llm_model"]
+                    }
+                }]]
+            )
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 24: send a chat request with a distinct model
+--- request
+POST /chat
+{"messages":[{"role":"user","content":"What is 1+1?"}], "model": "distinct-model-aaa"}
+--- more_headers
+X-AI-Fixture: prometheus/chat-basic.json
+--- error_code: 200
+
+
+
+=== TEST 25: send another chat request with a different distinct model
+--- request
+POST /chat
+{"messages":[{"role":"user","content":"What is 1+1?"}], "model": "distinct-model-bbb"}
+--- more_headers
+X-AI-Fixture: prometheus/chat-basic.json
+--- error_code: 200
+
+
+
+=== TEST 26: disabled_labels collapses distinct client models to one empty-valued series
+--- request
+GET /apisix/prometheus/metrics
+--- response_body_like eval
+qr/apisix_llm_prompt_tokens\{.*request_llm_model="",llm_model=""\}/
+--- response_body_unlike eval
+qr/apisix_llm_prompt_tokens\{.*request_llm_model="distinct-model-/
+
+
+
+=== TEST 27: create a route to check llm_latency excludes error responses
+--- config
+    location /t {
+        content_by_lua_block {
+            local data = {
+                {
+                    url = "/apisix/admin/routes/5",
+                    data = [[{
+                        "plugins": {
+                            "prometheus": {},
+                            "ai-proxy-multi": {
+                                "instances": [
+                                    {
+                                        "name": "openai-gpt4",
+                                        "provider": "openai",
+                                        "weight": 1,
+                                        "auth": {
+                                            "header": {
+                                                "Authorization": "Bearer token"
+                                            }
+                                        },
+                                        "options": {
+                                            "model": "gpt-4"
+                                        },
+                                        "override": {
+                                            "endpoint": "http://127.0.0.1:1980"
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        "uri": "/chat-guard"
+                    }]],
+                },
+            }
+            local t = require("lib.test_admin").test
+            for _, data in ipairs(data) do
+                local _, body = t(data.url, ngx.HTTP_PUT, data.data)
+                ngx.say(body)
+            end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 28: a served response records one llm_latency observation
+--- request
+POST /chat-guard
+{"messages":[{"role":"user","content":"What is 1+1?"}], "model": "gpt-3"}
+--- more_headers
+X-AI-Fixture: prometheus/chat-basic.json
+--- error_code: 200
+
+
+
+=== TEST 29: a 429 error response goes through the same route
+--- request
+POST /chat-guard
+{"messages":[{"role":"user","content":"What is 1+1?"}], "model": "gpt-3"}
+--- more_headers
+X-AI-Fixture: prometheus/chat-basic.json
+X-AI-Fixture-Status: 429
+--- error_code: 429
+
+
+
+=== TEST 30: the error response is excluded, so the count stays 1 not 2
+--- request
+GET /apisix/prometheus/metrics
+--- response_body eval
+qr/apisix_llm_latency_count\{type="total",.*route_id="5",.*,node="openai-gpt4".*request_type="ai_chat",request_llm_model="gpt-3",llm_model="gpt-4"\} 1\n/

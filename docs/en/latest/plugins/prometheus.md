@@ -100,11 +100,13 @@ You can configure the Plugin through its [Plugin Metadata](../terminology/plugin
 
 | Name            | Type   | Required | Description                                                                                                                                                                                                                                                                                |
 | --------------- | ------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| disabled_labels | object | False    | Per-metric map of built-in label names whose values are collapsed to an empty string `""` to reduce metric cardinality. Keyed by metric name: `http_status`, `http_latency`, `bandwidth`, `llm_latency`, `llm_prompt_tokens`, `llm_completion_tokens`, `llm_active_connections`, `llm_prompt_tokens_dist`, `llm_completion_tokens_dist`. Structural labels that define a metric's identity (`code` on `http_status`, `type` on `http_latency`, `bandwidth` and `llm_latency`) cannot be disabled. |
+| disabled_labels | object | False    | Per-metric map of built-in label names whose values are collapsed to an empty string `""` to reduce metric cardinality. Keyed by metric name: `http_status`, `http_latency`, `bandwidth`, `llm_latency`, `llm_prompt_tokens`, `llm_completion_tokens`, `llm_active_connections`, `llm_prompt_tokens_dist`, `llm_completion_tokens_dist`, `ai_cache_hits_total`, `ai_cache_misses_total`, `ai_cache_bypasses_total`, `ai_cache_embedding_latency`. Structural labels that define a metric's identity (`code` on `http_status`, `type` on `http_latency`, `bandwidth` and `llm_latency`, `layer` on `ai_cache_hits_total`) cannot be disabled. |
 
 Collapsing a label's value to `""` keeps the label registered in the metric schema, so existing dashboards, `absent()` alerts, and recording rules keep working — only the high-cardinality time series that differ solely by those labels are collapsed into one. This is useful in dynamic environments such as Kubernetes autoscaling, where the upstream node IP (`node` label) churns rapidly and would otherwise overflow the `prometheus-metrics` shared dict.
 
 See [Reduce Metric Cardinality by Disabling Labels](#reduce-metric-cardinality-by-disabling-labels) for an example.
+
+The `request_llm_model` and `llm_model` label values are derived from client-supplied model names. To bound cardinality, APISIX truncates each of these label values to 128 bytes before recording. If you do not need per-model breakdowns, list `request_llm_model` and `llm_model` under `disabled_labels` for the LLM metrics to collapse them to a single empty-valued series.
 
 ## Metrics
 
@@ -246,6 +248,30 @@ The `type` label distinguishes the kind of latency, similar to `apisix_http_late
 | node       | IP address of the upstream node.                                                                                          |
 | request_type       | traditional_http / ai_chat / ai_stream                                                                                          |
 | llm_model       | For non-traditional_http requests, name of the llm_model                                                                                          |
+
+### Labels for the `apisix_ai_cache_*` metrics
+
+The [`ai-cache`](./ai-cache.md) Plugin exports four metrics:
+
+- `apisix_ai_cache_hits_total` counts requests served from the cache, per serving layer.
+- `apisix_ai_cache_misses_total` counts requests the Plugin looked up but could not serve from the cache.
+- `apisix_ai_cache_bypasses_total` counts requests that bypassed the cache lookup entirely.
+- `apisix_ai_cache_embedding_latency` is a histogram of the latency, in milliseconds, of the embedding calls made by the semantic layer, measured around the embedding provider round-trip for successful and failed calls alike.
+
+They share the following labels:
+
+| Name | Description                                                                                                                   |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| layer      | Only on `apisix_ai_cache_hits_total`. Cache layer that served the hit: `exact` or `semantic`.                                                                                 |
+| route      | Name of the Route that the metric corresponds to. Default to an empty string if the Route has no name or a request does not match any Route.                         |
+| route_id      | ID of the Route that the metric corresponds to. Default to an empty string if a request does not match any Route.                         |
+| service    | Name of the Service that the matched Route belongs to. Default to an empty string if the matched Route does not belong to any Service. |
+| service_id    | ID of the Service that the matched Route belongs to. Default to an empty string if the matched Route does not belong to any Service. |
+| consumer   | Name of the Consumer associated with a request. Default to an empty string if no Consumer is associated with the request.                       |
+| node       | Name of the LLM instance picked by the `ai-proxy` or `ai-proxy-multi` Plugin, such as `ai-proxy-openai`. These Plugins report the instance name instead of an upstream IP address, on cache hits and misses alike.                                                                                          |
+| request_type       | traditional_http / ai_chat / ai_stream                                                                                          |
+| request_llm_model       | Model name requested by the client.                                                                                          |
+| llm_model       | Model name reported by the LLM response. Empty on cache hits, which are served without reaching the LLM.                                                                                          |
 
 ### Labels for `apisix_http_latency`
 

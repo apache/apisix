@@ -291,6 +291,10 @@ local config_schema = {
                     minItems = 1,
                     items = {
                         type = "string",
+                        -- NUL can never be carried through the C environ and
+                        -- other control chars (newline etc.) have no sane
+                        -- config source; reject early with a clear error
+                        pattern = [[\A[^\x00-\x1f]*\z]],
                     }
                 }
             },

@@ -109,7 +109,3 @@ passed
 qr/create new checker: table:/
 --- grep_error_log_out
 create new checker: table:
-create new checker: table:
-create new checker: table:
-create new checker: table:
-create new checker: table:
