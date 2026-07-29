@@ -161,6 +161,7 @@ local _M = {
       lua_shared_dict = {
         ["internal-status"] = "10m",
         ["plugin-limit-req"] = "10m",
+        ["plugin-limit-req-global"] = "10m",
         ["plugin-limit-count"] = "10m",
         ["prometheus-metrics"] = "128m",
         ["plugin-limit-conn"] = "10m",
@@ -259,6 +260,7 @@ local _M = {
     "limit-conn",
     "limit-count",
     "limit-req",
+    "limit-req-global",
     "gzip",
     -- deprecated and will be removed in a future release
     -- "server-info",
