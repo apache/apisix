@@ -224,10 +224,10 @@ end
 
 
 -- Moderate a piece of LLM response text.
--- Returns (deny_code, deny_body) on a hit, nothing otherwise. A Comprehend
--- failure is logged and the content passes through: the response side has no
--- fail-closed option once bytes are on the wire, and buffered responses behave
--- the same way for consistency.
+-- Returns (deny_code, deny_body) on a hit, (nil, nil, err) on a Comprehend
+-- failure, and nothing when the content is clean. The buffered caller fails
+-- closed on err (bytes not sent yet, same as the request side); streaming
+-- callers can't and let the content through.
 local function moderate_response(ctx, conf, content)
     if not content or content == "" then
         -- nothing to score, but keep the risk_level contract satisfied so the
@@ -239,7 +239,7 @@ local function moderate_response(ctx, conf, content)
     local reason, err = detect_toxic(conf, ctx, content, "response body")
     if err then
         core.log.error(err)
-        return
+        return nil, nil, err
     end
     if reason then
         return conf.deny_code, build_deny_message(ctx, conf, reason)
@@ -373,7 +373,13 @@ function _M.lua_body_filter(conf, ctx, headers, body)
 
     -- ai-proxy hands us the fully assembled completion, so one check covers it.
     if request_type == "ai_chat" then
-        return moderate_response(ctx, conf, ctx.var.llm_response_text)
+        local code, body, err = moderate_response(ctx, conf, ctx.var.llm_response_text)
+        if err then
+            -- the buffered body has not reached the client yet, so fail closed
+            -- like the request side instead of shipping unmoderated content
+            return HTTP_INTERNAL_SERVER_ERROR, err
+        end
+        return code, body
     end
 
     if request_type ~= "ai_stream" then

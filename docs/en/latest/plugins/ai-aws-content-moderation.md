@@ -42,6 +42,8 @@ The Plugin is protocol-aware: it extracts the prompt content from the LLM reques
 
 Both directions can be moderated. Set `check_response` to moderate the LLM response as well. For streaming responses, `stream_check_mode` selects between `realtime`, which moderates batches as they arrive and replaces the remainder of the stream once a batch is flagged, and `final_packet`, which moderates the assembled response and annotates the last chunk with `risk_level`. The verdict is also exposed on the request context as `$llm_content_risk_level` (`high` or `none`) for logging.
 
+If AWS Comprehend cannot be reached, the request and the buffered (non-streaming) response both fail closed with a `500`, so unmoderated content is never proxied. Streaming response moderation is best-effort: once the first bytes have been sent to the client the response cannot be blocked, so a Comprehend failure there lets the remaining stream through.
+
 The `ai-aws-content-moderation` Plugin should be used with either [`ai-proxy`](./ai-proxy.md) or [`ai-proxy-multi`](./ai-proxy-multi.md) Plugin for proxying LLM requests.
 
 ## Plugin Attributes
