@@ -52,7 +52,13 @@ function _M.init_iv_tbl(ivs)
 
     if type(ivs) == "table" then
         for _, iv in ipairs(ivs) do
-            tbl.insert(iv_tbl, assert(aes:new(iv, nil, aes.cipher(128, "cbc"), {iv = iv})))
+            -- a 16-byte key selects AES-128, a 32-byte key selects AES-256;
+            -- keys of any other length are skipped
+            if #iv == 32 then
+                tbl.insert(iv_tbl, assert(aes:new(iv, nil, aes.cipher(256, "cbc"), {iv = iv})))
+            elseif #iv == 16 then
+                tbl.insert(iv_tbl, assert(aes:new(iv, nil, aes.cipher(128, "cbc"), {iv = iv})))
+            end
         end
     end
 
