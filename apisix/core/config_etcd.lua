@@ -21,7 +21,6 @@
 
 local table        = require("apisix.core.table")
 local config_local = require("apisix.core.config_local")
-local config_util  = require("apisix.core.config_util")
 local log          = require("apisix.core.log")
 local json         = require("apisix.core.json")
 local etcd_apisix  = require("apisix.core.etcd")
@@ -561,9 +560,6 @@ end
 local function load_full_data(self, dir_res, headers, prev_values, prev_values_hash)
     local err
     local changed = false
-    -- previous items carried over because their new data failed the check;
-    -- their clean handlers must NOT be fired
-    local carried = {}
 
     if self.single_item then
         self.values = new_tab(1, 0)
@@ -593,8 +589,6 @@ local function load_full_data(self, dir_res, headers, prev_values, prev_values_h
             insert_tab(self.values, item)
             self.values_hash[self.key] = #self.values
 
-            item.clean_handlers = {}
-
             if self.filter then
                 self.filter(item)
             end
@@ -609,7 +603,6 @@ local function load_full_data(self, dir_res, headers, prev_values, prev_values_h
                          "], keep the previous configuration, err: ", err)
                 insert_tab(self.values, prev_item)
                 self.values_hash[self.key] = #self.values
-                carried[prev_item] = true
             end
         end
 
@@ -662,7 +655,6 @@ local function load_full_data(self, dir_res, headers, prev_values, prev_values_h
                 self.values_hash[key] = #self.values
 
                 item.value.id = key
-                item.clean_handlers = {}
 
                 if self.filter then
                     self.filter(item)
@@ -678,21 +670,10 @@ local function load_full_data(self, dir_res, headers, prev_values, prev_values_h
                              "], keep the previous configuration, err: ", err)
                     insert_tab(self.values, prev_item)
                     self.values_hash[key] = #self.values
-                    carried[prev_item] = true
                 end
             end
 
             self:upgrade_version(item.modifiedIndex)
-        end
-    end
-
-    -- fire the clean handlers of the previous items that were not carried
-    -- over: they were either replaced by a new value or deleted from etcd
-    if prev_values then
-        for _, item in ipairs(prev_values) do
-            if item and not carried[item] then
-                config_util.fire_all_clean_handlers(item)
-            end
         end
     end
 
@@ -837,18 +818,12 @@ local function sync_data(self)
 
         local pre_index = self.values_hash[key]
         if pre_index then
-            local pre_val = self.values[pre_index]
-            if pre_val then
-                config_util.fire_all_clean_handlers(pre_val)
-            end
-
             if res.value then
                 if not self.single_item then
                     res.value.id = key
                 end
 
                 self.values[pre_index] = res
-                res.clean_handlers = {}
                 log.info("update data by key: ", key)
 
             else
@@ -859,7 +834,6 @@ local function sync_data(self)
             end
 
         elseif res.value then
-            res.clean_handlers = {}
             insert_tab(self.values, res)
             self.values_hash[key] = #self.values
             if not self.single_item then
