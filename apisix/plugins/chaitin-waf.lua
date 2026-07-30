@@ -88,6 +88,16 @@ local plugin_schema = {
                 },
                 real_client_ip = {
                     type = "boolean"
+                },
+                log_resp = {
+                    type = "boolean"
+                },
+                resp_body_size = {
+                    type = "integer",
+                    minimum = 0
+                },
+                extra_ignored_content_types = {
+                    type = "string"
                 }
             },
         },
@@ -152,6 +162,23 @@ local metadata_schema = {
                 real_client_ip = {
                     type = "boolean",
                     default = true
+                },
+                -- report the response to the WAF detection service
+                log_resp = {
+                    type = "boolean",
+                    default = false
+                },
+                -- amount of the response body to report, in KB,
+                -- 0 disables body buffering
+                resp_body_size = {
+                    type = "integer",
+                    minimum = 0,
+                    default = 4
+                },
+                -- extra response content types (comma separated) to skip
+                -- on top of the built-in ignored list
+                extra_ignored_content_types = {
+                    type = "string"
                 }
             },
             default = {},
@@ -273,29 +300,34 @@ local function get_conf(conf, metadata)
         real_client_ip = true,
     }
 
-    if metadata.config then
-        t.connect_timeout = metadata.config.connect_timeout
-        t.send_timeout = metadata.config.send_timeout
-        t.read_timeout = metadata.config.read_timeout
-        t.req_body_size = metadata.config.req_body_size
-        t.keepalive_size = metadata.config.keepalive_size
-        t.keepalive_timeout = metadata.config.keepalive_timeout
-        if metadata.config.real_client_ip ~= nil then
-            t.real_client_ip = metadata.config.real_client_ip
+    local function apply(config)
+        if not config then
+            return
+        end
+
+        t.connect_timeout = config.connect_timeout
+        t.send_timeout = config.send_timeout
+        t.read_timeout = config.read_timeout
+        t.req_body_size = config.req_body_size
+        t.keepalive_size = config.keepalive_size
+        t.keepalive_timeout = config.keepalive_timeout
+        if config.real_client_ip ~= nil then
+            t.real_client_ip = config.real_client_ip
+        end
+        if config.log_resp ~= nil then
+            t.log_resp = config.log_resp
+        end
+        if config.resp_body_size ~= nil then
+            t.resp_body_size = config.resp_body_size
+        end
+        if config.extra_ignored_content_types ~= nil then
+            t.extra_ignored_content_types = config.extra_ignored_content_types
         end
     end
 
-    if conf.config then
-        t.connect_timeout = conf.config.connect_timeout
-        t.send_timeout = conf.config.send_timeout
-        t.read_timeout = conf.config.read_timeout
-        t.req_body_size = conf.config.req_body_size
-        t.keepalive_size = conf.config.keepalive_size
-        t.keepalive_timeout = conf.config.keepalive_timeout
-        if conf.config.real_client_ip ~= nil then
-            t.real_client_ip = conf.config.real_client_ip
-        end
-    end
+    -- metadata config first, then route/service level config overrides it
+    apply(metadata.config)
+    apply(conf.config)
 
     t.mode = conf.mode or metadata.mode or t.mode
 
@@ -418,6 +450,16 @@ end
 
 function _M.header_filter(conf, ctx)
     t1k.do_header_filter()
+end
+
+
+function _M.body_filter(conf, ctx)
+    t1k.do_body_filter()
+end
+
+
+function _M.log(conf, ctx)
+    t1k.do_log()
 end
 
 
