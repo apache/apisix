@@ -1494,7 +1494,6 @@ local function merge_global_rules(global_rules, conf_version)
         },
         createdIndex = conf_version,
         modifiedIndex = conf_version,
-        clean_handlers = {},
     }
 
     return dummy_global_rule

@@ -747,7 +747,6 @@ nginx_config:
             local stale = {
                 key = "/apisix/global_rules/ghost",
                 modifiedIndex = 1,
-                clean_handlers = {},
                 value = {id = "ghost", plugins = {}},
             }
             core.table.insert(obj.values, stale)
