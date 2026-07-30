@@ -222,6 +222,7 @@ local _M = {
     "authz-casbin",
     "authz-casdoor",
     "wolf-rbac",
+    "ldap-auth-advanced",
     "ldap-auth",
     "hmac-auth",
     "basic-auth",
