@@ -904,14 +904,21 @@ passed
             table.sort(results)
             ngx.say("Results: ", table.concat(results, ", "))
 
-            ngx.say("Phase 4: Reset to OPEN state")
-            -- Trigger failure to reset circuit breaker to OPEN state
+            -- Exactly half_open_max_calls (2) probes may be admitted, even
+            -- though 3 requests raced in concurrently; the 3rd must be
+            -- rejected rather than sneaking through as an uncounted probe.
+            -- Both admitted probes succeeded, so the breaker closes with a
+            -- fresh window -- a single subsequent failure below
+            -- min_request_threshold should not be enough to reopen it.
+            ngx.say("Phase 4: Confirm breaker closed with a fresh window")
             local code9 = run_req('/api_breaker?code=500')
             ngx.say("Request 9 status: ", code9)
 
-            ngx.say("Phase 5: Verify headers in OPEN state")
-            local code10, headers10 = run_req('/api_breaker?code=200')
+            ngx.say("Phase 5: Reopen with fresh failures and verify headers")
+            local code10 = run_req('/api_breaker?code=500')
             ngx.say("Request 10 status: ", code10)
+            local code11, headers11 = run_req('/api_breaker?code=200')
+            ngx.say("Request 11 status: ", code11)
         }
     }
 --- request
@@ -921,8 +928,9 @@ Phase 1: Trigger circuit breaker
 Trigger req status: 502
 Phase 2: Wait for half-open state
 Phase 3: Test half-open request limit
-Results: 200, 200, 200
-Phase 4: Reset to OPEN state
-Request 9 status: 502
-Phase 5: Verify headers in OPEN state
-Request 10 status: 502
+Results: 200, 200, 502
+Phase 4: Confirm breaker closed with a fresh window
+Request 9 status: 500
+Phase 5: Reopen with fresh failures and verify headers
+Request 10 status: 500
+Request 11 status: 502
