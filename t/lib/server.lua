@@ -1327,4 +1327,15 @@ function _M.plugin_proxy_rewrite_multi_header()
 end
 
 
+-- mock of Lago's batch events endpoint (POST /api/v1/events/batch); logs the
+-- Authorization header and request body so lago.t can assert on what the plugin
+-- actually sent, then answers 200 with an empty batch like Lago does
+function _M.api_v1_events_batch()
+    ngx.req.read_body()
+    ngx.log(ngx.WARN, "lago auth: ", ngx.req.get_headers()["Authorization"] or "")
+    ngx.log(ngx.WARN, "lago body: ", ngx.req.get_body_data() or "")
+    ngx.say('{"events": []}')
+end
+
+
 return _M
