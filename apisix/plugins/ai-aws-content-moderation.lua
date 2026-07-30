@@ -401,8 +401,16 @@ function _M.lua_body_filter(conf, ctx, headers, body)
 
     -- realtime: moderate batches as they arrive so a hit can cut the stream off
     ctx.aws_cm_cache = ctx.aws_cm_cache or ""
-    ctx.aws_cm_cache = ctx.aws_cm_cache
-                       .. table.concat(ctx.llm_response_contents_in_chunk or {}, "")
+    -- With a protocol converter a single upstream chunk is dispatched as several
+    -- downstream chunks, so this filter runs once per converted chunk while
+    -- llm_response_contents_in_chunk is filled once per upstream chunk. Take the
+    -- texts on the first run only, otherwise the batch holds them N times over.
+    local chunk_seq = ctx.llm_response_chunk_seq
+    if not chunk_seq or chunk_seq ~= ctx.aws_cm_chunk_seq then
+        ctx.aws_cm_chunk_seq = chunk_seq
+        ctx.aws_cm_cache = ctx.aws_cm_cache
+                           .. table.concat(ctx.llm_response_contents_in_chunk or {}, "")
+    end
     local now = ngx.now()
     ctx.aws_cm_last_check = ctx.aws_cm_last_check or now
     if #ctx.aws_cm_cache < conf.stream_check_cache_size

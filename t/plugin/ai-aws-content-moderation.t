@@ -81,6 +81,7 @@ _EOC_
                         ngx.say("[INTERNAL FAILURE]: failed to decoded request body: ", err)
                     end
                     local result = body.TextSegments[1].Text
+                    ngx.log(ngx.WARN, "comprehend text: ", result)
                     local final_response = responses[result]
 
                     -- Response-side text is free-form LLM output, not a fixture
@@ -871,3 +872,155 @@ qr/code:nil\nrisk_level:none\n.*"risk_level":"none"/s
 qr/code:nil\n.*data: 12345.*"risk_level":"none"/s
 --- no_error_log
 [error]
+
+
+
+=== TEST 33: realtime takes an upstream chunk's text once per chunk, not per converted chunk
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.ai-aws-content-moderation")
+            local ctx = {
+                picked_ai_instance = { provider = "openai" },
+                ai_client_protocol = "anthropic-messages",
+                var = { request_type = "ai_stream" },
+                llm_response_contents_in_chunk = { "hello" },
+                llm_response_chunk_seq = 1,
+            }
+            local conf = {
+                comprehend = {
+                    access_key_id = "access",
+                    secret_access_key = "secret",
+                    region = "us-east-1",
+                    endpoint = "http://localhost:2668"
+                },
+                check_response = true,
+                stream_check_mode = "realtime",
+                stream_check_cache_size = 4096,
+                stream_check_interval = 60,
+            }
+            plugin.check_schema(conf)
+            -- a converter dispatches one upstream chunk as several downstream
+            -- chunks, so the filter runs once per converted chunk
+            for _ = 1, 3 do
+                plugin.lua_body_filter(conf, ctx, {}, "data: {}\n\n")
+            end
+            ngx.say("chunk 1: ", ctx.aws_cm_cache)
+
+            ctx.llm_response_contents_in_chunk = { " world" }
+            ctx.llm_response_chunk_seq = 2
+            for _ = 1, 2 do
+                plugin.lua_body_filter(conf, ctx, {}, "data: {}\n\n")
+            end
+            ngx.say("chunk 2: ", ctx.aws_cm_cache)
+        }
+    }
+--- response_body
+chunk 1: hello
+chunk 2: hello world
+--- no_error_log
+[error]
+
+
+
+=== TEST 34: set route serving an Anthropic client from an OpenAI upstream (converter active)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/anthropic/v1/messages",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": { "header": { "Authorization": "Bearer token" } },
+                            "options": {
+                                "model": "claude-3-5-sonnet-20241022",
+                                "stream": true
+                            },
+                            "override": { "endpoint": "http://127.0.0.1:1980/v1/chat/completions" }
+                        },
+                        "ai-aws-content-moderation": {
+                            "comprehend": {
+                                "access_key_id": "access",
+                                "secret_access_key": "ea+secret",
+                                "region": "us-east-1",
+                                "endpoint": "http://localhost:2668"
+                            },
+                            "check_request": false,
+                            "check_response": true,
+                            "stream_check_mode": "realtime",
+                            "stream_check_cache_size": 4096,
+                            "stream_check_interval": 60
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 35: converter fan-out moderates the response text once, not once per converted chunk
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local httpc = http.new()
+
+            local ok, err = httpc:connect({
+                scheme = "http",
+                host = "localhost",
+                port = ngx.var.server_port,
+            })
+            if not ok then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+
+            local res, err = httpc:request({
+                method = "POST",
+                path = "/anthropic/v1/messages",
+                headers = {
+                    ["Content-Type"] = "application/json",
+                    ["Connection"] = "close",
+                    ["X-AI-Fixture"] = "protocol-conversion/openai-to-anthropic-stream.sse",
+                },
+                body = [[{
+                    "model": "claude-3-5-sonnet-20241022",
+                    "messages": [{"role": "user", "content": "Hi"}],
+                    "stream": true
+                }]],
+            })
+            if not res then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+
+            local results = {}
+            while true do
+                local chunk = res.body_reader()
+                if not chunk then break end
+                table.insert(results, chunk)
+            end
+            ngx.print(table.concat(results, ""))
+        }
+    }
+--- error_code: 200
+--- response_body_like eval
+qr/event: message_stop/
+--- grep_error_log eval
+qr/comprehend text: [^,]+/
+--- grep_error_log_out
+comprehend text: Hello world
