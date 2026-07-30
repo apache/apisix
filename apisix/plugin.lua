@@ -818,8 +818,12 @@ local function merge_consumer_route(route_conf, consumer_conf, consumer_group_co
         return route_conf
     end
 
-    -- the plugins subtree is fully overwritten below, so there is no need to
-    -- deep-copy it; shallow-copy that subtree to avoid the wasted work
+    -- some plugins cache request-time state on their conf object (resolved DNS
+    -- nodes, probed backend versions, ...). Deep-copying the plugin confs would
+    -- hand every consumer its own copy and drop that state, so keep them shared
+    -- by reference, as they already are on the route without consumer auth. The
+    -- `plugins` container itself is still a fresh table, so the merge below
+    -- overwrites its keys without touching the original route conf.
     local new_route_conf = core.table.deepcopy(route_conf,
         { shallow_prefix = "self.value.plugins" })
 
