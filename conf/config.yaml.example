@@ -766,6 +766,13 @@ deployment:                    # Deployment configurations
     admin_listen:                 # Set the Admin API listening addresses.
       ip: 0.0.0.0                 # Set listening IP.
       port: 9180                  # Set listening port. Beware of port conflict with node_listen.
+      # admin_listen also accepts an array to listen on multiple addresses at once,
+      # for example IPv4 + IPv6 dual-stack (the same port may be reused across them):
+      # admin_listen:
+      #   - ip: 0.0.0.0
+      #     port: 9180
+      #   - ip: "[::]"
+      #     port: 9180
 
     # https_admin: true           # Enable SSL for Admin API on IP and port specified in admin_listen.
                                   # Use admin_api_mtls.admin_ssl_cert and admin_api_mtls.admin_ssl_cert_key.

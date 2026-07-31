@@ -616,7 +616,9 @@ http {
     {% if enable_admin then %}
     server {
         {%if https_admin then%}
+        {% for _, admin_server_addr in ipairs(admin_server_addrs) do %}
         listen {* admin_server_addr *} ssl;
+        {% end %}
 
         ssl_certificate      {* admin_api_mtls.admin_ssl_cert *};
         ssl_certificate_key  {* admin_api_mtls.admin_ssl_cert_key *};
@@ -636,7 +638,9 @@ http {
         {% end %}
 
         {% else %}
+        {% for _, admin_server_addr in ipairs(admin_server_addrs) do %}
         listen {* admin_server_addr *};
+        {% end %}
         {%end%}
         log_not_found off;
 
