@@ -30,9 +30,12 @@ local str_find = string.find
 local str_sub = string.sub
 local parse_addr = core.utils.parse_addr
 
--- RFC 4512 attribute-description shape: a leading letter, then letters,
--- digits, semicolons (option separators) or hyphens.
-local ATTR_PATTERN = "^[A-Za-z][A-Za-z0-9;-]*$"
+-- RFC 4512 attribute-description: a descriptor ("cn", "sAMAccountName") or a
+-- numeric OID ("1.2.840.113556.1.4.656"), either optionally followed by
+-- ";option" suffixes ("cn;lang-en", "1.2.840.113556.1.4.656;binary").
+local ATTR_PATTERN = "^(?:[A-Za-z][A-Za-z0-9-]*"
+                     .. "|(?:0|[1-9][0-9]*)(?:\\.(?:0|[1-9][0-9]*))+)"
+                     .. "(?:;[A-Za-z0-9-]+)*$"
 
 local schema = {
     type = "object",
@@ -143,23 +146,12 @@ end
 
 
 
--- Extract username/password from the credential header: the scheme word is
--- conf.header_type ("ldap" or "basic", case-insensitive), the payload is
+-- Parse one credential header value: the scheme word is conf.header_type
+-- ("ldap" or "basic", case-insensitive), the payload is
 -- base64("username:password").
-local function extract_credentials(conf, ctx)
-    -- Proxy-Authorization is checked before Authorization
-    local header_name = "Proxy-Authorization"
-    local auth_header = core.request.header(ctx, header_name)
-    if not auth_header then
-        header_name = "Authorization"
-        auth_header = core.request.header(ctx, header_name)
-    end
-    if not auth_header then
-        return nil, nil, "missing authorization header"
-    end
-
+local function parse_credential_header(conf, auth_header)
     local m, err = ngx_re_match(auth_header,
-                                "(?i:" .. conf.header_type .. ")\\s(.+)", "jo")
+                                "^(?i:" .. conf.header_type .. ")\\s+(.+)", "jo")
     if err then
         return nil, nil, "error matching authorization header: " .. err
     end
@@ -182,32 +174,43 @@ local function extract_credentials(conf, ctx)
 end
 
 
--- Tell a directory result-code failure (an auth failure -> 401) apart from a
--- socket/TLS/timeout error (an outage -> 500) by the library's error prefixes.
-local function is_result_code_failure(err)
-    if type(err) ~= "string" then
-        return false
+-- Proxy-Authorization takes priority, but only when it parses into
+-- credentials for conf.header_type: a forward proxy may spend that header
+-- on its own credentials (e.g. "Basic ...") while the end user's ride in
+-- Authorization, so its mere presence must not mask a usable Authorization.
+local function extract_credentials(conf, ctx)
+    local proxy_err
+    local proxy_header = core.request.header(ctx, "Proxy-Authorization")
+    if proxy_header then
+        local username, password
+        username, password, proxy_err = parse_credential_header(conf, proxy_header)
+        if username then
+            return username, password
+        end
     end
-    return str_sub(err, 1, 18) == "simple bind failed"
-        or str_sub(err, 1, 13) == "search failed"
+
+    local auth_header = core.request.header(ctx, "Authorization")
+    if not auth_header then
+        return nil, nil, proxy_err or "missing authorization header"
+    end
+
+    return parse_credential_header(conf, auth_header)
 end
 
 
+-- resty.ldap reports a directory result-code failure as
+-- "<op> failed, error: <ERROR_MSG[code]>, details: <diagnostic>"; anything
+-- else is a socket/TLS/timeout error or a protocol violation. Match against
+-- the library's own message table so the strings cannot drift from it.
+local RESULT_INVALID_CREDENTIALS = ldap_protocol.ERROR_MSG[49]
+local RESULT_SIZE_LIMIT_EXCEEDED = ldap_protocol.ERROR_MSG[4]
 
-
--- Build the user_dn lookup map in one pass over the Consumers, cached
--- against the Consumer config version.
-local consumer_lrucache = core.lrucache.new({ ttl = 300, count = 512 })
-
-local function build_consumer_maps(consumer_conf)
-    local by_user_dn = {}
-    for _, node in ipairs(consumer_conf.nodes) do
-        local auth_conf = node.auth_conf
-        if auth_conf and auth_conf.user_dn then
-            by_user_dn[auth_conf.user_dn] = node
-        end
+local function is_result_code(err, op, result_msg)
+    if type(err) ~= "string" then
+        return false
     end
-    return { by_user_dn = by_user_dn }
+    local prefix = op .. " failed, error: " .. result_msg .. ", details:"
+    return str_sub(err, 1, #prefix) == prefix
 end
 
 
@@ -263,10 +266,8 @@ local function ldap_resolve(conf, ctx, username, password)
             core.log.error(plugin_name, ": LDAP connect failed: ", berr)
             return 500
         end
-        if is_result_code_failure(berr) then
-            -- a rejected search bind is a misconfiguration; fail closed
-            return auth_failed(conf, ctx, "search bind rejected by directory")
-        end
+        -- a rejected search bind (e.g. a rotated service-account password)
+        -- is a misconfiguration, never the client's auth failure
         core.log.error(plugin_name, ": LDAP search bind failed: ", berr)
         return 500
     end
@@ -282,8 +283,12 @@ local function ldap_resolve(conf, ctx, username, password)
         search_filter)
     if entries == false then
         client:close()
-        if is_result_code_failure(serr) then
-            return auth_failed(conf, ctx, "user search rejected by directory")
+        if is_result_code(serr, "search", RESULT_SIZE_LIMIT_EXCEEDED) then
+            -- more than size_limit entries matched the login attribute: the
+            -- same ambiguity as match_count > 1 below; fail closed
+            return auth_failed(conf, ctx,
+                               "ambiguous user match (size limit exceeded); "
+                               .. "check attribute uniqueness")
         end
         core.log.error(plugin_name, ": LDAP user search failed: ", serr)
         return 500
@@ -310,12 +315,13 @@ local function ldap_resolve(conf, ctx, username, password)
                            "ambiguous user match (>1 entry); check attribute uniqueness")
     end
 
-    -- Authenticate: bind as the resolved user. A result-code failure is a
-    -- wrong password (401); a transport error is an outage (500).
+    -- Authenticate: bind as the resolved user. invalidCredentials is a wrong
+    -- password (401); any other result code (busy, unavailable, ...) or a
+    -- transport error is an outage (500).
     local auth_ok, aerr = client:simple_bind(user_dn, password)
     if not auth_ok then
         client:close()
-        if is_result_code_failure(aerr) then
+        if is_result_code(aerr, "simple bind", RESULT_INVALID_CREDENTIALS) then
             return auth_failed(conf, ctx, "user authentication failed")
         end
         core.log.error(plugin_name, ": LDAP authentication bind failed: ", aerr)
@@ -334,8 +340,13 @@ end
 
 
 function _M.rewrite(conf, ctx)
-    -- Strip any client-supplied X-Authenticated-Groups before any auth work.
+    -- Strip the client-supplied identity headers before any auth work: only
+    -- attach_consumer() may set them, and with consumer_required=false it
+    -- never runs, so an inbound value would otherwise pass through untouched.
     core.request.set_header(ctx, "X-Authenticated-Groups", nil)
+    core.request.set_header(ctx, "X-Consumer-Username", nil)
+    core.request.set_header(ctx, "X-Credential-Identifier", nil)
+    core.request.set_header(ctx, "X-Consumer-Custom-ID", nil)
 
     local username, password, err = extract_credentials(conf, ctx)
     if err then
@@ -359,17 +370,14 @@ function _M.rewrite(conf, ctx)
     end
 
     -- Associate a Consumer with the authenticated identity, unless
-    -- consumer_required is false.
+    -- consumer_required is false. find_consumer() resolves secret references
+    -- in the Consumer's user_dn and skips unresolved ones fail-closed.
     if conf.consumer_required ~= false then
-        local consumer_conf = consumer_mod.consumers_conf(plugin_name)
-        if not consumer_conf or not consumer_conf.nodes then
+        local consumer, consumer_conf, err =
+            consumer_mod.find_consumer(plugin_name, "user_dn", user_dn)
+        if err then
             return auth_failed(conf, ctx, "consumer_required but no Consumer is configured")
         end
-
-        local maps = consumer_lrucache(consumer_conf, consumer_conf.conf_version,
-                                       build_consumer_maps, consumer_conf)
-
-        local consumer = maps.by_user_dn[user_dn]
         if not consumer then
             return auth_failed(conf, ctx,
                                "no Consumer maps to the authenticated user_dn")
