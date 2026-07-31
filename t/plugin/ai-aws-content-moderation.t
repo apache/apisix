@@ -81,6 +81,7 @@ _EOC_
                         ngx.status(503)
                         ngx.say("[INTERNAL FAILURE]: failed to decoded request body: ", err)
                     end
+                    local utf8 = require("lua-utf8")
                     local segments = body.TextSegments
                     ngx.log(ngx.WARN, "comprehend call: segments=", #segments,
                             " connection_requests=", ngx.var.connection_requests)
@@ -104,6 +105,9 @@ _EOC_
                     local results = {}
                     for i, segment in ipairs(segments) do
                         local text = segment.Text
+                        if not utf8.len(text) then
+                            ngx.log(ngx.ERR, "comprehend got a segment that is not valid utf-8")
+                        end
                         if #text > 1024 then
                             ngx.status = 400
                             ngx.say(json.encode({
@@ -1265,6 +1269,13 @@ response was not scored, streaming without a risk_level annotation
             ngx.say("zero request limit: ",
                 plugin.check_schema(conf({request_check_length_limit = 0}))
                     and "accepted" or "rejected")
+            -- a segment narrower than 4 bytes could not hold one UTF-8 character
+            ngx.say("3 byte request limit: ",
+                plugin.check_schema(conf({request_check_length_limit = 3}))
+                    and "accepted" or "rejected")
+            ngx.say("4 byte response limit: ",
+                plugin.check_schema(conf({response_check_length_limit = 4}))
+                    and "accepted" or "rejected")
             ngx.say("1 KB limit: ",
                 plugin.check_schema(conf({response_check_length_limit = 1024}))
                     and "accepted" or "rejected")
@@ -1280,5 +1291,60 @@ response was not scored, streaming without a risk_level annotation
 request limit over 1 KB: rejected
 response limit over 1 KB: rejected
 zero request limit: rejected
+3 byte request limit: rejected
+4 byte response limit: accepted
 1 KB limit: accepted
 defaults: 1000 1000 10000 on 60000
+
+
+
+=== TEST 46: set route with the default check length limits
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/chat",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": { "header": { "Authorization": "Bearer token" } },
+                            "override": { "endpoint": "http://127.0.0.1:1980/v1/chat/completions" }
+                        },
+                        "ai-aws-content-moderation": {
+                            "comprehend": {
+                                "access_key_id": "access",
+                                "secret_access_key": "ea+secret",
+                                "region": "us-east-1",
+                                "endpoint": "http://localhost:2668"
+                            },
+                            "deny_code": 400
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 47: multibyte content is split on character boundaries
+--- request eval
+"POST /chat
+{ \"messages\": [ { \"role\": \"user\", \"content\": \"" . ("\xe6\x97\xa5" x 400) . "\" } ] }"
+--- error_code: 200
+--- grep_error_log eval
+qr/comprehend call: segments=\d+/
+--- grep_error_log_out
+comprehend call: segments=2
+--- no_error_log
+not valid utf-8

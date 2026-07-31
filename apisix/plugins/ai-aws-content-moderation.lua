@@ -41,9 +41,14 @@ local HTTP_BAD_REQUEST = ngx.HTTP_BAD_REQUEST
 -- 1 KB, with the whole list capped at 10 KB. Anything over that is rejected
 -- with TextSizeLimitExceededException, so content is split and batched to fit.
 -- https://docs.aws.amazon.com/comprehend/latest/APIReference/API_DetectToxicContent.html
+-- MAX_CALL_BYTES keeps a margin under the 10 KB list cap: AWS does not say
+-- whether the cap counts the encoded list or just the text, and an extra call
+-- is much cheaper than a rejected one that leaves content unmoderated.
 local MAX_SEGMENT_BYTES = 1024
 local MAX_SEGMENTS_PER_CALL = 10
 local MAX_CALL_BYTES = 10000
+-- a UTF-8 character is up to 4 bytes, so a smaller segment could not hold one
+local MIN_SEGMENT_BYTES = 4
 
 local moderation_categories_pattern = "^(PROFANITY|HATE_SPEECH|INSULT|"..
                                       "HARASSMENT_OR_ABUSE|SEXUAL|VIOLENCE_OR_THREAT)$"
@@ -88,7 +93,7 @@ local schema = {
         check_response = { type = "boolean", default = false },
         request_check_length_limit = {
             type = "integer",
-            minimum = 1,
+            minimum = MIN_SEGMENT_BYTES,
             maximum = MAX_SEGMENT_BYTES,
             default = 1000,
             description = "max bytes of request content per Comprehend text segment; " ..
@@ -96,7 +101,7 @@ local schema = {
         },
         response_check_length_limit = {
             type = "integer",
-            minimum = 1,
+            minimum = MIN_SEGMENT_BYTES,
             maximum = MAX_SEGMENT_BYTES,
             default = 1000,
             description = "max bytes of response content per Comprehend text segment; " ..
@@ -205,14 +210,14 @@ local function get_comprehend_client(conf, ctx)
     local default_endpoint = "https://comprehend." .. comprehend.region .. ".amazonaws.com"
     local scheme, host, port = unpack(http:parse_uri(comprehend.endpoint or default_endpoint))
     local endpoint = scheme .. "://" .. host
-    aws_instance.config.endpoint = endpoint
-    aws_instance.config.ssl_verify = comprehend.ssl_verify
 
+    -- aws_instance is shared, so keep per-route settings on the service config
     ctx.aws_cm_client = aws_instance:Comprehend({
         credentials = credentials,
         endpoint = endpoint,
         region = comprehend.region,
         port = port,
+        ssl_verify = comprehend.ssl_verify,
         timeout = conf.timeout,
         keepalive_idle_timeout = conf.keepalive and conf.keepalive_timeout or nil,
     })
@@ -242,7 +247,7 @@ local function segment_end(content, from, limit)
 
     local byte = str_byte(content, cut + 1)
     if cut < from or (byte >= 0x80 and byte < 0xC0) then
-        -- one character wider than the limit, or invalid UTF-8: cut on the byte
+        -- the content is not valid UTF-8: cut on the byte
         return last
     end
     return cut
