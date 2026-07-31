@@ -1194,3 +1194,133 @@ qr/property \\"path\\" is required/
 GET /t
 --- response_body
 passed
+
+
+
+=== TEST 31: aggregate requests arriving via a unix domain socket
+--- config
+    listen unix:$TEST_NGINX_HTML_DIR/apisix.sock;
+
+    location = /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local json = require("toolkit.json")
+            local http = require("resty.http")
+            local httpc = http.new()
+            httpc:set_timeout(2000)
+            local ok, err = httpc:connect("unix:$TEST_NGINX_HTML_DIR/apisix.sock")
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+
+            local body = core.json.encode({
+                pipeline = {
+                    {path = "/uds-b"},
+                    {path = "/uds-c", method = "PUT"},
+                }
+            })
+
+            local res, err = httpc:request({
+                method = "POST",
+                path = "/apisix/batch-requests",
+                headers = {
+                    ["Host"] = "127.0.0.1",
+                    ["Content-Type"] = "application/json",
+                },
+                body = body,
+            })
+            if not res then
+                ngx.say("request failed: ", err)
+                return
+            end
+
+            local resp_body, err = res:read_body()
+            if not resp_body then
+                ngx.say("failed to read response body: ", err)
+                return
+            end
+
+            if res.status ~= 200 then
+                ngx.status = res.status
+                ngx.print(resp_body)
+                return
+            end
+
+            local data = json.decode(resp_body)
+            for _, resp in ipairs(data) do
+                ngx.say(resp.status, " ", resp.body)
+            end
+        }
+    }
+
+    location = /uds-b {
+        content_by_lua_block {
+            ngx.print("B")
+        }
+    }
+    location = /uds-c {
+        content_by_lua_block {
+            ngx.status = 201
+            ngx.print("C")
+        }
+    }
+--- request
+GET /t
+--- response_body
+200 B
+201 C
+
+
+
+=== TEST 32: no TCP port to loop back through
+--- yaml_config
+apisix:
+  node_listen: []
+  enable_resolv_search_opt: false
+  trusted_addresses:
+    - "127.0.0.1"
+--- config
+    listen unix:$TEST_NGINX_HTML_DIR/apisix.sock;
+
+    location = /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local http = require("resty.http")
+            local httpc = http.new()
+            httpc:set_timeout(2000)
+            local ok, err = httpc:connect("unix:$TEST_NGINX_HTML_DIR/apisix.sock")
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+
+            local body = core.json.encode({pipeline = {{path = "/uds-b"}}})
+            local res, err = httpc:request({
+                method = "POST",
+                path = "/apisix/batch-requests",
+                headers = {
+                    ["Host"] = "127.0.0.1",
+                    ["Content-Type"] = "application/json",
+                },
+                body = body,
+            })
+            if not res then
+                ngx.say("request failed: ", err)
+                return
+            end
+
+            local resp_body = res:read_body()
+            ngx.say(res.status, " ", resp_body)
+        }
+    }
+
+    location = /uds-b {
+        content_by_lua_block {
+            ngx.print("B")
+        }
+    }
+--- request
+GET /t
+--- response_body_like
+503 .*doesn't listen on a TCP port.*
