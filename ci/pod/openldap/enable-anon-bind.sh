@@ -55,6 +55,11 @@ DATA_DB_DN="$(ldapsearch -Y EXTERNAL -H "ldapi:///" -b cn=config \
     "(olcSuffix=dc=example,dc=org)" dn 2>/dev/null \
     | awk '/^dn:/ { $1=""; sub(/^ /,""); print; exit }')"
 
+if [ -z "${DATA_DB_DN}" ]; then
+    error "cannot resolve the cn=config database DN for suffix dc=example,dc=org"
+    exit 1
+fi
+
 ldapmodify -Y EXTERNAL -H "ldapi:///" <<EOF
 dn: ${DATA_DB_DN}
 changetype: modify

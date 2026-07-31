@@ -402,7 +402,7 @@ passed
 GET /hello
 --- error_code: 401
 --- response_headers
-WWW-Authenticate: basic realm="ldap"
+WWW-Authenticate: Basic realm="ldap"
 
 
 
@@ -1553,3 +1553,53 @@ Authorization: ldap aW5ldE9yZ1BlcnNvbjp4
 qr/ambiguous user match \(size limit exceeded\)/
 --- grep_error_log_out
 ambiguous user match (size limit exceeded)
+
+
+
+=== TEST 68: empty ldap_uri is rejected (minLength)
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.ldap-auth-advanced")
+            local ok, err = plugin.check_schema({
+                ldap_uri = "",
+                base_dn = "ou=users,dc=example,dc=org",
+            })
+            ngx.say(ok and "passed" or err)
+        }
+    }
+--- response_body_like eval
+qr/property "ldap_uri" validation failed/
+
+
+
+=== TEST 69: overlong base_dn is rejected (maxLength)
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.ldap-auth-advanced")
+            local ok, err = plugin.check_schema({
+                ldap_uri = "127.0.0.1:1389",
+                base_dn = "ou=" .. string.rep("x", 4094) .. ",dc=org",
+            })
+            ngx.say(ok and "passed" or err)
+        }
+    }
+--- response_body_like eval
+qr/property "base_dn" validation failed/
+
+
+
+=== TEST 70: empty consumer user_dn is rejected (minLength)
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local plugin = require("apisix.plugins.ldap-auth-advanced")
+            local ok, err = plugin.check_schema({ user_dn = "" },
+                                                core.schema.TYPE_CONSUMER)
+            ngx.say(ok and "passed" or err)
+        }
+    }
+--- response_body_like eval
+qr/property "user_dn" validation failed/

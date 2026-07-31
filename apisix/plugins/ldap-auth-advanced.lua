@@ -42,25 +42,28 @@ local schema = {
     title = "work with route or service object",
     properties = {
         -- connection
-        ldap_uri     = { type = "string" },                        -- "host[:port]"
+        ldap_uri     = { type = "string",                          -- "host[:port]"
+                         minLength = 1, maxLength = 256 },
         use_ldaps    = { type = "boolean", default = false },
         use_starttls = { type = "boolean", default = false },
         ssl_verify   = { type = "boolean", default = true },
         timeout      = { type = "integer", minimum = 1, maximum = 60000,
-                         default = 3000 },                          -- milliseconds
+                         default = 10000 },                         -- milliseconds
 
         -- connection pool
         keepalive           = { type = "boolean", default = true },
         keepalive_timeout   = { type = "integer", minimum = 1000, default = 60000 },
         keepalive_pool_size = { type = "integer", minimum = 1, default = 5 },
-        keepalive_pool_name = { type = "string" },
+        keepalive_pool_name = { type = "string", minLength = 1, maxLength = 256 },
 
         -- user resolution (search-then-bind)
-        base_dn       = { type = "string" },                       -- search root
-        attribute     = { type = "string",                         -- filter: (attribute=username)
+        base_dn       = { type = "string",                         -- search root
+                          minLength = 1, maxLength = 4096 },
+        attribute     = { type = "string", maxLength = 256,        -- filter: (attribute=username)
                           default = "cn", pattern = ATTR_PATTERN },
-        bind_dn       = { type = "string" },                       -- absent => anonymous search
-        ldap_password = { type = "string" },
+        bind_dn       = { type = "string",                         -- absent => anonymous search
+                          minLength = 1, maxLength = 4096 },
+        ldap_password = { type = "string", minLength = 1, maxLength = 4096 },
 
         -- search bounds
         size_limit = { type = "integer", minimum = 2, default = 2 },
@@ -84,7 +87,7 @@ local consumer_schema = {
     type = "object",
     title = "work with consumer object",
     properties = {
-        user_dn  = { type = "string" },
+        user_dn  = { type = "string", minLength = 1, maxLength = 4096 },
     },
     required = {"user_dn"},
 }
@@ -126,6 +129,11 @@ function _M.check_schema(conf, schema_type)
 end
 
 
+local CHALLENGE_SCHEME = {
+    ldap  = "ldap",
+    basic = "Basic",
+}
+
 
 -- Shared 401 helper for the authentication-failure paths.
 local function auth_failed(conf, ctx, reason)
@@ -139,7 +147,8 @@ local function auth_failed(conf, ctx, reason)
         core.log.warn(plugin_name, ": ", reason)
     end
     core.response.set_header("WWW-Authenticate",
-                             conf.header_type .. " realm=\"" .. conf.realm .. "\"")
+                             CHALLENGE_SCHEME[conf.header_type]
+                             .. " realm=\"" .. conf.realm .. "\"")
     return 401, { message = "Authorization required" }
 end
 
