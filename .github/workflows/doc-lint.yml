@@ -2,6 +2,7 @@ name: Doc Lint
 
 on:
   push:
+    branches: [master, "release/**"]
     paths:
       - "docs/**"
       - "**/*.md"

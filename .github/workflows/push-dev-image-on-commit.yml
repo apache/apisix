@@ -6,6 +6,7 @@ on:
       - "docs/**"
       - "**/*.md"
   push:
+    branches: [master, "release/**"]
     paths-ignore:
       - "docs/**"
       - "**/*.md"
