@@ -373,23 +373,31 @@ local function load(plugin_names, wasm_plugin_names)
     -- keyed by name (timers.register_timer), so a new instance registering
     -- before the old one unregisters would lose the resource. If any hook
     -- fails, roll everything back and keep serving with the current set.
+    -- destroy() runs in the reverse order of init(): plugins which wrap a
+    -- shared function (gm, ocsp-stapling) restore what they saved, so the
+    -- innermost wrapper has to be removed first. Only the new instances whose
+    -- init() actually ran are destroyed during the rollback: destroy() of an
+    -- instance that was never initialized would publish its uninitialized
+    -- state, e.g. set radixtree_sni.set_cert_and_key to a nil upvalue.
     local old_plugins = core.table.clone(local_plugins)
-    for _, old_plugin in ipairs(old_plugins) do
-        destroy_plugin(old_plugin, http_plugin_type(old_plugin))
+    for i = #old_plugins, 1, -1 do
+        destroy_plugin(old_plugins[i], http_plugin_type(old_plugins[i]))
     end
 
     local load_err
-    for _, plugin in ipairs(new_plugins) do
+    local inited = 0
+    for i, plugin in ipairs(new_plugins) do
         local ok, err = init_plugin(plugin, http_plugin_type(plugin))
         if not ok then
             load_err = err
             break
         end
+        inited = i
     end
 
     if load_err then
-        for _, plugin in ipairs(new_plugins) do
-            destroy_plugin(plugin, http_plugin_type(plugin))
+        for i = inited, 1, -1 do
+            destroy_plugin(new_plugins[i], http_plugin_type(new_plugins[i]))
         end
 
         for pkg_name, mod in pairs(pkg_snapshot) do
@@ -475,22 +483,24 @@ local function load_stream(plugin_names)
     end
 
     local old_plugins = core.table.clone(stream_local_plugins)
-    for _, old_plugin in ipairs(old_plugins) do
-        destroy_plugin(old_plugin, PLUGIN_TYPE_STREAM)
+    for i = #old_plugins, 1, -1 do
+        destroy_plugin(old_plugins[i], PLUGIN_TYPE_STREAM)
     end
 
     local load_err
-    for _, plugin in ipairs(new_plugins) do
+    local inited = 0
+    for i, plugin in ipairs(new_plugins) do
         local ok, err = init_plugin(plugin, PLUGIN_TYPE_STREAM)
         if not ok then
             load_err = err
             break
         end
+        inited = i
     end
 
     if load_err then
-        for _, plugin in ipairs(new_plugins) do
-            destroy_plugin(plugin, PLUGIN_TYPE_STREAM)
+        for i = inited, 1, -1 do
+            destroy_plugin(new_plugins[i], PLUGIN_TYPE_STREAM)
         end
 
         for pkg_name, mod in pairs(pkg_snapshot) do

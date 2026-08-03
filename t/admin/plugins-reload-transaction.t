@@ -188,3 +188,69 @@ key-auth in hash: true
 --- timeout: 15
 --- error_log eval
 qr/reload-bad-init: init\(\) boom/
+
+
+
+=== TEST 3: the rollback only destroys the new instances which were initialized
+--- yaml_config
+apisix:
+  node_listen: 1984
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  admin:
+    admin_key: null
+plugins:
+  - response-rewrite
+  - reload-probe
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        local state = require("lib.reload_probe_state")
+
+        -- the initial load has initialized the old reload-probe instance
+        ngx.say("after start: init=", state.init, " destroy=", state.destroy)
+
+        -- reload-bad-init has a higher priority than reload-probe, so it fails
+        -- before the new reload-probe instance is initialized
+        require("lib.test_admin").set_config_yaml([[
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  admin:
+    admin_key: null
+apisix:
+  node_listen: 1984
+plugins:
+  - response-rewrite
+  - reload-bad-init
+  - reload-probe
+]])
+        local code = t('/apisix/admin/plugins/reload', ngx.HTTP_PUT)
+        ngx.say("reload: ", code)
+        ngx.sleep(1)
+
+        -- the old instance was destroyed once and re-initialized by the
+        -- rollback; the new one was never initialized, so it must never have
+        -- been destroyed either
+        ngx.say("after rollback: init=", state.init, " destroy=", state.destroy,
+                " destroy_without_init=", state.destroy_without_init)
+
+        local plugin = require("apisix.plugin")
+        ngx.say("reload-probe still live: ",
+                plugin.plugins_hash["reload-probe"] ~= nil)
+    }
+}
+--- request
+GET /t
+--- response_body
+after start: init=1 destroy=0
+reload: 500
+after rollback: init=2 destroy=1 destroy_without_init=0
+reload-probe still live: true
+--- timeout: 15
+--- error_log eval
+qr/reload-bad-init: init\(\) boom/
