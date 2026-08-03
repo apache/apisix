@@ -33,7 +33,7 @@ The base configuration in this tutorial provides routing, upstream authenticatio
 
 ## Prerequisites
 
-- [Docker](https://docs.docker.com/get-docker/)
+- [Docker](https://docs.docker.com/get-docker/) with Docker Engine 28.0.0 or later
 - [curl](https://curl.se/) and [jq](https://jqlang.github.io/jq/)
 - Apache APISIX 3.17.0 or later. The [`proxy-buffering`](../plugins/proxy-buffering.md) Plugin used for streaming was added in APISIX 3.17.0.
 
@@ -61,7 +61,7 @@ docker run --detach \
   run llama-3.2-1b-instruct:q4_k_m
 ```
 
-Binding the port to `127.0.0.1` prevents remote clients from bypassing APISIX and accessing LocalAI directly.
+With Docker Engine 28.0.0 or later, binding the published port to `127.0.0.1` limits access to the Docker host. On older Engine releases, upgrade or additionally block port `8080` with the host firewall. See [Docker port publishing](https://docs.docker.com/engine/network/port-publishing/) for details.
 
 The first start downloads the model and its backend and can take several minutes. Check LocalAI until it is ready:
 
