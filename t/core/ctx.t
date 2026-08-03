@@ -915,3 +915,56 @@ GET /hello
 hello world
 --- error_log eval
 qr/request log: \{"route_id":"1","route_name":"my_route","service_id":"1","service_name":"my_service"\}/
+
+
+
+=== TEST 36: upstream_unresolved_host is available in the nginx access log
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "upstream": {
+                        "nodes": {
+                            "localhost:1980": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            -- a real proxied request so the access log line gets written
+            local http = require("resty.http")
+            local httpc = http.new()
+            local res, err = httpc:request_uri(
+                "http://127.0.0.1:" .. ngx.var.server_port .. "/hello")
+            if not res or res.status ~= 200 then
+                ngx.say("request failed: ", err or res.status)
+                return
+            end
+            -- let the log phase flush the access log line
+            ngx.sleep(0.1)
+
+            local fd = assert(io.open(ngx.config.prefix() .. "logs/access.log", "r"))
+            local content = fd:read("*a")
+            fd:close()
+            -- the configured domain shows up before DNS resolution
+            if content:find("unresolved_host=localhost", 1, true) then
+                ngx.say("found")
+            else
+                ngx.say("not found")
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+found

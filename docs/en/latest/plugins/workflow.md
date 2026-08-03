@@ -39,6 +39,12 @@ import TabItem from '@theme/TabItem';
 
 The `workflow` Plugin supports the conditional execution of user-defined actions to client traffic based on a given set of rules, defined using [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list). This provides a granular approach to traffic management.
 
+:::note
+
+When a Plugin such as `limit-count` or `limit-conn` is used as a `workflow` action, the same Plugin is automatically skipped in the normal Plugin chain for that request. This avoids running it twice (for example, counting a request twice against a rate limit) when the Plugin is also configured directly on the same Route, Service, Consumer, or Global Rule.
+
+:::
+
 ## Attributes
 
 | Name | Type | Required | Default | Valid values | Description |

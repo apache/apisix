@@ -89,9 +89,10 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/batch-requests -H "X-API
 
 ## Metadata
 
-| Name          | Type    | Required | Default | Valid values | Description                                |
-| ------------- | ------- | -------- | ------- | ------------ | ------------------------------------------ |
-| max_body_size | integer | True     | 1048576 | [1, ...]     | Maximum size of the request body in bytes. |
+| Name               | Type    | Required | Default | Valid values | Description                                              |
+| ------------------ | ------- | -------- | ------- | ------------ | -------------------------------------------------------- |
+| max_body_size      | integer | True     | 1048576 | [1, ...]     | Maximum size of the request body in bytes.               |
+| max_pipeline_items | integer | True     | 1000    | [1, ...]     | Maximum number of requests allowed in a single pipeline. |
 
 ## Request and response format
 

@@ -34,6 +34,7 @@ local schema = {
         tls_options = {type = "string"},
         timeout = {type = "integer", minimum = 1, default= 1000},
         log_format = {type = "object"},
+        log_format_extra = {type = "object"},
         include_req_body = {type = "boolean", default = false},
         include_req_body_expr = {
             type = "array",
@@ -59,6 +60,9 @@ local schema = {
 local metadata_schema = {
     type = "object",
     properties = {
+        log_format_extra = {
+            type = "object"
+        },
         log_format = {
             type = "object"
         },

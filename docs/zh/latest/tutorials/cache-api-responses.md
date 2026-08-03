@@ -109,7 +109,7 @@ curl http://127.0.0.1:9180/apisix/admin/plugins/reload -H "X-API-KEY: $admin_key
 然后，我们运行两个 curl 命令来为 `/api/products` 端点配置 **Upstream** 和 **Route**。首先，创建一个示例 Upstream（也就是我们的 API 服务器）：
 
 ```shell
-curl "http://127.0.0.1:9180/apisix/admin/upstreams/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
+curl "http://127.0.0.1:9180/apisix/admin/upstreams/1" -H "X-API-KEY: $admin_key" -X PUT -d '
 {
   "type": "roundrobin",
   "nodes": {
@@ -121,7 +121,7 @@ curl "http://127.0.0.1:9180/apisix/admin/upstreams/1" -H "X-API-KEY: edd1c9f0343
 接下来，我们为 `/api/products` 添加一个具备缓存能力的路由，通过在 `plugins` 属性中设置 `proxy-cache` 插件，并通过 **upstream_id** 引用上游服务，将请求转发到 API 服务器：
 
 ```shell
-curl "http://127.0.0.1:9180/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '{
+curl "http://127.0.0.1:9180/apisix/admin/routes/1" -H "X-API-KEY: $admin_key" -X PUT -d '{
   "name": "Route for API Caching",
   "methods": [
     "GET"

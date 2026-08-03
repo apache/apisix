@@ -18,19 +18,13 @@
 package main
 
 import (
-	"context"
 	"log"
+	"net/http"
 
-	_ "example.com/hello"
-	"github.com/OpenFunction/functions-framework-go/framework"
+	hello "example.com/hello"
 )
 
 func main() {
-	fwk, err := framework.NewFramework()
-	if err != nil {
-		log.Fatalf("failed to create framework: %v", err)
-	}
-	if err = fwk.Start(context.Background()); err != nil {
-		log.Fatalf("failed to start framework: %v", err)
-	}
+	http.HandleFunc("/", hello.HelloWorld)
+	log.Fatal(http.ListenAndServe(":8080", nil))
 }

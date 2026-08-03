@@ -525,8 +525,15 @@ function _M.body_filter(conf, ctx)
         return
     end
 
-    local res_body = core.response.hold_body_chunk(ctx, true)
+    local res_body = core.response.hold_body_chunk(ctx, true, conf.max_resp_body_size)
     if not res_body then
+        return
+    end
+
+    if conf.max_resp_body_size and #res_body >= conf.max_resp_body_size then
+        -- response exceeds the buffering cap; stream it through without
+        -- caching so we never store a truncated body
+        ctx.cache = nil
         return
     end
 
@@ -569,6 +576,12 @@ function _M.body_filter(conf, ctx)
         core.log.error("failed to set cache, err: ", err)
     end
 end
+
+
+-- Expose the variant-aware purge so callers reusing this strategy (e.g.
+-- graphql-proxy-cache's PURGE handler) can clear the index and every Vary
+-- variant instead of only the legacy base-key entry.
+_M.purge_all_variants = purge_all_variants
 
 
 return _M

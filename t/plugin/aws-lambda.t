@@ -372,3 +372,141 @@ test-api-key
 secretkey encrypted: ok
 accesskey encrypted: ok
 apikey encrypted: ok
+
+
+
+=== TEST 9: IAM v4 signing with encoded, multi-value and valueless query params
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "aws-lambda": {
+                                "function_uri": "http://localhost:8765/generic",
+                                "authorization": {
+                                    "iam": {
+                                        "accesskey": "KEY1",
+                                        "secretkey": "KeySecret"
+                                    }
+                                }
+                            }
+                        },
+                        "uri": "/aws"
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
+
+            ngx.say(body)
+
+            -- unsorted query string with a percent-encoded key and value,
+            -- a value that needs encoding, repeated args and a valueless arg
+            local code, _, body = t(
+                "/aws?with%20space=a%2Fb%20c&multi=m2&multi=m1&flag&a=*&a-=x",
+                "GET")
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.print(body)
+        }
+    }
+--- inside_lua_block
+-- emulate the AWS server side SigV4 validation: rebuild the canonical
+-- request from the request actually received and recompute the signature
+local hmac = require("resty.hmac")
+local resty_sha256 = require("resty.sha256")
+local hex_encode = require("resty.string").to_hex
+
+local function hmac256(key, msg)
+    return hmac:new(key, hmac.ALGOS.SHA256):final(msg)
+end
+
+local function sha256(msg)
+    local hash = resty_sha256:new()
+    hash:update(msg)
+    return hex_encode(hash:final())
+end
+
+local function uri_encode(s)
+    return (s:gsub("[^A-Za-z0-9%-_.~]", function(c)
+        return string.format("%%%02X", string.byte(c))
+    end))
+end
+
+ngx.say("query: ", ngx.var.args)
+
+local headers = ngx.req.get_headers()
+local credential, signed_headers, signature = headers["authorization"]:match(
+    "^AWS4%-HMAC%-SHA256 Credential=([^,]+), SignedHeaders=([^,]+), Signature=(%x+)$")
+local datestamp, region, service = credential:match(
+    "/(%d+)/([^/]+)/([^/]+)/aws4_request$")
+
+-- canonical query string: decode every pair received on the wire,
+-- then URI-encode and sort the pairs again
+local query_pairs = {}
+for pair in (ngx.var.args or ""):gmatch("[^&]+") do
+    local eq = pair:find("=", 1, true)
+    local k, v
+    if eq then
+        k, v = pair:sub(1, eq - 1), pair:sub(eq + 1)
+    else
+        k, v = pair, ""
+    end
+    table.insert(query_pairs,
+                 {uri_encode(ngx.unescape_uri(k)), uri_encode(ngx.unescape_uri(v))})
+end
+table.sort(query_pairs, function(a, b)
+    if a[1] ~= b[1] then
+        return a[1] < b[1]
+    end
+    return a[2] < b[2]
+end)
+local canonical_qs = {}
+for i, p in ipairs(query_pairs) do
+    canonical_qs[i] = p[1] .. "=" .. p[2]
+end
+
+local canonical_headers = {}
+local i = 0
+for name in signed_headers:gmatch("[^;]+") do
+    i = i + 1
+    local value = headers[name]:gsub("^%s+", ""):gsub("%s+$", "")
+    canonical_headers[i] = name .. ":" .. value .. "\n"
+end
+
+ngx.req.read_body()
+local canonical_request = ngx.req.get_method() .. "\n"
+    .. ngx.var.request_uri:match("^([^?]*)") .. "\n"
+    .. table.concat(canonical_qs, "&") .. "\n"
+    .. table.concat(canonical_headers) .. "\n"
+    .. signed_headers .. "\n"
+    .. sha256(ngx.req.get_body_data() or "")
+
+local string_to_sign = "AWS4-HMAC-SHA256\n"
+    .. headers["x-amz-date"] .. "\n"
+    .. datestamp .. "/" .. region .. "/" .. service .. "/aws4_request\n"
+    .. sha256(canonical_request)
+
+local sign_key = hmac256("AWS4" .. "KeySecret", datestamp)
+sign_key = hmac256(sign_key, region)
+sign_key = hmac256(sign_key, service)
+sign_key = hmac256(sign_key, "aws4_request")
+local expected = hex_encode(hmac256(sign_key, string_to_sign))
+
+if expected == signature then
+    ngx.say("signature: ok")
+else
+    ngx.say("signature mismatch: got ", signature, ", want ", expected)
+end
+
+--- response_body
+passed
+query: a=%2A&a-=x&flag=&multi=m1&multi=m2&with%20space=a%2Fb%20c
+signature: ok

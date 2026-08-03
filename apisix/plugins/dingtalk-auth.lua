@@ -215,6 +215,9 @@ end
 function _M.rewrite(conf, ctx)
     local userinfo, err
 
+    -- clear any client-supplied X-Userinfo before authentication
+    core.request.set_header(ctx, "X-Userinfo", nil)
+
     local sess, sess_err = session.open(
         {
             secret = conf.secret,

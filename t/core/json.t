@@ -193,3 +193,51 @@ b.d: 1
 e: text
 a or default: default
 top-level null: nil
+
+
+
+=== TEST 9: cjson instances created by dependencies keep empty arrays as arrays
+--- config
+    location /t {
+        content_by_lua_block {
+            -- a dependency that keeps a private instance, e.g. lua-resty-session
+            local safe_instance = require("cjson.safe").new()
+            ngx.say("cjson.safe instance: ",
+                    safe_instance.encode(safe_instance.decode('{"arr":[]}')))
+
+            local instance = require("cjson").new()
+            ngx.say("cjson instance: ", instance.encode(instance.decode('{"arr":[]}')))
+
+            -- the plain singleton is a separate config from cjson.safe
+            local cjson = require("cjson")
+            ngx.say("cjson singleton: ", cjson.encode(cjson.decode('{"arr":[]}')))
+        }
+    }
+--- response_body
+cjson.safe instance: {"arr":[]}
+cjson instance: {"arr":[]}
+cjson singleton: {"arr":[]}
+
+
+
+=== TEST 10: cjson instances created by dependencies do not escape forward slashes
+--- config
+    location /t {
+        content_by_lua_block {
+            -- today the bundled lua-cjson keeps a shared escape table, so this
+            -- already holds; the patch pins it for when the option becomes
+            -- per-instance upstream
+            local safe_instance = require("cjson.safe").new()
+            ngx.say("cjson.safe instance: ", safe_instance.encode({uri = "/a/b"}))
+
+            local instance = require("cjson").new()
+            ngx.say("cjson instance: ", instance.encode({uri = "/a/b"}))
+
+            local cjson = require("cjson")
+            ngx.say("cjson singleton: ", cjson.encode({uri = "/a/b"}))
+        }
+    }
+--- response_body
+cjson.safe instance: {"uri":"/a/b"}
+cjson instance: {"uri":"/a/b"}
+cjson singleton: {"uri":"/a/b"}

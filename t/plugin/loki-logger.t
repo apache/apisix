@@ -423,3 +423,196 @@ GET /hello
 hello world
 --- error_log
 go(): authorization: test1234
+
+
+
+=== TEST 17: setup route with a per-request variable label (same conf for all requests)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "loki-logger": {
+                            "endpoint_addrs": ["http://127.0.0.1:3100"],
+                            "tenant_id": "tenant_1",
+                            "log_labels": {
+                                "service": "$http_x_service_name"
+                            },
+                            "batch_max_size": 2
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 18: two requests with different label values share one worker and must not leak
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local cjson = require("cjson")
+
+            -- all requests hit the same worker (worker_processes 1), so a buggy
+            -- shared-conf / single-stream batch would freeze the first label and
+            -- stamp every line with it. the last request omits x-service-name
+            -- (boundary case): it must not inherit a prior request's label
+            local req_headers = {
+                { ["x-service-name"] = "svc-alpha" },
+                { ["x-service-name"] = "svc-beta" },
+                {},
+            }
+            for _, headers in ipairs(req_headers) do
+                local httpc = http.new()
+                local res, err = httpc:request_uri(
+                    "http://127.0.0.1:" .. ngx.var.server_port .. "/hello",
+                    { headers = headers })
+                assert(res, "request failed: " .. (err or ""))
+                assert(res.status == 200, "unexpected status: " .. res.status)
+            end
+
+            -- wait for the batch flush timer and Loki ingestion
+            ngx.sleep(2)
+
+            local loki = require("lib.grafana_loki")
+            local now = ngx.now() * 1000
+            local from = tostring(now - 10000) .. "000000"
+            local to = tostring(now) .. "000000"
+
+            for _, svc in ipairs({"svc-alpha", "svc-beta"}) do
+                local data, err = loki.fetch_logs_from_loki(from, to,
+                    { query = [[{service="]] .. svc .. [["} | json]] })
+
+                assert(err == nil, "fetch logs error: " .. (err or ""))
+                assert(data.status == "success",
+                       "loki response error: " .. cjson.encode(data))
+                assert(#data.data.result == 1,
+                       "expected exactly one stream for service=" .. svc .. ": "
+                       .. cjson.encode(data))
+
+                local entry = data.data.result[1]
+                assert(entry.stream.service == svc,
+                       "expected stream service=" .. svc .. ": " .. cjson.encode(entry))
+                assert(entry.stream.request_headers_x_service_name == svc,
+                       "log line under service=" .. svc ..
+                       " belongs to another request: " .. cjson.encode(entry))
+            end
+
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 19: setup route (log_format_extra enriches default via plugin metadata)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            -- additive log format: keep the rich default and add the pre-DNS
+            -- upstream host on top
+            local code, body = t('/apisix/admin/plugin_metadata/loki-logger',
+                ngx.HTTP_PUT,
+                [[{
+                    "log_format_extra": {
+                        "upstream_host": "$upstream_unresolved_host"
+                    }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "loki-logger": {
+                            "endpoint_addrs": ["http://127.0.0.1:3100"],
+                            "tenant_id": "tenant_1",
+                            "log_labels": {
+                                "enrich_label": "enrich_value"
+                            },
+                            "batch_max_size": 1
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 20: hit route
+--- request
+GET /hello
+--- response_body
+hello world
+
+
+
+=== TEST 21: check loki log (default fields kept + extra field added)
+--- config
+    location /t {
+        content_by_lua_block {
+            local cjson = require("cjson")
+            local now = ngx.now() * 1000
+            local data, err = require("lib.grafana_loki").fetch_logs_from_loki(
+                tostring(now - 3000) .. "000000", -- from
+                tostring(now) .. "000000",        -- to
+                { query = [[{enrich_label="enrich_value"} | json]] }
+            )
+
+            assert(err == nil, "fetch logs error: " .. (err or ""))
+            assert(data.status == "success", "loki response error: " .. cjson.encode(data))
+            assert(#data.data.result > 0, "loki log empty: " .. cjson.encode(data))
+
+            local entry = data.data.result[1]
+            -- the extra field is added
+            assert(entry.stream.upstream_host == "127.0.0.1",
+                  "expected extra field upstream_host: " .. cjson.encode(entry))
+            -- the rich default fields are still present
+            assert(entry.stream.route_id == "1",
+                  "expected default field route_id: " .. cjson.encode(entry))
+            assert(entry.stream.request_method == "GET",
+                  "expected default field request_method: " .. cjson.encode(entry))
+        }
+    }
+--- error_code: 200

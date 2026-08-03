@@ -63,6 +63,12 @@ Reload APISIX for changes to take effect.
 |--------------|--------|----------|---------|--------------|----------------------------------------------------------------------------|
 | sample_ratio | number | False     | 1       | [0.00001, 1] | Frequency of request sampling. Setting the sample ratio to `1` means to sample all requests. |
 
+:::tip Performance
+
+The plugin hooks several request phases and builds a trace per sampled request, so tracing adds per-request overhead. Sampling is the primary lever to control it: unsampled requests skip trace creation entirely. Lower `sample_ratio` on high-throughput routes to reduce overhead while keeping representative traces.
+
+:::
+
 ## Example
 
 To follow along the example, start a storage, OAP and Booster UI with Docker Compose, following [Skywalking's documentation](https://skywalking.apache.org/docs/main/next/en/setup/backend/backend-docker/). Once set up, the OAP server should be listening on `12800` and you should be able to access the UI at [http://localhost:8080](http://localhost:8080).

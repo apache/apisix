@@ -447,17 +447,17 @@ HTTP/1.1 200 OK
 
 ## What is the `X-API-KEY` of the Admin API? Can it be modified?
 
-`X-API-KEY` of the Admin API refers to the `apisix.admin_key.key` in your `conf/config.yaml` file. It is the access token for the Admin API.
+`X-API-KEY` of the Admin API refers to `deployment.admin.admin_key[0].key` in your `conf/config.yaml` file. It is the access token for the Admin API.
 
-By default, it is set to `edd1c9f034335f136f87ad84b625c8f1` and can be modified by changing the parameter in your `conf/config.yaml` file:
+In the default configuration, this field is empty. APISIX generates a random Admin API key during initialization and writes it back to `conf/config.yaml`. You can also set the key explicitly by changing the parameter in your `conf/config.yaml` file:
 
 ```yaml
-apisix:
-  admin_key
-    -
-      name: "admin"
-      key: newkey
-      role: admin
+deployment:
+  admin:
+    admin_key:
+      - name: "admin"
+        key: newkey
+        role: admin
 ```
 
 Now, to access the Admin API:

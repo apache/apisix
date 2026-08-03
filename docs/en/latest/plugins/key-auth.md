@@ -1187,7 +1187,147 @@ adc sync -f adc.yaml
 
 <TabItem value="aic">
 
-Consumer custom labels are currently not supported when configuring resources through the Ingress Controller, and the `X-Consumer-Custom-Id` header is not included in requests. At the moment, this example cannot be completed with the Ingress Controller.
+Create a Consumer with `key-auth` Credential and a Route with `key-auth` Plugin enabled:
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="key-auth-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: Consumer
+metadata:
+  namespace: aic
+  name: jack
+  labels:
+    custom_id: "495aec6a"
+spec:
+  gatewayRef:
+    name: apisix
+  credentials:
+    - type: key-auth
+      name: primary-key
+      config:
+        key: jack-key
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: key-auth-plugin-config
+spec:
+  plugins:
+    - name: key-auth
+      config:
+        _meta:
+          disable: false
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: key-auth-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /anything
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: key-auth-plugin-config
+      backendRefs:
+        - name: httpbin-external-domain
+          port: 80
+```
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f key-auth-ic.yaml
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="key-auth-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixConsumer
+metadata:
+  namespace: aic
+  name: jack
+  labels:
+    custom_id: "495aec6a"
+spec:
+  ingressClassName: apisix
+  authParameter:
+    keyAuth:
+      value:
+        key: jack-key
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  externalNodes:
+    - type: Domain
+      name: httpbin.org
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: key-auth-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: key-auth-route
+      match:
+        paths:
+          - /anything
+      upstreams:
+        - name: httpbin-external-domain
+      plugins:
+        - name: key-auth
+          enable: true
+          config:
+            _meta:
+              disable: false
+```
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f key-auth-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
 
 </TabItem>
 
@@ -1214,7 +1354,7 @@ You should see an `HTTP/1.1 200 OK` response similar to the following:
     "Host": "127.0.0.1",
     "User-Agent": "curl/8.6.0",
     "X-Amzn-Trace-Id": "Root=1-66ea8d64-33df89052ae198a706e18c2a",
-    "X-Consumer-Username": "jack",
+    "X-Consumer-Username": "aic_jack",
     "X-Credential-Identifier": "cred-jack-key-auth",
     "X-Consumer-Custom-Id": "495aec6a",
     "X-Forwarded-Host": "127.0.0.1"
@@ -1472,7 +1612,82 @@ kubectl apply -f key-auth-ic.yaml
 
 <TabItem value="apisix-ingress-controller">
 
-The ApisixConsumer CRD currently does not support configuring plugins on consumers, except for the authentication plugins allowed in `authParameter`. This example cannot be completed with APISIX CRDs.
+Configure Consumers with different rate limits and a Route that accepts anonymous users:
+
+```yaml title="key-auth-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixConsumer
+metadata:
+  namespace: aic
+  name: jack
+spec:
+  ingressClassName: apisix
+  authParameter:
+    keyAuth:
+      value:
+        key: jack-key
+  plugins:
+    - name: limit-count
+      enable: true
+      config:
+        count: 3
+        time_window: 30
+        rejected_code: 429
+        policy: local
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixConsumer
+metadata:
+  namespace: aic
+  name: anonymous
+spec:
+  ingressClassName: apisix
+  plugins:
+    - name: limit-count
+      enable: true
+      config:
+        count: 1
+        time_window: 30
+        rejected_code: 429
+        policy: local
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  externalNodes:
+    - type: Domain
+      name: httpbin.org
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: key-auth-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: key-auth-route
+      match:
+        paths:
+          - /anything
+      upstreams:
+        - name: httpbin-external-domain
+      plugins:
+        - name: key-auth
+          enable: true
+          config:
+            anonymous_consumer: aic_anonymous
+```
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f key-auth-ic.yaml
+```
 
 </TabItem>
 

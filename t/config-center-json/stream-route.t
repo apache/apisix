@@ -110,8 +110,8 @@ qr/property "\w+" is required/
     }
   ]
 }
---- stream_response
-hello world
+--- error_log
+err:unknown plugin [x-rewrite]
 
 
 

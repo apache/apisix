@@ -23,15 +23,19 @@ local http = require("resty.http")
 local ngx_now = ngx.now
 local pairs = pairs
 local ipairs = ipairs
+local pcall = pcall
 local type = type
 local str_lower = string.lower
+local tostring = tostring
 
 local _M = {}
 
 
 --- Map network errors to HTTP status codes.
+-- Cosocket timers report "timeout"; OS errno (ETIMEDOUT) and the resolver
+-- report "... timed out", so both spellings must be matched.
 function _M.handle_error(err)
-    if core.string.find(err, "timeout") then
+    if core.string.find(err, "timeout") or core.string.find(err, "timed out") then
         return 504
     end
     return 500
@@ -39,9 +43,14 @@ end
 
 
 --- Build forwarded headers from client request + extra headers.
--- Copies client headers, merges ext_opts_headers (lowercased),
+-- Copies `client_headers`, merges ext_opts_headers (lowercased),
 -- forces Content-Type to application/json, removes host/content-length.
-function _M.construct_forward_headers(ext_opts_headers, ctx)
+-- `client_headers` is the downstream request's headers to forward (proxy path),
+-- or nil for a self-contained internal request (e.g. ai-request-rewrite calling
+-- an LLM to rewrite the body), which must not leak the client's Authorization,
+-- Cookie or other headers to a third-party endpoint. The caller passes them in
+-- explicitly, so the transport carries no `ctx` / downstream-request coupling.
+function _M.construct_forward_headers(ext_opts_headers, client_headers)
     local blacklist = {
         "host",
         "content-length",
@@ -49,7 +58,7 @@ function _M.construct_forward_headers(ext_opts_headers, ctx)
     }
 
     local headers = {}
-    for k, v in pairs(core.request.headers(ctx) or {}) do
+    for k, v in pairs(client_headers or {}) do
         headers[str_lower(k)] = v
     end
     for k, v in pairs(ext_opts_headers or {}) do
@@ -62,6 +71,20 @@ function _M.construct_forward_headers(ext_opts_headers, ctx)
     end
 
     return headers
+end
+
+
+local function encode_body(body)
+    local ok, encoded = pcall(core.json.canonical_encode, body)
+    if ok and encoded then
+        return encoded
+    end
+
+    core.log.error("failed to encode AI request body with rapidjson: ",
+                  ok and "unknown" or tostring(encoded),
+                  ", fallback to cjson; LLM cache hit rate may decrease")
+
+    return core.json.encode(body)
 end
 
 
@@ -107,7 +130,7 @@ function _M.request(params, timeout)
         req_json = params.body
     else
         local err
-        req_json, err = core.json.encode(params.body)
+        req_json, err = encode_body(params.body)
         if not req_json then
             httpc:close()
             return nil, "encode body: " .. (err or "unknown"), {

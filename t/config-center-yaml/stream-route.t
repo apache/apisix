@@ -35,10 +35,12 @@ _EOC_
 
     $block->set_value("yaml_config", $yaml_config);
 
-    $block->set_value("stream_enable", 1);
+    if (!defined $block->stream_conf_enable) {
+        $block->set_value("stream_enable", 1);
 
-    if (!$block->stream_request) {
-        $block->set_value("stream_request", "mmm");
+        if (!$block->stream_request) {
+            $block->set_value("stream_request", "mmm");
+        }
     }
 
     if (!$block->error_log && !$block->no_error_log) {
@@ -125,3 +127,80 @@ upstreams:
 "\x10\x0f\x00\x04\x4d\x51\x54\x54\x04\x02\x00\x3c\x00\x03\x66\x6f\x6f"
 --- stream_response
 hello world
+
+
+
+=== TEST 5: xRPC protocol works when stream_proxy is enabled and Admin API is disabled
+--- yaml_config
+apisix:
+    node_listen: 1984
+    enable_admin: false
+    stream_proxy:
+        tcp:
+            - 9100
+xrpc:
+    protocols:
+        - name: pingpong
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
+--- apisix_yaml
+stream_routes:
+  - server_addr: 127.0.0.1
+    server_port: 1985
+    id: 1
+    protocol:
+      name: pingpong
+    upstream:
+      nodes:
+        "127.0.0.1:1995": 1
+      type: roundrobin
+#END
+--- stream_conf_enable
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.req.read_body()
+            local sock = ngx.socket.tcp()
+            sock:settimeout(1000)
+            local ok, err = sock:connect("127.0.0.1", 1985)
+            if not ok then
+                ngx.log(ngx.ERR, "failed to connect: ", err)
+                return ngx.exit(503)
+            end
+
+            local bytes, err = sock:send(ngx.req.get_body_data())
+            if not bytes then
+                ngx.log(ngx.ERR, "send stream request error: ", err)
+                return ngx.exit(503)
+            end
+            while true do
+                local data, err = sock:receiveany(4096)
+                if not data then
+                    sock:close()
+                    break
+                end
+                ngx.print(data)
+            end
+        }
+    }
+--- stream_upstream_code
+            local sock = ngx.req.socket(true)
+            sock:settimeout(10)
+            while true do
+                local data = sock:receiveany(4096)
+                if not data then
+                    return
+                end
+                sock:send(data)
+            end
+--- request eval
+"POST /t
+pp\x02\x00\x00\x00\x00\x00\x00\x03ABC"
+--- response_body eval
+"pp\x02\x00\x00\x00\x00\x00\x00\x03ABC"
+--- no_error_log
+unknown protocol
+[error]
+[alert]

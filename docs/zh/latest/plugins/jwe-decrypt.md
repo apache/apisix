@@ -39,7 +39,7 @@ import TabItem from '@theme/TabItem';
 
 `jwe-decrypt` 插件解密发送到 APISIX [路由](../terminology/route.md)或[服务](../terminology/service.md)的请求中的 [JWE](https://datatracker.ietf.org/doc/html/rfc7516) 授权请求头。
 
-该插件添加了一个 `/apisix/plugin/jwe/encrypt` 内部端点用于 JWE 加密。解密时，密钥应配置在[消费者](../terminology/consumer.md)中。
+解密密钥应配置在[消费者](../terminology/consumer.md)中。
 
 ## 属性
 
@@ -73,27 +73,14 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 :::
 
-### 暴露 JWE 加密端点并生成 JWE 令牌
+### 创建带有解密密钥的消费者
 
-以下示例演示如何暴露 JWE 加密端点并生成 JWE 令牌。
+以下示例演示如何创建带有解密密钥的消费者，并为其生成 JWE 令牌。
 
-`jwe-decrypt` 插件在 `/apisix/plugin/jwe/encrypt` 创建一个内部端点用于 JWE 加密。使用 [public-api](public-api.md) 插件暴露该端点：
+创建带有 `jwe-decrypt` 的消费者并配置解密密钥：
 
 <Tabs groupId="api">
 <TabItem value="admin-api" label="Admin API">
-
-```shell
-curl "http://127.0.0.1:9180/apisix/admin/routes/jwe-encrypt-api" -X PUT \
-  -H "X-API-KEY: ${admin_key}" \
-  -d '{
-    "uri": "/apisix/plugin/jwe/encrypt",
-    "plugins": {
-      "public-api": {}
-    }
-  }'
-```
-
-创建带有 `jwe-decrypt` 的消费者并配置解密密钥：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
@@ -113,7 +100,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
 
 <TabItem value="adc" label="ADC">
 
-暴露 JWE 加密端点并创建带有 `jwe-decrypt` 凭证的消费者：
+创建带有 `jwe-decrypt` 凭证的消费者：
 
 ```yaml title="adc.yaml"
 consumers:
@@ -122,20 +109,6 @@ consumers:
       jwe-decrypt:
         key: jack-key
         secret: key-length-should-be-32-chars123
-services:
-  - name: jwe-encrypt-api-service
-    routes:
-      - name: jwe-encrypt-api-route
-        uris:
-          - /apisix/plugin/jwe/encrypt
-        plugins:
-          public-api: {}
-    upstream:
-      type: roundrobin
-      nodes:
-        - host: httpbin.org
-          port: 80
-          weight: 1
 ```
 
 将配置同步到网关：
@@ -148,12 +121,12 @@ adc sync -f adc.yaml
 
 <TabItem value="ingress-controller" label="Ingress Controller">
 
-创建带有 `jwe-decrypt` 的消费者并使用 `public-api` 插件暴露 JWE 加密端点：
+创建带有 `jwe-decrypt` 的消费者：
 
 <Tabs groupId="k8s-api">
 <TabItem value="gateway-api" label="Gateway API">
 
-```yaml title="jwe-encrypt-api-ic.yaml"
+```yaml title="jwe-consumer-ic.yaml"
 apiVersion: apisix.apache.org/v1alpha1
 kind: Consumer
 metadata:
@@ -167,44 +140,12 @@ spec:
       config:
         key: jack-key
         secret: key-length-should-be-32-chars123
----
-apiVersion: apisix.apache.org/v1alpha1
-kind: PluginConfig
-metadata:
-  namespace: aic
-  name: jwe-encrypt-api-plugin-config
-spec:
-  plugins:
-    - name: public-api
-      config:
-        _meta:
-          disable: false
----
-apiVersion: gateway.networking.k8s.io/v1
-kind: HTTPRoute
-metadata:
-  namespace: aic
-  name: jwe-encrypt-api-route
-spec:
-  parentRefs:
-    - name: apisix
-  rules:
-    - matches:
-        - path:
-            type: Exact
-            value: /apisix/plugin/jwe/encrypt
-      filters:
-        - type: ExtensionRef
-          extensionRef:
-            group: apisix.apache.org
-            kind: PluginConfig
-            name: jwe-encrypt-api-plugin-config
 ```
 
 将配置应用到集群：
 
 ```shell
-kubectl apply -f jwe-encrypt-api-ic.yaml
+kubectl apply -f jwe-consumer-ic.yaml
 ```
 
 </TabItem>
@@ -219,22 +160,23 @@ kubectl apply -f jwe-encrypt-api-ic.yaml
 </TabItem>
 </Tabs>
 
-向加密端点发送请求，使用消费者密钥加密 payload 中的示例数据：
-
-```shell
-curl "http://127.0.0.1:9080/apisix/plugin/jwe/encrypt?key=jack-key" \
-  --data-urlencode 'payload={"uid":10000,"uname":"test"}' -G
-```
-
-你应该看到类似以下的响应，响应体中包含 JWE 加密数据：
+要为消费者生成 JWE 令牌，可使用任意 AES-256-GCM 库离线加密 payload，加密密钥为消费者的 secret。令牌结构如下：
 
 ```text
-eyJraWQiOiJqYWNrLWtleSIsImFsZyI6ImRpciIsImVuYyI6IkEyNTZHQ00ifQ..MTIzNDU2Nzg5MDEy.IUFW_q4igO_wvf63i-3VwV0MEetPL9C20tlgcQ.fveViMUi0ijJlQ19D7kDrg
+base64url(header).<empty>.base64url(iv).base64url(ciphertext).base64url(tag)
+```
+
+其中 header 为 `{"alg":"dir","enc":"A256GCM","kid":"<consumer-key>"}`。每个令牌的 IV 必须唯一且随机生成，切勿在同一密钥下复用 IV。
+
+例如，以下令牌使用上面配置的 secret，为消费者密钥 `jack-key` 加密了 payload `{"uid":10000,"uname":"test"}`：
+
+```text
+eyJraWQiOiJqYWNrLWtleSIsImFsZyI6ImRpciIsImVuYyI6IkEyNTZHQ00ifQ..vi29KBCQKcVmPwTT.VToyPMFbq-ZY05MIpntP1N3AmYeq3zELQ0B6iQ.vuTPG2ODc-DjUTjNCzfA2A
 ```
 
 ### 使用 JWE 解密数据
 
-以下示例演示如何解密上述生成的 JWE 令牌。
+以下示例演示如何解密上面生成的 JWE 令牌。
 
 创建带有 `jwe-decrypt` 的路由以解密授权请求头：
 
@@ -365,7 +307,7 @@ kubectl apply -f jwe-decrypt-ic.yaml
 在 `Authorization` 请求头中携带 JWE 加密数据向路由发送请求：
 
 ```shell
-curl "http://127.0.0.1:9080/anything/jwe" -H 'Authorization: eyJraWQiOiJqYWNrLWtleSIsImFsZyI6ImRpciIsImVuYyI6IkEyNTZHQ00ifQ..MTIzNDU2Nzg5MDEy.IUFW_q4igO_wvf63i-3VwV0MEetPL9C20tlgcQ.fveViMUi0ijJlQ19D7kDrg'
+curl "http://127.0.0.1:9080/anything/jwe" -H 'Authorization: eyJraWQiOiJqYWNrLWtleSIsImFsZyI6ImRpciIsImVuYyI6IkEyNTZHQ00ifQ..vi29KBCQKcVmPwTT.VToyPMFbq-ZY05MIpntP1N3AmYeq3zELQ0B6iQ.vuTPG2ODc-DjUTjNCzfA2A'
 ```
 
 你应该看到类似以下的响应，其中 `Authorization` 请求头显示了 payload 的明文：

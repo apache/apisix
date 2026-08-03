@@ -48,6 +48,20 @@ local schema = {
     properties = {
         request = transform_schema,
         response = transform_schema,
+        max_req_body_size = {
+            type = "integer",
+            minimum = 1,
+            default = 67108864,
+            description = "maximum request body size in bytes buffered into "
+                       .. "memory; larger request bodies are rejected",
+        },
+        max_resp_body_size = {
+            type = "integer",
+            minimum = 1,
+            default = 67108864,
+            description = "maximum response body size in bytes buffered into "
+                       .. "memory; larger responses are truncated",
+        },
     },
     anyOf = {
         {required = {"request"}},
@@ -79,24 +93,30 @@ local function escape_json(s)
 end
 
 
+-- Build a new table instead of renaming keys in place: inserting keys into
+-- the table being traversed by pairs() is undefined behavior in Lua, and
+-- can nondeterministically skip keys, leaving some keys not renamed.
 local function remove_namespace(tbl)
+    local res = {}
     for k, v in pairs(tbl) do
-        if type(v) == "table" and next(v) == nil then
-            v = ""
-            tbl[k] = v
+        if type(v) == "table" then
+            if next(v) == nil then
+                v = ""
+            else
+                v = remove_namespace(v)
+            end
         end
+        -- strip the namespace prefix from string keys, e.g. "ns:key" -> "key";
+        -- numeric keys (array part, i.e. repeated XML elements) are kept as is
         if type(k) == "string" then
             local newk = k:match(".*:(.*)")
             if newk then
-                tbl[newk] = v
-                tbl[k] = nil
-            end
-            if type(v) == "table" then
-                remove_namespace(v)
+                k = newk
             end
         end
+        res[k] = v
     end
-    return tbl
+    return res
 end
 
 
@@ -121,7 +141,10 @@ local decoders = {
         return req_get_uri_args()
     end,
     multipart = function (data, content_type_header)
-        local res = multipart(data, content_type_header)
+        local ok, res = pcall(multipart, data, content_type_header)
+        if not ok then
+            return nil, res
+        end
         return res
     end
 }
@@ -144,14 +167,14 @@ local function transform(conf, body, typ, ctx, request_method)
         local err
         if format then
             out, err = decoders[format](body, ct)
+            if not out then
+                err = str_format("%s body decode: %s", typ, err)
+                core.log.error(err, ", body size: ", body and #body or 0)
+                return nil, 400, err
+            end
             if format == "multipart" then
                 _multipart = out
                 out = out:get_all_with_arrays()
-            end
-            if not out then
-                err = str_format("%s body decode: %s", typ, err)
-                core.log.error(err, ", body=", body)
-                return nil, 400, err
             end
         else
             core.log.warn("no input format to parse ", typ, " body")
@@ -170,6 +193,16 @@ local function transform(conf, body, typ, ctx, request_method)
         return nil, 503, err
     end
 
+    -- The helpers below are provided via __index, but Lua reads raw keys
+    -- before consulting __index. Clear the reserved names from the decoded
+    -- body so attacker-controlled fields cannot shadow the helpers and
+    -- break (or hijack) template rendering.
+    out._ctx = nil
+    out._body = nil
+    out._escape_xml = nil
+    out._escape_json = nil
+    out._multipart = nil
+
     setmetatable(out, {__index = {
         _ctx = ctx,
         _body = body,
@@ -178,7 +211,8 @@ local function transform(conf, body, typ, ctx, request_method)
         _multipart = _multipart
     }})
 
-    local ok, render_out = pcall(render, out)
+    local render_out
+    ok, render_out = pcall(render, out)
     if not ok then
         local err = str_format("%s template rendering: %s", typ, render_out)
         core.log.error(err)
@@ -213,7 +247,11 @@ function _M.rewrite(conf, ctx)
         local request_method  = ngx.var.request_method
         conf = core.table.deepcopy(conf)
         ctx.body_transformer_conf = conf
-        local body = core.request.get_body()
+        local body, err = core.request.get_body(conf.max_req_body_size)
+        if err then
+            core.log.error("failed to get request body: ", err)
+            return 413
+        end
         set_input_format(conf, "request", ctx.var.http_content_type, request_method)
         local out, status, err = transform(conf, body, "request", ctx, request_method)
         if not out then
@@ -242,7 +280,7 @@ function _M.body_filter(_, ctx)
         return
     end
     if conf.response then
-        local body = core.response.hold_body_chunk(ctx)
+        local body = core.response.hold_body_chunk(ctx, false, conf.max_resp_body_size)
         if ngx.arg[2] == false and not body then
             return
         end

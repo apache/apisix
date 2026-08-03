@@ -88,7 +88,7 @@ function _M.rewrite(conf, ctx)
             else
                 core.table.insert(errors, auth_plugin_name ..
                         " failed to authenticate the request, code: "
-                        .. auth_code .. ". error: " .. err)
+                        .. auth_code .. ". error: " .. (err or ""))
             end
         end
     end

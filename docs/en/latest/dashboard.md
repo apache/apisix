@@ -73,8 +73,8 @@ deployment:
       -
         name: admin
         role: admin
-        # Using a simple Admin API Key poses security risks. Please update it when deploying to production
-        key: edd1c9f034335f136f87ad84b625c8f1
+        # Set a secure Admin API Key. If left empty, APISIX will generate one during initialization and write it back to this file.
+        key: your-admin-key
 ```
 
 Configuration via environment variables is also supported:

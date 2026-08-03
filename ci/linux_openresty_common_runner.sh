@@ -50,6 +50,13 @@ do_install() {
     make utils
 
     mkdir -p build-cache
+    # The test gRPC servers depend on golang.org/x/net v0.55.0, which requires
+    # Go >= 1.25 - newer than the job's Go (pinned to 1.17 for TinyGo/wasm).
+    # Provision a matching Go just for these builds without disturbing the rest.
+    pushd build-cache
+    wget -q https://golang.org/dl/go1.25.1.linux-amd64.tar.gz && tar -xf go1.25.1.linux-amd64.tar.gz
+    export PATH=$(pwd)/go/bin:$PATH
+    popd
     # install and start grpc_server_example
     cd t/grpc_server_example
 

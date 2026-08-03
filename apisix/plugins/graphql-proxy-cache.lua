@@ -395,8 +395,10 @@ local function purge_hander()
         end
         os.remove(filename)
     else
-        local memory_handler = memory_strategy({shdict_name = conf.cache_zone})
-        memory_handler:purge(ngx_var.upstream_cache_key)
+        local memory = memory_strategy({shdict_name = conf.cache_zone})
+        -- Walk the Vary index and purge every variant, not just the legacy
+        -- base-key entry, so PURGE clears all cached responses for the key.
+        memory_handler.purge_all_variants(memory, ngx_var.upstream_cache_key)
     end
 
     return core.response.exit(200)

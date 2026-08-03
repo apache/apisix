@@ -16,25 +16,13 @@
 --
 local core           = require("apisix.core")
 local secret         = require("apisix.secret")
+local data_encryption = core.data_encryption
 local ngx_ssl        = require("ngx.ssl")
 local ngx_ssl_client = require("ngx.ssl.clienthello")
-local ffi            = require("ffi")
 
-local C = ffi.C
-local ngx_encode_base64 = ngx.encode_base64
-local ngx_decode_base64 = ngx.decode_base64
-local aes = require("resty.aes")
 local str_lower = string.lower
 local str_byte = string.byte
-local assert = assert
-local type = type
-local ipairs = ipairs
 local ngx_sub = ngx.re.sub
-
-ffi.cdef[[
-unsigned long ERR_peek_error(void);
-void ERR_clear_error(void);
-]]
 
 local cert_cache = core.lrucache.new {
     ttl = 3600, count = 1024,
@@ -86,97 +74,23 @@ function _M.set_protocols_by_clienthello(ssl_protocols)
 end
 
 
-local function init_iv_tbl(ivs)
-    local _aes_128_cbc_with_iv_tbl = core.table.new(2, 0)
-    local type_ivs = type(ivs)
-
-    if type_ivs == "table" then
-        for _, iv in ipairs(ivs) do
-            local aes_with_iv = assert(aes:new(iv, nil, aes.cipher(128, "cbc"), {iv = iv}))
-            core.table.insert(_aes_128_cbc_with_iv_tbl, aes_with_iv)
-        end
-    elseif type_ivs == "string" then
-        local aes_with_iv = assert(aes:new(ivs, nil, aes.cipher(128, "cbc"), {iv = ivs}))
-        core.table.insert(_aes_128_cbc_with_iv_tbl, aes_with_iv)
-    end
-
-    return _aes_128_cbc_with_iv_tbl
-end
-
-
-local _aes_128_cbc_with_iv_tbl_gde
-local function get_aes_128_cbc_with_iv_gde(local_conf)
-    if _aes_128_cbc_with_iv_tbl_gde == nil then
-        local ivs = core.table.try_read_attr(local_conf, "apisix", "data_encryption", "keyring")
-        _aes_128_cbc_with_iv_tbl_gde = init_iv_tbl(ivs)
-    end
-
-    return _aes_128_cbc_with_iv_tbl_gde
-end
-
-
-
-local function encrypt(aes_128_cbc_with_iv, origin)
-    local encrypted = aes_128_cbc_with_iv:encrypt(origin)
-    if encrypted == nil then
-        core.log.error("failed to encrypt key")
+-- Encrypt an SSL private key with the data_encryption keyring. Only PEM-form
+-- keys are encrypted, so already-encrypted or non-PEM values pass through.
+function _M.aes_encrypt_pkey(origin)
+    if not core.string.has_prefix(origin, "---") then
         return origin
     end
 
-    return ngx_encode_base64(encrypted)
-end
-
-function _M.aes_encrypt_pkey(origin, field)
-    local local_conf = core.config.local_conf()
-    local aes_128_cbc_with_iv_tbl_gde = get_aes_128_cbc_with_iv_gde(local_conf)
-    local aes_128_cbc_with_iv_gde = aes_128_cbc_with_iv_tbl_gde[1]
-
-    if not field then
-        if aes_128_cbc_with_iv_gde ~= nil and core.string.has_prefix(origin, "---") then
-            return encrypt(aes_128_cbc_with_iv_gde, origin)
-        end
-    else
-        if field == "data_encrypt" then
-            if aes_128_cbc_with_iv_gde ~= nil then
-                return encrypt(aes_128_cbc_with_iv_gde, origin)
-            end
-        end
-    end
-    return origin
+    return data_encryption.encrypt(origin)
 end
 
 
-local function aes_decrypt_pkey(origin, field)
-    if not field and core.string.has_prefix(origin, "---") then
+local function aes_decrypt_pkey(origin)
+    if core.string.has_prefix(origin, "---") then
         return origin
     end
 
-    local local_conf = core.config.local_conf()
-    local aes_128_cbc_with_iv_tbl = get_aes_128_cbc_with_iv_gde(local_conf)
-    if #aes_128_cbc_with_iv_tbl == 0 then
-        return origin
-    end
-
-    local decoded_key = ngx_decode_base64(origin)
-    if not decoded_key then
-        core.log.error("base64 decode ssl key failed")
-        return nil, "base64 decode ssl key failed"
-    end
-
-    for _, aes_128_cbc_with_iv in ipairs(aes_128_cbc_with_iv_tbl) do
-        local decrypted = aes_128_cbc_with_iv:decrypt(decoded_key)
-        if decrypted then
-            return decrypted
-        end
-
-        if C.ERR_peek_error() then
-            -- clean up the error queue of OpenSSL to prevent
-            -- normal requests from being interfered with.
-            C.ERR_clear_error()
-        end
-    end
-
-    return nil, "decrypt ssl key failed"
+    return data_encryption.decrypt(origin, "ssl key")
 end
 _M.aes_decrypt_pkey = aes_decrypt_pkey
 
@@ -300,9 +214,11 @@ function _M.check_ssl_conf(in_dp, conf)
             return nil, "client tls verify unsupported"
         end
 
-        local ok, err = validate(conf.client.ca, nil)
-        if not ok then
-            return nil, "failed to validate client_cert: " .. err
+        if not secret.check_secret_uri(conf.client.ca) then
+            local ok, err = validate(conf.client.ca, nil)
+            if not ok then
+                return nil, "failed to validate client_cert: " .. err
+            end
         end
     end
 
