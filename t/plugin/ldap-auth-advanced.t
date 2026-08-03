@@ -967,19 +967,20 @@ invalid username
 
 
 
-=== TEST 46: username with a grammar-reserved ASCII byte (trailing '~') -> clean 401, never a 500
+=== TEST 46: username with a trailing '~' reaches the search and 401s as not-found
 --- config
     location /t {
         content_by_lua_block {
             local http = require("resty.http")
             local port = ngx.var.server_port
-            -- "admin~" is valid ASCII (it passes any UTF-8 check) but filter.escape
-            -- leaves '~' untouched and the library's filter grammar rejects a trailing
-            -- '~' as a "syntax error". Before the compile pre-check this reached the
-            -- search and the non-result-code branch turned that "syntax error" into
-            -- HTTP 500. A malformed username is a bad credential (a client error),
-            -- so it must be rejected up front as a clean 401 with "invalid username"
-            -- -- never surfaced as a 500 and never logged as an LDAP search failure.
+            -- RFC 4515 UTF1SUBSET (%x5D-7F) includes '~' (0x7e), so "admin~" is a
+            -- legal assertion value and a legal directory username. The filter
+            -- grammar only tolerates a raw '~' mid-value, so filter.escape emits
+            -- it as "\7e"; the compiler un-escapes that back to '~' and the search
+            -- goes out with the exact username. It must therefore reach the search
+            -- and take the "user not found" 401 path -- never be turned away by the
+            -- compile pre-check, which is reserved for input the grammar genuinely
+            -- cannot express (e.g. invalid UTF-8, TEST 44).
             local hc = http.new()
             local cred = ngx.encode_base64("admin~:x")
             local res, err = hc:request_uri(
@@ -991,9 +992,9 @@ invalid username
 --- response_body
 status: 401
 --- error_log
-invalid username
+user not found
 --- no_error_log
-LDAP user search failed
+invalid username
 
 
 
@@ -1414,7 +1415,48 @@ Proxy-Authorization: Basic cHJveHk6aHVudGVyMg==
 
 
 
-=== TEST 62: set up a route whose service-account password is wrong
+=== TEST 62: Proxy-Authorization with an empty username falls back to Authorization (proxy: ":pass")
+--- request
+GET /hello
+--- more_headers
+Proxy-Authorization: ldap OnBhc3M=
+Authorization: ldap dXNlcjAxOnBhc3N3b3JkMQ==
+--- error_code: 200
+--- response_body
+hello world
+--- error_log
+find consumer ldapadvuser01
+
+
+
+=== TEST 63: Proxy-Authorization with an empty password falls back to Authorization (proxy: "user:")
+--- request
+GET /hello
+--- more_headers
+Proxy-Authorization: ldap dXNlcjo=
+Authorization: ldap dXNlcjAxOnBhc3N3b3JkMQ==
+--- error_code: 200
+--- response_body
+hello world
+--- error_log
+find consumer ldapadvuser01
+
+
+
+=== TEST 64: an empty-field Proxy-Authorization with no Authorization still 401s (proxy: ":")
+--- request
+GET /hello
+--- more_headers
+Proxy-Authorization: ldap Og==
+--- error_code: 401
+--- grep_error_log eval
+qr/empty password/
+--- grep_error_log_out
+empty password
+
+
+
+=== TEST 65: set up a route whose service-account password is wrong
 --- config
     location /t {
         content_by_lua_block {
@@ -1451,7 +1493,7 @@ passed
 
 
 
-=== TEST 63: rejected service bind -> 500, never a client auth failure (creds: user01:password1)
+=== TEST 66: rejected service bind -> 500, never a client auth failure (creds: user01:password1)
 --- request
 GET /hello
 --- more_headers
@@ -1462,7 +1504,7 @@ LDAP search bind failed
 
 
 
-=== TEST 64: set up a route with a nonexistent base_dn
+=== TEST 67: set up a route with a nonexistent base_dn
 --- config
     location /t {
         content_by_lua_block {
@@ -1497,7 +1539,7 @@ passed
 
 
 
-=== TEST 65: search against a nonexistent base_dn -> 500 (noSuchObject is a misconfiguration) (creds: user01:password1)
+=== TEST 68: search against a nonexistent base_dn -> 500 (noSuchObject is a misconfiguration) (creds: user01:password1)
 --- request
 GET /hello
 --- more_headers
@@ -1508,7 +1550,7 @@ LDAP user search failed
 
 
 
-=== TEST 66: set up a route whose login attribute matches many entries (objectClass)
+=== TEST 69: set up a route whose login attribute matches many entries (objectClass)
 --- config
     location /t {
         content_by_lua_block {
@@ -1543,7 +1585,7 @@ passed
 
 
 
-=== TEST 67: sizeLimitExceeded stays a fail-closed 401, not a 500 (creds: inetOrgPerson:x)
+=== TEST 70: sizeLimitExceeded stays a fail-closed 401, not a 500 (creds: inetOrgPerson:x)
 --- request
 GET /hello
 --- more_headers
@@ -1556,7 +1598,7 @@ ambiguous user match (size limit exceeded)
 
 
 
-=== TEST 68: empty ldap_uri is rejected (minLength)
+=== TEST 71: empty ldap_uri is rejected (minLength)
 --- config
     location /t {
         content_by_lua_block {
@@ -1573,7 +1615,7 @@ qr/property "ldap_uri" validation failed/
 
 
 
-=== TEST 69: overlong base_dn is rejected (maxLength)
+=== TEST 72: overlong base_dn is rejected (maxLength)
 --- config
     location /t {
         content_by_lua_block {
@@ -1590,7 +1632,7 @@ qr/property "base_dn" validation failed/
 
 
 
-=== TEST 70: empty consumer user_dn is rejected (minLength)
+=== TEST 73: empty consumer user_dn is rejected (minLength)
 --- config
     location /t {
         content_by_lua_block {

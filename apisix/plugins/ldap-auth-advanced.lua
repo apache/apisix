@@ -179,11 +179,21 @@ local function parse_credential_header(conf, auth_header)
         return nil, nil, "invalid credential: missing ':' separator"
     end
 
-    return str_sub(decoded, 1, sep - 1), str_sub(decoded, sep + 1)
+    local username = str_sub(decoded, 1, sep - 1)
+    local password = str_sub(decoded, sep + 1)
+
+    if password == "" then
+        return nil, nil, "empty password rejected before bind"
+    end
+    if username == "" then
+        return nil, nil, "empty username"
+    end
+
+    return username, password
 end
 
 
--- Proxy-Authorization takes priority, but only when it parses into
+-- Proxy-Authorization takes priority, but only when it parses into usable
 -- credentials for conf.header_type: a forward proxy may spend that header
 -- on its own credentials (e.g. "Basic ...") while the end user's ride in
 -- Authorization, so its mere presence must not mask a usable Authorization.
@@ -357,20 +367,11 @@ function _M.rewrite(conf, ctx)
     core.request.set_header(ctx, "X-Credential-Identifier", nil)
     core.request.set_header(ctx, "X-Consumer-Custom-ID", nil)
 
+    -- Both fields are guaranteed non-empty: parse_credential_header rejects
+    -- an empty username or password as an unusable credential.
     local username, password, err = extract_credentials(conf, ctx)
     if err then
         return auth_failed(conf, ctx, err)
-    end
-
-    -- A zero-length password would be an RFC 4513 5.1.2 unauthenticated bind,
-    -- which authenticates anyone whose username resolves. Reject before any
-    -- bind can be attempted.
-    if password == "" then
-        return auth_failed(conf, ctx, "empty password rejected before bind")
-    end
-
-    if username == "" then
-        return auth_failed(conf, ctx, "empty username")
     end
 
     local code, body, user_dn = ldap_resolve(conf, ctx, username, password)
