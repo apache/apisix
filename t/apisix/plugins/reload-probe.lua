@@ -20,12 +20,13 @@
 -- aborted this instance has never been initialized and must not be destroyed.
 local state = require("lib.reload_probe_state")
 
+local plugin_name = "reload-probe"
 local inited = false
 
 local _M = {
     version = 0.1,
     priority = 411,
-    name = "reload-probe",
+    name = plugin_name,
     schema = {type = "object"},
 }
 
@@ -33,6 +34,7 @@ local _M = {
 function _M.init()
     inited = true
     state.init = state.init + 1
+    state.record(plugin_name, "init")
 end
 
 
@@ -41,7 +43,9 @@ function _M.destroy()
         state.destroy_without_init = state.destroy_without_init + 1
     end
 
+    inited = false
     state.destroy = state.destroy + 1
+    state.record(plugin_name, "destroy")
 end
 
 

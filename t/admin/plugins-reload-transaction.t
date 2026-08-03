@@ -254,3 +254,61 @@ reload-probe still live: true
 --- timeout: 15
 --- error_log eval
 qr/reload-bad-init: init\(\) boom/
+
+
+
+=== TEST 4: the destroy hooks run in the reverse order of the init hooks
+--- yaml_config
+apisix:
+  node_listen: 1984
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  admin:
+    admin_key: null
+plugins:
+  - reload-probe
+  - reload-probe-2
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        local core = require("apisix.core")
+        local state = require("lib.reload_probe_state")
+
+        -- reload-bad-init has the highest priority of the three, so it fails
+        -- before any new instance is initialized: nothing of the new set may
+        -- be destroyed, and the old set is unwound in the reverse order of
+        -- its init() and then restored in the init() order
+        require("lib.test_admin").set_config_yaml([[
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  admin:
+    admin_key: null
+apisix:
+  node_listen: 1984
+plugins:
+  - reload-probe
+  - reload-bad-init
+  - reload-probe-2
+]])
+        local code = t('/apisix/admin/plugins/reload', ngx.HTTP_PUT)
+        ngx.say("reload: ", code)
+        ngx.sleep(1)
+
+        ngx.say("hooks: ", core.table.concat(state.events, " "))
+        ngx.say("destroy_without_init=", state.destroy_without_init)
+    }
+}
+--- request
+GET /t
+--- response_body
+reload: 500
+hooks: reload-probe:init reload-probe-2:init reload-probe-2:destroy reload-probe:destroy reload-probe:init reload-probe-2:init
+destroy_without_init=0
+--- timeout: 15
+--- error_log eval
+qr/reload-bad-init: init\(\) boom/

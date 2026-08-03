@@ -15,21 +15,37 @@
 -- limitations under the License.
 --
 
--- Records the lifecycle hooks the reload-probe test plugins have seen. It lives
--- outside the apisix.plugins package so that the plugin loader never drops it
--- from package.loaded, hence the counters survive a reload.
+-- A second lifecycle probe, with a lower priority than reload-probe, so that
+-- the two are initialized in a known order and the destroy order can be
+-- asserted against it.
+local state = require("lib.reload_probe_state")
+
+local plugin_name = "reload-probe-2"
+local inited = false
+
 local _M = {
-    init = 0,
-    destroy = 0,
-    -- destroy() calls on an instance whose init() never ran
-    destroy_without_init = 0,
-    -- "<name>:<hook>" entries in the order the hooks ran
-    events = {},
+    version = 0.1,
+    priority = 410,
+    name = plugin_name,
+    schema = {type = "object"},
 }
 
 
-function _M.record(name, hook)
-    _M.events[#_M.events + 1] = name .. ":" .. hook
+function _M.init()
+    inited = true
+    state.init = state.init + 1
+    state.record(plugin_name, "init")
+end
+
+
+function _M.destroy()
+    if not inited then
+        state.destroy_without_init = state.destroy_without_init + 1
+    end
+
+    inited = false
+    state.destroy = state.destroy + 1
+    state.record(plugin_name, "destroy")
 end
 
 

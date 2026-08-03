@@ -374,14 +374,16 @@ local function load(plugin_names, wasm_plugin_names)
     -- before the old one unregisters would lose the resource. If any hook
     -- fails, roll everything back and keep serving with the current set.
     -- destroy() runs in the reverse order of init(): plugins which wrap a
-    -- shared function (gm, ocsp-stapling) restore what they saved, so the
-    -- innermost wrapper has to be removed first. Only the new instances whose
-    -- init() actually ran are destroyed during the rollback: destroy() of an
-    -- instance that was never initialized would publish its uninitialized
-    -- state, e.g. set radixtree_sni.set_cert_and_key to a nil upvalue.
+    -- shared function (gm, then ocsp-stapling on top of it) restore what they
+    -- saved, so the wrappers have to be unwound LIFO, the last one installed
+    -- first. Only the new instances whose init() actually ran are destroyed
+    -- during the rollback: destroy() of an instance that was never initialized
+    -- would publish its uninitialized state, e.g. set
+    -- radixtree_sni.set_cert_and_key to a nil upvalue.
     local old_plugins = core.table.clone(local_plugins)
     for i = #old_plugins, 1, -1 do
-        destroy_plugin(old_plugins[i], http_plugin_type(old_plugins[i]))
+        local old_plugin = old_plugins[i]
+        destroy_plugin(old_plugin, http_plugin_type(old_plugin))
     end
 
     local load_err
@@ -397,7 +399,8 @@ local function load(plugin_names, wasm_plugin_names)
 
     if load_err then
         for i = inited, 1, -1 do
-            destroy_plugin(new_plugins[i], http_plugin_type(new_plugins[i]))
+            local plugin = new_plugins[i]
+            destroy_plugin(plugin, http_plugin_type(plugin))
         end
 
         for pkg_name, mod in pairs(pkg_snapshot) do
