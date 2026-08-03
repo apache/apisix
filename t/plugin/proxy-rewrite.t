@@ -1516,3 +1516,211 @@ GET /hello?name=a%20b&x=1 HTTP/1.1
 --- response_body
 ngx.var.uri: /print_uri_detailed
 ngx.var.request_uri: /print_uri_detailed?name=a%20b&x=1
+
+
+
+=== TEST 58: set route(set header with multiple values)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "proxy-rewrite": {
+                                "uri": "/plugin_proxy_rewrite_multi_header",
+                                "headers": {
+                                    "set": {
+                                        "x-multi": ["val1", "val2"]
+                                    }
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 59: set replaces the incoming header with multiple same-name headers
+--- request
+GET /hello
+--- more_headers
+x-multi: origin
+--- response_body_like eval
+qr/x-multi: val1\nx-multi: val2/
+--- response_body_unlike eval
+qr/x-multi: origin/
+
+
+
+=== TEST 60: set route(add header with multiple values)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "proxy-rewrite": {
+                                "uri": "/plugin_proxy_rewrite_multi_header",
+                                "headers": {
+                                    "add": {
+                                        "x-multi": ["val1", "val2"]
+                                    }
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 61: add appends multiple same-name headers to the incoming header
+--- request
+GET /hello
+--- more_headers
+x-multi: origin
+--- response_body_like eval
+qr/x-multi: origin\nx-multi: val1\nx-multi: val2/
+
+
+
+=== TEST 62: set route(multi-value with regex_uri capture and nginx variable)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "proxy-rewrite": {
+                                "regex_uri": ["^/test/(.*)",
+                                    "/plugin_proxy_rewrite_multi_header"],
+                                "headers": {
+                                    "set": {
+                                        "x-multi": ["cap-$1", "$http_x_src"]
+                                    }
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/test/*"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 63: each array element resolves capture and variable
+--- request
+GET /test/echo
+--- more_headers
+x-src: from-src
+--- response_body_like eval
+qr/x-multi: cap-echo\nx-multi: from-src/
+
+
+
+=== TEST 64: add route(multi-value with regex_uri capture and nginx variable)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "proxy-rewrite": {
+                                "regex_uri": ["^/test/(.*)",
+                                    "/plugin_proxy_rewrite_multi_header"],
+                                "headers": {
+                                    "add": {
+                                        "x-multi": ["cap-$1", "$http_x_src"]
+                                    }
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/test/*"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 65: add resolves capture and variable for each array element
+--- request
+GET /test/echo
+--- more_headers
+x-src: from-src
+--- response_body_like eval
+qr/x-multi: cap-echo\nx-multi: from-src/

@@ -57,7 +57,7 @@ env GCP_SERVICE_ACCOUNT;
 
 {% if envs then %}
 {% for _, name in ipairs(envs) do %}
-env {*name*};
+env "{*name*}";
 {% end %}
 {% end %}
 
