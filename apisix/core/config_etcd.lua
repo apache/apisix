@@ -26,6 +26,7 @@ local json         = require("apisix.core.json")
 local etcd_apisix  = require("apisix.core.etcd")
 local core_str     = require("apisix.core.string")
 local new_tab      = require("table.new")
+local nkeys        = require("table.nkeys")
 local inspect      = require("inspect")
 local process      = require("ngx.process")
 local check_schema = require("apisix.core.schema").check
@@ -549,6 +550,8 @@ end
 local function load_full_data(self, dir_res, headers, prev_values, prev_values_hash)
     local err
     local changed = false
+    -- how many of the previous keys are still present, used to detect deletions
+    local matched_prev = 0
 
     if self.single_item then
         self.values = new_tab(1, 0)
@@ -610,6 +613,25 @@ local function load_full_data(self, dir_res, headers, prev_values, prev_values_h
 
         for _, item in ipairs(values) do
             local key = short_key(self, item.key)
+            local prev_item = get_prev_item(prev_values, prev_values_hash, key)
+            if prev_item then
+                matched_prev = matched_prev + 1
+            end
+
+            -- Nothing changed for this key, so reuse the item we already have
+            -- instead of rebuilding it. This keeps the object identity stable,
+            -- which matters because downstream caches are keyed on it, and it
+            -- leaves `changed` alone so that a reload which changed nothing
+            -- does not bump conf_version and rebuild every router.
+            -- Same semantics as the incremental watch path in sync_data, which
+            -- only re-runs the checker and filter for the keys that changed.
+            if prev_item and prev_item.modifiedIndex == item.modifiedIndex then
+                insert_tab(self.values, prev_item)
+                self.values_hash[key] = #self.values
+                self:upgrade_version(item.modifiedIndex)
+                goto continue
+            end
+
             local data_valid = true
             err = nil
             if type(item.value) ~= "table" then
@@ -649,20 +671,28 @@ local function load_full_data(self, dir_res, headers, prev_values, prev_values_h
                     self.filter(item)
                 end
 
-            else
-                local prev_item = get_prev_item(prev_values, prev_values_hash, key)
-                if prev_item then
-                    -- keep serving with the last valid configuration instead of
-                    -- silently dropping the whole item on a full reload, see the
-                    -- incremental path in sync_data for the same semantics
-                    log.warn("failed to check item data of [", self.key, "/", key,
-                             "], keep the previous configuration, err: ", err)
-                    insert_tab(self.values, prev_item)
-                    self.values_hash[key] = #self.values
-                end
+            elseif prev_item then
+                -- keep serving with the last valid configuration instead of
+                -- silently dropping the whole item on a full reload, see the
+                -- incremental path in sync_data for the same semantics
+                log.warn("failed to check item data of [", self.key, "/", key,
+                         "], keep the previous configuration, err: ", err)
+                insert_tab(self.values, prev_item)
+                self.values_hash[key] = #self.values
             end
 
             self:upgrade_version(item.modifiedIndex)
+
+            ::continue::
+        end
+
+        -- Keys present in the previous snapshot but absent now were deleted
+        -- while we were not watching. Every surviving key can be untouched and
+        -- still leave us with a changed configuration, so this has to be
+        -- checked separately or a reload that only deletes would keep serving
+        -- the removed items.
+        if prev_values_hash and matched_prev < nkeys(prev_values_hash) then
+            changed = true
         end
     end
 
