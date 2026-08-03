@@ -43,13 +43,13 @@ description: mocking 插件无需转发请求到上游服务即可模拟 API 响
 | delay            | integer | 否     | 0                             | 延迟返回响应的时间，单位为秒。                                                                                                                   |
 | response_status  | integer | 否     | 200                           | 响应的 HTTP 状态码。                                                                                                                             |
 | content_type     | string  | 否     | application/json;charset=utf8 | 响应的 `Content-Type` 标头值。                                                                                                                   |
-| response_example | string  | 二选一 |                               | 响应体内容。支持 [NGINX 变量](https://nginx.org/en/docs/http/ngx_http_core_module.html)，例如 `$remote_addr`。与 `response_schema` 二选一，且至少配置其中一个，不能同时配置。 |
-| response_schema  | object  | 二选一 |                               | 用于生成随机模拟响应体的 [JSON Schema](https://json-schema.org) 对象。与 `response_example` 二选一，且至少配置其中一个，不能同时配置。          |
+| response_example | string  | 二者至少其一 |                               | 响应体内容。支持 [NGINX 变量](https://nginx.org/en/docs/http/ngx_http_core_module.html)，例如 `$remote_addr`。`response_example` 与 `response_schema` 至少配置其中一个；若同时配置，以 `response_example` 为准，`response_schema` 将被忽略。 |
+| response_schema  | object  | 二者至少其一 |                               | 用于生成随机模拟响应体的 [JSON Schema](https://json-schema.org) 对象。`response_schema` 与 `response_example` 至少配置其中一个；若同时配置，以 `response_example` 为准，`response_schema` 将被忽略。          |
 | with_mock_header | boolean | 否     | true                          | 设置为 `true` 时，将添加响应头 `x-mock-by: APISIX/{version}`。                                                                                  |
 | response_headers | object  | 否     |                               | 要添加到模拟响应中的标头。例如：`{"X-Foo": "bar"}`。                                                                                            |
 
 :::note
-`response_example` 与 `response_schema` 不能同时配置，且至少需要配置其中一个，否则插件配置将无法通过校验。
+必须配置 `response_example` 或 `response_schema` 其中之一，否则插件配置将无法通过校验；若同时配置，以 `response_example` 为准，`response_schema` 将被忽略。
 :::
 
 `response_schema` 支持以下字段类型：

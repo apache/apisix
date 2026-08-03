@@ -795,3 +795,153 @@ passed
 --- error_code: 400
 --- response_body eval
 qr/\{"error_msg":"the property is forbidden:.*"\}/
+
+
+
+=== TEST 23: PATCH must not re-encrypt the encrypted plugin fields (full body)
+--- yaml_config
+apisix:
+    data_encryption:
+        enable_encrypt_fields: true
+        keyring:
+            - edd1c9f0985e76a2
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    },
+                    "plugins": {
+                        "csrf": {
+                            "key": "userkey",
+                            "expires": 1000000000
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            -- patch an unrelated field twice
+            for i = 1, 2 do
+                local code, body = t('/apisix/admin/routes/1',
+                    ngx.HTTP_PATCH,
+                    '{"desc": "patch ' .. i .. '"}'
+                )
+                if code >= 300 then
+                    ngx.status = code
+                    ngx.say(body)
+                    return
+                end
+            end
+
+            -- get plugin conf from admin api, the key is decrypted
+            local code, message, res = t('/apisix/admin/routes/1',
+                ngx.HTTP_GET
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(message)
+                return
+            end
+            res = json.decode(res)
+            ngx.say(res.value.plugins["csrf"].key)
+
+            -- get plugin conf from etcd, the key is encrypted exactly once
+            local etcd = require("apisix.core.etcd")
+            local res = assert(etcd.get('/routes/1'))
+            ngx.say(res.body.node.value.plugins["csrf"].key)
+        }
+    }
+--- response_body
+userkey
+mt39FazQccyMqt4ctoRV7w==
+
+
+
+=== TEST 24: PATCH must not re-encrypt the encrypted plugin fields (sub path)
+--- yaml_config
+apisix:
+    data_encryption:
+        enable_encrypt_fields: true
+        keyring:
+            - edd1c9f0985e76a2
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    },
+                    "plugins": {
+                        "csrf": {
+                            "key": "userkey",
+                            "expires": 1000000000
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            -- patch an unrelated field twice via sub path
+            for i = 1, 2 do
+                local code, body = t('/apisix/admin/routes/1/desc',
+                    ngx.HTTP_PATCH,
+                    '"patch ' .. i .. '"'
+                )
+                if code >= 300 then
+                    ngx.status = code
+                    ngx.say(body)
+                    return
+                end
+            end
+
+            -- get plugin conf from admin api, the key is decrypted
+            local code, message, res = t('/apisix/admin/routes/1',
+                ngx.HTTP_GET
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(message)
+                return
+            end
+            res = json.decode(res)
+            ngx.say(res.value.plugins["csrf"].key)
+
+            -- get plugin conf from etcd, the key is encrypted exactly once
+            local etcd = require("apisix.core.etcd")
+            local res = assert(etcd.get('/routes/1'))
+            ngx.say(res.body.node.value.plugins["csrf"].key)
+
+            t('/apisix/admin/routes/1', ngx.HTTP_DELETE)
+        }
+    }
+--- response_body
+userkey
+mt39FazQccyMqt4ctoRV7w==

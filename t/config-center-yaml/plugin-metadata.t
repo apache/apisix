@@ -87,3 +87,105 @@ plugin_metadata:
 GET /hello
 --- error_log
 failed to check item data of [plugin_metadata]
+
+
+
+=== TEST 3: metadata of plugins from the other subsystem should be skipped silently
+--- yaml_config
+apisix:
+    node_listen: 1984
+    proxy_mode: http&stream
+    stream_proxy:
+        tcp:
+            - 9100
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
+--- stream_enable
+--- apisix_yaml
+upstreams:
+  - id: 1
+    nodes:
+      "127.0.0.1:1980": 1
+    type: roundrobin
+routes:
+  -
+    uri: /hello
+    upstream_id: 1
+    plugins:
+        cors:
+            allow_origins_by_metadata:
+                - local
+plugin_metadata:
+  - id: cors
+    allow_origins:
+        local: "http://example.com"
+  - id: mqtt-proxy
+    log_format:
+        host: "$host"
+#END
+--- request
+GET /hello
+--- response_body
+hello world
+--- no_error_log
+disabled or unknown plugin
+
+
+
+=== TEST 4: metadata of a disabled or unknown plugin is ignored silently
+--- extra_yaml_config
+apisix:
+    data_encryption:
+        enable_encrypt_fields: true
+        keyring:
+            - edd1c9f0985e76a2
+--- apisix_yaml
+upstreams:
+  - id: 1
+    nodes:
+      "127.0.0.1:1980": 1
+    type: roundrobin
+routes:
+  -
+    uri: /hello
+    upstream_id: 1
+plugin_metadata:
+  - id: plugin-not-exist
+    log_format:
+        host: "$host"
+#END
+--- request
+GET /hello
+--- response_body
+hello world
+--- no_error_log
+disabled or unknown plugin
+failed to check item data of [plugin_metadata]
+failed to get schema
+
+
+
+=== TEST 5: metadata entry without id is ignored silently
+--- apisix_yaml
+upstreams:
+  - id: 1
+    nodes:
+      "127.0.0.1:1980": 1
+    type: roundrobin
+routes:
+  -
+    uri: /hello
+    upstream_id: 1
+plugin_metadata:
+  - log_format:
+        host: "$host"
+#END
+--- request
+GET /hello
+--- response_body
+hello world
+--- no_error_log
+disabled or unknown plugin
+failed to check item data of [plugin_metadata]

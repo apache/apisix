@@ -542,3 +542,38 @@ same table: true
 decode_count: 1
 after set_body model: claude
 decode_count: 2
+
+
+
+=== TEST 18: set_header with a different case should not leave a stale entry in the cached headers
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            ngx.ctx.api_ctx = {}
+            local ctx = ngx.ctx.api_ctx
+
+            -- warm the headers cache
+            core.request.headers(ctx)
+
+            core.request.set_header(ctx, "X-Mixed-Case", "new")
+
+            local count = 0
+            local value
+            for k, v in pairs(core.request.headers(ctx)) do
+                if string.lower(k) == "x-mixed-case" then
+                    count = count + 1
+                    value = v
+                end
+            end
+            ngx.say("count: ", count)
+            ngx.say("value: ", value)
+            ngx.say("header: ", core.request.header(ctx, "X-Mixed-Case"))
+        }
+    }
+--- more_headers
+x-mixed-case: old
+--- response_body
+count: 1
+value: new
+header: new

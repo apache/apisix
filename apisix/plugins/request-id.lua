@@ -18,10 +18,14 @@
 local ngx = ngx
 local core = require("apisix.core")
 local uuid = require("resty.jit-uuid")
-local nanoid = require("nanoid")
+local resty_random = require("resty.random")
 local ksuid = require("resty.ksuid")
 local math_random = math.random
 local str_byte = string.byte
+local str_sub = string.sub
+local table_concat = table.concat
+local bit = require("bit")
+local band = bit.band
 local ffi = require "ffi"
 
 local plugin_name = "request-id"
@@ -70,6 +74,22 @@ function _M.check_schema(conf)
     return core.schema.check(schema, conf)
 end
 
+-- standard nanoid alphabet: 64 characters, so 6 bits of CSPRNG output map
+-- to one character without modulo bias
+local NANOID_ALPHABET = "-_0123456789abcdefghijklmnopqrstuvwxyz"
+                        .. "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+local NANOID_SIZE = 21
+
+local function get_nanoid()
+    local bytes = resty_random.bytes(NANOID_SIZE)
+    local id = core.table.new(NANOID_SIZE, 0)
+    for i = 1, NANOID_SIZE do
+        local idx = band(str_byte(bytes, i), 63) + 1
+        id[i] = str_sub(NANOID_ALPHABET, idx, idx)
+    end
+    return table_concat(id)
+end
+
 -- generate range_id
 local function get_range_id(range_id)
     local res = ffi.new("unsigned char[?]", range_id.length)
@@ -87,7 +107,7 @@ local function get_request_id(conf)
         return core.utils.generate_uuid_v7()
     end
     if conf.algorithm == "nanoid" then
-        return nanoid.safe_simple()
+        return get_nanoid()
     end
 
     if conf.algorithm == "range_id" then

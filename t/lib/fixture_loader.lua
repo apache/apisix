@@ -22,6 +22,7 @@
 -- Supported headers:
 --   X-AI-Fixture: <path>          -- fixture file path relative to t/fixtures/
 --   X-AI-Fixture-Status: <code>   -- optional HTTP status code (default 200)
+--   X-AI-Fixture-Flush-Events     -- for .sse fixtures, flush each SSE event separately
 
 local _M = {}
 local io = io
@@ -99,6 +100,17 @@ local function apply_template(content)
 end
 
 
+-- Print each SSE event (delimited by a blank line) as its own flushed chunk,
+-- so the upstream is seen as a multi-chunk stream rather than one body.
+local function flush_sse_events(content)
+    for event in content:gmatch("(.-\n\n)") do
+        ngx.print(event)
+        ngx.flush(true)
+        ngx.sleep(0.01)
+    end
+end
+
+
 -- Serve a fixture based on the X-AI-Fixture request header.
 -- For .sse files: sets Content-Type to text/event-stream and sends content as-is.
 -- For other files: sets Content-Type to application/json.
@@ -130,6 +142,10 @@ function _M.dispatch()
         ngx.header["Content-Type"] = "text/event-stream"
         ngx.header["Cache-Control"] = "no-cache"
         ngx.header["Transfer-Encoding"] = "chunked"
+        if headers["X-AI-Fixture-Flush-Events"] then
+            flush_sse_events(content)
+            return
+        end
         ngx.print(content)
         ngx.flush(true)
     else

@@ -40,6 +40,7 @@ local schema = {
             enum = {"default", "origin"},
         },
         log_format = {type = "object"},
+        log_format_extra = {type = "object"},
         -- deprecated, use "brokers" instead
         broker_list = {
             type = "object",
@@ -88,6 +89,16 @@ local schema = {
             },
             uniqueItems = true,
         },
+        tls = {
+            type = "object",
+            description = "tls config for connecting to kafka brokers",
+            properties = {
+                verify = {
+                    type = "boolean",
+                    default = false,
+                },
+            },
+        },
         kafka_topic = {type = "string"},
         producer_type = {
             type = "string",
@@ -128,16 +139,27 @@ local schema = {
         producer_max_buffering = {type = "integer", minimum = 1, default = 50000},
         producer_time_linger = {type = "integer", minimum = 1, default = 1},
         meta_refresh_interval = {type = "integer", minimum = 1, default = 30},
+        -- send message with the Produce API version, only version 2 carries
+        -- the message timestamp, so that brokers can store it
+        api_version = {
+            type = "integer",
+            default = 1,
+            enum = {0, 1, 2},
+        },
     },
     oneOf = {
         { required = {"broker_list", "kafka_topic"},},
         { required = {"brokers", "kafka_topic"},},
-    }
+    },
+    encrypt_fields = {"brokers.sasl_config.password"},
 }
 
 local metadata_schema = {
     type = "object",
     properties = {
+        log_format_extra = {
+            type = "object"
+        },
         log_format = {
             type = "object"
         },
@@ -167,6 +189,8 @@ function _M.check_schema(conf, schema_type)
     if not ok then
         return nil, err
     end
+
+    core.utils.check_tls_bool({"tls.verify"}, conf, plugin_name)
     return log_util.check_log_schema(conf)
 end
 
@@ -266,6 +290,11 @@ function _M.log(conf, ctx)
     broker_config["max_buffering"] = conf.producer_max_buffering
     broker_config["flush_time"] = conf.producer_time_linger * 1000
     broker_config["refresh_interval"] = conf.meta_refresh_interval * 1000
+    broker_config["api_version"] = conf.api_version
+    if conf.tls then
+        broker_config["ssl"] = true
+        broker_config["ssl_verify"] = conf.tls.verify
+    end
 
     local prod, err = core.lrucache.plugin_ctx(lrucache, ctx, nil, create_producer,
                                                broker_list, broker_config, conf.cluster_name)
@@ -290,8 +319,6 @@ function _M.log(conf, ctx)
         if not data then
             return false, 'error occurred while encoding the data: ' .. err
         end
-
-        core.log.info("send data to kafka: ", data)
 
         return send_kafka_data(conf, data, prod)
     end

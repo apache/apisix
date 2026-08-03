@@ -351,3 +351,120 @@ GET /test_concurrency
 500
 --- error_log
 failed to get limit conn rules
+
+
+
+=== TEST 11: restore route for invalid-variable tests (conn/burst as dynamic header)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "limit-conn": {
+                                "conn": "${http_conn ?? 5}",
+                                "burst": "${http_burst ?? 2}",
+                                "default_conn_delay": 0.1,
+                                "rejected_code": 503,
+                                "key": "remote_addr"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/limit_conn"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 12: zero conn header value is rejected with 500 and error log
+--- request
+GET /limit_conn
+--- more_headers
+conn: 0
+--- error_code: 500
+--- error_log
+resolved value must be a positive number
+
+
+
+=== TEST 13: negative conn header value is rejected with 500 and error log
+--- request
+GET /limit_conn
+--- more_headers
+conn: -1
+--- error_code: 500
+--- error_log
+resolved value must be a positive number
+
+
+
+=== TEST 14: fractional conn header value is rejected with 500 and error log
+--- request
+GET /limit_conn
+--- more_headers
+conn: 1.5
+--- error_code: 500
+--- error_log
+resolved value must be an integer
+
+
+
+=== TEST 15: fractional burst header value is rejected with 500 and error log
+--- request
+GET /limit_conn
+--- more_headers
+burst: 1.5
+--- error_code: 500
+--- error_log
+resolved value must be an integer
+
+
+
+=== TEST 16: conn header value above 2^53-1 is rejected with 500 and error log
+--- request
+GET /limit_conn
+--- more_headers
+conn: 99007199254740993
+--- error_code: 500
+--- error_log
+resolved value exceeds safe integer range
+
+
+
+=== TEST 17: dynamic burst resolving to 0 is accepted (schema allows burst minimum 0)
+--- request
+GET /limit_conn
+--- more_headers
+burst: 0
+--- error_code: 200
+--- no_error_log
+resolved value must be
+
+
+
+=== TEST 18: negative burst header value is rejected with 500 and error log
+--- request
+GET /limit_conn
+--- more_headers
+burst: -1
+--- error_code: 500
+--- error_log
+resolved value must be a non-negative number

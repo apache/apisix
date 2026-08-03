@@ -56,8 +56,11 @@ function _M.init()
         return
     end
 
-    if is_http and not local_conf.apisix.enable_admin then
-        -- we need to register xRPC protocols in HTTP only when Admin API is enabled
+    if is_http and not local_conf.apisix.enable_admin and
+        not local_conf.apisix.stream_proxy then
+        -- we need to register xRPC protocols in HTTP only when Admin API is enabled,
+        -- or when stream_proxy is configured, as the stream router initialized in
+        -- HTTP workers needs them to check the schema of stream routes
         return
     end
 

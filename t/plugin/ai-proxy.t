@@ -1240,10 +1240,6 @@ got token usage from ai service:
                 capabilities = {},
             })
 
-            local ctx = {
-                var = {},
-                ai_client_protocol = "openai-chat",
-            }
             local conf = { ssl_verify = false }
             local opts = {
                 endpoint = "http://127.0.0.1:1980/v1/chat/completions?extra=value",
@@ -1251,8 +1247,10 @@ got token usage from ai service:
                 conf = {},
             }
 
-            provider:build_request(ctx, conf, {messages = {{role="user", content="hi"}}}, opts)
-            provider:build_request(ctx, conf, {messages = {{role="user", content="hi"}}}, opts)
+            -- assert both builds: a build failure would otherwise leave auth_query
+            -- untouched and the test would still report OK
+            assert(provider:build_request(conf, {messages = {{role="user", content="hi"}}}, opts))
+            assert(provider:build_request(conf, {messages = {{role="user", content="hi"}}}, opts))
 
             if auth_query["extra"] then
                 ngx.say("FAIL: auth.query was mutated, extra=" .. auth_query["extra"])
@@ -1263,3 +1261,67 @@ got token usage from ai service:
     }
 --- response_body
 OK: auth.query is clean
+
+
+
+=== TEST 38: set route to an upstream that returns 5xx with an error body
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai-compatible",
+                            "auth": {
+                                "header": {
+                                    "Authorization": "Bearer token"
+                                }
+                            },
+                            "options": {
+                                "model": "custom"
+                            },
+                            "override": {
+                                "endpoint": "http://127.0.0.1:6725/v1/chat/completions"
+                            },
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 39: single-instance ai-proxy returns the upstream 5xx error body to the client
+--- http_config
+    server {
+        server_name internal_error;
+        listen 6725;
+        default_type 'application/json';
+        location / {
+            content_by_lua_block {
+                ngx.status = 500
+                ngx.say([[{ "error": {"message":"upstream boom"}}]])
+                return
+            }
+        }
+    }
+--- request
+POST /anything
+{ "messages": [ { "role": "user", "content": "What is 1+1?"} ] }
+--- error_code: 500
+--- response_body_like: upstream boom
+--- response_headers
+Content-Type: application/json

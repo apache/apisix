@@ -16,12 +16,14 @@
 --
 local limit_conn_new = require("resty.limit.conn").new
 local core = require("apisix.core")
+local apisix_plugin = require("apisix.plugin")
 local is_http = ngx.config.subsystem == "http"
 local sleep = core.sleep
 local tonumber = tonumber
 local type = type
 local tostring = tostring
 local ipairs = ipairs
+local floor = math.floor
 local shdict_name = "plugin-limit-conn"
 if ngx.config.subsystem == "stream" then
     shdict_name = shdict_name .. "-stream"
@@ -41,16 +43,38 @@ end
 local _M = {}
 
 
-local function resolve_var(ctx, value)
+local function resolve_var(ctx, value, allow_zero)
     if type(value) == "string" then
+        local original = value
         local err, _
         value, err, _ = core.utils.resolve_var(value, ctx.var)
         if err then
-            return nil, "could not resolve var for value: " .. value .. ", err: " .. err
+            return nil, "could not resolve var for value: " .. original .. ", err: " .. err
         end
+        local resolved = value
         value = tonumber(value)
         if not value then
-            return nil, "resolved value is not a number: " .. tostring(value)
+            return nil, "resolved value is not a number: " .. tostring(resolved)
+        end
+        -- conn must be positive; burst may be zero, mirroring the schema where
+        -- conn has exclusiveMinimum 0 and burst has minimum 0
+        if allow_zero then
+            if value < 0 then
+                return nil, "resolved value must be a non-negative number, got: "
+                            .. tostring(value)
+            end
+        elseif value <= 0 then
+            return nil, "resolved value must be a positive number, got: " .. tostring(value)
+        end
+        -- conn/burst are used as integer operands in floor((conn - 1) / max);
+        -- fractional values produce wrong delay calculations
+        if value ~= floor(value) then
+            return nil, "resolved value must be an integer, got: " .. tostring(value)
+        end
+        -- LuaJIT doubles lose integer precision above 2^53 (9007199254740992)
+        if value > 9007199254740991 then
+            return nil, "resolved value exceeds safe integer range (2^53-1), got: "
+                        .. tostring(value)
         end
     end
     return value
@@ -63,7 +87,7 @@ local function get_rules(ctx, conf)
         if err then
             return nil, err
         end
-        local burst, err2 = resolve_var(ctx, conf.burst)
+        local burst, err2 = resolve_var(ctx, conf.burst, true)
         if err2 then
             return nil, err2
         end
@@ -83,7 +107,7 @@ local function get_rules(ctx, conf)
         if err then
             goto CONTINUE
         end
-        local burst, err2 = resolve_var(ctx, rule.burst)
+        local burst, err2 = resolve_var(ctx, rule.burst, true)
         if err2 then
             goto CONTINUE
         end
@@ -102,6 +126,24 @@ local function get_rules(ctx, conf)
         ::CONTINUE::
     end
     return rules
+end
+
+
+local function gen_limit_key(conf, ctx, key)
+    local parent = conf._meta and conf._meta.parent
+    if not parent or not parent.resource_key then
+        core.log.error("failed to generate key invalid parent: ", core.json.encode(parent))
+        return nil
+    end
+
+    local new_key = parent.resource_key .. ':' .. apisix_plugin.conf_version(conf) .. ':' .. key
+    if conf._vid then
+        -- conf has _vid means it's from workflow plugin, add _vid to the key
+        -- so that the counter is unique per action.
+        return new_key .. ':' .. conf._vid
+    end
+
+    return new_key
 end
 
 
@@ -167,7 +209,13 @@ local function run_limit_conn(conf, rule, ctx)
         key = ctx.var["remote_addr"]
     end
 
-    key = key .. ctx.conf_type .. ctx.conf_version
+    key = gen_limit_key(conf, ctx, key)
+    if not key then
+        if conf.allow_degradation then
+            return
+        end
+        return 500
+    end
     core.log.info("limit key: ", key)
 
     local delay, err = lim:incoming(key, true)
@@ -201,8 +249,6 @@ end
 
 
 function _M.increase(conf, ctx)
-    core.log.info("ver: ", ctx.conf_version)
-
     local rules, err = get_rules(ctx, conf)
     if not rules or #rules == 0 then
         core.log.error("failed to get limit conn rules: ", err)

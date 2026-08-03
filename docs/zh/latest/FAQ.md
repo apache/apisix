@@ -450,14 +450,14 @@ curl http://127.0.0.1:9080/ip -i
 
 ## Admin API 的 `X-API-KEY` 指的是什么？是否可以修改？
 
-Admin API 的 `X-API-KEY` 指的是 `./conf/config.yaml` 文件中的 `deployment.admin.admin_key.key`，默认值是 `edd1c9f034335f136f87ad84b625c8f1`。它是 Admin API 的访问 token。
+Admin API 的 `X-API-KEY` 指的是 `./conf/config.yaml` 文件中的 `deployment.admin.admin_key[0].key`。它是 Admin API 的访问 token。
 
-默认情况下，它被设置为 `edd1c9f034335f136f87ad84b625c8f1`，也可以通过修改 `./conf/conf/config` 中的参数来修改，如下示例：
+在默认配置中，该字段为空。APISIX 会在初始化时自动生成一个随机的 Admin API Key，并将其写回 `./conf/config.yaml`。你也可以通过修改 `./conf/config.yaml` 中的参数来显式设置该 Key，如下示例：
 
 ```yaml
 deployment:
   admin:
-    admin_key
+    admin_key:
       - name: "admin"
         key: newkey
         role: admin

@@ -17,34 +17,61 @@
 
 local redis_cluster = require("apisix.utils.rediscluster")
 local core = require("apisix.core")
-local to_hex = require("resty.string").to_hex
+local delayed_syncer = require("apisix.plugins.limit-count.delayed-syncer")
+local sliding_window = require("apisix.plugins.limit-count.sliding-window.sliding-window")
+local sliding_window_store = require("apisix.plugins.limit-count."
+                                     .. "sliding-window.store.redis")
+local limit_count_local = require("apisix.plugins.limit-count.limit-count-local")
+local util = require("apisix.plugins.limit-count.util")
+
+local timer_at = ngx.timer.at
 local setmetatable = setmetatable
-local tostring = tostring
 
 local _M = {}
-
 
 local mt = {
     __index = _M
 }
 
-
-local script = core.string.compress_script([=[
-    assert(tonumber(ARGV[3]) >= 1, "cost must be at least 1")
-    local ttl = redis.call('ttl', KEYS[1])
-    if ttl < 0 then
-        redis.call('set', KEYS[1], ARGV[1] - ARGV[3], 'EX', ARGV[2])
-        return {ARGV[1] - ARGV[3], ARGV[2]}
-    end
-    return {redis.call('incrby', KEYS[1], 0 - ARGV[3]), ttl}
-]=])
-local script_sha = to_hex(ngx.sha1_bin(script))
-
-
-function _M.new(plugin_name, limit, window, conf)
+function _M.new(plugin_name, limit, window, conf, key_version)
     local red_cli, err = redis_cluster.new(conf, "plugin-limit-count-redis-cluster-slot-lock")
     if not red_cli then
         return nil, err
+    end
+
+    local fallback_limiter, fallback_err = limit_count_local.new(plugin_name,
+                                                                 limit, window,
+                                                                 conf.window_type)
+    if not fallback_limiter then
+        return nil, fallback_err
+    end
+
+    local enable_delayed_sync = conf.sync_interval and conf.sync_interval ~= -1
+
+    if conf.window_type == "sliding" then
+        local sw_limit_count
+        sw_limit_count, err = sliding_window.new(sliding_window_store, limit, window, red_cli)
+        if not sw_limit_count then
+            return nil, err
+        end
+
+        sw_limit_count.fallback_limiter = fallback_limiter
+        sw_limit_count.plugin_name = plugin_name
+        local self = {
+            limit = limit,
+            window_type = conf.window_type,
+            limit_count = sw_limit_count,
+        }
+
+        if enable_delayed_sync then
+            local ds, ds_err = delayed_syncer.new(plugin_name, limit, window,
+                conf, self.limit_count)
+            if not ds then
+                return nil, ds_err
+            end
+            self.delayed_syncer = ds
+        end
+        return setmetatable(self, mt)
     end
 
     local self = {
@@ -52,38 +79,51 @@ function _M.new(plugin_name, limit, window, conf)
         window = window,
         conf = conf,
         plugin_name = plugin_name,
+        key_version = key_version,
         red_cli = red_cli,
+        fallback_limiter = fallback_limiter,
     }
+
+    if enable_delayed_sync then
+        local ds, ds_err = delayed_syncer.new(plugin_name, limit, window, conf, self)
+        if not ds then
+            return nil, ds_err
+        end
+        self.delayed_syncer = ds
+    end
 
     return setmetatable(self, mt)
 end
 
-
-function _M.incoming(self, key, cost)
-    local red = self.red_cli
-    local limit = self.limit
-    local window = self.window
-    key = self.plugin_name .. tostring(key)
-
-    local ttl = 0
-    local res, err = red:evalsha(script_sha, 1, key, limit, window, cost or 1)
-    if err and core.string.has_prefix(err, "NOSCRIPT") then
-        core.log.warn("redis evalsha failed: ", err, ". Falling back to eval")
-        res, err = red:eval(script, 1, key, limit, window, cost or 1)
+function _M.incoming_delayed(self, key, cost, syncer_id)
+    local remaining, reset, err = self.delayed_syncer:delayed_sync(key, cost, syncer_id)
+    if not remaining then
+        return nil, err, 0
     end
-
-    if err then
-        return nil, err, ttl
-    end
-
-    local remaining = res[1]
-    ttl = res[2]
-
     if remaining < 0 then
-        return nil, "rejected", ttl
+        return nil, "rejected", reset
     end
-    return 0, remaining, ttl
+    return 0, remaining, reset
 end
 
+function _M.incoming(self, key, cost)
+    if self.window_type == "sliding" then
+        return self.limit_count:incoming(key, cost)
+    end
+
+    return util.redis_incoming(self, key, cost, false)
+end
+
+function _M.log_phase_incoming(self, key, cost)
+    local ok, err = timer_at(0, function ()
+        local delay, incoming_err = self:incoming(key, cost)
+        if not delay and incoming_err ~= "rejected" then
+            core.log.error("failed to sync limit count in log phase: ", incoming_err)
+        end
+    end)
+    if not ok then
+        core.log.error("failed to schedule timer: ", err)
+    end
+end
 
 return _M

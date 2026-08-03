@@ -74,9 +74,19 @@ openssl pkcs12 -export -clcerts -in client.cer -inkey client.key -out client.p12
 
 :::
 
+:::note 注意
+
+你可以通过以下命令从 `config.yaml` 中获取 `admin_key` 并保存到环境变量：
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
 curl -X PUT 'http://127.0.0.1:9180/apisix/admin/ssls/1' \
---header 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' \
+--header 'X-API-KEY: $admin_key' \
 --header 'Content-Type: application/json' \
 --data-raw '{
     "sni": "test.com",
@@ -99,7 +109,7 @@ curl -X PUT 'http://127.0.0.1:9180/apisix/admin/ssls/1' \
 
 ```shell
 curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/1' \
---header 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' \
+--header 'X-API-KEY: $admin_key' \
 --header 'Content-Type: application/json' \
 --data-raw '{
     "uri": "/anything",

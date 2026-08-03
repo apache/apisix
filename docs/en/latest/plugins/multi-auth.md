@@ -39,6 +39,8 @@ import TabItem from '@theme/TabItem';
 
 The `multi-auth` Plugin allows Consumers using different authentication methods to share the same Route or Service. It supports the configuration of multiple authentication Plugins, so that a request would be allowed through if it authenticates successfully against any configured authentication method.
 
+When every configured method fails, the request is rejected with a `401` and each method's underlying failure reason is written to the error log (for example, `key-auth failed to authenticate the request, code: 401. error: failed to find consumer: invalid api key`), which helps diagnose why a particular authentication method rejected the request.
+
 ## Attributes
 
 | Name | Type | Required | Default | Valid values | Description |

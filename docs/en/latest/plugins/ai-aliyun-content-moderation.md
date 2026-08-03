@@ -58,18 +58,21 @@ The `ai-aliyun-content-moderation` Plugin should be used with either [`ai-proxy`
 | stream_check_mode | string | False | `"final_packet"` | `realtime`, `final_packet` | Streaming moderation mode. `realtime`: batched checks during streaming. `final_packet`: append risk level at the end. |
 | stream_check_cache_size | integer | False | `128` | >= 1 | Maximum bytes per moderation batch in `realtime` mode. Length is measured using Lua string length, so for UTF-8 text non-ASCII characters may consume multiple bytes. |
 | stream_check_interval | number | False | `3` | >= 0.1 | Seconds between batch checks in `realtime` mode. |
+| request_check_roles | array[string] | False | `["user"]` | items are `user`, `tool`, `system` | Which message roles to moderate on the request side. `user` and `tool` follow `request_check_mode`; `system` is checked on every request (it can be poisoned by malicious ToolCall arguments overwriting the system prompt). The default `["user"]` preserves the previous behavior. Note: tool-result moderation applies to OpenAI-compatible formats where the tool output is a distinct `tool` role/item; for Anthropic and Bedrock (tool results are nested blocks inside user messages) tool content is not extracted. |
+| request_check_mode | string | False | `"last"` | `last`, `all` | Which user/tool messages to moderate. `last`: only the latest consecutive block of selected-role messages (the newest turn). `all`: every selected-role message. Does not apply to `system`, which is always moderated when enabled via `request_check_roles`. |
 | request_check_service | string | False | `"llm_query_moderation"` | | Aliyun service for request moderation. |
-| request_check_length_limit | number | False | `2000` | | Request content length limit, in bytes. Length is measured using Lua string length, so for UTF-8 text non-ASCII characters may consume multiple bytes. If exceeded, the content will be sent in chunks. For instance, if the request content is 250 bytes and the `request_check_length_limit` is set to `100`, then the content will be sent in 3 requests to Aliyun. |
+| request_check_length_limit | number | False | `2000` | >= 1 | Request content length limit. If exceeded, the content is sent to Aliyun in chunks. For instance, if the request content is 250 characters and `request_check_length_limit` is set to `100`, the content is sent in 3 requests to Aliyun. |
 | response_check_service | string | False | `"llm_response_moderation"` | | Aliyun service for response moderation. |
-| response_check_length_limit | number | False | `5000` | | Response content length limit, in bytes. Length is measured using Lua string length, so for UTF-8 text non-ASCII characters may consume multiple bytes. If exceeded, the content will be sent in chunks. For instance, if the response content is 250 bytes and the `response_check_length_limit` is set to `100`, then the content will be sent in 3 requests to Aliyun. |
+| response_check_length_limit | number | False | `5000` | >= 1 | Response content length limit. If exceeded, the content is sent to Aliyun in chunks. For instance, if the response content is 250 characters and `response_check_length_limit` is set to `100`, the content is sent in 3 requests to Aliyun. |
 | risk_level_bar | string | False | `"high"` | `none`, `low`, `medium`, `high`, `max` | If the evaluated risk level is lower than the `risk_level_bar`, the request or response will be passed through to Upstream LLM or client respectively. |
-| deny_code | number | False | `200` | | Rejection HTTP status code. |
+| deny_code | integer | False | `200` | [200, 599] | Rejection HTTP status code. Defaults to `200` so the provider-compatible refusal parses as a normal completion in client SDKs; set a 4xx to surface denies as HTTP errors instead. |
 | deny_message | string | False | | | Rejection message. |
 | timeout | integer | False | `10000` | >= 1 | Timeout in milliseconds. |
 | keepalive | boolean | False | `true` | | If `true`, enable HTTP connection keepalive to Aliyun. |
 | keepalive_pool | integer | False | `30` | >= 1 | Maximum number of connections in the keepalive pool. |
 | keepalive_timeout | integer | False | `60000` | >= 1000 | Keepalive timeout in milliseconds. |
 | ssl_verify | boolean | False | `true` | | If `true`, enable SSL certificate verification. |
+| fail_mode | string | False | `"skip"` | `skip`, `warn`, `error` | Behavior when the request is not a recognized AI request that this plugin can inspect (for example, plain HTTP traffic on a Consumer-bound plugin, or a request that did not pass through `ai-proxy`). `skip`: let the request pass through unchecked; `warn`: pass through and log a warning; `error`: reject the request. |
 
 ## Examples
 

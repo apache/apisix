@@ -118,3 +118,79 @@ location /t {
 --- error_log
 max pending entries limit exceeded. discarding entry
 --- timeout: 5
+
+
+
+=== TEST 2: data encryption for brokers[].sasl_config.password
+--- yaml_config
+apisix:
+    data_encryption:
+        enable_encrypt_fields: true
+        keyring:
+            - edd1c9f0985e76a2
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+            local kafka_password = "super-secret-kafka-password"
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 json.encode({
+                     plugins = {
+                         ["kafka-logger"] = {
+                             brokers = {{
+                                 host = "127.0.0.1",
+                                 port = 9092,
+                                 sasl_config = {
+                                     mechanism = "PLAIN",
+                                     user = "admin",
+                                     password = kafka_password,
+                                 }
+                             }},
+                             kafka_topic = "test",
+                             batch_max_size = 1,
+                         }
+                     },
+                     upstream = {
+                         nodes = {["127.0.0.1:1980"] = 1},
+                         type = "roundrobin"
+                     },
+                     uri = "/hello"
+                 })
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            ngx.sleep(0.1)
+
+            -- get plugin conf from admin api, password is decrypted
+            local code, message, res = t('/apisix/admin/routes/1',
+                ngx.HTTP_GET
+            )
+            res = json.decode(res)
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(message)
+                return
+            end
+
+            local plain = res.value.plugins["kafka-logger"].brokers[1].sasl_config.password
+            ngx.say(plain == kafka_password)
+
+            -- get plugin conf from etcd, password must be encrypted
+            local etcd = require("apisix.core.etcd")
+            local etcd_res = assert(etcd.get('/routes/1'))
+            local stored = etcd_res.body.node.value
+                              .plugins["kafka-logger"].brokers[1].sasl_config.password
+            ngx.say(type(stored) == "string" and stored ~= "" and stored ~= kafka_password)
+        }
+    }
+--- response_body
+true
+true
+--- no_error_log
+[alert]

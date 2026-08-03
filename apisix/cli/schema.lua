@@ -165,6 +165,12 @@ local config_schema = {
                                             },
                                             tls = {
                                                 type = "boolean",
+                                            },
+                                            proxy_protocol = {
+                                                type = "boolean",
+                                            },
+                                            proxy_protocol_to_upstream = {
+                                                type = "boolean",
                                             }
                                         },
                                         required = {"addr"}
@@ -268,6 +274,13 @@ local config_schema = {
                     },
                     uniqueItems = true
                 },
+                max_post_args_readable_size = {
+                    type = "integer",
+                    minimum = 0,
+                    default = 64,
+                    description = "cap (in MB) on the request body read for post_arg.* "
+                                  .. "route matching; 0 disables the limit",
+                },
             }
         },
         nginx_config = {
@@ -278,6 +291,10 @@ local config_schema = {
                     minItems = 1,
                     items = {
                         type = "string",
+                        -- NUL can never be carried through the C environ and
+                        -- other control chars (newline etc.) have no sane
+                        -- config source; reject early with a clear error
+                        pattern = [[\A[^\x00-\x1f]*\z]],
                     }
                 }
             },

@@ -49,6 +49,8 @@ It might take some time to receive the log data. It will be automatically sent a
 | brokers.sasl_config.mechanism    | string  | False    | "PLAIN"        | ["PLAIN", "SCRAM-SHA-256", "SCRAM-SHA-512"]       | The mechanism of SASL config.                                                                                                                                                                                                                                                                                                                    |
 | brokers.sasl_config.user         | string  | True     |                |                                                   | The user of `sasl_config`. Required if `sasl_config` is configured.                                                                                                                                                                                                                                                                              |
 | brokers.sasl_config.password     | string  | True     |                |                                                   | The password of `sasl_config`. Required if `sasl_config` is configured.                                                                                                                                                                                                                                                                          |
+| tls                              | object  | False    |                |                                                   | TLS configuration for connecting to Kafka brokers.                                                                                                                                                                                                                                                                                               |
+| tls.verify                       | boolean | False    | false          |                                                   | If true, verify the Kafka broker TLS certificate.                                                                                                                                                                                                                                                                                                |
 | kafka_topic                      | string  | True     |                |                                                   | Target topic to push the logs.                                                                                                                                                                                                                                                                                                                   |
 | producer_type                    | string  | False    | async          | ["async", "sync"]                                 | Message sending mode of the producer.                                                                                                                                                                                                                                                                                                            |
 | required_acks                    | integer | False    | 1              | [1, -1]                                           | Number of acknowledgements the leader needs to receive for the producer to consider the request complete. This controls the durability of the sent records. The attribute follows the same configuration as the Kafka `acks` attribute. `required_acks` cannot be 0. See [Apache Kafka documentation](https://kafka.apache.org/documentation/#producerconfigs_acks) for more. |
@@ -57,6 +59,7 @@ It might take some time to receive the log data. It will be automatically sent a
 | name                             | string  | False    | "kafka logger" |                                                   | Unique identifier for the batch processor. If you use Prometheus to monitor APISIX metrics, the name is exported in `apisix_batch_process_entries`.                                                                                                                                                                                              |
 | meta_format                      | enum    | False    | "default"      | ["default","origin"]                              | Format to collect the request information. Setting to `default` collects the information in JSON format and `origin` collects the information with the original HTTP request. See [examples](#meta_format-example) below.                                                                                                                         |
 | log_format                       | object  | False    |                |                                                   | Log format declared as key-value pairs in JSON. Values support strings and nested objects (up to five levels deep; deeper fields are truncated). Within strings, [APISIX](../apisix-variable.md) or [NGINX](http://nginx.org/en/docs/varindex.html) variables can be referenced by prefixing with `$`.                                           |
+| log_format_extra                       | object  | False    |                |                                                   | Extra log fields **added on top of** the default log entry, keeping every default field instead of replacing them (unlike `log_format`). Same value syntax as `log_format`. Ignored when `log_format` is set. |
 | include_req_body                 | boolean | False    | false          | [false, true]                                     | When set to `true` includes the request body in the log. If the request body is too big to be kept in the memory, it can't be logged due to NGINX's limitations.                                                                                                                                                                                 |
 | include_req_body_expr            | array   | False    |                |                                                   | Filter for when the `include_req_body` attribute is set to `true`. Request body is only logged when the expression set here evaluates to `true`. See [lua-resty-expr](https://github.com/api7/lua-resty-expr) for more.                                                                                                                          |
 | max_req_body_bytes               | integer | False    | 524288         | >=1                                               | Maximum request body size in bytes to push to Kafka. If the size exceeds the configured value, the body will be truncated before being pushed.                                                                                                                                                                                                   |
@@ -69,6 +72,7 @@ It might take some time to receive the log data. It will be automatically sent a
 | producer_max_buffering           | integer | False    | 50000          | [1,...]                                           | `max_buffering` parameter in [lua-resty-kafka](https://github.com/doujiang24/lua-resty-kafka) representing maximum buffer size. Unit is message count.                                                                                                                                                                                           |
 | producer_time_linger             | integer | False    | 1              | [1,...]                                           | `flush_time` parameter in [lua-resty-kafka](https://github.com/doujiang24/lua-resty-kafka) in seconds.                                                                                                                                                                                                                                          |
 | meta_refresh_interval            | integer | False    | 30             | [1,...]                                           | `refresh_interval` parameter in [lua-resty-kafka](https://github.com/doujiang24/lua-resty-kafka) that specifies the interval to auto-refresh the metadata, in seconds.                                                                                                                                                                          |
+| api_version                      | integer | False    | 1              | [0, 1, 2]                                         | `api_version` parameter in [lua-resty-kafka](https://github.com/doujiang24/lua-resty-kafka) that specifies the version of the Kafka Produce API. Set to `2` to make brokers store message timestamps; otherwise the timestamps are stored as `-1` (shown as `1970-01-01` in some consumers). Requires Kafka 0.10 or later.                       |
 
 This Plugin supports using batch processors to aggregate and process entries (logs/data) in a batch. This avoids the need for frequently submitting the data. The batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. See [Batch Processor](../batch-processor.md#configuration) for more information or setting your custom configuration.
 
@@ -143,6 +147,7 @@ You can also set the format of the logs by configuring the Plugin metadata. The 
 | Name                | Type    | Required | Default | Description                                                                                                                                                                                                                                             |
 | ------------------- | ------- | -------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | log_format          | object  | False    |         | Log format declared as key-value pairs in JSON. Values support strings and nested objects (up to five levels deep; deeper fields are truncated). Within strings, [APISIX](../apisix-variable.md) or [NGINX](http://nginx.org/en/docs/varindex.html) variables can be referenced by prefixing with `$`. |
+| log_format_extra          | object  | False    |         | Extra log fields **added on top of** the default log entry, keeping every default field instead of replacing them (unlike `log_format`). Same value syntax as `log_format`. Ignored when `log_format` is set. |
 | max_pending_entries | integer | False    |         | Maximum number of pending entries that can be buffered in the batch processor before it starts dropping them.                                                                                                                                           |
 
 :::info IMPORTANT
@@ -484,3 +489,50 @@ If you have customized the `log_format` in addition to setting `include_req_body
 ```
 
 :::
+
+### Log to TLS-Enabled Kafka Brokers
+
+The following example demonstrates how to connect to TLS-enabled Kafka brokers, such as AWS MSK.
+
+Create a Route with `kafka-logger` and configure the `tls` attribute to connect to the TLS-enabled Kafka broker:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "kafka-logger-tls-route",
+    "uri": "/get",
+    "plugins": {
+      "kafka-logger": {
+        "brokers": [
+          {
+            "host": "kafka.example.com",
+            "port": 9093
+          }
+        ],
+        "kafka_topic": "test2",
+        "key": "key1",
+        "batch_max_size": 1,
+        "tls": {
+          "verify": true
+        }
+      }
+    },
+    "upstream": {
+      "nodes": {
+        "httpbin.org:80": 1
+      },
+      "type": "roundrobin"
+    }
+  }'
+```
+
+When using self-signed certificates, set `tls.verify` to `false` to skip certificate verification:
+
+```json
+{
+  "tls": {
+    "verify": false
+  }
+}
+```

@@ -71,6 +71,8 @@ The `limit-conn` Plugin limits the rate of requests by the number of concurrent 
 | rules.burst | integer or string | True | | >= 0 or [lua-resty-expr](https://github.com/api7/lua-resty-expr) | The number of excessive concurrent requests allowed to be delayed. Requests exceeding `conn + burst` will be rejected immediately. This parameter also supports the string data type and allows the use of built-in variables prefixed with a dollar sign (`$`). |
 | rules.key | string | True | | | The key to count requests by. If the configured key does not exist, the rule will not be executed. The `key` is interpreted as a combination of variables. All variables should be prefixed by dollar signs (`$`). |
 
+NOTE: `encrypt_fields = {"redis_password"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
+
 ## Examples
 
 The examples below demonstrate how you can configure `limit-conn` in different scenarios.

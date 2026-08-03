@@ -39,6 +39,31 @@ echo "passed: define custom shdict"
 
 git checkout conf/config.yaml
 
+# resolve environment variable used as a config key: the resolved key must be
+# rendered and the stale unresolved key must be removed from the config table
+echo '
+nginx_config:
+  http:
+    custom_lua_shared_dict:
+      "${{DICT_NAME}}": 1m
+' > conf/config.yaml
+
+DICT_NAME=env_dict make init
+
+if ! grep "lua_shared_dict env_dict 1m;" conf/nginx.conf > /dev/null; then
+    echo "failed: resolve env var used as config key"
+    exit 1
+fi
+
+if grep -F '${{DICT_NAME}}' conf/nginx.conf > /dev/null; then
+    echo "failed: stale unresolved env var key should be removed"
+    exit 1
+fi
+
+echo "passed: resolve env var used as config key"
+
+git checkout conf/config.yaml
+
 echo "
 plugins:
     - ip-restriction
