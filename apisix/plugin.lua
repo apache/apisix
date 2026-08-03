@@ -637,19 +637,17 @@ end
 
 
 function _M.exit_worker()
-    for name, plugin in pairs(local_plugins_hash) do
-        local ty = PLUGIN_TYPE_HTTP
-        if plugin.type == "wasm" then
-            ty = PLUGIN_TYPE_HTTP_WASM
-        end
-        unload_plugin(name, ty)
+    -- same LIFO unwind as a reload does, see load()
+    for i = #local_plugins, 1, -1 do
+        local plugin = local_plugins[i]
+        unload_plugin(plugin.name, http_plugin_type(plugin))
     end
 
     -- we need to load stream plugin so that we can check their schemas in
     -- Admin API. Maybe we can avoid calling `load` in this case? So that
     -- we don't need to call `destroy` too
-    for name in pairs(stream_local_plugins_hash) do
-        unload_plugin(name, PLUGIN_TYPE_STREAM)
+    for i = #stream_local_plugins, 1, -1 do
+        unload_plugin(stream_local_plugins[i].name, PLUGIN_TYPE_STREAM)
     end
 end
 
