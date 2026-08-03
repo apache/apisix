@@ -862,3 +862,184 @@ GET /t
 invalid new item loaded: false
 --- no_error_log
 keep the previous configuration
+
+
+
+=== TEST 19: a full reload that changes nothing reuses the items and does not bump conf_version
+--- timeout: 25
+--- yaml_config
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
+    host:
+      - "http://127.0.0.1:2379"
+    prefix: /apisix
+--- extra_yaml_config
+nginx_config:
+    worker_processes: 1
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local etcd = require("resty.etcd")
+            local etcd_cli, err = etcd.new({
+                http_host = "http://127.0.0.1:2379",
+            })
+            if not etcd_cli then
+                ngx.say("failed to create etcd client: ", err)
+                return
+            end
+
+            etcd_cli:set("/apisix/global_rules/1", {
+                id = "1",
+                create_time = 1700000000,
+                update_time = 1700000000,
+                plugins = {["response-rewrite"] = {headers = {set = {["X-T"] = "a"}}}}
+            })
+            ngx.sleep(2)
+
+            local obj = core.config.fetch_created_obj("/global_rules")
+            local before_version = obj.conf_version
+
+            -- Two independent probes. A reload always builds a fresh `values`
+            -- array, so losing this one proves the reload actually ran; the
+            -- incremental path only mutates elements and would keep it.
+            obj.values.array_probe = "old"
+            -- The items inside must survive: reusing them is the whole point.
+            for _, item in ipairs(obj.values) do
+                if item and item.value and item.value.id == "1" then
+                    item.reload_probe = "kept"
+                end
+            end
+
+            -- Arm the recovery path taken after a `compacted` error, then write
+            -- a second rule. sync_data is parked in waitdir, so the write is
+            -- what wakes it: the incremental path adds /2 and bumps
+            -- conf_version once, and the next sync_data round reaches the
+            -- need_reload branch. By then /1 and /2 are both in memory at the
+            -- revisions etcd reports, so the reload has nothing to change and
+            -- must not bump conf_version a second time.
+            obj.need_reload = true
+            etcd_cli:set("/apisix/global_rules/2", {
+                id = "2",
+                create_time = 1700000000,
+                update_time = 1700000000,
+                plugins = {["response-rewrite"] = {headers = {set = {["X-T2"] = "b"}}}}
+            })
+            ngx.sleep(3)
+
+            local probe_kept = false
+            for _, item in ipairs(obj.values) do
+                if item and item.value and item.value.id == "1" then
+                    probe_kept = (item.reload_probe == "kept")
+                end
+            end
+
+            ngx.say("reload ran: ", obj.values.array_probe == nil)
+            ngx.say("item reused: ", probe_kept)
+            ngx.say("conf_version bumped once, not twice: ",
+                    obj.conf_version == before_version + 1)
+
+            etcd_cli:delete("/apisix/global_rules/1")
+            etcd_cli:delete("/apisix/global_rules/2")
+            ngx.sleep(1)
+        }
+    }
+--- request
+GET /t
+--- response_body
+reload ran: true
+item reused: true
+conf_version bumped once, not twice: true
+
+
+
+=== TEST 20: a full reload that only deletes must still bump conf_version
+--- timeout: 25
+--- yaml_config
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
+    host:
+      - "http://127.0.0.1:2379"
+    prefix: /apisix
+--- extra_yaml_config
+nginx_config:
+    worker_processes: 1
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local etcd = require("resty.etcd")
+            local etcd_cli, err = etcd.new({
+                http_host = "http://127.0.0.1:2379",
+            })
+            if not etcd_cli then
+                ngx.say("failed to create etcd client: ", err)
+                return
+            end
+
+            etcd_cli:set("/apisix/global_rules/1", {
+                id = "1",
+                create_time = 1700000000,
+                update_time = 1700000000,
+                plugins = {["response-rewrite"] = {headers = {set = {["X-T"] = "a"}}}}
+            })
+            ngx.sleep(2)
+
+            local obj = core.config.fetch_created_obj("/global_rules")
+            obj.values.array_probe = "old"
+
+            -- An item that is live in memory but gone from etcd, so the reload
+            -- has to drop it. Every surviving key is untouched and therefore
+            -- reused, so without an explicit deletion check `changed` would
+            -- stay false, conf_version would not move, and the routers would
+            -- go on serving the dropped item.
+            local ghost = {
+                key = "/apisix/global_rules/ghost",
+                modifiedIndex = 1,
+                value = {id = "ghost", plugins = {}},
+            }
+            core.table.insert(obj.values, ghost)
+            obj.values_hash["ghost"] = #obj.values
+
+            local before_version = obj.conf_version
+
+            -- same wake-up mechanism as TEST 19: /2 arrives incrementally
+            -- (+1), then the reload drops the ghost (+1)
+            obj.need_reload = true
+            etcd_cli:set("/apisix/global_rules/2", {
+                id = "2",
+                create_time = 1700000000,
+                update_time = 1700000000,
+                plugins = {["response-rewrite"] = {headers = {set = {["X-T2"] = "b"}}}}
+            })
+            ngx.sleep(3)
+
+            local found_ghost = false
+            for _, item in ipairs(obj.values) do
+                if item and item.value and item.value.id == "ghost" then
+                    found_ghost = true
+                end
+            end
+
+            ngx.say("reload ran: ", obj.values.array_probe == nil)
+            ngx.say("ghost dropped: ", not found_ghost)
+            ngx.say("conf_version bumped for the deletion: ",
+                    obj.conf_version == before_version + 2)
+
+            etcd_cli:delete("/apisix/global_rules/1")
+            etcd_cli:delete("/apisix/global_rules/2")
+            ngx.sleep(1)
+        }
+    }
+--- request
+GET /t
+--- response_body
+reload ran: true
+ghost dropped: true
+conf_version bumped for the deletion: true
