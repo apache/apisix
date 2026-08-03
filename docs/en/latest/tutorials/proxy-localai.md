@@ -162,22 +162,28 @@ Send a streaming chat completion request:
 ```shell
 stream_output=$(mktemp)
 
-curl --fail-with-body --no-buffer "http://127.0.0.1:9080/v1/chat/completions" \
-  -H "Authorization: Bearer ${LOCALAI_API_KEY}" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "llama-3.2-1b-instruct:q4_k_m",
-    "messages": [
-      {"role": "user", "content": "Count from one to five."}
-    ],
-    "stream": true,
-    "temperature": 0,
-    "max_tokens": 32
-  }' | tee "${stream_output}"
+(
+  set -o pipefail
 
-test "$(grep -c '^data:' "${stream_output}")" -gt 1
-grep -q '^data: \[DONE\]$' "${stream_output}"
-rm "${stream_output}"
+  curl --fail-with-body --no-buffer "http://127.0.0.1:9080/v1/chat/completions" \
+    -H "Authorization: Bearer ${LOCALAI_API_KEY}" \
+    -H "Content-Type: application/json" \
+    -d '{
+      "model": "llama-3.2-1b-instruct:q4_k_m",
+      "messages": [
+        {"role": "user", "content": "Count from one to five."}
+      ],
+      "stream": true,
+      "temperature": 0,
+      "max_tokens": 32
+    }' | tee "${stream_output}"
+) &&
+  test "$(grep -c '^data:' "${stream_output}")" -gt 1 &&
+  grep -q '^data: \[DONE\]$' "${stream_output}"
+
+stream_status=$?
+rm -f "${stream_output}"
+test "${stream_status}" -eq 0
 ```
 
 You should receive multiple `data:` events followed by `data: [DONE]`.
@@ -233,7 +239,7 @@ curl --fail-with-body "http://127.0.0.1:9180/apisix/admin/routes/localai" -X PAT
   }'
 ```
 
-The requests below carry the APISIX key only in the `apikey` header. With `hide_credentials` enabled, APISIX removes that authenticated header before proxying. Do not duplicate the gateway key in an `apikey` query parameter.
+The requests below carry the APISIX key only in the `apikey` header. Header lookup takes precedence over query lookup. If both forms are present, `hide_credentials` removes only the authenticated header, and the duplicate `apikey` query value is still forwarded upstream. Never put the gateway key in the query string or send both forms.
 
 Send both independent credentials to access LocalAI through APISIX:
 
@@ -244,18 +250,17 @@ curl --fail-with-body "http://127.0.0.1:9080/v1/models" \
   jq -e '.data[] | select(.id == "llama-3.2-1b-instruct:q4_k_m")'
 ```
 
-A request without the `apikey` header is rejected by APISIX. A request with the APISIX key but without the LocalAI bearer token is rejected by LocalAI.
+A request without an APISIX gateway credential is rejected by APISIX. A request with the APISIX key but without the LocalAI bearer token is rejected by LocalAI.
 
 Verify both rejection cases. Each command should return `401`:
 
 ```shell
 test "$(curl --silent --output /dev/null --write-out "%{http_code}" \
   "http://127.0.0.1:9080/v1/models" \
-  -H "Authorization: Bearer ${LOCALAI_API_KEY}")" = "401"
-
-test "$(curl --silent --output /dev/null --write-out "%{http_code}" \
-  "http://127.0.0.1:9080/v1/models" \
-  -H "apikey: gateway-client-key")" = "401"
+  -H "Authorization: Bearer ${LOCALAI_API_KEY}")" = "401" &&
+  test "$(curl --silent --output /dev/null --write-out "%{http_code}" \
+    "http://127.0.0.1:9080/v1/models" \
+    -H "apikey: gateway-client-key")" = "401"
 ```
 
 ## Production Considerations
@@ -282,8 +287,12 @@ curl --fail-with-body "http://127.0.0.1:9180/apisix/admin/consumers/localai-clie
   -H "X-API-KEY: ${admin_key}"
 ```
 
-Remove the LocalAI container. The named model and backend volumes are retained for reuse.
+Remove the LocalAI container and named volumes:
 
 ```shell
-docker rm --force localai
+docker rm --force localai &&
+  docker volume rm localai-models localai-backends &&
+  unset LOCALAI_API_KEY admin_key
 ```
+
+To keep the downloaded model and backend for reuse, omit the `docker volume rm` command.
