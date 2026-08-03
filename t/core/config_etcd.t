@@ -521,7 +521,7 @@ main etcd watcher initialised, revision=
 
 
 
-=== TEST 14: watch revision should be upgraded when timeout occurs
+=== TEST 14: watch revision must not be upgraded when the watch times out
 --- yaml_config
 deployment:
   role: traditional
@@ -547,7 +547,8 @@ nginx_config:
                 return
             end
             ngx.sleep(2)
-            -- we will assert 4 lines of revision upgrade log because we have one worker and one privileged agent
+            -- write outside the watched prefix so that the global revision
+            -- moves on while the watch itself stays idle and keeps timing out
             for i = 1, 2 do
                local _, err = etcd_cli:set("/apache", "apisix")
                if err then
@@ -563,10 +564,8 @@ nginx_config:
 GET /t
 --- response_body
 passed
---- grep_error_log eval
-qr/etcd watch timeout, upgrade revision to/
---- grep_error_log_out eval
-qr/(etcd watch timeout, upgrade revision to\n){2,}/
+--- no_error_log
+etcd watch timeout, upgrade revision to
 
 
 
