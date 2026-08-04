@@ -1573,23 +1573,21 @@ qr/request body exceeds toxicity threshold/
 
 
 
-=== TEST 55: assistant content is never moderated on the request side
+=== TEST 55: default roles moderate client-supplied assistant history
 --- request
 POST /chat
 { "messages": [ { "role": "user", "content": "What is 1+1?" }, { "role": "assistant", "content": "I want to kill you" } ] }
---- more_headers
-X-AI-Fixture: aws/chat-safe.json
---- error_code: 200
+--- error_code: 400
 --- response_body_like eval
-qr/How can I assist you today/
+qr/request body exceeds toxicity threshold/
 --- grep_error_log eval
 qr/comprehend text: [^,]+/
 --- grep_error_log_out
-comprehend text: What is 1+1?
+comprehend text: What is 1+1? I want to kill you
 
 
 
-=== TEST 56: set route with request_check_mode "last"
+=== TEST 56: set route with request_check_mode "last", assistant left out of the roles
 --- config
     location /t {
         content_by_lua_block {
@@ -1612,6 +1610,7 @@ comprehend text: What is 1+1?
                                 "endpoint": "http://localhost:2668"
                             },
                             "request_check_mode": "last",
+                            "request_check_roles": ["user", "tool", "system"],
                             "deny_code": 400
                         }
                     }
@@ -1738,21 +1737,23 @@ qr/request body exceeds toxicity threshold/
                 }
                 return plugin.check_schema(conf) and "accepted" or "rejected"
             end
-            ngx.say('roles ["assistant"]: ', check({ request_check_roles = { "assistant" } }))
+            ngx.say('roles ["developer"]: ', check({ request_check_roles = { "developer" } }))
             ngx.say("roles []: ", check({ request_check_roles = {} }))
             ngx.say('roles ["user", "user"]: ',
                     check({ request_check_roles = { "user", "user" } }))
             ngx.say('mode "latest": ', check({ request_check_mode = "latest" }))
+            ngx.say('roles ["assistant"]: ', check({ request_check_roles = { "assistant" } }))
             ngx.say('roles ["tool", "system"] + mode "all": ',
                     check({ request_check_roles = { "tool", "system" },
                             request_check_mode = "all" }))
         }
     }
 --- response_body
-roles ["assistant"]: rejected
+roles ["developer"]: rejected
 roles []: rejected
 roles ["user", "user"]: rejected
 mode "latest": rejected
+roles ["assistant"]: accepted
 roles ["tool", "system"] + mode "all": accepted
 
 
@@ -1803,3 +1804,58 @@ POST /chat
 --- error_code: 500
 --- response_body_chomp
 protocol passthrough cannot moderate the configured request_check_roles
+
+
+
+=== TEST 65: set route with request_check_mode "last" and assistant among the roles
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/chat",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": { "header": { "Authorization": "Bearer token" } },
+                            "override": { "endpoint": "http://127.0.0.1:1980/v1/chat/completions" }
+                        },
+                        "ai-aws-content-moderation": {
+                            "comprehend": {
+                                "access_key_id": "access",
+                                "secret_access_key": "ea+secret",
+                                "region": "us-east-1",
+                                "endpoint": "http://localhost:2668"
+                            },
+                            "request_check_mode": "last",
+                            "request_check_roles": ["user", "assistant"],
+                            "deny_code": 400
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 66: assistant turns no longer end the block, so "last" reaches back into history
+--- request
+POST /chat
+{ "messages": [ { "role": "user", "content": "I want to kill you" }, { "role": "assistant", "content": "ok" }, { "role": "user", "content": "What is 1+1?" } ] }
+--- error_code: 400
+--- response_body_like eval
+qr/request body exceeds toxicity threshold/
+--- grep_error_log eval
+qr/comprehend text: [^,]+/
+--- grep_error_log_out
+comprehend text: I want to kill you ok What is 1+1?

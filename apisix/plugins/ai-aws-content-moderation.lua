@@ -94,26 +94,28 @@ local schema = {
         check_response = { type = "boolean", default = false },
         request_check_roles = {
             type = "array",
-            items = { type = "string", enum = { "user", "tool", "system" } },
+            items = { type = "string", enum = { "user", "tool", "system", "assistant" } },
             minItems = 1,
             uniqueItems = true,
-            default = { "user", "tool", "system" },
-            description = "which message roles to moderate on the request side. user and " ..
-                          "tool follow request_check_mode; system is checked on every " ..
-                          "request because it can be poisoned by malicious ToolCall " ..
-                          "arguments. Note: tool-result moderation applies to " ..
-                          "OpenAI-compatible formats where the tool output is a distinct " ..
-                          "tool role/item; for Anthropic/Bedrock (tool results are nested " ..
-                          "blocks inside user messages) tool content is not extracted.",
+            default = { "user", "tool", "system", "assistant" },
+            description = "which message roles to moderate on the request side. user, tool " ..
+                          "and assistant follow request_check_mode; system is checked on " ..
+                          "every request because it can be poisoned by malicious ToolCall " ..
+                          "arguments. assistant messages are client-supplied history, so " ..
+                          "they are moderated by default too. Note: tool-result moderation " ..
+                          "applies to OpenAI-compatible formats where the tool output is a " ..
+                          "distinct tool role/item; for Anthropic/Bedrock (tool results are " ..
+                          "nested blocks inside user messages) tool content is not extracted.",
         },
         request_check_mode = {
             type = "string",
             enum = { "last", "all" },
             default = "all",
-            description = "which user/tool messages to moderate: last (only the latest " ..
-                          "consecutive block of selected-role messages) | all (every " ..
-                          "selected-role message). Does not apply to the system role, " ..
-                          "which is always checked.",
+            description = "which user/tool/assistant messages to moderate: last (only the " ..
+                          "latest consecutive block of selected-role messages) | all (every " ..
+                          "selected-role message). Does not apply to the system role, which " ..
+                          "is always checked. Note that selecting assistant together with " ..
+                          "last widens the block, since assistant turns no longer end it.",
         },
         request_check_length_limit = {
             type = "integer",
@@ -507,9 +509,13 @@ function _M.access(conf, ctx)
     for _, role in ipairs(conf.request_check_roles) do
         roles[role] = true
     end
+    -- every role but system is a turn role, extracted through extract_turn_content
     local turn_roles = {}
-    if roles.user then turn_roles.user = true end
-    if roles.tool then turn_roles.tool = true end
+    for role in pairs(roles) do
+        if role ~= "system" then
+            turn_roles[role] = true
+        end
+    end
 
     -- A configured role whose extractor this protocol doesn't implement would
     -- otherwise pass unmoderated. Route that through fail_mode instead of
@@ -532,7 +538,7 @@ function _M.access(conf, ctx)
     -- Comprehend takes a flat list of text segments with no role field, so
     -- per-role calls would only cost extra requests. system is always included
     -- (not subject to request_check_mode, it can be poisoned by malicious
-    -- ToolCall arguments); user/tool follow request_check_mode.
+    -- ToolCall arguments); the turn roles follow request_check_mode.
     local contents = {}
     if roles.system then
         local system_texts = proto.extract_system_content(request_tab)
