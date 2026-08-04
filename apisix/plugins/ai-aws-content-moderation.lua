@@ -25,16 +25,31 @@ local aws_instance
 
 local http = require("resty.http")
 
-local ngx     = ngx
-local ngx_ok  = ngx.OK
-local pairs   = pairs
-local unpack  = unpack
-local type    = type
-local ipairs  = ipairs
-local next    = next
-local table   = table
+local ngx      = ngx
+local ngx_ok   = ngx.OK
+local pairs    = pairs
+local unpack   = unpack
+local type     = type
+local ipairs   = ipairs
+local next     = next
+local table    = table
+local str_byte = string.byte
+local str_sub  = string.sub
 local HTTP_INTERNAL_SERVER_ERROR = ngx.HTTP_INTERNAL_SERVER_ERROR
 local HTTP_BAD_REQUEST = ngx.HTTP_BAD_REQUEST
+
+-- DetectToxicContent takes at most 10 text segments per call, each at most
+-- 1 KB, with the whole list capped at 10 KB. Anything over that is rejected
+-- with TextSizeLimitExceededException, so content is split and batched to fit.
+-- https://docs.aws.amazon.com/comprehend/latest/APIReference/API_DetectToxicContent.html
+-- MAX_CALL_BYTES keeps a margin under the 10 KB list cap: AWS does not say
+-- whether the cap counts the encoded list or just the text, and an extra call
+-- is much cheaper than a rejected one that leaves content unmoderated.
+local MAX_SEGMENT_BYTES = 1024
+local MAX_SEGMENTS_PER_CALL = 10
+local MAX_CALL_BYTES = 10000
+-- a UTF-8 character is up to 4 bytes, so a smaller segment could not hold one
+local MIN_SEGMENT_BYTES = 4
 
 local moderation_categories_pattern = "^(PROFANITY|HATE_SPEECH|INSULT|"..
                                       "HARASSMENT_OR_ABUSE|SEXUAL|VIOLENCE_OR_THREAT)$"
@@ -100,6 +115,22 @@ local schema = {
                           "selected-role message). Does not apply to the system role, " ..
                           "which is always checked.",
         },
+        request_check_length_limit = {
+            type = "integer",
+            minimum = MIN_SEGMENT_BYTES,
+            maximum = MAX_SEGMENT_BYTES,
+            default = 1000,
+            description = "max bytes of request content per Comprehend text segment; " ..
+                          "longer content is split into several segments",
+        },
+        response_check_length_limit = {
+            type = "integer",
+            minimum = MIN_SEGMENT_BYTES,
+            maximum = MAX_SEGMENT_BYTES,
+            default = 1000,
+            description = "max bytes of response content per Comprehend text segment; " ..
+                          "longer content is split into several segments",
+        },
         stream_check_mode = {
             type = "string",
             enum = { "realtime", "final_packet" },
@@ -130,6 +161,24 @@ local schema = {
                           "client SDKs; set a 4xx to surface denies as HTTP errors instead.",
         },
         deny_message = { type = "string" },
+        timeout = {
+            type = "integer",
+            minimum = 1,
+            default = 10000,
+            description = "Comprehend request timeout in milliseconds",
+        },
+        keepalive = {
+            type = "boolean",
+            default = true,
+            description = "if true, keep the Comprehend connection alive for reuse",
+        },
+        keepalive_timeout = {
+            type = "integer",
+            minimum = 1000,
+            default = 60000,
+            description = "idle time in milliseconds before a pooled Comprehend " ..
+                          "connection is closed",
+        },
         fail_mode = binding.schema_property("skip"),
     },
     encrypt_fields = { "comprehend.secret_access_key" },
@@ -162,11 +211,15 @@ local function set_risk_level(ctx, flagged)
 end
 
 
--- Score content with AWS Comprehend detectToxicContent.
--- `subject` names the moderated text in the deny reason ("request"/"response" body).
--- Returns (reason, nil) when a category/toxicity threshold is exceeded,
--- (nil, err) on a service error, and (nil, nil) when the content is clean.
-local function detect_toxic(conf, ctx, content, subject)
+-- One Comprehend client per request: realtime moderation fires a call per
+-- batch, and rebuilding the credentials and the service object every time is
+-- pure overhead. The connection itself is reused across requests through the
+-- keepalive pool.
+local function get_comprehend_client(conf, ctx)
+    if ctx.aws_cm_client then
+        return ctx.aws_cm_client, ctx.aws_cm_endpoint
+    end
+
     local comprehend = conf.comprehend
 
     if not aws_instance then
@@ -181,21 +234,79 @@ local function detect_toxic(conf, ctx, content, subject)
     local default_endpoint = "https://comprehend." .. comprehend.region .. ".amazonaws.com"
     local scheme, host, port = unpack(http:parse_uri(comprehend.endpoint or default_endpoint))
     local endpoint = scheme .. "://" .. host
-    aws_instance.config.endpoint = endpoint
-    aws_instance.config.ssl_verify = comprehend.ssl_verify
 
-    local comprehend_client = aws_instance:Comprehend({
+    -- aws_instance is shared, so keep per-route settings on the service config
+    ctx.aws_cm_client = aws_instance:Comprehend({
         credentials = credentials,
         endpoint = endpoint,
         region = comprehend.region,
         port = port,
+        ssl_verify = comprehend.ssl_verify,
+        timeout = conf.timeout,
+        keepalive_idle_timeout = conf.keepalive and conf.keepalive_timeout or nil,
     })
+    ctx.aws_cm_endpoint = endpoint
+    return ctx.aws_cm_client, endpoint
+end
 
-    local res, err = comprehend_client:detectToxicContent({
+
+-- Last byte of the segment starting at `from`: at most `limit` bytes, cut on a
+-- UTF-8 character boundary so a multibyte character is never torn in half.
+local function segment_end(content, from, limit)
+    local last = from + limit - 1
+    if last >= #content then
+        return #content
+    end
+
+    -- 0x80..0xBF are continuation bytes: walk back to the start of the
+    -- character straddling the cut and end the segment just before it
+    local cut = last
+    for _ = 1, 3 do
+        local byte = str_byte(content, cut + 1)
+        if byte < 0x80 or byte >= 0xC0 then
+            break
+        end
+        cut = cut - 1
+    end
+
+    local byte = str_byte(content, cut + 1)
+    if cut < from or (byte >= 0x80 and byte < 0xC0) then
+        -- the content is not valid UTF-8: cut on the byte
+        return last
+    end
+    return cut
+end
+
+
+-- Collect the next batch of text segments starting at `cursor`, staying within
+-- Comprehend's per-segment, per-list and per-call size limits.
+-- Returns the segments and the cursor to resume from.
+local function next_batch(content, cursor, limit)
+    local segments = {}
+    local bytes = 0
+
+    while cursor <= #content and #segments < MAX_SEGMENTS_PER_CALL do
+        local stop = segment_end(content, cursor, limit)
+        local piece = str_sub(content, cursor, stop)
+        if #segments > 0 and bytes + #piece > MAX_CALL_BYTES then
+            break
+        end
+        segments[#segments + 1] = { Text = piece }
+        bytes = bytes + #piece
+        cursor = stop + 1
+    end
+
+    return segments, cursor
+end
+
+
+-- Score one batch of segments. Returns the deny reason when a
+-- category/toxicity threshold is exceeded, (nil, err) on a service error.
+local function detect_batch(conf, ctx, segments, subject)
+    local client, endpoint = get_comprehend_client(conf, ctx)
+    local res, err = client:detectToxicContent({
         LanguageCode = "en",
-        TextSegments = {{
-            Text = content
-        }},
+        TextSegments = segments,
     })
     if not res then
         return nil, "failed to send request to " .. endpoint .. ": " .. err
@@ -211,15 +322,37 @@ local function detect_toxic(conf, ctx, content, subject)
             for _, item in pairs(result.Labels) do
                 local threshold = conf.moderation_categories[item.Name]
                 if threshold and item.Score > threshold then
-                    set_risk_level(ctx, true)
                     return subject .. " exceeds " .. item.Name .. " threshold"
                 end
             end
         end
 
         if result.Toxicity > conf.moderation_threshold then
-            set_risk_level(ctx, true)
             return subject .. " exceeds toxicity threshold"
+        end
+    end
+end
+
+
+-- Score content with AWS Comprehend detectToxicContent, splitting it into
+-- segments the service accepts and batching those into as few calls as
+-- possible. `subject` names the moderated text in the deny reason
+-- ("request"/"response" body). Returns (reason, nil) when a category/toxicity
+-- threshold is exceeded, (nil, err) on a service error, and (nil, nil) when
+-- the content is clean.
+local function detect_toxic(conf, ctx, content, subject, length_limit)
+    local cursor = 1
+    while cursor <= #content do
+        local segments
+        segments, cursor = next_batch(content, cursor, length_limit)
+
+        local reason, err = detect_batch(conf, ctx, segments, subject)
+        if err then
+            return nil, err
+        end
+        if reason then
+            set_risk_level(ctx, true)
+            return reason
         end
     end
 
@@ -257,14 +390,17 @@ local function moderate_response(ctx, conf, content)
         -- nothing to score, but keep the risk_level contract satisfied so the
         -- streamed annotation still reports a verdict
         set_risk_level(ctx, false)
+        ctx.aws_cm_response_scored = true
         return
     end
 
-    local reason, err = detect_toxic(conf, ctx, content, "response body")
+    local reason, err = detect_toxic(conf, ctx, content, "response body",
+                                     conf.response_check_length_limit)
     if err then
         core.log.error(err)
         return nil, nil, err
     end
+    ctx.aws_cm_response_scored = true
     if reason then
         return conf.deny_code, build_deny_message(ctx, conf, reason)
     end
@@ -279,11 +415,19 @@ local function annotate_stream(ctx, body)
         return
     end
 
+    -- Comprehend failed, so there is no verdict for this response. Leaving
+    -- risk_level off is the honest outcome: annotating would report the
+    -- request-side verdict, or a stale one, as if the response was scored.
+    local scored = ctx.aws_cm_response_scored
+    if not scored then
+        core.log.warn("response was not scored, streaming without a risk_level annotation")
+    end
+
     local events = sse.decode(body)
     local raw_events = {}
     local contains_done_event = false
     for _, event in ipairs(events) do
-        if proto.is_data_event(event) then
+        if scored and proto.is_data_event(event) then
             local data, err = core.json.decode(event.data)
             -- a scalar or cjson.null decode can't be indexed; only annotate
             -- well-formed JSON object frames and leave anything else untouched
@@ -408,7 +552,8 @@ function _M.access(conf, ctx)
         return
     end
 
-    local reason, err = detect_toxic(conf, ctx, content, "request body")
+    local reason, err = detect_toxic(conf, ctx, content, "request body",
+                                     conf.request_check_length_limit)
     if err then
         core.log.error(err)
         return HTTP_INTERNAL_SERVER_ERROR, err
