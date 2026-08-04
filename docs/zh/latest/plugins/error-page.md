@@ -45,6 +45,9 @@ description: error-page 插件允许自定义 APISIX 生成的 HTTP 错误响应
 | 名称 | 类型 | 必选项 | 默认值 | 描述 |
 | ---- | ---- | ------ | ------ | ---- |
 | enable | boolean | 否 | false | 设为 `true` 以启用插件。 |
+| error_403 | object | 否 | | 403 响应的自定义错误页面配置。 |
+| error_403.body | string | 否 | 默认 HTML 页面 | 403 响应的响应体内容。 |
+| error_403.content_type | string | 否 | text/html | 响应体的内容类型。 |
 | error_404 | object | 否 | | 404 响应的自定义错误页面配置。 |
 | error_404.body | string | 否 | 默认 HTML 页面 | 404 响应的响应体内容。 |
 | error_404.content_type | string | 否 | text/html | 响应体的内容类型。 |
@@ -57,6 +60,21 @@ description: error-page 插件允许自定义 APISIX 生成的 HTTP 错误响应
 | error_503 | object | 否 | | 503 响应的自定义错误页面配置。 |
 | error_503.body | string | 否 | 默认 HTML 页面 | 503 响应的响应体内容。 |
 | error_503.content_type | string | 否 | text/html | 响应体的内容类型。 |
+
+每个错误页面的 `body` 支持 Nginx 变量，变量会在响应发送前解析。例如可以嵌入请求 ID，方便用户和管理员将错误响应与日志关联：
+
+```json
+{
+    "enable": true,
+    "error_404": {
+        "body": "<html><body><h1>404 页面未找到</h1><p>请求 ID：$request_id</p></body></html>",
+        "content_type": "text/html"
+    }
+}
+```
+
+变量可以写作 `$var` 或 `${var}`，并支持使用 `??` 运算符指定默认值（例如 `$http_x_custom_id??unknown`）。如需输出字面量美元符号，请使用反斜杠转义（例如 `\$100` 将原样输出 `\$100`）。
+
 
 ## 启用插件
 
