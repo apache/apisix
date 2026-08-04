@@ -14,30 +14,31 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+use t::APISIX 'no_plan';
 
-apiVersion: v1
-kind: Service
-metadata:
-  name: apisix-gw-lb
-  # namespace: default
-  labels:
-    app: apisix-gw  # useful for service discovery, for example, prometheus-operator.
-spec:
-  ports:
-    - name: http
-      port: 9080
-      protocol: TCP
-      targetPort: 9080
-    - name: https
-      port: 9443
-      protocol: TCP
-      targetPort: 9443
-    - name: admin-port
-      port: 9180
-      protocol: TCP
-      targetPort: 9180
-  selector:
-    app: apisix-gw
-  type: NodePort
-  externalTrafficPolicy: Local
-  # sessionAffinity: None
+repeat_each(1);
+no_long_string();
+no_root_location();
+
+run_tests();
+
+__DATA__
+
+=== TEST 1: cjson resolves to the OpenResty bundled copy, never the one under deps/
+--- config
+    location /t {
+        content_by_lua_block {
+            local path = package.searchpath("cjson", package.cpath)
+            if not path then
+                ngx.say("BAD: cjson could not be resolved")
+            elseif path:find("/deps/", 1, true) then
+                ngx.say("BAD: cjson resolved from deps: ", path)
+            else
+                ngx.say("OK: cjson resolved from bundled")
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+OK: cjson resolved from bundled

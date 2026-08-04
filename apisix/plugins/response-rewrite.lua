@@ -38,6 +38,14 @@ local lrucache = core.lrucache.new({
 local schema = {
     type = "object",
     properties = {
+        max_resp_body_size = {
+            type = "integer",
+            minimum = 1,
+            default = 67108864,
+            description = "maximum response body size in bytes buffered into "
+                       .. "memory when filters are applied; larger responses "
+                       .. "are truncated",
+        },
         headers = {
             description = "new headers for response",
             anyOf = {
@@ -257,7 +265,7 @@ function _M.body_filter(conf, ctx)
 
     if conf.filters then
 
-        local body = core.response.hold_body_chunk(ctx)
+        local body = core.response.hold_body_chunk(ctx, false, conf.max_resp_body_size)
         if not body then
             return
         end

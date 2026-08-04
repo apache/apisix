@@ -47,6 +47,14 @@ This Plugin supports two cache layers:
 
 The `ai-cache` Plugin must be used with the [`ai-proxy`](./ai-proxy.md) or [`ai-proxy-multi`](./ai-proxy-multi.md) Plugin.
 
+### Streaming
+
+Streaming (SSE) responses are cached and replayed. A streamed response is written to the cache only after it completes — that is, the terminal event for the client protocol is received (`data: [DONE]` for OpenAI, `message_stop` for Anthropic, `response.completed` for OpenAI Responses). A stream that is interrupted (client disconnect, or the `ai-proxy` `max_stream_duration_ms` / `max_response_bytes` limits) is never cached, so partial responses are never served. On a hit, the stored response is replayed as a single `text/event-stream` body with its terminal event intact.
+
+Streaming and non-streaming requests for the same prompt are cached as **separate** entries at both layers, so a streaming client always receives a stream and a non-streaming client always receives a single JSON response. This applies whether streaming is requested by the client (`"stream": true`) or forced by the route via `options.stream`.
+
+Limitations: binary streaming formats without an SSE terminal event (for example Bedrock ConverseStream) are not cached. Replay is immediate (the full stored response is sent at once) rather than re-timed token-by-token.
+
 :::note
 
 By default the cache is isolated per route, so two routes never serve each other's entries even when they see the same protocol, model and messages. Set `cache_key.share_across_routes` to `true` to share one cache space across routes.
