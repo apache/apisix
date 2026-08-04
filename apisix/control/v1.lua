@@ -427,17 +427,24 @@ function _M.post_reload_plugins()
     -- reconciliation timer. This is the same guard the admin reload path added
     -- in #13714; the control path was left out. When the admin is disabled the
     -- timer is absent and this is a no-op.
+    local version_recorded = true
     if plugins_conf_ver_dict then
         local _, incr_err = plugins_conf_ver_dict:incr(PLUGINS_CONF_VERSION_KEY, 1, 0)
         if incr_err then
+            -- see the admin path: this worker has already switched, so the
+            -- event still has to go out or the workers split for good
             core.log.error("failed to increase plugins conf version: ", incr_err)
-            core.response.exit(503, {error_msg = "failed to record plugins reload"})
+            version_recorded = false
         end
     end
 
-    local success, err = events:post(_M.RELOAD_EVENT, ngx.req.get_method(), ngx.time())
+    local success, post_err = events:post(_M.RELOAD_EVENT, ngx.req.get_method(), ngx.time())
     if not success then
-        core.response.exit(503, err)
+        core.response.exit(503, post_err)
+    end
+
+    if not version_recorded then
+        core.response.exit(503, {error_msg = "failed to record plugins reload"})
     end
 
     core.response.exit(200, "done")

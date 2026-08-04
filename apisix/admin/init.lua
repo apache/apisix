@@ -312,27 +312,36 @@ local function post_reload_plugins()
         core.response.exit(500, {error_msg = "failed to reload plugins: " .. err})
     end
 
+    local version_recorded = true
     if plugins_conf_ver_dict then
         -- bump the version, so that a process which never receives the event
         -- (e.g. the privileged agent while it is reconnecting to the events
         -- broker) still converges through the periodic reconciliation below
         local ver, incr_err = plugins_conf_ver_dict:incr(PLUGINS_CONF_VERSION_KEY, 1, 0)
         if incr_err then
-            -- if the version cannot be bumped the reconciliation timer will
-            -- never notice a change, so a worker that misses the broadcast
-            -- would stay stale forever; fail loud instead of pretending success
+            -- do not return here: this worker has already switched to the new
+            -- set, so the event still has to go out or the other workers stay
+            -- on the old one with no version change for the reconciliation
+            -- timer to notice — a split that never heals. Report it after the
+            -- broadcast instead
             core.log.error("failed to increase plugins conf version: ", incr_err)
-            core.response.exit(503, {error_msg = "failed to record plugins reload"})
+            version_recorded = false
+        else
+            -- this worker already applied the new set above, don't let its own
+            -- reconciliation timer redo the work one second later
+            applied_plugins_conf_version = ver
         end
-
-        -- this worker already applied the new set above, don't let its own
-        -- reconciliation timer redo the work one second later
-        applied_plugins_conf_version = ver
     end
 
-    local success, err = events:post(reload_event, get_method(), ngx_time())
+    local success, post_err = events:post(reload_event, get_method(), ngx_time())
     if not success then
-        core.response.exit(503, err)
+        core.response.exit(503, post_err)
+    end
+
+    if not version_recorded then
+        -- the workers agree through the broadcast, but a process which missed
+        -- it has no version to reconcile against, so this is not a full success
+        core.response.exit(503, {error_msg = "failed to record plugins reload"})
     end
 
     core.response.exit(200, "done")
