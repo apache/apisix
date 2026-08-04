@@ -51,12 +51,12 @@ import TabItem from '@theme/TabItem';
 | 客户端协议 | 检测条件 | 路由 URI |
 | --- | --- | --- |
 | Bedrock Converse | 请求体包含 `messages` 数组，并且请求 URI 以 `/converse` 结尾。 | URI 可以包含自定义前缀，但必须保留 `/converse` 后缀。 |
-| Anthropic Messages | 请求体为 JSON 对象，并且请求 URI 以 `/v1/messages` 结尾。 | URI 可以包含自定义前缀，但必须保留 `/v1/messages` 后缀。 |
+| Anthropic Messages | 请求体为 JSON 对象或数组，并且请求 URI 以 `/v1/messages` 结尾。 | URI 可以包含自定义前缀，但必须保留 `/v1/messages` 后缀。 |
 | OpenAI Responses | 请求体包含 `input`，并且请求 URI 以 `/v1/responses` 结尾。 | URI 可以包含自定义前缀，但必须保留 `/v1/responses` 后缀。 |
 | OpenAI Chat Completions | 请求体包含 `messages` 数组。 | 路由匹配的任意 URI。 |
 | OpenAI Embeddings | 请求体包含 `input`，并且之前的规则均未匹配。 | 路由匹配的任意 URI。 |
 
-基于 URI 的规则在仅基于请求体的规则之前运行，以免包含 `messages` 的 Bedrock Converse 和 Anthropic Messages 请求被识别为 Chat Completions。Responses 和 Embeddings 请求都使用 `input`，因此包含 `input` 但不包含 `messages` 的请求会被识别为 Embeddings，除非其 URI 以 `/v1/responses` 结尾。如果之前的规则均未匹配，插件会将非空 JSON 对象视为透传请求。空请求体或无效请求体会被拒绝。
+基于 URI 的规则在仅基于请求体的规则之前运行，以免包含 `messages` 的 Bedrock Converse 和 Anthropic Messages 请求被识别为 Chat Completions。Responses 和 Embeddings 请求都使用 `input`，因此包含 `input` 但不包含 `messages` 的请求会被识别为 Embeddings，除非其 URI 以 `/v1/responses` 结尾。如果之前的规则均未匹配，插件会将非空 JSON 对象或数组视为透传请求。空请求体或无效请求体会被拒绝。
 
 ### Chat Completions 请求格式
 
