@@ -1322,6 +1322,27 @@ function _M.rewrite(plugin_conf, ctx)
                 return 302
             end
 
+            -- Transient authorization error from the identity provider: the ID
+            -- provider redirected to the redirect_uri with
+            -- error=temporarily_unavailable instead of a code, e.g. Keycloak's
+            -- login session expiring before the user completed authentication.
+            -- This is recoverable, so restart the authentication flow by
+            -- sending the browser back to the original URL instead of
+            -- dead-ending with a 500. Other error codes (access_denied,
+            -- login_required, ...) are not retried here, since they reflect a
+            -- deliberate outcome rather than a transient failure.
+            local uri_args = ngx.req.get_uri_args()
+            if uri_args.error == "temporarily_unavailable" and target_url
+               and ngx.req.get_method() == "GET" then
+                core.log.warn("OIDC authorization callback reported a temporarily ",
+                              "unavailable identity provider",
+                              uri_args.error_description and
+                                  (" (" .. uri_args.error_description .. ")") or "",
+                              ", restarting the authentication flow")
+                core.response.set_header("Location", target_url)
+                return 302
+            end
+
             core.log.error("OIDC authentication failed: ", err)
             return 500
         end
