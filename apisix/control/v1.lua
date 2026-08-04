@@ -16,6 +16,7 @@
 --
 local require = require
 local core = require("apisix.core")
+local tostring = tostring
 local plugin = require("apisix.plugin")
 local get_routes = require("apisix.router").http_routes
 local get_stream_routes = require("apisix.router").stream_routes
