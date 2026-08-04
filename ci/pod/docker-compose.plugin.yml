@@ -242,7 +242,7 @@ services:
   openldap:
     image: bitnamilegacy/openldap:2.5.8
     environment:
-      - LDAP_ADMIN_USERNAME=amdin
+      - LDAP_ADMIN_USERNAME=admin
       - LDAP_ADMIN_PASSWORD=adminpassword
       - LDAP_USERS=user01,user02
       - LDAP_PASSWORDS=password1,password2
@@ -255,6 +255,8 @@ services:
       - "1636:1636"
     volumes:
       - ./t/certs:/certs
+      - ./ci/pod/openldap/ad.ldif:/ldifs/ad.ldif
+      - ./ci/pod/openldap/enable-anon-bind.sh:/docker-entrypoint-initdb.d/enable-anon-bind.sh
 
 
   ## Grafana Loki
