@@ -538,6 +538,7 @@ nginx_config:
 --- config
     location /t {
         content_by_lua_block {
+            local core = require("apisix.core")
             local etcd = require("resty.etcd")
             local etcd_cli, err = etcd.new({
                 http_host = "http://127.0.0.1:2379",
@@ -557,13 +558,44 @@ nginx_config:
                end
                ngx.sleep(1)
             end
-            ngx.say("passed")
+
+            -- The watch has timed out and restarted several times by now. Assert
+            -- it still delivers events for the watched prefix: the other
+            -- assertion here is the absence of a log line, which would also hold
+            -- if the watch were broken outright.
+            local _, err = etcd_cli:set("/apisix/routes/after-timeout", {
+                id = "after-timeout",
+                uri = "/after-timeout",
+                create_time = 1700000000,
+                update_time = 1700000000,
+                upstream = {type = "roundrobin", nodes = {["127.0.0.1:1980"] = 1}}
+            })
+            if err then
+                ngx.say("failed to set route: ", err)
+                return
+            end
+            ngx.sleep(1)
+
+            local delivered = false
+            local obj = core.config.fetch_created_obj("/routes")
+            for _, item in ipairs(obj and obj.values or {}) do
+                if item and item.value and item.value.id == "after-timeout" then
+                    delivered = true
+                end
+            end
+            ngx.say("update after timeout delivered: ", delivered)
+
+            local _, err = etcd_cli:delete("/apisix/routes/after-timeout")
+            if err then
+                ngx.log(ngx.WARN, "failed to clean up route: ", err)
+            end
+            ngx.sleep(1)
         }
     }
 --- request
 GET /t
 --- response_body
-passed
+update after timeout delivered: true
 --- no_error_log
 etcd watch timeout, upgrade revision to
 
@@ -891,12 +923,16 @@ nginx_config:
                 return
             end
 
-            etcd_cli:set("/apisix/global_rules/1", {
+            local _, err = etcd_cli:set("/apisix/global_rules/1", {
                 id = "1",
                 create_time = 1700000000,
                 update_time = 1700000000,
                 plugins = {["response-rewrite"] = {headers = {set = {["X-T"] = "a"}}}}
             })
+            if err then
+                ngx.say("failed to set global_rules/1: ", err)
+                return
+            end
             ngx.sleep(2)
 
             local obj = core.config.fetch_created_obj("/global_rules")
@@ -921,12 +957,16 @@ nginx_config:
             -- revisions etcd reports, so the reload has nothing to change and
             -- must not bump conf_version a second time.
             obj.need_reload = true
-            etcd_cli:set("/apisix/global_rules/2", {
+            local _, err = etcd_cli:set("/apisix/global_rules/2", {
                 id = "2",
                 create_time = 1700000000,
                 update_time = 1700000000,
                 plugins = {["response-rewrite"] = {headers = {set = {["X-T2"] = "b"}}}}
             })
+            if err then
+                ngx.say("failed to set global_rules/2: ", err)
+                return
+            end
             ngx.sleep(3)
 
             local probe_kept = false
@@ -941,8 +981,12 @@ nginx_config:
             ngx.say("conf_version bumped once, not twice: ",
                     obj.conf_version == before_version + 1)
 
-            etcd_cli:delete("/apisix/global_rules/1")
-            etcd_cli:delete("/apisix/global_rules/2")
+            for _, key in ipairs({"/apisix/global_rules/1", "/apisix/global_rules/2"}) do
+                local _, del_err = etcd_cli:delete(key)
+                if del_err then
+                    ngx.log(ngx.WARN, "failed to clean up ", key, ": ", del_err)
+                end
+            end
             ngx.sleep(1)
         }
     }
@@ -982,12 +1026,16 @@ nginx_config:
                 return
             end
 
-            etcd_cli:set("/apisix/global_rules/1", {
+            local _, err = etcd_cli:set("/apisix/global_rules/1", {
                 id = "1",
                 create_time = 1700000000,
                 update_time = 1700000000,
                 plugins = {["response-rewrite"] = {headers = {set = {["X-T"] = "a"}}}}
             })
+            if err then
+                ngx.say("failed to set global_rules/1: ", err)
+                return
+            end
             ngx.sleep(2)
 
             local obj = core.config.fetch_created_obj("/global_rules")
@@ -1011,12 +1059,16 @@ nginx_config:
             -- same wake-up mechanism as TEST 19: /2 arrives incrementally
             -- (+1), then the reload drops the ghost (+1)
             obj.need_reload = true
-            etcd_cli:set("/apisix/global_rules/2", {
+            local _, err = etcd_cli:set("/apisix/global_rules/2", {
                 id = "2",
                 create_time = 1700000000,
                 update_time = 1700000000,
                 plugins = {["response-rewrite"] = {headers = {set = {["X-T2"] = "b"}}}}
             })
+            if err then
+                ngx.say("failed to set global_rules/2: ", err)
+                return
+            end
             ngx.sleep(3)
 
             local found_ghost = false
@@ -1031,8 +1083,12 @@ nginx_config:
             ngx.say("conf_version bumped for the deletion: ",
                     obj.conf_version == before_version + 2)
 
-            etcd_cli:delete("/apisix/global_rules/1")
-            etcd_cli:delete("/apisix/global_rules/2")
+            for _, key in ipairs({"/apisix/global_rules/1", "/apisix/global_rules/2"}) do
+                local _, del_err = etcd_cli:delete(key)
+                if del_err then
+                    ngx.log(ngx.WARN, "failed to clean up ", key, ": ", del_err)
+                end
+            end
             ngx.sleep(1)
         }
     }
