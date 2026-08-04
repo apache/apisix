@@ -574,13 +574,21 @@ nginx_config:
                 ngx.say("failed to set route: ", err)
                 return
             end
-            ngx.sleep(1)
-
+            -- poll rather than sleep a fixed amount: delivery is normally
+            -- immediate, and a fixed wait would only be a guess about how slow
+            -- the etcd round trip can get on a loaded CI machine
             local delivered = false
-            local obj = core.config.fetch_created_obj("/routes")
-            for _, item in ipairs(obj and obj.values or {}) do
-                if item and item.value and item.value.id == "after-timeout" then
-                    delivered = true
+            for _ = 1, 25 do
+                ngx.sleep(0.2)
+                local obj = core.config.fetch_created_obj("/routes")
+                for _, item in ipairs(obj and obj.values or {}) do
+                    if item and item.value and item.value.id == "after-timeout" then
+                        delivered = true
+                        break
+                    end
+                end
+                if delivered then
+                    break
                 end
             end
             ngx.say("update after timeout delivered: ", delivered)
@@ -589,9 +597,9 @@ nginx_config:
             if err then
                 ngx.log(ngx.WARN, "failed to clean up route: ", err)
             end
-            ngx.sleep(1)
         }
     }
+--- timeout: 20
 --- request
 GET /t
 --- response_body
