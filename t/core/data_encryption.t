@@ -72,34 +72,43 @@ decrypted: hello world
 
 
 
-=== TEST 3: a 16 and a 32 byte key coexist in one keyring
+=== TEST 3: rotating an AES-128 keyring to AES-256 keeps the old data readable
 --- config
     location /t {
         content_by_lua_block {
             local data_encryption = require("apisix.core.data_encryption")
-            local iv_tbl = data_encryption.init_iv_tbl({
+
+            -- data written before the rotation, encrypted with the 16 byte key only
+            local legacy = data_encryption.init_iv_tbl("qeddd145sfvddff3")
+            local legacy_enc = data_encryption.aes_cbc_encrypt(legacy, "hello world")
+
+            -- the new 32 byte key goes first, the old one is kept to read old data
+            local rotated = data_encryption.init_iv_tbl({
                 "qeddd145sfvddff3qeddd145sfvddff3",
                 "qeddd145sfvddff3",
             })
-            ngx.say("ciphers: ", #iv_tbl)
+            ngx.say("ciphers: ", #rotated)
+            ngx.say("legacy data: ", data_encryption.aes_cbc_decrypt(rotated, legacy_enc))
 
-            -- encrypt with the first (AES-256) cipher
-            local enc = data_encryption.aes_cbc_encrypt(iv_tbl, "hello world")
-            -- decrypt tries every cipher in the keyring, so it still resolves
-            ngx.say("decrypted: ", data_encryption.aes_cbc_decrypt(iv_tbl, enc))
+            -- new writes go through the first (AES-256) cipher
+            local enc = data_encryption.aes_cbc_encrypt(rotated, "hello world")
+            ngx.say("re-encrypted: ", enc ~= legacy_enc)
+            ngx.say("new data: ", data_encryption.aes_cbc_decrypt(rotated, enc))
         }
     }
 --- request
 GET /t
 --- response_body
 ciphers: 2
-decrypted: hello world
+legacy data: hello world
+re-encrypted: true
+new data: hello world
 --- no_error_log
 [error]
 
 
 
-=== TEST 4: a key of an unsupported length is skipped
+=== TEST 4: a key of an unsupported length is dropped and reported
 --- config
     location /t {
         content_by_lua_block {
@@ -115,5 +124,32 @@ decrypted: hello world
 GET /t
 --- response_body
 ciphers: 1
+--- error_log
+expected a 16 byte (AES-128) or 32 byte (AES-256) key, got 5 bytes
+
+
+
+=== TEST 5: a 32 byte keyring configured in config.yaml encrypts and decrypts
+--- yaml_config
+apisix:
+    node_listen: 1984
+    data_encryption:
+        enable_encrypt_fields: true
+        keyring:
+            - qeddd145sfvddff3qeddd145sfvddff3
+--- config
+    location /t {
+        content_by_lua_block {
+            local data_encryption = require("apisix.core.data_encryption")
+            local enc = data_encryption.encrypt("hello world")
+            ngx.say("encrypted: ", enc ~= "hello world")
+            ngx.say("decrypted: ", data_encryption.decrypt(enc))
+        }
+    }
+--- request
+GET /t
+--- response_body
+encrypted: true
+decrypted: hello world
 --- no_error_log
 [error]
