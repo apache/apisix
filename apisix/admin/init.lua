@@ -335,7 +335,7 @@ local function post_reload_plugins()
 
     local success, post_err = events:post(reload_event, get_method(), ngx_time())
     if not success then
-        core.response.exit(503, post_err)
+        core.response.exit(503, {error_msg = tostring(post_err)})
     end
 
     if not version_recorded then
@@ -439,7 +439,11 @@ function reload_plugins_and_sync()
 
     -- record the sampled version even when the load failed: the reconciliation
     -- timer would otherwise retry the very same plugin set every second, and
-    -- every attempt tears the live set down and rebuilds it
+    -- every attempt tears the live set down and rebuilds it. The cost is that
+    -- this worker keeps its previous set until some later reload bumps the
+    -- version again -- a load that failed for a transient reason (reading the
+    -- plugin file while it was still being written, say) does not recover on
+    -- its own, it only logs
     if ver then
         applied_plugins_conf_version = ver
     end

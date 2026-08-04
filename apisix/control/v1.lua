@@ -440,7 +440,7 @@ function _M.post_reload_plugins()
 
     local success, post_err = events:post(_M.RELOAD_EVENT, ngx.req.get_method(), ngx.time())
     if not success then
-        core.response.exit(503, post_err)
+        core.response.exit(503, {error_msg = tostring(post_err)})
     end
 
     if not version_recorded then

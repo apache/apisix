@@ -260,33 +260,41 @@ end
 
 local function load_plugin(name, plugins_list, plugin_type)
     local ok, plugin
+    local pkg_name
     if plugin_type == PLUGIN_TYPE_HTTP_WASM  then
         -- for wasm plugin, we pass the whole attrs instead of name
         ok, plugin = wasm.require(name)
         name = name.name
     else
-        ok, plugin = pcall(require, plugin_pkg_name(name, plugin_type))
+        pkg_name = plugin_pkg_name(name, plugin_type)
+        ok, plugin = pcall(require, pkg_name)
+    end
+
+    -- a module which does not make it into the plugin list must not stay in
+    -- package.loaded: nothing drops it later, since a reload only drops the
+    -- modules of the live set, so require() would keep handing back this
+    -- rejected version even after the file on disk is fixed
+    local function reject(...)
+        core.log.error(...)
+        if pkg_name then
+            pkg_loaded[pkg_name] = nil
+        end
     end
 
     if not ok then
-        core.log.error("failed to load plugin [", name, "] err: ", plugin)
-        return
+        return reject("failed to load plugin [", name, "] err: ", plugin)
     end
 
     if not plugin.priority then
-        core.log.error("invalid plugin [", name,
-                        "], missing field: priority")
-        return
+        return reject("invalid plugin [", name, "], missing field: priority")
     end
 
     if not plugin.version then
-        core.log.error("invalid plugin [", name, "] missing field: version")
-        return
+        return reject("invalid plugin [", name, "] missing field: version")
     end
 
     if type(plugin.schema) ~= "table" then
-        core.log.error("invalid plugin [", name, "] schema field")
-        return
+        return reject("invalid plugin [", name, "] schema field")
     end
 
     if not plugin.schema.properties then
@@ -298,9 +306,8 @@ local function load_plugin(name, plugins_list, plugin_type)
 
     if plugin.schema['$comment'] ~= plugin_injected_schema['$comment'] then
         if properties._meta then
-            core.log.error("invalid plugin [", name,
-                           "]: found forbidden '_meta' field in the schema")
-            return
+            return reject("invalid plugin [", name,
+                          "]: found forbidden '_meta' field in the schema")
         end
 
         properties._meta = plugin_injected_schema._meta
