@@ -611,3 +611,47 @@ hello world
 GET /t
 --- response_body
 hello world
+
+
+
+=== TEST 22: auth plugin returning a code with nil error message does not raise
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugin")
+            local orig_get = plugin.get
+            plugin.get = function(name)
+                return {
+                    type = "auth",
+                    rewrite = function()
+                        -- mimic an auth plugin that returns a status code
+                        -- without an accompanying error message
+                        return 401, nil
+                    end,
+                }
+            end
+
+            local multi_auth = require("apisix.plugins.multi-auth")
+            local conf = {
+                auth_plugins = {
+                    { ["fake-auth-1"] = {} },
+                    { ["fake-auth-2"] = {} },
+                }
+            }
+            local ctx = { var = {} }
+            local ok, code = pcall(multi_auth.rewrite, conf, ctx)
+            plugin.get = orig_get
+
+            if not ok then
+                ngx.say("error: ", code)
+                return
+            end
+            ngx.say("code: ", code)
+        }
+    }
+--- request
+GET /t
+--- response_body
+code: 401
+--- no_error_log
+[error]

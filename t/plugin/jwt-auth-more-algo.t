@@ -325,13 +325,18 @@ passed
 
 
 
-=== TEST 13: verify success with expired token
+=== TEST 13: configured claim (nbf) missing from token -> rejected
+# claims_to_verify lists nbf, but this token only carries exp. A claim that is
+# explicitly configured is required, so the missing nbf is rejected.
 --- request
 GET /hello
 --- more_headers
 Authorization: eyJhbGciOiJIUzM4NCIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2Mzg3MDUwMX0.SJNbFYR1qlIOD7D8aItkB9hYxdhc0d_JGaLgVjOCDOAHd8CSJuHp_R6YQniRDq8S
---- response_body
-hello world
+--- error_code: 401
+--- response_body eval
+qr/failed to verify jwt/
+--- error_log
+claim nbf is missing
 
 
 
@@ -363,6 +368,33 @@ hello world
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
+
+            -- TEST 12 left claims_to_verify=["nbf"] on this route. Now that
+            -- configured claims are required, that stale requirement would reject
+            -- the EdDSA token in TEST 17 (which carries exp but no nbf). This test
+            -- group targets signature verification, so restore a clean jwt-auth
+            -- config on the route first.
+            local code = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "jwt-auth": {}
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("failed to reset route")
+                return
+            end
+
             local code, body = t('/apisix/admin/consumers',
                 ngx.HTTP_PUT,
                 [[{

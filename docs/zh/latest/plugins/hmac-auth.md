@@ -195,8 +195,6 @@ adc sync -f adc.yaml
 
 <TabItem value="aic">
 
-通过 Ingress Controller 配置资源时，目前不支持 Consumer 自定义标签。因此，`X-Consumer-Custom-Id` 标头不会包含在请求中。
-
 <Tabs
 groupId="k8s-api"
 defaultValue="gateway-api"
@@ -213,6 +211,8 @@ kind: Consumer
 metadata:
   namespace: aic
   name: john
+  labels:
+    custom_id: "495aec6a"
 spec:
   gatewayRef:
     name: apisix
@@ -285,6 +285,8 @@ kind: ApisixConsumer
 metadata:
   namespace: aic
   name: john
+  labels:
+    custom_id: "495aec6a"
 spec:
   ingressClassName: apisix
   authParameter:
@@ -419,7 +421,7 @@ curl -X GET "http://127.0.0.1:9080/get" \
     "Host": "127.0.0.1",
     "User-Agent": "curl/8.6.0",
     "X-Amzn-Trace-Id": "Root=1-66d96513-2e52d4f35c9b6a2772d667ea",
-    "X-Consumer-Username": "john",
+    "X-Consumer-Username": "aic_john",
     "X-Credential-Identifier": "cred-john-hmac-auth",
     "X-Consumer-Custom-Id": "495aec6a",
     "X-Forwarded-Host": "127.0.0.1"
@@ -1602,7 +1604,85 @@ kubectl apply -f hmac-auth-ic.yaml
 
 <TabItem value="apisix-crd">
 
-ApisixConsumer CRD 目前不支持在 Consumer 上配置插件，`authParameter` 中允许的认证插件除外。此示例无法通过 APISIX CRD 完成。
+配置具有不同速率限制的 Consumer 以及接受匿名用户的 Route：
+
+```yaml title="hmac-auth-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixConsumer
+metadata:
+  namespace: aic
+  name: john
+spec:
+  ingressClassName: apisix
+  authParameter:
+    hmacAuth:
+      value:
+        key_id: john-key
+        secret_key: john-secret-key
+  plugins:
+    - name: limit-count
+      enable: true
+      config:
+        count: 3
+        time_window: 30
+        rejected_code: 429
+        policy: local
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixConsumer
+metadata:
+  namespace: aic
+  name: anonymous
+spec:
+  ingressClassName: apisix
+  plugins:
+    - name: limit-count
+      enable: true
+      config:
+        count: 1
+        time_window: 30
+        rejected_code: 429
+        policy: local
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  externalNodes:
+    - type: Domain
+      name: httpbin.org
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: hmac-auth-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: hmac-auth-route
+      match:
+        paths:
+          - /get
+        methods:
+          - GET
+      upstreams:
+        - name: httpbin-external-domain
+      plugins:
+        - name: hmac-auth
+          enable: true
+          config:
+            anonymous_consumer: aic_anonymous  # namespace_consumername
+```
+
+将配置应用到集群：
+
+```shell
+kubectl apply -f hmac-auth-ic.yaml
+```
 
 </TabItem>
 

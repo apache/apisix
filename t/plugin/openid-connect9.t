@@ -190,3 +190,65 @@ GET /hello HTTP/1.1
 Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL3NhbXBsZXMuYXV0aDAuY29tLyIsInN1YiI6InRlc3Qtc3ViamVjdCIsImF1ZCI6ImtieXVG RGlkTExtMjgwTEl3VkZpYXpPcWpPM3R5OEtIIiwic2NvcGUiOiJhcGlzaXgiLCJpYXQiOjEwMDAwMDAwLCJleHAiOjI1MDAwMDAwMDB9.bfcZsd4ABgo0GoLT8EwfnKgf AWbnJZbZ3kOtqyeSkXYqGlSmgMNW3q5Kx1SGjMNhEKVG_KrFfsPrQmcTljSPZA
 --- response_body
 success
+
+
+
+=== TEST 5: configure route with bearer_only + public_key + claim_schema that requires an absent field
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "openid-connect": {
+                            "client_id": "kbyuFDidLLm280LIwVFiazOqjO3ty8KH",
+                            "discovery": "https://samples.auth0.com/.well-known/openid-configuration",
+                            "ssl_verify": false,
+                            "bearer_only": true,
+                            "public_key": "-----BEGIN PUBLIC KEY-----\nMFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAO6oZg+4sbTPa0oeKcfsJf2bx7N7JkGB\ngVqJeCkMHJ7lKLCTpg6P3UpTfNx5K+pKXsDucQbhjQqmjMwTBEe44EsCAwEAAQ==\n-----END PUBLIC KEY-----",
+                            "token_signing_alg_values_expected": "RS256",
+                            "claim_schema": {
+                                "type": "object",
+                                "required": ["email"]
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 6: bearer-path claim_schema rejection returns 401 with WWW-Authenticate header
+--- request
+GET /hello HTTP/1.1
+--- more_headers
+Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL3NhbXBsZXMuYXV0aDAuY29tLyIsInN1YiI6InRlc3Qtc3ViamVjdCIsImF1ZCI6ImtieXVGRGlkTExtMjgwTEl3VkZpYXpPcWpPM3R5OEtIIiwic2NvcGUiOiJhcGlzaXgiLCJpYXQiOjEwMDAwMDAwLCJleHAiOjI1MDAwMDAwMDB9.yWPMyXHuhiBP3q0xUkg3Iwu8dvXWlaVGBqPC8y8hC1MYoCcj687X85o9mvw1Mz_kGgKHNvDYrl5EQ3B3LAM4OA
+--- error_code: 401
+--- response_headers_like
+WWW-Authenticate: Bearer realm="apisix", error="invalid_token".*
+--- no_error_log
+[crit]
+[alert]
+[emerg]
+--- grep_error_log eval
+qr/OIDC claim validation failed/
+--- grep_error_log_out
+OIDC claim validation failed

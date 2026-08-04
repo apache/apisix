@@ -63,13 +63,22 @@ The `openid-connect` Plugin supports the integration with [OpenID Connect (OIDC)
 | token_signing_alg_values_expected | string | False | | | Algorithm used for signing JWT, such as `RS256`. |
 | set_access_token_header | boolean | False | true | | If true, set the access token in a request header. By default, the `X-Access-Token` header is used. |
 | access_token_in_authorization_header | boolean | False | false | | If true and if `set_access_token_header` is also true, set the access token in the `Authorization` header. |
-| set_id_token_header | boolean | False | true | | If true and if the ID token is available, set the value in the `X-ID-Token` request header. |
+| set_id_token_header | boolean | False | true | | If true and if the ID token is available, set the value in the `X-ID-Token` request header. Note: this header contains `base64(JSON(decoded_claims))` and carries no cryptographic signature. |
+| set_raw_id_token_header | boolean | False | false | | If true and if the raw signed ID token JWT is available, set the value in the `X-Raw-ID-Token` request header. Unlike `X-ID-Token`, this header contains the original RS256-signed JWT from the identity provider and can be verified against the provider's JWKS endpoint. The plugin automatically persists the raw JWT in the session when this option is enabled. |
 | set_userinfo_header | boolean | False | true | | If true and if user info data is available, set the value in the `X-Userinfo` request header. |
 | set_refresh_token_header | boolean | False | false | | If true and if the refresh token is available, set the value in the `X-Refresh-Token` request header. |
 | session | object | False | | | Session configuration used when `bearer_only` is `false` and the Plugin uses Authorization Code flow. |
 | session.secret | string | True | | 16 or more characters | Key used for session encryption and HMAC operation when `bearer_only` is `false`. |
-| session.cookie | object | False | | | Cookie configurations. |
-| session.cookie.lifetime | integer | False | 3600 | | Cookie lifetime in seconds. |
+| session.cookie_name | string | False | | | Session cookie name. Forwarded to [lua-resty-session](https://github.com/bungle/lua-resty-session#configuration) 4.x as `cookie_name`. |
+| session.cookie_path | string | False | | | Cookie path scope. Forwarded to lua-resty-session as `cookie_path`. |
+| session.cookie_domain | string | False | | | Cookie domain scope. Forwarded to lua-resty-session as `cookie_domain`. |
+| session.cookie_secure | boolean | False | | | If true, set the `Secure` cookie attribute. Forwarded to lua-resty-session as `cookie_secure`. |
+| session.cookie_http_only | boolean | False | | | If true, set the `HttpOnly` cookie attribute. Forwarded to lua-resty-session as `cookie_http_only`. |
+| session.cookie_same_site | string | False | | ["Strict", "Lax", "None", "Default"] | `SameSite` cookie attribute. Forwarded to lua-resty-session as `cookie_same_site`. |
+| session.idling_timeout | integer | False | | | Idling timeout in seconds. Forwarded to lua-resty-session as `idling_timeout`. |
+| session.rolling_timeout | integer | False | | | Rolling timeout in seconds. Forwarded to lua-resty-session as `rolling_timeout`. |
+| session.absolute_timeout | integer | False | | | Absolute session lifetime in seconds. Forwarded to lua-resty-session as `absolute_timeout`. |
+| session.cookie.lifetime | integer | False | | | Deprecated. Mapped to `session.absolute_timeout` at runtime when `absolute_timeout` is not set. Use `session.absolute_timeout` instead. |
 | session.storage | string | False | cookie | ["cookie", "redis"] | Session storage method. |
 | session.redis | object | False | | | Redis configuration when `storage` is `redis`. |
 | session.redis.host | string | False | 127.0.0.1 | | Redis host. |
@@ -403,6 +412,16 @@ This section covers a few commonly seen issues when working with this Plugin to 
 ### APISIX Cannot Connect to OpenID Provider
 
 If APISIX fails to resolve or cannot connect to the OpenID provider, double check the DNS settings in your configuration file `config.yaml` and modify as needed.
+
+### State Mismatch in the Authorization Callback
+
+The session holds the state of a single login flow. If the same browser starts a second flow before the first one completes — for example by opening a protected page in another tab — the second flow overwrites the state, and the first tab's callback arrives with a state that no longer matches:
+
+```text
+state from argument does not match state restored from session
+```
+
+For a `GET` callback, the Plugin responds with `302` back to the URL the user was originally trying to reach, so a fresh authentication flow starts from there. When the OpenID provider still holds an SSO session, this completes without any user interaction. Callbacks using other request methods, and callbacks carrying no session at all, still fail with `500`.
 
 ### No Session State Found
 

@@ -32,6 +32,31 @@ local ngx_encode_base64 = ngx.encode_base64
 
 local plugin_name       = "openid-connect"
 
+-- returned verbatim by resty.openidc when the state in the authorization
+-- callback does not match the one restored from the session; the string is
+-- identical in lua-resty-openidc 1.8.0 and 1.9.0
+local STATE_MISMATCH_ERR =
+    "state from argument does not match state restored from session"
+
+
+-- Session config is passed as-is to resty.session.start(); the only
+-- translation is the legacy session.cookie.lifetime alias from the
+-- lua-resty-session 3.x schema, which is mapped to absolute_timeout
+-- when the latter is unset.
+local function build_session_opts(session_conf)
+    if not session_conf then
+        return nil
+    end
+    if session_conf.cookie and session_conf.cookie.lifetime then
+        if not session_conf.absolute_timeout then
+            session_conf.absolute_timeout = session_conf.cookie.lifetime
+            core.log.warn("session.cookie.lifetime is deprecated; ",
+                          "use session.absolute_timeout instead")
+        end
+    end
+    return session_conf
+end
+
 
 local schema = {
     type = "object",
@@ -76,14 +101,58 @@ local schema = {
                     description = "the key used for the encrypt and HMAC calculation",
                     minLength = 16,
                 },
+                cookie_name = {
+                    type = "string",
+                    description = "session cookie name",
+                },
+                cookie_path = {
+                    type = "string",
+                    description = "cookie path scope",
+                },
+                cookie_domain = {
+                    type = "string",
+                    description = "cookie domain scope",
+                },
+                cookie_secure = {
+                    type = "boolean",
+                    description = "if true, set the Secure cookie attribute",
+                },
+                cookie_http_only = {
+                    type = "boolean",
+                    description = "if true, set the HttpOnly cookie attribute",
+                },
+                cookie_same_site = {
+                    type = "string",
+                    enum = {"Strict", "Lax", "None", "Default"},
+                    description = "SameSite cookie attribute",
+                },
+                idling_timeout = {
+                    type = "integer",
+                    description = "idling timeout in seconds",
+                },
+                rolling_timeout = {
+                    type = "integer",
+                    description = "rolling timeout in seconds",
+                },
+                absolute_timeout = {
+                    type = "integer",
+                    description = "absolute session lifetime in seconds",
+                },
                 cookie = {
                     type = "object",
+                    description =
+                        "Deprecated. Kept for backward compatibility with "
+                        .. "the lua-resty-session 3.x schema. Use the flat "
+                        .. "session.* options (cookie_name, absolute_timeout, "
+                        .. "etc.) instead.",
                     properties = {
                         lifetime = {
                             type = "integer",
-                            description = "it holds the cookie lifetime in seconds in the future",
-                        }
-                    }
+                            description =
+                                "Deprecated. Mapped to absolute_timeout at "
+                                .. "runtime when absolute_timeout is not set.",
+                        },
+                    },
                 },
                 storage = {
                     type = "string",
@@ -253,6 +322,12 @@ local schema = {
             type = "boolean",
             default = true
         },
+        set_raw_id_token_header = {
+            description = "Whether the raw signed ID token JWT should be added in the " ..
+                "X-Raw-ID-Token header to the request for downstream.",
+            type = "boolean",
+            default = false
+        },
         set_userinfo_header = {
             description = "Whether the user info token should be added in the X-Userinfo " ..
                 "header to the request for downstream.",
@@ -403,7 +478,7 @@ local schema = {
     },
     encrypt_fields = {"client_secret", "client_rsa_private_key",
                       "session.secret", "session.redis.password"},
-    required = {"client_id", "client_secret", "discovery"}
+    required = {"client_id", "discovery"}
 }
 
 
@@ -412,6 +487,7 @@ local _M = {
     priority = 2599,
     name = plugin_name,
     schema = schema,
+    _build_session_opts = build_session_opts,
 }
 
 function _M.check_schema(conf)
@@ -422,6 +498,26 @@ function _M.check_schema(conf)
 
     if not conf.bearer_only and not conf.session then
         return false, "property \"session.secret\" is required when \"bearer_only\" is false"
+    end
+
+    -- client_secret is not required in certain authentication modes. The exemption
+    -- is scoped to the flow each alternative actually applies to:
+    --   bearer_only=true + public_key/use_jwks: local JWT verification, no IdP call needed
+    --   bearer_only=true + introspection_endpoint_auth_method=private_key_jwt: introspection
+    --     endpoint authenticates via signed JWT instead of client_secret
+    --   token_endpoint_auth_method=private_key_jwt (non-bearer): token endpoint uses signed
+    --     JWT; this exemption applies only to the session/callback flow, not bearer mode
+    --   use_pkce=true (non-bearer): public-client PKCE flow needs no client_secret
+    local client_secret_optional
+    if conf.bearer_only then
+        client_secret_optional = (conf.public_key or conf.use_jwks)
+            or (conf.introspection_endpoint_auth_method == "private_key_jwt")
+    else
+        client_secret_optional = (conf.token_endpoint_auth_method == "private_key_jwt")
+            or conf.use_pkce
+    end
+    if not client_secret_optional and not conf.client_secret then
+        return false, "property \"client_secret\" is required"
     end
 
     local check = {"discovery", "introspection_endpoint", "redirect_uri",
@@ -619,7 +715,7 @@ function _M.rewrite(plugin_conf, ctx)
     local conf = core.table.clone(plugin_conf)
 
     -- Snapshot the client-supplied X-Access-Token (it doubles as a bearer
-    -- input via get_bearer_access_token) and clear the four headers this
+    -- input via get_bearer_access_token) and clear the five headers this
     -- plugin advertises as outputs so client-supplied values cannot bleed
     -- through to the upstream.
     ctx.openid_connect_client_x_access_token = core.request.header(ctx, "X-Access-Token")
@@ -627,6 +723,7 @@ function _M.rewrite(plugin_conf, ctx)
     core.request.set_header(ctx, "X-Userinfo", nil)
     core.request.set_header(ctx, "X-ID-Token", nil)
     core.request.set_header(ctx, "X-Refresh-Token", nil)
+    core.request.set_header(ctx, "X-Raw-ID-Token", nil)
 
     -- Previously, we multiply conf.timeout before storing it in etcd.
     -- If the timeout is too large, we should not multiply it again.
@@ -673,7 +770,7 @@ function _M.rewrite(plugin_conf, ctx)
         end
     end
 
-    local response, err, session, _
+    local response, err, session
 
     if conf.bearer_only or conf.introspection_endpoint or conf.public_key or conf.use_jwks then
         -- An introspection endpoint or a public key has been configured. Try to
@@ -736,6 +833,20 @@ function _M.rewrite(plugin_conf, ctx)
                 end
             end
 
+            -- Validate bearer-path claims against claim_schema when configured.
+            -- The schema is applied directly to the flat JWT payload / introspection
+            -- response, which is different from the session-flow structure
+            -- {user, access_token, id_token}.
+            if conf.claim_schema then
+                local ok, err = core.schema.check(conf.claim_schema, response)
+                if not ok then
+                    core.log.error("OIDC claim validation failed: ", err)
+                    ngx.header["WWW-Authenticate"] = 'Bearer realm="' .. conf.realm ..
+                        '", error="invalid_token", error_description="' .. err .. '"'
+                    return ngx.HTTP_UNAUTHORIZED
+                end
+            end
+
             -- Add configured access token header, maybe.
             add_access_token_header(ctx, conf, access_token)
 
@@ -756,13 +867,24 @@ function _M.rewrite(plugin_conf, ctx)
             unauth_action = "deny"
         end
 
+        -- When set_raw_id_token_header is enabled and the user has explicitly restricted
+        -- session_contents, ensure enc_id_token is included so session:get("enc_id_token")
+        -- returns the raw signed JWT. When session_contents is nil, lua-resty-openidc stores
+        -- all session data by default (including enc_id_token), so no action is needed.
+        if conf.set_raw_id_token_header and conf.session_contents then
+            conf.session_contents = core.table.clone(conf.session_contents)
+            conf.session_contents.enc_id_token = true
+        end
+
         -- Authenticate the request. This will validate the access token if it
         -- is stored in a sessions cookie, and also renew the token if required.
         -- If no token can be extracted, the response will redirect to the ID
         -- provider's authorization endpoint to initiate the Relying Party flow.
         -- This code path also handles when the ID provider then redirects to
         -- the configured redirect URI after successful authentication.
-        response, err, _, session  = openidc.authenticate(conf, nil, unauth_action, conf.session)
+        local target_url
+        response, err, target_url, session = openidc.authenticate(conf, nil, unauth_action,
+                                                          build_session_opts(conf.session))
 
         if err then
             if session then
@@ -774,6 +896,23 @@ function _M.rewrite(plugin_conf, ctx)
                 end
                 return 401
             end
+
+            -- Stale authorization callback: the state in the callback does not
+            -- match the one in the session, e.g. the same browser started
+            -- another login flow in a second tab and overwrote the state, or an
+            -- already completed callback was replayed. The client is a browser
+            -- mid-navigation, so instead of a dead-end 500, send it back to the
+            -- original URL that resty.openidc returns alongside the error: a
+            -- fresh flow starts from there and completes without any user
+            -- interaction while the ID provider still holds an SSO session.
+            if err == STATE_MISMATCH_ERR and target_url
+               and ngx.req.get_method() == "GET" then
+                core.log.warn("OIDC state mismatch (concurrent login flows or ",
+                              "replayed callback), restarting the authentication flow")
+                core.response.set_header("Location", target_url)
+                return 302
+            end
+
             core.log.error("OIDC authentication failed: ", err)
             return 500
         end
@@ -810,6 +949,12 @@ function _M.rewrite(plugin_conf, ctx)
             local refresh_token = session:get("refresh_token")
             if refresh_token and conf.set_refresh_token_header then
                 core.request.set_header(ctx, "X-Refresh-Token", refresh_token)
+            end
+
+            -- Add X-Raw-ID-Token header, maybe.
+            local enc_id_token = session:get("enc_id_token")
+            if enc_id_token and conf.set_raw_id_token_header then
+                core.request.set_header(ctx, "X-Raw-ID-Token", enc_id_token)
             end
         end
     end

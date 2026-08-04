@@ -137,7 +137,7 @@ hello world
 --- grep_error_log eval
 qr/lua balancer: keepalive .*/
 --- grep_error_log_out eval
-qr/^lua balancer: keepalive create pool, crc32: \S+, size: 4
+qr/^lua balancer: keepalive create pool, name: \S+, size: 4
 lua balancer: keepalive no free connection, cpool: \S+
 lua balancer: keepalive saving connection \S+, cpool: \S+, connections: 1
 lua balancer: keepalive reusing connection \S+, requests: 1, cpool: \S+
@@ -201,13 +201,13 @@ hello world
 --- grep_error_log eval
 qr/lua balancer: keepalive .*/
 --- grep_error_log_out eval
-qr/^lua balancer: keepalive create pool, crc32: \S+, size: 1
+qr/^lua balancer: keepalive create pool, name: (\S+), size: 1
 lua balancer: keepalive no free connection, cpool: \S+
 lua balancer: keepalive saving connection \S+, cpool: \S+, connections: 1
 lua balancer: keepalive reusing connection \S+, requests: 1, cpool: \S+
 lua balancer: keepalive not saving connection \S+, cpool: \S+, connections: 0
-lua balancer: keepalive free pool \S+, crc32: \S+
-lua balancer: keepalive create pool, crc32: \S+, size: 1
+lua balancer: keepalive free pool \S+, name: \1
+lua balancer: keepalive create pool, name: \1, size: 1
 lua balancer: keepalive no free connection, cpool: \S+
 lua balancer: keepalive saving connection \S+, cpool: \S+, connections: 1
 $/
@@ -263,7 +263,7 @@ hello world
 --- grep_error_log eval
 qr/lua balancer: keepalive .*/
 --- grep_error_log_out eval
-qr/^lua balancer: keepalive create pool, crc32: \S+, size: 320
+qr/^lua balancer: keepalive create pool, name: \S+, size: 320
 lua balancer: keepalive no free connection, cpool: \S+
 lua balancer: keepalive saving connection \S+, cpool: \S+, connections: 1
 lua balancer: keepalive reusing connection \S+, requests: 1, cpool: \S+
@@ -628,8 +628,8 @@ $/
 --- grep_error_log eval
 qr/lua balancer: keepalive create pool, .*/
 --- grep_error_log_out eval
-qr/^lua balancer: keepalive create pool, crc32: \S+, size: 8
-lua balancer: keepalive create pool, crc32: \S+, size: 4
+qr/^lua balancer: keepalive create pool, name: \S+#b\.com, size: 8
+lua balancer: keepalive create pool, name: \S+#a\.com, size: 4
 $/
 
 
@@ -731,8 +731,8 @@ $/
 --- grep_error_log eval
 qr/lua balancer: keepalive create pool, .*/
 --- grep_error_log_out eval
-qr/^lua balancer: keepalive create pool, crc32: \S+, size: 4
-lua balancer: keepalive create pool, crc32: \S+, size: 8
+qr/^lua balancer: keepalive create pool, name: \S+#a\.com, size: 4
+lua balancer: keepalive create pool, name: http#\S+, size: 8
 $/
 
 
@@ -805,3 +805,140 @@ grpcurl -import-path ./t/grpc_server_example/proto -proto helloworld.proto -plai
 {
   "message": "Hello apisix"
 }
+
+
+
+=== TEST 19: upstreams with different client cert referenced by id
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin")
+            local test = require("lib.test_admin").test
+            local json = require("toolkit.json")
+            local ssl_cert = t.read_file("t/certs/mtls_client.crt")
+            local ssl_key = t.read_file("t/certs/mtls_client.key")
+            local ssl_cert2 = t.read_file("t/certs/apisix.crt")
+            local ssl_key2 = t.read_file("t/certs/apisix.key")
+
+            local code, body = test('/apisix/admin/ssls/1',
+                ngx.HTTP_PUT,
+                json.encode({type = "client", cert = ssl_cert, key = ssl_key})
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.print(body)
+                return
+            end
+
+            local code, body = test('/apisix/admin/ssls/2',
+                ngx.HTTP_PUT,
+                json.encode({type = "client", cert = ssl_cert2, key = ssl_key2})
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.print(body)
+                return
+            end
+
+            local code, body = test('/apisix/admin/upstreams/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "scheme": "https",
+                    "type": "roundrobin",
+                    "nodes": {
+                        "127.0.0.1:1983": 1
+                    },
+                    "keepalive_pool": {
+                        "size": 4
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.print(body)
+                return
+            end
+
+            local code, body = test('/apisix/admin/upstreams/2',
+                ngx.HTTP_PUT,
+                json.encode({
+                    scheme = "https",
+                    type = "roundrobin",
+                    nodes = {["127.0.0.1:1983"] = 1},
+                    tls = {client_cert_id = 1},
+                    keepalive_pool = {size = 8}
+                })
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.print(body)
+                return
+            end
+
+            local code, body = test('/apisix/admin/upstreams/3',
+                ngx.HTTP_PUT,
+                json.encode({
+                    scheme = "https",
+                    type = "roundrobin",
+                    nodes = {["127.0.0.1:1983"] = 1},
+                    tls = {client_cert_id = 2},
+                    keepalive_pool = {size = 16}
+                })
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.print(body)
+                return
+            end
+
+            for i = 1, 3 do
+                local code, body = test('/apisix/admin/routes/' .. i,
+                    ngx.HTTP_PUT,
+                    [[{
+                        "uri":"/hello/]] .. i .. [[",
+                        "plugins": {
+                            "proxy-rewrite": {
+                                "uri": "/hello"
+                            }
+                        },
+                        "upstream_id": ]] .. i .. [[
+                    }]])
+                if code >= 300 then
+                    ngx.status = code
+                    ngx.print(body)
+                    return
+                end
+            end
+        }
+    }
+--- response_body
+
+
+
+=== TEST 20: hit
+--- upstream_server_config
+    ssl_client_certificate ../../certs/mtls_ca.crt;
+    ssl_verify_client on;
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+
+            for i = 1, 12 do
+                local idx = (i % 3) + 1
+                local httpc = http.new()
+                local res, err = httpc:request_uri(uri .. "/hello/" .. idx)
+                if not res then
+                    ngx.say(err)
+                    return
+                end
+
+                if idx == 2 then
+                    assert(res.status == 200)
+                else
+                    assert(res.status == 400)
+                end
+            end
+        }
+    }

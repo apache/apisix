@@ -429,3 +429,56 @@ Content-Type: application/json
 --- error_code: 502
 --- error_log
 aborting AI response: body size exceeds max_response_bytes 1024
+
+
+
+=== TEST 10: set route with max_req_body_size to bound the request body
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": {
+                                "header": {
+                                    "Authorization": "Bearer token"
+                                }
+                            },
+                            "options": {
+                                "model": "gpt-3.5-turbo"
+                            },
+                            "max_req_body_size": 10,
+                            "override": {
+                                "endpoint": "http://localhost:7740"
+                            },
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 11: request body larger than max_req_body_size is rejected with 413
+--- request
+POST /anything
+{"messages": [{"role": "user", "content": "this request body is well over ten bytes"}]}
+--- more_headers
+Content-Type: application/json
+--- error_code: 413
+--- error_log
+failed to read request body

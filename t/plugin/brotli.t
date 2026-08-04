@@ -833,8 +833,8 @@ Content-Encoding: br
 Vary:
 Etag:
 Content-Length:
---- error_log
-no standard etag or regex match failed:
+--- no_error_log
+[error]
 
 
 
@@ -888,3 +888,22 @@ Vary:
 Etag: W/"123456789"
 Last-Modified: Thu, 27 Nov 2025 00:32:33 GMT
 Content-Length:
+
+
+
+=== TEST 37: etag with embedded quotes is non-standard, clear it
+--- request
+POST /echo
+0123456789
+012345678
+--- more_headers
+Accept-Encoding: br
+Content-Type: text/html
+Etag: "12"34"
+--- response_headers
+Content-Encoding: br
+Vary:
+Etag:
+Content-Length:
+--- no_error_log
+[error]

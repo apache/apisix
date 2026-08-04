@@ -17,6 +17,7 @@
 local core = require("apisix.core")
 local utils = require("apisix.admin.utils")
 local apisix_ssl = require("apisix.ssl")
+local apisix_plugin = require("apisix.plugin")
 local apisix_consumer = require("apisix.consumer")
 local tbl_deepcopy = require("apisix.core.table").deepcopy
 local setmetatable = setmetatable
@@ -81,7 +82,7 @@ local function check_forbidden_properties(conf, forbidden_properties)
 end
 
 
-function _M:check_conf(id, conf, need_id, typ, allow_time)
+function _M:check_conf(id, conf, need_id, typ, allow_time, sub_path)
     if self.name == "secrets" then
         id = typ .. "/" .. id
     end
@@ -123,21 +124,24 @@ function _M:check_conf(id, conf, need_id, typ, allow_time)
     end
 
     local conf_for_check = tbl_deepcopy(conf)
-    local ok, err = self.checker(id, conf_for_check, need_id, self.schema, {secret_type = typ})
+    local ok, err = self.checker(id, conf_for_check, need_id, self.schema,
+                                 {secret_type = typ, sub_path = sub_path})
 
+    if not ok then
+        return ok, err
+    end
+
+    -- encrypt the real conf only after a successful check; encrypting
+    -- unvalidated input can crash on malformed structures (e.g. plugins
+    -- as a string), and invalid configs are never persisted anyway
     if self.encrypt_conf then
         self.encrypt_conf(id, conf)
     end
 
-    if not ok then
-        return ok, err
-    else
-        if no_id_res[self.name] then
-            return ok
-        else
-            return need_id and id or true
-        end
+    if no_id_res[self.name] then
+        return ok
     end
+    return need_id and id or true
 end
 
 
@@ -253,7 +257,7 @@ function _M:put(id, conf, sub_path, args)
     end
 
     local need_id = not no_id_res[self.name]
-    local ok, err = self:check_conf(id, conf, need_id, typ)
+    local ok, err = self:check_conf(id, conf, need_id, typ, nil, sub_path)
     if not ok then
         return 400, err
     end
@@ -421,6 +425,13 @@ function _M:patch(id, conf, sub_path, args)
     local node_value = res_old.body.node.value
     local modified_index = res_old.body.node.modifiedIndex
 
+    -- the encrypt_fields of the stored plugin conf are ciphertext, decrypt
+    -- them before merging, otherwise the check_conf below will encrypt them
+    -- again, resulting in fields that are encrypted multiple times
+    if apisix_plugin.enable_gde() then
+        utils.decrypt_params(apisix_plugin.decrypt_conf, res_old.body)
+    end
+
     if sub_path and sub_path ~= "" then
         if self.name == "ssls" then
             if sub_path == "key" then
@@ -453,12 +464,14 @@ function _M:patch(id, conf, sub_path, args)
         utils.inject_timestamp(node_value, nil, conf)
     end
 
-    core.log.info("new conf: ", core.json.delay_encode(node_value, true))
-
     local ok, err = self:check_conf(id, node_value, true, typ, true)
     if not ok then
         return 400, err
     end
+
+    -- log after check_conf so the encrypt_fields are encrypted again and
+    -- the plaintext values decrypted above don't leak into the log
+    core.log.info("new conf: ", core.json.delay_encode(node_value, true))
 
     local ttl = nil
     if args then

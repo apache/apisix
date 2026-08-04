@@ -142,7 +142,7 @@ with open(sys.argv[3]) as f:
     sign_cert = f.read()
 with open(sys.argv[4]) as f:
     sign_key = f.read()
-api_key = "edd1c9f034335f136f87ad84b625c8f1"
+api_key = "your-admin-key"
 resp = requests.put("http://127.0.0.1:9180/apisix/admin/ssls/1", json={
     "cert": enc_cert,
     "key": enc_key,

@@ -28,6 +28,41 @@ add_block_preprocessor(sub {
     }
 });
 
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    # The plugin no longer logs the payload; reproduce the observability the
+    # tests rely on by logging each batch entry from a test-only hook.
+    my $extra_init_by_lua = <<_EOC_;
+    local bp_manager = require("apisix.utils.batch-processor-manager")
+    local core = require("apisix.core")
+    local function log_send_data(entry)
+        local data = type(entry) == "table" and core.json.encode(entry) or entry
+        core.log.info("send data to rocketmq: ", data)
+    end
+    local old_add = bp_manager.add_entry
+    bp_manager.add_entry = function(self, conf, entry, max_pending_entries)
+        local ok = old_add(self, conf, entry, max_pending_entries)
+        if ok then
+            log_send_data(entry)
+        end
+        return ok
+    end
+    local old_new = bp_manager.add_entry_to_new_processor
+    bp_manager.add_entry_to_new_processor = function(self, conf, entry, ctx, func, max_pending_entries)
+        local ok = old_new(self, conf, entry, ctx, func, max_pending_entries)
+        if ok then
+            log_send_data(entry)
+        end
+        return ok
+    end
+_EOC_
+
+    if (!defined $block->extra_init_by_lua) {
+        $block->set_value("extra_init_by_lua", $extra_init_by_lua);
+    }
+});
+
 run_tests;
 
 __DATA__

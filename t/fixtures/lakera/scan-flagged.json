@@ -1,0 +1,26 @@
+{
+    "payload": [],
+    "flagged": true,
+    "metadata": {
+        "request_uuid": "a1b2c3d4-5e6f-4a7b-8c9d-0e1f2a3b4c5d"
+    },
+    "breakdown": [
+        {
+            "project_id": "project-7539648934",
+            "policy_id": "policy-a2412e48-42eb-4e39-b6d8-8591171d48f2",
+            "detector_id": "detector-lakera-default-prompt-attack",
+            "detector_type": "prompt_attack",
+            "detected": true,
+            "result": "l1_confident",
+            "message_id": 0
+        },
+        {
+            "project_id": "project-7539648934",
+            "policy_id": "policy-a2412e48-42eb-4e39-b6d8-8591171d48f2",
+            "detector_id": "detector-lakera-default-pii",
+            "detector_type": "pii",
+            "detected": false,
+            "message_id": 0
+        }
+    ]
+}

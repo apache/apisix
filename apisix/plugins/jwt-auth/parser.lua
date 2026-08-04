@@ -32,6 +32,7 @@ local ipairs = ipairs
 local type = type
 local error = error
 local pcall = pcall
+local tostring = tostring
 
 local default_claims = {
     "nbf",
@@ -223,27 +224,69 @@ end
 
 
 function _M.verify_signature(self, key)
-    return alg_verify[self.header.alg](self.raw_header .. "." ..
-               self.raw_payload, base64_decode(self.signature), key)
+    local verifier = alg_verify[self.header.alg]
+    if not verifier then
+        return false, "unsupported algorithm: " .. tostring(self.header.alg)
+    end
+
+    local signature = base64_decode(self.signature)
+    if not signature then
+        return false, "failed to decode signature"
+    end
+
+    -- the per-algorithm verifiers assert on signature length and key validity,
+    -- so guard with pcall to turn a malformed token into a clean rejection
+    -- instead of letting the error propagate as a 500 response
+    local ok, verified, verify_err = pcall(verifier,
+        self.raw_header .. "." .. self.raw_payload, signature, key)
+    if not ok then
+        -- verifier raised: `verified` holds the caught error message
+        return false, verified
+    end
+
+    -- preserve the verifier's own (verified, err) return contract
+    return verified, verify_err
 end
 
 
 function _M.verify_claims(self, claims, conf)
-    if not claims then
-        claims = default_claims
+    -- When `claims_to_verify` is not configured (nil or an explicitly empty
+    -- array), fall back to the default claims (exp/nbf) and validate them only
+    -- if they are present in the payload. This closes the expired-token hole
+    -- while staying lenient for tokens that legitimately omit these claims.
+    -- An empty array must NOT skip validation, otherwise it reopens the bypass.
+    if not claims or #claims == 0 then
+        for _, claim_name in ipairs(default_claims) do
+            local claim = self.payload[claim_name]
+            if claim ~= nil then
+                local checker = claims_checker[claim_name]
+                if type(claim) ~= checker.type then
+                    return false, "claim " .. claim_name .. " is not a " .. checker.type
+                end
+                local ok, err = checker.check(claim, conf)
+                if not ok then
+                    return false, err
+                end
+            end
+        end
+
+        return true
     end
 
+    -- When `claims_to_verify` is explicitly configured, the listed claims are
+    -- required: they must exist in the payload and be valid.
     for _, claim_name in ipairs(claims) do
         local claim = self.payload[claim_name]
-        if claim then
-            local checker = claims_checker[claim_name]
-            if type(claim) ~= checker.type then
-                return false, "claim " .. claim_name .. " is not a " .. checker.type
-            end
-            local ok, err = checker.check(claim, conf)
-            if not ok then
-                return false, err
-            end
+        if claim == nil then
+            return false, "claim " .. claim_name .. " is missing"
+        end
+        local checker = claims_checker[claim_name]
+        if type(claim) ~= checker.type then
+            return false, "claim " .. claim_name .. " is not a " .. checker.type
+        end
+        local ok, err = checker.check(claim, conf)
+        if not ok then
+            return false, err
         end
     end
 

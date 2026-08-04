@@ -144,7 +144,7 @@ GET /compare
     "token": "${KUBERNETES_CLIENT_TOKEN}"
   },
   "watch_endpoint_slices": false,
-  "shared_size": "1m",
+  "shared_size": "64m",
   "default_weight": 50
 }
 --- more_headers
@@ -179,7 +179,7 @@ GET /compare
     "token": "${KUBERNETES_CLIENT_TOKEN}"
   },
   "watch_endpoint_slices": false,
-  "shared_size": "1m",
+  "shared_size": "64m",
   "default_weight": 50
 }
 --- more_headers
@@ -190,6 +190,11 @@ true
 
 
 === TEST 3: mixing set custom and default values
+# This block only compares the resolved configuration. Unlike the blocks around
+# it, the custom host does not point at the apiserver the CI port-forwards to
+# 127.0.0.1, so the informer's connect fails and logs an [error]. Whether that
+# lands inside this block's window depends on how long resolving the host takes,
+# so the default `no_error_log: [error]` would make this block flaky.
 --- yaml_config
 apisix:
   node_listen: 1984
@@ -223,6 +228,8 @@ GET /compare
 Content-type: application/json
 --- response_body
 true
+--- no_error_log
+[alert]
 
 
 
@@ -251,7 +258,7 @@ GET /compare
     "token": "${KUBERNETES_CLIENT_TOKEN}"
   },
   "watch_endpoint_slices": false,
-  "shared_size": "1m",
+  "shared_size": "64m",
   "default_weight": 33
 }
 --- more_headers
@@ -304,7 +311,7 @@ GET /compare
     },
     "watch_endpoint_slices": false,
     "default_weight": 50,
-    "shared_size": "1m"
+    "shared_size": "64m"
   },
   {
     "id": "release",
@@ -354,7 +361,7 @@ GET /compare
     "token": "${KUBERNETES_CLIENT_TOKEN}"
   },
   "watch_endpoint_slices": true,
-  "shared_size": "1m",
+  "shared_size": "64m",
   "default_weight": 33
 }
 --- more_headers

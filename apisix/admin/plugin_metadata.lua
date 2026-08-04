@@ -94,7 +94,10 @@ local function encrypt_conf(plugin_name, conf)
     inject_metadata_schema(plugin_object)
 
     local schema = plugin_object.metadata_schema
-    if schema['$comment'] ~= injected_mark and plugin_object.check_schema then
+    -- encrypt whenever the plugin has a real metadata schema; do not gate on
+    -- check_schema, or a plugin that validates via core.schema.check would leak
+    -- its metadata encrypt_fields in plaintext
+    if schema['$comment'] ~= injected_mark then
         plugin_encrypt_conf(plugin_name, conf, core.schema.TYPE_METADATA)
     end
 end

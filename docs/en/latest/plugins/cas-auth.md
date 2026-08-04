@@ -37,6 +37,7 @@ to do authentication, from the SP (service provider) perspective.
 
 | Name      | Type | Required      | Default | Description |
 | ----------- | ----------- | ----------- | ----------- | ----------- |
+| max_req_body_size | integer | False | 67108864 | >= 1 | Maximum request body size in bytes buffered into memory. Requests with a larger body are rejected. |
 | `idp_uri`      | string       | True      | | URI of IdP.       |
 | `cas_callback_uri`      | string       | True      | | redirect uri used to callback the SP from IdP after login or logout.       |
 | `logout_uri`      | string       | True      | | logout uri to trigger logout.       |
@@ -97,6 +98,8 @@ This process is only done once and subsequent requests are left uninterrupted.
 Once this is done, the user is redirected to the original URL they wanted to visit.
 
 Later, the user could visit `logout_uri` to start logout process. The user would be redirected to `idp_uri` to do logout.
+
+The IdP may also send a single logout (SLO) `POST` request to `cas_callback_uri`. The Plugin handles such requests itself (invalidating the matching session) and never forwards them to the upstream.
 
 Note that, `cas_callback_uri` and `logout_uri` should be
 either full qualified address (e.g. `http://127.0.0.1:9080/anything/logout`),

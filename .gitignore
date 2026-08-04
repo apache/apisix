@@ -92,3 +92,10 @@ t/node_modules/
 release/*
 
 
+# files produced when running the test suite locally; never commit these
+# redis snapshot from a locally run redis-server (limit-* tests)
+dump.rdb
+# redis persistence dirs from the docker-compose redis services (--appendonly yes)
+/data/
+# telemetry dumped by the otel collector during tests
+ci/pod/otelcol-contrib/data-otlp.json

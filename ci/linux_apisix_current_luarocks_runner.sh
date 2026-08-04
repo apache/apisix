@@ -73,7 +73,7 @@ script() {
     set_coredns
 
     # install test dependencies
-    sudo pip install requests
+    sudo pip install requests aiohttp aiohttp-sse
 
     # dismiss "maximum number of open file descriptors too small" warning
     ulimit -n 10240
