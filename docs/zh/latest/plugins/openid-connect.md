@@ -118,7 +118,7 @@ import TabItem from '@theme/TabItem';
 | client_rsa_private_key | string | 否 | | | 用于向 OP 签署 JWT 进行身份验证的客户端 RSA 私钥。当 `token_endpoint_auth_method` 为 `private_key_jwt` 时必填。 |
 | client_rsa_private_key_id | string | 否 | | | 用于计算已签名 JWT 的客户端 RSA 私钥 ID。当 `token_endpoint_auth_method` 为 `private_key_jwt` 时可选。 |
 | client_jwt_assertion_expires_in | integer | 否 | 60 | | 向 OP 进行身份验证的已签名 JWT 的有效期，单位为秒。在 `token_endpoint_auth_method` 为 `private_key_jwt` 或 `client_secret_jwt` 时使用。 |
-| client_jwt_assertion_alg | string | 否 | | | 客户端断言 JWT 的签名算法。`private_key_jwt` 默认使用 `RS256`，`client_secret_jwt` 默认使用 `HS256`。当发现文档声明 `token_endpoint_auth_signing_alg_values_supported` 时，配置值必须受 OP 支持。 |
+| client_jwt_assertion_alg | string | 否 | | ["HS256", "HS512", "RS256", "RS512", "ES256", "ES512"] | 客户端断言 JWT 的签名算法。`private_key_jwt` 默认使用 `RS256`，`client_secret_jwt` 默认使用 `HS256`。`client_secret_jwt` 需使用 `HS*` 算法，`private_key_jwt` 需使用非对称算法。当发现文档声明 `token_endpoint_auth_signing_alg_values_supported` 时，配置值还必须受 OP 支持。 |
 | client_jwt_assertion_audience | string | 否 | | | 客户端断言 JWT 的 audience。未设置时使用被调用的端点 URL。当 APISIX 通过内部 URL 访问令牌端点，但 OP 期望外部令牌端点 URL 作为 audience 时，请配置此项。 |
 | renew_access_token_on_expiry | boolean | 否 | true | | 如果为 true，则在访问令牌过期或刷新令牌可用时尝试静默续期。如果令牌续期失败，则重定向用户重新认证。 |
 | access_token_expires_in | integer | 否 | | | 当令牌端点响应中没有 `expires_in` 属性时，访问令牌的有效期，单位为秒。 |
@@ -143,6 +143,8 @@ import TabItem from '@theme/TabItem';
 | claim_validator.audience.required | boolean | 否 | false | | 如果为 true，则受众 claim 为必填项，claim 名称为 `claim` 中定义的名称。 |
 | claim_validator.audience.match_with_client_id | boolean | 否 | false | | 如果为 true，则要求受众与客户端 ID 匹配。如果受众是字符串，则必须与客户端 ID 完全匹配。如果受众是字符串数组，则至少一个值必须与客户端 ID 匹配。如果未找到匹配，将收到 `mismatched audience` 错误。OpenID Connect 规范规定了此要求，以确保令牌是为特定客户端颁发的。 |
 | claim_schema | object | 否 | | | OIDC 响应 claim 的 JSON schema。示例：`{"type":"object","properties":{"access_token":{"type":"string"}},"required":["access_token"]}` - 验证响应包含必填的字符串字段 `access_token`。 |
+
+注意：升级到此版本会改变向令牌内省端点发送客户端凭证的方式，即使插件配置没有变更。`lua-resty-openidc` 1.9.0 仅在 `introspection_endpoint_auth_method` 未设置时才将 `client_id` 和 `client_secret` 放入内省请求体，而本插件将该属性默认设置为 `client_secret_basic`，因此凭证现在只通过 `Authorization` 标头发送。如果你的 OP 从请求体中验证内省调用，请将 `introspection_endpoint_auth_method` 设置为 `client_secret_post`。
 
 注意：schema 中还定义了 `encrypt_fields = {"client_secret", "client_rsa_private_key", "dpop.private_key"}`，这意味着这些字段将在 etcd 中加密存储。详见[加密存储字段](../plugin-develop.md#加密存储字段)。
 
@@ -367,7 +369,7 @@ spec:
     "use_pkce": true,
     "token_endpoint_auth_method": "private_key_jwt",
     "client_rsa_private_key": "-----BEGIN RSA PRIVATE KEY-----\n...\n-----END RSA PRIVATE KEY-----",
-    "client_jwt_assertion_alg": "PS256",
+    "client_jwt_assertion_alg": "RS512",
     "par": {
       "enabled": true,
       "endpoint_auth_method": "private_key_jwt"

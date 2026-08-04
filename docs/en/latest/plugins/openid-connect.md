@@ -118,7 +118,7 @@ The `openid-connect` Plugin supports the integration with [OpenID Connect (OIDC)
 | client_rsa_private_key | string | False | | | Client RSA private key used to sign JWT for authentication to the OP. Required when `token_endpoint_auth_method` is `private_key_jwt`. |
 | client_rsa_private_key_id | string | False | | | Client RSA private key ID used to compute a signed JWT. Optional when `token_endpoint_auth_method` is `private_key_jwt`. |
 | client_jwt_assertion_expires_in | integer | False | 60 | | Life duration of the signed JWT for authentication to the OP, in seconds. Used when `token_endpoint_auth_method` is `private_key_jwt` or `client_secret_jwt`. |
-| client_jwt_assertion_alg | string | False | | | Signing algorithm for the client assertion JWT. Defaults to `RS256` for `private_key_jwt` and `HS256` for `client_secret_jwt`. When the discovery document advertises `token_endpoint_auth_signing_alg_values_supported`, the configured value must be supported by the OP. |
+| client_jwt_assertion_alg | string | False | | ["HS256", "HS512", "RS256", "RS512", "ES256", "ES512"] | Signing algorithm for the client assertion JWT. Defaults to `RS256` for `private_key_jwt` and `HS256` for `client_secret_jwt`. Use a `HS*` algorithm with `client_secret_jwt` and an asymmetric one with `private_key_jwt`. When the discovery document advertises `token_endpoint_auth_signing_alg_values_supported`, the configured value must also be supported by the OP. |
 | client_jwt_assertion_audience | string | False | | | Audience for the client assertion JWT. If unset, the endpoint URL being called is used. Configure this when APISIX reaches the token endpoint through an internal URL but the OP expects its external token endpoint URL as the audience. |
 | renew_access_token_on_expiry | boolean | False | true | | If true, attempt to silently renew the access token when it expires or if a refresh token is available. If the token fails to renew, redirect user for re-authentication. |
 | access_token_expires_in | integer | False | | | Lifetime of the access token in seconds if no `expires_in` attribute is present in the token endpoint response. |
@@ -143,6 +143,8 @@ The `openid-connect` Plugin supports the integration with [OpenID Connect (OIDC)
 | claim_validator.audience.required | boolean | False | false | | If true, audience claim is required and the name of the claim will be the name defined in `claim`. |
 | claim_validator.audience.match_with_client_id | boolean | False | false | | If true, require the audience to match the client ID. If the audience is a string, it must exactly match the client ID. If the audience is an array of strings, at least one of the values must match the client ID. If no match is found, you will receive a `mismatched audience` error. This requirement is stated in the OpenID Connect specification to ensure that the token is intended for the specific client. |
 | claim_schema | object | False | | | JSON schema of OIDC response claim. Example: `{"type":"object","properties":{"access_token":{"type":"string"}},"required":["access_token"]}` - validates that the response contains a required string field `access_token`. |
+
+NOTE: Upgrading to this version changes how the client credentials are sent to the token introspection endpoint, even for Plugin configurations that are not modified. `lua-resty-openidc` 1.9.0 only places `client_id` and `client_secret` in the introspection request body when `introspection_endpoint_auth_method` is unset, and this Plugin defaults that attribute to `client_secret_basic`, so the credentials are now sent only in the `Authorization` header. If your OP authenticates the introspection call from the request body, set `introspection_endpoint_auth_method` to `client_secret_post`.
 
 NOTE: `encrypt_fields = {"client_secret", "client_rsa_private_key", "dpop.private_key"}` is also defined in the schema, which means that the fields will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
 
@@ -367,7 +369,7 @@ The following example configures the authorization code flow with PAR, DPoP, PKC
     "use_pkce": true,
     "token_endpoint_auth_method": "private_key_jwt",
     "client_rsa_private_key": "-----BEGIN RSA PRIVATE KEY-----\n...\n-----END RSA PRIVATE KEY-----",
-    "client_jwt_assertion_alg": "PS256",
+    "client_jwt_assertion_alg": "RS512",
     "par": {
       "enabled": true,
       "endpoint_auth_method": "private_key_jwt"

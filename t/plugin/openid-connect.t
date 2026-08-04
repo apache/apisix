@@ -1876,7 +1876,7 @@ done
                 },
                 token_endpoint_auth_method = "private_key_jwt",
                 client_rsa_private_key = "-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAK\n-----END RSA PRIVATE KEY-----",
-                client_jwt_assertion_alg = "PS256",
+                client_jwt_assertion_alg = "RS512",
                 client_jwt_assertion_audience = "https://issuer.example.com/token",
                 session = { secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK" },
             })
@@ -2027,6 +2027,18 @@ done
                 if args.scope ~= "openid email" or not args.state then
                     ngx.status = 400
                     ngx.say([[{"error":"invalid_request"}]])
+                    return
+                end
+
+                -- only client_secret_post sends the credentials in the body;
+                -- without this the par.endpoint_auth_method mapping is not
+                -- really tested, because dropping it falls back to
+                -- token_endpoint_auth_method, which defaults to
+                -- client_secret_basic and would be accepted here too
+                if args.client_id ~= "test_client"
+                   or args.client_secret ~= "test_secret" then
+                    ngx.status = 400
+                    ngx.say([[{"error":"invalid_client"}]])
                     return
                 end
 
@@ -2324,3 +2336,213 @@ passed
 --- timeout: 20
 --- response_body
 passed
+
+
+
+=== TEST 61: Reject a client assertion algorithm resty.jwt cannot sign.
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local ok, err = plugin.check_schema({
+                client_id = "a",
+                discovery = "https://example.com/.well-known/openid-configuration",
+                token_endpoint_auth_method = "private_key_jwt",
+                client_rsa_private_key = "-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAK\n-----END RSA PRIVATE KEY-----",
+                client_jwt_assertion_alg = "PS256",
+                session = { secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK" },
+            })
+            if not ok then
+                ngx.say(err)
+            end
+            ngx.say("done")
+        }
+    }
+--- response_body
+property "client_jwt_assertion_alg" validation failed: matches none of the enum values
+done
+
+
+
+=== TEST 62: Every nested option is flattened to the name lua-resty-openidc reads.
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local jwk = {kty = "RSA", e = "AQAB", n = "abc"}
+            local conf = {
+                par = {
+                    enabled = true,
+                    endpoint = "https://example.com/par",
+                    endpoint_auth_method = "private_key_jwt",
+                },
+                dpop = {
+                    enabled = true,
+                    signing_alg = "PS256",
+                    private_key = "dpop-private-key",
+                    public_jwk = jwk,
+                },
+            }
+            plugin._flatten_openidc_options(conf)
+
+            ngx.say(conf.use_par == true)
+            ngx.say(conf.pushed_authorization_request_endpoint
+                    == "https://example.com/par")
+            ngx.say(conf.pushed_authorization_request_endpoint_auth_method
+                    == "private_key_jwt")
+            ngx.say(conf.use_dpop == true)
+            ngx.say(conf.dpop_signing_alg == "PS256")
+            ngx.say(conf.dpop_private_key == "dpop-private-key")
+            ngx.say(conf.dpop_public_jwk == jwk)
+            -- the nested tables must not survive into the opts handed to
+            -- lua-resty-openidc
+            ngx.say(conf.par == nil)
+            ngx.say(conf.dpop == nil)
+        }
+    }
+--- response_body
+true
+true
+true
+true
+true
+true
+true
+true
+true
+
+
+
+=== TEST 63: A conf without par or dpop is left alone by the flattening.
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local conf = {client_id = "a"}
+            plugin._flatten_openidc_options(conf)
+
+            ngx.say(conf.use_par == nil)
+            ngx.say(conf.use_dpop == nil)
+            ngx.say(conf.dpop_public_jwk == nil)
+            ngx.say(conf.client_id == "a")
+        }
+    }
+--- response_body
+true
+true
+true
+true
+
+
+
+=== TEST 64: Introspection sends the client credentials per introspection_endpoint_auth_method.
+--- http_config
+    server {
+        listen 16969;
+        server_name localhost;
+
+        location /.well-known/openid-configuration {
+            content_by_lua_block {
+                ngx.header.content_type = "application/json"
+                ngx.say([[{
+                    "issuer": "http://127.0.0.1:16969",
+                    "authorization_endpoint": "http://127.0.0.1:16969/authorize",
+                    "token_endpoint": "http://127.0.0.1:16969/token",
+                    "userinfo_endpoint": "http://127.0.0.1:16969/userinfo",
+                    "jwks_uri": "http://127.0.0.1:16969/jwks"
+                }]])
+            }
+        }
+
+        # lua-resty-openidc 1.9.0 only puts the credentials in the POST body
+        # when introspection_endpoint_auth_method is nil, and this Plugin
+        # defaults it to client_secret_basic. Report where they actually
+        # arrived so both halves of that behavior are pinned.
+        location /introspect {
+            content_by_lua_block {
+                ngx.req.read_body()
+                local args = ngx.req.get_post_args()
+                local in_body = args.client_id == "test_client"
+                                and args.client_secret == "test_secret"
+                local expected = "Basic " .. ngx.encode_base64(
+                    ngx.escape_uri("test_client") .. ":"
+                    .. ngx.escape_uri("test_secret"))
+                local in_header = ngx.var.http_authorization == expected
+
+                ngx.header.content_type = "application/json"
+                ngx.say([[{"active":true,"body":]] .. tostring(in_body)
+                        .. [[,"header":]] .. tostring(in_header) .. [[}]])
+            }
+        }
+    }
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local http = require("resty.http")
+
+            local function probe(auth_method, token)
+                local conf = [=[{
+                    "plugins": {
+                        "openid-connect": {
+                            "client_id": "test_client",
+                            "client_secret": "test_secret",
+                            "discovery": "http://127.0.0.1:16969/.well-known/openid-configuration",
+                            "introspection_endpoint": "http://127.0.0.1:16969/introspect",
+                            "bearer_only": true,
+                            "ssl_verify": false,
+                            "timeout": 10,
+                            "set_userinfo_header": true]=]
+                if auth_method then
+                    conf = conf .. [=[,
+                            "introspection_endpoint_auth_method": "]=]
+                           .. auth_method .. [=["]=]
+                end
+                conf = conf .. [=[
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {"127.0.0.1:1980": 1},
+                        "type": "roundrobin"
+                    },
+                    "uri": "/uri"
+                }]=]
+
+                local code = t('/apisix/admin/routes/1', ngx.HTTP_PUT, conf)
+                if code >= 300 then
+                    return "route failed: " .. code
+                end
+
+                local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/uri"
+                local res, err = http.new():request_uri(uri, {
+                    method = "GET",
+                    headers = {["Authorization"] = "Bearer " .. token},
+                })
+                if not res then
+                    return "request failed: " .. err
+                end
+                -- the introspection result reaches the upstream base64-encoded
+                -- in X-Userinfo; /uri echoes the request headers back
+                local encoded = res.body:match("x%-userinfo: ([%w+/=]+)")
+                if not encoded then
+                    return "no x-userinfo, status " .. res.status
+                end
+                local core = require("apisix.core")
+                local seen = core.json.decode(ngx.decode_base64(encoded))
+                -- assert on the decoded fields, not on the key order the
+                -- library happens to re-encode them in
+                return "body=" .. tostring(seen.body)
+                       .. " header=" .. tostring(seen.header)
+            end
+
+            -- the default is client_secret_basic, so the body carries nothing
+            ngx.say(probe(nil, "tok-default"))
+            ngx.say(probe("client_secret_basic", "tok-basic"))
+            ngx.say(probe("client_secret_post", "tok-post"))
+        }
+    }
+--- timeout: 10s
+--- response_body
+body=false header=true
+body=false header=true
+body=true header=false

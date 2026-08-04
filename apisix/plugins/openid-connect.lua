@@ -454,9 +454,17 @@ local schema = {
             type = "integer",
             default = 60
         },
+        -- resty.jwt signs the client assertion and raises an uncaught Lua
+        -- error for an algorithm it cannot handle, so an unconstrained value
+        -- would surface as a 500 per request instead of a rejected config.
+        -- lua-resty-openidc depends on lua-resty-jwt, which supports more
+        -- algorithms, but it installs the same resty/jwt.lua as the
+        -- api7-lua-resty-jwt this rockspec pins and luarocks leaves the
+        -- pinned one in place either way, so the effective set is this one.
         client_jwt_assertion_alg = {
             description = "Signing algorithm for the client assertion JWT.",
-            type = "string"
+            type = "string",
+            enum = {"HS256", "HS512", "RS256", "RS512", "ES256", "ES512"}
         },
         client_jwt_assertion_audience = {
             description = "Audience for the client assertion JWT.",
@@ -567,6 +575,7 @@ local _M = {
     name = plugin_name,
     schema = schema,
     _build_session_opts = build_session_opts,
+    _flatten_openidc_options = flatten_openidc_options,
 }
 
 function _M.check_schema(conf)
