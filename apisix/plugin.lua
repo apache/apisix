@@ -403,6 +403,18 @@ local function load(plugin_names, wasm_plugin_names)
             destroy_plugin(plugin, http_plugin_type(plugin))
         end
 
+        -- drop what this aborted reload cached: a plugin the reload introduces
+        -- has no pkg_snapshot entry, so restoring the snapshot alone would
+        -- leave its module in package.loaded. Phase 1 of the next reload only
+        -- drops the modules of the live set, which does not include it, so
+        -- require() would keep returning the stale module even after the
+        -- operator fixed the file on disk.
+        for _, plugin in ipairs(new_plugins) do
+            if plugin.type ~= "wasm" then
+                pkg_loaded[plugin_pkg_name(plugin.name, PLUGIN_TYPE_HTTP)] = nil
+            end
+        end
+
         for pkg_name, mod in pairs(pkg_snapshot) do
             pkg_loaded[pkg_name] = mod or nil
         end
@@ -504,6 +516,14 @@ local function load_stream(plugin_names)
     if load_err then
         for i = inited, 1, -1 do
             destroy_plugin(new_plugins[i], PLUGIN_TYPE_STREAM)
+        end
+
+        -- see load(): the modules this aborted reload cached have to go, or a
+        -- later reload would not re-read them from disk
+        if has_lifecycle(PLUGIN_TYPE_STREAM) then
+            for _, plugin in ipairs(new_plugins) do
+                pkg_loaded[plugin_pkg_name(plugin.name, PLUGIN_TYPE_STREAM)] = nil
+            end
         end
 
         for pkg_name, mod in pairs(pkg_snapshot) do

@@ -242,6 +242,11 @@ plugins:
         local plugin = require("apisix.plugin")
         ngx.say("reload-probe still live: ",
                 plugin.plugins_hash["reload-probe"] ~= nil)
+
+        -- the module the aborted reload pulled in must not stay cached, or a
+        -- fixed plugin file would not be re-read by the next reload
+        ngx.say("bad-init still cached: ",
+                package.loaded["apisix.plugins.reload-bad-init"] ~= nil)
     }
 }
 --- request
@@ -251,6 +256,7 @@ after start: init=1 destroy=0
 reload: 500
 after rollback: init=2 destroy=1 destroy_without_init=0
 reload-probe still live: true
+bad-init still cached: false
 --- timeout: 15
 --- error_log eval
 qr/reload-bad-init: init\(\) boom/
