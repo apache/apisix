@@ -52,6 +52,36 @@ function _M.incr(self, key, delta, expiry)
     return new_value
 end
 
+-- Counterpart of the redis store's atomic check. Shared dict ops don't yield,
+-- so get/decide/incr can't interleave within a worker. They aren't atomic
+-- across workers though, so a concurrent burst may admit a few extra requests
+-- at a window boundary. Best-effort by design; the redis store is exact.
+function _M.check_and_incr(self, current_key, last_key, cost, limit,
+                           window_size, remaining_time, expiry)
+    local dict = self.dict
+    local last = dict:get(last_key) or 0
+    if last > limit then
+        last = limit
+    end
+
+    local cur = dict:get(current_key) or 0
+    local estimated = last / window_size * remaining_time + cur
+    if cur >= limit or estimated >= limit then
+        return {0, cur, last}
+    end
+
+    local new, err, forcible = dict:incr(current_key, cost, 0, expiry)
+    if err then
+        return nil, err
+    end
+
+    if forcible then
+        log.warn("shared dictionary is full, removed valid key(s) to store the new one")
+    end
+
+    return {1, new, last}
+end
+
 function _M.get(self, key)
     local value, err = self.dict:get(key)
     if not value then

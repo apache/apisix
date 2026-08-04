@@ -40,6 +40,7 @@ local schema = {
             enum = {"default", "origin"},
         },
         log_format = {type = "object"},
+        log_format_extra = {type = "object"},
         -- deprecated, use "brokers" instead
         broker_list = {
             type = "object",
@@ -87,6 +88,16 @@ local schema = {
                 required = {"host", "port"},
             },
             uniqueItems = true,
+        },
+        tls = {
+            type = "object",
+            description = "tls config for connecting to kafka brokers",
+            properties = {
+                verify = {
+                    type = "boolean",
+                    default = false,
+                },
+            },
         },
         kafka_topic = {type = "string"},
         producer_type = {
@@ -146,6 +157,9 @@ local schema = {
 local metadata_schema = {
     type = "object",
     properties = {
+        log_format_extra = {
+            type = "object"
+        },
         log_format = {
             type = "object"
         },
@@ -175,6 +189,8 @@ function _M.check_schema(conf, schema_type)
     if not ok then
         return nil, err
     end
+
+    core.utils.check_tls_bool({"tls.verify"}, conf, plugin_name)
     return log_util.check_log_schema(conf)
 end
 
@@ -275,6 +291,10 @@ function _M.log(conf, ctx)
     broker_config["flush_time"] = conf.producer_time_linger * 1000
     broker_config["refresh_interval"] = conf.meta_refresh_interval * 1000
     broker_config["api_version"] = conf.api_version
+    if conf.tls then
+        broker_config["ssl"] = true
+        broker_config["ssl_verify"] = conf.tls.verify
+    end
 
     local prod, err = core.lrucache.plugin_ctx(lrucache, ctx, nil, create_producer,
                                                broker_list, broker_config, conf.cluster_name)

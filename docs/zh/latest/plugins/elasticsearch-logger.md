@@ -47,7 +47,7 @@ description: elasticsearch-logger Plugin 将请求和响应日志批量推送到
 | auth | object | 否 | |              | Elasticsearch [身份验证](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) 配置。 |
 | auth.username | string | 否 | |              | Elasticsearch [身份验证](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) 用户名​​。当配置 `auth` 时必填，需与 `auth.password` 成对配置。 |
 | auth.password | string | 否 | |              | Elasticsearch [身份验证](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) 密码。当配置 `auth` 时必填，需与 `auth.username` 成对配置。该密钥在存储到 etcd 之前会使用 AES 加密。 |
-| headers | object | 否 | |              | 自定义 HTTP 请求标头，以键值对形式包含在发送给 Elasticsearch 的请求中。可作为 `auth` 的替代或补充，用于身份验证和其他目的。在 APISIX 3.16.0 中可用。 |
+| headers | object | 否 | |              | 自定义 HTTP 请求标头，以键值对形式包含在发送给 Elasticsearch 的请求中。可作为 `auth` 的替代或补充，用于身份验证和其他目的。这些值在存储到 etcd 之前会使用 AES 加密。在 APISIX 3.16.0 中可用。 |
 | ssl_verify | boolean | 否 | true |              | 如果为 true，则执行 SSL 验证。 |
 | timeout | integer | 否 | 10 |              | Elasticsearch 发送数据超时（秒）。 |
 | include_req_body | boolean | 否 | false |              | 如果为 true，则将请求主体包含在日志中。请注意，如果请求主体太大而无法保存在内存中，则由于 NGINX 的限制而无法记录。 |
@@ -57,7 +57,7 @@ description: elasticsearch-logger Plugin 将请求和响应日志批量推送到
 | include_resp_body_expr | array[array] | 否 | |              | 一个或多个条件的数组，形式为 [lua-resty-expr](https://github.com/api7/lua-resty-expr)。在 `include_resp_body` 为 true 时使用。仅当此处配置的表达式计算结果为 true 时，才会记录响应主体。 |
 | max_resp_body_bytes | integer | 否 | 524288 | >=1          | 记录响应主体的最大字节数。如果响应主体超过此值，则会在记录前截断。在 APISIX 3.16.0 中可用。 |
 
-注意：schema 中还定义了 `encrypt_fields = {"auth.password"}`，这意味着该字段将会被加密存储在 etcd 中。具体参考 [加密存储字段](../plugin-develop.md#加密存储字段)。
+注意：schema 中还定义了 `encrypt_fields = {"auth.password", "headers"}`，这意味着这些字段将会被加密存储在 etcd 中。具体参考 [加密存储字段](../plugin-develop.md#加密存储字段)。
 
 本插件支持使用批处理器来聚合并批量处理条目（日志和数据）。这样可以避免插件频繁地提交数据，默认设置情况下批处理器会每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解或自定义批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置) 配置部分。
 

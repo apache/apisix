@@ -48,14 +48,15 @@ function _M.redact_params(params)
         redacted.headers = safe_headers
     end
 
-    return core.json.delay_encode(redacted, true)
+    -- return a raw table; call sites wrap it once in delay_encode
+    return redacted
 end
 
 
 function _M.redact_extra_opts(extra_opts)
     local redacted = core.table.deepcopy(extra_opts)
     redacted.auth = nil
-    return core.json.delay_encode(redacted, true)
+    return redacted
 end
 
 

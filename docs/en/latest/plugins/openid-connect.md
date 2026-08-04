@@ -63,7 +63,8 @@ The `openid-connect` Plugin supports the integration with [OpenID Connect (OIDC)
 | token_signing_alg_values_expected | string | False | | | Algorithm used for signing JWT, such as `RS256`. |
 | set_access_token_header | boolean | False | true | | If true, set the access token in a request header. By default, the `X-Access-Token` header is used. |
 | access_token_in_authorization_header | boolean | False | false | | If true and if `set_access_token_header` is also true, set the access token in the `Authorization` header. |
-| set_id_token_header | boolean | False | true | | If true and if the ID token is available, set the value in the `X-ID-Token` request header. |
+| set_id_token_header | boolean | False | true | | If true and if the ID token is available, set the value in the `X-ID-Token` request header. Note: this header contains `base64(JSON(decoded_claims))` and carries no cryptographic signature. |
+| set_raw_id_token_header | boolean | False | false | | If true and if the raw signed ID token JWT is available, set the value in the `X-Raw-ID-Token` request header. Unlike `X-ID-Token`, this header contains the original RS256-signed JWT from the identity provider and can be verified against the provider's JWKS endpoint. The plugin automatically persists the raw JWT in the session when this option is enabled. |
 | set_userinfo_header | boolean | False | true | | If true and if user info data is available, set the value in the `X-Userinfo` request header. |
 | set_refresh_token_header | boolean | False | false | | If true and if the refresh token is available, set the value in the `X-Refresh-Token` request header. |
 | session | object | False | | | Session configuration used when `bearer_only` is `false` and the Plugin uses Authorization Code flow. |
@@ -411,6 +412,16 @@ This section covers a few commonly seen issues when working with this Plugin to 
 ### APISIX Cannot Connect to OpenID Provider
 
 If APISIX fails to resolve or cannot connect to the OpenID provider, double check the DNS settings in your configuration file `config.yaml` and modify as needed.
+
+### State Mismatch in the Authorization Callback
+
+The session holds the state of a single login flow. If the same browser starts a second flow before the first one completes — for example by opening a protected page in another tab — the second flow overwrites the state, and the first tab's callback arrives with a state that no longer matches:
+
+```text
+state from argument does not match state restored from session
+```
+
+For a `GET` callback, the Plugin responds with `302` back to the URL the user was originally trying to reach, so a fresh authentication flow starts from there. When the OpenID provider still holds an SSO session, this completes without any user interaction. Callbacks using other request methods, and callbacks carrying no session at all, still fail with `500`.
 
 ### No Session State Found
 

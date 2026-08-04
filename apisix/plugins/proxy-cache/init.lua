@@ -50,6 +50,14 @@ end
 local schema = {
     type = "object",
     properties = {
+        max_resp_body_size = {
+            type = "integer",
+            minimum = 1,
+            default = 67108864,
+            description = "maximum response body size in bytes buffered into "
+                       .. "memory by the memory cache strategy; larger "
+                       .. "responses are streamed through without being cached",
+        },
         cache_zone = {
             type = "string",
             minLength = 1,

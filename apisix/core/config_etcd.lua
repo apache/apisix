@@ -21,7 +21,6 @@
 
 local table        = require("apisix.core.table")
 local config_local = require("apisix.core.config_local")
-local config_util  = require("apisix.core.config_util")
 local log          = require("apisix.core.log")
 local json         = require("apisix.core.json")
 local etcd_apisix  = require("apisix.core.etcd")
@@ -546,7 +545,19 @@ local function sync_status_to_shdict(status)
 end
 
 
-local function load_full_data(self, dir_res, headers)
+local function get_prev_item(prev_values, prev_values_hash, key)
+    if not prev_values or not prev_values_hash then
+        return nil
+    end
+
+    -- deleted items are tombstoned as `false` in the values array and removed
+    -- from the hash by the watch path, so a hash hit is always a live item
+    local idx = prev_values_hash[key]
+    return idx and prev_values[idx] or nil
+end
+
+
+local function load_full_data(self, dir_res, headers, prev_values, prev_values_hash)
     local err
     local changed = false
 
@@ -578,10 +589,20 @@ local function load_full_data(self, dir_res, headers)
             insert_tab(self.values, item)
             self.values_hash[self.key] = #self.values
 
-            item.clean_handlers = {}
-
             if self.filter then
                 self.filter(item)
+            end
+
+        elseif item.value ~= nil then
+            -- new data exists but is invalid: keep the previous value like the
+            -- incremental watch path does. An absent value (deleted key) must
+            -- not be resurrected, hence the `item.value ~= nil` guard.
+            local prev_item = get_prev_item(prev_values, prev_values_hash, self.key)
+            if prev_item then
+                log.warn("failed to check item data of [", self.key,
+                         "], keep the previous configuration, err: ", err)
+                insert_tab(self.values, prev_item)
+                self.values_hash[self.key] = #self.values
             end
         end
 
@@ -601,8 +622,10 @@ local function load_full_data(self, dir_res, headers)
         for _, item in ipairs(values) do
             local key = short_key(self, item.key)
             local data_valid = true
+            err = nil
             if type(item.value) ~= "table" then
                 data_valid = false
+                err = "invalid item data, it should be an object"
                 log.error("invalid item data of [", self.key .. "/" .. key,
                           "], val: ", item.value,
                           ", it should be an object")
@@ -632,10 +655,21 @@ local function load_full_data(self, dir_res, headers)
                 self.values_hash[key] = #self.values
 
                 item.value.id = key
-                item.clean_handlers = {}
 
                 if self.filter then
                     self.filter(item)
+                end
+
+            else
+                local prev_item = get_prev_item(prev_values, prev_values_hash, key)
+                if prev_item then
+                    -- keep serving with the last valid configuration instead of
+                    -- silently dropping the whole item on a full reload, see the
+                    -- incremental path in sync_data for the same semantics
+                    log.warn("failed to check item data of [", self.key, "/", key,
+                             "], keep the previous configuration, err: ", err)
+                    insert_tab(self.values, prev_item)
+                    self.values_hash[key] = #self.values
                 end
             end
 
@@ -691,16 +725,15 @@ local function sync_data(self)
         log.debug("readdir key: ", self.key, " res: ",
                   json.delay_encode(dir_res))
 
-        if self.values then
-            for i, val in ipairs(self.values) do
-                config_util.fire_all_clean_handlers(val)
-            end
+        -- hand the previous values over to load_full_data so that an item whose
+        -- new data fails the validation can keep serving with its old value,
+        -- consistent with the incremental watch path. The clean handlers of the
+        -- replaced / deleted items are fired inside load_full_data.
+        local prev_values, prev_values_hash = self.values, self.values_hash
+        self.values = nil
+        self.values_hash = nil
 
-            self.values = nil
-            self.values_hash = nil
-        end
-
-        load_full_data(self, dir_res, headers)
+        load_full_data(self, dir_res, headers, prev_values, prev_values_hash)
 
         return true
     end
@@ -785,18 +818,12 @@ local function sync_data(self)
 
         local pre_index = self.values_hash[key]
         if pre_index then
-            local pre_val = self.values[pre_index]
-            if pre_val then
-                config_util.fire_all_clean_handlers(pre_val)
-            end
-
             if res.value then
                 if not self.single_item then
                     res.value.id = key
                 end
 
                 self.values[pre_index] = res
-                res.clean_handlers = {}
                 log.info("update data by key: ", key)
 
             else
@@ -807,7 +834,6 @@ local function sync_data(self)
             end
 
         elseif res.value then
-            res.clean_handlers = {}
             insert_tab(self.values, res)
             self.values_hash[key] = #self.values
             if not self.single_item then

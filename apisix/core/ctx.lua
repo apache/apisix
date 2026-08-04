@@ -45,6 +45,8 @@ local pcall        = pcall
 
 local _M = {version = 0.2}
 local GRAPHQL_DEFAULT_MAX_SIZE       = 1048576               -- 1MiB
+local DEFAULT_MAX_POST_ARGS_SIZE     = 64                    -- 64MiB
+local MB                             = 1024 * 1024
 local GRAPHQL_REQ_DATA_KEY           = "query"
 local GRAPHQL_REQ_METHOD_HTTP_GET    = "GET"
 local GRAPHQL_REQ_METHOD_HTTP_POST   = "POST"
@@ -129,6 +131,27 @@ local function parse_graphql(ctx)
 end
 
 
+-- read the cap (in bytes) for parsing post_arg.* bodies; 0 disables the limit
+local function get_max_post_args_readable_size()
+    local local_conf, err = config_local.local_conf()
+    if not local_conf then
+        log.error("failed to get local conf: ", err)
+        return DEFAULT_MAX_POST_ARGS_SIZE * MB
+    end
+
+    local size = core_tab.try_read_attr(local_conf, "apisix", "max_post_args_readable_size")
+    if size == nil then
+        size = DEFAULT_MAX_POST_ARGS_SIZE
+    end
+
+    if size == 0 then
+        return nil
+    end
+
+    return size * MB
+end
+
+
 local function get_parsed_graphql()
     local ctx = ngx.ctx.api_ctx
     if ctx._graphql then
@@ -190,6 +213,7 @@ do
     local ngx_var_names = {
         upstream_scheme            = true,
         upstream_host              = true,
+        upstream_unresolved_host   = true,
         upstream_upgrade           = true,
         upstream_connection        = true,
         upstream_uri               = true,
@@ -244,6 +268,8 @@ do
         route_name = true,
         service_id = true,
         service_name = true,
+        -- the upstream host before DNS resolution (configured domain/host)
+        upstream_unresolved_host = true,
     }
 
     local mt = {
@@ -321,7 +347,8 @@ do
             elseif core_str.has_prefix(key, "post_arg.") then
                 -- trim the "post_arg." prefix (10 characters)
                 local arg_key = sub_str(key, 10)
-                local parsed_body, err = request.get_request_body_table(t._ctx)
+                local max_size = get_max_post_args_readable_size()
+                local parsed_body, err = request.get_request_body_table(t._ctx, nil, max_size)
                 if not parsed_body then
                     log.warn("failed to fetch post args value by key: ", arg_key, " error: ", err)
                     return nil

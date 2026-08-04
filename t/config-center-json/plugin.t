@@ -74,7 +74,7 @@ GET /t
 --- response_body
 hello world
 --- error_log
-use config_provider: yaml
+use config_provider: json
 load(): loaded plugin and sort by priority: 3000 name: ip-restriction
 load(): loaded plugin and sort by priority: 2510 name: jwt-auth
 load_stream(): loaded stream plugin and sort by priority: 1000 name: mqtt-proxy
@@ -96,7 +96,7 @@ apisix:
 deployment:
     role: data_plane
     role_data_plane:
-        config_provider: yaml
+        config_provider: json
 plugins:
     - ip-restriction
     - jwt-auth
@@ -213,7 +213,7 @@ apisix:
 deployment:
     role: data_plane
     role_data_plane:
-        config_provider: yaml
+        config_provider: json
 plugins:
     - ip-restriction
     - jwt-auth
@@ -286,6 +286,6 @@ GET /t
 --- response_body
 hello world
 --- error_log
-use config_provider: yaml
+use config_provider: json
 load(): new plugins: {}
 load_stream(): new plugins: {}
