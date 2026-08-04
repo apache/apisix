@@ -999,18 +999,20 @@ function _M.rewrite(plugin_conf, ctx)
                 return 401
             end
 
-            -- Stale authorization callback: the state in the callback does not
-            -- match the one in the session, e.g. the same browser started
-            -- another login flow in a second tab and overwrote the state, or an
-            -- already completed callback was replayed. The client is a browser
+            -- Stale authorization callback: the session holds no authorization
+            -- state for the state in the callback, e.g. an already completed
+            -- callback was replayed, or the state was pruned after too many
+            -- concurrent flows. (Concurrent logins in several tabs are handled
+            -- by resty.openidc itself since 1.9.0, which keeps one
+            -- authorization state per in-flight flow.) The client is a browser
             -- mid-navigation, so instead of a dead-end 500, send it back to the
             -- original URL that resty.openidc returns alongside the error: a
             -- fresh flow starts from there and completes without any user
             -- interaction while the ID provider still holds an SSO session.
             if err == STATE_MISMATCH_ERR and target_url
                and ngx.req.get_method() == "GET" then
-                core.log.warn("OIDC state mismatch (concurrent login flows or ",
-                              "replayed callback), restarting the authentication flow")
+                core.log.warn("OIDC state mismatch (replayed or pruned ",
+                              "callback), restarting the authentication flow")
                 core.response.set_header("Location", target_url)
                 return 302
             end
