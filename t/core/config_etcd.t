@@ -559,10 +559,8 @@ nginx_config:
                ngx.sleep(1)
             end
 
-            -- The watch has timed out and restarted several times by now. Assert
-            -- it still delivers events for the watched prefix: the other
-            -- assertion here is the absence of a log line, which would also hold
-            -- if the watch were broken outright.
+            -- The only other assertion here is that a log line is absent, which
+            -- would also hold if the watch were broken outright. So check delivery.
             local _, err = etcd_cli:set("/apisix/routes/after-timeout", {
                 id = "after-timeout",
                 uri = "/after-timeout",
@@ -574,9 +572,7 @@ nginx_config:
                 ngx.say("failed to set route: ", err)
                 return
             end
-            -- poll rather than sleep a fixed amount: delivery is normally
-            -- immediate, and a fixed wait would only be a guess about how slow
-            -- the etcd round trip can get on a loaded CI machine
+            -- polled, not slept: a fixed wait would just guess at CI latency
             local delivered = false
             for _ = 1, 25 do
                 ngx.sleep(0.2)
@@ -946,9 +942,8 @@ nginx_config:
             local obj = core.config.fetch_created_obj("/global_rules")
             local before_version = obj.conf_version
 
-            -- Two independent probes. A reload always builds a fresh `values`
-            -- array, so losing this one proves the reload actually ran; the
-            -- incremental path only mutates elements and would keep it.
+            -- A reload always builds a fresh `values` array, so losing this probe
+            -- proves it ran; the incremental path only mutates elements.
             obj.values.array_probe = "old"
             -- The items inside must survive: reusing them is the whole point.
             for _, item in ipairs(obj.values) do
@@ -957,13 +952,10 @@ nginx_config:
                 end
             end
 
-            -- Arm the recovery path taken after a `compacted` error, then write
-            -- a second rule. sync_data is parked in waitdir, so the write is
-            -- what wakes it: the incremental path adds /2 and bumps
-            -- conf_version once, and the next sync_data round reaches the
-            -- need_reload branch. By then /1 and /2 are both in memory at the
-            -- revisions etcd reports, so the reload has nothing to change and
-            -- must not bump conf_version a second time.
+            -- Arm the recovery path taken after `compacted`. sync_data is parked
+            -- in waitdir, so the write below is what wakes it: /2 arrives
+            -- incrementally (+1), then the reload runs with /1 and /2 already in
+            -- memory at the revisions etcd reports, so it must not bump again.
             obj.need_reload = true
             local _, err = etcd_cli:set("/apisix/global_rules/2", {
                 id = "2",
@@ -1049,11 +1041,9 @@ nginx_config:
             local obj = core.config.fetch_created_obj("/global_rules")
             obj.values.array_probe = "old"
 
-            -- An item that is live in memory but gone from etcd, so the reload
-            -- has to drop it. Every surviving key is untouched and therefore
-            -- reused, so without an explicit deletion check `changed` would
-            -- stay false, conf_version would not move, and the routers would
-            -- go on serving the dropped item.
+            -- Live in memory, gone from etcd. Every surviving key is untouched
+            -- and therefore reused, so without an explicit deletion check
+            -- conf_version would not move and the routers would keep serving it.
             local ghost = {
                 key = "/apisix/global_rules/ghost",
                 modifiedIndex = 1,

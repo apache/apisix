@@ -197,13 +197,9 @@ local function do_run_watch(premature)
     opts.need_cancel = true
     opts.start_revision = watch_ctx.rev
 
-    -- Do not advance start_revision on a watch timeout. A timeout only means
-    -- that no bytes arrived for watch_timeout seconds; it cannot tell an idle
-    -- prefix apart from a stream that established and then died silently. In
-    -- the latter case etcd has already written the pending events into the
-    -- dead stream, so moving the revision forward skips them for good, and the
-    -- loss never heals: the next start revision is fresh, so compaction is not
-    -- triggered and need_reload is never set. See #13067.
+    -- A watch timeout must not advance start_revision: it cannot tell an idle
+    -- prefix from a stream that died silently, and skipping ahead loses the
+    -- events etcd already wrote into that stream. See #13067.
     log.info("restart watchdir: start_revision=", opts.start_revision)
 
     local res_func, err, http_cli = watch_ctx.cli:watchdir(watch_ctx.prefix, opts)
@@ -550,8 +546,7 @@ end
 local function load_full_data(self, dir_res, headers, prev_values, prev_values_hash)
     local err
     local changed = false
-    -- how many of the previous keys are still present, used to detect deletions
-    local matched_prev = 0
+    local prev_keys_still_present = 0
 
     if self.single_item then
         self.values = new_tab(1, 0)
@@ -615,16 +610,13 @@ local function load_full_data(self, dir_res, headers, prev_values, prev_values_h
             local key = short_key(self, item.key)
             local prev_item = get_prev_item(prev_values, prev_values_hash, key)
             if prev_item then
-                matched_prev = matched_prev + 1
+                prev_keys_still_present = prev_keys_still_present + 1
             end
 
-            -- Nothing changed for this key, so reuse the item we already have
-            -- instead of rebuilding it. This keeps the object identity stable,
-            -- which matters because downstream caches are keyed on it, and it
-            -- leaves `changed` alone so that a reload which changed nothing
-            -- does not bump conf_version and rebuild every router.
-            -- Same semantics as the incremental watch path in sync_data, which
-            -- only re-runs the checker and filter for the keys that changed.
+            -- Deliberately leaves `changed` alone, so a reload that changed
+            -- nothing does not bump conf_version and rebuild every router.
+            -- Same semantics as sync_data, which re-runs the checker and filter
+            -- only for the keys that changed.
             if prev_item and prev_item.modifiedIndex == item.modifiedIndex then
                 insert_tab(self.values, prev_item)
                 self.values_hash[key] = #self.values
@@ -686,12 +678,10 @@ local function load_full_data(self, dir_res, headers, prev_values, prev_values_h
             ::continue::
         end
 
-        -- Keys present in the previous snapshot but absent now were deleted
-        -- while we were not watching. Every surviving key can be untouched and
-        -- still leave us with a changed configuration, so this has to be
-        -- checked separately or a reload that only deletes would keep serving
-        -- the removed items.
-        if prev_values_hash and matched_prev < nkeys(prev_values_hash) then
+        -- A deletion leaves every surviving key untouched, so it has to be
+        -- detected separately or a reload that only deletes would keep
+        -- serving the removed items.
+        if prev_values_hash and prev_keys_still_present < nkeys(prev_values_hash) then
             changed = true
         end
     end
