@@ -632,6 +632,11 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
         end
         sse_parts = {remainder}
         ctx.llm_response_contents_in_chunk = {}
+        -- Bumped with every reset so body_filter hooks can tell which upstream
+        -- chunk the texts above belong to. A converter dispatches one upstream
+        -- chunk as several downstream chunks, running those hooks more than
+        -- once for the same texts.
+        ctx.llm_response_chunk_seq = (ctx.llm_response_chunk_seq or 0) + 1
         local converted_chunks = {}
 
         for _, event in ipairs(events) do
