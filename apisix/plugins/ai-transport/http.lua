@@ -24,11 +24,80 @@ local ngx_now = ngx.now
 local pairs = pairs
 local ipairs = ipairs
 local pcall = pcall
+local require = require
 local type = type
 local str_lower = string.lower
 local tostring = tostring
 
+local FFI_CLIENT_MODULE = "resty.ngx_http_ffi_client"
+
 local _M = {}
+
+local ffi_client
+local ffi_client_resolved
+
+
+--- Pick the outbound HTTP client.
+-- `ngx_http_ffi_client` is a C client with the same object API as
+-- lua-resty-http and roughly a third of its outbound CPU cost, but it only
+-- exists when the gateway runtime was built with the module. It is preferred
+-- whenever present, and lua-resty-http stays the fallback.
+-- `plugin_attr.ai-proxy.http_client` forces the choice: "auto" (default),
+-- "ffi" or "lua-resty-http".
+-- Resolved once per worker, on first request, because local_conf is not
+-- readable while the module is still loading.
+local function resolve_ffi_client()
+    if ffi_client_resolved then
+        return ffi_client
+    end
+    ffi_client_resolved = true
+
+    local local_conf = core.config.local_conf()
+    local want = core.table.try_read_attr(local_conf, "plugin_attr",
+                                          "ai-proxy", "http_client") or "auto"
+
+    if want == "lua-resty-http" then
+        core.log.info("ai transport pinned to lua-resty-http")
+        return nil
+    end
+
+    local ok, mod = pcall(require, FFI_CLIENT_MODULE)
+    if not ok or type(mod) ~= "table" then
+        if want == "ffi" then
+            core.log.error("plugin_attr.ai-proxy.http_client is \"ffi\" but ",
+                           FFI_CLIENT_MODULE, " is missing: ", mod)
+        else
+            core.log.info(FFI_CLIENT_MODULE, " is not available, ",
+                          "using lua-resty-http")
+        end
+        return nil
+    end
+
+    ffi_client = mod
+
+    return ffi_client
+end
+
+
+--- Create an HTTP client, preferring the FFI one.
+-- The Lua half of `ngx_http_ffi_client` loads even when the C module is not
+-- compiled into the runtime; new() is what reports that, so a failure here
+-- falls back for the rest of the worker's life.
+local function new_client()
+    local client = resolve_ffi_client()
+    if client then
+        local httpc, err = client.new()
+        if httpc then
+            return httpc
+        end
+
+        core.log.warn("failed to create ", FFI_CLIENT_MODULE, ", ",
+                      "falling back to lua-resty-http: ", err or "unknown")
+        ffi_client = nil
+    end
+
+    return http.new()
+end
 
 
 --- Map network errors to HTTP status codes.
@@ -44,17 +113,23 @@ end
 
 --- Build forwarded headers from client request + extra headers.
 -- Copies `client_headers`, merges ext_opts_headers (lowercased),
--- forces Content-Type to application/json, removes host/content-length.
+-- forces Content-Type to application/json, drops the headers that belong to
+-- the downstream connection rather than the upstream one.
 -- `client_headers` is the downstream request's headers to forward (proxy path),
 -- or nil for a self-contained internal request (e.g. ai-request-rewrite calling
 -- an LLM to rewrite the body), which must not leak the client's Authorization,
 -- Cookie or other headers to a third-party endpoint. The caller passes them in
 -- explicitly, so the transport carries no `ctx` / downstream-request coupling.
 function _M.construct_forward_headers(ext_opts_headers, client_headers)
+    -- connection and transfer-encoding are hop-by-hop: they describe the
+    -- downstream connection, and forwarding them desyncs the upstream one.
+    -- The client frames the body itself with content-length.
     local blacklist = {
         "host",
         "content-length",
         "accept-encoding",
+        "connection",
+        "transfer-encoding",
     }
 
     local headers = {}
@@ -100,7 +175,7 @@ end
 -- @return string|nil Error message
 -- @return table|nil Upstream metadata on failure (for recording failed attempts)
 function _M.request(params, timeout)
-    local httpc, err = http.new()
+    local httpc, err = new_client()
     if not httpc then
         return nil, "failed to create http client: " .. (err or "unknown")
     end
