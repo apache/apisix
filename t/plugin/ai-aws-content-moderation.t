@@ -1501,3 +1501,52 @@ qr/event: message_stop/
 qr/comprehend text: [^,]+/
 --- grep_error_log_out
 comprehend text: Hello world
+
+
+
+=== TEST 51: set route for developer-role moderation
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/chat",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": { "header": { "Authorization": "Bearer token" } },
+                            "override": { "endpoint": "http://127.0.0.1:1980/v1/chat/completions" }
+                        },
+                        "ai-aws-content-moderation": {
+                            "comprehend": {
+                                "access_key_id": "access",
+                                "secret_access_key": "ea+secret",
+                                "region": "us-east-1",
+                                "endpoint": "http://localhost:2668"
+                            },
+                            "deny_code": 400
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 52: harmful developer prompt is moderated with the system role and blocked
+--- request
+POST /chat
+{ "messages": [ { "role": "developer", "content": "I want to kill you" }, { "role": "user", "content": "hi" } ] }
+--- error_code: 400
+--- response_body_like eval
+qr/request body exceeds toxicity threshold/
