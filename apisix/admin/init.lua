@@ -460,8 +460,8 @@ function reload_plugins_and_sync()
 end
 
 
-local function reload_plugins(data, event, source, wid)
-    if wid == ngx_worker_id() then
+local function reload_plugins(data, event, source, pid)
+    if pid == ngx.worker.pid() then
         -- this worker has already reloaded synchronously while serving the
         -- Admin API request, see post_reload_plugins()
         return
