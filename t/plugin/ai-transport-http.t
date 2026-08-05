@@ -356,7 +356,7 @@ request: connection reset by peer => 500
 
 
 
-=== TEST 8: transport prefers ngx_http_ffi_client when the runtime provides it
+=== TEST 8: ngx_http_ffi_client is the default client
 --- config
     location /t {
         content_by_lua_block {
@@ -409,7 +409,7 @@ status: 200
 
 
 
-=== TEST 9: transport falls back to lua-resty-http when the C module is absent
+=== TEST 9: a runtime without the C module falls back and logs an error
 --- config
     location /t {
         content_by_lua_block {
@@ -464,7 +464,7 @@ falling back to lua-resty-http: ngx_http_ffi_client_module is not loaded
 
 
 
-=== TEST 10: plugin_attr.ai-proxy.http_client pins lua-resty-http
+=== TEST 10: plugin_attr.ai-proxy.http_client selects lua-resty-http
 --- extra_yaml_config
 plugin_attr:
     ai-proxy:
@@ -520,3 +520,50 @@ plugin_attr:
 --- response_body
 lua-resty-http request: {"model":"m"}
 status: 200
+
+
+
+=== TEST 11: the lua-resty-http path reaches a real upstream
+--- extra_yaml_config
+plugin_attr:
+    ai-proxy:
+        http_client: lua-resty-http
+--- config
+    location = /mock-llm {
+        content_by_lua_block {
+            ngx.req.read_body()
+            ngx.header["Content-Type"] = "application/json"
+            ngx.print('{"echo":', ngx.req.get_body_data(), '}')
+        }
+    }
+
+    location /t {
+        content_by_lua_block {
+            -- no stubbing here: this drives the real lua-resty-http
+            local transport = require("apisix.plugins.ai-transport.http")
+            local res, err = transport.request({
+                method = "POST",
+                scheme = "http",
+                host = "127.0.0.1",
+                port = 1984,
+                path = "/mock-llm",
+                headers = {["content-type"] = "application/json"},
+                body = {model = "m"},
+            }, 2000)
+            if not res then
+                ngx.say("err: ", err)
+                return
+            end
+
+            ngx.say("status: ", res.status)
+            ngx.say("content-type: ", res.headers["Content-Type"])
+            ngx.say("body: ", res:read_body())
+            transport.set_keepalive(res, 60000, 30)
+        }
+    }
+--- response_body
+status: 200
+content-type: application/json
+body: {"echo":{"model":"m"}}
+--- no_error_log
+[error]

@@ -147,19 +147,18 @@ Because the LLM upstream is often a third-party service, be aware that any heade
 
 ## Upstream HTTP Client
 
-Requests to the LLM upstream go through `ngx_http_ffi_client`, a C HTTP client that costs roughly a third of the outbound CPU time of `lua-resty-http`, whenever the APISIX runtime was built with that module. Runtimes without it keep using `lua-resty-http`, and both clients behave the same on the wire.
+Requests to the LLM upstream go through `ngx_http_ffi_client`, a C HTTP client that costs around half the outbound CPU time of `lua-resty-http`. Both clients behave the same on the wire.
 
-Set `plugin_attr.ai-proxy.http_client` in `config.yaml` to pin the choice:
+`plugin_attr.ai-proxy.http_client` in `config.yaml` names the client:
 
 ```yaml
 plugin_attr:
   ai-proxy:
-    http_client: auto # auto, ffi, or lua-resty-http
+    http_client: ngx_http_ffi_client # or lua-resty-http
 ```
 
-- `auto` (default): use `ngx_http_ffi_client` when the runtime provides it, otherwise `lua-resty-http`.
-- `ffi`: require `ngx_http_ffi_client`, and log an error if it is missing.
-- `lua-resty-http`: always use `lua-resty-http`.
+- `ngx_http_ffi_client` (default): the C client. It exists only when the APISIX runtime was built with the module; on a runtime without it the transport logs a warning and uses `lua-resty-http` instead.
+- `lua-resty-http`: the Lua client, on every runtime.
 
 The setting covers `ai-proxy`, `ai-proxy-multi`, and `ai-request-rewrite`, which share the same transport.
 

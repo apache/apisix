@@ -29,6 +29,8 @@ local type = type
 local str_lower = string.lower
 local tostring = tostring
 
+local FFI_CLIENT = "ngx_http_ffi_client"
+local LUA_RESTY_HTTP = "lua-resty-http"
 local FFI_CLIENT_MODULE = "resty.ngx_http_ffi_client"
 
 local _M = {}
@@ -38,12 +40,10 @@ local ffi_client_resolved
 
 
 --- Pick the outbound HTTP client.
--- `ngx_http_ffi_client` is a C client with the same object API as
--- lua-resty-http and roughly a third of its outbound CPU cost, but it only
--- exists when the gateway runtime was built with the module. It is preferred
--- whenever present, and lua-resty-http stays the fallback.
--- `plugin_attr.ai-proxy.http_client` forces the choice: "auto" (default),
--- "ffi" or "lua-resty-http".
+-- `plugin_attr.ai-proxy.http_client` names it: "ngx_http_ffi_client", the
+-- default, or "lua-resty-http". The first is a C client with the same object
+-- API as the second and around half its outbound CPU cost, and it exists only
+-- when the gateway runtime was built with the module.
 -- Resolved once per worker, on first request, because local_conf is not
 -- readable while the module is still loading.
 local function resolve_ffi_client()
@@ -54,22 +54,24 @@ local function resolve_ffi_client()
 
     local local_conf = core.config.local_conf()
     local want = core.table.try_read_attr(local_conf, "plugin_attr",
-                                          "ai-proxy", "http_client") or "auto"
+                                          "ai-proxy", "http_client") or FFI_CLIENT
 
-    if want == "lua-resty-http" then
-        core.log.info("ai transport pinned to lua-resty-http")
+    if want == LUA_RESTY_HTTP then
+        core.log.info("ai transport uses ", LUA_RESTY_HTTP)
         return nil
+    end
+
+    if want ~= FFI_CLIENT then
+        core.log.error("unknown plugin_attr.ai-proxy.http_client \"", want,
+                       "\", using ", FFI_CLIENT)
     end
 
     local ok, mod = pcall(require, FFI_CLIENT_MODULE)
     if not ok or type(mod) ~= "table" then
-        if want == "ffi" then
-            core.log.error("plugin_attr.ai-proxy.http_client is \"ffi\" but ",
-                           FFI_CLIENT_MODULE, " is missing: ", mod)
-        else
-            core.log.info(FFI_CLIENT_MODULE, " is not available, ",
-                          "using lua-resty-http")
-        end
+        -- a runtime built without the module; warn rather than error, since
+        -- every request on such a runtime would otherwise log one
+        core.log.warn(FFI_CLIENT_MODULE, " is not available, ",
+                      "falling back to ", LUA_RESTY_HTTP, ": ", mod)
         return nil
     end
 
@@ -79,7 +81,7 @@ local function resolve_ffi_client()
 end
 
 
---- Create an HTTP client, preferring the FFI one.
+--- Create an HTTP client.
 -- The Lua half of `ngx_http_ffi_client` loads even when the C module is not
 -- compiled into the runtime; new() is what reports that, so a failure here
 -- falls back for the rest of the worker's life.
@@ -92,7 +94,8 @@ local function new_client()
         end
 
         core.log.warn("failed to create ", FFI_CLIENT_MODULE, ", ",
-                      "falling back to lua-resty-http: ", err or "unknown")
+                      "falling back to ", LUA_RESTY_HTTP, ": ",
+                      err or "unknown")
         ffi_client = nil
     end
 
