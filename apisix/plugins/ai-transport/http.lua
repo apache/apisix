@@ -113,23 +113,17 @@ end
 
 --- Build forwarded headers from client request + extra headers.
 -- Copies `client_headers`, merges ext_opts_headers (lowercased),
--- forces Content-Type to application/json, drops the headers that belong to
--- the downstream connection rather than the upstream one.
+-- forces Content-Type to application/json, removes host/content-length.
 -- `client_headers` is the downstream request's headers to forward (proxy path),
 -- or nil for a self-contained internal request (e.g. ai-request-rewrite calling
 -- an LLM to rewrite the body), which must not leak the client's Authorization,
 -- Cookie or other headers to a third-party endpoint. The caller passes them in
 -- explicitly, so the transport carries no `ctx` / downstream-request coupling.
 function _M.construct_forward_headers(ext_opts_headers, client_headers)
-    -- connection and transfer-encoding are hop-by-hop: they describe the
-    -- downstream connection, and forwarding them desyncs the upstream one.
-    -- The client frames the body itself with content-length.
     local blacklist = {
         "host",
         "content-length",
         "accept-encoding",
-        "connection",
-        "transfer-encoding",
     }
 
     local headers = {}
