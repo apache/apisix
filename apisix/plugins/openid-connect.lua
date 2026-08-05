@@ -58,6 +58,37 @@ local function build_session_opts(session_conf)
 end
 
 
+-- The nested par/dpop objects own these lua-resty-openidc option names. The
+-- root schema accepts unknown properties, so without an explicit rejection a
+-- config could set them directly and reach the library unvalidated: the flat
+-- DPoP key is not covered by encrypt_fields and would be stored in etcd in
+-- plaintext, and the flat PAR endpoint would skip the https check.
+local reserved_flat_opts = {
+    {name = "use_par", owner = "par.enabled"},
+    {name = "pushed_authorization_request_endpoint", owner = "par.endpoint"},
+    {name = "pushed_authorization_request_endpoint_auth_method",
+     owner = "par.endpoint_auth_method"},
+    {name = "use_dpop", owner = "dpop.enabled"},
+    {name = "dpop_signing_alg", owner = "dpop.signing_alg"},
+    {name = "dpop_private_key", owner = "dpop.private_key"},
+    {name = "dpop_public_jwk", owner = "dpop.public_jwk"},
+}
+
+-- lua-resty-openidc builds the DPoP proof with resty.openssl, so the JWK type
+-- has to match the signing algorithm: ES256 signs with an EC key, RS256 and
+-- PS256 with an RSA one.
+local dpop_alg_key_type = {
+    ES256 = "EC",
+    RS256 = "RSA",
+    PS256 = "RSA",
+}
+
+local dpop_jwk_required_members = {
+    EC = {"crv", "x", "y"},
+    RSA = {"e", "n"},
+}
+
+
 local function flatten_openidc_options(conf)
     if conf.par then
         conf.use_par = conf.par.enabled
@@ -590,6 +621,89 @@ local _M = {
     _flatten_openidc_options = flatten_openidc_options,
 }
 
+-- lua-resty-openidc rejects a JWK that lacks the members its key type needs,
+-- but only once the first authorization request builds the thumbprint, which
+-- surfaces as a 500 per request instead of a rejected configuration.
+local function check_dpop_key(dpop)
+    local jwk = dpop and dpop.public_jwk
+    if not jwk then
+        return true
+    end
+
+    local required = dpop_jwk_required_members[jwk.kty]
+    if not required then
+        return false, "property \"dpop.public_jwk\" validation failed: kty \""
+                      .. tostring(jwk.kty) .. "\" is not supported"
+    end
+
+    for _, member in ipairs(required) do
+        if jwk[member] == nil then
+            return false, "property \"dpop.public_jwk\" validation failed: kty \""
+                          .. jwk.kty .. "\" requires " .. concat(required, ", ")
+        end
+    end
+
+    local expected = dpop_alg_key_type[dpop.signing_alg]
+    if expected and expected ~= jwk.kty then
+        return false, "property \"dpop.signing_alg\" \"" .. dpop.signing_alg
+                      .. "\" requires an " .. expected .. " \"dpop.public_jwk\""
+    end
+
+    return true
+end
+
+
+-- The client assertion is signed with a single algorithm, but each endpoint
+-- picks its own auth method. lua-resty-openidc rejects a symmetric algorithm
+-- with private_key_jwt and an asymmetric one with client_secret_jwt when the
+-- endpoint is called, which surfaces as a 500. With no algorithm configured
+-- the library defaults per auth method, so the families cannot conflict.
+local function check_client_jwt_assertion_alg(conf)
+    local alg = conf.client_jwt_assertion_alg
+    if not alg then
+        return true
+    end
+
+    local selections = {
+        {name = "token_endpoint_auth_method",
+         method = conf.token_endpoint_auth_method},
+        {name = "introspection_endpoint_auth_method",
+         method = conf.introspection_endpoint_auth_method},
+        {name = "par.endpoint_auth_method",
+         method = conf.par and conf.par.endpoint_auth_method},
+    }
+
+    local asymmetric_by, symmetric_by
+    for _, selection in ipairs(selections) do
+        if selection.method == "private_key_jwt" then
+            asymmetric_by = asymmetric_by or selection.name
+        elseif selection.method == "client_secret_jwt" then
+            symmetric_by = symmetric_by or selection.name
+        end
+    end
+
+    if asymmetric_by and symmetric_by then
+        return false, "property \"client_jwt_assertion_alg\" is a single algorithm, "
+                      .. "but \"" .. asymmetric_by .. "\" selects private_key_jwt and \""
+                      .. symmetric_by .. "\" selects client_secret_jwt"
+    end
+
+    local is_symmetric = alg:sub(1, 2) == "HS"
+    if asymmetric_by and is_symmetric then
+        return false, "property \"client_jwt_assertion_alg\" \"" .. alg
+                      .. "\" is symmetric and cannot be used with the private_key_jwt "
+                      .. "selected by \"" .. asymmetric_by .. "\""
+    end
+    if symmetric_by and not is_symmetric then
+        return false, "property \"client_jwt_assertion_alg\" \"" .. alg
+                      .. "\" is asymmetric and cannot be used with the client_secret_jwt "
+                      .. "selected by \"" .. symmetric_by .. "\""
+    end
+
+    return true
+end
+
+
 function _M.check_schema(conf)
     if conf.ssl_verify == "no" then
         -- we used to set 'ssl_verify' to "no"
@@ -636,6 +750,23 @@ function _M.check_schema(conf)
         if not ok then
             return false, "check claim_schema failed: " .. tostring(res)
         end
+    end
+
+    for _, opt in ipairs(reserved_flat_opts) do
+        if conf[opt.name] ~= nil then
+            return false, "property \"" .. opt.name .. "\" is not allowed, use \""
+                          .. opt.owner .. "\" instead"
+        end
+    end
+
+    ok, err = check_dpop_key(conf.dpop)
+    if not ok then
+        return false, err
+    end
+
+    ok, err = check_client_jwt_assertion_alg(conf)
+    if not ok then
+        return false, err
     end
 
     return true

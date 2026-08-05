@@ -2654,3 +2654,213 @@ true
 body=false header=true
 body=false header=true
 body=true header=false
+
+
+
+=== TEST 67: Reject the flat lua-resty-openidc option names the par and dpop objects own.
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local flat = {
+                {use_par = true},
+                {pushed_authorization_request_endpoint = "https://example.com/par"},
+                {pushed_authorization_request_endpoint_auth_method = "private_key_jwt"},
+                {use_dpop = true},
+                {dpop_signing_alg = "RS256"},
+                {dpop_private_key = "plaintext-key"},
+                {dpop_public_jwk = {kty = "RSA", e = "AQAB", n = "abc"}},
+            }
+            for _, extra in ipairs(flat) do
+                local conf = {
+                    client_id = "a",
+                    client_secret = "b",
+                    discovery = "https://example.com/.well-known/openid-configuration",
+                    session = { secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK" },
+                }
+                for k, v in pairs(extra) do conf[k] = v end
+                local ok, err = plugin.check_schema(conf)
+                ngx.say(ok and "ACCEPTED" or err)
+            end
+        }
+    }
+--- response_body
+property "use_par" is not allowed, use "par.enabled" instead
+property "pushed_authorization_request_endpoint" is not allowed, use "par.endpoint" instead
+property "pushed_authorization_request_endpoint_auth_method" is not allowed, use "par.endpoint_auth_method" instead
+property "use_dpop" is not allowed, use "dpop.enabled" instead
+property "dpop_signing_alg" is not allowed, use "dpop.signing_alg" instead
+property "dpop_private_key" is not allowed, use "dpop.private_key" instead
+property "dpop_public_jwk" is not allowed, use "dpop.public_jwk" instead
+
+
+
+=== TEST 68: The Admin API rejects a flat DPoP private key instead of storing it in plaintext.
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "openid-connect": {
+                            "client_id": "a",
+                            "client_secret": "b",
+                            "discovery": "https://example.com/.well-known/openid-configuration",
+                            "use_dpop": true,
+                            "dpop_private_key": "plaintext-key",
+                            "dpop_public_jwk": {"kty": "RSA", "e": "AQAB", "n": "abc"},
+                            "session": {"secret": "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK"}
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {"127.0.0.1:1980": 1},
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]])
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- error_code: 400
+--- response_body eval
+qr/property \\"use_dpop\\" is not allowed, use \\"dpop.enabled\\" instead/
+
+
+
+=== TEST 69: Reject a DPoP public JWK that lua-resty-openidc cannot build a thumbprint from.
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local jwks = {
+                {kty = "RSA"},
+                {kty = "EC", crv = "P-256"},
+                {kty = "OKP", x = "abc"},
+            }
+            for _, jwk in ipairs(jwks) do
+                local ok, err = plugin.check_schema({
+                    client_id = "a",
+                    client_secret = "b",
+                    discovery = "https://example.com/.well-known/openid-configuration",
+                    dpop = {
+                        enabled = true,
+                        signing_alg = jwk.kty == "RSA" and "RS256" or "ES256",
+                        private_key = "-----BEGIN PRIVATE KEY-----\nMIIEowIBAAK\n-----END PRIVATE KEY-----",
+                        public_jwk = jwk,
+                    },
+                    session = { secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK" },
+                })
+                ngx.say(ok and "ACCEPTED" or err)
+            end
+        }
+    }
+--- response_body
+property "dpop.public_jwk" validation failed: kty "RSA" requires e, n
+property "dpop.public_jwk" validation failed: kty "EC" requires crv, x, y
+property "dpop.public_jwk" validation failed: kty "OKP" is not supported
+
+
+
+=== TEST 70: Reject a DPoP signing algorithm that does not match the public JWK key type.
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local cases = {
+                {alg = "ES256", jwk = {kty = "RSA", e = "AQAB", n = "abc"}},
+                {alg = "RS256", jwk = {kty = "EC", crv = "P-256", x = "a", y = "b"}},
+                {alg = "PS256", jwk = {kty = "EC", crv = "P-256", x = "a", y = "b"}},
+            }
+            for _, case in ipairs(cases) do
+                local ok, err = plugin.check_schema({
+                    client_id = "a",
+                    client_secret = "b",
+                    discovery = "https://example.com/.well-known/openid-configuration",
+                    dpop = {
+                        enabled = true,
+                        signing_alg = case.alg,
+                        private_key = "-----BEGIN PRIVATE KEY-----\nMIIEowIBAAK\n-----END PRIVATE KEY-----",
+                        public_jwk = case.jwk,
+                    },
+                    session = { secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK" },
+                })
+                ngx.say(ok and "ACCEPTED" or err)
+            end
+        }
+    }
+--- response_body
+property "dpop.signing_alg" "ES256" requires an EC "dpop.public_jwk"
+property "dpop.signing_alg" "RS256" requires an RSA "dpop.public_jwk"
+property "dpop.signing_alg" "PS256" requires an RSA "dpop.public_jwk"
+
+
+
+=== TEST 71: Reject a client assertion algorithm whose family the endpoint auth method rejects.
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local cases = {
+                {token_endpoint_auth_method = "private_key_jwt",
+                 client_rsa_private_key = "k", client_jwt_assertion_alg = "HS256"},
+                {introspection_endpoint_auth_method = "private_key_jwt",
+                 bearer_only = true, public_key = "k", client_jwt_assertion_alg = "HS512"},
+                {token_endpoint_auth_method = "client_secret_jwt",
+                 client_jwt_assertion_alg = "RS256"},
+                {par = {enabled = true, endpoint_auth_method = "client_secret_jwt"},
+                 client_jwt_assertion_alg = "ES256"},
+                {token_endpoint_auth_method = "private_key_jwt",
+                 client_rsa_private_key = "k",
+                 introspection_endpoint_auth_method = "client_secret_jwt",
+                 client_jwt_assertion_alg = "RS256"},
+            }
+            for _, extra in ipairs(cases) do
+                local conf = {
+                    client_id = "a",
+                    client_secret = "b",
+                    discovery = "https://example.com/.well-known/openid-configuration",
+                    session = { secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK" },
+                }
+                for k, v in pairs(extra) do conf[k] = v end
+                local ok, err = plugin.check_schema(conf)
+                ngx.say(ok and "ACCEPTED" or err)
+            end
+        }
+    }
+--- response_body
+property "client_jwt_assertion_alg" "HS256" is symmetric and cannot be used with the private_key_jwt selected by "token_endpoint_auth_method"
+property "client_jwt_assertion_alg" "HS512" is symmetric and cannot be used with the private_key_jwt selected by "introspection_endpoint_auth_method"
+property "client_jwt_assertion_alg" "RS256" is asymmetric and cannot be used with the client_secret_jwt selected by "token_endpoint_auth_method"
+property "client_jwt_assertion_alg" "ES256" is asymmetric and cannot be used with the client_secret_jwt selected by "par.endpoint_auth_method"
+property "client_jwt_assertion_alg" is a single algorithm, but "token_endpoint_auth_method" selects private_key_jwt and "introspection_endpoint_auth_method" selects client_secret_jwt
+
+
+
+=== TEST 72: Accept both JWT auth families when no client assertion algorithm is configured.
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            -- lua-resty-openidc then picks RS256 or HS256 per auth method,
+            -- so the families cannot conflict
+            local ok, err = plugin.check_schema({
+                client_id = "a",
+                client_secret = "b",
+                discovery = "https://example.com/.well-known/openid-configuration",
+                token_endpoint_auth_method = "private_key_jwt",
+                client_rsa_private_key = "k",
+                introspection_endpoint_auth_method = "client_secret_jwt",
+                session = { secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK" },
+            })
+            if not ok then
+                ngx.say(err)
+            end
+            ngx.say("done")
+        }
+    }
+--- response_body
+done
