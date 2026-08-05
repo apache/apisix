@@ -199,8 +199,8 @@ end
 
 end -- do
 
-local function reload_plugins(data, event, source, pid)
-    if pid == ngx.worker.pid() then
+local function reload_plugins(data, event, source, wid)
+    if wid == ngx.worker.id() then
         -- already reloaded synchronously in post_reload_plugins()
         return
     end
