@@ -114,6 +114,10 @@ write_probe "$PROBE_A" 412
 write_probe "$PROBE_B" 411
 write_bad_probe
 
+# mktemp -d gives 0700 and the workers do not necessarily run as this user, so
+# the tree has to be readable and traversable for extra_lua_path to resolve
+chmod -R a+rX "$WORKDIR"
+
 # $1: extra plugin lines, appended to the list
 write_config() {
     cat > conf/config.yaml <<EOF
