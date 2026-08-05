@@ -1525,17 +1525,37 @@ function _M.run_global_rules(api_ctx, global_rules, conf_version, phase_name)
                                                              global_rules,
                                                              conf_version)
 
-        local plugins = core.tablepool.fetch("plugins", 32, 0)
         local route = api_ctx.matched_route
         api_ctx.conf_type = "global_rule"
         api_ctx.conf_version = dummy_global_rule.modifiedIndex
         api_ctx.conf_id = dummy_global_rule.value.id
 
-        core.table.clear(plugins)
-        plugins = _M.filter(api_ctx, dummy_global_rule, plugins, route)
+        -- The filtered set depends only on the merged global rule (itself cached
+        -- per conf_version) and on the matched route, so it does not need
+        -- recomputing in every phase. This matters most for body_filter, which
+        -- runs once per response buffer. Route plugins are already reused this
+        -- way through api_ctx.plugins; global rules were not.
+        -- The route is part of the key because plugins with
+        -- run_policy == "prefer_route" are skipped when the route configures the
+        -- same plugin, and api_ctx.matched_route is replaced when a consumer's
+        -- configuration is merged in -- which happens after the rewrite phase
+        -- has run but before access.
+        -- The table is returned to the pool in http_log_phase.
+        local plugins = api_ctx.global_plugins
+        if not (plugins
+                and api_ctx.global_plugins_route == route
+                and api_ctx.global_plugins_version == dummy_global_rule.modifiedIndex)
+        then
+            plugins = plugins or core.tablepool.fetch("global_plugins", 32, 0)
+            core.table.clear(plugins)
+            plugins = _M.filter(api_ctx, dummy_global_rule, plugins, route)
+
+            api_ctx.global_plugins = plugins
+            api_ctx.global_plugins_route = route
+            api_ctx.global_plugins_version = dummy_global_rule.modifiedIndex
+        end
 
         _M.run_plugin(phase_name, plugins, api_ctx)
-        core.tablepool.release("plugins", plugins)
 
         api_ctx.conf_type = orig_conf_type
         api_ctx.conf_version = orig_conf_version
