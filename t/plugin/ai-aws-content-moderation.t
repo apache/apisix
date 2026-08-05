@@ -36,8 +36,9 @@ _EOC_
 
     $block->set_value("main_config", $main_config);
 
-    # Mock AWS Comprehend detectToxicContent: looks up the extracted text
-    # (TextSegments[1].Text) in the canned responses fixture.
+    # Mock AWS Comprehend detectToxicContent: looks up each extracted text
+    # segment in the canned responses fixture and answers with one result per
+    # segment, the way the real service does.
     my $http_config = $block->http_config // <<_EOC_;
         server {
             listen 2668;
@@ -80,21 +81,58 @@ _EOC_
                         ngx.status(503)
                         ngx.say("[INTERNAL FAILURE]: failed to decoded request body: ", err)
                     end
-                    local result = body.TextSegments[1].Text
-                    ngx.log(ngx.WARN, "comprehend text: ", result)
-                    local final_response = responses[result]
+                    local utf8 = require("lua-utf8")
+                    local segments = body.TextSegments
+                    ngx.log(ngx.WARN, "comprehend call: segments=", #segments,
+                            " connection_requests=", ngx.var.connection_requests)
 
-                    -- Response-side text is free-form LLM output, not a fixture
-                    -- key, so fall back to flagging anything violent.
-                    if not final_response then
-                        if result:find("kill", 1, true) then
-                            final_response = responses["toxic"]
-                        else
-                            final_response = responses["good_request"]
-                        end
+                    -- Comprehend takes at most 10 segments of 1 KB each, 10 KB
+                    -- for the list; over that it answers 400. Enforce it here so
+                    -- the tests catch content that is sent unsplit.
+                    local total = 0
+                    for _, segment in ipairs(segments) do
+                        total = total + #segment.Text
+                    end
+                    if #segments > 10 or total > 10240 then
+                        ngx.status = 400
+                        ngx.say(json.encode({
+                            __type = "TextSizeLimitExceededException",
+                            Message = "Input text size exceeds limit."
+                        }))
+                        return
                     end
 
-                    ngx.say(json.encode(final_response))
+                    local results = {}
+                    for i, segment in ipairs(segments) do
+                        local text = segment.Text
+                        ngx.log(ngx.WARN, "comprehend text: ", text)
+                        if not utf8.len(text) then
+                            ngx.log(ngx.ERR, "comprehend got a segment that is not valid utf-8")
+                        end
+                        if #text > 1024 then
+                            ngx.status = 400
+                            ngx.say(json.encode({
+                                __type = "TextSizeLimitExceededException",
+                                Message = "Input text size exceeds limit."
+                            }))
+                            return
+                        end
+
+                        local canned = responses[text]
+
+                        -- Response-side text is free-form LLM output, not a
+                        -- fixture key, so fall back to flagging anything violent.
+                        if not canned then
+                            if text:find("kill", 1, true) then
+                                canned = responses["toxic"]
+                            else
+                                canned = responses["good_request"]
+                            end
+                        end
+                        results[i] = canned.ResultList[1]
+                    end
+
+                    ngx.say(json.encode({ ResultList = results }))
                 }
             }
         }
@@ -875,7 +913,446 @@ qr/code:nil\n.*data: 12345.*"risk_level":"none"/s
 
 
 
-=== TEST 33: realtime takes an upstream chunk's text once per chunk, not per converted chunk
+=== TEST 33: set route with the default check length limits
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/chat",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": { "header": { "Authorization": "Bearer token" } },
+                            "override": { "endpoint": "http://127.0.0.1:1980/v1/chat/completions" }
+                        },
+                        "ai-aws-content-moderation": {
+                            "comprehend": {
+                                "access_key_id": "access",
+                                "secret_access_key": "ea+secret",
+                                "region": "us-east-1",
+                                "endpoint": "http://localhost:2668"
+                            },
+                            "deny_code": 400
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 34: request over 1 KB is split into segments Comprehend accepts
+--- request eval
+"POST /chat
+{ \"messages\": [ { \"role\": \"user\", \"content\": \"" . ("a" x 2395) . " kill\" } ] }"
+--- error_code: 400
+--- response_body_like eval
+qr/request body exceeds toxicity threshold/
+--- grep_error_log eval
+qr/comprehend call: segments=\d+/
+--- grep_error_log_out
+comprehend call: segments=3
+
+
+
+=== TEST 35: clean request over 1 KB passes
+--- request eval
+"POST /chat
+{ \"messages\": [ { \"role\": \"user\", \"content\": \"" . ("a" x 2400) . "\" } ] }"
+--- error_code: 200
+--- grep_error_log eval
+qr/comprehend call: segments=\d+/
+--- grep_error_log_out
+comprehend call: segments=3
+
+
+
+=== TEST 36: set route with a check length limit that needs several batches
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/chat",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": { "header": { "Authorization": "Bearer token" } },
+                            "override": { "endpoint": "http://127.0.0.1:1980/v1/chat/completions" }
+                        },
+                        "ai-aws-content-moderation": {
+                            "comprehend": {
+                                "access_key_id": "access",
+                                "secret_access_key": "ea+secret",
+                                "region": "us-east-1",
+                                "endpoint": "http://localhost:2668"
+                            },
+                            "request_check_length_limit": 100
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 37: segments past the tenth go in a second call on the same connection
+--- request eval
+"POST /chat
+{ \"messages\": [ { \"role\": \"user\", \"content\": \"" . ("a" x 1100) . "\" } ] }"
+--- error_code: 200
+--- grep_error_log eval
+qr/comprehend call: segments=\d+ connection_requests=\d+/
+--- grep_error_log_out
+comprehend call: segments=10 connection_requests=1
+comprehend call: segments=1 connection_requests=2
+
+
+
+=== TEST 38: same route with keepalive turned off
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/chat",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": { "header": { "Authorization": "Bearer token" } },
+                            "override": { "endpoint": "http://127.0.0.1:1980/v1/chat/completions" }
+                        },
+                        "ai-aws-content-moderation": {
+                            "comprehend": {
+                                "access_key_id": "access",
+                                "secret_access_key": "ea+secret",
+                                "region": "us-east-1",
+                                "endpoint": "http://localhost:2668"
+                            },
+                            "request_check_length_limit": 100,
+                            "keepalive": false
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 39: without keepalive every batch opens a new connection
+--- request eval
+"POST /chat
+{ \"messages\": [ { \"role\": \"user\", \"content\": \"" . ("a" x 1100) . "\" } ] }"
+--- error_code: 200
+--- grep_error_log eval
+qr/comprehend call: segments=\d+ connection_requests=\d+/
+--- grep_error_log_out
+comprehend call: segments=10 connection_requests=1
+comprehend call: segments=1 connection_requests=1
+
+
+
+=== TEST 40: set route with check_response enabled (non-streaming)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/chat",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": { "header": { "Authorization": "Bearer token" } },
+                            "override": { "endpoint": "http://127.0.0.1:1980/v1/chat/completions" }
+                        },
+                        "ai-aws-content-moderation": {
+                            "comprehend": {
+                                "access_key_id": "access",
+                                "secret_access_key": "ea+secret",
+                                "region": "us-east-1",
+                                "endpoint": "http://localhost:2668"
+                            },
+                            "check_request": false,
+                            "check_response": true,
+                            "deny_code": 400
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 41: toxic LLM response over 1 KB is denied
+--- request
+POST /chat
+{ "messages": [ { "role": "user", "content": "good_request" } ] }
+--- more_headers
+X-AI-Fixture: aws/chat-long-harmful.json
+--- error_code: 400
+--- response_body_like eval
+qr/response body exceeds toxicity threshold/
+--- grep_error_log eval
+qr/comprehend call: segments=\d+/
+--- grep_error_log_out
+comprehend call: segments=2
+
+
+
+=== TEST 42: set route with stream_check_mode = realtime and a batch over 1 KB
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/chat",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": { "header": { "Authorization": "Bearer token" } },
+                            "override": { "endpoint": "http://127.0.0.1:1980/v1/chat/completions" }
+                        },
+                        "ai-aws-content-moderation": {
+                            "comprehend": {
+                                "access_key_id": "access",
+                                "secret_access_key": "ea+secret",
+                                "region": "us-east-1",
+                                "endpoint": "http://localhost:2668"
+                            },
+                            "check_request": false,
+                            "check_response": true,
+                            "deny_message": "the response was withheld",
+                            "stream_check_mode": "realtime",
+                            "stream_check_cache_size": 1500
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 43: a realtime batch over 1 KB is still moderated
+--- request
+POST /chat
+{ "messages": [ { "role": "user", "content": "good_request" } ], "stream": true }
+--- more_headers
+X-AI-Fixture: aws/chat-streaming-long-harmful.sse
+X-AI-Fixture-Flush-Events: true
+--- error_code: 200
+--- response_body_like eval
+qr/the response was withheld/
+--- error_log
+comprehend call: segments=2
+--- no_error_log
+failed to get moderation results from response
+
+
+
+=== TEST 44: final_packet does not annotate a verdict it could not compute
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.ai-aws-content-moderation")
+            local ctx = {
+                picked_ai_instance = { provider = "openai" },
+                ai_client_protocol = "openai-chat",
+                var = {
+                    request_type = "ai_stream",
+                    llm_response_text = "hello there",
+                    llm_request_done = true,
+                    -- the request check already ran and found nothing
+                    llm_content_risk_level = "none",
+                },
+            }
+            local conf = {
+                comprehend = {
+                    access_key_id = "access",
+                    secret_access_key = "secret",
+                    region = "us-east-1",
+                    -- nothing listening, so the response is never scored
+                    endpoint = "http://localhost:2669"
+                },
+                check_response = true,
+                stream_check_mode = "final_packet",
+            }
+            plugin.check_schema(conf)
+            local body = 'data: {"choices":[{"delta":{"content":"hi"}}]}\n\n'
+            local code, new_body = plugin.lua_body_filter(conf, ctx, {}, body)
+            ngx.say("code:", code or "nil")
+            ngx.say("annotated:", new_body:find("risk_level", 1, true) and "yes" or "no")
+        }
+    }
+--- response_body
+code:nil
+annotated:no
+--- error_log
+response was not scored, streaming without a risk_level annotation
+
+
+
+=== TEST 45: schema check: length limits are bounded by Comprehend's 1 KB cap
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.ai-aws-content-moderation")
+            local function conf(extra)
+                local c = {
+                    comprehend = {
+                        access_key_id = "a",
+                        secret_access_key = "s",
+                        region = "us-east-1"
+                    }
+                }
+                for k, v in pairs(extra or {}) do
+                    c[k] = v
+                end
+                return c
+            end
+
+            ngx.say("request limit over 1 KB: ",
+                plugin.check_schema(conf({request_check_length_limit = 1025}))
+                    and "accepted" or "rejected")
+            ngx.say("response limit over 1 KB: ",
+                plugin.check_schema(conf({response_check_length_limit = 1025}))
+                    and "accepted" or "rejected")
+            ngx.say("zero request limit: ",
+                plugin.check_schema(conf({request_check_length_limit = 0}))
+                    and "accepted" or "rejected")
+            -- a segment narrower than 4 bytes could not hold one UTF-8 character
+            ngx.say("3 byte request limit: ",
+                plugin.check_schema(conf({request_check_length_limit = 3}))
+                    and "accepted" or "rejected")
+            ngx.say("4 byte response limit: ",
+                plugin.check_schema(conf({response_check_length_limit = 4}))
+                    and "accepted" or "rejected")
+            ngx.say("1 KB limit: ",
+                plugin.check_schema(conf({response_check_length_limit = 1024}))
+                    and "accepted" or "rejected")
+
+            local c = conf()
+            plugin.check_schema(c)
+            ngx.say("defaults: ", c.request_check_length_limit, " ",
+                    c.response_check_length_limit, " ", c.timeout, " ",
+                    c.keepalive and "on" or "off", " ", c.keepalive_timeout)
+        }
+    }
+--- response_body
+request limit over 1 KB: rejected
+response limit over 1 KB: rejected
+zero request limit: rejected
+3 byte request limit: rejected
+4 byte response limit: accepted
+1 KB limit: accepted
+defaults: 1000 1000 10000 on 60000
+
+
+
+=== TEST 46: set route with the default check length limits
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/chat",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": { "header": { "Authorization": "Bearer token" } },
+                            "override": { "endpoint": "http://127.0.0.1:1980/v1/chat/completions" }
+                        },
+                        "ai-aws-content-moderation": {
+                            "comprehend": {
+                                "access_key_id": "access",
+                                "secret_access_key": "ea+secret",
+                                "region": "us-east-1",
+                                "endpoint": "http://localhost:2668"
+                            },
+                            "deny_code": 400
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 47: multibyte content is split on character boundaries
+--- request eval
+"POST /chat
+{ \"messages\": [ { \"role\": \"user\", \"content\": \"" . ("\xe6\x97\xa5" x 400) . "\" } ] }"
+--- error_code: 200
+--- grep_error_log eval
+qr/comprehend call: segments=\d+/
+--- grep_error_log_out
+comprehend call: segments=2
+--- no_error_log
+not valid utf-8
+
+
+
+=== TEST 48: realtime takes an upstream chunk's text once per chunk, not per converted chunk
 --- config
     location /t {
         content_by_lua_block {
@@ -923,7 +1400,7 @@ chunk 2: hello world
 
 
 
-=== TEST 34: set route serving an Anthropic client from an OpenAI upstream (converter active)
+=== TEST 49: set route serving an Anthropic client from an OpenAI upstream (converter active)
 --- config
     location /t {
         content_by_lua_block {
@@ -970,7 +1447,7 @@ passed
 
 
 
-=== TEST 35: converter fan-out moderates the response text once, not once per converted chunk
+=== TEST 50: converter fan-out moderates the response text once, not once per converted chunk
 --- config
     location /t {
         content_by_lua_block {

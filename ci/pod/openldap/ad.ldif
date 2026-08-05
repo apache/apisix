@@ -1,0 +1,102 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# Self-contained bootstrap tree: a non-empty /ldifs makes bitnami skip its
+# default tree and LDAP_USERS bootstrap, so this file rebuilds the base tree
+# and the stock user01/user02/readers entries (keeping the existing ldap-auth
+# tests passing) alongside the ldap-auth-advanced fixtures.
+
+dn: dc=example,dc=org
+objectClass: dcObject
+objectClass: organization
+dc: example
+o: example
+
+dn: ou=users,dc=example,dc=org
+objectClass: organizationalUnit
+ou: users
+
+dn: cn=user01,ou=users,dc=example,dc=org
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+cn: User1
+cn: user01
+sn: Bar1
+uid: user01
+uidNumber: 1000
+gidNumber: 1000
+homeDirectory: /home/user01
+userPassword: password1
+
+dn: cn=user02,ou=users,dc=example,dc=org
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+cn: User2
+cn: user02
+sn: Bar2
+uid: user02
+uidNumber: 1001
+gidNumber: 1001
+homeDirectory: /home/user02
+userPassword: password2
+
+dn: cn=readers,ou=users,dc=example,dc=org
+objectClass: groupOfNames
+cn: readers
+member: cn=user01,ou=users,dc=example,dc=org
+member: cn=user02,ou=users,dc=example,dc=org
+
+# AD shape: the RDN is cn ("Jane Doe") but the login attribute is uid (jdoe).
+dn: cn=Jane Doe,ou=users,dc=example,dc=org
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+cn: Jane Doe
+sn: Doe
+uid: jdoe
+userPassword: janesecret
+
+# Two entries share uid=dupuser: the ambiguous-match case.
+dn: cn=Dup User One,ou=users,dc=example,dc=org
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+cn: Dup User One
+sn: One
+uid: dupuser
+userPassword: duppass1
+
+dn: cn=Dup User Two,ou=users,dc=example,dc=org
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+cn: Dup User Two
+sn: Two
+uid: dupuser
+userPassword: duppass2
+
+# Hidden from anonymous searches by an ACL (enable-anon-bind.sh) yet readable
+# by any authenticated identity: the tripwire for the bind-state-leak probe.
+dn: cn=Secret User,ou=users,dc=example,dc=org
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+cn: Secret User
+sn: Secret
+uid: secretuser
+userPassword: secretpass
