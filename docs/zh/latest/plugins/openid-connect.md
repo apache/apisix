@@ -144,6 +144,8 @@ import TabItem from '@theme/TabItem';
 | claim_validator.audience.match_with_client_id | boolean | 否 | false | | 如果为 true，则要求受众与客户端 ID 匹配。如果受众是字符串，则必须与客户端 ID 完全匹配。如果受众是字符串数组，则至少一个值必须与客户端 ID 匹配。如果未找到匹配，将收到 `mismatched audience` 错误。OpenID Connect 规范规定了此要求，以确保令牌是为特定客户端颁发的。 |
 | claim_schema | object | 否 | | | OIDC 响应 claim 的 JSON schema。示例：`{"type":"object","properties":{"access_token":{"type":"string"}},"required":["access_token"]}` - 验证响应包含必填的字符串字段 `access_token`。 |
 
+注意：`par` 和 `dpop` 所对应的 `lua-resty-openidc` 扁平选项名（`use_par`、`pushed_authorization_request_endpoint`、`pushed_authorization_request_endpoint_auth_method`、`use_dpop`、`dpop_signing_alg`、`dpop_private_key`、`dpop_public_jwk`）会被拒绝。直接设置它们会绕过嵌套对象提供的校验以及 `dpop.private_key` 的加密存储，请改用嵌套属性。
+
 注意：升级到此版本会改变向令牌内省端点发送客户端凭证的方式，即使插件配置没有变更。`lua-resty-openidc` 1.9.0 仅在 `introspection_endpoint_auth_method` 未设置时才将 `client_id` 和 `client_secret` 放入内省请求体，而本插件将该属性默认设置为 `client_secret_basic`，因此凭证现在只通过 `Authorization` 标头发送。如果你的 OP 从请求体中验证内省调用，请将 `introspection_endpoint_auth_method` 设置为 `client_secret_post`。
 
 注意：schema 中还定义了 `encrypt_fields = {"client_secret", "client_rsa_private_key", "dpop.private_key"}`，这意味着这些字段将在 etcd 中加密存储。详见[加密存储字段](../plugin-develop.md#加密存储字段)。

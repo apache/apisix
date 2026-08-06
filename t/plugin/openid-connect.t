@@ -1866,12 +1866,19 @@ done
                 },
                 dpop = {
                     enabled = true,
-                    signing_alg = "PS256",
-                    private_key = "-----BEGIN PRIVATE KEY-----\nMIIEowIBAAK\n-----END PRIVATE KEY-----",
+                    signing_alg = "ES256",
+                    -- a real key pair: the private key has to load and match
+                    -- the algorithm, and the JWK is derived from it
+                    private_key = "-----BEGIN PRIVATE KEY-----\n"
+                        .. "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgzVW+Se78iBpOnKwj\n"
+                        .. "D0Gqp/ZpmFSVJPRSTI7ZU50g3s2hRANCAARJ6hd/fMq/ZLvdEu1ZKHWFmiTjL1LD\n"
+                        .. "U4q5hU/UxozQRW7+Gr5bcSvgHJWK/PlNCN/NGISpRs3K3l3K0BUr7plo\n"
+                        .. "-----END PRIVATE KEY-----",
                     public_jwk = {
-                        kty = "RSA",
-                        e = "AQAB",
-                        n = "abc",
+                        kty = "EC",
+                        crv = "P-256",
+                        x = "SeoXf3zKv2S73RLtWSh1hZok4y9Sw1OKuYVP1MaM0EU",
+                        y = "bv4avltxK-AclYr8-U0I380YhKlGzcreXcrQFSvumWg",
                     },
                 },
                 token_endpoint_auth_method = "private_key_jwt",
@@ -2854,6 +2861,232 @@ property "client_jwt_assertion_alg" is a single algorithm, but "token_endpoint_a
                 token_endpoint_auth_method = "private_key_jwt",
                 client_rsa_private_key = "k",
                 introspection_endpoint_auth_method = "client_secret_jwt",
+                session = { secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK" },
+            })
+            if not ok then
+                ngx.say(err)
+            end
+            ngx.say("done")
+        }
+    }
+--- response_body
+done
+
+
+
+=== TEST 73: Reject a DPoP public JWK whose members are not usable in a thumbprint.
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local cases = {
+                -- ES256 is P-256 only per RFC 7518; another curve produces a
+                -- proof the OP cannot verify
+                {alg = "ES256", jwk = {kty = "EC", crv = "P-384", x = "x", y = "y"}},
+                {alg = "ES256", jwk = {kty = "EC", crv = "P-256", x = 1, y = "y"}},
+                {alg = "ES256", jwk = {kty = "EC", crv = "P-256", x = "x", y = ""}},
+                {alg = "RS256", jwk = {kty = "RSA", e = "AQAB", n = ""}},
+                {alg = "RS256", jwk = {kty = "RSA", e = true, n = "abc"}},
+            }
+            for _, case in ipairs(cases) do
+                local ok, err = plugin.check_schema({
+                    client_id = "a",
+                    client_secret = "b",
+                    discovery = "https://example.com/.well-known/openid-configuration",
+                    dpop = {
+                        enabled = true,
+                        signing_alg = case.alg,
+                        private_key = "-----BEGIN PRIVATE KEY-----\nMIIEowIBAAK\n-----END PRIVATE KEY-----",
+                        public_jwk = case.jwk,
+                    },
+                    session = { secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK" },
+                })
+                ngx.say(ok and "ACCEPTED" or err)
+            end
+        }
+    }
+--- response_body
+property "dpop.signing_alg" "ES256" requires "dpop.public_jwk" crv "P-256", got "P-384"
+property "dpop.public_jwk" validation failed: "x" must be a non-empty string
+property "dpop.public_jwk" validation failed: "y" must be a non-empty string
+property "dpop.public_jwk" validation failed: "n" must be a non-empty string
+property "dpop.public_jwk" validation failed: "e" must be a non-empty string
+
+
+
+=== TEST 74: Reject a PAR authentication method lua-resty-openidc cannot use.
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local base = {
+                client_id = "a",
+                discovery = "https://example.com/.well-known/openid-configuration",
+                use_pkce = true,
+                session = { secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK" },
+            }
+            local function check(extra)
+                local conf = {}
+                for k, v in pairs(base) do conf[k] = v end
+                for k, v in pairs(extra) do conf[k] = v end
+                local ok, err = plugin.check_schema(conf)
+                ngx.say(ok and "ACCEPTED" or err)
+            end
+
+            -- unknown method
+            check({par = {enabled = true, endpoint_auth_method = "bogus"}})
+            -- supported methods missing the credential they need
+            check({par = {enabled = true, endpoint_auth_method = "private_key_jwt"}})
+            check({par = {enabled = true, endpoint_auth_method = "client_secret_jwt"}})
+            -- PAR falls back to token_endpoint_auth_method when it has none
+            check({token_endpoint_auth_method = "private_key_jwt",
+                   par = {enabled = true}})
+        }
+    }
+--- response_body
+property "par" validation failed: property "endpoint_auth_method" validation failed: matches none of the enum values
+property "par.endpoint_auth_method" "private_key_jwt" requires "client_rsa_private_key" when "par.enabled" is true
+property "par.endpoint_auth_method" "client_secret_jwt" requires "client_secret" when "par.enabled" is true
+property "token_endpoint_auth_method" "private_key_jwt" requires "client_rsa_private_key" when "par.enabled" is true
+
+
+
+=== TEST 75: Accept PAR authentication methods that have their credential.
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local cases = {
+                -- the schema default for token_endpoint_auth_method is
+                -- client_secret_basic, which needs no extra credential
+                {client_secret = "s", par = {enabled = true}},
+                {client_secret = "s",
+                 par = {enabled = true, endpoint_auth_method = "client_secret_post"}},
+                {client_secret = "s",
+                 par = {enabled = true, endpoint_auth_method = "client_secret_jwt"}},
+                {client_secret = "s", client_rsa_private_key = "k",
+                 par = {enabled = true, endpoint_auth_method = "private_key_jwt"}},
+                -- an unusable method only breaks PAR, so it stays valid while
+                -- PAR is off: the token endpoint falls back on its own
+                {client_secret = "s", token_endpoint_auth_method = "private_key_jwt",
+                 par = {enabled = false}},
+            }
+            for _, extra in ipairs(cases) do
+                local conf = {
+                    client_id = "a",
+                    discovery = "https://example.com/.well-known/openid-configuration",
+                    use_pkce = true,
+                    session = { secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK" },
+                }
+                for k, v in pairs(extra) do conf[k] = v end
+                local ok, err = plugin.check_schema(conf)
+                ngx.say(ok and "accepted" or err)
+            end
+        }
+    }
+--- response_body
+accepted
+accepted
+accepted
+accepted
+accepted
+
+
+
+=== TEST 76: Reject a DPoP private key that cannot be loaded or does not match the algorithm.
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local ec_key = "-----BEGIN PRIVATE KEY-----\n"
+                .. "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgzVW+Se78iBpOnKwj\n"
+                .. "D0Gqp/ZpmFSVJPRSTI7ZU50g3s2hRANCAARJ6hd/fMq/ZLvdEu1ZKHWFmiTjL1LD\n"
+                .. "U4q5hU/UxozQRW7+Gr5bcSvgHJWK/PlNCN/NGISpRs3K3l3K0BUr7plo\n"
+                .. "-----END PRIVATE KEY-----"
+            local ec_jwk = {kty = "EC", crv = "P-256",
+                            x = "SeoXf3zKv2S73RLtWSh1hZok4y9Sw1OKuYVP1MaM0EU",
+                            y = "bv4avltxK-AclYr8-U0I380YhKlGzcreXcrQFSvumWg"}
+            local cases = {
+                -- not a key at all
+                {alg = "ES256", key = "-----BEGIN PRIVATE KEY-----\nnope\n-----END PRIVATE KEY-----",
+                 jwk = ec_jwk},
+                -- a real key, but RS256 signs with an RSA one
+                {alg = "RS256", key = ec_key, jwk = {kty = "RSA", e = "AQAB", n = "abc"}},
+            }
+            for _, case in ipairs(cases) do
+                local ok, err = plugin.check_schema({
+                    client_id = "a",
+                    client_secret = "b",
+                    discovery = "https://example.com/.well-known/openid-configuration",
+                    dpop = {enabled = true, signing_alg = case.alg,
+                            private_key = case.key, public_jwk = case.jwk},
+                    session = { secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK" },
+                })
+                if ok then
+                    ngx.say("ACCEPTED")
+                else
+                    -- the openssl error text varies by version
+                    ngx.say((err:gsub("key: .*", "key")))
+                end
+            end
+        }
+    }
+--- response_body
+property "dpop.private_key" is not a valid key
+property "dpop.private_key" is not an RSA key, which "dpop.signing_alg" "RS256" requires
+
+
+
+=== TEST 77: Key material staged before DPoP is enabled stays valid.
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            -- lua-resty-openidc reads none of it while use_dpop is false, so
+            -- none of the DPoP checks may fire yet
+            local cases = {
+                {public_jwk = {kty = "RSA", e = "AQAB", n = "abc"}},
+                {enabled = false, signing_alg = "ES256",
+                 public_jwk = {kty = "RSA", e = "AQAB", n = "abc"}},
+                {enabled = false, private_key = "not-a-key",
+                 public_jwk = {kty = "EC", crv = "P-384", x = "x", y = "y"}},
+            }
+            for _, dpop in ipairs(cases) do
+                local ok, err = plugin.check_schema({
+                    client_id = "a",
+                    client_secret = "b",
+                    discovery = "https://example.com/.well-known/openid-configuration",
+                    dpop = dpop,
+                    session = { secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK" },
+                })
+                ngx.say(ok and "accepted" or err)
+            end
+        }
+    }
+--- response_body
+accepted
+accepted
+accepted
+
+
+
+=== TEST 78: bearer_only only ever calls the introspection endpoint.
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            -- the token and PAR endpoints belong to the authorization code
+            -- flow, which bearer_only never runs, so their auth method cannot
+            -- conflict with the introspection one
+            local ok, err = plugin.check_schema({
+                client_id = "a",
+                bearer_only = true,
+                public_key = "k",
+                discovery = "https://example.com/.well-known/openid-configuration",
+                introspection_endpoint_auth_method = "private_key_jwt",
+                client_rsa_private_key = "k",
+                token_endpoint_auth_method = "client_secret_jwt",
+                client_jwt_assertion_alg = "RS256",
                 session = { secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK" },
             })
             if not ok then
