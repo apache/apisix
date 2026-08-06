@@ -26,6 +26,7 @@ local pcall = pcall
 local require = require
 local type = type
 local str_lower = string.lower
+local tonumber = tonumber
 local tostring = tostring
 
 local FFI_CLIENT = "ngx_http_ffi_client"
