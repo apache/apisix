@@ -33,6 +33,10 @@ run_tests;
 __DATA__
 
 === TEST 1: AI transport encodes upstream request body with sorted keys and preserves empty arrays
+--- extra_yaml_config
+plugin_attr:
+    ai-proxy:
+        http_client: lua-resty-http
 --- config
     location /t {
         content_by_lua_block {
@@ -96,6 +100,10 @@ __DATA__
 
 
 === TEST 2: AI transport falls back to cjson when rapidjson encode fails
+--- extra_yaml_config
+plugin_attr:
+    ai-proxy:
+        http_client: lua-resty-http
 --- config
     location /t {
         content_by_lua_block {
@@ -197,6 +205,10 @@ rapidjson nested empty table: \{\}
 
 
 === TEST 4: AI transport preserves JSON null values from cjson decode
+--- extra_yaml_config
+plugin_attr:
+    ai-proxy:
+        http_client: lua-resty-http
 --- config
     location /t {
         content_by_lua_block {
@@ -242,6 +254,10 @@ failed to encode AI request body with rapidjson:
 
 
 === TEST 5: AI transport preserves manually constructed arrays
+--- extra_yaml_config
+plugin_attr:
+    ai-proxy:
+        http_client: lua-resty-http
 --- config
     location /t {
         content_by_lua_block {
@@ -292,6 +308,10 @@ failed to encode AI request body with rapidjson:
 
 
 === TEST 6: connect timeout ("Operation timed out") maps to 504
+--- extra_yaml_config
+plugin_attr:
+    ai-proxy:
+        http_client: lua-resty-http
 --- config
     location /t {
         content_by_lua_block {
@@ -662,3 +682,55 @@ plugin_attr:
 status: failed to create http client: invalid plugin_attr.ai-proxy: property "http_client" validation failed: matches none of the enum values
 --- error_log
 invalid plugin_attr.ai-proxy: property "http_client" validation failed
+
+
+
+=== TEST 14: the C client resolves a hostname through the gateway's resolver
+--- config
+    location /t {
+        content_by_lua_block {
+            local orig_ffi = package.loaded["resty.ngx_http_ffi_client"]
+            local orig_transport = package.loaded["apisix.plugins.ai-transport.http"]
+
+            -- the C client dials on its own, so the transport has to hand it an
+            -- address; the name has to survive in the Host header
+            package.loaded["resty.ngx_http_ffi_client"] = {
+                new = function()
+                    return {
+                        set_timeout = function() end,
+                        connect = function(_, params)
+                            ngx.say("connect host: ", params.host)
+                            ngx.say("ssl_server_name: ", params.ssl_server_name)
+                            return 1
+                        end,
+                        request = function(_, params)
+                            ngx.say("Host header: ", params.headers["Host"])
+                            return {headers = {}, status = 200}
+                        end,
+                    }
+                end,
+            }
+
+            package.loaded["apisix.plugins.ai-transport.http"] = nil
+            local transport = require("apisix.plugins.ai-transport.http")
+            local res, err = transport.request({
+                scheme = "http",
+                host = "localhost",
+                port = 1980,
+                path = "/v1/chat/completions",
+                headers = {["content-type"] = "application/json"},
+                body = {model = "m"},
+            }, 1000)
+            ngx.say("status: ", res and res.status or err)
+
+            package.loaded["resty.ngx_http_ffi_client"] = orig_ffi
+            package.loaded["apisix.plugins.ai-transport.http"] = orig_transport
+        }
+    }
+--- response_body
+connect host: 127.0.0.1
+ssl_server_name: localhost
+Host header: localhost:1980
+status: 200
+--- no_error_log
+[error]

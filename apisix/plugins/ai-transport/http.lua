@@ -51,6 +51,7 @@ local attr_schema = {
 local _M = {}
 
 local http_client
+local http_client_is_ffi
 
 
 --- Pick the outbound HTTP client.
@@ -85,8 +86,47 @@ local function resolve_client()
     end
 
     http_client = mod
+    http_client_is_ffi = name == FFI_CLIENT
 
     return http_client
+end
+
+
+--- Resolve the upstream name the way every other socket in the gateway does.
+-- Cosockets are patched (apisix/patch.lua) to run names through
+-- core.resolver, which honours dns_resolver, /etc/hosts and the search
+-- domains. The C client dials on its own and only sees nginx's `resolver`,
+-- so the name is resolved here and kept for the Host header and the SNI.
+local function resolve_upstream_host(params)
+    local host = params.host
+    if not host
+       or core.utils.parse_ipv4(host)
+       or core.utils.parse_ipv6(host)
+    then
+        return true
+    end
+
+    local ip, err = core.resolver.parse_domain(host)
+    if not ip then
+        return nil, "failed to parse domain: " .. (err or "unknown")
+    end
+
+    params.ssl_server_name = params.ssl_server_name or host
+
+    local headers = params.headers or {}
+    if not headers["Host"] and not headers["host"] then
+        local default_port = params.scheme == "https" and 443 or 80
+        if params.port and tonumber(params.port) ~= default_port then
+            headers["Host"] = host .. ":" .. params.port
+        else
+            headers["Host"] = host
+        end
+    end
+    params.headers = headers
+
+    params.host = ip
+
+    return true
 end
 
 
@@ -183,6 +223,19 @@ function _M.request(params, timeout)
     local upstream_host = params.host or ""
     local upstream_scheme = params.scheme or "http"
     local t0 = ngx_now()
+
+    if http_client_is_ffi then
+        local resolved, rerr = resolve_upstream_host(params)
+        if not resolved then
+            return nil, "connect: " .. rerr, {
+                upstream_addr = upstream_addr,
+                upstream_host = upstream_host,
+                upstream_scheme = upstream_scheme,
+                upstream_uri = params.path,
+                t0 = t0,
+            }
+        end
+    end
 
     local ok, err = httpc:connect(params)
     if not ok then
