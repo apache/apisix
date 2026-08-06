@@ -38,6 +38,16 @@ import TabItem from '@theme/TabItem';
 
 `ai-prompt-decorator` 插件通过在用户输入提示前后添加预设提示来修改用户输入，以在内容生成中设定上下文。这种做法有助于模型在交互过程中按照预期的指导方针运行。
 
+该插件使用每种协议的原生提示结构修饰 Chat Completions、Responses API、Anthropic Messages 和 Bedrock Converse 请求。对于 Responses，`prepend` 中的内容会添加到 `instructions`，`append` 中的内容会添加到 `input`。该插件不会修改 Embeddings 请求，因为该格式没有可前置或追加的提示角色。
+
+APISIX 会先检查基于 URI 的格式，再检查仅基于请求体的格式：
+
+- Bedrock Converse 要求 URI 以 `/converse` 结尾且请求体包含 `messages` 数组。
+- Anthropic Messages 要求 URI 以 `/v1/messages` 结尾。
+- Responses API 要求 URI 以 `/v1/responses` 结尾且请求体包含 `input`。
+- Chat Completions 使用 `messages` 数组。
+- 之前的规则均未匹配时，包含 `input` 的请求会被识别为 Embeddings。
+
 ## 插件属性
 
 | 名称 | 类型 | 必选项 | 默认值 | 有效值 | 描述 |

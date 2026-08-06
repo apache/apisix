@@ -42,6 +42,16 @@ The `ai-rag` Plugin provides Retrieval-Augmented Generation (RAG) capabilities w
 
 The Plugin supports using [Azure OpenAI](https://azure.microsoft.com/en-us/products/ai-services/openai-service) and [Azure AI Search](https://azure.microsoft.com/en-us/products/ai-services/ai-search) services for generating embeddings and performing vector search. PRs for introducing support for other service providers are welcomed.
 
+The Plugin enriches Chat Completions, Responses API, Anthropic Messages, and Bedrock Converse requests using each protocol's native prompt structure. For Responses, it appends retrieved context to `input`. It does not enrich direct Embeddings API requests. The nested `ai_rag.embeddings` object configures the embedding input used internally for retrieval and is distinct from a top-level Embeddings request.
+
+APISIX checks URI-specific formats before body-only formats:
+
+- Bedrock Converse requires a URI ending in `/converse` and a `messages` array.
+- Anthropic Messages requires a URI ending in `/v1/messages`.
+- Responses API requires a URI ending in `/v1/responses` and an `input` field.
+- Chat Completions uses a `messages` array.
+- Embeddings uses `input` after the earlier rules do not match.
+
 ## Plugin Attributes
 
 | Name | Type | Required | Default | Valid values | Description |
