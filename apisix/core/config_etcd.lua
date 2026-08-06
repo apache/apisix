@@ -26,6 +26,7 @@ local json         = require("apisix.core.json")
 local etcd_apisix  = require("apisix.core.etcd")
 local core_str     = require("apisix.core.string")
 local new_tab      = require("table.new")
+local nkeys        = require("table.nkeys")
 local inspect      = require("inspect")
 local process      = require("ngx.process")
 local check_schema = require("apisix.core.schema").check
@@ -196,18 +197,9 @@ local function do_run_watch(premature)
     opts.need_cancel = true
     opts.start_revision = watch_ctx.rev
 
-    -- get latest revision
-    local res, err = watch_ctx.cli:readdir(watch_ctx.prefix .. "/phantomkey")
-    if err then
-        log.error("failed to get latest revision, err: ", err)
-    end
-    local latest_rev
-    if res and res.body and res.body.header and res.body.header.revision then
-        latest_rev = tonumber(res.body.header.revision)
-    else
-        log.error("failed to get latest revision, res: ", json.delay_encode(res))
-    end
-
+    -- A watch timeout must not advance start_revision: it cannot tell an idle
+    -- prefix from a stream that died silently, and skipping ahead loses the
+    -- events etcd already wrote into that stream. See #13067.
     log.info("restart watchdir: start_revision=", opts.start_revision)
 
     local res_func, err, http_cli = watch_ctx.cli:watchdir(watch_ctx.prefix, opts)
@@ -226,12 +218,6 @@ local function do_run_watch(premature)
                 err ~= "broken pipe"
             then
                 log.error("wait watch event: ", err)
-            end
-            if err == "timeout" then
-                if latest_rev and watch_ctx.rev < latest_rev + 1 then
-                    watch_ctx.rev = latest_rev + 1
-                    log.info("etcd watch timeout, upgrade revision to ", watch_ctx.rev)
-                end
             end
             cancel_watch(http_cli)
             break
@@ -560,6 +546,7 @@ end
 local function load_full_data(self, dir_res, headers, prev_values, prev_values_hash)
     local err
     local changed = false
+    local prev_keys_still_present = 0
 
     if self.single_item then
         self.values = new_tab(1, 0)
@@ -621,6 +608,22 @@ local function load_full_data(self, dir_res, headers, prev_values, prev_values_h
 
         for _, item in ipairs(values) do
             local key = short_key(self, item.key)
+            local prev_item = get_prev_item(prev_values, prev_values_hash, key)
+            if prev_item then
+                prev_keys_still_present = prev_keys_still_present + 1
+            end
+
+            -- Deliberately leaves `changed` alone, so a reload that changed
+            -- nothing does not bump conf_version and rebuild every router.
+            -- Same semantics as sync_data, which re-runs the checker and filter
+            -- only for the keys that changed.
+            if prev_item and prev_item.modifiedIndex == item.modifiedIndex then
+                insert_tab(self.values, prev_item)
+                self.values_hash[key] = #self.values
+                self:upgrade_version(item.modifiedIndex)
+                goto continue
+            end
+
             local data_valid = true
             err = nil
             if type(item.value) ~= "table" then
@@ -660,20 +663,26 @@ local function load_full_data(self, dir_res, headers, prev_values, prev_values_h
                     self.filter(item)
                 end
 
-            else
-                local prev_item = get_prev_item(prev_values, prev_values_hash, key)
-                if prev_item then
-                    -- keep serving with the last valid configuration instead of
-                    -- silently dropping the whole item on a full reload, see the
-                    -- incremental path in sync_data for the same semantics
-                    log.warn("failed to check item data of [", self.key, "/", key,
-                             "], keep the previous configuration, err: ", err)
-                    insert_tab(self.values, prev_item)
-                    self.values_hash[key] = #self.values
-                end
+            elseif prev_item then
+                -- keep serving with the last valid configuration instead of
+                -- silently dropping the whole item on a full reload, see the
+                -- incremental path in sync_data for the same semantics
+                log.warn("failed to check item data of [", self.key, "/", key,
+                         "], keep the previous configuration, err: ", err)
+                insert_tab(self.values, prev_item)
+                self.values_hash[key] = #self.values
             end
 
             self:upgrade_version(item.modifiedIndex)
+
+            ::continue::
+        end
+
+        -- A deletion leaves every surviving key untouched, so it has to be
+        -- detected separately or a reload that only deletes would keep
+        -- serving the removed items.
+        if prev_values_hash and prev_keys_still_present < nkeys(prev_values_hash) then
+            changed = true
         end
     end
 
