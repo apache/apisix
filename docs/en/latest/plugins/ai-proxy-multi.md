@@ -164,7 +164,7 @@ plugin_attr:
     http_client: ngx_http_ffi_client # or lua-resty-http
 ```
 
-- `ngx_http_ffi_client` (default): the C client. It exists only when the APISIX runtime was built with the module; on a runtime without it the transport logs a warning and uses `lua-resty-http` instead.
+- `ngx_http_ffi_client` (default): the C client. It requires an APISIX runtime built with the module, which the runtime pinned in `.requirements` is. On a runtime without it, the request fails and the error names the missing module; the plugin never silently switches clients.
 - `lua-resty-http`: the Lua client, on every runtime.
 
 The setting covers `ai-proxy`, `ai-proxy-multi`, and `ai-request-rewrite`, which share the same transport.

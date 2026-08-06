@@ -19,7 +19,6 @@
 -- Provides HTTP client lifecycle management for AI provider requests.
 
 local core = require("apisix.core")
-local http = require("resty.http")
 local ngx_now = ngx.now
 local pairs = pairs
 local ipairs = ipairs
@@ -31,12 +30,27 @@ local tostring = tostring
 
 local FFI_CLIENT = "ngx_http_ffi_client"
 local LUA_RESTY_HTTP = "lua-resty-http"
-local FFI_CLIENT_MODULE = "resty.ngx_http_ffi_client"
+
+-- the client name in the config is not the module name
+local CLIENT_MODULES = {
+    [FFI_CLIENT] = "resty.ngx_http_ffi_client",
+    [LUA_RESTY_HTTP] = "resty.http",
+}
+
+local attr_schema = {
+    type = "object",
+    properties = {
+        http_client = {
+            type = "string",
+            enum = {FFI_CLIENT, LUA_RESTY_HTTP},
+            default = FFI_CLIENT,
+        },
+    },
+}
 
 local _M = {}
 
-local ffi_client
-local ffi_client_resolved
+local http_client
 
 
 --- Pick the outbound HTTP client.
@@ -44,62 +58,49 @@ local ffi_client_resolved
 -- default, or "lua-resty-http". The first is a C client with the same object
 -- API as the second and around half its outbound CPU cost, and it exists only
 -- when the gateway runtime was built with the module.
--- Resolved once per worker, on first request, because local_conf is not
--- readable while the module is still loading.
-local function resolve_ffi_client()
-    if ffi_client_resolved then
-        return ffi_client
+-- Resolved on first request, because local_conf is not readable while the
+-- module is still loading, and cached only once a client has been loaded.
+local function resolve_client()
+    if http_client then
+        return http_client
     end
-    ffi_client_resolved = true
 
     local local_conf = core.config.local_conf()
-    local want = core.table.try_read_attr(local_conf, "plugin_attr",
-                                          "ai-proxy", "http_client") or FFI_CLIENT
+    local attr = core.table.try_read_attr(local_conf, "plugin_attr", "ai-proxy") or {}
 
-    if want == LUA_RESTY_HTTP then
-        core.log.info("ai transport uses ", LUA_RESTY_HTTP)
-        return nil
+    local ok, err = core.schema.check(attr_schema, attr)
+    if not ok then
+        core.log.error("invalid plugin_attr.ai-proxy: ", err)
+        return nil, "invalid plugin_attr.ai-proxy: " .. err
     end
 
-    if want ~= FFI_CLIENT then
-        core.log.error("unknown plugin_attr.ai-proxy.http_client \"", want,
-                       "\", using ", FFI_CLIENT)
-    end
+    local name = attr.http_client or FFI_CLIENT
+    local module_name = CLIENT_MODULES[name]
 
-    local ok, mod = pcall(require, FFI_CLIENT_MODULE)
+    local mod
+    ok, mod = pcall(require, module_name)
     if not ok or type(mod) ~= "table" then
-        -- a runtime built without the module; warn rather than error, since
-        -- every request on such a runtime would otherwise log one
-        core.log.warn(FFI_CLIENT_MODULE, " is not available, ",
-                      "falling back to ", LUA_RESTY_HTTP, ": ", mod)
-        return nil
+        core.log.error(module_name, " is not available: ", mod)
+        return nil, module_name .. " is not available: " .. tostring(mod)
     end
 
-    ffi_client = mod
+    http_client = mod
 
-    return ffi_client
+    return http_client
 end
 
 
 --- Create an HTTP client.
 -- The Lua half of `ngx_http_ffi_client` loads even when the C module is not
--- compiled into the runtime; new() is what reports that, so a failure here
--- falls back for the rest of the worker's life.
+-- compiled into the runtime; new() is what reports that. Either way the
+-- failure is returned, never worked around with the other client.
 local function new_client()
-    local client = resolve_ffi_client()
-    if client then
-        local httpc, err = client.new()
-        if httpc then
-            return httpc
-        end
-
-        core.log.warn("failed to create ", FFI_CLIENT_MODULE, ", ",
-                      "falling back to ", LUA_RESTY_HTTP, ": ",
-                      err or "unknown")
-        ffi_client = nil
+    local client, err = resolve_client()
+    if not client then
+        return nil, err
     end
 
-    return http.new()
+    return client.new()
 end
 
 
