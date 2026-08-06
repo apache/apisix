@@ -533,7 +533,8 @@ local function meta_filter(ctx, plugin_name, plugin_conf)
 
     local match_cache_key =
         ctx.conf_type .. "#" .. ctx.conf_id .. "#"
-            .. ctx.conf_version .. "#" .. plugin_name .. "#meta_filter_matched"
+            .. ctx.conf_version .. "#" .. plugin_name .. "#"
+            .. ngx.get_phase() .. "#meta_filter_matched"
     if ctx[match_cache_key] ~= nil then
         return ctx[match_cache_key]
     end
