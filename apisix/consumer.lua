@@ -303,7 +303,6 @@ local plugin_unique_key_attrs = {
     ["jwt-auth"]   = "key",
     ["hmac-auth"]  = "key_id",
     ["ldap-auth"]  = "user_dn",
-    ["ldap-auth-advanced"] = "user_dn",
 }
 
 

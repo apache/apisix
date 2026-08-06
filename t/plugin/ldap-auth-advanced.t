@@ -228,39 +228,7 @@ rejected
 
 
 
-=== TEST 12: consumer schema with user_dn passes
---- config
-    location /t {
-        content_by_lua_block {
-            local core = require("apisix.core")
-            local plugin = require("apisix.plugins.ldap-auth-advanced")
-            local ok, err = plugin.check_schema(
-                { user_dn = "cn=user01,ou=users,dc=example,dc=org" },
-                core.schema.TYPE_CONSUMER)
-            ngx.say(ok and "passed" or err)
-        }
-    }
---- response_body
-passed
-
-
-
-=== TEST 13: empty consumer schema is rejected
---- config
-    location /t {
-        content_by_lua_block {
-            local core = require("apisix.core")
-            local plugin = require("apisix.plugins.ldap-auth-advanced")
-            local ok, err = plugin.check_schema({}, core.schema.TYPE_CONSUMER)
-            ngx.say(ok and "passed" or "rejected")
-        }
-    }
---- response_body
-rejected
-
-
-
-=== TEST 14: set up a route protected by ldap-auth-advanced (live LDAP)
+=== TEST 12: set up a route protected by ldap-auth-advanced (live LDAP)
 --- config
     location /t {
         content_by_lua_block {
@@ -295,7 +263,7 @@ passed
 
 
 
-=== TEST 15: no credential header -> 401 with WWW-Authenticate ldap realm
+=== TEST 13: no credential header -> 401 with WWW-Authenticate ldap realm
 --- request
 GET /hello
 --- error_code: 401
@@ -304,7 +272,7 @@ WWW-Authenticate: ldap realm="ldap"
 
 
 
-=== TEST 16: malformed base64 payload ("aca_a" does not decode) -> 401
+=== TEST 14: malformed base64 payload ("aca_a" does not decode) -> 401
 --- request
 GET /hello
 --- more_headers
@@ -313,7 +281,7 @@ Authorization: ldap aca_a
 
 
 
-=== TEST 17: base64 payload without a ':' separator (decodes to "useronly") -> 401
+=== TEST 15: base64 payload without a ':' separator (decodes to "useronly") -> 401
 --- request
 GET /hello
 --- more_headers
@@ -322,7 +290,7 @@ Authorization: ldap dXNlcm9ubHk=
 
 
 
-=== TEST 18: empty password (payload decodes to "user01:") rejected before any bind (RFC 4513 5.1.2 unauthenticated bind)
+=== TEST 16: empty password (payload decodes to "user01:") rejected before any bind (RFC 4513 5.1.2 unauthenticated bind)
 --- request
 GET /hello
 --- more_headers
@@ -335,7 +303,7 @@ empty password
 
 
 
-=== TEST 19: scheme word parsed case-insensitively (uppercase), empty password still rejected (creds: user01:)
+=== TEST 17: scheme word parsed case-insensitively (uppercase), empty password still rejected (creds: user01:)
 --- request
 GET /hello
 --- more_headers
@@ -348,7 +316,7 @@ empty password
 
 
 
-=== TEST 20: scheme word parsed case-insensitively (mixed case), empty password still rejected (creds: user01:)
+=== TEST 18: scheme word parsed case-insensitively (mixed case), empty password still rejected (creds: user01:)
 --- request
 GET /hello
 --- more_headers
@@ -361,7 +329,7 @@ empty password
 
 
 
-=== TEST 21: set up a route with header_type basic
+=== TEST 19: set up a route with header_type basic
 --- config
     location /t {
         content_by_lua_block {
@@ -397,7 +365,7 @@ passed
 
 
 
-=== TEST 22: header_type basic emits a Basic-scheme WWW-Authenticate
+=== TEST 20: header_type basic emits a Basic-scheme WWW-Authenticate
 --- request
 GET /hello
 --- error_code: 401
@@ -406,7 +374,7 @@ WWW-Authenticate: Basic realm="ldap"
 
 
 
-=== TEST 23: inbound identity headers are cleared before any auth work, on every path
+=== TEST 21: inbound identity headers are cleared before any auth work, on every path
 --- config
     location /t {
         content_by_lua_block {
@@ -415,6 +383,7 @@ WWW-Authenticate: Basic realm="ldap"
             local headers = {
                 "X-Authenticated-Groups", "X-Consumer-Username",
                 "X-Credential-Identifier", "X-Consumer-Custom-ID",
+                "X-Authenticated-User-Dn", "X-Authenticated-Username",
             }
             local ctx = { var = {} }
             local before = {}
@@ -436,13 +405,15 @@ X-Authenticated-Groups: injected
 X-Consumer-Username: spoofed-user
 X-Credential-Identifier: spoofed-cred
 X-Consumer-Custom-ID: spoofed-id
+X-Authenticated-User-Dn: spoofed-dn
+X-Authenticated-Username: spoofed-login
 --- response_body
-before: injected spoofed-user spoofed-cred spoofed-id
-after: nil nil nil nil
+before: injected spoofed-user spoofed-cred spoofed-id spoofed-dn spoofed-login
+after: nil nil nil nil nil nil
 
 
 
-=== TEST 24: set up a route with multi-auth wrapping ldap-auth-advanced and basic-auth
+=== TEST 22: set up a route with multi-auth wrapping ldap-auth-advanced and basic-auth
 --- config
     location /t {
         content_by_lua_block {
@@ -486,7 +457,7 @@ passed
 
 
 
-=== TEST 25: under multi-auth ldap-auth-advanced declines quietly (creds: user01:)
+=== TEST 23: under multi-auth ldap-auth-advanced declines quietly (creds: user01:)
 --- request
 GET /hello
 --- more_headers
@@ -501,7 +472,7 @@ empty password
 
 
 
-=== TEST 26: set up the plain search-then-bind route (uid attribute)
+=== TEST 24: set up the plain search-then-bind route (uid attribute)
 --- config
     location /t {
         content_by_lua_block {
@@ -537,81 +508,7 @@ passed
 
 
 
-=== TEST 27: consumer_required (default true) with NO matching Consumer -> 401 (fails closed) (creds: user01:password1)
---- request
-GET /hello
---- more_headers
-Authorization: ldap dXNlcjAxOnBhc3N3b3JkMQ==
---- error_code: 401
---- grep_error_log eval
-qr/no Consumer is configured/
---- grep_error_log_out
-no Consumer is configured
-
-
-
-=== TEST 28: create the ldap-auth-advanced Consumers (user_dn associations)
---- config
-    location /t {
-        content_by_lua_block {
-            local core = require("apisix.core")
-            local t = require("lib.test_admin").test
-            local users = {
-                { name = "ldapadvuser01", dn = "cn=user01,ou=users,dc=example,dc=org" },
-                { name = "ldapadvuser02", dn = "cn=user02,ou=users,dc=example,dc=org" },
-                { name = "ldapadvjdoe",   dn = "cn=Jane Doe,ou=users,dc=example,dc=org" },
-                { name = "ldapadvsecret", dn = "cn=Secret User,ou=users,dc=example,dc=org" },
-            }
-            for _, u in ipairs(users) do
-                local code, body = t('/apisix/admin/consumers',
-                    ngx.HTTP_PUT,
-                    core.json.encode({
-                        username = u.name,
-                        plugins = {
-                            ["ldap-auth-advanced"] = { user_dn = u.dn },
-                        },
-                    }))
-                if code >= 300 then
-                    ngx.status = code
-                    ngx.say(body)
-                    return
-                end
-            end
-            ngx.say("passed")
-        }
-    }
---- response_body
-passed
-
-
-
-=== TEST 29: happy path -- uid=user01 (cn=user01) matches Consumer ldapadvuser01 (200 + attached) (creds: user01:password1)
---- request
-GET /hello
---- more_headers
-Authorization: ldap dXNlcjAxOnBhc3N3b3JkMQ==
---- error_code: 200
---- response_body
-hello world
---- error_log
-find consumer ldapadvuser01
-
-
-
-=== TEST 30: AD-shape happy path -- uid=jdoe (cn=Jane Doe) matches Consumer ldapadvjdoe (200) (creds: jdoe:janesecret)
---- request
-GET /hello
---- more_headers
-Authorization: ldap amRvZTpqYW5lc2VjcmV0
---- error_code: 200
---- response_body
-hello world
---- error_log
-find consumer ldapadvjdoe
-
-
-
-=== TEST 31: wrong password -> 401 (a result-code failure, not a transport error) (creds: user01:wrong)
+=== TEST 25: wrong password -> 401 (a result-code failure, not a transport error) (creds: user01:wrong)
 --- request
 GET /hello
 --- more_headers
@@ -620,7 +517,7 @@ Authorization: ldap dXNlcjAxOndyb25n
 
 
 
-=== TEST 32: unknown user -> 401 (the user search returns 0 entries) (creds: nouser:x)
+=== TEST 26: unknown user -> 401 (the user search returns 0 entries) (creds: nouser:x)
 --- request
 GET /hello
 --- more_headers
@@ -629,7 +526,7 @@ Authorization: ldap bm91c2VyOng=
 
 
 
-=== TEST 33: ambiguous match (two uid=dupuser entries) -> 401 + "ambiguous" warn (creds: dupuser:duppass1)
+=== TEST 27: ambiguous match (two uid=dupuser entries) -> 401 + "ambiguous" warn (creds: dupuser:duppass1)
 --- request
 GET /hello
 --- more_headers
@@ -642,56 +539,7 @@ ambiguous user match
 
 
 
-=== TEST 34: set up the search-then-bind route with consumer_required=false
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                ngx.HTTP_PUT,
-                [[{
-                    "plugins": {
-                        "ldap-auth-advanced": {
-                            "ldap_uri": "127.0.0.1:1389",
-                            "base_dn": "ou=users,dc=example,dc=org",
-                            "attribute": "uid",
-                            "consumer_required": false
-                        }
-                    },
-                    "upstream": {
-                        "nodes": {
-                            "127.0.0.1:1980": 1
-                        },
-                        "type": "roundrobin"
-                    },
-                    "uri": "/hello"
-                }]]
-                )
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- response_body
-passed
-
-
-
-=== TEST 35: consumer_required=false -> user01 authenticated, no Consumer attached (200) (creds: user01:password1)
---- request
-GET /hello
---- more_headers
-Authorization: ldap dXNlcjAxOnBhc3N3b3JkMQ==
---- error_code: 200
---- response_body
-hello world
---- no_error_log
-find consumer
-
-
-
-=== TEST 36: point the route at a dead LDAP port (transport-error case)
+=== TEST 28: point the route at a dead LDAP port (transport-error case)
 --- config
     location /t {
         content_by_lua_block {
@@ -727,7 +575,7 @@ passed
 
 
 
-=== TEST 37: LDAP unreachable -> 500 (a transport error is never an auth failure) (creds: user01:password1)
+=== TEST 29: LDAP unreachable -> 500 (a transport error is never an auth failure) (creds: user01:password1)
 --- request
 GET /hello
 --- more_headers
@@ -738,7 +586,7 @@ LDAP connect failed
 
 
 
-=== TEST 38: set up an LDAPS route on 1636 (use_ldaps, ssl_verify off)
+=== TEST 30: set up an LDAPS route on 1636 (use_ldaps, ssl_verify off)
 --- config
     location /t {
         content_by_lua_block {
@@ -775,7 +623,7 @@ passed
 
 
 
-=== TEST 39: happy path over LDAPS (200) (creds: user01:password1)
+=== TEST 31: happy path over LDAPS (200) (creds: user01:password1)
 --- request
 GET /hello
 --- more_headers
@@ -786,7 +634,7 @@ hello world
 
 
 
-=== TEST 40: set up a StartTLS route on 1389 (use_starttls, ssl_verify off)
+=== TEST 32: set up a StartTLS route on 1389 (use_starttls, ssl_verify off)
 --- config
     location /t {
         content_by_lua_block {
@@ -823,7 +671,7 @@ passed
 
 
 
-=== TEST 41: happy path over StartTLS (200) (creds: user01:password1)
+=== TEST 33: happy path over StartTLS (200) (creds: user01:password1)
 --- request
 GET /hello
 --- more_headers
@@ -834,7 +682,7 @@ hello world
 
 
 
-=== TEST 42: restore the plain search-then-bind route for the injection suite
+=== TEST 34: restore the plain search-then-bind route for the injection suite
 --- config
     location /t {
         content_by_lua_block {
@@ -869,7 +717,7 @@ passed
 
 
 
-=== TEST 43: filter-injection usernames each 401 (none widens the search)
+=== TEST 35: filter-injection usernames each 401 (none widens the search)
 --- config
     location /t {
         content_by_lua_block {
@@ -909,7 +757,7 @@ ambiguous user match
 
 
 
-=== TEST 44: username with an invalid UTF-8 byte -> clean 401, never a 500
+=== TEST 36: username with an invalid UTF-8 byte -> clean 401, never a 500
 --- config
     location /t {
         content_by_lua_block {
@@ -938,7 +786,7 @@ LDAP user search failed
 
 
 
-=== TEST 45: well-formed multibyte UTF-8 username reaches the search and 401s as not-found
+=== TEST 37: well-formed multibyte UTF-8 username reaches the search and 401s as not-found
 --- config
     location /t {
         content_by_lua_block {
@@ -967,7 +815,7 @@ invalid username
 
 
 
-=== TEST 46: username with a trailing '~' reaches the search and 401s as not-found
+=== TEST 38: username with a trailing '~' reaches the search and 401s as not-found
 --- config
     location /t {
         content_by_lua_block {
@@ -998,7 +846,7 @@ invalid username
 
 
 
-=== TEST 47: set up the three concurrent-probe routes (churn + anon-secret + svc-secret)
+=== TEST 39: set up the three concurrent-probe routes (churn + anon-secret + svc-secret)
 --- config
     location /t {
         content_by_lua_block {
@@ -1047,7 +895,7 @@ passed
 
 
 
-=== TEST 48: CONCURRENT bind-state-leak probe: anon re-bind must not leak
+=== TEST 40: CONCURRENT bind-state-leak probe: anon re-bind must not leak
 --- config
     location /probe {
         content_by_lua_block {
@@ -1126,70 +974,7 @@ routeB_svc_all_200: true
 
 
 
-=== TEST 49: swap in a Consumer whose user_dn is an $ENV:// secret reference
---- main_config
-env ADV_LDAP_USER_DN=cn=user02,ou=users,dc=example,dc=org;
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/consumers/ldapadvuser02', ngx.HTTP_DELETE)
-            if code >= 300 then
-                ngx.status = code
-                return ngx.say(body)
-            end
-
-            code, body = t('/apisix/admin/consumers',
-                ngx.HTTP_PUT,
-                [[{
-                     "username": "ldapadvenvref",
-                     "plugins": {
-                         "ldap-auth-advanced": {
-                             "user_dn": "$ENV://ADV_LDAP_USER_DN"
-                         }
-                     }
-                }]]
-                )
-            if code >= 300 then
-                ngx.status = code
-                return ngx.say(body)
-            end
-
-            -- wait until the watcher has synced BOTH writes: the resolved
-            -- env-ref consumer must be the one the runtime map returns
-            local find_consumer = require("apisix.consumer").find_consumer
-            for _ = 1, 100 do
-                local consumer = find_consumer("ldap-auth-advanced", "user_dn",
-                                               "cn=user02,ou=users,dc=example,dc=org")
-                if consumer and consumer.consumer_name == "ldapadvenvref" then
-                    break
-                end
-                ngx.sleep(0.05)
-            end
-            ngx.say("passed")
-        }
-    }
---- response_body
-passed
-
-
-
-=== TEST 50: env-ref user_dn resolves and matches the Consumer (200) (creds: user02:password2)
---- main_config
-env ADV_LDAP_USER_DN=cn=user02,ou=users,dc=example,dc=org;
---- request
-GET /hello
---- more_headers
-Authorization: ldap dXNlcjAyOnBhc3N3b3JkMg==
---- error_code: 200
---- response_body
-hello world
---- error_log
-find consumer ldapadvenvref
-
-
-
-=== TEST 51: set the /uri header-printing route to consumer_required=false
+=== TEST 41: set up the /uri header-printing route
 --- config
     location /t {
         content_by_lua_block {
@@ -1202,7 +987,7 @@ find consumer ldapadvenvref
                             "ldap_uri": "127.0.0.1:1389",
                             "base_dn": "ou=users,dc=example,dc=org",
                             "attribute": "uid",
-                            "consumer_required": false
+                            "set_user_dn_header": true
                         }
                     },
                     "upstream": {
@@ -1225,7 +1010,7 @@ passed
 
 
 
-=== TEST 52: spoofed identity headers never reach the upstream without a Consumer (creds: user01:password1)
+=== TEST 42: spoofed identity headers never reach the upstream (creds: user01:password1)
 --- request
 GET /uri
 --- more_headers
@@ -1234,16 +1019,17 @@ X-Consumer-Username: spoofed-user
 X-Credential-Identifier: spoofed-cred
 X-Consumer-Custom-ID: spoofed-id
 X-Authenticated-Groups: spoofed-groups
+X-Authenticated-User-Dn: spoofed-dn
+X-Authenticated-Username: spoofed-login
 --- error_code: 200
---- response_body
-uri: /uri
-authorization: ldap dXNlcjAxOnBhc3N3b3JkMQ==
-host: localhost
-x-real-ip: 127.0.0.1
+--- response_body_like eval
+qr/uri: \/uri\nauthorization: ldap dXNlcjAxOnBhc3N3b3JkMQ==\nhost: localhost\nx-authenticated-groups: (Domain Admins,developers|developers,Domain Admins)\nx-authenticated-user-dn: cn=user01,ou=users,dc=example,dc=org\nx-authenticated-username: user01\nx-real-ip: 127\.0\.0\.1\n/
+--- response_body_unlike eval
+qr/spoofed/
 
 
 
-=== TEST 53: RFC 4512 attribute forms are accepted (descriptor, OID, options)
+=== TEST 43: RFC 4512 attribute forms are accepted (descriptor, OID, options)
 --- config
     location /t {
         content_by_lua_block {
@@ -1272,7 +1058,7 @@ cn;lang-en: passed
 
 
 
-=== TEST 54: malformed attribute forms are rejected
+=== TEST 44: malformed attribute forms are rejected
 --- config
     location /t {
         content_by_lua_block {
@@ -1303,7 +1089,7 @@ cn;: rejected
 
 
 
-=== TEST 55: set up the search-then-bind route with the uid attribute's numeric OID
+=== TEST 45: set up the search-then-bind route with the uid attribute's numeric OID
 --- config
     location /t {
         content_by_lua_block {
@@ -1338,7 +1124,7 @@ passed
 
 
 
-=== TEST 56: OID attribute resolves the user end-to-end (200) (creds: user01:password1)
+=== TEST 46: OID attribute resolves the user end-to-end (200) (creds: user01:password1)
 --- request
 GET /hello
 --- more_headers
@@ -1346,12 +1132,10 @@ Authorization: ldap dXNlcjAxOnBhc3N3b3JkMQ==
 --- error_code: 200
 --- response_body
 hello world
---- error_log
-find consumer ldapadvuser01
 
 
 
-=== TEST 57: a proxy's own Basic Proxy-Authorization must not mask a valid Authorization
+=== TEST 47: a proxy's own Basic Proxy-Authorization must not mask a valid Authorization
 --- request
 GET /hello
 --- more_headers
@@ -1360,12 +1144,10 @@ Authorization: ldap dXNlcjAxOnBhc3N3b3JkMQ==
 --- error_code: 200
 --- response_body
 hello world
---- error_log
-find consumer ldapadvuser01
 
 
 
-=== TEST 58: Proxy-Authorization alone carries the credential (200) (creds: user01:password1)
+=== TEST 48: Proxy-Authorization alone carries the credential (200) (creds: user01:password1)
 --- request
 GET /hello
 --- more_headers
@@ -1373,12 +1155,10 @@ Proxy-Authorization: ldap dXNlcjAxOnBhc3N3b3JkMQ==
 --- error_code: 200
 --- response_body
 hello world
---- error_log
-find consumer ldapadvuser01
 
 
 
-=== TEST 59: when both headers parse, Proxy-Authorization wins (proxy: user01, auth: jdoe)
+=== TEST 49: when both headers parse, Proxy-Authorization wins (proxy: user01, auth: jdoe)
 --- request
 GET /hello
 --- more_headers
@@ -1387,12 +1167,10 @@ Authorization: ldap amRvZTpqYW5lc2VjcmV0
 --- error_code: 200
 --- response_body
 hello world
---- error_log
-find consumer ldapadvuser01
 
 
 
-=== TEST 60: undecodable Proxy-Authorization payload falls back to Authorization
+=== TEST 50: undecodable Proxy-Authorization payload falls back to Authorization
 --- request
 GET /hello
 --- more_headers
@@ -1401,12 +1179,10 @@ Authorization: ldap dXNlcjAxOnBhc3N3b3JkMQ==
 --- error_code: 200
 --- response_body
 hello world
---- error_log
-find consumer ldapadvuser01
 
 
 
-=== TEST 61: unusable Proxy-Authorization with no Authorization still 401s
+=== TEST 51: unusable Proxy-Authorization with no Authorization still 401s
 --- request
 GET /hello
 --- more_headers
@@ -1415,7 +1191,7 @@ Proxy-Authorization: Basic cHJveHk6aHVudGVyMg==
 
 
 
-=== TEST 62: Proxy-Authorization with an empty username falls back to Authorization (proxy: ":pass")
+=== TEST 52: Proxy-Authorization with an empty username falls back to Authorization (proxy: ":pass")
 --- request
 GET /hello
 --- more_headers
@@ -1424,12 +1200,10 @@ Authorization: ldap dXNlcjAxOnBhc3N3b3JkMQ==
 --- error_code: 200
 --- response_body
 hello world
---- error_log
-find consumer ldapadvuser01
 
 
 
-=== TEST 63: Proxy-Authorization with an empty password falls back to Authorization (proxy: "user:")
+=== TEST 53: Proxy-Authorization with an empty password falls back to Authorization (proxy: "user:")
 --- request
 GET /hello
 --- more_headers
@@ -1438,12 +1212,10 @@ Authorization: ldap dXNlcjAxOnBhc3N3b3JkMQ==
 --- error_code: 200
 --- response_body
 hello world
---- error_log
-find consumer ldapadvuser01
 
 
 
-=== TEST 64: an empty-field Proxy-Authorization with no Authorization still 401s (proxy: ":")
+=== TEST 54: an empty-field Proxy-Authorization with no Authorization still 401s (proxy: ":")
 --- request
 GET /hello
 --- more_headers
@@ -1456,7 +1228,7 @@ empty password
 
 
 
-=== TEST 65: set up a route whose service-account password is wrong
+=== TEST 55: set up a route whose service-account password is wrong
 --- config
     location /t {
         content_by_lua_block {
@@ -1493,7 +1265,7 @@ passed
 
 
 
-=== TEST 66: rejected service bind -> 500, never a client auth failure (creds: user01:password1)
+=== TEST 56: rejected service bind -> 500, never a client auth failure (creds: user01:password1)
 --- request
 GET /hello
 --- more_headers
@@ -1504,7 +1276,7 @@ LDAP search bind failed
 
 
 
-=== TEST 67: set up a route with a nonexistent base_dn
+=== TEST 57: set up a route with a nonexistent base_dn
 --- config
     location /t {
         content_by_lua_block {
@@ -1539,7 +1311,7 @@ passed
 
 
 
-=== TEST 68: search against a nonexistent base_dn -> 500 (noSuchObject is a misconfiguration) (creds: user01:password1)
+=== TEST 58: search against a nonexistent base_dn -> 500 (noSuchObject is a misconfiguration) (creds: user01:password1)
 --- request
 GET /hello
 --- more_headers
@@ -1550,7 +1322,7 @@ LDAP user search failed
 
 
 
-=== TEST 69: set up a route whose login attribute matches many entries (objectClass)
+=== TEST 59: set up a route whose login attribute matches many entries (objectClass)
 --- config
     location /t {
         content_by_lua_block {
@@ -1585,7 +1357,7 @@ passed
 
 
 
-=== TEST 70: sizeLimitExceeded stays a fail-closed 401, not a 500 (creds: inetOrgPerson:x)
+=== TEST 60: sizeLimitExceeded stays a fail-closed 401, not a 500 (creds: inetOrgPerson:x)
 --- request
 GET /hello
 --- more_headers
@@ -1598,7 +1370,7 @@ ambiguous user match (size limit exceeded)
 
 
 
-=== TEST 71: empty ldap_uri is rejected (minLength)
+=== TEST 61: empty ldap_uri is rejected (minLength)
 --- config
     location /t {
         content_by_lua_block {
@@ -1615,7 +1387,7 @@ qr/property "ldap_uri" validation failed/
 
 
 
-=== TEST 72: overlong base_dn is rejected (maxLength)
+=== TEST 62: overlong base_dn is rejected (maxLength)
 --- config
     location /t {
         content_by_lua_block {
@@ -1632,16 +1404,256 @@ qr/property "base_dn" validation failed/
 
 
 
-=== TEST 73: empty consumer user_dn is rejected (minLength)
+=== TEST 63: set up the /hello route with a log-phase identity-header reader
 --- config
     location /t {
         content_by_lua_block {
-            local core = require("apisix.core")
-            local plugin = require("apisix.plugins.ldap-auth-advanced")
-            local ok, err = plugin.check_schema({ user_dn = "" },
-                                                core.schema.TYPE_CONSUMER)
-            ngx.say(ok and "passed" or err)
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "ldap-auth-advanced": {
+                            "ldap_uri": "127.0.0.1:1389",
+                            "base_dn": "ou=users,dc=example,dc=org",
+                            "attribute": "uid",
+                            "set_user_dn_header": true
+                        },
+                        "serverless-post-function": {
+                            "phase": "log",
+                            "functions": ["return function(conf, ctx) ngx.log(ngx.WARN, \"ldapheaders: [\", ctx.var.http_x_authenticated_username, \"][\", ctx.var.http_x_authenticated_user_dn, \"][\", ctx.var.http_x_authenticated_groups, \"]\") end"]
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 64: identity headers reach a log-phase reader as $http_ vars (creds: user01:password1)
+--- request
+GET /hello
+--- more_headers
+Authorization: ldap dXNlcjAxOnBhc3N3b3JkMQ==
+--- error_code: 200
+--- error_log eval
+qr/ldapheaders: \[user01\]\[cn=user01,ou=users,dc=example,dc=org\]\[(Domain Admins,developers|developers,Domain Admins)\]/
+
+
+
+=== TEST 65: X-Authenticated-User-Dn and X-Authenticated-Username reach the upstream (creds: user01:password1)
+--- request
+GET /uri
+--- more_headers
+Authorization: ldap dXNlcjAxOnBhc3N3b3JkMQ==
+--- error_code: 200
+--- response_body_like eval
+qr/x-authenticated-user-dn: cn=user01,ou=users,dc=example,dc=org\nx-authenticated-username: user01\n/
+
+
+
+=== TEST 66: a lower-priority plugin's _meta.filter can match the identity header via $http_
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/2',
+                ngx.HTTP_PUT,
+                [=[{
+                    "plugins": {
+                        "ldap-auth-advanced": {
+                            "ldap_uri": "127.0.0.1:1389",
+                            "base_dn": "ou=users,dc=example,dc=org",
+                            "attribute": "uid",
+                            "set_user_dn_header": true
+                        },
+                        "response-rewrite": {
+                            "_meta": {
+                                "filter": [["http_x_authenticated_user_dn", "==", "cn=user01,ou=users,dc=example,dc=org"]]
+                            },
+                            "body": "var-filter-hit\n"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/uri"
+                }]=]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 67: the filter fires for user01 and stays quiet for jdoe
+--- pipelined_requests eval
+["GET /uri", "GET /uri"]
+--- more_headers eval
+["Authorization: ldap dXNlcjAxOnBhc3N3b3JkMQ==", "Authorization: ldap amRvZTpqYW5lc2VjcmV0"]
+--- response_body_like eval
+[qr/var-filter-hit/, qr/uri: \/uri/]
+
+
+
+=== TEST 68: set up a multi-auth route where a denied LDAP principal is followed by a key-auth win
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "ldapadvmixed",
+                    "plugins": {
+                        "key-auth": {
+                            "key": "ldapadv-mixed-key"
+                        }
+                    }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code2, body2 = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [=[{
+                    "plugins": {
+                        "multi-auth": {
+                            "auth_plugins": [
+                                {
+                                    "ldap-auth-advanced": {
+                                        "ldap_uri": "127.0.0.1:1389",
+                                        "base_dn": "ou=users,dc=example,dc=org",
+                                        "attribute": "uid",
+                                        "groups_required": [["no-such-group"]]
+                                    }
+                                },
+                                {
+                                    "key-auth": {}
+                                }
+                            ]
+                        },
+                        "serverless-post-function": {
+                            "phase": "log",
+                            "functions": ["return function(conf, ctx) ngx.log(ngx.WARN, \"ldapheaders: [\", ctx.var.http_x_authenticated_username, \"][\", ctx.var.http_x_authenticated_user_dn, \"][\", ctx.var.http_x_authenticated_groups, \"]\") end"]
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]=]
+                )
+            if code2 >= 300 then
+                ngx.status = code2
+            end
+            ngx.say(body2)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 69: a denied LDAP principal leaves no identity headers behind for a sibling key-auth win (creds: user01:password1 + apikey)
+--- request
+GET /hello
+--- more_headers
+Authorization: ldap dXNlcjAxOnBhc3N3b3JkMQ==
+apikey: ldapadv-mixed-key
+--- error_code: 200
+--- error_log eval
+qr/ldapheaders: \[nil\]\[nil\]\[nil\]/
+
+
+
+=== TEST 70: attaching ldap-auth-advanced to a Consumer is rejected with a pointer to ldap-auth
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            -- the slice-1 consumer shape: exactly what a stale pre-release
+            -- Consumer would still carry
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "ldapadvnoconsumer",
+                    "plugins": {
+                        "ldap-auth-advanced": {
+                            "user_dn": "cn=user01,ou=users,dc=example,dc=org"
+                        }
+                    }
+                }]]
+                )
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- error_code: 400
+--- response_body_like eval
+qr/does not support consumer-scoped configuration; use the ldap-auth plugin/
+
+
+
+=== TEST 71: a Credential carrying ldap-auth-advanced is rejected the same way
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            -- a plugin-less Consumer is fine; only the credential must fail
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{ "username": "ldapadvcredcase" }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                ngx.print(body)
+                return
+            end
+            local code2, body2 = t(
+                '/apisix/admin/consumers/ldapadvcredcase/credentials/cred1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "ldap-auth-advanced": {
+                            "user_dn": "cn=user01,ou=users,dc=example,dc=org"
+                        }
+                    }
+                }]]
+                )
+            ngx.say(code2)
+            ngx.print(body2)
+            t('/apisix/admin/consumers/ldapadvcredcase', ngx.HTTP_DELETE)
         }
     }
 --- response_body_like eval
-qr/property "user_dn" validation failed/
+qr/^400\n.*does not support consumer-scoped configuration/

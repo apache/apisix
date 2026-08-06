@@ -100,3 +100,23 @@ cn: Secret User
 sn: Secret
 uid: secretuser
 userPassword: secretpass
+
+# Member of three groups (groups.ldif): exercises the unbounded group search.
+dn: cn=Multi User,ou=users,dc=example,dc=org
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+cn: Multi User
+sn: User
+uid: multiuser
+userPassword: multipass
+
+# Sole member of the comma-in-cn group "Sales, EMEA" (DN unescape case).
+dn: cn=Sales User,ou=users,dc=example,dc=org
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+cn: Sales User
+sn: User
+uid: salesuser
+userPassword: salespass

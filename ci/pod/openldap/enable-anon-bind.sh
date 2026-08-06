@@ -25,8 +25,11 @@
 #   * cn=Secret User: invisible to an anonymous search, readable by any
 #     authenticated identity (userPassword keeps `auth` so the entry can
 #     still be bound once found) -- the bind-state-leak tripwire.
+#   * ou=groups `member`: readable by anonymous (the group-search identity)
+#     but NOT by end users -- a group search that skipped the re-bind would
+#     match nothing. The rootdn (cn=admin) bypasses ACLs entirely.
 #   * The catch-all keeps everything else readable, so the ldap-auth
-#     regression is unaffected.
+#     regression and the memberOf attribute are unaffected.
 
 set -o errexit
 set -o nounset
@@ -66,7 +69,8 @@ changetype: modify
 replace: olcAccess
 olcAccess: {0}to dn.exact="cn=Secret User,ou=users,dc=example,dc=org" attrs=userPassword by anonymous auth by users read by * none
 olcAccess: {1}to dn.exact="cn=Secret User,ou=users,dc=example,dc=org" by users read by * none
-olcAccess: {2}to * by * read
+olcAccess: {2}to dn.subtree="ou=groups,dc=example,dc=org" attrs=member by anonymous read by users none
+olcAccess: {3}to * by * read
 EOF
 
 ldap_stop

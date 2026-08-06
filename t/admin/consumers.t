@@ -702,83 +702,12 @@ GET /t
 
 
 
-=== TEST 21: add consumer adv_case_a with ldap-auth-advanced user_dn
+=== TEST 21: clean up consumers
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/consumers',
-                ngx.HTTP_PUT,
-                [[{
-                     "username": "adv_case_a",
-                     "plugins": {
-                         "ldap-auth-advanced": {
-                             "user_dn": "cn=adv-duplicate-check,ou=users,dc=example,dc=org"
-                         }
-                     }
-                }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- request
-GET /t
---- response_body
-passed
-
-
-
-=== TEST 22: add consumer adv_case_b with the same ldap-auth-advanced user_dn, should fail
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            -- the duplicate check runs against the locally synced consumer
-            -- data, wait until the watcher catches up with the previous write
-            local find_consumer = require("apisix.consumer").find_consumer
-            for _ = 1, 100 do
-                if find_consumer("ldap-auth-advanced", "user_dn",
-                                 "cn=adv-duplicate-check,ou=users,dc=example,dc=org") then
-                    break
-                end
-                ngx.sleep(0.05)
-            end
-
-            local code, body = t('/apisix/admin/consumers',
-                ngx.HTTP_PUT,
-                [[{
-                     "username": "adv_case_b",
-                     "plugins": {
-                         "ldap-auth-advanced": {
-                             "user_dn": "cn=adv-duplicate-check,ou=users,dc=example,dc=org"
-                         }
-                     }
-                }]]
-                )
-
-            ngx.status = code
-            ngx.print(body)
-        }
-    }
---- request
-GET /t
---- error_code: 400
---- response_body
-{"error_msg":"duplicate user_dn of plugin ldap-auth-advanced found with consumer: adv_case_a"}
-
-
-
-=== TEST 23: clean up consumers
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            for _, name in ipairs({"case_a", "case_b", "case_c", "enc_case_a", "ldap_case_a",
-                                   "adv_case_a"}) do
+            for _, name in ipairs({"case_a", "case_b", "case_c", "enc_case_a", "ldap_case_a"}) do
                 local code, body = t('/apisix/admin/consumers/' .. name, ngx.HTTP_DELETE)
                 if code >= 300 then
                     ngx.say("failed to delete consumer ", name, ": ", body)
