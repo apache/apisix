@@ -463,6 +463,13 @@ local schema = {
                 pattern = "^[^:]+$"
             }
         },
+        introspect_session_access_token = {
+            description = "Whether to introspect the access token held in the session on " ..
+                "every request; requires an introspection endpoint. " ..
+                "Set introspection_interval to cache active results.",
+            type = "boolean",
+            default = false
+        },
         required_scopes = {
             description = "List of scopes that are required to be granted to the access token",
             type = "array",
@@ -528,6 +535,12 @@ function _M.check_schema(conf)
     local ok, err = core.schema.check(schema, conf)
     if not ok then
         return false, err
+    end
+
+    -- bearer_only never stores a token in the session; the header path already introspects.
+    if conf.bearer_only and conf.introspect_session_access_token then
+        return false, "\"introspect_session_access_token\" is only supported when " ..
+                      "\"bearer_only\" is false"
     end
 
     if conf.claim_schema and not secret.is_secret_ref(conf.claim_schema) then
@@ -666,6 +679,94 @@ local function introspect(ctx, conf)
         core.log.debug("token validate successfully by introspection")
         return res, err, token, res
     end
+end
+
+-- Destroying a cookie-stored session cannot recall the cookie the client holds,
+-- so replayed revoked sessions would otherwise introspect on every request.
+local SESSION_INTROSPECTION_NEGATIVE_TTL = 10
+
+-- Introspect the access token held in the session, which introspect() above
+-- (header tokens only) never sees. Returns:
+--   "active"          the provider (or a live cache entry) vouches for the token
+--   "inactive", err   the provider reports the token as not active
+--   nil, err          no verdict could be obtained; the session must be kept
+local function introspect_session_access_token(conf, access_token)
+    if not access_token then
+        return "inactive", "no access token in session"
+    end
+
+    -- The dict is shared with resty.openidc's own introspection cache, hence
+    -- the prefix. The endpoint URL separates providers (client_id alone is
+    -- not unique across them); cache_segment partitions further.
+    local dict = ngx.shared.introspection
+    local cache_key = "session-introspection:" .. (conf.cache_segment or "") ..
+                      ":" .. (conf.introspection_endpoint or conf.discovery) ..
+                      ":" .. conf.client_id .. ":" .. access_token
+    if dict then
+        local cached = dict:get(cache_key)
+        if cached == true then
+            return "active"
+        end
+        if cached == false then
+            return "inactive", "cached introspection result reports the token as inactive"
+        end
+    end
+
+    local endpoint = conf.introspection_endpoint
+    if not endpoint then
+        local discovery, err = openidc.get_discovery_doc(conf)
+        if err then
+            return nil, "failed to load discovery document: " .. err
+        end
+        endpoint = discovery.introspection_endpoint
+    end
+
+    if not endpoint then
+        return nil, "no introspection endpoint is configured or discoverable"
+    end
+
+    -- call_token_endpoint() adds the client credentials itself; only the token
+    -- goes in the body.
+    local res, err = openidc.call_token_endpoint(conf, endpoint,
+                                                 {token = access_token},
+                                                 conf.introspection_endpoint_auth_method,
+                                                 "introspection")
+    if err then
+        return nil, err
+    end
+
+    if not res then
+        return nil, "introspection returned no result"
+    end
+
+    if not res.active then
+        if dict then
+            dict:set(cache_key, false, SESSION_INTROSPECTION_NEGATIVE_TTL)
+        end
+        return "inactive", "the identity provider reports the token as inactive"
+    end
+
+    -- A cached "active" delays revocation detection by its TTL, so caching is
+    -- opt-in via introspection_interval; the token's own expiry caps the TTL.
+    local interval = conf.introspection_interval or 0
+    if dict and interval > 0 then
+        local ttl = interval
+        local expiry_claim = conf.introspection_expiry_claim or "exp"
+        local claim_ttl = res[expiry_claim]
+        if claim_ttl then
+            if expiry_claim == "exp" then
+                claim_ttl = claim_ttl - ngx.time()
+            end
+            if claim_ttl < ttl then
+                ttl = claim_ttl
+            end
+        end
+        if ttl > 0 then
+            dict:set(cache_key, true, ttl)
+        end
+    end
+
+    return "active"
 end
 
 
@@ -918,6 +1019,55 @@ function _M.rewrite(plugin_conf, ctx)
         end
 
         if response then
+            if conf.introspect_session_access_token then
+                local state, state_err =
+                    introspect_session_access_token(conf, response.access_token)
+
+                if not state then
+                    -- No verdict (endpoint unreachable or missing): fail the
+                    -- request but keep the session, so a provider hiccup does
+                    -- not log everyone out.
+                    core.log.error("OIDC session access token introspection failed: ",
+                                   state_err)
+                    session:close()
+                    return 503
+                end
+
+                if state == "inactive" then
+                    core.log.warn("OIDC access token in session is no longer active: ",
+                                  state_err)
+
+                    -- Drop the dead session. Every branch below returns, so the
+                    -- tail close() is never reached.
+                    session:clear_request_cookie()
+                    session:destroy()
+
+                    if conf.unauth_action == "pass" then
+                        return nil
+                    end
+
+                    if conf.unauth_action == "deny" then
+                        return 401
+                    end
+
+                    -- Start a fresh code flow; on success authenticate()
+                    -- redirects and does not return.
+                    local _, auth_err, _, new_session =
+                        openidc.authenticate(conf, nil, "auth",
+                                             build_session_opts(conf.session))
+                    if new_session then
+                        new_session:close()
+                    end
+
+                    if auth_err then
+                        core.log.error("OIDC re-authentication failed: ", auth_err)
+                        return 500
+                    end
+
+                    return
+                end
+            end
+
             local ok, err = validate_claims_in_oidcauth_response(response, conf)
             if not ok then
                 core.log.error("OIDC claim validation failed: ", err)
