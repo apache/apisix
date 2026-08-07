@@ -21,6 +21,7 @@ local ngx_re            = require("ngx.re")
 local openidc           = require("resty.openidc")
 local jsonschema        = require('jsonschema')
 local pkey              = require("resty.openssl.pkey")
+local dump_jwk          = require("resty.openssl.auxiliary.jwk").dump_jwk
 local string            = string
 local ngx               = ngx
 local ipairs            = ipairs
@@ -28,6 +29,7 @@ local type              = type
 local tostring          = tostring
 local pcall             = pcall
 local concat            = table.concat
+local unpack            = unpack
 
 local ngx_encode_base64 = ngx.encode_base64
 
@@ -89,9 +91,14 @@ local dpop_jwk_required_members = {
     RSA = {"e", "n"},
 }
 
-local dpop_openssl_key_type = {
-    EC = "id-ecPublicKey",
-    RSA = "rsaEncryption",
+-- resty.jwt selects the signer from the algorithm and not from the key, so an
+-- EC algorithm handed an RSA key terminates the worker with a SIGSEGV; the
+-- curve matters too, since ES512 on a P-256 key emits a P-256 signature
+local client_assertion_key_type = {
+    RS256 = {kty = "RSA"},
+    RS512 = {kty = "RSA"},
+    ES256 = {kty = "EC", crv = "P-256"},
+    ES512 = {kty = "EC", crv = "P-521"},
 }
 
 -- the client authentication methods lua-resty-openidc can use, and the
@@ -641,6 +648,32 @@ local _M = {
 -- lua-resty-openidc rejects a JWK that lacks the members its key type needs,
 -- but only once the first authorization request builds the thumbprint, which
 -- surfaces as a 500 per request instead of a rejected configuration.
+-- The public JWK openssl derives from a private key, so a configured JWK can
+-- be checked against the key that will actually sign with it.
+local function private_key_jwk(pem, field)
+    local key, err = pkey.new(pem)
+    if not key then
+        return nil, "property \"" .. field .. "\" is not a valid key: " .. tostring(err)
+    end
+    if not key:is_private() then
+        return nil, "property \"" .. field .. "\" has no private key in it"
+    end
+
+    local ok, dumped = pcall(dump_jwk, key, false)
+    if not ok or not dumped then
+        return nil, "property \"" .. field .. "\" could not be read as a JWK"
+    end
+
+    local jwk
+    jwk, err = core.json.decode(dumped)
+    if not jwk then
+        return nil, "property \"" .. field .. "\" could not be read as a JWK: "
+                    .. tostring(err)
+    end
+    return jwk
+end
+
+
 local function check_dpop_key(dpop)
     -- lua-resty-openidc reads none of this while use_dpop is false, so a
     -- configuration that stages the key material before turning DPoP on is
@@ -674,34 +707,39 @@ local function check_dpop_key(dpop)
     end
 
     local expected = dpop_alg_key_type[dpop.signing_alg]
-    if expected then
-        if expected.kty ~= jwk.kty then
-            return false, "property \"dpop.signing_alg\" \"" .. dpop.signing_alg
-                          .. "\" requires an " .. expected.kty .. " \"dpop.public_jwk\""
-        end
-        if expected.crv and jwk.crv ~= expected.crv then
-            return false, "property \"dpop.signing_alg\" \"" .. dpop.signing_alg
-                          .. "\" requires \"dpop.public_jwk\" crv \"" .. expected.crv
-                          .. "\", got \"" .. tostring(jwk.crv) .. "\""
-        end
+    if not expected then
+        return true
+    end
 
-        -- the proof is signed with the private key, not the JWK, so a matching
-        -- JWK says nothing about it; openidc_dpop_sign fails per request on a
-        -- key it cannot load or cannot use with the algorithm's padding
-        local private_key = dpop.private_key
-        if private_key and not secret.is_secret_ref(private_key) then
-            local key, err = pkey.new(private_key)
-            if not key then
-                return false, "property \"dpop.private_key\" is not a valid key: "
-                              .. tostring(err)
-            end
-            local key_type = key:get_key_type()
-            key_type = type(key_type) == "table" and key_type.sn or key_type
-            if key_type ~= dpop_openssl_key_type[expected.kty] then
-                return false, "property \"dpop.private_key\" is not an "
-                              .. expected.kty .. " key, which \"dpop.signing_alg\" \""
-                              .. dpop.signing_alg .. "\" requires"
-            end
+    if expected.kty ~= jwk.kty then
+        return false, "property \"dpop.signing_alg\" \"" .. dpop.signing_alg
+                      .. "\" requires an " .. expected.kty .. " \"dpop.public_jwk\""
+    end
+    if expected.crv and jwk.crv ~= expected.crv then
+        return false, "property \"dpop.signing_alg\" \"" .. dpop.signing_alg
+                      .. "\" requires \"dpop.public_jwk\" crv \"" .. expected.crv
+                      .. "\", got \"" .. tostring(jwk.crv) .. "\""
+    end
+
+    -- The proof is signed with the private key and advertises the JWK, so the
+    -- two have to be the same key pair: otherwise the OP gets a proof it
+    -- cannot verify. Comparing the derived JWK covers that, and with it the
+    -- private key's own type and curve.
+    local private_key = dpop.private_key
+    if not private_key or secret.is_secret_ref(private_key) then
+        return true
+    end
+
+    local derived, err = private_key_jwk(private_key, "dpop.private_key")
+    if not derived then
+        return false, err
+    end
+
+    for _, member in ipairs({"kty", unpack(required)}) do
+        if derived[member] ~= jwk[member] then
+            return false, "property \"dpop.public_jwk\" is not the public key of "
+                          .. "\"dpop.private_key\": " .. member .. " is \""
+                          .. tostring(derived[member]) .. "\""
         end
     end
 
@@ -709,32 +747,61 @@ local function check_dpop_key(dpop)
 end
 
 
+-- Which endpoints a configuration can actually reach, and with which client
+-- authentication method. rewrite() only calls introspect() when one of
+-- bearer_only/introspection_endpoint/public_key/use_jwks is set, and inside it
+-- public_key and use_jwks take the local JWT verification branch instead. The
+-- token and PAR endpoints belong to the authorization code flow, which
+-- bearer_only never runs.
+local function reachable_jwt_auth(conf)
+    local reachable = {}
+
+    if not (conf.public_key or conf.use_jwks)
+       and (conf.bearer_only or conf.introspection_endpoint) then
+        core.table.insert(reachable, {name = "introspection_endpoint_auth_method",
+                                      method = conf.introspection_endpoint_auth_method})
+    end
+
+    if not conf.bearer_only then
+        -- ensure_config() replaces an unusable token_endpoint_auth_method
+        -- before any endpoint is called (openidc.lua:1209), so it only counts
+        -- while its credential is there
+        local method = conf.token_endpoint_auth_method
+        local credential = token_auth_method_credential[method]
+        if credential == nil or credential == false or conf[credential] then
+            core.table.insert(reachable, {name = "token_endpoint_auth_method",
+                                          method = method})
+        end
+
+        -- an explicit PAR method reaches the request unchanged; without one
+        -- PAR uses the resolved token method, which is already counted above
+        if conf.par and conf.par.enabled and conf.par.endpoint_auth_method then
+            core.table.insert(reachable, {name = "par.endpoint_auth_method",
+                                          method = conf.par.endpoint_auth_method})
+        end
+    end
+
+    return reachable
+end
+
+
 -- The token endpoint only logs and falls back when its auth method cannot be
 -- used, but the PAR request fails outright (openidc.lua:547), which surfaces
--- as a 500. PAR uses its own method when set and token_endpoint_auth_method
--- otherwise, so validate whichever one it will actually use.
+-- as a 500. Only an explicit PAR method gets there unchanged: without one PAR
+-- uses whatever ensure_config() resolved, which is usable by construction.
 local function check_par_auth_method(conf)
-    if not (conf.par and conf.par.enabled) then
+    if conf.bearer_only or not (conf.par and conf.par.enabled) then
         return true
     end
 
     local method = conf.par.endpoint_auth_method
-    local source = "par.endpoint_auth_method"
-    if not method then
-        method = conf.token_endpoint_auth_method
-        source = "token_endpoint_auth_method"
-    end
     if not method then
         return true
     end
 
     local credential = token_auth_method_credential[method]
-    if credential == nil then
-        return false, "property \"" .. source .. "\" \"" .. method
-                      .. "\" is not supported when \"par.enabled\" is true"
-    end
     if credential and not conf[credential] then
-        return false, "property \"" .. source .. "\" \"" .. method
+        return false, "property \"par.endpoint_auth_method\" \"" .. method
                       .. "\" requires \"" .. credential .. "\" when \"par.enabled\" is true"
     end
 
@@ -753,21 +820,8 @@ local function check_client_jwt_assertion_alg(conf)
         return true
     end
 
-    -- bearer_only never runs the authorization code flow, so only the
-    -- introspection endpoint is ever called
-    local selections = {
-        {name = "introspection_endpoint_auth_method",
-         method = conf.introspection_endpoint_auth_method},
-    }
-    if not conf.bearer_only then
-        core.table.insert(selections, {name = "token_endpoint_auth_method",
-                                       method = conf.token_endpoint_auth_method})
-        core.table.insert(selections, {name = "par.endpoint_auth_method",
-                                       method = conf.par and conf.par.endpoint_auth_method})
-    end
-
     local asymmetric_by, symmetric_by
-    for _, selection in ipairs(selections) do
+    for _, selection in ipairs(reachable_jwt_auth(conf)) do
         if selection.method == "private_key_jwt" then
             asymmetric_by = asymmetric_by or selection.name
         elseif selection.method == "client_secret_jwt" then
@@ -793,10 +847,32 @@ local function check_client_jwt_assertion_alg(conf)
                       .. "selected by \"" .. symmetric_by .. "\""
     end
 
+    -- resty.jwt picks the signer from the algorithm, not the key: handing an
+    -- EC algorithm an RSA key terminates the worker with a SIGSEGV in the
+    -- signature conversion, and an EC key on the wrong curve silently emits a
+    -- signature of the wrong size
+    local expected = asymmetric_by and client_assertion_key_type[alg]
+    local private_key = conf.client_rsa_private_key
+    if not expected or not private_key or secret.is_secret_ref(private_key) then
+        return true
+    end
+
+    local derived, err = private_key_jwk(private_key, "client_rsa_private_key")
+    if not derived then
+        return false, err
+    end
+    if derived.kty ~= expected.kty then
+        return false, "property \"client_jwt_assertion_alg\" \"" .. alg
+                      .. "\" requires an " .. expected.kty .. " \"client_rsa_private_key\""
+    end
+    if expected.crv and derived.crv ~= expected.crv then
+        return false, "property \"client_jwt_assertion_alg\" \"" .. alg
+                      .. "\" requires a \"client_rsa_private_key\" on curve \""
+                      .. expected.crv .. "\", got \"" .. tostring(derived.crv) .. "\""
+    end
+
     return true
 end
-
-
 function _M.check_schema(conf)
     if conf.ssl_verify == "no" then
         -- we used to set 'ssl_verify' to "no"

@@ -63,7 +63,7 @@ import TabItem from '@theme/TabItem';
 | par | object | 否 | | | Pushed Authorization Requests (PAR) 配置。 |
 | par.enabled | boolean | 否 | false | | 如果为 true，则按照 [RFC 9126](https://datatracker.ietf.org/doc/html/rfc9126) 使用 OAuth 2.0 Pushed Authorization Requests (PAR)。授权请求参数会发送到 PAR 端点，浏览器将使用返回的 `request_uri` 重定向。 |
 | par.endpoint | string | 否 | | | PAR 端点 URL。未设置时使用发现文档中的端点。 |
-| par.endpoint_auth_method | string | 否 | | | PAR 端点的认证方法。未设置时使用 `token_endpoint_auth_method`。 |
+| par.endpoint_auth_method | string | 否 | | ["client_secret_basic", "client_secret_post", "private_key_jwt", "client_secret_jwt"] | PAR 端点的认证方法。未设置时使用 `token_endpoint_auth_method`。`private_key_jwt` 需要 `client_rsa_private_key`，`client_secret_jwt` 需要 `client_secret`；与令牌端点不同，PAR 请求在认证方法不可用时会直接失败。 |
 | dpop | object | 否 | | | Demonstrating Proof of Possession (DPoP) 配置。 |
 | dpop.enabled | boolean | 否 | false | | 如果为 true，则按照 [RFC 9449](https://datatracker.ietf.org/doc/html/rfc9449) 使用 OAuth 2.0 DPoP。插件会向令牌端点发送 DPoP proof JWT，并在用户信息请求中使用 DPoP 绑定的访问令牌。 |
 | dpop.signing_alg | string | 否 | ES256 | ["ES256", "RS256", "PS256"] | DPoP proof JWT 的签名算法。 |
@@ -115,9 +115,9 @@ import TabItem from '@theme/TabItem';
 | proxy_opts.https_proxy_authorization | string | 否 | | Basic [base64 username:password] | 与 `https_proxy` 一起使用的默认 `Proxy-Authorization` 头值。由于 HTTPS 连接时已完成授权，不能用自定义 `Proxy-Authorization` 请求头覆盖。 |
 | proxy_opts.no_proxy | string | 否 | | | 不需要代理的主机列表，以逗号分隔。 |
 | authorization_params | object | 否 | | | 发送到授权端点请求中的额外参数。 |
-| client_rsa_private_key | string | 否 | | | 用于向 OP 签署 JWT 进行身份验证的客户端 RSA 私钥。当 `token_endpoint_auth_method` 为 `private_key_jwt` 时必填。 |
-| client_rsa_private_key_id | string | 否 | | | 用于计算已签名 JWT 的客户端 RSA 私钥 ID。当 `token_endpoint_auth_method` 为 `private_key_jwt` 时可选。 |
-| client_jwt_assertion_expires_in | integer | 否 | 60 | | 向 OP 进行身份验证的已签名 JWT 的有效期，单位为秒。在 `token_endpoint_auth_method` 为 `private_key_jwt` 或 `client_secret_jwt` 时使用。 |
+| client_rsa_private_key | string | 否 | | | 用于签署客户端断言 JWT 的客户端私钥。只要 `token_endpoint_auth_method`、`introspection_endpoint_auth_method` 或 `par.endpoint_auth_method` 中任一选择了 `private_key_jwt` 就必填。密钥类型必须与 `client_jwt_assertion_alg` 匹配：`RS*` 算法用 RSA 密钥，`ES*` 算法用对应曲线的 EC 密钥。 |
+| client_rsa_private_key_id | string | 否 | | | 用于计算已签名客户端断言 JWT 的客户端私钥 ID。任一端点选择 `private_key_jwt` 时可选。 |
+| client_jwt_assertion_expires_in | integer | 否 | 60 | | 向 OP 进行身份验证的已签名 JWT 的有效期，单位为秒。令牌、内省或 PAR 端点中任一选择 `private_key_jwt` 或 `client_secret_jwt` 时使用。 |
 | client_jwt_assertion_alg | string | 否 | | ["HS256", "HS512", "RS256", "RS512", "ES256", "ES512"] | 客户端断言 JWT 的签名算法。`private_key_jwt` 默认使用 `RS256`，`client_secret_jwt` 默认使用 `HS256`。`client_secret_jwt` 需使用 `HS*` 算法，`private_key_jwt` 需使用非对称算法。当发现文档声明 `token_endpoint_auth_signing_alg_values_supported` 时，配置值还必须受 OP 支持。 |
 | client_jwt_assertion_audience | string | 否 | | | 客户端断言 JWT 的 audience。未设置时使用被调用的端点 URL。当 APISIX 通过内部 URL 访问令牌端点，但 OP 期望外部令牌端点 URL 作为 audience 时，请配置此项。 |
 | renew_access_token_on_expiry | boolean | 否 | true | | 如果为 true，则在访问令牌过期或刷新令牌可用时尝试静默续期。如果令牌续期失败，则重定向用户重新认证。 |

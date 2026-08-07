@@ -1882,8 +1882,13 @@ done
                     },
                 },
                 token_endpoint_auth_method = "private_key_jwt",
-                client_rsa_private_key = "-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAK\n-----END RSA PRIVATE KEY-----",
-                client_jwt_assertion_alg = "RS512",
+                -- ES256 signs with an EC key, so this reuses the pair above
+                client_rsa_private_key = "-----BEGIN PRIVATE KEY-----\n"
+                    .. "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgzVW+Se78iBpOnKwj\n"
+                    .. "D0Gqp/ZpmFSVJPRSTI7ZU50g3s2hRANCAARJ6hd/fMq/ZLvdEu1ZKHWFmiTjL1LD\n"
+                    .. "U4q5hU/UxozQRW7+Gr5bcSvgHJWK/PlNCN/NGISpRs3K3l3K0BUr7plo\n"
+                    .. "-----END PRIVATE KEY-----",
+                client_jwt_assertion_alg = "ES256",
                 client_jwt_assertion_audience = "https://issuer.example.com/token",
                 session = { secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK" },
             })
@@ -2815,13 +2820,16 @@ property "dpop.signing_alg" "PS256" requires an RSA "dpop.public_jwk"
                 {token_endpoint_auth_method = "private_key_jwt",
                  client_rsa_private_key = "k", client_jwt_assertion_alg = "HS256"},
                 {introspection_endpoint_auth_method = "private_key_jwt",
-                 bearer_only = true, public_key = "k", client_jwt_assertion_alg = "HS512"},
+                 bearer_only = true,
+                 introspection_endpoint = "https://example.com/introspect",
+                 client_rsa_private_key = "k", client_jwt_assertion_alg = "HS512"},
                 {token_endpoint_auth_method = "client_secret_jwt",
                  client_jwt_assertion_alg = "RS256"},
                 {par = {enabled = true, endpoint_auth_method = "client_secret_jwt"},
                  client_jwt_assertion_alg = "ES256"},
                 {token_endpoint_auth_method = "private_key_jwt",
                  client_rsa_private_key = "k",
+                 introspection_endpoint = "https://example.com/introspect",
                  introspection_endpoint_auth_method = "client_secret_jwt",
                  client_jwt_assertion_alg = "RS256"},
             }
@@ -2938,16 +2946,12 @@ property "dpop.public_jwk" validation failed: "e" must be a non-empty string
             -- supported methods missing the credential they need
             check({par = {enabled = true, endpoint_auth_method = "private_key_jwt"}})
             check({par = {enabled = true, endpoint_auth_method = "client_secret_jwt"}})
-            -- PAR falls back to token_endpoint_auth_method when it has none
-            check({token_endpoint_auth_method = "private_key_jwt",
-                   par = {enabled = true}})
         }
     }
 --- response_body
 property "par" validation failed: property "endpoint_auth_method" validation failed: matches none of the enum values
 property "par.endpoint_auth_method" "private_key_jwt" requires "client_rsa_private_key" when "par.enabled" is true
 property "par.endpoint_auth_method" "client_secret_jwt" requires "client_secret" when "par.enabled" is true
-property "token_endpoint_auth_method" "private_key_jwt" requires "client_rsa_private_key" when "par.enabled" is true
 
 
 
@@ -2970,6 +2974,14 @@ property "token_endpoint_auth_method" "private_key_jwt" requires "client_rsa_pri
                 -- PAR is off: the token endpoint falls back on its own
                 {client_secret = "s", token_endpoint_auth_method = "private_key_jwt",
                  par = {enabled = false}},
+                -- and with PAR on but no method of its own, PAR uses whatever
+                -- ensure_config resolved, which is usable by construction
+                {client_secret = "s", token_endpoint_auth_method = "private_key_jwt",
+                 par = {enabled = true}},
+                -- bearer_only never runs the authorization code flow, so PAR
+                -- is unreachable however it is configured
+                {client_secret = "s", bearer_only = true, public_key = "k",
+                 par = {enabled = true, endpoint_auth_method = "private_key_jwt"}},
             }
             for _, extra in ipairs(cases) do
                 local conf = {
@@ -2985,6 +2997,8 @@ property "token_endpoint_auth_method" "private_key_jwt" requires "client_rsa_pri
         }
     }
 --- response_body
+accepted
+accepted
 accepted
 accepted
 accepted
@@ -3033,7 +3047,7 @@ accepted
     }
 --- response_body
 property "dpop.private_key" is not a valid key
-property "dpop.private_key" is not an RSA key, which "dpop.signing_alg" "RS256" requires
+property "dpop.public_jwk" is not the public key of "dpop.private_key": kty is "EC"
 
 
 
@@ -3097,3 +3111,187 @@ accepted
     }
 --- response_body
 done
+
+
+
+=== TEST 79: Reject a DPoP key pair whose halves do not match.
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local jwk = {kty = "EC", crv = "P-256",
+                         x = "SeoXf3zKv2S73RLtWSh1hZok4y9Sw1OKuYVP1MaM0EU",
+                         y = "bv4avltxK-AclYr8-U0I380YhKlGzcreXcrQFSvumWg"}
+            -- carries no private half, so it cannot sign a proof
+            local public_only = "-----BEGIN PUBLIC KEY-----\n"
+                .. "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAESeoXf3zKv2S73RLtWSh1hZok4y9S\n"
+                .. "w1OKuYVP1MaM0EVu/hq+W3Er4ByVivz5TQjfzRiEqUbNyt5dytAVK+6ZaA==\n"
+                .. "-----END PUBLIC KEY-----"
+            -- a different P-256 key: the proof would advertise a JWK the
+            -- signature does not belong to
+            local other_key = "-----BEGIN PRIVATE KEY-----\n"
+                .. "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQge5Rl9pweBnZ1WxHc\n"
+                .. "r4U8KwHh4m1qvOTPxWcPJ1zlpKuhRANCAATD9wxHo/JutVZx87WBAG7MEJ9KuNwd\n"
+                .. "rYw4LcUN2D/1tfqaTg94vWmN3o+4Z5gTW5PHNA+I760YsJnVHmNg+l4v\n"
+                .. "-----END PRIVATE KEY-----"
+            -- right kind of key, wrong curve
+            local p384_key = "-----BEGIN PRIVATE KEY-----\n"
+                .. "MIG2AgEAMBAGByqGSM49AgEGBSuBBAAiBIGeMIGbAgEBBDBkw8FnyuXW3AXb4ucM\n"
+                .. "0z1m2SdxLpunow06uZQHMcGA/Udu+xbAEAevgha+JVlGsJWhZANiAAQAmA7SYPIo\n"
+                .. "gRAJdCBDS3rYJOZgPDVezGgsVFneBI47JeuLF2jAeGN6PNO/zP65kC3ywWuJBFck\n"
+                .. "qpp43wav41a8jlmo8f5/3jWnv+5WV01p6TsF8xSDOfv2X/L3Y7p2Bkc=\n"
+                .. "-----END PRIVATE KEY-----"
+            for _, key in ipairs({public_only, other_key, p384_key}) do
+                local ok, err = plugin.check_schema({
+                    client_id = "a",
+                    client_secret = "b",
+                    discovery = "https://example.com/.well-known/openid-configuration",
+                    dpop = {enabled = true, private_key = key, public_jwk = jwk},
+                    session = { secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK" },
+                })
+                ngx.say(ok and "ACCEPTED" or (err:gsub(" is \"[^\"]*\"$", "")))
+            end
+        }
+    }
+--- response_body
+property "dpop.private_key" has no private key in it
+property "dpop.public_jwk" is not the public key of "dpop.private_key": x
+property "dpop.public_jwk" is not the public key of "dpop.private_key": crv
+
+
+
+=== TEST 80: Reject a client assertion algorithm the configured key cannot sign.
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            -- resty.jwt picks the signer from the algorithm, not the key: an
+            -- EC algorithm handed an RSA key takes the worker down with a
+            -- SIGSEGV, and an EC key on the wrong curve emits a signature of
+            -- the wrong size
+            local rsa_key = "-----BEGIN PRIVATE KEY-----\n"
+                .. "MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCR+XDXtbspeYTI\n"
+                .. "NSgogElb7gAeDEZOgF/t7RO3azpyPSqj+/5SguFaLQ2oANgY6FIhcQ0+wsVpNTE7\n"
+                .. "EkX5Z8pNGC+VoMWVrtllFpbhgLKBbbXLpY+oi7h6Iv9jB5BvaUaZuVe6vqWKPIYj\n"
+                .. "qLguSwKYkIt6bxxDPQcGh+9Mdvyvo/jm8AQQcczfRcv916UamEDygzUB65ibMt9R\n"
+                .. "oBrN0JI4tQGh7K53vnWnu0FH0j0iP6Nlh24Fdul6cCV/1PlGLUFY5+RfUJBZ+/q6\n"
+                .. "bi/8jWc5/1qNafFhePNlsMaj0VbDtw3TLFgmyiVQplzDAQp/8P6WTWrlyF0YSNW2\n"
+                .. "CBst8ryxAgMBAAECggEAAv9+g8+lsmpegcYltv87gnnW4scZwo78aWSPHRtErgf3\n"
+                .. "kjqgtI0fl7yJJUQvLAPJfApYXUuexlRjWHU9nqu1CfRPNeGBbVuT93GJU8RS5jmc\n"
+                .. "nDwgQTPtbAS//gavvroIyyt1U86Kk9Y+YwkaD0lXGk8NrkwN5ougU1ADaCyhb/IE\n"
+                .. "PzY9b+wF7ykmGxc+17JybvSvGmY3Fs5PlSRThV+uVIMvuw/EfvWfqUUkEzWvdh7/\n"
+                .. "0d57eWzluPAaQZLCxzirBClrw5GUS7WUJ/0OrLpoLwC/D1JOmothbShJKKh3sKQZ\n"
+                .. "k5xMRVN+QN65a7Xhw16+5nAgTk7P9Xkuj7ogywzzyQKBgQC8dI8/MylqVxtYmod4\n"
+                .. "D2DM9ZfplPjYy5RGxaHU6CHx5hZZUZUASmSR/LKBpZ0BUgBD9aGTrlnZq717qBNM\n"
+                .. "1mSrb1FZ7oA4OXeor9t5rd4hNoaNcbjW4OajbN7QQjvUKz8j4rqLbM7nN0Cshu6m\n"
+                .. "eQCsJYxwpzs36TCPbxuJr9hEHwKBgQDGSxsI7DhvnshzV6UDyGdbYF4o/BpoIMGE\n"
+                .. "fY5QOYTXD8OCOmAiDoRf4msDRpSVPbYQiC9kcCX5A/w7NkeAshN5/IYyw3uLO+22\n"
+                .. "i6xzx9J527weHhgz03+t0zd3JxNaEFR/GxJYZldgQ9CFjHdLEFoEndMYNlm+C4B+\n"
+                .. "Zr7SseJlLwKBgA67/kcutNo/nT+8NUNJ0IO13/6/SwWIRTuTUCfZTm4fUzgAjOnM\n"
+                .. "5zgSzdIdJL1pr+OgXNWzGAtQxivY5Elpqc1Nksq5PwUmWRizRzGoSmnGXZbJgW4r\n"
+                .. "f1zfsjwOMadRCkq/+13TUAn74+6ZTidt5oOPG//i01p3vPg586k8Omh5AoGBAK/s\n"
+                .. "sm+YI/njxbOPbreMdSZ8uQ1jnYoEhawmOLy0S0cClVJUuDV+67KmDos5c1l1BrJk\n"
+                .. "IKfbV9U10/I0lft4Ag+YGveut00wPhZWlQmjnvi+Gogd6xsP6ZcubWcpI+Ij2tNq\n"
+                .. "ETycj6i4gaf6l1vhhfvSihZRIg2Z5sY+Ic6MQ2/BAoGARAUxjo1S11xIwXcpunBX\n"
+                .. "UJrklxKeV0YAgRvKBhBUD/emRt8kIn6CDJyUwYMfQUVQdOYWxI8LdfirA2574/RJ\n"
+                .. "Z9WVu21q+5Ehgsyj8WC9wBpjaMMnefPhGUIVDTLyjYd0em8o3nsmv1BT22EVD99l\n"
+                .. "VqsWmAVmCe8jO3o35s1nUqs=\n"
+                .. "-----END PRIVATE KEY-----"
+            local ec256 = "-----BEGIN PRIVATE KEY-----\n"
+                .. "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgzVW+Se78iBpOnKwj\n"
+                .. "D0Gqp/ZpmFSVJPRSTI7ZU50g3s2hRANCAARJ6hd/fMq/ZLvdEu1ZKHWFmiTjL1LD\n"
+                .. "U4q5hU/UxozQRW7+Gr5bcSvgHJWK/PlNCN/NGISpRs3K3l3K0BUr7plo\n"
+                .. "-----END PRIVATE KEY-----"
+            local cases = {
+                {alg = "ES256", key = rsa_key},
+                {alg = "ES512", key = ec256},
+                {alg = "RS256", key = ec256},
+            }
+            for _, case in ipairs(cases) do
+                local ok, err = plugin.check_schema({
+                    client_id = "a",
+                    client_secret = "b",
+                    discovery = "https://example.com/.well-known/openid-configuration",
+                    token_endpoint_auth_method = "private_key_jwt",
+                    client_rsa_private_key = case.key,
+                    client_jwt_assertion_alg = case.alg,
+                    session = { secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK" },
+                })
+                ngx.say(ok and "ACCEPTED" or err)
+            end
+        }
+    }
+--- response_body
+property "client_jwt_assertion_alg" "ES256" requires an EC "client_rsa_private_key"
+property "client_jwt_assertion_alg" "ES512" requires a "client_rsa_private_key" on curve "P-521", got "P-256"
+property "client_jwt_assertion_alg" "RS256" requires an RSA "client_rsa_private_key"
+
+
+
+=== TEST 81: An endpoint the configuration never calls cannot conflict.
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local rsa_key = "-----BEGIN PRIVATE KEY-----\n"
+                .. "MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCR+XDXtbspeYTI\n"
+                .. "NSgogElb7gAeDEZOgF/t7RO3azpyPSqj+/5SguFaLQ2oANgY6FIhcQ0+wsVpNTE7\n"
+                .. "EkX5Z8pNGC+VoMWVrtllFpbhgLKBbbXLpY+oi7h6Iv9jB5BvaUaZuVe6vqWKPIYj\n"
+                .. "qLguSwKYkIt6bxxDPQcGh+9Mdvyvo/jm8AQQcczfRcv916UamEDygzUB65ibMt9R\n"
+                .. "oBrN0JI4tQGh7K53vnWnu0FH0j0iP6Nlh24Fdul6cCV/1PlGLUFY5+RfUJBZ+/q6\n"
+                .. "bi/8jWc5/1qNafFhePNlsMaj0VbDtw3TLFgmyiVQplzDAQp/8P6WTWrlyF0YSNW2\n"
+                .. "CBst8ryxAgMBAAECggEAAv9+g8+lsmpegcYltv87gnnW4scZwo78aWSPHRtErgf3\n"
+                .. "kjqgtI0fl7yJJUQvLAPJfApYXUuexlRjWHU9nqu1CfRPNeGBbVuT93GJU8RS5jmc\n"
+                .. "nDwgQTPtbAS//gavvroIyyt1U86Kk9Y+YwkaD0lXGk8NrkwN5ougU1ADaCyhb/IE\n"
+                .. "PzY9b+wF7ykmGxc+17JybvSvGmY3Fs5PlSRThV+uVIMvuw/EfvWfqUUkEzWvdh7/\n"
+                .. "0d57eWzluPAaQZLCxzirBClrw5GUS7WUJ/0OrLpoLwC/D1JOmothbShJKKh3sKQZ\n"
+                .. "k5xMRVN+QN65a7Xhw16+5nAgTk7P9Xkuj7ogywzzyQKBgQC8dI8/MylqVxtYmod4\n"
+                .. "D2DM9ZfplPjYy5RGxaHU6CHx5hZZUZUASmSR/LKBpZ0BUgBD9aGTrlnZq717qBNM\n"
+                .. "1mSrb1FZ7oA4OXeor9t5rd4hNoaNcbjW4OajbN7QQjvUKz8j4rqLbM7nN0Cshu6m\n"
+                .. "eQCsJYxwpzs36TCPbxuJr9hEHwKBgQDGSxsI7DhvnshzV6UDyGdbYF4o/BpoIMGE\n"
+                .. "fY5QOYTXD8OCOmAiDoRf4msDRpSVPbYQiC9kcCX5A/w7NkeAshN5/IYyw3uLO+22\n"
+                .. "i6xzx9J527weHhgz03+t0zd3JxNaEFR/GxJYZldgQ9CFjHdLEFoEndMYNlm+C4B+\n"
+                .. "Zr7SseJlLwKBgA67/kcutNo/nT+8NUNJ0IO13/6/SwWIRTuTUCfZTm4fUzgAjOnM\n"
+                .. "5zgSzdIdJL1pr+OgXNWzGAtQxivY5Elpqc1Nksq5PwUmWRizRzGoSmnGXZbJgW4r\n"
+                .. "f1zfsjwOMadRCkq/+13TUAn74+6ZTidt5oOPG//i01p3vPg586k8Omh5AoGBAK/s\n"
+                .. "sm+YI/njxbOPbreMdSZ8uQ1jnYoEhawmOLy0S0cClVJUuDV+67KmDos5c1l1BrJk\n"
+                .. "IKfbV9U10/I0lft4Ag+YGveut00wPhZWlQmjnvi+Gogd6xsP6ZcubWcpI+Ij2tNq\n"
+                .. "ETycj6i4gaf6l1vhhfvSihZRIg2Z5sY+Ic6MQ2/BAoGARAUxjo1S11xIwXcpunBX\n"
+                .. "UJrklxKeV0YAgRvKBhBUD/emRt8kIn6CDJyUwYMfQUVQdOYWxI8LdfirA2574/RJ\n"
+                .. "Z9WVu21q+5Ehgsyj8WC9wBpjaMMnefPhGUIVDTLyjYd0em8o3nsmv1BT22EVD99l\n"
+                .. "VqsWmAVmCe8jO3o35s1nUqs=\n"
+                .. "-----END PRIVATE KEY-----"
+            -- introspect() takes the local verification branch under
+            -- public_key/use_jwks, and rewrite() does not call it at all in
+            -- non-bearer mode without an introspection endpoint; PAR belongs
+            -- to the authorization code flow, which bearer_only never runs
+            local cases = {
+                {bearer_only = true, use_jwks = true,
+                 introspection_endpoint_auth_method = "client_secret_jwt",
+                 token_endpoint_auth_method = "private_key_jwt",
+                 client_rsa_private_key = "k", client_jwt_assertion_alg = "RS256"},
+                {token_endpoint_auth_method = "private_key_jwt",
+                 client_rsa_private_key = rsa_key,
+                 introspection_endpoint_auth_method = "client_secret_jwt",
+                 client_jwt_assertion_alg = "RS256"},
+                {use_pkce = true, par = {enabled = false,
+                                         endpoint_auth_method = "client_secret_jwt"},
+                 client_jwt_assertion_alg = "RS256"},
+            }
+            for _, extra in ipairs(cases) do
+                local conf = {
+                    client_id = "a",
+                    client_secret = "b",
+                    discovery = "https://example.com/.well-known/openid-configuration",
+                    session = { secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK" },
+                }
+                for k, v in pairs(extra) do conf[k] = v end
+                local ok, err = plugin.check_schema(conf)
+                ngx.say(ok and "accepted" or err)
+            end
+        }
+    }
+--- response_body
+accepted
+accepted
+accepted
