@@ -1245,6 +1245,10 @@ function _M.http_log_phase()
         core.tablepool.release("plugins", api_ctx.plugins)
     end
 
+    if api_ctx.global_plugins then
+        core.tablepool.release("global_plugins", api_ctx.global_plugins)
+    end
+
     if api_ctx.curr_req_matched then
         core.tablepool.release("matched_route_record", api_ctx.curr_req_matched)
     end
