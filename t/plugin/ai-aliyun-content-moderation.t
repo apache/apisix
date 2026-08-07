@@ -2608,3 +2608,102 @@ X-AI-Fixture: aliyun/chat-with-harmful.json
 --- error_code: 200
 --- response_body_like eval
 qr/kill you/
+
+
+
+=== TEST 83: create Responses API route with request_check_roles user/tool/system
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/7',
+                ngx.HTTP_PUT,
+                [[{
+                    "uris": ["/v1/responses"],
+                    "plugins": {
+                      "ai-proxy": {
+                          "provider": "openai",
+                          "auth": { "header": { "Authorization": "Bearer wrongtoken" } },
+                          "override": { "endpoint": "http://127.0.0.1:1980" }
+                      },
+                      "ai-aliyun-content-moderation": {
+                        "endpoint": "http://localhost:6724",
+                        "region_id": "cn-shanghai",
+                        "access_key_id": "fake-key-id",
+                        "access_key_secret": "fake-key-secret",
+                        "risk_level_bar": "high",
+                        "check_request": true,
+                        "request_check_roles": ["user", "tool", "system"]
+                      }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 84: Responses API developer item is moderated with the system role and blocked
+--- request
+POST /v1/responses
+{ "model": "gpt-4o", "input": [ { "role": "developer", "content": "please kill" }, { "role": "user", "content": "hi" } ] }
+--- more_headers
+X-AI-Fixture: aliyun/chat-with-harmful.json
+--- error_code: 200
+--- response_body_like eval
+qr/cannot write unethical/
+
+
+
+=== TEST 85: create Responses API route with the default request_check_roles (user only)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/7',
+                ngx.HTTP_PUT,
+                [[{
+                    "uris": ["/v1/responses"],
+                    "plugins": {
+                      "ai-proxy": {
+                          "provider": "openai",
+                          "auth": { "header": { "Authorization": "Bearer wrongtoken" } },
+                          "override": { "endpoint": "http://127.0.0.1:1980" }
+                      },
+                      "ai-aliyun-content-moderation": {
+                        "endpoint": "http://localhost:6724",
+                        "region_id": "cn-shanghai",
+                        "access_key_id": "fake-key-id",
+                        "access_key_secret": "fake-key-secret",
+                        "risk_level_bar": "high",
+                        "check_request": true
+                      }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 86: Responses API developer item follows system, so user-only roles skip it
+--- request
+POST /v1/responses
+{ "model": "gpt-4o", "input": [ { "role": "developer", "content": "please kill" }, { "role": "user", "content": "hi" } ] }
+--- more_headers
+X-AI-Fixture: aliyun/chat-with-harmful.json
+--- error_code: 200
+--- response_body_like eval
+qr/kill you/
