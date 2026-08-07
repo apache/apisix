@@ -413,6 +413,17 @@ function _M.dump_plugin_metadata()
 end
 
 function _M.post_reload_plugins()
+    -- Bump the version before anything is committed, so a lost broadcast still
+    -- leaves the admin reconciliation timer something to replay. When the admin
+    -- is disabled the dict is absent and this is a no-op.
+    if plugins_conf_ver_dict then
+        local _, incr_err = plugins_conf_ver_dict:incr(PLUGINS_CONF_VERSION_KEY, 1, 0)
+        if incr_err then
+            core.log.error("failed to increase plugins conf version: ", incr_err)
+            core.response.exit(503, {error_msg = "failed to record plugins reload"})
+        end
+    end
+
     -- reload on this worker first so that a plugin set which cannot be loaded
     -- is reported to the caller instead of being broadcast
     core.log.info("start to hot reload plugins")
@@ -422,34 +433,15 @@ function _M.post_reload_plugins()
         core.response.exit(500, {error_msg = "failed to reload plugins: " .. err})
     end
 
-    -- Bump the shared version once the load succeeded so that a worker which
-    -- misses the event (the resty.events broker gives no delivery guarantee
-    -- while a worker is reconnecting) still converges through the admin
-    -- reconciliation timer. This is the same guard the admin reload path added
-    -- in #13714; the control path was left out. When the admin is disabled the
-    -- timer is absent and this is a no-op.
-    local version_recorded = true
-    if plugins_conf_ver_dict then
-        local _, incr_err = plugins_conf_ver_dict:incr(PLUGINS_CONF_VERSION_KEY, 1, 0)
-        if incr_err then
-            -- see the admin path: this worker has already switched, so the
-            -- event still has to go out or the workers split for good
-            core.log.error("failed to increase plugins conf version: ", incr_err)
-            version_recorded = false
-        end
-    end
-
     local success, post_err = events:post(_M.RELOAD_EVENT, ngx.req.get_method(), ngx.time())
     if not success then
+        core.log.error("failed to broadcast the plugins reload: ", post_err)
         core.response.exit(503, {error_msg = tostring(post_err)})
-    end
-
-    if not version_recorded then
-        core.response.exit(503, {error_msg = "failed to record plugins reload"})
     end
 
     core.response.exit(200, "done")
 end
+
 
 return {
     -- /v1/schema

@@ -301,47 +301,36 @@ local reload_plugins_and_sync
 local function post_reload_plugins()
     set_ctx_and_check_token()
 
-    -- reload on this worker first: if the new plugin set cannot be loaded,
-    -- report the error to the operator instead of an unconditional "done",
-    -- and neither bump the version nor broadcast, so that neither the other
-    -- workers nor the reconciliation timer are asked to apply a plugin set
-    -- which is already known not to load
+    -- Bump the version first, before anything is committed anywhere. It is
+    -- what the reconciliation timer replays, so it has to exist before this
+    -- worker changes its own plugin set: if the broadcast is then lost, the
+    -- other workers still converge on the next tick. Failing here commits
+    -- nothing, so every worker simply stays on the current set.
+    if plugins_conf_ver_dict then
+        local _, incr_err = plugins_conf_ver_dict:incr(PLUGINS_CONF_VERSION_KEY, 1, 0)
+        if incr_err then
+            core.log.error("failed to increase plugins conf version: ", incr_err)
+            core.response.exit(503, {error_msg = "failed to record plugins reload"})
+        end
+    end
+
+    -- reload on this worker first, so that a plugin set which cannot be loaded
+    -- is reported to the operator instead of an unconditional "done".
+    -- reload_plugins_and_sync() records the version it sampled whether or not
+    -- the load worked, so a set that fails to load is attempted once per
+    -- worker and then left alone -- they all keep serving the previous one.
     local ok, err = reload_plugins_and_sync()
     if not ok then
         core.log.error("failed to hot reload plugins: ", err)
         core.response.exit(500, {error_msg = "failed to reload plugins: " .. err})
     end
 
-    local version_recorded = true
-    if plugins_conf_ver_dict then
-        -- bump the version, so that a process which never receives the event
-        -- (e.g. the privileged agent while it is reconnecting to the events
-        -- broker) still converges through the periodic reconciliation below
-        local ver, incr_err = plugins_conf_ver_dict:incr(PLUGINS_CONF_VERSION_KEY, 1, 0)
-        if incr_err then
-            -- do not return here: this worker has already switched to the new
-            -- set, so the event still has to go out or the other workers stay
-            -- on the old one with no version change for the reconciliation
-            -- timer to notice — a split that never heals. Report it after the
-            -- broadcast instead
-            core.log.error("failed to increase plugins conf version: ", incr_err)
-            version_recorded = false
-        else
-            -- this worker already applied the new set above, don't let its own
-            -- reconciliation timer redo the work one second later
-            applied_plugins_conf_version = ver
-        end
-    end
-
     local success, post_err = events:post(reload_event, get_method(), ngx_time())
     if not success then
+        -- the version was bumped before this worker committed, so the others
+        -- converge through the reconciliation timer even with the event lost
+        core.log.error("failed to broadcast the plugins reload: ", post_err)
         core.response.exit(503, {error_msg = tostring(post_err)})
-    end
-
-    if not version_recorded then
-        -- the workers agree through the broadcast, but a process which missed
-        -- it has no version to reconcile against, so this is not a full success
-        core.response.exit(503, {error_msg = "failed to record plugins reload"})
     end
 
     core.response.exit(200, "done")
