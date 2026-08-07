@@ -187,6 +187,8 @@ function _M.before_proxy(conf, ctx, on_error)
             return 400, err
         end
 
+        request_body = core.table.deepcopy(request_body)
+
         local extra_opts = {
             name = ai_instance.name,
             endpoint = ai_instance._resolved_endpoint
@@ -242,10 +244,6 @@ function _M.before_proxy(conf, ctx, on_error)
 
         -- Step 2: Extract model from request
         local request_model = request_body.model
-
-        if request_model then
-            ctx.var.request_llm_model = request_model
-        end
         local model = ai_instance.options and ai_instance.options.model or request_model
         if model then
             ctx.var.llm_model = model
