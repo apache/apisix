@@ -43,6 +43,23 @@ local function get_dict()
 end
 
 
+local function sanitize_nodes(nodes)
+    local sanitized_nodes = core.table.new(#nodes, 0)
+
+    for _, node in ipairs(nodes) do
+        if node.metadata == nil then
+            core.table.insert(sanitized_nodes, node)
+        else
+            local sanitized_node = core.table.clone(node)
+            sanitized_node.metadata = nil
+            core.table.insert(sanitized_nodes, sanitized_node)
+        end
+    end
+
+    return sanitized_nodes
+end
+
+
 local function default_key_builder(id)
     return function(namespace_id, group_name, service_name)
         return id .. "/" .. namespace_id .. "/" .. group_name .. "/" .. service_name
@@ -107,7 +124,6 @@ local function fetch_full_registry(premature, reg)
                     access_key        = reg.conf.access_key,
                     secret_key        = reg.conf.secret_key,
                     timeout           = timeout,
-                    preserve_metadata = reg.preserve_metadata,
                     key_builder       = reg.key_builder,
                 })
 
@@ -154,7 +170,7 @@ end
 --- conf fields: id, host (array), fetch_interval, prefix, weight,
 ---              access_key, secret_key, timeout ({connect,send,read} in ms)
 ---
---- options: service_scanner (function), preserve_metadata (bool),
+--- options: service_scanner (function),
 ---          key_builder (function(ns,group,svc)->string),
 ---          username (string), password (string)
 function _M.create_registry(conf, options)
@@ -172,7 +188,6 @@ function _M.create_registry(conf, options)
         id              = id,
         conf            = conf,
         stop_flag       = false,
-        preserve_metadata = options.preserve_metadata or false,
         key_builder     = options.key_builder or default_key_builder(id),
         service_scanner = options.service_scanner or function()
             return nacos_client.get_nacos_services()
@@ -242,17 +257,22 @@ end
 function _M.get_nodes(key, metadata)
     local dict = get_dict()
     if not dict then
-        return nil
+        return nil, "nacos shared dict not available"
     end
 
     local value = dict:get(key)
     if not value then
-        return nil
+        return nil, "nacos service not found: " .. key
     end
 
-    local nodes = core.json.decode(value)
+    local nodes, err = core.json.decode(value)
+    if not nodes then
+        return nil, "failed to decode nodes for key: " .. key
+                    .. ", error: " .. (err or "")
+    end
+
     if not metadata then
-        return nodes
+        return sanitize_nodes(nodes)
     end
 
     local res = {}
@@ -261,7 +281,7 @@ function _M.get_nodes(key, metadata)
             core.table.insert(res, node)
         end
     end
-    return res
+    return sanitize_nodes(res)
 end
 
 
@@ -274,7 +294,8 @@ function _M.nodes(service_name, discovery_args)
             and discovery_args.group_name or "DEFAULT_GROUP"
 
     local key = "default/" .. namespace_id .. "/" .. group_name .. "/" .. service_name
-    return _M.get_nodes(key)
+    local metadata = discovery_args and discovery_args.metadata
+    return _M.get_nodes(key, metadata)
 end
 
 

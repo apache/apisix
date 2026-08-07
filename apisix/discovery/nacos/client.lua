@@ -198,7 +198,6 @@ end
 ---   access_key         (string)    AK for HMAC-SHA1 signing (optional)
 ---   secret_key         (string)    SK for HMAC-SHA1 signing (optional)
 ---   timeout            (table)     { connect, send, read } in ms
----   preserve_metadata  (bool)      include instance.metadata in returned nodes
 ---   key_builder        (function)  key_builder(namespace_id, group_name, service_name)
 ---                                  returns the key to use for this service in the result.
 ---                                  default: ns_id.group.service
@@ -209,7 +208,6 @@ function _M.fetch_from_host(base_uri, username, password, services, options)
     local ak = options.access_key
     local sk = options.secret_key
     local timeout = options.timeout
-    local preserve_metadata = options.preserve_metadata
     local key_builder = options.key_builder
 
     local token_param, err = _M.get_token_param(base_uri, username, password, timeout)
@@ -261,8 +259,12 @@ function _M.fetch_from_host(base_uri, username, password, services, options)
                 if is_grpc(scheme) and host.metadata and host.metadata.gRPC_port then
                     node.port = host.metadata.gRPC_port
                 end
-                if preserve_metadata and host.metadata then
-                    node.metadata = host.metadata
+                if service_info.preserve_metadata and host.metadata then
+                    if type(host.metadata) == "table" then
+                        node.metadata = host.metadata
+                    else
+                        log.error('nacos host metadata is not a table: ', host.metadata)
+                    end
                 end
                 core.table.insert(nodes, node)
             end
@@ -281,10 +283,12 @@ end
 
 -- ─── service scanning ─────────────────────────────────────────────────
 
-local function de_duplication(services, namespace_id, group_name, service_name, scheme)
+local function de_duplication(services, namespace_id, group_name, service_name,
+                              scheme, preserve_metadata)
     for _, service in ipairs(services) do
         if service.namespace_id == namespace_id and service.group_name == group_name
                 and service.service_name == service_name and service.scheme == scheme then
+            service.preserve_metadata = service.preserve_metadata or preserve_metadata
             return true
         end
     end
@@ -323,8 +327,14 @@ local function iter_and_add_service(services, values, filter)
         local group_name = (up.discovery_args and up.discovery_args.group_name)
                            or default_group_name
 
+        -- Preserve metadata only for Nacos services referenced by upstreams
+        -- with metadata filters. This keeps the common unfiltered path from
+        -- encoding/decoding metadata or cloning nodes during sanitization.
+        local metadata = up.discovery_args and up.discovery_args.metadata
+        local preserve_metadata = metadata ~= nil and next(metadata) ~= nil
+
         local dup = de_duplication(services, namespace_id, group_name,
-                up.service_name, up.scheme)
+                up.service_name, up.scheme, preserve_metadata)
         if dup then
             goto CONTINUE
         end
@@ -334,6 +344,7 @@ local function iter_and_add_service(services, values, filter)
             namespace_id = namespace_id,
             group_name = group_name,
             scheme = up.scheme,
+            preserve_metadata = preserve_metadata,
         })
         ::CONTINUE::
     end
