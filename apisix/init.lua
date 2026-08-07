@@ -813,8 +813,9 @@ function _M.http_access_phase()
 
             api_ctx.var.uri = new_uri
             -- forward the original uri so the servlet upstream
-            -- can consume the param after ';'
-            api_ctx.var.upstream_uri = uri
+            -- can consume the param after ';'. Encode control characters so a
+            -- CR/LF in the decoded uri cannot inject into the upstream request line.
+            api_ctx.var.upstream_uri = core.utils.escape_uri_control_chars(uri)
         end
     end
 

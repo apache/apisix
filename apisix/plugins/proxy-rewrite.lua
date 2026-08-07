@@ -382,8 +382,12 @@ function _M.rewrite(conf, ctx)
         end
 
         if index then
+            -- The query part (after '?') keeps its ?, =, & delimiters, but control
+            -- characters in it (e.g. a CR/LF reflected from $uri or a regex capture)
+            -- must still be encoded so they cannot be written verbatim into the
+            -- upstream request line.
             upstream_uri = core.utils.uri_safe_encode(sub_str(upstream_uri, 1, index - 1)) ..
-                sub_str(upstream_uri, index)
+                core.utils.escape_uri_control_chars(sub_str(upstream_uri, index))
         else
             -- The '?' may come from client request '%3f' when we use ngx.var.uri directly or
             -- via regex_uri
