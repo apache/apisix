@@ -6,7 +6,7 @@ keywords:
   - Plugin
   - LDAP Authentication
   - ldap-auth-advanced
-description: The ldap-auth-advanced Plugin authenticates users against an LDAP directory using search-then-bind, so users do not need to be enumerated in APISIX.
+description: The ldap-auth-advanced Plugin authenticates users against an LDAP directory using search-then-bind; with consumer_required disabled, users do not need to be enumerated in APISIX.
 ---
 
 <!--
@@ -34,7 +34,7 @@ description: The ldap-auth-advanced Plugin authenticates users against an LDAP d
 
 ## Description
 
-The `ldap-auth-advanced` Plugin adds LDAP authentication to a Route or a Service. Unlike [`ldap-auth`](./ldap-auth.md), which binds with a DN assembled from the Consumer configuration, this Plugin *searches* the directory for the user first, then binds as the entry it found. Users therefore do not need to be enumerated in APISIX.
+The `ldap-auth-advanced` Plugin adds LDAP authentication to a Route or a Service. Unlike [`ldap-auth`](./ldap-auth.md), which binds with a DN assembled from the Consumer configuration, this Plugin *searches* the directory for the user first, then binds as the entry it found. When `consumer_required` is disabled, users do not need to be enumerated in APISIX; with the default `true`, each authenticated user must still map to a Consumer by its `user_dn`.
 
 On each request the Plugin:
 
@@ -49,7 +49,7 @@ The Plugin distinguishes two failure modes, so an outage is never reported as a 
 | Status | Cause |
 |--------|-------|
 | `401` | Missing, malformed, or rejected credentials; a username matching more than one entry; or `consumer_required` is `true` and no Consumer matches. Returned with a `WWW-Authenticate` header. |
-| `500` | The directory is unreachable or the `bind_dn` credentials were rejected. |
+| `500` | LDAP transport, TLS, protocol, or server-side failures — for example an unreachable directory, a failed user search, or a user bind rejected with a result code other than `invalidCredentials` — as well as rejected `bind_dn` credentials. |
 
 This Plugin uses [lua-resty-ldap](https://github.com/api7/lua-resty-ldap) to connect to the LDAP server.
 

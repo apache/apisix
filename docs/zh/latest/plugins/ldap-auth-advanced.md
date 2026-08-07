@@ -6,7 +6,7 @@ keywords:
   - Plugin
   - LDAP Authentication
   - ldap-auth-advanced
-description: ldap-auth-advanced 插件通过“先搜索后绑定”的方式在 LDAP 目录中认证用户，因此无需在 APISIX 中逐个维护用户。
+description: ldap-auth-advanced 插件通过“先搜索后绑定”的方式在 LDAP 目录中认证用户；在关闭 consumer_required 时，无需在 APISIX 中逐个维护用户。
 ---
 
 <!--
@@ -34,7 +34,7 @@ description: ldap-auth-advanced 插件通过“先搜索后绑定”的方式在
 
 ## 描述
 
-`ldap-auth-advanced` 插件可用于给路由或服务添加 LDAP 身份认证。与使用 Consumer 配置拼接 DN 后直接绑定的 [`ldap-auth`](./ldap-auth.md) 不同，该插件会先在目录中**搜索**用户，再以搜索到的条目进行绑定。因此无需在 APISIX 中逐个维护用户。
+`ldap-auth-advanced` 插件可用于给路由或服务添加 LDAP 身份认证。与使用 Consumer 配置拼接 DN 后直接绑定的 [`ldap-auth`](./ldap-auth.md) 不同，该插件会先在目录中**搜索**用户，再以搜索到的条目进行绑定。在 `consumer_required` 设置为 `false` 时，无需在 APISIX 中逐个维护用户；使用默认值 `true` 时，认证通过的用户仍需通过 `user_dn` 匹配到对应的 Consumer。
 
 插件在每个请求中依次执行以下操作：
 
@@ -49,7 +49,7 @@ description: ldap-auth-advanced 插件通过“先搜索后绑定”的方式在
 | 状态码 | 原因 |
 |--------|------|
 | `401` | 凭证缺失、格式错误或被拒绝；用户名匹配到多个条目；或 `consumer_required` 为 `true` 但没有匹配的 Consumer。响应中会携带 `WWW-Authenticate` 请求头。 |
-| `500` | LDAP 服务器不可达，或 `bind_dn` 凭证被拒绝。 |
+| `500` | LDAP 传输、TLS、协议或服务端故障（例如目录不可达、用户搜索失败，或用户绑定被以 `invalidCredentials` 以外的结果码拒绝），以及 `bind_dn` 凭证被拒绝。 |
 
 该插件使用 [lua-resty-ldap](https://github.com/api7/lua-resty-ldap) 连接 LDAP 服务器。
 
