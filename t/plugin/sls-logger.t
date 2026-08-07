@@ -544,3 +544,23 @@ GET /t
 --- response_body
 done
 --- no_error_log
+
+
+
+=== TEST 18: ssl_verify defaults to true
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.sls-logger")
+            local conf = {
+                host = "127.0.0.1", port = 10009,
+                project = "p", logstore = "l",
+                access_key_id = "id", access_key_secret = "sec"
+            }
+            local ok, err = plugin.check_schema(conf)
+            if not ok then ngx.say("check failed: ", err); return end
+            ngx.say("ssl_verify=", tostring(conf.ssl_verify))
+        }
+    }
+--- response_body
+ssl_verify=true
