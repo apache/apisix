@@ -20,6 +20,8 @@ local secret            = require("apisix.secret")
 local ngx_re            = require("ngx.re")
 local openidc           = require("resty.openidc")
 local jsonschema        = require('jsonschema')
+local pkey              = require("resty.openssl.pkey")
+local dump_jwk          = require("resty.openssl.auxiliary.jwk").dump_jwk
 local string            = string
 local ngx               = ngx
 local ipairs            = ipairs
@@ -27,6 +29,7 @@ local type              = type
 local tostring          = tostring
 local pcall             = pcall
 local concat            = table.concat
+local unpack            = unpack
 
 local ngx_encode_base64 = ngx.encode_base64
 
@@ -55,6 +58,75 @@ local function build_session_opts(session_conf)
         end
     end
     return session_conf
+end
+
+
+-- The nested par/dpop objects own these lua-resty-openidc option names. The
+-- root schema accepts unknown properties, so without an explicit rejection a
+-- config could set them directly and reach the library unvalidated: the flat
+-- DPoP key is not covered by encrypt_fields and would be stored in etcd in
+-- plaintext, and the flat PAR endpoint would skip the https check.
+local reserved_flat_opts = {
+    {name = "use_par", owner = "par.enabled"},
+    {name = "pushed_authorization_request_endpoint", owner = "par.endpoint"},
+    {name = "pushed_authorization_request_endpoint_auth_method",
+     owner = "par.endpoint_auth_method"},
+    {name = "use_dpop", owner = "dpop.enabled"},
+    {name = "dpop_signing_alg", owner = "dpop.signing_alg"},
+    {name = "dpop_private_key", owner = "dpop.private_key"},
+    {name = "dpop_public_jwk", owner = "dpop.public_jwk"},
+}
+
+-- lua-resty-openidc builds the DPoP proof with resty.openssl, so the JWK has
+-- to match the signing algorithm: ES256 signs with an EC key on P-256 per
+-- RFC 7518, RS256 and PS256 with an RSA one.
+local dpop_alg_key_type = {
+    ES256 = {kty = "EC", crv = "P-256"},
+    RS256 = {kty = "RSA"},
+    PS256 = {kty = "RSA"},
+}
+
+local dpop_jwk_required_members = {
+    EC = {"crv", "x", "y"},
+    RSA = {"e", "n"},
+}
+
+-- resty.jwt selects the signer from the algorithm and not from the key, so an
+-- EC algorithm handed an RSA key terminates the worker with a SIGSEGV; the
+-- curve matters too, since ES512 on a P-256 key emits a P-256 signature
+local client_assertion_key_type = {
+    RS256 = {kty = "RSA"},
+    RS512 = {kty = "RSA"},
+    ES256 = {kty = "EC", crv = "P-256"},
+    ES512 = {kty = "EC", crv = "P-521"},
+}
+
+-- the client authentication methods lua-resty-openidc can use, and the
+-- credential each one needs
+local token_auth_method_credential = {
+    client_secret_basic = false,
+    client_secret_post = false,
+    private_key_jwt = "client_rsa_private_key",
+    client_secret_jwt = "client_secret",
+}
+
+
+local function flatten_openidc_options(conf)
+    if conf.par then
+        conf.use_par = conf.par.enabled
+        conf.pushed_authorization_request_endpoint = conf.par.endpoint
+        conf.pushed_authorization_request_endpoint_auth_method =
+            conf.par.endpoint_auth_method
+        conf.par = nil
+    end
+
+    if conf.dpop then
+        conf.use_dpop = conf.dpop.enabled
+        conf.dpop_signing_alg = conf.dpop.signing_alg
+        conf.dpop_private_key = conf.dpop.private_key
+        conf.dpop_public_jwk = conf.dpop.public_jwk
+        conf.dpop = nil
+    end
 end
 
 
@@ -304,6 +376,72 @@ local schema = {
             type = "boolean",
             default = false
         },
+        par = {
+            description = "Pushed Authorization Requests (PAR) configuration.",
+            type = "object",
+            properties = {
+                enabled = {
+                    description = "When true, use Pushed Authorization Requests (PAR).",
+                    type = "boolean",
+                    default = false,
+                },
+                endpoint = {
+                    description = "URL of the Pushed Authorization Requests endpoint.",
+                    type = "string",
+                },
+                endpoint_auth_method = {
+                    description = "Authentication method for the PAR endpoint.",
+                    type = "string",
+                    enum = {"client_secret_basic", "client_secret_post",
+                            "private_key_jwt", "client_secret_jwt"},
+                },
+            },
+            additionalProperties = false,
+        },
+        dpop = {
+            description = "Demonstrating Proof-of-Possession (DPoP) configuration.",
+            type = "object",
+            properties = {
+                enabled = {
+                    description = "When true, use DPoP proof JWTs.",
+                    type = "boolean",
+                    default = false,
+                },
+                signing_alg = {
+                    description = "DPoP proof JWT signing algorithm.",
+                    type = "string",
+                    enum = {"ES256", "RS256", "PS256"},
+                    default = "ES256",
+                },
+                private_key = {
+                    description = "Private key used to sign DPoP proof JWTs.",
+                    type = "string",
+                },
+                public_jwk = {
+                    description = "Public JWK matching dpop.private_key.",
+                    type = "object",
+                    ["not"] = {anyOf = {
+                        {required = {"d"}},
+                        {required = {"p"}},
+                        {required = {"q"}},
+                        {required = {"dp"}},
+                        {required = {"dq"}},
+                        {required = {"qi"}},
+                        {required = {"oth"}},
+                        {required = {"k"}},
+                    }},
+                },
+            },
+            ["if"] = {
+                properties = {
+                    enabled = { const = true },
+                },
+            },
+            ["then"] = {
+                required = {"private_key", "public_jwk"},
+            },
+            additionalProperties = false,
+        },
         set_access_token_header = {
             description = "Whether the access token should be added as a header to the request " ..
                 "for downstream",
@@ -382,6 +520,22 @@ local schema = {
             description = "Life duration of the signed JWT in seconds.",
             type = "integer",
             default = 60
+        },
+        -- resty.jwt signs the client assertion and raises an uncaught Lua
+        -- error for an algorithm it cannot handle, so an unconstrained value
+        -- would surface as a 500 per request instead of a rejected config.
+        -- Two rocks provide resty/jwt.lua here: the api7-lua-resty-jwt this
+        -- rockspec pins, and the lua-resty-jwt lua-resty-openidc depends on.
+        -- This enum is what the api7 fork signs, a subset of what the other
+        -- one signs, so it holds whichever of the two ends up installed.
+        client_jwt_assertion_alg = {
+            description = "Signing algorithm for the client assertion JWT.",
+            type = "string",
+            enum = {"HS256", "HS512", "RS256", "RS512", "ES256", "ES512"}
+        },
+        client_jwt_assertion_audience = {
+            description = "Audience for the client assertion JWT.",
+            type = "string"
         },
         renew_access_token_on_expiry = {
             description = "Whether to attempt silently renewing the access token.",
@@ -476,7 +630,7 @@ local schema = {
             default = nil,
         }
     },
-    encrypt_fields = {"client_secret", "client_rsa_private_key",
+    encrypt_fields = {"client_secret", "client_rsa_private_key", "dpop.private_key",
                       "session.secret", "session.redis.password"},
     required = {"client_id", "discovery"}
 }
@@ -488,8 +642,237 @@ local _M = {
     name = plugin_name,
     schema = schema,
     _build_session_opts = build_session_opts,
+    _flatten_openidc_options = flatten_openidc_options,
 }
 
+-- lua-resty-openidc rejects a JWK that lacks the members its key type needs,
+-- but only once the first authorization request builds the thumbprint, which
+-- surfaces as a 500 per request instead of a rejected configuration.
+-- The public JWK openssl derives from a private key, so a configured JWK can
+-- be checked against the key that will actually sign with it.
+local function private_key_jwk(pem, field)
+    local key, err = pkey.new(pem)
+    if not key then
+        return nil, "property \"" .. field .. "\" is not a valid key: " .. tostring(err)
+    end
+    if not key:is_private() then
+        return nil, "property \"" .. field .. "\" has no private key in it"
+    end
+
+    local ok, dumped = pcall(dump_jwk, key, false)
+    if not ok or not dumped then
+        return nil, "property \"" .. field .. "\" could not be read as a JWK"
+    end
+
+    local jwk
+    jwk, err = core.json.decode(dumped)
+    if not jwk then
+        return nil, "property \"" .. field .. "\" could not be read as a JWK: "
+                    .. tostring(err)
+    end
+    return jwk
+end
+
+
+local function check_dpop_key(dpop)
+    -- lua-resty-openidc reads none of this while use_dpop is false, so a
+    -- configuration that stages the key material before turning DPoP on is
+    -- valid and must not be rejected
+    if not (dpop and dpop.enabled) then
+        return true
+    end
+
+    local jwk = dpop.public_jwk
+    if not jwk then
+        return true
+    end
+
+    local required = dpop_jwk_required_members[jwk.kty]
+    if not required then
+        return false, "property \"dpop.public_jwk\" validation failed: kty \""
+                      .. tostring(jwk.kty) .. "\" is not supported"
+    end
+
+    for _, member in ipairs(required) do
+        if jwk[member] == nil then
+            return false, "property \"dpop.public_jwk\" validation failed: kty \""
+                          .. jwk.kty .. "\" requires " .. concat(required, ", ")
+        end
+        -- the members go into the RFC 7638 thumbprint verbatim, so a non-string
+        -- would be encoded as itself and produce a thumbprint no OP can match
+        if type(jwk[member]) ~= "string" or jwk[member] == "" then
+            return false, "property \"dpop.public_jwk\" validation failed: \""
+                          .. member .. "\" must be a non-empty string"
+        end
+    end
+
+    local expected = dpop_alg_key_type[dpop.signing_alg]
+    if not expected then
+        return true
+    end
+
+    if expected.kty ~= jwk.kty then
+        return false, "property \"dpop.signing_alg\" \"" .. dpop.signing_alg
+                      .. "\" requires an " .. expected.kty .. " \"dpop.public_jwk\""
+    end
+    if expected.crv and jwk.crv ~= expected.crv then
+        return false, "property \"dpop.signing_alg\" \"" .. dpop.signing_alg
+                      .. "\" requires \"dpop.public_jwk\" crv \"" .. expected.crv
+                      .. "\", got \"" .. tostring(jwk.crv) .. "\""
+    end
+
+    -- The proof is signed with the private key and advertises the JWK, so the
+    -- two have to be the same key pair: otherwise the OP gets a proof it
+    -- cannot verify. Comparing the derived JWK covers that, and with it the
+    -- private key's own type and curve.
+    local private_key = dpop.private_key
+    if not private_key or secret.is_secret_ref(private_key) then
+        return true
+    end
+
+    local derived, err = private_key_jwk(private_key, "dpop.private_key")
+    if not derived then
+        return false, err
+    end
+
+    for _, member in ipairs({"kty", unpack(required)}) do
+        if derived[member] ~= jwk[member] then
+            return false, "property \"dpop.public_jwk\" is not the public key of "
+                          .. "\"dpop.private_key\": " .. member .. " is \""
+                          .. tostring(derived[member]) .. "\""
+        end
+    end
+
+    return true
+end
+
+
+-- Which endpoints a configuration can actually reach, and with which client
+-- authentication method. rewrite() only calls introspect() when one of
+-- bearer_only/introspection_endpoint/public_key/use_jwks is set, and inside it
+-- public_key and use_jwks take the local JWT verification branch instead. The
+-- token and PAR endpoints belong to the authorization code flow, which
+-- bearer_only never runs.
+local function reachable_jwt_auth(conf)
+    local reachable = {}
+
+    if not (conf.public_key or conf.use_jwks)
+       and (conf.bearer_only or conf.introspection_endpoint) then
+        core.table.insert(reachable, {name = "introspection_endpoint_auth_method",
+                                      method = conf.introspection_endpoint_auth_method})
+    end
+
+    if not conf.bearer_only then
+        -- ensure_config() replaces an unusable token_endpoint_auth_method
+        -- before any endpoint is called (openidc.lua:1209), so it only counts
+        -- while its credential is there
+        local method = conf.token_endpoint_auth_method
+        local credential = token_auth_method_credential[method]
+        if credential == nil or credential == false or conf[credential] then
+            core.table.insert(reachable, {name = "token_endpoint_auth_method",
+                                          method = method})
+        end
+
+        -- an explicit PAR method reaches the request unchanged; without one
+        -- PAR uses the resolved token method, which is already counted above
+        if conf.par and conf.par.enabled and conf.par.endpoint_auth_method then
+            core.table.insert(reachable, {name = "par.endpoint_auth_method",
+                                          method = conf.par.endpoint_auth_method})
+        end
+    end
+
+    return reachable
+end
+
+
+-- The token endpoint only logs and falls back when its auth method cannot be
+-- used, but the PAR request fails outright (openidc.lua:547), which surfaces
+-- as a 500. Only an explicit PAR method gets there unchanged: without one PAR
+-- uses whatever ensure_config() resolved, which is usable by construction.
+local function check_par_auth_method(conf)
+    if conf.bearer_only or not (conf.par and conf.par.enabled) then
+        return true
+    end
+
+    local method = conf.par.endpoint_auth_method
+    if not method then
+        return true
+    end
+
+    local credential = token_auth_method_credential[method]
+    if credential and not conf[credential] then
+        return false, "property \"par.endpoint_auth_method\" \"" .. method
+                      .. "\" requires \"" .. credential .. "\" when \"par.enabled\" is true"
+    end
+
+    return true
+end
+
+
+-- The client assertion is signed with a single algorithm, but each endpoint
+-- picks its own auth method. lua-resty-openidc rejects a symmetric algorithm
+-- with private_key_jwt and an asymmetric one with client_secret_jwt when the
+-- endpoint is called, which surfaces as a 500. With no algorithm configured
+-- the library defaults per auth method, so the families cannot conflict.
+local function check_client_jwt_assertion_alg(conf)
+    local alg = conf.client_jwt_assertion_alg
+    if not alg then
+        return true
+    end
+
+    local asymmetric_by, symmetric_by
+    for _, selection in ipairs(reachable_jwt_auth(conf)) do
+        if selection.method == "private_key_jwt" then
+            asymmetric_by = asymmetric_by or selection.name
+        elseif selection.method == "client_secret_jwt" then
+            symmetric_by = symmetric_by or selection.name
+        end
+    end
+
+    if asymmetric_by and symmetric_by then
+        return false, "property \"client_jwt_assertion_alg\" is a single algorithm, "
+                      .. "but \"" .. asymmetric_by .. "\" selects private_key_jwt and \""
+                      .. symmetric_by .. "\" selects client_secret_jwt"
+    end
+
+    local is_symmetric = alg:sub(1, 2) == "HS"
+    if asymmetric_by and is_symmetric then
+        return false, "property \"client_jwt_assertion_alg\" \"" .. alg
+                      .. "\" is symmetric and cannot be used with the private_key_jwt "
+                      .. "selected by \"" .. asymmetric_by .. "\""
+    end
+    if symmetric_by and not is_symmetric then
+        return false, "property \"client_jwt_assertion_alg\" \"" .. alg
+                      .. "\" is asymmetric and cannot be used with the client_secret_jwt "
+                      .. "selected by \"" .. symmetric_by .. "\""
+    end
+
+    -- resty.jwt picks the signer from the algorithm, not the key: handing an
+    -- EC algorithm an RSA key terminates the worker with a SIGSEGV in the
+    -- signature conversion, and an EC key on the wrong curve silently emits a
+    -- signature of the wrong size
+    local expected = asymmetric_by and client_assertion_key_type[alg]
+    local private_key = conf.client_rsa_private_key
+    if not expected or not private_key or secret.is_secret_ref(private_key) then
+        return true
+    end
+
+    local derived, err = private_key_jwk(private_key, "client_rsa_private_key")
+    if not derived then
+        return false, err
+    end
+    if derived.kty ~= expected.kty then
+        return false, "property \"client_jwt_assertion_alg\" \"" .. alg
+                      .. "\" requires an " .. expected.kty .. " \"client_rsa_private_key\""
+    end
+    if expected.crv and derived.crv ~= expected.crv then
+        return false, "property \"client_jwt_assertion_alg\" \"" .. alg
+                      .. "\" requires a \"client_rsa_private_key\" on curve \""
+                      .. expected.crv .. "\", got \"" .. tostring(derived.crv) .. "\""
+    end
+
+    return true
+end
 function _M.check_schema(conf)
     if conf.ssl_verify == "no" then
         -- we used to set 'ssl_verify' to "no"
@@ -521,7 +904,8 @@ function _M.check_schema(conf)
     end
 
     local check = {"discovery", "introspection_endpoint", "redirect_uri",
-                    "post_logout_redirect_uri", "proxy_opts.http_proxy", "proxy_opts.https_proxy"}
+                    "post_logout_redirect_uri", "par.endpoint", "proxy_opts.http_proxy",
+                    "proxy_opts.https_proxy"}
     core.utils.check_https(check, conf, plugin_name)
     core.utils.check_tls_bool({"ssl_verify"}, conf, plugin_name)
 
@@ -535,6 +919,28 @@ function _M.check_schema(conf)
         if not ok then
             return false, "check claim_schema failed: " .. tostring(res)
         end
+    end
+
+    for _, opt in ipairs(reserved_flat_opts) do
+        if conf[opt.name] ~= nil then
+            return false, "property \"" .. opt.name .. "\" is not allowed, use \""
+                          .. opt.owner .. "\" instead"
+        end
+    end
+
+    ok, err = check_dpop_key(conf.dpop)
+    if not ok then
+        return false, err
+    end
+
+    ok, err = check_client_jwt_assertion_alg(conf)
+    if not ok then
+        return false, err
+    end
+
+    ok, err = check_par_auth_method(conf)
+    if not ok then
+        return false, err
     end
 
     return true
@@ -713,6 +1119,7 @@ end
 
 function _M.rewrite(plugin_conf, ctx)
     local conf = core.table.clone(plugin_conf)
+    flatten_openidc_options(conf)
 
     -- Snapshot the client-supplied X-Access-Token (it doubles as a bearer
     -- input via get_bearer_access_token) and clear the five headers this
@@ -897,18 +1304,20 @@ function _M.rewrite(plugin_conf, ctx)
                 return 401
             end
 
-            -- Stale authorization callback: the state in the callback does not
-            -- match the one in the session, e.g. the same browser started
-            -- another login flow in a second tab and overwrote the state, or an
-            -- already completed callback was replayed. The client is a browser
+            -- Stale authorization callback: the session holds no authorization
+            -- state for the state in the callback, e.g. an already completed
+            -- callback was replayed, or the state was pruned after too many
+            -- concurrent flows. (Concurrent logins in several tabs are handled
+            -- by resty.openidc itself since 1.9.0, which keeps one
+            -- authorization state per in-flight flow.) The client is a browser
             -- mid-navigation, so instead of a dead-end 500, send it back to the
             -- original URL that resty.openidc returns alongside the error: a
             -- fresh flow starts from there and completes without any user
             -- interaction while the ID provider still holds an SSO session.
             if err == STATE_MISMATCH_ERR and target_url
                and ngx.req.get_method() == "GET" then
-                core.log.warn("OIDC state mismatch (concurrent login flows or ",
-                              "replayed callback), restarting the authentication flow")
+                core.log.warn("OIDC state mismatch (replayed or pruned ",
+                              "callback), restarting the authentication flow")
                 core.response.set_header("Location", target_url)
                 return 302
             end
