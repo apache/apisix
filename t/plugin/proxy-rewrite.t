@@ -1755,7 +1755,9 @@ qr/x-multi: cap-echo\nx-multi: from-src/
     }
 --- request
 GET /t
---- response_body eval
-qr{request_uri: /print_request_received\?orig=/reflect%0[Dd]%0[Aa]X-Injected}
+--- response_body_like
+request_uri: /print_request_received\?orig=/reflect%0[Dd]%0[Aa]X-Injected:pwn
+--- response_body_unlike
+x-injected: pwn
 --- no_error_log
 [error]
