@@ -1,0 +1,53 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# Authorization groups for the ldap-auth-advanced tests. Loaded by
+# setup-groups.sh AFTER the memberof overlay is active, so the overlay
+# back-populates memberOf on the member user entries.
+
+dn: ou=groups,dc=example,dc=org
+objectClass: organizationalUnit
+ou: groups
+
+dn: cn=Domain Admins,ou=groups,dc=example,dc=org
+objectClass: groupOfNames
+cn: Domain Admins
+member: cn=Jane Doe,ou=users,dc=example,dc=org
+member: cn=user01,ou=users,dc=example,dc=org
+member: cn=Multi User,ou=users,dc=example,dc=org
+
+dn: cn=developers,ou=groups,dc=example,dc=org
+objectClass: groupOfNames
+cn: developers
+member: cn=user01,ou=users,dc=example,dc=org
+member: cn=Multi User,ou=users,dc=example,dc=org
+
+dn: cn=ops,ou=groups,dc=example,dc=org
+objectClass: groupOfNames
+cn: ops
+member: cn=Jane Doe,ou=users,dc=example,dc=org
+member: cn=Multi User,ou=users,dc=example,dc=org
+
+dn: cn=superadmin,ou=groups,dc=example,dc=org
+objectClass: groupOfNames
+cn: superadmin
+member: cn=user02,ou=users,dc=example,dc=org
+
+# The cn contains a comma, escaped in the DN as cn=Sales\, EMEA.
+dn: cn=Sales\, EMEA,ou=groups,dc=example,dc=org
+objectClass: groupOfNames
+cn: Sales, EMEA
+member: cn=Sales User,ou=users,dc=example,dc=org

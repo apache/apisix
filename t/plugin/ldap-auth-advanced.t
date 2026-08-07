@@ -1239,6 +1239,7 @@ X-Authenticated-Groups: spoofed-groups
 uri: /uri
 authorization: ldap dXNlcjAxOnBhc3N3b3JkMQ==
 host: localhost
+x-authenticated-groups: Domain Admins,developers
 x-real-ip: 127.0.0.1
 
 
