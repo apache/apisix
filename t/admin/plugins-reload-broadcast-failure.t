@@ -49,28 +49,37 @@ deployment:
 plugins:
   - response-rewrite
   - reload-probe-shared
+--- extra_init_by_lua
+    -- patched in init_by_lua so every worker inherits it: the Admin API request
+    -- below is served by whichever worker nginx picks, not necessarily the one
+    -- running this test
+    local events = require("apisix.events")
+    local orig_post = events.post
+    events.post = function(self, ...)
+        local dict = ngx.shared["internal-status"]
+        if dict and dict:get("break_broadcast") then
+            return nil, "forced broadcast failure"
+        end
+        return orig_post(self, ...)
+    end
 --- config
 location /t {
     content_by_lua_block {
         local dict = ngx.shared["internal-status"]
-        local events = require("apisix.events")
 
         -- let the boot-time loads settle before counting
         ngx.sleep(1)
         local before = dict:get("reload_probe_shared_init") or 0
         local ver_before = dict:get("plugins_conf_version") or 0
 
-        -- the broadcast fails, so no worker is told about the reload
-        local orig_post = events.post
-        events.post = function()
-            return nil, "forced broadcast failure"
-        end
+        -- from here on no worker manages to broadcast the reload
+        dict:set("break_broadcast", true)
 
         local t = require("lib.test_admin").test
         local code = t('/apisix/admin/plugins/reload', ngx.HTTP_PUT)
         ngx.say("reload: ", code)
 
-        events.post = orig_post
+        dict:set("break_broadcast", false)
 
         -- the version must have moved even though the broadcast did not, which
         -- is what lets the other worker converge
