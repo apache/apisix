@@ -263,3 +263,60 @@ X-Forwarded-Proto: http
 X-Forwarded-Proto: grpc
 --- response_headers
 X-Forwarded-Proto: http
+
+
+
+=== TEST 9: customize X-Forwarded-Port when the client sends none
+--- apisix_yaml
+routes:
+  -
+    id: 1
+    uri: /echo
+    plugins:
+        proxy-rewrite:
+            headers:
+                X-Forwarded-Port: 10080
+    upstream_id: 1
+upstreams:
+  -
+    id: 1
+    nodes:
+        "127.0.0.1:1980": 1
+    type: roundrobin
+#END
+--- request
+GET /echo
+--- response_headers
+X-Forwarded-Port: 10080
+
+
+
+=== TEST 10: customize X-Forwarded-Port when the client sends none and trusted_addresses is unset
+--- yaml_config
+apisix:
+    node_listen: 1984
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
+--- apisix_yaml
+routes:
+  -
+    id: 1
+    uri: /echo
+    plugins:
+        proxy-rewrite:
+            headers:
+                X-Forwarded-Port: 10080
+    upstream_id: 1
+upstreams:
+  -
+    id: 1
+    nodes:
+        "127.0.0.1:1980": 1
+    type: roundrobin
+#END
+--- request
+GET /echo
+--- response_headers
+X-Forwarded-Port: 10080

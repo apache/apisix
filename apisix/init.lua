@@ -687,56 +687,105 @@ end
 
 
 local function handle_x_forwarded_headers(api_ctx)
-    local addr_is_trusted = trusted_addresses_util.is_trusted(api_ctx.var.realip_remote_addr)
-
-    -- Only untrusted values need to be overwritten or cleared.
-    if not addr_is_trusted then
-        -- store the original x-forwarded-* headers
-        -- to allow future use by other plugins or processes
-        api_ctx.var.original_x_forwarded_proto = api_ctx.var.http_x_forwarded_proto
-        api_ctx.var.original_x_forwarded_host = api_ctx.var.http_x_forwarded_host
-        api_ctx.var.original_x_forwarded_port = api_ctx.var.http_x_forwarded_port
-        api_ctx.var.original_x_forwarded_for = api_ctx.var.http_x_forwarded_for
-
-        -- trusted ones
-        -- ref: ngx_tpl.lua#L831-L840
-        --
-        -- these values are observed directly by APISIX and cannot be forged,
-        -- making them highly credible.
-        local proto = api_ctx.var.scheme
-        local http_host = api_ctx.var.http_host or api_ctx.var.host
-        -- parse_addr handles IPv6 literals and bracketed host:port correctly.
-        local _, port_from_host = core.utils.parse_addr(http_host)
-        local host = http_host
-        local port = port_from_host or api_ctx.var.server_port
-
-        -- override the x-forwarded-* headers to the trusted ones.
-        -- make sure that the correct values ​​are obtained
-        -- in the subsequent stages using `core.request.header`.
-        core.request.set_header(api_ctx, "X-Forwarded-Proto", proto)
-        core.request.set_header(api_ctx, "X-Forwarded-Host", host)
-        core.request.set_header(api_ctx, "X-Forwarded-Port", port)
-        -- Clear RFC 7239 Forwarded header to prevent forgery.
-        core.request.set_header(api_ctx, "Forwarded", nil)
-
-        -- X-Forwarded-For: when a trust boundary is configured but this peer is
-        -- untrusted, reset it so the upstream only sees the APISIX-observed
-        -- connection IP via `$proxy_add_x_forwarded_for`, dropping the spoofable
-        -- inbound chain. When `trusted_addresses` is unset, keep the compatible
-        -- default of preserving the inbound chain (the connection IP is appended).
-        if trusted_addresses_util.is_configured() then
-            core.request.set_header(api_ctx, "X-Forwarded-For", nil)
-            api_ctx.var.http_x_forwarded_for = nil
-        end
-
-        -- update the cached value in http_x_forwarded_* to the trusted ones.
-        -- make sure that the correct values ​​are obtained
-        -- in the subsequent stages using `var.http_x_forwarded_*`.
-        api_ctx.var.http_x_forwarded_proto = proto
-        api_ctx.var.http_x_forwarded_host = host
-        api_ctx.var.http_x_forwarded_port = port
-        api_ctx.var.http_forwarded = nil
+    -- with no trust boundary configured no peer is trusted, so skip the IP match
+    -- (and the `$realip_remote_addr` lookup it needs) altogether.
+    local trust_boundary_configured = trusted_addresses_util.is_configured()
+    if trust_boundary_configured
+       and trusted_addresses_util.is_trusted(api_ctx.var.realip_remote_addr) then
+        -- values from a trusted peer are forwarded as they arrived
+        return
     end
+
+    -- read the forgeable headers through `ngx.var` rather than `api_ctx.var`:
+    -- the latter runs a `lower()` plus an `ngx.re.gsub()` on every `http_*` key
+    -- and does not cache a nil result, which makes these lookups the single most
+    -- expensive part of this function on requests that carry no such header.
+    local xf_proto = ngx_var.http_x_forwarded_proto
+    local xf_host = ngx_var.http_x_forwarded_host
+    local xf_port = ngx_var.http_x_forwarded_port
+    local xf_for = ngx_var.http_x_forwarded_for
+    local forwarded = ngx_var.http_forwarded
+
+    -- Nothing forgeable was sent, so there is nothing to neutralize: the request
+    -- headers are left untouched, which skips four `ngx.req.set_header()` calls.
+    -- The values handed to the upstream must not change though, and the
+    -- `set $var_x_forwarded_*` defaults in ngx_tpl.lua resolve to
+    -- $scheme/$host/$server_port, so they drop an explicit port carried by the
+    -- Host header -- which is the port the client actually used, and the only
+    -- correct X-Forwarded-Port on a port-mapped deployment. Write the variables
+    -- only in the cases where those defaults would lose information; `$scheme`
+    -- never needs one.
+    if not (xf_proto or xf_host or xf_port or xf_for or forwarded) then
+        local http_host = ngx_var.http_host
+        if http_host then
+            local _, port_from_host = core.utils.parse_addr(http_host)
+            if port_from_host then
+                api_ctx.var.var_x_forwarded_host = http_host
+                api_ctx.var.var_x_forwarded_port = port_from_host
+            elseif http_host ~= api_ctx.var.host then
+                -- `$host` is lower-cased, the Host header is not
+                api_ctx.var.var_x_forwarded_host = http_host
+            end
+        end
+        return
+    end
+
+    -- store the original x-forwarded-* headers
+    -- to allow future use by other plugins or processes
+    api_ctx.var.original_x_forwarded_proto = xf_proto
+    api_ctx.var.original_x_forwarded_host = xf_host
+    api_ctx.var.original_x_forwarded_port = xf_port
+    api_ctx.var.original_x_forwarded_for = xf_for
+
+    -- the replacement values
+    -- ref: ngx_tpl.lua#L831-L840
+    --
+    -- only two of these are beyond the client's reach: `scheme` is the protocol
+    -- of the connection APISIX accepted, and `server_port` is the listener's own
+    -- port. `http_host` and the port parsed out of it come from the client's
+    -- Host header, so they are not authenticated. What the rewrite buys for
+    -- those two is that X-Forwarded-Host and X-Forwarded-Port can no longer be
+    -- set independently of Host, not that their content is trustworthy -- an
+    -- upstream building absolute URLs from X-Forwarded-Host still has to
+    -- validate Host itself.
+    local proto = api_ctx.var.scheme
+    local http_host = ngx_var.http_host or api_ctx.var.host
+    -- parse_addr handles IPv6 literals and bracketed host:port correctly.
+    local _, port_from_host = core.utils.parse_addr(http_host)
+    local host = http_host
+    local port = port_from_host or api_ctx.var.server_port
+
+    -- override the x-forwarded-* headers to the trusted ones.
+    -- make sure that the correct values ​​are obtained
+    -- in the subsequent stages using `core.request.header`.
+    core.request.set_header(api_ctx, "X-Forwarded-Proto", proto)
+    core.request.set_header(api_ctx, "X-Forwarded-Host", host)
+    core.request.set_header(api_ctx, "X-Forwarded-Port", port)
+    -- Clear RFC 7239 Forwarded header to prevent forgery.
+    if forwarded then
+        core.request.set_header(api_ctx, "Forwarded", nil)
+    end
+
+    -- X-Forwarded-For: when a trust boundary is configured but this peer is
+    -- untrusted, reset it so the upstream only sees the APISIX-observed
+    -- connection IP via `$proxy_add_x_forwarded_for`, dropping the spoofable
+    -- inbound chain. When `trusted_addresses` is unset, keep the compatible
+    -- default of preserving the inbound chain (the connection IP is appended).
+    if xf_for and trust_boundary_configured then
+        core.request.set_header(api_ctx, "X-Forwarded-For", nil)
+        -- `set_header` invalidates `ctx.var` under the hyphenated header name,
+        -- which is not the key `ctx.var.http_x_forwarded_for` is cached under,
+        -- so drop that one explicitly in case an earlier phase populated it.
+        api_ctx.var.http_x_forwarded_for = nil
+    end
+
+    -- update the cached value in http_x_forwarded_* to the trusted ones.
+    -- make sure that the correct values ​​are obtained
+    -- in the subsequent stages using `var.http_x_forwarded_*`.
+    api_ctx.var.http_x_forwarded_proto = proto
+    api_ctx.var.http_x_forwarded_host = host
+    api_ctx.var.http_x_forwarded_port = port
+    api_ctx.var.http_forwarded = nil
 end
 
 
@@ -754,18 +803,25 @@ end
 --
 -- the `X-Forwarded-For` header is not updated through these variables.
 -- because it is set by the `proxy_add_x_forwarded_for` directive.
+--
+-- the headers are read through `ngx.var` rather than `api_ctx.var`: the wrapper
+-- runs a `lower()` plus an `ngx.re.gsub()` for every `http_*` key and never
+-- caches a nil result, so on a request carrying no X-Forwarded-* header these
+-- three lookups cost more than everything else in this function. `ngx.var` sees
+-- both the values written by `handle_x_forwarded_headers` and any header a
+-- plugin changed in between, because both go through `core.request.set_header`.
 local function set_upstream_x_forwarded_headers(api_ctx)
-    local proto = api_ctx.var.http_x_forwarded_proto
+    local proto = ngx_var.http_x_forwarded_proto
     if proto then
         api_ctx.var.var_x_forwarded_proto = proto
     end
 
-    local port = api_ctx.var.http_x_forwarded_port
+    local port = ngx_var.http_x_forwarded_port
     if port then
         api_ctx.var.var_x_forwarded_port = port
     end
 
-    local host = api_ctx.var.http_x_forwarded_host
+    local host = ngx_var.http_x_forwarded_host
     if host then
         api_ctx.var.var_x_forwarded_host = host
     end

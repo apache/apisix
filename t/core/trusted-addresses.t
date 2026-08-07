@@ -68,6 +68,7 @@ x-forwarded-proto: http
 x-real-ip: 127.0.0.1
 --- error_log
 trusted_addresses is not configured
+--- no_error_log
 trusted_addresses_matcher is not initialized
 
 
@@ -437,4 +438,206 @@ x-forwarded-for: 127.0.0.1
 x-forwarded-host: example.com
 x-forwarded-port: 8443
 x-forwarded-proto: https
+x-real-ip: 127.0.0.1
+
+
+
+=== TEST 11: without trusted_addresses, a request carrying no X-Forwarded-* header keeps the nginx-derived values
+--- yaml_config
+apisix:
+    node_listen: 1984
+    enable_admin: false
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
+--- apisix_yaml
+routes:
+  -
+    id: 1
+    uri: /old_uri
+    upstream:
+        nodes:
+            "127.0.0.1:1980": 1
+        type: roundrobin
+#END
+--- request
+GET /old_uri
+--- response_body
+uri: /old_uri
+host: localhost
+x-forwarded-for: 127.0.0.1
+x-forwarded-host: localhost
+x-forwarded-port: 1984
+x-forwarded-proto: http
+x-real-ip: 127.0.0.1
+
+
+
+=== TEST 12: with trusted_addresses, an untrusted peer carrying no X-Forwarded-* header gets the same values
+--- yaml_config
+apisix:
+    node_listen: 1984
+    enable_admin: false
+    trusted_addresses:
+        - "1.0.0.1"
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
+--- apisix_yaml
+routes:
+  -
+    id: 1
+    uri: /old_uri
+    upstream:
+        nodes:
+            "127.0.0.1:1980": 1
+        type: roundrobin
+#END
+--- request
+GET /old_uri
+--- response_body
+uri: /old_uri
+host: localhost
+x-forwarded-for: 127.0.0.1
+x-forwarded-host: localhost
+x-forwarded-port: 1984
+x-forwarded-proto: http
+x-real-ip: 127.0.0.1
+
+
+
+=== TEST 13: without trusted_addresses, RFC 7239 Forwarded alone is cleared and X-Forwarded-* are overridden
+--- yaml_config
+apisix:
+    node_listen: 1984
+    enable_admin: false
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
+--- apisix_yaml
+routes:
+  -
+    id: 1
+    uri: /old_uri
+    upstream:
+        nodes:
+            "127.0.0.1:1980": 1
+        type: roundrobin
+#END
+--- request
+GET /old_uri
+--- more_headers
+Forwarded: for=1.2.3.4;host=evil.com;proto=https
+--- response_body
+uri: /old_uri
+host: localhost
+x-forwarded-for: 127.0.0.1
+x-forwarded-host: localhost
+x-forwarded-port: 1984
+x-forwarded-proto: http
+x-real-ip: 127.0.0.1
+
+
+
+=== TEST 14: without trusted_addresses, a forged X-Forwarded-For alone still overrides the other X-Forwarded-*
+--- yaml_config
+apisix:
+    node_listen: 1984
+    enable_admin: false
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
+--- apisix_yaml
+routes:
+  -
+    id: 1
+    uri: /old_uri
+    upstream:
+        nodes:
+            "127.0.0.1:1980": 1
+        type: roundrobin
+#END
+--- request
+GET /old_uri
+--- more_headers
+X-Forwarded-For: 1.2.3.4
+--- response_body
+uri: /old_uri
+host: localhost
+x-forwarded-for: 1.2.3.4, 127.0.0.1
+x-forwarded-host: localhost
+x-forwarded-port: 1984
+x-forwarded-proto: http
+x-real-ip: 127.0.0.1
+
+
+
+=== TEST 15: without trusted_addresses and without any X-Forwarded-* header, an explicit port in Host is preserved
+--- yaml_config
+apisix:
+    node_listen: 1984
+    enable_admin: false
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
+--- apisix_yaml
+routes:
+  -
+    id: 1
+    uri: /old_uri
+    upstream:
+        nodes:
+            "127.0.0.1:1980": 1
+        type: roundrobin
+#END
+--- request
+GET /old_uri
+--- more_headers
+Host: localhost:8443
+--- response_body
+uri: /old_uri
+host: localhost:8443
+x-forwarded-for: 127.0.0.1
+x-forwarded-host: localhost:8443
+x-forwarded-port: 8443
+x-forwarded-proto: http
+x-real-ip: 127.0.0.1
+
+
+
+=== TEST 16: without trusted_addresses and without any X-Forwarded-* header, the Host header case is preserved
+--- yaml_config
+apisix:
+    node_listen: 1984
+    enable_admin: false
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
+--- apisix_yaml
+routes:
+  -
+    id: 1
+    uri: /old_uri
+    upstream:
+        nodes:
+            "127.0.0.1:1980": 1
+        type: roundrobin
+#END
+--- request
+GET /old_uri
+--- more_headers
+Host: LOCALHOST
+--- response_body
+uri: /old_uri
+host: LOCALHOST
+x-forwarded-for: 127.0.0.1
+x-forwarded-host: LOCALHOST
+x-forwarded-port: 1984
+x-forwarded-proto: http
 x-real-ip: 127.0.0.1
