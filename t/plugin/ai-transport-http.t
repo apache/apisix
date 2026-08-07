@@ -33,6 +33,10 @@ run_tests;
 __DATA__
 
 === TEST 1: AI transport encodes upstream request body with sorted keys and preserves empty arrays
+--- extra_yaml_config
+plugin_attr:
+    ai-proxy:
+        http_client: lua-resty-http
 --- config
     location /t {
         content_by_lua_block {
@@ -96,6 +100,10 @@ __DATA__
 
 
 === TEST 2: AI transport falls back to cjson when rapidjson encode fails
+--- extra_yaml_config
+plugin_attr:
+    ai-proxy:
+        http_client: lua-resty-http
 --- config
     location /t {
         content_by_lua_block {
@@ -197,6 +205,10 @@ rapidjson nested empty table: \{\}
 
 
 === TEST 4: AI transport preserves JSON null values from cjson decode
+--- extra_yaml_config
+plugin_attr:
+    ai-proxy:
+        http_client: lua-resty-http
 --- config
     location /t {
         content_by_lua_block {
@@ -242,6 +254,10 @@ failed to encode AI request body with rapidjson:
 
 
 === TEST 5: AI transport preserves manually constructed arrays
+--- extra_yaml_config
+plugin_attr:
+    ai-proxy:
+        http_client: lua-resty-http
 --- config
     location /t {
         content_by_lua_block {
@@ -292,6 +308,10 @@ failed to encode AI request body with rapidjson:
 
 
 === TEST 6: connect timeout ("Operation timed out") maps to 504
+--- extra_yaml_config
+plugin_attr:
+    ai-proxy:
+        http_client: lua-resty-http
 --- config
     location /t {
         content_by_lua_block {
@@ -353,3 +373,364 @@ connect: operation timed out => 504
 connect: Operation timed out => 504
 request: connection refused => 500
 request: connection reset by peer => 500
+
+
+
+=== TEST 8: ngx_http_ffi_client is the default client
+--- config
+    location /t {
+        content_by_lua_block {
+            local orig_http = package.loaded["resty.http"]
+            local orig_ffi = package.loaded["resty.ngx_http_ffi_client"]
+            local orig_transport = package.loaded["apisix.plugins.ai-transport.http"]
+
+            package.loaded["resty.http"] = {
+                new = function()
+                    ngx.say("lua-resty-http client created")
+                    return {
+                        set_timeout = function() end,
+                        connect = function() return true end,
+                        request = function() return {headers = {}, status = 200} end,
+                    }
+                end,
+            }
+
+            package.loaded["resty.ngx_http_ffi_client"] = {
+                new = function()
+                    return {
+                        set_timeout = function() end,
+                        connect = function() return 1 end,
+                        request = function(_, params)
+                            ngx.say("ffi client request: ", params.body)
+                            return {headers = {}, status = 200}
+                        end,
+                    }
+                end,
+            }
+
+            package.loaded["apisix.plugins.ai-transport.http"] = nil
+            local transport = require("apisix.plugins.ai-transport.http")
+            local res, err = transport.request({
+                host = "127.0.0.1",
+                port = 80,
+                path = "/",
+                body = {model = "m"},
+            }, 1000)
+            ngx.say("status: ", res and res.status or err)
+
+            package.loaded["resty.http"] = orig_http
+            package.loaded["resty.ngx_http_ffi_client"] = orig_ffi
+            package.loaded["apisix.plugins.ai-transport.http"] = orig_transport
+        }
+    }
+--- response_body
+ffi client request: {"model":"m"}
+status: 200
+
+
+
+=== TEST 9: a runtime without the C module fails the request
+--- config
+    location /t {
+        content_by_lua_block {
+            local orig_http = package.loaded["resty.http"]
+            local orig_ffi = package.loaded["resty.ngx_http_ffi_client"]
+            local orig_transport = package.loaded["apisix.plugins.ai-transport.http"]
+
+            package.loaded["resty.http"] = {
+                new = function()
+                    ngx.say("lua-resty-http client created")
+                    return {
+                        set_timeout = function() end,
+                        connect = function() return true end,
+                        request = function() return {headers = {}, status = 200} end,
+                    }
+                end,
+            }
+
+            -- the Lua half loads even when the C module is not built in
+            package.loaded["resty.ngx_http_ffi_client"] = {
+                new = function()
+                    return nil, "ngx_http_ffi_client_module is not loaded"
+                end,
+            }
+
+            package.loaded["apisix.plugins.ai-transport.http"] = nil
+            local transport = require("apisix.plugins.ai-transport.http")
+            for _ = 1, 2 do
+                local res, err = transport.request({
+                    host = "127.0.0.1",
+                    port = 80,
+                    path = "/",
+                    body = {model = "m"},
+                }, 1000)
+                ngx.say("status: ", res and res.status or err)
+            end
+
+            package.loaded["resty.http"] = orig_http
+            package.loaded["resty.ngx_http_ffi_client"] = orig_ffi
+            package.loaded["apisix.plugins.ai-transport.http"] = orig_transport
+        }
+    }
+--- response_body
+status: failed to create http client: ngx_http_ffi_client_module is not loaded
+status: failed to create http client: ngx_http_ffi_client_module is not loaded
+
+
+
+=== TEST 10: plugin_attr.ai-proxy.http_client selects lua-resty-http
+--- extra_yaml_config
+plugin_attr:
+    ai-proxy:
+        http_client: lua-resty-http
+--- config
+    location /t {
+        content_by_lua_block {
+            local orig_http = package.loaded["resty.http"]
+            local orig_ffi = package.loaded["resty.ngx_http_ffi_client"]
+            local orig_transport = package.loaded["apisix.plugins.ai-transport.http"]
+
+            package.loaded["resty.http"] = {
+                new = function()
+                    return {
+                        set_timeout = function() end,
+                        connect = function() return true end,
+                        request = function(_, params)
+                            ngx.say("lua-resty-http request: ", params.body)
+                            return {headers = {}, status = 200}
+                        end,
+                    }
+                end,
+            }
+
+            package.loaded["resty.ngx_http_ffi_client"] = {
+                new = function()
+                    return {
+                        set_timeout = function() end,
+                        connect = function() return 1 end,
+                        request = function()
+                            ngx.say("ffi client request")
+                            return {headers = {}, status = 200}
+                        end,
+                    }
+                end,
+            }
+
+            package.loaded["apisix.plugins.ai-transport.http"] = nil
+            local transport = require("apisix.plugins.ai-transport.http")
+            local res, err = transport.request({
+                host = "127.0.0.1",
+                port = 80,
+                path = "/",
+                body = {model = "m"},
+            }, 1000)
+            ngx.say("status: ", res and res.status or err)
+
+            package.loaded["resty.http"] = orig_http
+            package.loaded["resty.ngx_http_ffi_client"] = orig_ffi
+            package.loaded["apisix.plugins.ai-transport.http"] = orig_transport
+        }
+    }
+--- response_body
+lua-resty-http request: {"model":"m"}
+status: 200
+
+
+
+=== TEST 11: the lua-resty-http path reaches a real upstream
+--- extra_yaml_config
+plugin_attr:
+    ai-proxy:
+        http_client: lua-resty-http
+--- config
+    location = /mock-llm {
+        content_by_lua_block {
+            ngx.req.read_body()
+            ngx.header["Content-Type"] = "application/json"
+            ngx.print('{"echo":', ngx.req.get_body_data(), '}')
+        }
+    }
+
+    location /t {
+        content_by_lua_block {
+            local orig_ffi = package.loaded["resty.ngx_http_ffi_client"]
+
+            -- lua-resty-http stays real; only the client that must not be
+            -- picked is stubbed, so a regression in the selection shows up
+            package.loaded["resty.ngx_http_ffi_client"] = {
+                new = function()
+                    ngx.log(ngx.ERR, "unexpected ngx_http_ffi_client selection")
+                    return nil, "unexpected ngx_http_ffi_client selection"
+                end,
+            }
+
+            local transport = require("apisix.plugins.ai-transport.http")
+            local res, err = transport.request({
+                method = "POST",
+                scheme = "http",
+                host = "127.0.0.1",
+                port = 1984,
+                path = "/mock-llm",
+                headers = {["content-type"] = "application/json"},
+                body = {model = "m"},
+            }, 2000)
+
+            package.loaded["resty.ngx_http_ffi_client"] = orig_ffi
+
+            if not res then
+                ngx.say("err: ", err)
+                return
+            end
+
+            ngx.say("status: ", res.status)
+            ngx.say("content-type: ", res.headers["Content-Type"])
+            ngx.say("body: ", res:read_body())
+            transport.set_keepalive(res, 60000, 30)
+        }
+    }
+--- response_body
+status: 200
+content-type: application/json
+body: {"echo":{"model":"m"}}
+--- no_error_log
+[error]
+unexpected ngx_http_ffi_client selection
+
+
+
+=== TEST 12: a runtime whose ngx_http_ffi_client module is missing fails the request
+--- config
+    location /t {
+        content_by_lua_block {
+            local orig_http = package.loaded["resty.http"]
+            local orig_ffi = package.loaded["resty.ngx_http_ffi_client"]
+            local orig_transport = package.loaded["apisix.plugins.ai-transport.http"]
+
+            package.loaded["resty.http"] = {
+                new = function()
+                    ngx.say("lua-resty-http client created")
+                    return {
+                        set_timeout = function() end,
+                        connect = function() return true end,
+                        request = function() return {headers = {}, status = 200} end,
+                    }
+                end,
+            }
+
+            -- require() returns this instead of the module table
+            package.loaded["resty.ngx_http_ffi_client"] = "not a module"
+
+            package.loaded["apisix.plugins.ai-transport.http"] = nil
+            local transport = require("apisix.plugins.ai-transport.http")
+            local res, err = transport.request({
+                host = "127.0.0.1",
+                port = 80,
+                path = "/",
+                body = {model = "m"},
+            }, 1000)
+            ngx.say("status: ", res and res.status or err)
+
+            package.loaded["resty.http"] = orig_http
+            package.loaded["resty.ngx_http_ffi_client"] = orig_ffi
+            package.loaded["apisix.plugins.ai-transport.http"] = orig_transport
+        }
+    }
+--- response_body
+status: failed to create http client: resty.ngx_http_ffi_client is not available: not a module
+--- error_log
+resty.ngx_http_ffi_client is not available: not a module
+
+
+
+=== TEST 13: an unknown plugin_attr.ai-proxy.http_client fails the request
+--- extra_yaml_config
+plugin_attr:
+    ai-proxy:
+        http_client: curl
+--- config
+    location /t {
+        content_by_lua_block {
+            local orig_http = package.loaded["resty.http"]
+            local orig_transport = package.loaded["apisix.plugins.ai-transport.http"]
+
+            package.loaded["resty.http"] = {
+                new = function()
+                    ngx.say("lua-resty-http client created")
+                    return {
+                        set_timeout = function() end,
+                        connect = function() return true end,
+                        request = function() return {headers = {}, status = 200} end,
+                    }
+                end,
+            }
+
+            package.loaded["apisix.plugins.ai-transport.http"] = nil
+            local transport = require("apisix.plugins.ai-transport.http")
+            local res, err = transport.request({
+                host = "127.0.0.1",
+                port = 80,
+                path = "/",
+                body = {model = "m"},
+            }, 1000)
+            ngx.say("status: ", res and res.status or err)
+
+            package.loaded["resty.http"] = orig_http
+            package.loaded["apisix.plugins.ai-transport.http"] = orig_transport
+        }
+    }
+--- response_body
+status: failed to create http client: invalid plugin_attr.ai-proxy: property "http_client" validation failed: matches none of the enum values
+--- error_log
+invalid plugin_attr.ai-proxy: property "http_client" validation failed
+
+
+
+=== TEST 14: the C client resolves a hostname through the gateway's resolver
+--- config
+    location /t {
+        content_by_lua_block {
+            local orig_ffi = package.loaded["resty.ngx_http_ffi_client"]
+            local orig_transport = package.loaded["apisix.plugins.ai-transport.http"]
+
+            -- the C client dials on its own, so the transport has to hand it an
+            -- address; the name has to survive in the Host header
+            package.loaded["resty.ngx_http_ffi_client"] = {
+                new = function()
+                    return {
+                        set_timeout = function() end,
+                        connect = function(_, params)
+                            ngx.say("connect host: ", params.host)
+                            ngx.say("ssl_server_name: ", params.ssl_server_name)
+                            return 1
+                        end,
+                        request = function(_, params)
+                            ngx.say("Host header: ", params.headers["Host"])
+                            return {headers = {}, status = 200}
+                        end,
+                    }
+                end,
+            }
+
+            package.loaded["apisix.plugins.ai-transport.http"] = nil
+            local transport = require("apisix.plugins.ai-transport.http")
+            local res, err = transport.request({
+                scheme = "http",
+                host = "localhost",
+                port = 1980,
+                path = "/v1/chat/completions",
+                headers = {["content-type"] = "application/json"},
+                body = {model = "m"},
+            }, 1000)
+            ngx.say("status: ", res and res.status or err)
+
+            package.loaded["resty.ngx_http_ffi_client"] = orig_ffi
+            package.loaded["apisix.plugins.ai-transport.http"] = orig_transport
+        }
+    }
+--- response_body
+connect host: 127.0.0.1
+ssl_server_name: localhost
+Host header: localhost:1980
+status: 200
+--- no_error_log
+[error]

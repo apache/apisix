@@ -19,16 +19,130 @@
 -- Provides HTTP client lifecycle management for AI provider requests.
 
 local core = require("apisix.core")
-local http = require("resty.http")
 local ngx_now = ngx.now
 local pairs = pairs
 local ipairs = ipairs
 local pcall = pcall
+local require = require
 local type = type
 local str_lower = string.lower
+local tonumber = tonumber
 local tostring = tostring
 
+local FFI_CLIENT = "ngx_http_ffi_client"
+local LUA_RESTY_HTTP = "lua-resty-http"
+
+-- the client name in the config is not the module name
+local CLIENT_MODULES = {
+    [FFI_CLIENT] = "resty.ngx_http_ffi_client",
+    [LUA_RESTY_HTTP] = "resty.http",
+}
+
+local attr_schema = {
+    type = "object",
+    properties = {
+        http_client = {
+            type = "string",
+            enum = {FFI_CLIENT, LUA_RESTY_HTTP},
+            default = FFI_CLIENT,
+        },
+    },
+}
+
 local _M = {}
+
+local http_client
+local http_client_is_ffi
+
+
+--- Pick the outbound HTTP client.
+-- `plugin_attr.ai-proxy.http_client` names it: "ngx_http_ffi_client", the
+-- default, or "lua-resty-http". The first is a C client with the same object
+-- API as the second and around half its outbound CPU cost, and it exists only
+-- when the gateway runtime was built with the module.
+-- Resolved on first request, because local_conf is not readable while the
+-- module is still loading, and cached only once a client has been loaded.
+local function resolve_client()
+    if http_client then
+        return http_client
+    end
+
+    local local_conf = core.config.local_conf()
+    local attr = core.table.try_read_attr(local_conf, "plugin_attr", "ai-proxy") or {}
+
+    local ok, err = core.schema.check(attr_schema, attr)
+    if not ok then
+        core.log.error("invalid plugin_attr.ai-proxy: ", err)
+        return nil, "invalid plugin_attr.ai-proxy: " .. err
+    end
+
+    local name = attr.http_client or FFI_CLIENT
+    local module_name = CLIENT_MODULES[name]
+
+    local mod
+    ok, mod = pcall(require, module_name)
+    if not ok or type(mod) ~= "table" then
+        core.log.error(module_name, " is not available: ", mod)
+        return nil, module_name .. " is not available: " .. tostring(mod)
+    end
+
+    http_client = mod
+    http_client_is_ffi = name == FFI_CLIENT
+
+    return http_client
+end
+
+
+--- Resolve the upstream name the way every other socket in the gateway does.
+-- Cosockets are patched (apisix/patch.lua) to run names through
+-- core.resolver, which honours dns_resolver, /etc/hosts and the search
+-- domains. The C client dials on its own and only sees nginx's `resolver`,
+-- so the name is resolved here and kept for the Host header and the SNI.
+local function resolve_upstream_host(params)
+    local host = params.host
+    if not host
+       or core.utils.parse_ipv4(host)
+       or core.utils.parse_ipv6(host)
+    then
+        return true
+    end
+
+    local ip, err = core.resolver.parse_domain(host)
+    if not ip then
+        return nil, "failed to parse domain: " .. (err or "unknown")
+    end
+
+    params.ssl_server_name = params.ssl_server_name or host
+
+    local headers = params.headers or {}
+    if not headers["Host"] and not headers["host"] then
+        local default_port = params.scheme == "https" and 443 or 80
+        if params.port and tonumber(params.port) ~= default_port then
+            headers["Host"] = host .. ":" .. params.port
+        else
+            headers["Host"] = host
+        end
+    end
+    params.headers = headers
+
+    params.host = ip
+
+    return true
+end
+
+
+--- Create an HTTP client.
+-- The Lua half of `ngx_http_ffi_client` loads even when the C module is not
+-- compiled into the runtime; new() is what reports that. Either way the
+-- failure is returned, never worked around with the other client.
+local function new_client()
+    local client, err = resolve_client()
+    if not client then
+        return nil, err
+    end
+
+    return client.new()
+end
 
 
 --- Map network errors to HTTP status codes.
@@ -100,7 +214,7 @@ end
 -- @return string|nil Error message
 -- @return table|nil Upstream metadata on failure (for recording failed attempts)
 function _M.request(params, timeout)
-    local httpc, err = http.new()
+    local httpc, err = new_client()
     if not httpc then
         return nil, "failed to create http client: " .. (err or "unknown")
     end
@@ -110,6 +224,19 @@ function _M.request(params, timeout)
     local upstream_host = params.host or ""
     local upstream_scheme = params.scheme or "http"
     local t0 = ngx_now()
+
+    if http_client_is_ffi then
+        local resolved, rerr = resolve_upstream_host(params)
+        if not resolved then
+            return nil, "connect: " .. rerr, {
+                upstream_addr = upstream_addr,
+                upstream_host = upstream_host,
+                upstream_scheme = upstream_scheme,
+                upstream_uri = params.path,
+                t0 = t0,
+            }
+        end
+    end
 
     local ok, err = httpc:connect(params)
     if not ok then

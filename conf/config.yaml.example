@@ -642,6 +642,9 @@ stream_plugins:                    # stream plugin list (sorted by priority)
 #   protocols:
 #     - name: pingpong
 plugin_attr:          # Plugin attributes
+  ai-proxy:           # Plugin: ai-proxy, ai-proxy-multi
+    http_client: ngx_http_ffi_client # HTTP client the AI plugins use to reach the
+                      # LLM upstream: ngx_http_ffi_client or lua-resty-http.
   log-rotate:         # Plugin: log-rotate
     timeout: 10000    # maximum wait time for a log rotation(unit: millisecond)
     interval: 3600    # Set the log rotate interval in seconds.
