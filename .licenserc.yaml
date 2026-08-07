@@ -47,6 +47,8 @@ header:
     - 'go.sum'
     # Exclude non-Apache licensed files
     - 'apisix/balancer/ewma.lua'
+    # Vendored from googleapis, Apache 2.0 under Google's copyright
+    - 't/grpc_server_example/proto/google/'
     # Exclude plugin-specific configuration files
     - 't/plugin/authz-casbin'
     - 't/coredns'
