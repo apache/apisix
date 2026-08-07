@@ -257,6 +257,9 @@ services:
       - ./t/certs:/certs
       - ./ci/pod/openldap/ad.ldif:/ldifs/ad.ldif
       - ./ci/pod/openldap/enable-anon-bind.sh:/docker-entrypoint-initdb.d/enable-anon-bind.sh
+      - ./ci/pod/openldap/memberof.ldif:/overlays/memberof.ldif
+      - ./ci/pod/openldap/groups.ldif:/overlays/groups.ldif
+      - ./ci/pod/openldap/setup-groups.sh:/docker-entrypoint-initdb.d/setup-groups.sh
 
 
   ## Grafana Loki
