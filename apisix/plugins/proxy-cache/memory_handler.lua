@@ -525,8 +525,15 @@ function _M.body_filter(conf, ctx)
         return
     end
 
-    local res_body = core.response.hold_body_chunk(ctx, true)
+    local res_body = core.response.hold_body_chunk(ctx, true, conf.max_resp_body_size)
     if not res_body then
+        return
+    end
+
+    if conf.max_resp_body_size and #res_body >= conf.max_resp_body_size then
+        -- response exceeds the buffering cap; stream it through without
+        -- caching so we never store a truncated body
+        ctx.cache = nil
         return
     end
 

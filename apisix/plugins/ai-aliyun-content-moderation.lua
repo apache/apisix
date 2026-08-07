@@ -539,8 +539,16 @@ function _M.lua_body_filter(conf, ctx, headers, body)
     if conf.stream_check_mode == "realtime" then
         ctx.content_moderation_cache = ctx.content_moderation_cache or ""
         ctx.llm_response_contents_in_chunk = ctx.llm_response_contents_in_chunk or {}
-        local content = table.concat(ctx.llm_response_contents_in_chunk, "")
-        ctx.content_moderation_cache = ctx.content_moderation_cache .. content
+        -- With a protocol converter a single upstream chunk is dispatched as several
+        -- downstream chunks, so this filter runs once per converted chunk while
+        -- llm_response_contents_in_chunk is filled once per upstream chunk. Take the
+        -- texts on the first run only, otherwise the batch holds them N times over.
+        local chunk_seq = ctx.llm_response_chunk_seq
+        if not chunk_seq or chunk_seq ~= ctx.aliyun_cm_chunk_seq then
+            ctx.aliyun_cm_chunk_seq = chunk_seq
+            local content = table.concat(ctx.llm_response_contents_in_chunk, "")
+            ctx.content_moderation_cache = ctx.content_moderation_cache .. content
+        end
         local now_time = ngx.now()
         ctx.last_moderate_time = ctx.last_moderate_time or now_time
         if #ctx.content_moderation_cache < conf.stream_check_cache_size

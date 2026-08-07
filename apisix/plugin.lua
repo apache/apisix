@@ -818,7 +818,14 @@ local function merge_consumer_route(route_conf, consumer_conf, consumer_group_co
         return route_conf
     end
 
-    local new_route_conf = core.table.deepcopy(route_conf)
+    -- some plugins cache request-time state on their conf object (resolved DNS
+    -- nodes, probed backend versions, ...). Deep-copying the plugin confs would
+    -- hand every consumer its own copy and drop that state, so keep them shared
+    -- by reference, as they already are on the route without consumer auth. The
+    -- `plugins` container itself is still a fresh table, so the merge below
+    -- overwrites its keys without touching the original route conf.
+    local new_route_conf = core.table.deepcopy(route_conf,
+        { shallow_prefix = "self.value.plugins" })
 
     if has_group_plugins then
         for name, conf in pairs(consumer_group_conf.value.plugins) do
@@ -1017,8 +1024,16 @@ local function check_single_plugin_schema(name, plugin_conf, schema_type, skip_d
     if plugin_obj.check_schema then
         local ok, err = plugin_obj.check_schema(plugin_conf, schema_type)
         if not ok then
-            return false, "failed to check the configuration of plugin "
-                .. name .. " err: " .. err
+            if check_disable(plugin_conf) ~= true then
+                return false, "failed to check the configuration of plugin "
+                    .. name .. " err: " .. err
+            end
+
+            -- the plugin is disabled via _meta.disable so it will never be
+            -- executed: an environment dependent failure (e.g. proxy-cache
+            -- cache_zone not found on this node) must not invalidate the item
+            core.log.warn("failed to check the configuration of disabled plugin ",
+                          name, ", accepting it anyway")
         end
 
         if plugin_conf._meta then
@@ -1262,8 +1277,13 @@ local function stream_check_schema(plugins_conf, schema_type, skip_disabled_plug
         if plugin_obj.check_schema then
             local ok, err = plugin_obj.check_schema(plugin_conf, schema_type)
             if not ok then
-                return false, "failed to check the configuration of "
-                              .. "stream plugin [" .. name .. "]: " .. err
+                if check_disable(plugin_conf) ~= true then
+                    return false, "failed to check the configuration of "
+                                  .. "stream plugin [" .. name .. "]: " .. err
+                end
+
+                core.log.warn("failed to check the configuration of disabled ",
+                              "stream plugin [", name, "], accepting it anyway")
             end
         end
 
@@ -1481,7 +1501,6 @@ local function merge_global_rules(global_rules, conf_version)
         },
         createdIndex = conf_version,
         modifiedIndex = conf_version,
-        clean_handlers = {},
     }
 
     return dummy_global_rule
