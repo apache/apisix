@@ -138,6 +138,7 @@
             "plugins/hmac-auth",
             "plugins/authz-casbin",
             "plugins/ldap-auth",
+            "plugins/ldap-auth-advanced",
             "plugins/opa",
             "plugins/forward-auth",
             "plugins/multi-auth",

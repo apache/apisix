@@ -20,6 +20,8 @@ local plugin_checker = require("apisix.plugin").plugin_checker
 local plugin = require("apisix.plugin")
 local services
 local error = error
+local ipairs = ipairs
+local str_lower = string.lower
 
 
 local _M = {
@@ -47,6 +49,13 @@ local function filter(service)
         return
     end
 
+    -- normalize the hosts like `apisix/router.lua` does for routes: hostnames are
+    -- case-insensitive, and they are matched against $host, which is always lowercase
+    if service.value.hosts then
+        for i, v in ipairs(service.value.hosts) do
+            service.value.hosts[i] = str_lower(v)
+        end
+    end
 
     plugin.set_plugins_meta_parent(service.value.plugins, service)
 
