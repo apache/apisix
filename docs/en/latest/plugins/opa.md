@@ -41,6 +41,12 @@ The `opa` Plugin supports the integration with [Open Policy Agent (OPA)](https:/
 
 Once configured, the OPA engine will evaluate the client request to a protected Route to determine whether the request should have access to the Upstream resource based on the defined policies.
 
+## Description
+
+The `opa` Plugin supports the integration with [Open Policy Agent (OPA)](https://www.openpolicyagent.org), a unified policy engine and framework that helps define and enforce authorization policies. Authorization logic is defined in [Rego](https://www.openpolicyagent.org/docs/latest/policy-language/) and stored in OPA.
+
+Once configured, the OPA engine will evaluate the client request to a protected Route to determine whether the request should have access to the Upstream resource based on the defined policies.
+
 ## Attributes
 
 | Name | Type | Required | Default | Valid values | Description |
@@ -56,6 +62,7 @@ Once configured, the OPA engine will evaluate the client request to a protected 
 | with_service | boolean | False | | | If true, send information of the current Service. |
 | with_consumer | boolean | False | | | If true, send information of the current Consumer. Note that the Consumer information may include sensitive information such as the API key. Only set this option to `true` if you are sure it is safe to do so. |
 | send_headers_upstream | array[string] | False | | >= 1 item | List of header names to forward from the OPA response to the Upstream service when the request is allowed. |
+| with_body | boolean | False | false | | If true, send the request body to OPA. Note that the request body may contain sensitive information such as passwords or API keys. Only enable this option if you understand the security implications. |
 
 ## Data Definition
 
@@ -77,7 +84,8 @@ The JSON below shows the data sent to the OPA service by APISIX:
         "query": {},
         "port": 9080,
         "method": "GET",
-        "host": "127.0.0.1"
+        "host": "127.0.0.1",
+        "body": {}
     },
     "var": {
         "timestamp": 1701234567,
@@ -97,6 +105,7 @@ Each of these keys are explained below:
 - `type` indicates the request type (`http` or `stream`).
 - `request` is used when the `type` is `http` and contains the basic request information (URL, headers etc).
 - `var` contains the basic information about the requested connection (IP, port, request timestamp etc).
+- `request.body` contains the HTTP request body. It is only included when `with_body` is set to `true` in the plugin configuration. When the request body is empty, this field is omitted. When present, it is a JSON value (object, array, or primitive) if the body can be parsed as JSON, or a raw string otherwise.
 - `route`, `service` and `consumer` contains the same data as stored in APISIX and are only sent if the `opa` Plugin is configured on these objects.
 
 ### OPA Service to APISIX
