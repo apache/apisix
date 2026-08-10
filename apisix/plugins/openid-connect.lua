@@ -32,23 +32,45 @@ local ngx_encode_base64 = ngx.encode_base64
 
 local plugin_name       = "openid-connect"
 
+-- returned verbatim by resty.openidc when the state in the authorization
+-- callback does not match the one restored from the session; the string is
+-- identical in lua-resty-openidc 1.8.0 and 1.9.0
+local STATE_MISMATCH_ERR =
+    "state from argument does not match state restored from session"
 
--- Session config is passed as-is to resty.session.start(); the only
--- translation is the legacy session.cookie.lifetime alias from the
--- lua-resty-session 3.x schema, which is mapped to absolute_timeout
--- when the latter is unset.
+
+-- Session config is passed to resty.session.start(). The legacy
+-- session.cookie.lifetime alias is mapped to absolute_timeout, and the Redis
+-- role marker is mapped to lua-resty-session's explicit revocation backend.
 local function build_session_opts(session_conf)
     if not session_conf then
         return nil
     end
-    if session_conf.cookie and session_conf.cookie.lifetime then
-        if not session_conf.absolute_timeout then
-            session_conf.absolute_timeout = session_conf.cookie.lifetime
+
+    -- Derive onto a copy: the plugin conf is only shallow cloned per request,
+    -- so mutating it here would persist fields that the session schema forbids.
+    local opts = core.table.clone(session_conf)
+
+    if opts.cookie and opts.cookie.lifetime then
+        if not opts.absolute_timeout then
+            opts.absolute_timeout = opts.cookie.lifetime
             core.log.warn("session.cookie.lifetime is deprecated; ",
                           "use session.absolute_timeout instead")
         end
     end
-    return session_conf
+
+    -- Revocation is only meaningful for cookie (stateless) sessions.
+    -- Server-side session storage already deletes on destroy, so never enable
+    -- a denylist when storage is redis (even if mode is set incorrectly).
+    if opts.redis then
+        local redis_mode = opts.redis.mode
+        local cookie_storage = opts.storage == nil or opts.storage == "cookie"
+        if cookie_storage and (redis_mode == "revocation" or redis_mode == nil) then
+            opts.revocation = "redis"
+        end
+    end
+
+    return opts
 end
 
 
@@ -161,7 +183,9 @@ local schema = {
                             enum = {"storage", "revocation"},
                             description =
                                 "Whether this Redis connection stores session data "
-                                .. "or the session revocation denylist.",
+                                .. "or the session revocation denylist. Use "
+                                .. "\"storage\" with session.storage=redis; use "
+                                .. "\"revocation\" only with session.storage=cookie.",
                         },
                         host = {
                             type = "string", minLength = 2, default = "127.0.0.1"
@@ -219,8 +243,8 @@ local schema = {
                     enum = {"open", "closed"},
                     default = "open",
                     description =
-                        "When the revocation store is unreachable: open allows requests "
-                        .. "based on JWT expiry only; closed always denies requests.",
+                        "When the revocation store is unreachable: open treats the "
+                        .. "session as not revoked; closed rejects open/destroy.",
                 },
             },
             required = {"secret"},
@@ -330,6 +354,12 @@ local schema = {
                 "the request for downstream.",
             type = "boolean",
             default = true
+        },
+        set_raw_id_token_header = {
+            description = "Whether the raw signed ID token JWT should be added in the " ..
+                "X-Raw-ID-Token header to the request for downstream.",
+            type = "boolean",
+            default = false
         },
         set_userinfo_header = {
             description = "Whether the user info token should be added in the X-Userinfo " ..
@@ -533,6 +563,13 @@ function _M.check_schema(conf)
         return false, err
     end
 
+    local session = conf.session
+    if session and session.storage == "redis"
+       and session.redis and session.redis.mode == "revocation" then
+        return false,
+            "session.redis.mode cannot be \"revocation\" when session.storage is \"redis\""
+    end
+
     if conf.claim_schema and not secret.is_secret_ref(conf.claim_schema) then
         local ok, res = pcall(jsonschema.generate_validator, conf.claim_schema)
         if not ok then
@@ -718,7 +755,7 @@ function _M.rewrite(plugin_conf, ctx)
     local conf = core.table.clone(plugin_conf)
 
     -- Snapshot the client-supplied X-Access-Token (it doubles as a bearer
-    -- input via get_bearer_access_token) and clear the four headers this
+    -- input via get_bearer_access_token) and clear the five headers this
     -- plugin advertises as outputs so client-supplied values cannot bleed
     -- through to the upstream.
     ctx.openid_connect_client_x_access_token = core.request.header(ctx, "X-Access-Token")
@@ -726,6 +763,7 @@ function _M.rewrite(plugin_conf, ctx)
     core.request.set_header(ctx, "X-Userinfo", nil)
     core.request.set_header(ctx, "X-ID-Token", nil)
     core.request.set_header(ctx, "X-Refresh-Token", nil)
+    core.request.set_header(ctx, "X-Raw-ID-Token", nil)
 
     -- Previously, we multiply conf.timeout before storing it in etcd.
     -- If the timeout is too large, we should not multiply it again.
@@ -772,7 +810,7 @@ function _M.rewrite(plugin_conf, ctx)
         end
     end
 
-    local response, err, session, _
+    local response, err, session
 
     if conf.bearer_only or conf.introspection_endpoint or conf.public_key or conf.use_jwks then
         -- An introspection endpoint or a public key has been configured. Try to
@@ -869,13 +907,23 @@ function _M.rewrite(plugin_conf, ctx)
             unauth_action = "deny"
         end
 
+        -- When set_raw_id_token_header is enabled and the user has explicitly restricted
+        -- session_contents, ensure enc_id_token is included so session:get("enc_id_token")
+        -- returns the raw signed JWT. When session_contents is nil, lua-resty-openidc stores
+        -- all session data by default (including enc_id_token), so no action is needed.
+        if conf.set_raw_id_token_header and conf.session_contents then
+            conf.session_contents = core.table.clone(conf.session_contents)
+            conf.session_contents.enc_id_token = true
+        end
+
         -- Authenticate the request. This will validate the access token if it
         -- is stored in a sessions cookie, and also renew the token if required.
         -- If no token can be extracted, the response will redirect to the ID
         -- provider's authorization endpoint to initiate the Relying Party flow.
         -- This code path also handles when the ID provider then redirects to
         -- the configured redirect URI after successful authentication.
-        response, err, _, session  = openidc.authenticate(conf, nil, unauth_action,
+        local target_url
+        response, err, target_url, session = openidc.authenticate(conf, nil, unauth_action,
                                                           build_session_opts(conf.session))
 
         if err then
@@ -888,6 +936,23 @@ function _M.rewrite(plugin_conf, ctx)
                 end
                 return 401
             end
+
+            -- Stale authorization callback: the state in the callback does not
+            -- match the one in the session, e.g. the same browser started
+            -- another login flow in a second tab and overwrote the state, or an
+            -- already completed callback was replayed. The client is a browser
+            -- mid-navigation, so instead of a dead-end 500, send it back to the
+            -- original URL that resty.openidc returns alongside the error: a
+            -- fresh flow starts from there and completes without any user
+            -- interaction while the ID provider still holds an SSO session.
+            if err == STATE_MISMATCH_ERR and target_url
+               and ngx.req.get_method() == "GET" then
+                core.log.warn("OIDC state mismatch (concurrent login flows or ",
+                              "replayed callback), restarting the authentication flow")
+                core.response.set_header("Location", target_url)
+                return 302
+            end
+
             core.log.error("OIDC authentication failed: ", err)
             return 500
         end
@@ -924,6 +989,12 @@ function _M.rewrite(plugin_conf, ctx)
             local refresh_token = session:get("refresh_token")
             if refresh_token and conf.set_refresh_token_header then
                 core.request.set_header(ctx, "X-Refresh-Token", refresh_token)
+            end
+
+            -- Add X-Raw-ID-Token header, maybe.
+            local enc_id_token = session:get("enc_id_token")
+            if enc_id_token and conf.set_raw_id_token_header then
+                core.request.set_header(ctx, "X-Raw-ID-Token", enc_id_token)
             end
         end
     end
