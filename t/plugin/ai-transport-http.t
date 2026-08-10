@@ -788,7 +788,7 @@ resty.ngx_http_ffi_client is not available: simulated loader failure
 
 
 === TEST 16: the C client carries a buffered request to a real upstream
---- skip_eval: 2: !-f "/usr/local/openresty/lualib/resty/ngx_http_ffi_client.lua"
+--- skip_eval: 3: system((($ENV{TEST_NGINX_BINARY} || "nginx") . " -V 2>&1 | grep -q ngx_http_ffi_client")) != 0
 --- config
     location = /mock-buffered {
         content_by_lua_block {
@@ -831,7 +831,7 @@ body: {"echo":{"model":"m"}}
 
 
 === TEST 17: the C client streams an SSE response through body_reader
---- skip_eval: 2: !-f "/usr/local/openresty/lualib/resty/ngx_http_ffi_client.lua"
+--- skip_eval: 3: system((($ENV{TEST_NGINX_BINARY} || "nginx") . " -V 2>&1 | grep -q ngx_http_ffi_client")) != 0
 --- config
     location = /mock-sse {
         content_by_lua_block {
@@ -898,7 +898,7 @@ saw done: true
 
 
 === TEST 18: the C client reuses a pooled connection across requests
---- skip_eval: 2: !-f "/usr/local/openresty/lualib/resty/ngx_http_ffi_client.lua"
+--- skip_eval: 3: system((($ENV{TEST_NGINX_BINARY} || "nginx") . " -V 2>&1 | grep -q ngx_http_ffi_client")) != 0
 --- config
     location = /mock-keepalive {
         # counts requests served on this connection: 1,2,3 proves one
@@ -939,7 +939,7 @@ saw done: true
 
 
 === TEST 19: the C client reaches an upstream named by hostname
---- skip_eval: 2: !-f "/usr/local/openresty/lualib/resty/ngx_http_ffi_client.lua"
+--- skip_eval: 3: system((($ENV{TEST_NGINX_BINARY} || "nginx") . " -V 2>&1 | grep -q ngx_http_ffi_client")) != 0
 --- config
     location = /mock-host {
         content_by_lua_block {
@@ -978,7 +978,7 @@ host header: localhost:1984
 
 
 === TEST 20: the C client verifies TLS against the configured trust store
---- skip_eval: 2: !-f "/usr/local/openresty/lualib/resty/ngx_http_ffi_client.lua"
+--- skip_eval: 3: system((($ENV{TEST_NGINX_BINARY} || "nginx") . " -V 2>&1 | grep -q ngx_http_ffi_client")) != 0
 --- http_config
     server {
         listen 21981 ssl;
