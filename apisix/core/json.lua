@@ -38,8 +38,6 @@ local rapidjson_null
 local rapidjson_encode_opts = { sort_keys = true }
 
 
-cjson.encode_escape_forward_slash(false)
-cjson.decode_array_with_array_mt(true)
 local _M = {
     version = 0.1,
     array_mt = cjson.array_mt,

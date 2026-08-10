@@ -74,7 +74,8 @@ function _M.upsert(red, doc_key, fields, ttl)
         "partition", fields.partition,
         "embedding", fields.embedding,
         "response", fields.response,
-        "created_at", fields.created_at)
+        "created_at", fields.created_at,
+        "format", fields.format)
     red:expire(doc_key, ttl)
     local res, err = red:commit_pipeline()
     if not res then
@@ -89,14 +90,14 @@ function _M.upsert(red, doc_key, fields, ttl)
 end
 
 
--- Returns the nearest hit { distance, response, created_at } or nil (no err) on
--- an empty result set.
+-- Returns the nearest hit { distance, response, created_at, format } or nil (no
+-- err) on an empty result set.
 function _M.knn_search(red, target, index, partition, vec, top_k)
     local query = "(@partition:{" .. partition .. "})=>[KNN " .. top_k ..
                   " @embedding $vec AS __score]"
     local res, err = red[ "FT.SEARCH" ](red, index, query,
         "PARAMS", 2, "vec", _M.pack_float32(vec),
-        "RETURN", 3, "__score", "response", "created_at",
+        "RETURN", 4, "__score", "response", "created_at", "format",
         "SORTBY", "__score",
         "DIALECT", 2)
     if not res then
@@ -121,6 +122,8 @@ function _M.knn_search(red, target, index, partition, vec, top_k)
             hit.response = v
         elseif k == "created_at" then
             hit.created_at = tonumber(v)
+        elseif k == "format" then
+            hit.format = v
         end
     end
     if not hit.response or not hit.distance then

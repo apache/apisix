@@ -82,7 +82,7 @@ local function check_forbidden_properties(conf, forbidden_properties)
 end
 
 
-function _M:check_conf(id, conf, need_id, typ, allow_time)
+function _M:check_conf(id, conf, need_id, typ, allow_time, sub_path)
     if self.name == "secrets" then
         id = typ .. "/" .. id
     end
@@ -124,21 +124,24 @@ function _M:check_conf(id, conf, need_id, typ, allow_time)
     end
 
     local conf_for_check = tbl_deepcopy(conf)
-    local ok, err = self.checker(id, conf_for_check, need_id, self.schema, {secret_type = typ})
+    local ok, err = self.checker(id, conf_for_check, need_id, self.schema,
+                                 {secret_type = typ, sub_path = sub_path})
 
+    if not ok then
+        return ok, err
+    end
+
+    -- encrypt the real conf only after a successful check; encrypting
+    -- unvalidated input can crash on malformed structures (e.g. plugins
+    -- as a string), and invalid configs are never persisted anyway
     if self.encrypt_conf then
         self.encrypt_conf(id, conf)
     end
 
-    if not ok then
-        return ok, err
-    else
-        if no_id_res[self.name] then
-            return ok
-        else
-            return need_id and id or true
-        end
+    if no_id_res[self.name] then
+        return ok
     end
+    return need_id and id or true
 end
 
 
@@ -254,7 +257,7 @@ function _M:put(id, conf, sub_path, args)
     end
 
     local need_id = not no_id_res[self.name]
-    local ok, err = self:check_conf(id, conf, need_id, typ)
+    local ok, err = self:check_conf(id, conf, need_id, typ, nil, sub_path)
     if not ok then
         return 400, err
     end

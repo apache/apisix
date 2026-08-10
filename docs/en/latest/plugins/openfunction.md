@@ -37,6 +37,7 @@ This Plugin can be configured on a Route and requests will be sent to the config
 
 | Name                        | Type    | Required | Default | Valid values | Description                                                                                                |
 | --------------------------- | ------- | -------- | ------- | ------------ | ---------------------------------------------------------------------------------------------------------- |
+| max_req_body_size | integer | False | 67108864 | >= 1 | Maximum request body size in bytes buffered into memory. Requests with a larger body are rejected. |
 | function_uri                | string  | True     |         |              | function uri. For example, `https://localhost:30858/default/function-sample`.                              |
 | ssl_verify                  | boolean | False    | true    |              | When set to `true` verifies the SSL certificate.                                                           |
 | authorization               | object  | False    |         |              | Authorization credentials to access functions of OpenFunction.                                      |
