@@ -740,12 +740,18 @@ local function handle_x_forwarded_headers(api_ctx)
         return
     end
 
-    -- store the original x-forwarded-* headers
-    -- to allow future use by other plugins or processes
-    api_ctx.var.original_x_forwarded_proto = xf_proto
-    api_ctx.var.original_x_forwarded_host = xf_host
-    api_ctx.var.original_x_forwarded_port = xf_port
-    api_ctx.var.original_x_forwarded_for = xf_for
+    -- keep what the client claimed, for plugins that want to see it after the
+    -- rewrite. These are plain `api_ctx` fields, not `api_ctx.var` entries:
+    -- `var` proxies NGINX variables, and these are not NGINX variables -- they
+    -- cannot appear in `log_format` or `proxy_set_header`, so putting them there
+    -- only makes them look like something they are not, shares a namespace with
+    -- real variable names, and makes reading an unset one walk the whole
+    -- `__index` chain down to an `ngx.var` lookup for a name NGINX has never
+    -- heard of (53 ns, against a plain table read).
+    api_ctx.original_x_forwarded_proto = xf_proto
+    api_ctx.original_x_forwarded_host = xf_host
+    api_ctx.original_x_forwarded_port = xf_port
+    api_ctx.original_x_forwarded_for = xf_for
 
     -- the replacement values
     -- ref: ngx_tpl.lua#L831-L840

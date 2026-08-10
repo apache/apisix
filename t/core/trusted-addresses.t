@@ -802,3 +802,37 @@ routes:
 GET /old_uri
 --- response_body_like eval
 qr/\nx-forwarded-host: localhost\nx-forwarded-port: 1984\nx-forwarded-proto: http\n/
+
+
+
+=== TEST 22: the original client-supplied values are kept on the ctx for plugins
+--- yaml_config
+apisix:
+    node_listen: 1984
+    enable_admin: false
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
+--- apisix_yaml
+routes:
+  -
+    id: 1
+    uri: /old_uri
+    plugins:
+        serverless-pre-function:
+            phase: rewrite
+            functions:
+              - return function(conf, ctx) ngx.log(ngx.WARN, "original xfp=", tostring(ctx.original_x_forwarded_proto), " xff=", tostring(ctx.original_x_forwarded_for), " current xfp=", tostring(ctx.var.http_x_forwarded_proto)) end
+    upstream:
+        nodes:
+            "127.0.0.1:1980": 1
+        type: roundrobin
+#END
+--- request
+GET /old_uri
+--- more_headers
+X-Forwarded-Proto: https
+X-Forwarded-For: 1.2.3.4
+--- error_log
+original xfp=https xff=1.2.3.4 current xfp=http
