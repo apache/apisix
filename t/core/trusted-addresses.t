@@ -710,7 +710,7 @@ x-real-ip: 127.0.0.1
 
 
 
-=== TEST 17: a request carrying no X-Forwarded-* still gets them in r->headers_in
+=== TEST 19: a request carrying no X-Forwarded-* still gets them in r->headers_in
 --- yaml_config
 apisix:
     node_listen: 1984
@@ -741,7 +741,7 @@ header-table xfp=http xfh=localhost xfport=1984
 
 
 
-=== TEST 18: a route matching on http_x_forwarded_proto still matches without one
+=== TEST 20: a route matching on http_x_forwarded_proto still matches without one
 --- yaml_config
 apisix:
     node_listen: 1984
@@ -776,7 +776,7 @@ x-real-ip: 127.0.0.1
 
 
 
-=== TEST 19: the injected headers are single-valued, including through an ngx.exec target
+=== TEST 21: the injected headers are single-valued, including through an ngx.exec target
 --- yaml_config
 apisix:
     node_listen: 1984
