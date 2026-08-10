@@ -247,6 +247,15 @@ function _M.extract_request_content(body)
 end
 
 
+-- Roles carrying the system prompt. `developer` is what OpenAI renamed `system`
+-- to on o1 and later models; both land in the same prompt slot, so the two are
+-- extracted together and the `system` role selector covers both.
+local SYSTEM_ROLES = {
+    system = true,
+    developer = true,
+}
+
+
 -- Whether an input item belongs to a selected turn role. A bare string is user
 -- text; a role item matches when its role is in `roles`; a Responses-API tool
 -- result (`function_call_output`, which has no role) matches when tool is selected.
@@ -306,8 +315,9 @@ function _M.extract_turn_content(body, mode, roles)
 end
 
 
--- Extract system-role text for request moderation. Responses API carries the
--- system prompt in `instructions`; an `input` array may also hold system items.
+-- Extract system-role text (see SYSTEM_ROLES) for request moderation. Responses
+-- API carries the system prompt in `instructions`; an `input` array may also
+-- hold system items.
 function _M.extract_system_content(body)
     local contents = {}
     if type(body.instructions) == "string" then
@@ -315,7 +325,7 @@ function _M.extract_system_content(body)
     end
     if type(body.input) == "table" then
         for _, item in ipairs(body.input) do
-            if type(item) == "table" and item.role == "system" then
+            if type(item) == "table" and SYSTEM_ROLES[item.role] then
                 append_item_text(contents, item)
             end
         end

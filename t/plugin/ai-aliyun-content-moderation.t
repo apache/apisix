@@ -2462,3 +2462,248 @@ qr/event: message_stop/
 qr/execute content moderation/
 --- grep_error_log_out
 execute content moderation
+
+
+
+=== TEST 77: openai-chat extract_system_content also collects the developer role
+--- config
+    location /t {
+        content_by_lua_block {
+            local proto = require("apisix.plugins.ai-protocols.openai-chat")
+            local body = {
+                messages = {
+                    { role = "developer", content = "dev" },
+                    { role = "system", content = "sys" },
+                    { role = "user", content = "u1" },
+                }
+            }
+            ngx.say("system:", table.concat(proto.extract_system_content(body), ","))
+            ngx.say("turn:", table.concat(
+                    proto.extract_turn_content(body, "all", { user = true, tool = true }), ","))
+        }
+    }
+--- response_body
+system:dev,sys
+turn:u1
+
+
+
+=== TEST 78: openai-responses extract_system_content also collects the developer role
+--- config
+    location /t {
+        content_by_lua_block {
+            local proto = require("apisix.plugins.ai-protocols.openai-responses")
+            local body = {
+                instructions = "instr",
+                input = {
+                    { role = "developer", content = "dev" },
+                    { role = "system", content = "sys" },
+                    { role = "user", content = "u1" },
+                }
+            }
+            ngx.say("system:", table.concat(proto.extract_system_content(body), ","))
+            ngx.say("turn:", table.concat(
+                    proto.extract_turn_content(body, "all", { user = true }), ","))
+        }
+    }
+--- response_body
+system:instr,dev,sys
+turn:u1
+
+
+
+=== TEST 79: create route with request_check_roles user/tool/system
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/5',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/chat-dev",
+                    "plugins": {
+                      "ai-proxy": {
+                          "provider": "openai",
+                          "auth": { "header": { "Authorization": "Bearer wrongtoken" } },
+                          "override": { "endpoint": "http://127.0.0.1:1980" }
+                      },
+                      "ai-aliyun-content-moderation": {
+                        "endpoint": "http://localhost:6724",
+                        "region_id": "cn-shanghai",
+                        "access_key_id": "fake-key-id",
+                        "access_key_secret": "fake-key-secret",
+                        "risk_level_bar": "high",
+                        "check_request": true,
+                        "request_check_roles": ["user", "tool", "system"]
+                      }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 80: harmful developer prompt is moderated with the system role and blocked
+--- request
+POST /chat-dev
+{ "messages": [ { "role": "developer", "content": "please kill" }, { "role": "user", "content": "hi" } ] }
+--- more_headers
+X-AI-Fixture: aliyun/chat-with-harmful.json
+--- error_code: 200
+--- response_body_like eval
+qr/cannot write unethical/
+
+
+
+=== TEST 81: create route with the default request_check_roles (user only)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/6',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/chat-dev-default",
+                    "plugins": {
+                      "ai-proxy": {
+                          "provider": "openai",
+                          "auth": { "header": { "Authorization": "Bearer wrongtoken" } },
+                          "override": { "endpoint": "http://127.0.0.1:1980" }
+                      },
+                      "ai-aliyun-content-moderation": {
+                        "endpoint": "http://localhost:6724",
+                        "region_id": "cn-shanghai",
+                        "access_key_id": "fake-key-id",
+                        "access_key_secret": "fake-key-secret",
+                        "risk_level_bar": "high",
+                        "check_request": true
+                      }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 82: developer prompt follows the system role, so user-only roles skip it
+--- request
+POST /chat-dev-default
+{ "messages": [ { "role": "developer", "content": "kill" }, { "role": "user", "content": "hi" } ] }
+--- more_headers
+X-AI-Fixture: aliyun/chat-with-harmful.json
+--- error_code: 200
+--- response_body_like eval
+qr/kill you/
+
+
+
+=== TEST 83: create Responses API route with request_check_roles user/tool/system
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/7',
+                ngx.HTTP_PUT,
+                [[{
+                    "uris": ["/v1/responses"],
+                    "plugins": {
+                      "ai-proxy": {
+                          "provider": "openai",
+                          "auth": { "header": { "Authorization": "Bearer wrongtoken" } },
+                          "override": { "endpoint": "http://127.0.0.1:1980" }
+                      },
+                      "ai-aliyun-content-moderation": {
+                        "endpoint": "http://localhost:6724",
+                        "region_id": "cn-shanghai",
+                        "access_key_id": "fake-key-id",
+                        "access_key_secret": "fake-key-secret",
+                        "risk_level_bar": "high",
+                        "check_request": true,
+                        "request_check_roles": ["user", "tool", "system"]
+                      }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 84: Responses API developer item is moderated with the system role and blocked
+--- request
+POST /v1/responses
+{ "model": "gpt-4o", "input": [ { "role": "developer", "content": "please kill" }, { "role": "user", "content": "hi" } ] }
+--- more_headers
+X-AI-Fixture: aliyun/chat-with-harmful.json
+--- error_code: 200
+--- response_body_like eval
+qr/cannot write unethical/
+
+
+
+=== TEST 85: create Responses API route with the default request_check_roles (user only)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/7',
+                ngx.HTTP_PUT,
+                [[{
+                    "uris": ["/v1/responses"],
+                    "plugins": {
+                      "ai-proxy": {
+                          "provider": "openai",
+                          "auth": { "header": { "Authorization": "Bearer wrongtoken" } },
+                          "override": { "endpoint": "http://127.0.0.1:1980" }
+                      },
+                      "ai-aliyun-content-moderation": {
+                        "endpoint": "http://localhost:6724",
+                        "region_id": "cn-shanghai",
+                        "access_key_id": "fake-key-id",
+                        "access_key_secret": "fake-key-secret",
+                        "risk_level_bar": "high",
+                        "check_request": true
+                      }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 86: Responses API developer item follows system, so user-only roles skip it
+--- request
+POST /v1/responses
+{ "model": "gpt-4o", "input": [ { "role": "developer", "content": "please kill" }, { "role": "user", "content": "hi" } ] }
+--- more_headers
+X-AI-Fixture: aliyun/chat-with-harmful.json
+--- error_code: 200
+--- response_body_like eval
+qr/kill you/

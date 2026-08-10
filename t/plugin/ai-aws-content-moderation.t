@@ -1859,3 +1859,109 @@ qr/request body exceeds toxicity threshold/
 qr/comprehend text: [^,]+/
 --- grep_error_log_out
 comprehend text: I want to kill you ok What is 1+1?
+
+
+
+=== TEST 67: set route with request_check_roles ["user", "tool", "system"]
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/chat",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": { "header": { "Authorization": "Bearer token" } },
+                            "override": { "endpoint": "http://127.0.0.1:1980/v1/chat/completions" }
+                        },
+                        "ai-aws-content-moderation": {
+                            "comprehend": {
+                                "access_key_id": "access",
+                                "secret_access_key": "ea+secret",
+                                "region": "us-east-1",
+                                "endpoint": "http://localhost:2668"
+                            },
+                            "request_check_roles": ["user", "tool", "system"],
+                            "deny_code": 400
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 68: the developer role is moderated along with system
+--- request
+POST /chat
+{ "messages": [ { "role": "system", "content": "be helpful" }, { "role": "developer", "content": "I want to kill you" }, { "role": "user", "content": "What is 1+1?" } ] }
+--- error_code: 400
+--- response_body_like eval
+qr/request body exceeds toxicity threshold/
+
+
+
+=== TEST 69: set route with request_check_roles ["user"]
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/chat",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": { "header": { "Authorization": "Bearer token" } },
+                            "override": { "endpoint": "http://127.0.0.1:1980/v1/chat/completions" }
+                        },
+                        "ai-aws-content-moderation": {
+                            "comprehend": {
+                                "access_key_id": "access",
+                                "secret_access_key": "ea+secret",
+                                "region": "us-east-1",
+                                "endpoint": "http://localhost:2668"
+                            },
+                            "request_check_roles": ["user"],
+                            "deny_code": 400
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 70: developer follows system, so roles ["user"] leaves it unmoderated
+--- request
+POST /chat
+{ "messages": [ { "role": "developer", "content": "I want to kill you" }, { "role": "user", "content": "What is 1+1?" } ] }
+--- more_headers
+X-AI-Fixture: aws/chat-safe.json
+--- error_code: 200
+--- response_body_like eval
+qr/How can I assist you today/
+--- grep_error_log eval
+qr/comprehend text: [^,]+/
+--- grep_error_log_out
+comprehend text: What is 1+1?
