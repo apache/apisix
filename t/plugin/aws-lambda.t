@@ -510,3 +510,75 @@ end
 passed
 query: a=%2A&a-=x&flag=&multi=m1&multi=m2&with%20space=a%2Fb%20c
 signature: ok
+
+
+
+=== TEST 12: create route for chunked-body framing check
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "aws-lambda": {
+                                "function_uri": "http://localhost:8765/generic"
+                            }
+                        },
+                        "uri": "/aws"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 13: chunked client body is reframed with a correct Content-Length
+--- inside_lua_block
+        ngx.req.read_body()
+        local te = ngx.req.get_headers()["transfer-encoding"]
+        ngx.say("te=", tostring(te))
+        ngx.say("body=", ngx.req.get_body_data() or "")
+--- config
+    location /t {
+        content_by_lua_block {
+            local sock = ngx.socket.tcp()
+            sock:settimeout(2000)
+            local ok, err = sock:connect("127.0.0.1", 1984)
+            if not ok then
+                ngx.say("connect failed: ", err)
+                return
+            end
+            local payload = "hello world"
+            local req = "POST /aws HTTP/1.1\r\n"
+                .. "Host: 127.0.0.1\r\n"
+                .. "Transfer-Encoding: chunked\r\n"
+                .. "Content-Type: text/plain\r\n"
+                .. "Connection: close\r\n\r\n"
+                .. string.format("%x\r\n%s\r\n0\r\n\r\n", #payload, payload)
+            local bytes, err = sock:send(req)
+            if not bytes then
+                ngx.say("send failed: ", err)
+                return
+            end
+            local data, err, partial = sock:receive("*a")
+            data = data or partial or ""
+            sock:close()
+            if data:find("te=nil", 1, true) and data:find("body=hello world", 1, true) then
+                ngx.say("PASS")
+            else
+                ngx.say("FAIL: ", data)
+            end
+        }
+    }
+--- response_body
+PASS
