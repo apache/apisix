@@ -193,27 +193,19 @@ server {
                 return
             end
 
-            -- The session is still open here, so the gauge must already be
-            -- counting it once the collector has ticked. Scrape over a real
-            -- socket: a subrequest would re-enter APISIX's routing and die in
-            -- the balancer with "invalid api_ctx".
-            ngx.sleep(1.5)
-
-            local scr = ngx.socket.tcp()
-            scr:settimeout(5000)
-            ok, err = scr:connect("127.0.0.1", 1984)
-            if not ok then
-                ngx.say("scrape connect: ", err)
-                return
+            -- The session is still open here, so the zone must be counting
+            -- it. Read the zone rather than the exposition: whether the
+            -- collector has published yet depends on when the stream plugins
+            -- finished loading, which is not what this case is about. TEST 9
+            -- covers the published gauge.
+            local zone = require("resty.apisix.stream.metrics")
+            local live = "no-slot"
+            for _, e in ipairs(zone.dump() or {}) do
+                if e.listen_addr == "0.0.0.0:1985" then
+                    live = e.active
+                end
             end
-            scr:send("GET /apisix/prometheus/metrics HTTP/1.0\r\n"
-                     .. "Host: localhost\r\n\r\n")
-            local body = scr:receive("*a")
-            scr:close()
-
-            local live = body and ngx.re.match(body,
-                [[apisix_stream_active_connections\{listen_addr="0\.0\.0\.0:1985"[^}]*\} (\d+)]])
-            ngx.say("live=", live and live[1] or "no-series")
+            ngx.say("live=", live)
 
             ok, err = sock:close()
             if not ok then
