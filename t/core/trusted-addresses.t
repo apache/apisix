@@ -707,3 +707,98 @@ x-forwarded-host: localhost
 x-forwarded-port: 1984
 x-forwarded-proto: http
 x-real-ip: 127.0.0.1
+
+
+
+=== TEST 17: a request carrying no X-Forwarded-* still gets them in r->headers_in
+--- yaml_config
+apisix:
+    node_listen: 1984
+    enable_admin: false
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
+--- apisix_yaml
+routes:
+  -
+    id: 1
+    uri: /old_uri
+    plugins:
+        serverless-pre-function:
+            phase: rewrite
+            functions:
+              - return function(conf, ctx) local h = ngx.req.get_headers(); ngx.log(ngx.WARN, "header-table xfp=", tostring(h["x-forwarded-proto"]), " xfh=", tostring(h["x-forwarded-host"]), " xfport=", tostring(h["x-forwarded-port"])) end
+    upstream:
+        nodes:
+            "127.0.0.1:1980": 1
+        type: roundrobin
+#END
+--- request
+GET /old_uri
+--- error_log
+header-table xfp=http xfh=localhost xfport=1984
+
+
+
+=== TEST 18: a route matching on http_x_forwarded_proto still matches without one
+--- yaml_config
+apisix:
+    node_listen: 1984
+    enable_admin: false
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
+--- apisix_yaml
+routes:
+  -
+    id: 1
+    uri: /old_uri
+    vars:
+      - ["http_x_forwarded_proto", "==", "http"]
+    upstream:
+        nodes:
+            "127.0.0.1:1980": 1
+        type: roundrobin
+#END
+--- request
+GET /old_uri
+--- error_code: 200
+--- response_body
+uri: /old_uri
+host: localhost
+x-forwarded-for: 127.0.0.1
+x-forwarded-host: localhost
+x-forwarded-port: 1984
+x-forwarded-proto: http
+x-real-ip: 127.0.0.1
+
+
+
+=== TEST 19: the injected headers are single-valued, including through an ngx.exec target
+--- yaml_config
+apisix:
+    node_listen: 1984
+    enable_admin: false
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
+--- apisix_yaml
+routes:
+  -
+    id: 1
+    uri: /old_uri
+    plugins:
+        proxy-buffering:
+            disable_proxy_buffering: true
+    upstream:
+        nodes:
+            "127.0.0.1:1980": 1
+        type: roundrobin
+#END
+--- request
+GET /old_uri
+--- response_body_like eval
+qr/\nx-forwarded-host: localhost\nx-forwarded-port: 1984\nx-forwarded-proto: http\n/

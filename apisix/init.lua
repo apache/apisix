@@ -713,11 +713,18 @@ local function handle_x_forwarded_headers(api_ctx)
     -- skipping the write would change what those see.
     --
     -- What can be skipped is the cost of *replacing* a header. `set_header` walks
-    -- the header list to find the old entry and removes it; here the entry is
-    -- known absent -- that is the condition for being on this path -- so appending
-    -- is enough. The rest of the slow path is a no-op on this input anyway: the
-    -- `original_x_forwarded_*` values are all nil, and clearing `Forwarded` or
-    -- `X-Forwarded-For` has nothing to clear.
+    -- the header list to find the old entry and removes it before inserting; here
+    -- there is no old entry, so appending is enough. The rest of the slow path is
+    -- a no-op on this input anyway: the `original_x_forwarded_*` values are all
+    -- nil, and clearing `Forwarded` or `X-Forwarded-For` has nothing to clear.
+    --
+    -- `add_header` appends unconditionally, so it is only correct while the
+    -- absence it relies on still holds. That is what the branch condition below
+    -- asserts, for all three headers at once and from `ngx.var`, which reflects
+    -- any earlier write to `r->headers_in` no matter who made it -- a second entry
+    -- would make `$http_x_forwarded_proto` read back as "http, http" rather than
+    -- nil, and this branch would not be taken. Keep the three `add_header` calls
+    -- directly under that check: nothing between them may touch a request header.
     if not (xf_proto or xf_host or xf_port or xf_for or forwarded) then
         local proto = api_ctx.var.scheme
         local http_host = ngx_var.http_host or api_ctx.var.host
