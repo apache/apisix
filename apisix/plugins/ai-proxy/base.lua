@@ -242,8 +242,14 @@ function _M.before_proxy(conf, ctx, on_error)
 
         -- Step 2: Extract model from request
         local request_model = request_body.model
-
-        if request_model then
+        -- request_body is the cached table from get_json_request_body_table.
+        -- On a fallback retry, build_body has already overwritten body.model with
+        -- the picked instance's model, so re-reading it here would clobber
+        -- $request_llm_model with the retry instance's model instead of keeping
+        -- the client's original. Capture the client model only on the first
+        -- attempt and preserve it across retries.
+        if request_model and not ctx.ai_request_llm_captured then
+            ctx.ai_request_llm_captured = true
             ctx.var.request_llm_model = request_model
         end
         local model = ai_instance.options and ai_instance.options.model or request_model
