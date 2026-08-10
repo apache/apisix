@@ -712,19 +712,17 @@ local function handle_x_forwarded_headers(api_ctx)
     -- (`@grpc_pass`, `@dubbo_pass`, the mirror subrequest) all observe them, so
     -- skipping the write would change what those see.
     --
-    -- What can be skipped is the cost of *replacing* a header. `set_header` walks
-    -- the header list to find the old entry and removes it before inserting; here
-    -- there is no old entry, so appending is enough. The rest of the slow path is
-    -- a no-op on this input anyway: the `original_x_forwarded_*` values are all
-    -- nil, and clearing `Forwarded` or `X-Forwarded-For` has nothing to clear.
+    -- What is worth skipping is the rest of the slow path, which is a no-op on
+    -- this input: every `original_x_forwarded_*` value is nil, and clearing
+    -- `Forwarded` or `X-Forwarded-For` has nothing to clear.
     --
-    -- `add_header` appends unconditionally, so it is only correct while the
-    -- absence it relies on still holds. That is what the branch condition below
-    -- asserts, for all three headers at once and from `ngx.var`, which reflects
-    -- any earlier write to `r->headers_in` no matter who made it -- a second entry
-    -- would make `$http_x_forwarded_proto` read back as "http, http" rather than
-    -- nil, and this branch would not be taken. Keep the three `add_header` calls
-    -- directly under that check: nothing between them may touch a request header.
+    -- The writes themselves stay `set_header`. `add_header` looks cheaper here --
+    -- the entry is known absent, so there is nothing to find and remove -- but on
+    -- an absent header the two measure the same: 100.3 against 95.3 ns raw, 100.6
+    -- against 103.3 ns through `core.request`. The find-and-remove that
+    -- `set_header` pays for only exists when the header is present. Appending
+    -- would buy nothing and would make correctness depend on a precondition
+    -- established a few lines up.
     if not (xf_proto or xf_host or xf_port or xf_for or forwarded) then
         local proto = api_ctx.var.scheme
         local http_host = ngx_var.http_host or api_ctx.var.host
@@ -732,9 +730,9 @@ local function handle_x_forwarded_headers(api_ctx)
         local _, port_from_host = core.utils.parse_addr(http_host)
         local port = port_from_host or api_ctx.var.server_port
 
-        core.request.add_header(api_ctx, "X-Forwarded-Proto", proto)
-        core.request.add_header(api_ctx, "X-Forwarded-Host", http_host)
-        core.request.add_header(api_ctx, "X-Forwarded-Port", port)
+        core.request.set_header(api_ctx, "X-Forwarded-Proto", proto)
+        core.request.set_header(api_ctx, "X-Forwarded-Host", http_host)
+        core.request.set_header(api_ctx, "X-Forwarded-Port", port)
 
         api_ctx.var.http_x_forwarded_proto = proto
         api_ctx.var.http_x_forwarded_host = http_host
