@@ -22,9 +22,11 @@ local ipairs      = ipairs
 local ngx         = ngx
 local type        = type
 local re_sub      = ngx.re.sub
+local re_gsub     = ngx.re.gsub
 local re_match    = ngx.re.match
 local req_set_uri = ngx.req.set_uri
 local sub_str     = string.sub
+local str_gsub    = string.gsub
 local str_find    = core.string.find
 
 local switch_map = {GET = ngx.HTTP_GET, POST = ngx.HTTP_POST, PUT = ngx.HTTP_PUT,
@@ -43,6 +45,26 @@ end
 local lrucache = core.lrucache.new({
     type = "plugin",
 })
+
+local nginx_var_pattern = [[(?<!\$)\$(?=[a-zA-Z_]|\{\s*[a-zA-Z_])]]
+
+
+local function escape_nginx_vars(replacement)
+    local escaped, _, err = re_gsub(replacement, nginx_var_pattern, function()
+        return "$$"
+    end, "jo")
+    return escaped, err
+end
+
+
+local function preserve_literal_dollars(replacement)
+    return str_gsub(replacement, "%$%$", "\\$")
+end
+
+
+local function restore_literal_dollars(replacement)
+    return str_gsub(replacement, "\\%$", "$")
+end
 
 core.ctx.register_var("proxy_rewrite_regex_uri_captures", function(ctx)
     return ctx.proxy_rewrite_regex_uri_captures
@@ -225,6 +247,14 @@ function _M.check_schema(conf)
             if not secret.is_secret_ref(pattern) then
                 local test_replacement = secret.is_secret_ref(replacement)
                                          and "" or replacement
+                if test_replacement ~= "" then
+                    local err
+                    test_replacement, err = escape_nginx_vars(test_replacement)
+                    if err then
+                        return false, "invalid regex_uri replacement(" ..
+                            replacement .. "): " .. err
+                    end
+                end
                 local _, _, err = re_sub("/fake_uri", pattern,
                     test_replacement, "jo")
                 if err then
@@ -355,8 +385,14 @@ function _M.rewrite(conf, ctx)
             if captures then
                 ctx.proxy_rewrite_regex_uri_captures = captures
 
+                local replacement = preserve_literal_dollars(conf.regex_uri[i + 1])
+                replacement = core.utils.resolve_var_with_captures(replacement, captures)
+                replacement = core.utils.resolve_var(replacement, ctx.var, escape_separator)
+                replacement = restore_literal_dollars(replacement)
                 local uri, _, err = re_sub(upstream_uri,
-                    conf.regex_uri[i], conf.regex_uri[i + 1], "jo")
+                    conf.regex_uri[i], function()
+                        return replacement
+                    end, "jo")
                 if uri then
                     upstream_uri = uri
                 else
