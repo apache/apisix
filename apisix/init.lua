@@ -706,27 +706,32 @@ local function handle_x_forwarded_headers(api_ctx)
     local xf_for = ngx_var.http_x_forwarded_for
     local forwarded = ngx_var.http_forwarded
 
-    -- Nothing forgeable was sent, so there is nothing to neutralize: the request
-    -- headers are left untouched, which skips four `ngx.req.set_header()` calls.
-    -- The values handed to the upstream must not change though, and the
-    -- `set $var_x_forwarded_*` defaults in ngx_tpl.lua resolve to
-    -- $scheme/$host/$server_port, so they drop an explicit port carried by the
-    -- Host header -- which is the port the client actually used, and the only
-    -- correct X-Forwarded-Port on a port-mapped deployment. Write the variables
-    -- only in the cases where those defaults would lose information; `$scheme`
-    -- never needs one.
+    -- Nothing forgeable was sent, so there is nothing to neutralize -- but the
+    -- headers still have to be there. Route `vars`, `ngx.req.get_headers()`, and
+    -- the exits that copy `r->headers_in` rather than reading `$var_x_forwarded_*`
+    -- (`@grpc_pass`, `@dubbo_pass`, the mirror subrequest) all observe them, so
+    -- skipping the write would change what those see.
+    --
+    -- What can be skipped is the cost of *replacing* a header. `set_header` walks
+    -- the header list to find the old entry and removes it; here the entry is
+    -- known absent -- that is the condition for being on this path -- so appending
+    -- is enough. The rest of the slow path is a no-op on this input anyway: the
+    -- `original_x_forwarded_*` values are all nil, and clearing `Forwarded` or
+    -- `X-Forwarded-For` has nothing to clear.
     if not (xf_proto or xf_host or xf_port or xf_for or forwarded) then
-        local http_host = ngx_var.http_host
-        if http_host then
-            local _, port_from_host = core.utils.parse_addr(http_host)
-            if port_from_host then
-                api_ctx.var.var_x_forwarded_host = http_host
-                api_ctx.var.var_x_forwarded_port = port_from_host
-            elseif http_host ~= api_ctx.var.host then
-                -- `$host` is lower-cased, the Host header is not
-                api_ctx.var.var_x_forwarded_host = http_host
-            end
-        end
+        local proto = api_ctx.var.scheme
+        local http_host = ngx_var.http_host or api_ctx.var.host
+        -- parse_addr handles IPv6 literals and bracketed host:port correctly.
+        local _, port_from_host = core.utils.parse_addr(http_host)
+        local port = port_from_host or api_ctx.var.server_port
+
+        core.request.add_header(api_ctx, "X-Forwarded-Proto", proto)
+        core.request.add_header(api_ctx, "X-Forwarded-Host", http_host)
+        core.request.add_header(api_ctx, "X-Forwarded-Port", port)
+
+        api_ctx.var.http_x_forwarded_proto = proto
+        api_ctx.var.http_x_forwarded_host = http_host
+        api_ctx.var.http_x_forwarded_port = port
         return
     end
 

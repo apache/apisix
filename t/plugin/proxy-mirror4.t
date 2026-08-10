@@ -17,9 +17,9 @@
 # The mirror subrequest, `@grpc_pass` and `@dubbo_pass` copy `r->headers_in`
 # instead of reading `$var_x_forwarded_*` the way `location /` does through
 # `proxy_set_header`. They therefore observe whether `handle_x_forwarded_headers`
-# wrote the X-Forwarded-* request headers, which it only does for a request that
-# carried a forgeable value. The mirror stands in for all three here because it
-# is the one that can be driven over plain HTTP.
+# wrote the X-Forwarded-* request headers at all, which makes them the regression
+# test for the fast path continuing to write them. The mirror stands in for all
+# three here because it is the one that can be driven over plain HTTP.
 use t::APISIX 'no_plan';
 
 repeat_each(1);
@@ -59,7 +59,7 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: a request carrying no X-Forwarded-* leaves the mirror with none either
+=== TEST 1: a request carrying no X-Forwarded-* still reaches the mirror with them
 --- yaml_config
 apisix:
     node_listen: 1984
@@ -86,7 +86,7 @@ GET /hello
 --- response_body
 hello world
 --- error_log
-mirror x-forwarded-proto: nil, x-forwarded-host: nil, x-forwarded-port: nil
+mirror x-forwarded-proto: http, x-forwarded-host: localhost, x-forwarded-port: 1984
 
 
 
