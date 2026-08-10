@@ -19,52 +19,34 @@
 -- Provides HTTP client lifecycle management for AI provider requests.
 
 local core = require("apisix.core")
+local http_client = require("apisix.utils.http")
 local ngx_now = ngx.now
 local pairs = pairs
 local ipairs = ipairs
 local pcall = pcall
-local require = require
 local type = type
 local str_lower = string.lower
-local tonumber = tonumber
 local tostring = tostring
-
-local FFI_CLIENT = "ngx_http_ffi_client"
-local LUA_RESTY_HTTP = "lua-resty-http"
-
--- the client name in the config is not the module name
-local CLIENT_MODULES = {
-    [FFI_CLIENT] = "resty.ngx_http_ffi_client",
-    [LUA_RESTY_HTTP] = "resty.http",
-}
 
 local attr_schema = {
     type = "object",
     properties = {
-        http_client = {
-            type = "string",
-            enum = {FFI_CLIENT, LUA_RESTY_HTTP},
-            default = FFI_CLIENT,
-        },
+        http_client = http_client.client_schema,
     },
 }
 
 local _M = {}
 
-local http_client
-local http_client_is_ffi
+local client_name
 
 
---- Pick the outbound HTTP client.
--- `plugin_attr.ai-proxy.http_client` names it: "ngx_http_ffi_client", the
--- default, or "lua-resty-http". The first is a C client with the same object
--- API as the second and around half its outbound CPU cost, and it exists only
--- when the gateway runtime was built with the module.
--- Resolved on first request, because local_conf is not readable while the
--- module is still loading, and cached only once a client has been loaded.
-local function resolve_client()
-    if http_client then
-        return http_client
+--- Which client this transport should use.
+-- `plugin_attr.ai-proxy.http_client` names it; the shared module owns the
+-- names, validation and loading. Read on first request, because local_conf is
+-- not readable while this module is still loading.
+local function resolve_client_name()
+    if client_name then
+        return client_name
     end
 
     local local_conf = core.config.local_conf()
@@ -76,72 +58,9 @@ local function resolve_client()
         return nil, "invalid plugin_attr.ai-proxy: " .. err
     end
 
-    local name = attr.http_client or FFI_CLIENT
-    local module_name = CLIENT_MODULES[name]
+    client_name = attr.http_client or http_client.DEFAULT_CLIENT
 
-    local mod
-    ok, mod = pcall(require, module_name)
-    if not ok or type(mod) ~= "table" then
-        core.log.error(module_name, " is not available: ", mod)
-        return nil, module_name .. " is not available: " .. tostring(mod)
-    end
-
-    http_client = mod
-    http_client_is_ffi = name == FFI_CLIENT
-
-    return http_client
-end
-
-
---- Resolve the upstream name the way every other socket in the gateway does.
--- Cosockets are patched (apisix/patch.lua) to run names through
--- core.resolver, which honours dns_resolver, /etc/hosts and the search
--- domains. The C client dials on its own and only sees nginx's `resolver`,
--- so the name is resolved here and kept for the Host header and the SNI.
-local function resolve_upstream_host(params)
-    local host = params.host
-    if not host
-       or core.utils.parse_ipv4(host)
-       or core.utils.parse_ipv6(host)
-    then
-        return true
-    end
-
-    local ip, err = core.resolver.parse_domain(host)
-    if not ip then
-        return nil, "failed to parse domain: " .. (err or "unknown")
-    end
-
-    params.ssl_server_name = params.ssl_server_name or host
-
-    local headers = params.headers or {}
-    if not headers["Host"] and not headers["host"] then
-        local default_port = params.scheme == "https" and 443 or 80
-        if params.port and tonumber(params.port) ~= default_port then
-            headers["Host"] = host .. ":" .. params.port
-        else
-            headers["Host"] = host
-        end
-    end
-    params.headers = headers
-
-    params.host = ip
-
-    return true
-end
-
-
---- Create an HTTP client.
--- The Lua half of `ngx_http_ffi_client` loads even when the C module is not
--- compiled into the runtime; new() is what reports that. Either way the
--- failure is returned, never worked around with the other client.
-local function new_client()
-    local client, err = resolve_client()
-    if not client then
-        return nil, err
-    end
-
-    return client.new()
+    return client_name
 end
 
 
@@ -214,7 +133,12 @@ end
 -- @return string|nil Error message
 -- @return table|nil Upstream metadata on failure (for recording failed attempts)
 function _M.request(params, timeout)
-    local httpc, err = new_client()
+    local name, name_err = resolve_client_name()
+    if not name then
+        return nil, "failed to create http client: " .. name_err
+    end
+
+    local httpc, err = http_client.new(name)
     if not httpc then
         return nil, "failed to create http client: " .. (err or "unknown")
     end
@@ -225,8 +149,8 @@ function _M.request(params, timeout)
     local upstream_scheme = params.scheme or "http"
     local t0 = ngx_now()
 
-    if http_client_is_ffi then
-        local resolved, rerr = resolve_upstream_host(params)
+    if http_client.needs_resolve(name) then
+        local resolved, rerr = http_client.resolve_upstream_host(params)
         if not resolved then
             return nil, "connect: " .. rerr, {
                 upstream_addr = upstream_addr,
