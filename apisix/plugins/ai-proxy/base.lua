@@ -341,7 +341,16 @@ function _M.before_proxy(conf, ctx, on_error)
                           core.json.delay_encode(log_sanitize.redact_params(params), true))
 
             -- Step 4: Send via transport
-            local res, transport_err, err_meta = transport_http.request(params, conf.timeout)
+            local timeout = conf.timeout
+            if conf.connect_timeout or conf.send_timeout or conf.read_timeout then
+                timeout = {
+                    connect_timeout = conf.connect_timeout or conf.timeout,
+                    send_timeout = conf.send_timeout or conf.timeout,
+                    read_timeout = conf.read_timeout or conf.timeout,
+                }
+            end
+
+            local res, transport_err, err_meta = transport_http.request(params, timeout)
             if not res then
                 core.log.warn("failed to send request to LLM server: ", transport_err)
                 if err_meta then

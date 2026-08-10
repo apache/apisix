@@ -94,7 +94,8 @@ end
 -- @param params table HTTP request parameters:
 --   {method, scheme, host, port, path, headers, query, body (table),
 --    ssl_verify, ssl_server_name}
--- @param timeout number Request timeout in milliseconds
+-- @param timeout number|table Request timeout in milliseconds, or a table with
+--   {connect_timeout, send_timeout, read_timeout} in milliseconds
 -- @return table|nil Response object (with body_reader, headers, status,
 --   _upstream_addr, _upstream_uri, _connect_time, _header_time, _t0)
 -- @return string|nil Error message
@@ -104,7 +105,12 @@ function _M.request(params, timeout)
     if not httpc then
         return nil, "failed to create http client: " .. (err or "unknown")
     end
-    httpc:set_timeout(timeout)
+    if type(timeout) == "table" then
+        httpc:set_timeouts(timeout.connect_timeout, timeout.send_timeout,
+                           timeout.read_timeout)
+    else
+        httpc:set_timeout(timeout)
+    end
 
     local upstream_addr = (params.host or "") .. ":" .. (params.port or "")
     local upstream_host = params.host or ""

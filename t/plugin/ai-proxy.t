@@ -69,6 +69,67 @@ passed
 
 
 
+=== TEST 1a: phase timeouts accept valid values and reject invalid values
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.ai-proxy")
+
+            local function base_conf()
+                return {
+                    provider = "openai",
+                    options = {model = "gpt-4"},
+                    auth = {header = {some_header = "some_value"}},
+                }
+            end
+
+            local valid_cases = {
+                {},
+                {connect_timeout = 1, send_timeout = 1, read_timeout = 1},
+                {connect_timeout = 600000, send_timeout = 600000, read_timeout = 600000},
+                {connect_timeout = 101, send_timeout = 202, read_timeout = 303},
+            }
+            for _, timeouts in ipairs(valid_cases) do
+                local conf = base_conf()
+                for key, value in pairs(timeouts) do
+                    conf[key] = value
+                end
+                assert(plugin.check_schema(conf))
+                ngx.say("valid")
+            end
+
+            local invalid_values = {0, 600001, 1.5, "invalid"}
+            for _, key in ipairs({"connect_timeout", "send_timeout", "read_timeout"}) do
+                for _, value in ipairs(invalid_values) do
+                    local conf = base_conf()
+                    conf[key] = value
+                    local ok = plugin.check_schema(conf)
+                    assert(not ok)
+                    ngx.say("invalid: ", key)
+                end
+            end
+        }
+    }
+--- response_body
+valid
+valid
+valid
+valid
+invalid: connect_timeout
+invalid: connect_timeout
+invalid: connect_timeout
+invalid: connect_timeout
+invalid: send_timeout
+invalid: send_timeout
+invalid: send_timeout
+invalid: send_timeout
+invalid: read_timeout
+invalid: read_timeout
+invalid: read_timeout
+invalid: read_timeout
+
+
+
 === TEST 2: unsupported provider
 --- config
     location /t {
@@ -1325,3 +1386,128 @@ POST /anything
 --- response_body_like: upstream boom
 --- response_headers
 Content-Type: application/json
+
+
+
+=== TEST 40: configure independent timeouts with a short read phase
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai-compatible",
+                            "auth": {
+                                "header": {
+                                    "Authorization": "Bearer token"
+                                }
+                            },
+                            "options": {
+                                "model": "delayed"
+                            },
+                            "override": {
+                                "endpoint": "http://127.0.0.1:6726/v1/chat/completions"
+                            },
+                            "timeout": 1000,
+                            "read_timeout": 50,
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 41: short read phase expires while connect and send phases are longer
+--- http_config
+    server {
+        server_name delayed_ai;
+        listen 6726;
+        default_type 'application/json';
+        location / {
+            content_by_lua_block {
+                ngx.sleep(0.25)
+                ngx.say([[{"choices":[{"message":{"content":"delayed"}}]}]])
+            }
+        }
+    }
+--- request
+POST /anything
+{ "messages": [ { "role": "user", "content": "slow response"} ] }
+--- error_code: 504
+
+
+
+=== TEST 42: configure a read phase that exceeds the local upstream delay
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai-compatible",
+                            "auth": {
+                                "header": {
+                                    "Authorization": "Bearer token"
+                                }
+                            },
+                            "options": {
+                                "model": "delayed"
+                            },
+                            "override": {
+                                "endpoint": "http://127.0.0.1:6726/v1/chat/completions"
+                            },
+                            "timeout": 1000,
+                            "read_timeout": 1000,
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 43: longer read phase receives the delayed local upstream response
+--- http_config
+    server {
+        server_name delayed_ai;
+        listen 6726;
+        default_type 'application/json';
+        location / {
+            content_by_lua_block {
+                ngx.sleep(0.25)
+                ngx.say([[{"choices":[{"message":{"content":"delayed"}}]}]])
+            }
+        }
+    }
+--- request
+POST /anything
+{ "messages": [ { "role": "user", "content": "slow response"} ] }
+--- error_code: 200
+--- response_body_like: delayed

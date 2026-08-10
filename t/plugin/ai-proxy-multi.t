@@ -77,6 +77,73 @@ passed
 
 
 
+=== TEST 1a: phase timeouts accept valid values and reject invalid values
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.ai-proxy-multi")
+
+            local function base_conf()
+                return {
+                    instances = {
+                        {
+                            name = "openai-official",
+                            provider = "openai",
+                            options = {model = "gpt-4"},
+                            weight = 1,
+                            auth = {header = {some_header = "some_value"}},
+                        }
+                    }
+                }
+            end
+
+            local valid_cases = {
+                {},
+                {connect_timeout = 1, send_timeout = 1, read_timeout = 1},
+                {connect_timeout = 600000, send_timeout = 600000, read_timeout = 600000},
+                {connect_timeout = 101, send_timeout = 202, read_timeout = 303},
+            }
+            for _, timeouts in ipairs(valid_cases) do
+                local conf = base_conf()
+                for key, value in pairs(timeouts) do
+                    conf[key] = value
+                end
+                assert(plugin.check_schema(conf))
+                ngx.say("valid")
+            end
+
+            local invalid_values = {0, 600001, 1.5, "invalid"}
+            for _, key in ipairs({"connect_timeout", "send_timeout", "read_timeout"}) do
+                for _, value in ipairs(invalid_values) do
+                    local conf = base_conf()
+                    conf[key] = value
+                    local ok = plugin.check_schema(conf)
+                    assert(not ok)
+                    ngx.say("invalid: ", key)
+                end
+            end
+        }
+    }
+--- response_body
+valid
+valid
+valid
+valid
+invalid: connect_timeout
+invalid: connect_timeout
+invalid: connect_timeout
+invalid: connect_timeout
+invalid: send_timeout
+invalid: send_timeout
+invalid: send_timeout
+invalid: send_timeout
+invalid: read_timeout
+invalid: read_timeout
+invalid: read_timeout
+invalid: read_timeout
+
+
+
 === TEST 2: unsupported provider
 --- config
     location /t {
