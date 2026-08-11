@@ -1,6 +1,6 @@
 COMPOSE = docker compose -f docker-compose.yml
 ARTIFACTS = artifacts
-TRACE_ID = $$(cat $(ARTIFACTS)/trace_id)
+REQUESTS = $(ARTIFACTS)/requests
 
 .PHONY: run logs analyze down
 
@@ -16,11 +16,17 @@ logs:
 	$(COMPOSE) logs --no-color elasticsearch > $(ARTIFACTS)/elasticsearch.log
 
 analyze:
-	@trace_id='$(TRACE_ID)'; \
-	printf 'trace=%s\n' "$$trace_id"; \
-	printf '\nCLIENT\n'; grep "$$trace_id" $(ARTIFACTS)/client.log || true; \
-	printf '\nAPISIX\n'; grep "$$trace_id" $(ARTIFACTS)/apisix.log || true; \
-	printf '\nELASTICSEARCH\n'; grep "$$trace_id" $(ARTIFACTS)/elasticsearch.log || true
+	@while read -r trace_id name method cache; do \
+		grep -F "trace=$$trace_id" $(ARTIFACTS)/client.log >/dev/null; \
+		grep -F "trace=$$trace_id client_method=$$method" $(ARTIFACTS)/apisix.log >/dev/null; \
+		case "$$name" in \
+			query-miss|post-miss|query-auth-1|query-auth-2|post-auth-1|post-auth-2) \
+				grep -F "$$trace_id" $(ARTIFACTS)/elasticsearch.log >/dev/null ;; \
+			query-hit|post-hit|query-no-content-type) \
+				! grep -F "$$trace_id" $(ARTIFACTS)/elasticsearch.log >/dev/null ;; \
+		esac; \
+	done < $(REQUESTS)
+	@printf 'validated %s correlated client/APISIX/Elasticsearch requests\n' "$$(wc -l < $(REQUESTS))"
 
 down:
 	$(COMPOSE) down --volumes
