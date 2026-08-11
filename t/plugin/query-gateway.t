@@ -55,6 +55,13 @@ server {
             ngx.say("counter: ", value)
         }
     }
+
+    location = /echo {
+        content_by_lua_block {
+            ngx.req.read_body()
+            ngx.print(ngx.req.get_body_data() or "")
+        }
+    }
 }
 _EOC_
 
