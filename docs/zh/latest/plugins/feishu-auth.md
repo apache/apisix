@@ -99,11 +99,12 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X P
 认证流程如下：
 
 1. 用户访问受 `feishu-auth` 插件保护的路由。
-2. 若不存在有效的 session Cookie 且请求中不含授权 `code`，插件将以 HTTP 302 重定向用户至 `redirect_uri`。你的应用随后应将用户重定向到飞书 OAuth 授权页面。
+2. 若不存在有效的 session Cookie 且请求中不含授权 `code`，插件将生成随机 `state` 并存入 session Cookie，然后以 HTTP 302 重定向用户至 `redirect_uri`，并在其查询字符串中附加 `state`。你的应用随后应将用户重定向到飞书 OAuth 授权页面，并透传 `state`，以便飞书在回调时将其返回。
 3. 用户授权后，飞书将携带授权 `code` 重定向回 `auth_redirect_uri`。插件从 `code_query` 查询参数或 `code_header` 请求头中提取该授权码。
-4. 插件向 `access_token_url` 发起请求，使用授权码换取 access token，再从 `userinfo_url` 获取用户信息。
-5. 用户信息存储在加密的 session Cookie（`feishu_session`）中。后续携带有效 Cookie 的请求将跳过 OAuth 流程。
-6. 若 `set_userinfo_header` 为 `true`，插件将用户信息 Base64 编码后设置到 `X-Userinfo` 请求头，随请求转发至上游服务。
+4. 从查询参数中获取的授权码必须携带与当前 session 绑定的 `state`，否则插件返回 HTTP 401。该校验将授权码与发起流程的浏览器绑定。从 `code_header` 请求头中获取的授权码不做此校验，因为此类请求来自非浏览器客户端。
+5. 插件向 `access_token_url` 发起请求，使用授权码换取 access token，再从 `userinfo_url` 获取用户信息。
+6. 用户信息存储在加密的 session Cookie（`feishu_session`）中。后续携带有效 Cookie 的请求将跳过 OAuth 流程。
+7. 若 `set_userinfo_header` 为 `true`，插件将用户信息 Base64 编码后设置到 `X-Userinfo` 请求头，随请求转发至上游服务。
 
 ## 删除插件
 

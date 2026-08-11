@@ -17,8 +17,12 @@
 local core = require("apisix.core")
 local http = require("resty.http")
 local session = require("resty.session")
+local resty_random = require("resty.random")
+local resty_string = require("resty.string")
 
 local base64_encode = ngx.encode_base64
+
+local STATE_BYTES = 16
 
 -- the access token from dingtalk has a TTL of 7200 seconds,
 -- we set the cache TTL to 7000 seconds to avoid edge cases of token expiration during use.
@@ -201,14 +205,46 @@ local function fetch_userinfo(conf, access_token, code)
 end
 
 
+local function session_opts(conf)
+    return {
+        secret = conf.secret,
+        secret_fallbacks = conf.secret_fallbacks,
+        cookie_name = "dingtalk_session",
+        absolute_timeout = conf.cookie_expires_in,
+    }
+end
+
+
+-- returns the code and whether it came from the request header
 local function get_code(conf, ctx)
     local code = core.request.header(ctx, conf.code_header)
-    if not code then
-        local uri_args = core.request.get_uri_args(ctx) or {}
-        code = uri_args[conf.code_query]
+    if code then
+        return code, true
     end
 
-    return code
+    local uri_args = core.request.get_uri_args(ctx) or {}
+    return uri_args[conf.code_query], false
+end
+
+
+-- bind a fresh state to the session and carry it along to the login page,
+-- so the code that comes back can be tied to the browser that started the flow
+local function redirect_to_login(conf, opts)
+    local bytes = resty_random.bytes(STATE_BYTES, true)
+                    or resty_random.bytes(STATE_BYTES)
+    local state = resty_string.to_hex(bytes)
+
+    local sess = session.start(opts)
+    sess:set("state", state)
+    local ok, err = sess:save()
+    if not ok then
+        core.log.error("failed to save session: ", err)
+        return 500, {message = "Failed to save session"}
+    end
+
+    local sep = core.string.find(conf.redirect_uri, "?") and "&" or "?"
+    core.response.set_header("Location", conf.redirect_uri .. sep .. "state=" .. state)
+    return 302
 end
 
 
@@ -218,14 +254,8 @@ function _M.rewrite(conf, ctx)
     -- clear any client-supplied X-Userinfo before authentication
     core.request.set_header(ctx, "X-Userinfo", nil)
 
-    local sess, sess_err = session.open(
-        {
-            secret = conf.secret,
-            secret_fallbacks = conf.secret_fallbacks,
-            cookie_name = "dingtalk_session",
-            absolute_timeout = conf.cookie_expires_in,
-        }
-    )
+    local opts = session_opts(conf)
+    local sess, sess_err = session.open(opts)
     if not sess then
         core.log.error("failed to open session: ", sess_err)
         return 500, {message = "Failed to open session"}
@@ -237,14 +267,26 @@ function _M.rewrite(conf, ctx)
         if not userinfo then
             sess:destroy()
             core.log.error("failed to decode userinfo in session: ", err)
-            core.response.set_header("Location", conf.redirect_uri)
-            return 302
+            return redirect_to_login(conf, opts)
         end
     else
-        local code = get_code(conf, ctx)
+        local code, from_header = get_code(conf, ctx)
         if not code then
-            core.response.set_header("Location", conf.redirect_uri)
-            return 302
+            return redirect_to_login(conf, opts)
+        end
+
+        -- a code in the query string comes back from the login redirect, so it must
+        -- carry the state bound to this session. a code in the header comes from a
+        -- non-browser client, which cannot be driven cross-site.
+        if not from_header then
+            local uri_args = core.request.get_uri_args(ctx) or {}
+            local state = sess:get("state")
+            if not state or uri_args.state ~= state then
+                sess:destroy()
+                core.log.warn("state does not match the one bound to the session")
+                return 401, {message = "Invalid state"}
+            end
+            sess:set("state", nil)
         end
 
         local key = core.table.concat({
