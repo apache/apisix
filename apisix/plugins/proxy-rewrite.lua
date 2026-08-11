@@ -248,6 +248,8 @@ function _M.check_schema(conf)
                 local test_replacement = secret.is_secret_ref(replacement)
                                          and "" or replacement
                 if test_replacement ~= "" then
+                    -- Keep validating PCRE captures without treating NGINX
+                    -- variables in the replacement as named captures.
                     local err
                     test_replacement, err = escape_nginx_vars(test_replacement)
                     if err then
