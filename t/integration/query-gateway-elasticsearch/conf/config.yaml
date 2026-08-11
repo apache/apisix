@@ -1,0 +1,16 @@
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
+
+apisix:
+  node_listen: 9080
+  enable_admin: false
+
+plugins:
+  - proxy-rewrite
+  - query-gateway
+
+nginx_config:
+  http:
+    access_log_format: '$time_iso8601 trace=$http_x_opaque_id client_method=$request_method request="$request" status=$status upstream_status=$upstream_status cache=$sent_http_apisix_cache_status'
