@@ -116,32 +116,20 @@ x-real-ip: 127.0.0.1
 
 === TEST 3: trace plugins info for debug
 --- debug_config eval: $::debug_config
---- config
-    location /t {
-        content_by_lua_block {
-            local json = require("toolkit.json")
-            local ngx_re = require("ngx.re")
-            local http = require "resty.http"
-            local httpc = http.new()
-            local headers = {}
-            headers["apikey"] = "auth-jack"
-            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
-            local res, err = httpc:request_uri(uri, {
-                    method = "GET",
-                    headers = headers,
-                })
-            local debug_header = res.headers["Apisix-Plugins"]
-            local arr = ngx_re.split(debug_header, ", ")
-            local hash = {}
-            for i, v in ipairs(arr) do
-                hash[v] = true
-            end
-            ngx.status = res.status
-            ngx.say(json.encode(hash))
-        }
-    }
+--- request
+GET /hello
+--- more_headers
+apikey: auth-jack
 --- response_body
-{"key-auth":true,"proxy-rewrite":true}
+uri: /uri/plugin_proxy_rewrite
+apikey: auth-jack
+host: localhost
+x-api-engine: APISIX
+x-consumer-id: 1
+x-consumer-username: jack
+x-real-ip: 127.0.0.1
+--- response_headers
+Apisix-Plugins: key-auth#rewrite, proxy-rewrite#rewrite
 
 
 
@@ -214,32 +202,20 @@ x-real-ip: 127.0.0.1
 
 === TEST 6: trace plugins info for debug
 --- debug_config eval: $::debug_config
---- config
-    location /t {
-        content_by_lua_block {
-            local json = require("toolkit.json")
-            local ngx_re = require("ngx.re")
-            local http = require "resty.http"
-            local httpc = http.new()
-            local headers = {}
-            headers["apikey"] = "auth-jack"
-            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
-            local res, err = httpc:request_uri(uri, {
-                    method = "GET",
-                    headers = headers,
-                })
-            local debug_header = res.headers["Apisix-Plugins"]
-            local arr = ngx_re.split(debug_header, ", ")
-            local hash = {}
-            for i, v in ipairs(arr) do
-                hash[v] = true
-            end
-            ngx.status = res.status
-            ngx.say(json.encode(hash))
-        }
-    }
+--- request
+GET /hello
+--- more_headers
+apikey: auth-jack
 --- response_body
-{"key-auth":true,"proxy-rewrite":true}
+uri: /uri/plugin_proxy_rewrite
+apikey: auth-jack
+host: localhost
+x-api-engine: APISIX
+x-consumer-id: 1
+x-consumer-username: jack
+x-real-ip: 127.0.0.1
+--- response_headers
+Apisix-Plugins: key-auth#rewrite, proxy-rewrite#rewrite
 
 
 

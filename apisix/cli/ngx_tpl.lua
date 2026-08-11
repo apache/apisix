@@ -57,7 +57,7 @@ env GCP_SERVICE_ACCOUNT;
 
 {% if envs then %}
 {% for _, name in ipairs(envs) do %}
-env {*name*};
+env "{*name*}";
 {% end %}
 {% end %}
 
@@ -171,6 +171,12 @@ stream {
 
     {% if ssl.ssl_trusted_certificate ~= nil then %}
     lua_ssl_trusted_certificate {* ssl.ssl_trusted_certificate *};
+    {% end %}
+
+    {% if stream.real_ip_from then %}
+    {% for _, real_ip in ipairs(stream.real_ip_from) do %}
+    set_real_ip_from {*real_ip*};
+    {% end %}
     {% end %}
 
     # for stream logs, off by default

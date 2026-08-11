@@ -231,7 +231,6 @@ Returns all configured [Routes](./terminology/route.md):
       },
       "status": 1
     },
-    "clean_handlers": {},
     "has_domain": false,
     "orig_modifiedIndex": 1631193445,
     "modifiedIndex": 1631193445,
@@ -269,7 +268,6 @@ Returns the Route with the specified `route_id`:
     },
     "status": 1
   },
-  "clean_handlers": {},
   "has_domain": false,
   "orig_modifiedIndex": 1631193445,
   "modifiedIndex": 1631193445,
@@ -287,7 +285,6 @@ Returns all the Services:
 [
   {
     "has_domain": false,
-    "clean_handlers": {},
     "modifiedIndex": 671,
     "key": "/apisix/services/200",
     "createdIndex": 671,
@@ -334,7 +331,6 @@ Returns the Service with the specified `service_id`:
 ```json
 {
   "has_domain": false,
-  "clean_handlers": {},
   "modifiedIndex": 728,
   "key": "/apisix/services/5",
   "createdIndex": 728,
@@ -392,8 +388,6 @@ Dumps all Upstreams:
       },
       "has_domain":true,
       "key":"\/apisix\/upstreams\/1",
-      "clean_handlers":{
-      },
       "createdIndex":938,
       "modifiedIndex":1225
    }
@@ -432,8 +426,6 @@ Dumps the Upstream with the specified `upstream_id`:
    },
    "has_domain":true,
    "key":"\/apisix\/upstreams\/1",
-   "clean_handlers":{
-   },
    "createdIndex":938,
    "modifiedIndex":1225
 }

@@ -813,8 +813,9 @@ function _M.http_access_phase()
 
             api_ctx.var.uri = new_uri
             -- forward the original uri so the servlet upstream
-            -- can consume the param after ';'
-            api_ctx.var.upstream_uri = uri
+            -- can consume the param after ';'. Encode control characters so a
+            -- CR/LF in the decoded uri cannot inject into the upstream request line.
+            api_ctx.var.upstream_uri = core.utils.escape_uri_control_chars(uri)
         end
     end
 
@@ -1049,13 +1050,20 @@ function _M.http_header_filter_phase()
         return
     end
 
-    local debug_headers = api_ctx.debug_headers
-    if debug_headers then
-        local deduplicate = core.table.new(core.table.nkeys(debug_headers), 0)
-        for k, v in pairs(debug_headers) do
-            core.table.insert(deduplicate, k)
+    if debug.enable_debug() then
+        -- report the plugin phase functions in the execution order: the ones
+        -- executed so far were traced at execution time, while the
+        -- post-header ones of the matched plugins have not run yet and are
+        -- inferred, so they may not fully match the real execution
+        plugin.trace_expected_plugins_for_debug(api_ctx)
+
+        local debug_plugins = api_ctx.debug_plugins
+        if debug_plugins then
+            core.response.set_header("Apisix-Plugins",
+                                     core.table.concat(debug_plugins, ", "))
+        else
+            core.response.set_header("Apisix-Plugins", "no plugin")
         end
-        core.response.set_header("Apisix-Plugins", core.table.concat(deduplicate, ", "))
     end
     span:finish(ngx_ctx)
 
@@ -1237,6 +1245,10 @@ function _M.http_log_phase()
         core.tablepool.release("plugins", api_ctx.plugins)
     end
 
+    if api_ctx.global_plugins then
+        core.tablepool.release("global_plugins", api_ctx.global_plugins)
+    end
+
     if api_ctx.curr_req_matched then
         core.tablepool.release("matched_route_record", api_ctx.curr_req_matched)
     end
@@ -1325,6 +1337,7 @@ function _M.stream_init(args)
     core.log.info("enter stream_init")
 
     core.resolver.init_resolver(args)
+    core.env.init()
 
     if core.config.init then
         local ok, err = core.config.init()
@@ -1366,6 +1379,7 @@ function _M.stream_init_worker()
 
     plugin.init_worker()
     xrpc.init_worker()
+    apisix_secret.init_worker()
     router.stream_init_worker()
     require("apisix.http.service").init_worker()
     apisix_upstream.init_worker()
@@ -1540,6 +1554,10 @@ function _M.stream_log_phase()
     end
 
     healthcheck_passive(api_ctx)
+
+    if api_ctx.server_picker and api_ctx.server_picker.after_balance then
+        api_ctx.server_picker.after_balance(api_ctx, false)
+    end
 
     core.ctx.release_vars(api_ctx)
     if api_ctx.plugins then

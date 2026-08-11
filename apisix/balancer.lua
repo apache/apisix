@@ -174,9 +174,9 @@ local function create_server_picker(upstream, checker)
             return server_picker
         end
 
-        core.log.info("upstream nodes: ",
-                      core.json.delay_encode(up_nodes[up_nodes._priority_index[1]]))
-        local server_picker = picker.new(up_nodes[up_nodes._priority_index[1]], upstream)
+        local priority = up_nodes._priority_index[1]
+        core.log.info("upstream nodes: ", core.json.delay_encode(up_nodes[priority]))
+        local server_picker = picker.new(up_nodes[priority], upstream, priority)
         server_picker.addr_to_domain = addr_to_domain
         return server_picker
     end
@@ -248,7 +248,13 @@ local function pick_server(route, ctx)
     local up_conf = ctx.upstream_conf
 
     local nodes_count = #up_conf.nodes
-    if nodes_count == 1 then
+    -- least_conn counts the in-flight connections of every request it routes, so it
+    -- has to see them even while the upstream has a single node: those connections
+    -- are what tells a later scale out that the node is not empty. Skipping the
+    -- balancer here would leave it blind to everything routed before the second
+    -- node showed up, which is the state a k8s deployment or a discovery service
+    -- starts from. See #12217
+    if nodes_count == 1 and up_conf.type ~= "least_conn" then
         local node = up_conf.nodes[1]
         ctx.balancer_ip = node.host
         ctx.balancer_port = node.port
@@ -268,7 +274,10 @@ local function pick_server(route, ctx)
     ctx.balancer_try_count = (ctx.balancer_try_count or 0) + 1
     if ctx.balancer_try_count > 1 then
         if ctx.server_picker and ctx.server_picker.after_balance then
-            ctx.server_picker.after_balance(ctx, true)
+            -- remembering the server as tried is what keeps the next pick off it, so
+            -- only do it when there is another one to move to. With a single node the
+            -- retry has to land on it again, the way the fast path below always did
+            ctx.server_picker.after_balance(ctx, nodes_count > 1)
         end
 
         if checker then
@@ -331,6 +340,9 @@ local function pick_server(route, ctx)
         return nil, "failed to find valid upstream server, all upstream servers tried"
     end
     ctx.balancer_server = server
+    -- from here on the request holds a server, so the log phase must be able to
+    -- release it even if we bail out below
+    ctx.server_picker = server_picker
 
     local domain = server_picker.addr_to_domain[server]
     local res, err = lrucache_addr(server, nil, parse_addr, server)
@@ -347,7 +359,6 @@ local function pick_server(route, ctx)
     if is_http and ctx.var then
         ctx.var.upstream_unresolved_host = ctx.upstream_unresolved_host
     end
-    ctx.server_picker = server_picker
     res.upstream_host = parse_server_for_upstream_host(res, ctx.upstream_scheme)
 
     return res

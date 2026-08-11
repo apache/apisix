@@ -60,10 +60,20 @@ The `openid-connect` Plugin supports the integration with [OpenID Connect (OIDC)
 | public_key | string | False | | | Public key used to verify JWT signature if asymmetric algorithm is used. Providing this value to perform token verification will skip token introspection in client credentials flow. You can pass the public key in `-----BEGIN PUBLIC KEY-----\n……\n-----END PUBLIC KEY-----` format. |
 | use_jwks | boolean | False | false | | If true and if `public_key` is not set, use the JWKS to verify JWT signature and skip token introspection in client credentials flow. The JWKS endpoint is parsed from the discovery document. |
 | use_pkce | boolean | False | false | | If true, use the Proof Key for Code Exchange (PKCE) for Authorization Code Flow as defined in [RFC 7636](https://datatracker.ietf.org/doc/html/rfc7636). |
+| par | object | False | | | Pushed Authorization Requests (PAR) configuration. |
+| par.enabled | boolean | False | false | | If true, use OAuth 2.0 Pushed Authorization Requests (PAR) as defined in [RFC 9126](https://datatracker.ietf.org/doc/html/rfc9126). Authorization request parameters are sent to the PAR endpoint and the browser is redirected with the returned `request_uri`. |
+| par.endpoint | string | False | | | URL of the PAR endpoint. If unset, the endpoint from the well-known discovery document is used. |
+| par.endpoint_auth_method | string | False | | ["client_secret_basic", "client_secret_post", "private_key_jwt", "client_secret_jwt"] | Authentication method for the PAR endpoint. If unset, `token_endpoint_auth_method` is used. `private_key_jwt` requires `client_rsa_private_key` and `client_secret_jwt` requires `client_secret`; unlike the token endpoint, the PAR request fails outright when the method it is given cannot be used. |
+| dpop | object | False | | | Demonstrating Proof of Possession (DPoP) configuration. |
+| dpop.enabled | boolean | False | false | | If true, use OAuth 2.0 DPoP as defined in [RFC 9449](https://datatracker.ietf.org/doc/html/rfc9449). The Plugin sends DPoP proof JWTs to the token endpoint and uses DPoP-bound access tokens for user info requests. |
+| dpop.signing_alg | string | False | ES256 | ["ES256", "RS256", "PS256"] | Signing algorithm for DPoP proof JWTs. |
+| dpop.private_key | string | False | | | PEM-encoded private key used to sign DPoP proof JWTs. Required when `dpop.enabled` is true. |
+| dpop.public_jwk | object | False | | | Public JWK that matches `dpop.private_key`. Required when `dpop.enabled` is true. The JWK must not contain private key material. |
 | token_signing_alg_values_expected | string | False | | | Algorithm used for signing JWT, such as `RS256`. |
 | set_access_token_header | boolean | False | true | | If true, set the access token in a request header. By default, the `X-Access-Token` header is used. |
 | access_token_in_authorization_header | boolean | False | false | | If true and if `set_access_token_header` is also true, set the access token in the `Authorization` header. |
-| set_id_token_header | boolean | False | true | | If true and if the ID token is available, set the value in the `X-ID-Token` request header. |
+| set_id_token_header | boolean | False | true | | If true and if the ID token is available, set the value in the `X-ID-Token` request header. Note: this header contains `base64(JSON(decoded_claims))` and carries no cryptographic signature. |
+| set_raw_id_token_header | boolean | False | false | | If true and if the raw signed ID token JWT is available, set the value in the `X-Raw-ID-Token` request header. Unlike `X-ID-Token`, this header contains the original RS256-signed JWT from the identity provider and can be verified against the provider's JWKS endpoint. The plugin automatically persists the raw JWT in the session when this option is enabled. |
 | set_userinfo_header | boolean | False | true | | If true and if user info data is available, set the value in the `X-Userinfo` request header. |
 | set_refresh_token_header | boolean | False | false | | If true and if the refresh token is available, set the value in the `X-Refresh-Token` request header. |
 | session | object | False | | | Session configuration used when `bearer_only` is `false` and the Plugin uses Authorization Code flow. |
@@ -107,9 +117,11 @@ The `openid-connect` Plugin supports the integration with [OpenID Connect (OIDC)
 | proxy_opts.https_proxy_authorization | string | False | | Basic [base64 username:password] | Default `Proxy-Authorization` header value to be used with `https_proxy`. Cannot be overridden with custom `Proxy-Authorization` request header since with HTTPS, the authorization is completed when connecting. |
 | proxy_opts.no_proxy | string | False | | | Comma-separated list of hosts that should not be proxied. |
 | authorization_params | object | False | | | Additional parameters to send in the request to the authorization endpoint. |
-| client_rsa_private_key | string | False | | | Client RSA private key used to sign JWT for authentication to the OP. Required when `token_endpoint_auth_method` is `private_key_jwt`. |
-| client_rsa_private_key_id | string | False | | | Client RSA private key ID used to compute a signed JWT. Optional when `token_endpoint_auth_method` is `private_key_jwt`. |
-| client_jwt_assertion_expires_in | integer | False | 60 | | Life duration of the signed JWT for authentication to the OP, in seconds. Used when `token_endpoint_auth_method` is `private_key_jwt` or `client_secret_jwt`. |
+| client_rsa_private_key | string | False | | | Client private key used to sign the client assertion JWT for authentication to the OP. Required whenever `private_key_jwt` is selected, by `token_endpoint_auth_method`, `introspection_endpoint_auth_method` or `par.endpoint_auth_method`. The key type has to match `client_jwt_assertion_alg`: RSA for the `RS*` algorithms, and an EC key on the matching curve for the `ES*` ones. |
+| client_rsa_private_key_id | string | False | | | Client private key ID used to compute the signed client assertion JWT. Optional whenever `private_key_jwt` is selected. |
+| client_jwt_assertion_expires_in | integer | False | 60 | | Life duration of the signed JWT for authentication to the OP, in seconds. Used whenever `private_key_jwt` or `client_secret_jwt` is selected, for the token, introspection or PAR endpoint. |
+| client_jwt_assertion_alg | string | False | | ["HS256", "HS512", "RS256", "RS512", "ES256", "ES512"] | Signing algorithm for the client assertion JWT. Defaults to `RS256` for `private_key_jwt` and `HS256` for `client_secret_jwt`. Use a `HS*` algorithm with `client_secret_jwt` and an asymmetric one with `private_key_jwt`; an asymmetric algorithm also has to match `client_rsa_private_key`, which must be an EC key on P-256 for `ES256` and on P-521 for `ES512`. This is one algorithm for every endpoint, so a configuration cannot select `private_key_jwt` for one endpoint and `client_secret_jwt` for another while setting it. When the discovery document advertises `token_endpoint_auth_signing_alg_values_supported`, the configured value must also be supported by the OP. |
+| client_jwt_assertion_audience | string | False | | | Audience for the client assertion JWT. If unset, the endpoint URL being called is used. Configure this when APISIX reaches the token endpoint through an internal URL but the OP expects its external token endpoint URL as the audience. |
 | renew_access_token_on_expiry | boolean | False | true | | If true, attempt to silently renew the access token when it expires or if a refresh token is available. If the token fails to renew, redirect user for re-authentication. |
 | access_token_expires_in | integer | False | | | Lifetime of the access token in seconds if no `expires_in` attribute is present in the token endpoint response. |
 | refresh_session_interval | integer | False | | | Time interval in seconds to refresh user ID token without requiring re-authentication. When not set, it will not check the expiration time of the session issued to the client by the gateway. |
@@ -134,7 +146,11 @@ The `openid-connect` Plugin supports the integration with [OpenID Connect (OIDC)
 | claim_validator.audience.match_with_client_id | boolean | False | false | | If true, require the audience to match the client ID. If the audience is a string, it must exactly match the client ID. If the audience is an array of strings, at least one of the values must match the client ID. If no match is found, you will receive a `mismatched audience` error. This requirement is stated in the OpenID Connect specification to ensure that the token is intended for the specific client. |
 | claim_schema | object | False | | | JSON schema of OIDC response claim. Example: `{"type":"object","properties":{"access_token":{"type":"string"}},"required":["access_token"]}` - validates that the response contains a required string field `access_token`. |
 
-NOTE: `encrypt_fields = {"client_secret", "client_rsa_private_key"}` is also defined in the schema, which means that the fields will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
+NOTE: The flat `lua-resty-openidc` option names that `par` and `dpop` own (`use_par`, `pushed_authorization_request_endpoint`, `pushed_authorization_request_endpoint_auth_method`, `use_dpop`, `dpop_signing_alg`, `dpop_private_key`, `dpop_public_jwk`) are rejected. Setting them directly would skip the validation and the `dpop.private_key` encryption the nested objects provide. Use the nested attributes instead.
+
+NOTE: Upgrading to this version changes how the client credentials are sent to the token introspection endpoint, even for Plugin configurations that are not modified. `lua-resty-openidc` 1.9.0 only places `client_id` and `client_secret` in the introspection request body when `introspection_endpoint_auth_method` is unset, and this Plugin defaults that attribute to `client_secret_basic`, so the credentials are now sent only in the `Authorization` header. If your OP authenticates the introspection call from the request body, set `introspection_endpoint_auth_method` to `client_secret_post`.
+
+NOTE: `encrypt_fields = {"client_secret", "client_rsa_private_key", "dpop.private_key"}` is also defined in the schema, which means that the fields will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
 
 In addition, you can use Environment Variables or APISIX Secret to store and reference Plugin attributes. APISIX currently supports storing secrets in two ways — [Environment Variables and HashiCorp Vault](../terminology/secret.md).
 
@@ -339,6 +355,46 @@ spec:
 
 See [Implement Authorization Code Grant](../tutorials/keycloak-oidc.md#implement-authorization-code-grant) for a complete example to use the `openid-connect` Plugin to integrate with Keycloak using the authorization code flow.
 
+### Authorization Code Flow with PAR and DPoP
+
+To use Pushed Authorization Requests (PAR), set `par.enabled` to `true`. If `par.endpoint` is not configured, the Plugin uses the PAR endpoint from the well-known discovery document.
+
+To use DPoP-bound access tokens, set `dpop.enabled` to `true` and configure the DPoP signing key material. The `dpop.public_jwk` value should contain only the public JWK fields.
+
+The following example configures the authorization code flow with PAR, DPoP, PKCE, and `private_key_jwt` client authentication:
+
+```json
+{
+  "openid-connect": {
+    "client_id": "apisix",
+    "discovery": "https://idp.example.com/realms/master/.well-known/openid-configuration",
+    "scope": "openid email profile",
+    "redirect_uri": "https://gateway.example.com/api/v1/redirect",
+    "use_pkce": true,
+    "token_endpoint_auth_method": "private_key_jwt",
+    "client_rsa_private_key": "-----BEGIN RSA PRIVATE KEY-----\n...\n-----END RSA PRIVATE KEY-----",
+    "client_jwt_assertion_alg": "RS512",
+    "par": {
+      "enabled": true,
+      "endpoint_auth_method": "private_key_jwt"
+    },
+    "dpop": {
+      "enabled": true,
+      "signing_alg": "PS256",
+      "private_key": "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----",
+      "public_jwk": {
+        "kty": "RSA",
+        "e": "AQAB",
+        "n": "..."
+      }
+    },
+    "session": {
+      "secret": "your-session-secret-min-16-chars"
+    }
+  }
+}
+```
+
 ### Proof Key for Code Exchange (PKCE)
 
 The Proof Key for Code Exchange (PKCE) is defined in [RFC 7636](https://datatracker.ietf.org/doc/html/rfc7636). PKCE enhances the authorization code flow by adding a code challenge and verifier to prevent authorization code interception attacks.
@@ -450,6 +506,16 @@ This section covers a few commonly seen issues when working with this Plugin to 
 ### APISIX Cannot Connect to OpenID Provider
 
 If APISIX fails to resolve or cannot connect to the OpenID provider, double check the DNS settings in your configuration file `config.yaml` and modify as needed.
+
+### State Mismatch in the Authorization Callback
+
+The session holds the state of a single login flow. If the same browser starts a second flow before the first one completes — for example by opening a protected page in another tab — the second flow overwrites the state, and the first tab's callback arrives with a state that no longer matches:
+
+```text
+state from argument does not match state restored from session
+```
+
+For a `GET` callback, the Plugin responds with `302` back to the URL the user was originally trying to reach, so a fresh authentication flow starts from there. When the OpenID provider still holds an SSO session, this completes without any user interaction. Callbacks using other request methods, and callbacks carrying no session at all, still fail with `500`.
 
 ### No Session State Found
 
