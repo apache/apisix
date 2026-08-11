@@ -626,7 +626,7 @@ _EOC_
     # mirrors apisix/cli/ngx_tpl.lua
     map \$http_host \$apisix_observed_port {
         default          \$server_port;
-        "~:(?<p>\\d+)\$" \$p;
+        "~:(?<p>\\\\d+)\$" \$p;
     }
     map \$http_host \$apisix_observed_host {
         default \$http_host;
