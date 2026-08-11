@@ -276,6 +276,7 @@ end
 
 function _M.fetch(conf, ctx)
     local headers = core.request.headers(ctx)
+    ctx.query_gateway_request_uri = ctx.query_gateway_request_uri or ctx.var.request_uri
     local cookie_key, reason = request_is_cacheable(conf, headers)
     if not cookie_key then
         return nil, reason
@@ -298,7 +299,7 @@ function _M.fetch(conf, ctx)
         ctx.route_id or ctx.conf_id or "",
         ctx.var.scheme or "",
         ctx.var.host or "",
-        ctx.var.request_uri or "",
+        ctx.query_gateway_request_uri or "",
         headers["content-type"] or "",
         headers["content-encoding"] or "",
         headers["content-language"] or "",
