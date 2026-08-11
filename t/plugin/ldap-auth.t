@@ -650,3 +650,84 @@ Authorization: bASiC dXNlcjAxOnBhc3N3b3JkMQ==
 hello world
 --- error_log
 find consumer user01
+
+
+
+=== TEST 29: add consumer whose user_dn drops the RDN escaping
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "commauser",
+                    "plugins": {
+                        "ldap-auth": {
+                            "user_dn": "cn=comma,user,ou=users,dc=example,dc=org"
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 30: a username holding a comma does not match the unescaped user_dn
+--- request
+GET /hello
+--- more_headers
+Authorization: Basic Y29tbWEsdXNlcjpjb21tYXBhc3M=
+--- error_code: 401
+--- response_body
+{"message":"Invalid user authorization"}
+--- no_error_log
+find consumer commauser
+
+
+
+=== TEST 31: repoint the consumer at the escaped user_dn
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "commauser",
+                    "plugins": {
+                        "ldap-auth": {
+                            "user_dn": "cn=comma\\,user,ou=users,dc=example,dc=org"
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 32: verify against the escaped user_dn
+--- request
+GET /hello
+--- more_headers
+Authorization: Basic Y29tbWEsdXNlcjpjb21tYXBhc3M=
+--- response_body
+hello world
+--- error_log
+find consumer commauser
