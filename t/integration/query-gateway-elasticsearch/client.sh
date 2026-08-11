@@ -11,7 +11,7 @@ log() {
 
 wait_for_apisix() {
     attempts=0
-    until curl -fsS "$APISIX_URL/" >/dev/null 2>&1; do
+    until curl -sS "$APISIX_URL/" >/dev/null 2>&1; do
         attempts=$((attempts + 1))
         if [ "$attempts" -ge 30 ]; then
             log "event=apisix_unavailable"
