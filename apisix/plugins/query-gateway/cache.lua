@@ -375,7 +375,7 @@ local function response_is_cacheable(conf, ctx, headers)
 end
 
 function _M.header_filter(conf, ctx)
-    if not ctx.query_gateway_cache_key then
+    if ctx.query_gateway_cache_hit or not ctx.query_gateway_cache_key then
         return
     end
 
@@ -404,6 +404,10 @@ function _M.header_filter(conf, ctx)
 end
 
 function _M.body_filter(conf, ctx)
+    if ctx.query_gateway_cache_hit then
+        return
+    end
+
     local entry = ctx.query_gateway_cache_entry
     if not entry then
         return
