@@ -1,0 +1,48 @@
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.18.3
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      xpack.security.http.ssl.enabled: "false"
+      ES_JAVA_OPTS: -Xms512m -Xmx512m
+      es.insecure_network_trace_enabled: "true"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:9200 >/dev/null"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  apisix:
+    build:
+      context: ../../..
+      dockerfile: docker/debian-dev/Dockerfile
+      args:
+        CODE_PATH: .
+        ENTRYPOINT_PATH: ./docker/debian-dev/docker-entrypoint.sh
+        INSTALL_BROTLI: ./docker/debian-dev/install-brotli.sh
+    environment:
+      APISIX_STAND_ALONE: "true"
+    volumes:
+      - ./conf/config.yaml:/usr/local/apisix/conf/config.yaml:ro
+      - ./conf/apisix.yaml:/usr/local/apisix/conf/apisix.yaml:ro
+    ports:
+      - "19080:9080"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+
+  client:
+    image: curlimages/curl:8.12.1
+    entrypoint: ["/bin/sh", "/tests/client.sh"]
+    environment:
+      APISIX_URL: http://apisix:9080
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+    volumes:
+      - ./client.sh:/tests/client.sh:ro
+      - ./artifacts:/artifacts
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+      apisix:
+        condition: service_started
