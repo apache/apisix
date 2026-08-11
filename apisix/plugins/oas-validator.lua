@@ -35,6 +35,13 @@ local DEFAULT_SPEC_URL_TTL = 3600
 local schema = {
     type = "object",
     properties = {
+        max_req_body_size = {
+            type = "integer",
+            minimum = 1,
+            default = 67108864,
+            description = "maximum request body size in bytes buffered into "
+                       .. "memory; larger request bodies are rejected",
+        },
         spec = {
             description = "schema against which the request/response will be validated",
             type = "string",
@@ -244,7 +251,7 @@ function _M.access(conf, ctx)
 
     local req_body
     if not conf.skip_request_body_validation then
-        local body, body_err = core.request.get_body()
+        local body, body_err = core.request.get_body(conf.max_req_body_size)
         if body_err ~= nil then
             core.log.error("failed reading request body, err: " .. body_err)
             return 500, {message = "error reading the request body. err: " .. body_err}

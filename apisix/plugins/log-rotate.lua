@@ -218,11 +218,13 @@ local function rotate_file(files, now_time, max_kept, timeout)
     for _, file in ipairs(files) do
         local now_date = os_date("%Y-%m-%d_%H-%M-%S", now_time)
         local new_file = rename_file(default_logs[file], now_date)
-        if not new_file then
-            return
+        if new_file then
+            core.table.insert(new_files, new_file)
         end
+    end
 
-        core.table.insert(new_files, new_file)
+    if core.table.isempty(new_files) then
+        return
     end
 
     -- send signal to reopen log files

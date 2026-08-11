@@ -108,7 +108,7 @@ unhealthy TCP increment (1/2) for '127.0.0.1(0.0.0.0:1988)'
 
 
 
-=== TEST 2: create new checker when nodes change
+=== TEST 2: reuse checker incrementally when nodes change
 --- apisix_yaml
 routes:
   -
@@ -150,11 +150,10 @@ routes:
         }
     }
 --- grep_error_log eval
-qr/(create new checker|releasing existing checker): table/
+qr/(create new checker|reused checker with incremental targets): table/
 --- grep_error_log_out
 create new checker: table
-releasing existing checker: table
-create new checker: table
+reused checker with incremental targets: table
 --- timeout: 30
 
 

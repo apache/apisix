@@ -20,7 +20,6 @@
 -- @module core.config_yaml
 
 local config_local = require("apisix.core.config_local")
-local config_util  = require("apisix.core.config_util")
 local yaml         = require("lyaml")
 local log          = require("apisix.core.log")
 local json         = require("apisix.core.json")
@@ -244,21 +243,15 @@ local function sync_data(self)
                 exist_items[tostring(item.id)] = true
             end
             -- remove objects that exist in the self.values but do not exist in the new items.
-            -- for removed items, trigger cleanup handlers.
             for _, item in ipairs(self.values) do
                 local id = item.value.id
-                if not exist_items[id]  then
-                    config_util.fire_all_clean_handlers(item)
-                else
+                if exist_items[id] then
                     insert_tab(exist_values, item)
                     self.values_hash[id] = #exist_values
                 end
             end
             self.values = exist_values
         else
-            for _, item in ipairs(self.values) do
-                config_util.fire_all_clean_handlers(item)
-            end
             self.values = nil
         end
     end
@@ -296,7 +289,6 @@ local function sync_data(self)
         if data_valid then
             insert_tab(self.values, conf_item)
             self.values_hash[self.key] = #self.values
-            conf_item.clean_handlers = {}
 
             if self.filter then
                 self.filter(conf_item)
@@ -349,16 +341,13 @@ local function sync_data(self)
                     local pre_val = self.values[pre_index]
                     if pre_val and
                         (not item.modifiedIndex or pre_val.modifiedIndex ~= item.modifiedIndex) then
-                        config_util.fire_all_clean_handlers(pre_val)
                         self.values[pre_index] = conf_item
                         conf_item.value.id = item_id
-                        conf_item.clean_handlers = {}
                     end
                 else
                     insert_tab(self.values, conf_item)
                     self.values_hash[item_id] = #self.values
                     conf_item.value.id = item_id
-                    conf_item.clean_handlers = {}
                 end
 
                 if self.filter then

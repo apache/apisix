@@ -890,3 +890,74 @@ X-Real-IP: 192.0.2.10
 wolf_rbac_access_check clientIP: 127.0.0.1
 --- no_error_log
 wolf_rbac_access_check clientIP: 192.0.2.10
+
+
+
+=== TEST 43: consumer and route that echo upstream-bound request headers
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "wolf_rbac_no_echo",
+                    "plugins": {
+                        "wolf-rbac": {
+                            "appid": "wolf-rbac-app-noecho",
+                            "server": "http://127.0.0.1:1982"
+                        }
+                    }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            code, body = t('/apisix/admin/routes/2',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "wolf-rbac": {},
+                        "serverless-post-function": {
+                            "phase": "access",
+                            "functions": [
+                                "return function(conf, ctx) local core = require(\"apisix.core\"); core.response.exit(200, core.request.headers(ctx)); end"
+                            ]
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1982": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello/no_userinfo"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 44: client-supplied identity headers dropped when auth response omits userInfo
+--- request
+GET /hello/no_userinfo
+--- more_headers
+Authorization: V1#wolf-rbac-app-noecho#wolf-rbac-token
+X-UserId: spoofid007
+X-Username: spoofadmin
+--- error_code: 200
+--- response_body_like eval
+qr/(?s)^(?!.*spoofid007)(?!.*spoofadmin).*authorization/
+--- no_error_log
+[error]

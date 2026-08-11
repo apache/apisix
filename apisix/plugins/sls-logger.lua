@@ -58,7 +58,8 @@ local schema = {
         project = {type = "string"},
         logstore = {type = "string"},
         access_key_id = {type = "string"},
-        access_key_secret = {type ="string"}
+        access_key_secret = {type ="string"},
+        ssl_verify = {type = "boolean", default = true}
     },
     encrypt_fields = {"access_key_secret"},
     required = {"host", "port", "project", "logstore", "access_key_id", "access_key_secret"}
@@ -108,7 +109,7 @@ local function send_tcp_data(route_conf, log_message)
                       .. "] port[" .. tostring(route_conf.port) .. "] err: " .. err
     end
 
-    ok, err = sock:sslhandshake(true, nil, false)
+    ok, err = sock:sslhandshake(true, route_conf.host, route_conf.ssl_verify)
     if not ok then
         return false, "failed to perform TLS handshake to TCP server: host["
                       .. route_conf.host .. "] port[" .. tostring(route_conf.port)

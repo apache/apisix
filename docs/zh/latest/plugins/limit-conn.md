@@ -71,6 +71,8 @@ import TabItem from '@theme/TabItem';
 | rules.burst | integer 或 string | 是 | | >= 0 或 [lua-resty-expr](https://github.com/api7/lua-resty-expr) | 允许延迟的过多并发请求数。超过 `conn + burst` 的请求将被立即拒绝。该参数也支持 string 数据类型，并允许使用以美元符号（`$`）为前缀的内置变量。|
 | rules.key | string | 是 | | | 用于计数请求的键。如果配置的键不存在，则不会执行该规则。`key` 被解释为变量的组合。所有变量都应以美元符号（`$`）为前缀。|
 
+注意：schema 中还定义了 `encrypt_fields = {"redis_password"}`，这意味着该字段将会被加密存储在 etcd 中。具体参考[加密存储字段](../plugin-develop.md#加密存储字段)。
+
 ## 示例
 
 以下示例演示了如何在不同场景中配置 `limit-conn`。

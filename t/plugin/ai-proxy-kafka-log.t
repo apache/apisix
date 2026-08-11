@@ -137,6 +137,10 @@ X-AI-Fixture: openai/chat-basic.json
 send data to kafka:
 llm_request
 llm_summary
+tool_count
+cache_read_input_tokens
+cache_creation_input_tokens
+reasoning_tokens
 You are a mathematician
 gpt-35-turbo-instruct
 llm_response_text
@@ -413,3 +417,60 @@ send data to kafka:
 llm_request
 llm_summary
 some content
+
+
+
+=== TEST 9: set_logging records every observability field in llm_summary
+--- config
+    location /t {
+        content_by_lua_block {
+            local base = require("apisix.plugins.ai-proxy.base")
+            local ctx = {
+                var = {
+                    request_llm_model = "m-req",
+                    llm_model = "m",
+                    llm_time_to_first_token = 12,
+                    llm_prompt_tokens = 11,
+                    llm_completion_tokens = 22,
+                    llm_total_tokens = 33,
+                    apisix_upstream_response_time = 1.5,
+                    llm_stream = "true",
+                    llm_tool_count = 2,
+                    llm_has_tool_calls = "true",
+                    llm_end_user_id = "user-1",
+                    llm_cache_read_input_tokens = 5,
+                    llm_cache_creation_input_tokens = 6,
+                    llm_reasoning_tokens = 7,
+                    llm_content_risk_level = "low",
+                }
+            }
+            base.set_logging(ctx, true, false)
+            local s = ctx.llm_summary
+            local keys = {
+                "request_model", "model", "duration", "prompt_tokens",
+                "completion_tokens", "total_tokens", "upstream_response_time",
+                "stream", "tool_count", "has_tool_calls", "end_user_id",
+                "cache_read_input_tokens", "cache_creation_input_tokens",
+                "reasoning_tokens", "content_risk_level",
+            }
+            for _, k in ipairs(keys) do
+                ngx.say(k, "=", tostring(s[k]))
+            end
+        }
+    }
+--- response_body
+request_model=m-req
+model=m
+duration=12
+prompt_tokens=11
+completion_tokens=22
+total_tokens=33
+upstream_response_time=1.5
+stream=true
+tool_count=2
+has_tool_calls=true
+end_user_id=user-1
+cache_read_input_tokens=5
+cache_creation_input_tokens=6
+reasoning_tokens=7
+content_risk_level=low

@@ -2076,12 +2076,23 @@ curl "http://127.0.0.1:9080/anything" -X POST \
 以下示例演示了如何在网关的访问日志中记录 LLM 请求相关信息，以改进分析和审计。以下变量可用：
 
 * `request_llm_model`：请求中指定的 LLM 模型名称。
-* `apisix_upstream_response_time`：APISIX 向上游服务发送请求并接收完整响应所花费的时间
+* `apisix_upstream_response_time`：APISIX 向上游服务发送请求并接收完整响应所花费的时间（毫秒）。LLM 服务返回的错误响应（如 429 或 5xx）同样以毫秒记录。
 * `request_type`：请求类型，值可能是 `traditional_http`、`ai_chat` 或 `ai_stream`。
-* `llm_time_to_first_token`：从发送请求到从 LLM 服务接收第一个令牌的持续时间（毫秒）。
+* `llm_time_to_first_token`：从发送请求到从 LLM 服务接收第一个令牌的持续时间（毫秒）。当 LLM 服务返回错误响应时，该值为收到错误响应为止的持续时间；当完全无法连接到 LLM 服务时，该值保持为 `0`。
 * `llm_model`：LLM 模型。
 * `llm_prompt_tokens`：提示中的令牌数量。
-* `llm_completion_tokens`：提示中的聊天完成令牌数量。
+* `llm_completion_tokens`：响应中的聊天完成令牌数量。
+* `llm_total_tokens`：使用的总令牌数（提示加完成）。
+* `llm_cache_read_input_tokens`：从缓存读取的输入令牌数量。
+* `llm_cache_creation_input_tokens`：写入缓存的输入令牌数量。
+* `llm_reasoning_tokens`：生成的推理令牌数量。
+* `llm_stream`：请求是否为流式请求（`true` 或 `false`）。
+* `llm_tool_count`：请求中提供的工具数量。
+* `llm_has_tool_calls`：当响应包含工具调用时为 `true`。
+* `llm_end_user_id`：从请求中提取的终端用户标识（例如 OpenAI 的 `user` 字段）。
+* `llm_content_risk_level`：内容审核报告的内容风险等级。
+
+当启用 `logging.summaries` 时，这些变量也会写入 `llm_summary` 日志对象（使用去掉 `llm_` 前缀的名称），日志插件无需额外配置即可使用。
 
 在配置文件中更新访问日志格式以包含其他 LLM 相关变量：
 

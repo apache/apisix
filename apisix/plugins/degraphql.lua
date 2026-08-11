@@ -25,6 +25,13 @@ local type = type
 local schema = {
     type = "object",
     properties = {
+        max_req_body_size = {
+            type = "integer",
+            minimum = 1,
+            default = 67108864,
+            description = "maximum request body size in bytes buffered into "
+                       .. "memory; larger request bodies are rejected",
+        },
         query = {
             type = "string",
             minLength = 1,
@@ -75,7 +82,7 @@ end
 
 
 local function fetch_post_variables(conf)
-    local req_body, err = core.request.get_body()
+    local req_body, err = core.request.get_body(conf.max_req_body_size)
     if err ~= nil then
         core.log.error("failed to get request body: ", err)
         return nil, 503
@@ -146,7 +153,7 @@ function _M.access(conf, ctx)
     if meth == "POST" then
         if not conf.variables then
             -- the set_body_data requires to read the body first
-            core.request.get_body()
+            core.request.get_body(conf.max_req_body_size)
         end
 
         core.request.set_header(ctx, "Content-Type", "application/json")
