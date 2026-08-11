@@ -7,7 +7,7 @@ REQUESTS = $(ARTIFACTS)/requests
 run:
 	mkdir -p $(ARTIFACTS)
 	$(COMPOSE) up --build -d apisix elasticsearch
-	$(COMPOSE) run --rm client > $(ARTIFACTS)/client.log
+	@$(COMPOSE) run --rm client > $(ARTIFACTS)/client.log || { status=$$?; $(MAKE) logs; exit $$status; }
 	$(MAKE) logs
 	$(MAKE) analyze
 
