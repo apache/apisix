@@ -1,0 +1,23 @@
+routes:
+  - id: query-gateway-elasticsearch
+    uri: /search
+    vars:
+      - - request_method
+        - ==
+        - QUERY
+    plugins:
+      proxy-rewrite:
+        uri: /query-gateway-integration/_search
+        headers:
+          X-Opaque-ID: $http_x_opaque_id
+      query-gateway:
+        cache:
+          enabled: true
+          backend: local
+          ttl: 30
+    upstream:
+      type: roundrobin
+      scheme: http
+      nodes:
+        "elasticsearch:9200": 1
+#END
