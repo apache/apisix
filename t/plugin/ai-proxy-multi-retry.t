@@ -217,3 +217,48 @@ POST /anything
 --- response_body_like: slow internal error
 --- error_log
 exceeding retry_on_failure_within_ms 200
+
+
+
+=== TEST 7: fallback preserves $request_llm_model as the client's original model
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-proxy-multi": {
+                            "fallback_strategy": ["http_5xx"],
+                            "instances": [
+                                {"name":"err-1","provider":"openai-compatible","weight":1,"priority":10,"auth":{"header":{"Authorization":"Bearer token"}},"options":{"model":"gpt-4"},"override":{"endpoint":"http://127.0.0.1:6731"}},
+                                {"name":"success","provider":"openai-compatible","weight":1,"priority":0,"auth":{"header":{"Authorization":"Bearer token"}},"options":{"model":"gpt-4-turbo"},"override":{"endpoint":"http://127.0.0.1:6733"}}
+                            ],
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+=== TEST 8: request_llm_model retains the client's original model across fallback
+--- request
+POST /anything
+{ "model": "model_test", "messages": [ { "role": "user", "content": "What is 1+1?"} ] }
+--- response_body chomp
+success
+--- error_code: 200
+--- error_log
+request_llm_model=model_test
+--- no_error_log
+request_llm_model=gpt-4

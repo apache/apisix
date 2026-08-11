@@ -956,7 +956,8 @@ local function retry_on_error(ctx, conf, code, body)
         -- The failed attempt's body never reaches the client (a later attempt
         -- responds instead), so surface the upstream error here for diagnostics.
         core.log.warn("ai instance ", failed_instance, " returned status ", code,
-                      ", falling back to ", name, ". upstream error body: ",
+                      ", falling back to ", name, ", request_llm_model=",
+                      ctx.var.request_llm_model, ". upstream error body: ",
                       body or "")
         ctx.balancer_ip = name
         ctx.picked_ai_instance_name = name
