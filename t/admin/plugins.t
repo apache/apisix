@@ -116,6 +116,7 @@ ai-lakera-guard
 proxy-mirror
 graphql-proxy-cache
 proxy-rewrite
+query-gateway
 workflow
 api-breaker
 graphql-limit-count
