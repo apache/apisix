@@ -624,11 +624,11 @@ _EOC_
     $lua_deps_path
 
     # mirrors apisix/cli/ngx_tpl.lua
-    map \$http_host \$apisix_observed_port {
+    map \$http_host \$var_x_forwarded_port {
         default          \$server_port;
         "~:(?<p>\\\\d+)\$" \$p;
     }
-    map \$http_host \$apisix_observed_host {
+    map \$http_host \$var_x_forwarded_host {
         default \$http_host;
         ""      \$host;
     }
@@ -965,8 +965,8 @@ _EOC_
             set \$apisix_orig_xf_port   \$http_x_forwarded_port;
             set \$apisix_orig_forwarded \$http_forwarded;
             more_set_input_headers "X-Forwarded-Proto: \$scheme";
-            more_set_input_headers "X-Forwarded-Host: \$apisix_observed_host";
-            more_set_input_headers "X-Forwarded-Port: \$apisix_observed_port";
+            more_set_input_headers "X-Forwarded-Host: \$var_x_forwarded_host";
+            more_set_input_headers "X-Forwarded-Port: \$var_x_forwarded_port";
             more_set_input_headers "Forwarded: ";
 
             ### the following x-forwarded-* headers is to send to upstream server

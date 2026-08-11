@@ -280,14 +280,17 @@ http {
     # That is the case worth optimizing for: with no `apisix.trusted_addresses`
     # configured no peer is trusted, so it is what every request gets.
     #
+    # These keep the names the `set` directives they replace used, and hold the
+    # same thing: what X-Forwarded-Host and X-Forwarded-Port are given below.
+    #
     # the port carried by the Host header, falling back to the listener's own
-    map $http_host $apisix_observed_port {
+    map $http_host $var_x_forwarded_port {
         default         $server_port;
         "~:(?<p>\\d+)$" $p;
     }
     # `$http_host` rather than `$host`: the port the client connected to belongs
     # in X-Forwarded-Host, and `$host` drops it
-    map $http_host $apisix_observed_host {
+    map $http_host $var_x_forwarded_host {
         default $http_host;
         ""      $host;
     }
@@ -908,15 +911,15 @@ http {
             # derives from them -- the upstream headers come from `r->headers_in`
             # and Lua's `ctx.var.http_x_forwarded_*` re-reads it through the prefix
             # handler -- but an access log format that names them logs what the
-            # client sent. `$scheme` / `$apisix_observed_host` /
-            # `$apisix_observed_port` are the sanitized values.
+            # client sent. `$scheme` / `$var_x_forwarded_host` /
+            # `$var_x_forwarded_port` are the sanitized values.
             set $apisix_orig_xf_proto  $http_x_forwarded_proto;
             set $apisix_orig_xf_host   $http_x_forwarded_host;
             set $apisix_orig_xf_port   $http_x_forwarded_port;
             set $apisix_orig_forwarded $http_forwarded;
             more_set_input_headers "X-Forwarded-Proto: $scheme";
-            more_set_input_headers "X-Forwarded-Host: $apisix_observed_host";
-            more_set_input_headers "X-Forwarded-Port: $apisix_observed_port";
+            more_set_input_headers "X-Forwarded-Host: $var_x_forwarded_host";
+            more_set_input_headers "X-Forwarded-Port: $var_x_forwarded_port";
             more_set_input_headers "Forwarded: ";
 
             # X-Forwarded-Proto/Host/Port are not set here: `r->headers_in` already

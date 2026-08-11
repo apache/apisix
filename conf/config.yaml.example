@@ -173,7 +173,7 @@ apisix:
                                   # are read there, so they cache the client's raw value for the rest of the
                                   # request. An access log format or a config-level `if` that reads them sees
                                   # what the client sent, not the override. Use `$scheme`,
-                                  # `$apisix_observed_host` and `$apisix_observed_port` for the overridden
+                                  # `$var_x_forwarded_host` and `$var_x_forwarded_port` for the overridden
                                   # values; `core.request.header` and `ctx.var.http_x_forwarded_*` in Lua are
                                   # unaffected and always see the overridden ones.
   # fine tune the parameters of LRU cache for some features like secret
