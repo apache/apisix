@@ -102,7 +102,7 @@ local schema = {
 
 local _M = {
     version  = 0.3,
-    priority = 1009,
+    priority = -1001,
     name     = plugin_name,
     schema   = schema,
 }
@@ -148,6 +148,7 @@ function _M.access(conf, ctx)
     if cache_conf and cache_conf.enabled and (method == "QUERY" or post_cache_enabled) then
         local entry, status = cache.fetch(cache_conf, ctx)
         if entry then
+            ctx.query_gateway_cache_hit = true
             return cache.serve(entry)
         end
 
