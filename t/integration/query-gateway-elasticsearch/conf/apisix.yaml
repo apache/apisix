@@ -1,5 +1,5 @@
 routes:
-  - id: query-gateway-elasticsearch
+  - id: query-gateway-elasticsearch-query
     uri: /search
     vars:
       - - request_method
@@ -11,6 +11,31 @@ routes:
         headers:
           X-Opaque-ID: $http_x_opaque_id
       query-gateway:
+        cache:
+          enabled: true
+          backend: local
+          ttl: 30
+    upstream:
+      type: roundrobin
+      scheme: http
+      nodes:
+        "elasticsearch:9200": 1
+
+  - id: query-gateway-elasticsearch-post
+    uri: /search
+    vars:
+      - - request_method
+        - ==
+        - POST
+    plugins:
+      proxy-rewrite:
+        uri: /query-gateway-integration/_search
+        headers:
+          X-Opaque-ID: $http_x_opaque_id
+      query-gateway:
+        post:
+          cache_enabled: true
+          read_only: true
         cache:
           enabled: true
           backend: local
