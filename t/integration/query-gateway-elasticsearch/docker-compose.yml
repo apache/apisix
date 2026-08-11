@@ -5,8 +5,7 @@ services:
       discovery.type: single-node
       xpack.security.enabled: "false"
       xpack.security.http.ssl.enabled: "false"
-      ES_JAVA_OPTS: -Xms512m -Xmx512m
-      es.insecure_network_trace_enabled: "true"
+      ES_JAVA_OPTS: -Xms512m -Xmx512m -Des.insecure_network_trace_enabled=true
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://localhost:9200 >/dev/null"]
       interval: 5s
