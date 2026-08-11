@@ -273,6 +273,25 @@ stream {
 
 {% if enable_http then %}
 http {
+    # X-Forwarded-* sanitization, first half. The second is
+    # `handle_trusted_x_forwarded_headers` in apisix/init.lua.
+    #
+    # Every request is neutralized unconditionally, in the rewrite phase, in C.
+    # That is the case worth optimizing for: with no `apisix.trusted_addresses`
+    # configured no peer is trusted, so it is what every request gets.
+    #
+    # the port carried by the Host header, falling back to the listener's own
+    map $http_host $apisix_observed_port {
+        default         $server_port;
+        "~:(?<p>\\d+)$" $p;
+    }
+    # `$http_host` rather than `$host`: the port the client connected to belongs
+    # in X-Forwarded-Host, and `$host` drops it
+    map $http_host $apisix_observed_host {
+        default $http_host;
+        ""      $host;
+    }
+
     # put extra_lua_path in front of the builtin path
     # so user can override the source code
     lua_package_path  "{*extra_lua_path*}$prefix/deps/share/lua/5.1/?.lua;$prefix/deps/share/lua/5.1/?/init.lua;]=]
@@ -880,14 +899,25 @@ http {
 
             ### the following x-forwarded-* headers is to send to upstream server
 
-            set $var_x_forwarded_proto      $scheme;
-            set $var_x_forwarded_host       $host;
-            set $var_x_forwarded_port       $server_port;
+            # Take copies before neutralizing, so a trusted peer's own values can
+            # be put back. ngx_rewrite's `set` runs before headers_more's handler,
+            # which is what makes this ordering work -- do not reorder these.
+            set $apisix_orig_xf_proto  $http_x_forwarded_proto;
+            set $apisix_orig_xf_host   $http_x_forwarded_host;
+            set $apisix_orig_xf_port   $http_x_forwarded_port;
+            set $apisix_orig_forwarded $http_forwarded;
+            more_set_input_headers "X-Forwarded-Proto: $scheme";
+            more_set_input_headers "X-Forwarded-Host: $apisix_observed_host";
+            more_set_input_headers "X-Forwarded-Port: $apisix_observed_port";
+            more_set_input_headers "Forwarded: ";
 
+            # X-Forwarded-Proto/Host/Port are not set here: `r->headers_in` already
+            # holds the values this request should carry, and proxy_pass forwards it
+            # as it stands. That is also what lets a plugin rewrite them -- a
+            # `proxy_set_header` would overwrite the plugin's value with whatever the
+            # variable held. X-Forwarded-For is different: the connection address has
+            # to be appended, which only $proxy_add_x_forwarded_for does.
             proxy_set_header   X-Forwarded-For      $proxy_add_x_forwarded_for;
-            proxy_set_header   X-Forwarded-Proto    $var_x_forwarded_proto;
-            proxy_set_header   X-Forwarded-Host     $var_x_forwarded_host;
-            proxy_set_header   X-Forwarded-Port     $var_x_forwarded_port;
 
             {% if enabled_plugins["proxy-cache"] or enabled_plugins["graphql-proxy-cache"] then %}
             ###  the following configuration is to cache response content from upstream server
@@ -1000,10 +1030,13 @@ http {
             proxy_set_header   X-Real-IP         $remote_addr;
             proxy_pass_header  Date;
 
+            # X-Forwarded-Proto/Host/Port are not set here: `r->headers_in` already
+            # holds the values this request should carry, and proxy_pass forwards it
+            # as it stands. That is also what lets a plugin rewrite them -- a
+            # `proxy_set_header` would overwrite the plugin's value with whatever the
+            # variable held. X-Forwarded-For is different: the connection address has
+            # to be appended, which only $proxy_add_x_forwarded_for does.
             proxy_set_header   X-Forwarded-For      $proxy_add_x_forwarded_for;
-            proxy_set_header   X-Forwarded-Proto    $var_x_forwarded_proto;
-            proxy_set_header   X-Forwarded-Host     $var_x_forwarded_host;
-            proxy_set_header   X-Forwarded-Port     $var_x_forwarded_port;
 
             proxy_pass      $upstream_scheme://apisix_backend$upstream_uri;
 

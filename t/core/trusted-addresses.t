@@ -68,6 +68,7 @@ x-forwarded-proto: http
 x-real-ip: 127.0.0.1
 --- error_log
 trusted_addresses is not configured
+--- no_error_log
 trusted_addresses_matcher is not initialized
 
 
@@ -438,3 +439,202 @@ x-forwarded-host: example.com
 x-forwarded-port: 8443
 x-forwarded-proto: https
 x-real-ip: 127.0.0.1
+
+
+
+=== TEST 11: Host carrying a port sets X-Forwarded-Host and X-Forwarded-Port from it
+--- yaml_config
+apisix:
+    node_listen: 1984
+    enable_admin: false
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
+--- apisix_yaml
+routes:
+  -
+    id: 1
+    uri: /old_uri
+    upstream:
+        nodes:
+            "127.0.0.1:1980": 1
+        type: roundrobin
+#END
+--- request
+GET /old_uri
+--- more_headers
+Host: example.com:8443
+--- response_body
+uri: /old_uri
+host: example.com:8443
+x-forwarded-for: 127.0.0.1
+x-forwarded-host: example.com:8443
+x-forwarded-port: 8443
+x-forwarded-proto: http
+x-real-ip: 127.0.0.1
+--- error_log
+trusted_addresses is not configured
+--- no_error_log
+trusted_addresses_matcher is not initialized
+
+
+
+=== TEST 12: request without a Host header falls back to $host
+--- yaml_config
+apisix:
+    node_listen: 1984
+    enable_admin: false
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
+--- apisix_yaml
+routes:
+  -
+    id: 1
+    uri: /old_uri
+    upstream:
+        nodes:
+            "127.0.0.1:1980": 1
+        type: roundrobin
+        pass_host: rewrite
+        upstream_host: localhost
+#END
+--- raw_request eval
+"GET /old_uri HTTP/1.0\r\n\r\n"
+--- response_body
+uri: /old_uri
+host: localhost
+x-forwarded-for: 127.0.0.1
+x-forwarded-host: localhost
+x-forwarded-port: 1984
+x-forwarded-proto: http
+x-real-ip: 127.0.0.1
+--- error_log
+trusted_addresses is not configured
+--- no_error_log
+trusted_addresses_matcher is not initialized
+
+
+
+=== TEST 13: trusted client that sent no X-Forwarded-* still gets the observed values
+--- yaml_config
+apisix:
+    node_listen: 1984
+    enable_admin: false
+    trusted_addresses:
+        - "127.0.0.1"
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
+--- apisix_yaml
+routes:
+  -
+    id: 1
+    uri: /old_uri
+    upstream:
+        nodes:
+            "127.0.0.1:1980": 1
+        type: roundrobin
+#END
+--- request
+GET /old_uri
+--- response_body
+uri: /old_uri
+host: localhost
+x-forwarded-for: 127.0.0.1
+x-forwarded-host: localhost
+x-forwarded-port: 1984
+x-forwarded-proto: http
+x-real-ip: 127.0.0.1
+--- no_error_log
+trusted_addresses is not configured
+trusted_addresses_matcher is not initialized
+
+
+
+=== TEST 14: trusted client, proxy-rewrite of X-Forwarded-Proto reaches the upstream
+--- yaml_config
+apisix:
+    node_listen: 1984
+    enable_admin: false
+    trusted_addresses:
+        - "127.0.0.1"
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
+--- apisix_yaml
+routes:
+  -
+    id: 1
+    uri: /old_uri
+    plugins:
+        proxy-rewrite:
+            headers:
+                X-Forwarded-Proto: https
+    upstream:
+        nodes:
+            "127.0.0.1:1980": 1
+        type: roundrobin
+#END
+--- request
+GET /old_uri
+--- more_headers
+X-Forwarded-Proto: grpc
+--- response_body
+uri: /old_uri
+host: localhost
+x-forwarded-for: 127.0.0.1
+x-forwarded-host: localhost
+x-forwarded-port: 1984
+x-forwarded-proto: https
+x-real-ip: 127.0.0.1
+--- no_error_log
+trusted_addresses is not configured
+trusted_addresses_matcher is not initialized
+
+
+
+=== TEST 15: client not in trusted list, every forged forwarding header is dropped
+--- yaml_config
+apisix:
+    node_listen: 1984
+    enable_admin: false
+    trusted_addresses:
+        - "1.0.0.1"
+        - "10.0.0.0/8"
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
+--- apisix_yaml
+routes:
+  -
+    id: 1
+    uri: /old_uri
+    upstream:
+        nodes:
+            "127.0.0.1:1980": 1
+        type: roundrobin
+#END
+--- request
+GET /old_uri
+--- more_headers
+X-Forwarded-For: 9.9.9.9
+X-Forwarded-Proto: https
+X-Forwarded-Host: evil.com
+Forwarded: for=1.2.3.4
+--- response_body
+uri: /old_uri
+host: localhost
+x-forwarded-for: 127.0.0.1
+x-forwarded-host: localhost
+x-forwarded-port: 1984
+x-forwarded-proto: http
+x-real-ip: 127.0.0.1
+--- no_error_log
+trusted_addresses is not configured
+trusted_addresses_matcher is not initialized
