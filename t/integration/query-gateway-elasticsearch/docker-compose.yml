@@ -33,6 +33,7 @@ services:
 
   client:
     image: curlimages/curl:8.12.1
+    user: "0:0"
     entrypoint: ["/bin/sh", "/tests/client.sh"]
     environment:
       APISIX_URL: http://apisix:9080
