@@ -116,7 +116,6 @@ ai-lakera-guard
 proxy-mirror
 graphql-proxy-cache
 proxy-rewrite
-query-gateway
 workflow
 api-breaker
 graphql-limit-count
@@ -158,6 +157,7 @@ clickhouse-logger
 tencent-cloud-cls
 inspect
 example-plugin
+query-gateway
 aws-lambda
 azure-functions
 openwhisk
