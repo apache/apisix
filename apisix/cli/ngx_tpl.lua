@@ -902,6 +902,14 @@ http {
             # Take copies before neutralizing, so a trusted peer's own values can
             # be put back. ngx_rewrite's `set` runs before headers_more's handler,
             # which is what makes this ordering work -- do not reorder these.
+            #
+            # Reading `$http_x_forwarded_*` here indexes them, so they keep the
+            # client's raw value for the rest of the request. Nothing downstream
+            # derives from them -- the upstream headers come from `r->headers_in`
+            # and Lua's `ctx.var.http_x_forwarded_*` re-reads it through the prefix
+            # handler -- but an access log format that names them logs what the
+            # client sent. `$scheme` / `$apisix_observed_host` /
+            # `$apisix_observed_port` are the sanitized values.
             set $apisix_orig_xf_proto  $http_x_forwarded_proto;
             set $apisix_orig_xf_host   $http_x_forwarded_host;
             set $apisix_orig_xf_port   $http_x_forwarded_port;

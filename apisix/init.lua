@@ -697,10 +697,14 @@ end
 -- its first line and nothing else runs.
 --
 -- `set` captures an absent header as the empty string, so "" means the peer sent
--- nothing and the value the config injected stays -- which is the value the
--- upstream has always received for a peer that sent no X-Forwarded-Proto.
--- `ctx.var.http_x_forwarded_*` is updated alongside, so a plugin reading it in a
--- later phase sees the restored value rather than the injected one.
+-- nothing and the value the config injected stays. That is a deliberate change
+-- for a trusted peer: the Lua-only implementation skipped the whole rewrite for
+-- one, so a header it did not send stayed absent and the upstream fell through to
+-- `$host` / `$server_port`. A trusted peer now gets the same observed values an
+-- untrusted one does -- the Host with its port and case, rather than the
+-- lower-cased portless `$host` -- which is the value the untrusted path has always
+-- produced. `ctx.var.http_x_forwarded_*` is updated alongside, so a plugin reading
+-- it in a later phase sees the restored value rather than the injected one.
 local function restore_if_sent(api_ctx, header_name, var_name, orig)
     if not orig or orig == "" then
         return

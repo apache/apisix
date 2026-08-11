@@ -168,6 +168,14 @@ apisix:
                                   # address, it is reset so the upstream only sees the APISIX-observed
                                   # connection IP; when `trusted_addresses` is not configured, it is
                                   # preserved and the connection IP is appended (compatible default).
+                                  # The override happens in the NGINX configuration, before any Lua runs.
+                                  # A side effect: `$http_x_forwarded_proto/host/port` and `$http_forwarded`
+                                  # are read there, so they cache the client's raw value for the rest of the
+                                  # request. An access log format or a config-level `if` that reads them sees
+                                  # what the client sent, not the override. Use `$scheme`,
+                                  # `$apisix_observed_host` and `$apisix_observed_port` for the overridden
+                                  # values; `core.request.header` and `ctx.var.http_x_forwarded_*` in Lua are
+                                  # unaffected and always see the overridden ones.
   # fine tune the parameters of LRU cache for some features like secret
   lru:
     secret:
