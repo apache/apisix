@@ -55,6 +55,15 @@ _EOC_
     if (!defined $block->request) {
         $block->set_value("request", "GET /t");
     }
+
+    # Every scrape needs the stream block in its own config. The zone backing
+    # the bandwidth and active connection metrics is declared there and is read
+    # while the exposition is built, so a block generated without a stream
+    # block has nothing to read -- and the reload into it drops the zone, which
+    # takes the running totals with it.
+    if ($block->request =~ m{/apisix/prometheus/metrics}) {
+        $block->set_value("stream_enable", 1);
+    }
 });
 
 run_tests;
