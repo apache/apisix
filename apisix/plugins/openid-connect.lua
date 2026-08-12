@@ -973,6 +973,13 @@ function _M.check_schema(conf)
                           "backchannel_logout.storage is redis and " ..
                           "session.redis is not configured"
         end
+        -- revocation is keyed off the id_token's sid/sub claims, so a restricted
+        -- session_contents must still keep id_token, else requests silently skip the denylist.
+        if type(conf.session_contents) == "table" and not conf.session_contents.id_token then
+            return false, "backchannel_logout requires session_contents.id_token " ..
+                          "to be true when session_contents is configured, because " ..
+                          "session revocation is keyed off the id_token's sid/sub claims"
+        end
     end
 
     if conf.claim_schema and not secret.is_secret_ref(conf.claim_schema) then
