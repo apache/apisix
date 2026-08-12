@@ -658,7 +658,112 @@ Allow: POST
 
 
 
-=== TEST 20: Set up the Keycloak route and register the BCL URL at the client.
+=== TEST 20: A logout token whose iss does not match the discovery issuer is rejected.
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require "lib.test_admin"
+            local bcl = require "lib.backchannel_logout"
+
+            local token = bcl.sign({
+                iss = "http://127.0.0.1:6724/wrong",
+                jti = "jti-bcl-iss-mismatch",
+                sid = "sess-iss-mismatch",
+            })
+
+            local res, err = t.req_self_with_http("/bcl", "POST",
+                                                  "logout_token=" .. token)
+            if not res then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+            ngx.status = res.status
+
+            local entry = ngx.shared.bcl:get(
+                "bcl:sid:http://127.0.0.1:6724#bcl-client#sess-iss-mismatch")
+            ngx.say("denylist entry: ", entry ~= nil)
+        }
+    }
+--- response_body
+denylist entry: false
+--- error_code: 400
+--- error_log
+iss does not match the discovery issuer
+
+
+
+=== TEST 21: A logout token with an iat far in the future is rejected.
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require "lib.test_admin"
+            local bcl = require "lib.backchannel_logout"
+
+            local token = bcl.sign({
+                iat = ngx.time() + 1200,
+                exp = ngx.time() + 1320,
+                jti = "jti-bcl-future-iat",
+                sid = "sess-future-iat",
+            })
+
+            local res, err = t.req_self_with_http("/bcl", "POST",
+                                                  "logout_token=" .. token)
+            if not res then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+            ngx.status = res.status
+
+            local entry = ngx.shared.bcl:get(
+                "bcl:sid:http://127.0.0.1:6724#bcl-client#sess-future-iat")
+            ngx.say("denylist entry: ", entry ~= nil)
+        }
+    }
+--- response_body
+denylist entry: false
+--- error_code: 400
+--- error_log
+iat is outside the acceptance window
+
+
+
+=== TEST 22: A logout token whose aud is an array containing the client_id is accepted.
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require "lib.test_admin"
+            local bcl = require "lib.backchannel_logout"
+
+            local token = bcl.sign({
+                aud = { "bcl-client", "another-client" },
+                jti = "jti-bcl-array-aud",
+                sid = "sess-arrayaud",
+            })
+
+            local res, err = t.req_self_with_http("/bcl", "POST",
+                                                  "logout_token=" .. token)
+            if not res then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+            ngx.status = res.status
+
+            local entry = ngx.shared.bcl:get(
+                "bcl:sid:http://127.0.0.1:6724#bcl-client#sess-arrayaud")
+            ngx.say("denylist entry: ", entry ~= nil)
+        }
+    }
+--- response_body
+denylist entry: true
+--- error_log
+OIDC backchannel logout accepted for sid sess-arrayaud
+
+
+
+=== TEST 23: Set up the Keycloak route and register the BCL URL at the client.
 --- config
     location /t {
         content_by_lua_block {
@@ -725,7 +830,7 @@ bcl configured
 
 
 
-=== TEST 21: The session is rejected after the IdP delivers a back-channel logout (sid).
+=== TEST 24: The session is rejected after the IdP delivers a back-channel logout (sid).
 --- config
     location /t {
         content_by_lua_block {
@@ -807,7 +912,7 @@ OIDC session revoked by backchannel logout
 
 
 
-=== TEST 22: With unauth_action deny, a revoked session gets 401.
+=== TEST 25: With unauth_action deny, a revoked session gets 401.
 --- config
     location /t {
         content_by_lua_block {
@@ -936,7 +1041,7 @@ OIDC session revoked by backchannel logout
 
 
 
-=== TEST 23: A sub-only logout kills the session; a later login survives.
+=== TEST 26: A sub-only logout kills the session; a later login survives.
 --- config
     location /t {
         content_by_lua_block {
@@ -1089,7 +1194,7 @@ OIDC session revoked by backchannel logout
 
 
 
-=== TEST 24: With storage redis, an accepted logout token lands in redis.
+=== TEST 27: With storage redis, an accepted logout token lands in redis.
 --- config
     location /t {
         content_by_lua_block {
@@ -1169,7 +1274,7 @@ OIDC backchannel logout accepted for sid sess-21
 
 
 
-=== TEST 25: storage redis without an own redis block falls back to session.redis.
+=== TEST 28: storage redis without an own redis block falls back to session.redis.
 --- config
     location /t {
         content_by_lua_block {
@@ -1251,7 +1356,7 @@ OIDC backchannel logout accepted for sid sess-22
 
 
 
-=== TEST 26: The endpoint answers 400 when the redis store is unreachable.
+=== TEST 29: The endpoint answers 400 when the redis store is unreachable.
 --- config
     location /t {
         content_by_lua_block {
@@ -1314,7 +1419,7 @@ OIDC backchannel logout store failed
 
 
 
-=== TEST 27: A request with the store down gets 503 and the session is kept.
+=== TEST 30: A request with the store down gets 503 and the session is kept.
 --- config
     location /t {
         content_by_lua_block {
@@ -1414,7 +1519,7 @@ OIDC backchannel logout store failed
 
 
 
-=== TEST 28: With storage redis, session.absolute_timeout 0 still falls back to a usable TTL.
+=== TEST 31: With storage redis, session.absolute_timeout 0 still falls back to a usable TTL.
 --- config
     location /t {
         content_by_lua_block {
@@ -1498,7 +1603,7 @@ OIDC backchannel logout accepted for sid sess-27
 
 
 
-=== TEST 29: With storage redis, the denylist entry stores the token's iat, not receipt time.
+=== TEST 32: With storage redis, the denylist entry stores the token's iat, not receipt time.
 --- config
     location /t {
         content_by_lua_block {
