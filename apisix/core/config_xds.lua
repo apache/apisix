@@ -324,7 +324,9 @@ function _M.new(key, opts)
             err = ok2
         end
 
-        if err then
+        -- "no keys" means the xds key has no data yet, not a failure; the
+        -- periodic fetch loop above already treats it as non-error
+        if err and err ~= "no keys" then
             log.error("failed to fetch data from xds ",
                       err, ", ", key)
         end
