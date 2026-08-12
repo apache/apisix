@@ -214,7 +214,7 @@ GET /hello?code=valid_code
 
 
 
-=== TEST 6.1: query code with a state not bound to the session is rejected
+=== TEST 7: query code with a state not bound to the session is rejected
 --- request
 GET /hello?code=valid_code&state=deadbeefdeadbeefdeadbeefdeadbeef
 --- error_code: 401
@@ -223,7 +223,7 @@ GET /hello?code=valid_code&state=deadbeefdeadbeefdeadbeefdeadbeef
 
 
 
-=== TEST 6.2: invalid code with a valid state - returns 401
+=== TEST 8: invalid code with a valid state - returns 401
 --- config
     location /t {
         content_by_lua_block {
@@ -239,7 +239,7 @@ GET /hello?code=valid_code&state=deadbeefdeadbeefdeadbeefdeadbeef
 
 
 
-=== TEST 7: valid code via query param - returns 200
+=== TEST 9: valid code via query param - returns 200
 --- config
     location /t {
         content_by_lua_block {
@@ -255,7 +255,7 @@ hello world
 
 
 
-=== TEST 7.1: a state from one session cannot be used by another session
+=== TEST 10: a state from one session cannot be used by another session
 --- config
     location /t {
         content_by_lua_block {
@@ -295,7 +295,7 @@ passed
 
 
 
-=== TEST 8: valid code via X-DingTalk-Code header - returns 200
+=== TEST 11: valid code via X-DingTalk-Code header - returns 200
 --- request
 GET /hello
 --- more_headers
@@ -306,7 +306,7 @@ hello world
 
 
 
-=== TEST 9: cookie session - subsequent requests reuse session
+=== TEST 12: cookie session - subsequent requests reuse session
 --- config
     location /t {
         content_by_lua_block {
@@ -344,7 +344,7 @@ passed
 
 
 
-=== TEST 10: cookie expires after cookie_expires_in seconds
+=== TEST 13: cookie expires after cookie_expires_in seconds
 --- config
     location /t {
         content_by_lua_block {
@@ -387,7 +387,7 @@ passed
 
 
 
-=== TEST 11: configure custom code_header and code_query
+=== TEST 14: configure custom code_header and code_query
 --- config
     location /t {
         content_by_lua_block {
@@ -428,7 +428,7 @@ passed
 
 
 
-=== TEST 12: custom code_query param works
+=== TEST 15: custom code_query param works
 --- config
     location /t {
         content_by_lua_block {
@@ -456,7 +456,7 @@ passed
 
 
 
-=== TEST 13: custom code_header works
+=== TEST 16: custom code_header works
 --- pipelined_requests eval
 ["GET /hello", "GET /hello"]
 --- more_headers eval
@@ -469,7 +469,7 @@ passed
 
 
 
-=== TEST 14: client-supplied X-Userinfo is not forwarded to upstream
+=== TEST 17: client-supplied X-Userinfo is not forwarded to upstream
 --- config
     location /t {
         content_by_lua_block {

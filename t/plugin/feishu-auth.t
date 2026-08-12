@@ -180,7 +180,7 @@ GET /hello?code=passed&state=deadbeefdeadbeefdeadbeefdeadbeef
 
 
 
-=== TEST 4.1: invalid code with a valid state
+=== TEST 5: invalid code with a valid state
 --- config
     location /t {
         content_by_lua_block {
@@ -196,7 +196,7 @@ GET /hello?code=passed&state=deadbeefdeadbeefdeadbeefdeadbeef
 
 
 
-=== TEST 4.2: valid code with the state bound to the session
+=== TEST 6: valid code with the state bound to the session
 --- config
     location /t {
         content_by_lua_block {
@@ -212,7 +212,7 @@ hello world
 
 
 
-=== TEST 4.3: a state from one session cannot be used by another session
+=== TEST 7: a state from one session cannot be used by another session
 --- config
     location /t {
         content_by_lua_block {
@@ -252,7 +252,7 @@ passed
 
 
 
-=== TEST 5: X-Feishu-Code with invalid code
+=== TEST 8: X-Feishu-Code with invalid code
 --- request
 GET /hello
 --- more_headers
@@ -263,7 +263,7 @@ X-Feishu-Code: invalid
 
 
 
-=== TEST 6: X-Feishu-Code header
+=== TEST 9: X-Feishu-Code header
 --- request
 GET /hello
 --- more_headers
@@ -274,7 +274,7 @@ hello world
 
 
 
-=== TEST 7: check cookie
+=== TEST 10: check cookie
 --- config
     location /t {
         content_by_lua_block {
@@ -317,7 +317,7 @@ passed
 
 
 
-=== TEST 8: cookie expire
+=== TEST 11: cookie expire
 --- config
     location /t {
         content_by_lua_block {
@@ -366,7 +366,7 @@ passed
 
 
 
-=== TEST 9: specify header and query and redirect_uri
+=== TEST 12: specify header and query and redirect_uri
 --- config
     location /t {
         content_by_lua_block {
@@ -412,7 +412,7 @@ passed
 
 
 
-=== TEST 10: specify query
+=== TEST 13: specify query
 --- config
     location /t {
         content_by_lua_block {
@@ -440,7 +440,7 @@ passed
 
 
 
-=== TEST 11: specify header
+=== TEST 14: specify header
 --- pipelined_requests eval
 ["GET /hello", "GET /hello"]
 --- more_headers eval
@@ -453,7 +453,7 @@ passed
 
 
 
-=== TEST 12: secret_fallbacks allows session created with old secret after key rotation
+=== TEST 15: secret_fallbacks allows session created with old secret after key rotation
 --- config
     location /t {
         content_by_lua_block {
@@ -573,7 +573,7 @@ passed
 
 
 
-=== TEST 13: forged X-Userinfo header does not bypass authentication
+=== TEST 16: forged X-Userinfo header does not bypass authentication
 --- config
     location /t {
         content_by_lua_block {
@@ -693,7 +693,7 @@ passed
 
 
 
-=== TEST 14: secret_fallbacks values are encrypted in etcd
+=== TEST 17: secret_fallbacks values are encrypted in etcd
 --- yaml_config
 apisix:
     data_encryption:
