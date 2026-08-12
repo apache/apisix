@@ -231,7 +231,10 @@ end
 -- so the code that comes back can be tied to the browser that started the flow
 local function redirect_to_login(conf, opts)
     local bytes = resty_random.bytes(STATE_BYTES, true)
-                    or resty_random.bytes(STATE_BYTES)
+    if not bytes then
+        core.log.error("failed to get strong random bytes for the state")
+        return 500, {message = "Failed to generate state"}
+    end
     local state = resty_string.to_hex(bytes)
 
     local sess = session.start(opts)

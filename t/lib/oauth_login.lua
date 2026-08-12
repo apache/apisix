@@ -16,8 +16,28 @@
 --
 local http = require("resty.http")
 local str_match = string.match
+local table_concat = table.concat
+local type = type
+local ipairs = ipairs
 
 local _M = {}
+
+
+-- resty.http hands back a table when the response carries several Set-Cookie
+-- headers, so keep only each one's name=value and join them the way a Cookie
+-- request header expects
+local function to_cookie_header(set_cookie)
+    if type(set_cookie) ~= "table" then
+        return set_cookie
+    end
+
+    local parts = {}
+    for i, entry in ipairs(set_cookie) do
+        parts[i] = str_match(entry, "^[^;]+")
+    end
+
+    return table_concat(parts, "; ")
+end
 
 
 -- follow the redirect to the login page and return the session cookie
@@ -34,7 +54,7 @@ function _M.begin(port, path)
         return nil, nil, "expected 302 to the login page, got " .. res.status
     end
 
-    local cookie = res.headers["Set-Cookie"]
+    local cookie = to_cookie_header(res.headers["Set-Cookie"])
     local state = str_match(res.headers["Location"] or "", "state=([0-9a-f]+)")
     if not cookie or not state then
         return nil, nil, "redirect did not carry a session cookie and a state"
