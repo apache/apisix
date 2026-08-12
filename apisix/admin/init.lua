@@ -294,27 +294,43 @@ local function unsupported_methods_reload_plugin()
 end
 
 
+-- defined after sync_local_conf_to_etcd
+local reload_plugins_and_sync
+
+
 local function post_reload_plugins()
     set_ctx_and_check_token()
 
+    -- Bump the version first, before anything is committed anywhere. It is
+    -- what the reconciliation timer replays, so it has to exist before this
+    -- worker changes its own plugin set: if the broadcast is then lost, the
+    -- other workers still converge on the next tick. Failing here commits
+    -- nothing, so every worker simply stays on the current set.
     if plugins_conf_ver_dict then
-        -- bump the version before broadcasting, so that a process which never
-        -- receives the event (e.g. the privileged agent while it is
-        -- reconnecting to the events broker) still converges through the
-        -- periodic reconciliation below
-        local _, err = plugins_conf_ver_dict:incr(PLUGINS_CONF_VERSION_KEY, 1, 0)
-        if err then
-            -- if the version cannot be bumped the reconciliation timer will
-            -- never notice a change, so a worker that misses the broadcast
-            -- would stay stale forever; fail loud instead of pretending success
-            core.log.error("failed to increase plugins conf version: ", err)
+        local _, incr_err = plugins_conf_ver_dict:incr(PLUGINS_CONF_VERSION_KEY, 1, 0)
+        if incr_err then
+            core.log.error("failed to increase plugins conf version: ", incr_err)
             core.response.exit(503, {error_msg = "failed to record plugins reload"})
         end
     end
 
-    local success, err = events:post(reload_event, get_method(), ngx_time())
+    -- reload on this worker first, so that a plugin set which cannot be loaded
+    -- is reported to the operator instead of an unconditional "done".
+    -- reload_plugins_and_sync() records the version it sampled whether or not
+    -- the load worked, so a set that fails to load is attempted once per
+    -- worker and then left alone -- they all keep serving the previous one.
+    local ok, err = reload_plugins_and_sync()
+    if not ok then
+        core.log.error("failed to hot reload plugins: ", err)
+        core.response.exit(500, {error_msg = "failed to reload plugins: " .. err})
+    end
+
+    local success, post_err = events:post(reload_event, get_method(), ngx_time())
     if not success then
-        core.response.exit(503, err)
+        -- the version was bumped before this worker committed, so the others
+        -- converge through the reconciliation timer even with the event lost
+        core.log.error("failed to broadcast the plugins reload: ", post_err)
+        core.response.exit(503, {error_msg = tostring(post_err)})
     end
 
     core.response.exit(200, "done")
@@ -397,7 +413,7 @@ local function sync_local_conf_to_etcd(reset)
 end
 
 
-local function reload_plugins(data, event, source, pid)
+function reload_plugins_and_sync()
     core.log.info("start to hot reload plugins")
 
     -- sample the version before loading: if another reload is accepted while
@@ -408,14 +424,42 @@ local function reload_plugins(data, event, source, pid)
         ver = plugins_conf_ver_dict:get(PLUGINS_CONF_VERSION_KEY)
     end
 
-    plugin.load()
+    local ok, err = plugin.load()
 
+    -- record the sampled version even when the load failed: the reconciliation
+    -- timer would otherwise retry the very same plugin set every second, and
+    -- every attempt tears the live set down and rebuilds it. The cost is that
+    -- this worker keeps its previous set until some later reload bumps the
+    -- version again -- a load that failed for a transient reason (reading the
+    -- plugin file while it was still being written, say) does not recover on
+    -- its own, it only logs
     if ver then
         applied_plugins_conf_version = ver
     end
 
+    if not ok then
+        return nil, err
+    end
+
     if ngx_worker_id() == 0 then
         sync_local_conf_to_etcd()
+    end
+
+    return true
+end
+
+
+local function reload_plugins(data, event, source, wid)
+    if wid == ngx_worker_id() then
+        -- this worker has already reloaded synchronously while serving the
+        -- Admin API request, see post_reload_plugins()
+        return
+    end
+
+    local ok, err = reload_plugins_and_sync()
+    if not ok then
+        core.log.error("failed to hot reload plugins: ", err,
+                       ", this worker keeps the old plugin set")
     end
 end
 
