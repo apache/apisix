@@ -28,6 +28,7 @@ local ngx               = ngx
 local ipairs            = ipairs
 local type              = type
 local tostring          = tostring
+local tonumber          = tonumber
 local pcall             = pcall
 local concat            = table.concat
 local unpack            = unpack

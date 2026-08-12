@@ -102,6 +102,10 @@ import TabItem from '@theme/TabItem';
 | session.redis.send_timeout | integer | 否 | 1000 | | 发送超时时间，单位为毫秒。 |
 | session.redis.read_timeout | integer | 否 | 1000 | | 读取超时时间，单位为毫秒。 |
 | session.redis.keepalive_timeout | integer | 否 | 10000 | | 保活超时时间，单位为毫秒。 |
+| backchannel_logout | object | 否 | | | OIDC Back-Channel Logout 1.0 接收端。配置后，身份提供商可以向 `backchannel_logout.path` POST 一个 `logout_token`，被撤销的会话从下一个请求起即被拒绝。不能与 `bearer_only` 同时使用。 |
+| backchannel_logout.path | string | 是 | | | 接收身份提供商后端通道注销 POST 请求的路由内路径。路由必须覆盖该路径，且应在身份提供商处将完整的公开 URL 注册为客户端的 backchannel logout URL。 |
+| backchannel_logout.storage | string | 否 | shm | ["shm","redis"] | 撤销记录的存储位置。`shm` 为每个网关实例独立：多节点部署中身份提供商的 POST 只会到达一个节点，因此应使用 `redis`。设置为 `redis` 且未配置 `backchannel_logout.redis` 时，复用 `session.redis`。 |
+| backchannel_logout.redis | object | 否 | | | 撤销存储的 Redis 连接。字段与 `session.redis` 相同，但 `prefix` 默认为 `bcl`。 |
 | session_contents | object | 否 | | | 会话内容配置。如果未配置，所有数据将存储在会话中。 |
 | session_contents.access_token | boolean | 否 | | | 如果为 true，则在会话中存储访问令牌。 |
 | session_contents.id_token | boolean | 否 | | | 如果为 true，则在会话中存储 ID 令牌。 |
@@ -458,6 +462,20 @@ OpenID Connect (OIDC) 中的 UserInfo 端点在 [OpenID Connect Core 1.0 第 5.3
 ![用户信息流程图](https://static.api7.ai/uploads/2026/04/21/WU7wdpMu_7-user-info-flow.webp)
 
 当 `set_userinfo_header` 为 `true`（默认值）时，插件在 `X-Userinfo` 请求头中设置用户信息数据，上游服务可使用该数据进行进一步处理。
+
+### 后端通道注销（Back-Channel Logout）
+
+配置 `backchannel_logout` 后，插件实现 [OIDC Back-Channel Logout 1.0](https://openid.net/specs/openid-connect-backchannel-1_0.html)：
+当用户在其他地方注销或管理员撤销会话时，身份提供商会通知网关，对应的会话 Cookie 立即失效，而不是继续有效直至其存储的令牌过期。
+
+将 `https://<your-route-host>` + `backchannel_logout.path` 注册为身份提供商处该客户端的 backchannel logout URL。
+在 Keycloak 中对应客户端的 **Backchannel logout URL** 和 **Backchannel logout session required** 设置；启用 *session required* 后，身份提供商会在注销令牌中携带 `sid` 声明，从而只注销一个会话，否则该用户在此客户端的所有会话都会被注销。
+Keycloak 会在用户注销和管理员撤销会话时发送后端通道注销，但不会在会话过期时发送；Okta、Microsoft Entra ID 和 Google 则完全不发送。
+注意，身份提供商通常不会重试传输失败的投递，因此恰好在网关节点重启瞬间到达的注销可能会丢失。
+
+携带 `sid` 声明的注销令牌只撤销对应的那一个会话；只携带 `sub` 的令牌会撤销该用户当时的所有会话：之后进行的登录不受影响。
+撤销记录保留 `session.absolute_timeout` 秒（未设置时为 86400 秒）。
+如果检查请求时无法访问撤销存储，该请求返回 `503`，会话保持不变。
 
 ## 故障排除
 

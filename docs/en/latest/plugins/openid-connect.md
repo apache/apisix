@@ -103,6 +103,10 @@ The `openid-connect` Plugin supports the integration with [OpenID Connect (OIDC)
 | session.redis.send_timeout | integer | False | 1000 | | Send timeout in milliseconds. |
 | session.redis.read_timeout | integer | False | 1000 | | Read timeout in milliseconds. |
 | session.redis.keepalive_timeout | integer | False | 10000 | | Keepalive timeout in milliseconds. |
+| backchannel_logout | object | False | | | OIDC Back-Channel Logout 1.0 receiver. When configured, the identity provider can POST a `logout_token` to `backchannel_logout.path`, and the revoked session is rejected from the next request on. Cannot be combined with `bearer_only`. |
+| backchannel_logout.path | string | True | | | In-route path that receives the provider's back-channel logout POST. The route must cover this path, and the full public URL should be registered at the provider as the client's backchannel logout URL. |
+| backchannel_logout.storage | string | False | shm | ["shm","redis"] | Where revocations are stored. `shm` is per-gateway-instance: in multi-node deployments the provider's POST only reaches one node, so use `redis`. When set to `redis` and `backchannel_logout.redis` is omitted, `session.redis` is reused. |
+| backchannel_logout.redis | object | False | | | Redis connection for the revocation store. Same fields as `session.redis`, except `prefix` defaults to `bcl`. |
 | session_contents | object | False | | | Session content configurations. If unconfigured, all data will be stored in the session. |
 | session_contents.access_token | boolean | False | | | If true, store the access token in the session. |
 | session_contents.id_token | boolean | False | | | If true, store the ID token in the session. |
@@ -459,6 +463,20 @@ The following diagram illustrates the interaction between different entities whe
 ![User info flow diagram](https://static.api7.ai/uploads/2026/04/21/WU7wdpMu_7-user-info-flow.webp)
 
 When `set_userinfo_header` is `true` (the default), the Plugin sets user info data in the `X-Userinfo` request header, which the Upstream can use for further processing.
+
+### Back-Channel Logout
+
+When `backchannel_logout` is configured, the Plugin implements [OIDC Back-Channel Logout 1.0](https://openid.net/specs/openid-connect-backchannel-1_0.html):
+the identity provider notifies the gateway when a user logs out elsewhere or an administrator revokes a session, and the corresponding session cookie stops being accepted immediately, instead of remaining valid until its stored token expiry.
+
+Register `https://<your-route-host>` + `backchannel_logout.path` at the provider as the client's backchannel logout URL.
+In Keycloak these are the client's **Backchannel logout URL** and **Backchannel logout session required** settings; enabling *session required* makes the provider send a `sid` claim so exactly one session is logged out, otherwise all of the user's sessions at this client are logged out.
+Keycloak sends back-channel logout on user logout and on administrative session revocation, but not on session expiry; Okta, Microsoft Entra ID and Google do not send it at all.
+Note that providers generally do not retry a delivery that fails in transit, so a logout arriving in the instant a gateway node restarts can be lost.
+
+A logout token with a `sid` claim revokes that one session; a token with only `sub` revokes every session the user had at the time: a login performed afterwards is unaffected.
+Revocations are kept for `session.absolute_timeout` seconds (86400 when unset).
+If the revocation store cannot be reached while checking a request, the request fails with `503` and the session is kept.
 
 ## Troubleshooting
 
