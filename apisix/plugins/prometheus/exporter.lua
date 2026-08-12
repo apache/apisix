@@ -292,7 +292,9 @@ local STREAM_REASON_TO_CODE = {
 
 -- Active session counts and byte counters are maintained by nginx in a shared
 -- memory zone (apisix_stream_metrics_zone) so that they keep moving during a
--- long-lived session. The zone is global, so a single worker publishes it.
+-- long-lived session instead of only landing when it ends. The zone holds
+-- process wide totals, so it is read once per scrape, by whichever worker
+-- happens to serve the metrics endpoint.
 local STREAM_BANDWIDTH_DIRECTIONS = {
     {"downstream_ingress", "ingress", "downstream"},
     {"downstream_egress", "egress", "downstream"},
@@ -300,80 +302,141 @@ local STREAM_BANDWIDTH_DIRECTIONS = {
     {"upstream_ingress", "ingress", "upstream"},
 }
 
-local stream_zone_totals = {}
+-- How much of each zone total has already been added to the counter. This
+-- lives in the metric dict rather than in worker memory so that every worker
+-- claims against the same value, and so that it is dropped together with the
+-- counters it describes whenever that dict is flushed.
+local STREAM_PUBLISHED_PREFIX = "stream_bytes_published:"
+
+local stream_metrics_lib
+local stream_metrics_lib_checked = false
 
 
-local function collect_stream_zone_metrics(premature, stream_metrics)
-    -- metrics is cleared while stream_init re-registers them, the timer may
-    -- well fire in that window
-    if premature or not metrics.stream_active_connections then
+local function stream_metrics_zone()
+    if stream_metrics_lib_checked then
+        return stream_metrics_lib
+    end
+    stream_metrics_lib_checked = true
+
+    local ok, lib = pcall(require, "resty.apisix.stream.metrics")
+    if not ok then
+        core.log.warn("stream bandwidth and active connection metrics need a ",
+                      "runtime providing resty.apisix.stream.metrics")
+        return nil
+    end
+
+    local _, err = lib.dump()
+    if err then
+        core.log.warn("stream bandwidth and active connection metrics are off: ", err)
+        return nil
+    end
+
+    stream_metrics_lib = lib
+    return lib
+end
+
+
+-- Move the published total forward and return how much of the move is ours to
+-- count. Two workers scraping at the same instant read the same starting
+-- point, so the range is claimed with an atomic incr rather than a
+-- read-modify-write: the loser sees the key run past the zone total, hands the
+-- excess back and counts only what is left.
+local function claim_stream_bytes(dict, key, total, delta)
+    -- the init argument covers the key being flushed between the read and the
+    -- claim: it rebaselines instead of failing
+    local claimed, err = dict:incr(key, delta, total - delta)
+    if not claimed then
+        core.log.error("failed to claim stream bandwidth for ", key, ": ", err)
+        return 0
+    end
+
+    if claimed <= total then
+        return delta
+    end
+
+    local excess = claimed - total
+    local _, incr_err = dict:incr(key, -excess)
+    if incr_err then
+        core.log.error("failed to return an over claim for ", key, ": ", incr_err)
+    end
+
+    return delta - excess
+end
+
+
+local function publish_stream_bytes(dict, listen_addr, direction, total)
+    local field = direction[1]
+    local key = STREAM_PUBLISHED_PREFIX .. listen_addr .. ":" .. field
+
+    -- The zone counts from when nginx started while the counter outlives a
+    -- reload, so the first sight of a slot only takes a baseline; replaying
+    -- the whole total into a counter that survived would double it. The cost
+    -- is that traffic before the first scrape is not counted.
+    if dict:add(key, total) then
         return
     end
 
-    local entries, err = stream_metrics.dump()
+    local published = dict:get(key)
+    if not published then
+        -- evicted between the add and the get, rebaseline on the next scrape
+        dict:set(key, total)
+        return
+    end
+
+    local delta = total - published
+    if delta == 0 then
+        return
+    end
+
+    if delta < 0 then
+        -- Either the zone was recreated under us, or another worker is midway
+        -- through a claim it has not handed back yet. Read once more before
+        -- rewinding: a claim in flight lasts microseconds, a recreated zone
+        -- stays low.
+        published = dict:get(key) or total
+        delta = total - published
+        if delta >= 0 then
+            return
+        end
+
+        dict:incr(key, delta)
+        return
+    end
+
+    local counted = claim_stream_bytes(dict, key, total, delta)
+    if counted > 0 then
+        metrics.stream_bandwidth:inc(counted,
+            gen_arr(listen_addr, direction[2], direction[3]))
+    end
+end
+
+
+local function collect_stream_zone_metrics()
+    if not metrics.stream_active_connections then
+        return
+    end
+
+    local lib = stream_metrics_zone()
+    if not lib then
+        return
+    end
+
+    local entries, err = lib.dump()
     if not entries then
         core.log.error("failed to read the stream metrics zone: ", err)
         return
     end
+
+    local dict = prometheus.dict
 
     for _, entry in ipairs(entries) do
         local listen_addr = entry.listen_addr
 
         metrics.stream_active_connections:set(entry.active, gen_arr(listen_addr))
 
-        local seen = stream_zone_totals[listen_addr]
-        if not seen then
-            -- The zone holds totals while the metric holds a counter that
-            -- outlives this worker, so the first read only takes a baseline;
-            -- otherwise a worker restart would replay everything.
-            seen = {}
-            stream_zone_totals[listen_addr] = seen
-            for _, direction in ipairs(STREAM_BANDWIDTH_DIRECTIONS) do
-                seen[direction[1]] = entry[direction[1]]
-            end
-
-        else
-            for _, direction in ipairs(STREAM_BANDWIDTH_DIRECTIONS) do
-                local field = direction[1]
-                local total = entry[field]
-                local delta = total - seen[field]
-
-                -- a negative delta means the zone was recreated, rebaseline
-                if delta > 0 then
-                    metrics.stream_bandwidth:inc(delta,
-                        gen_arr(listen_addr, direction[2], direction[3]))
-                end
-                seen[field] = total
-            end
+        for _, direction in ipairs(STREAM_BANDWIDTH_DIRECTIONS) do
+            publish_stream_bytes(dict, listen_addr, direction, entry[direction[1]])
         end
-    end
-end
-
-
-local function init_stream_zone_collector()
-    if ngx.get_phase() ~= "init_worker" or ngx.worker.id() ~= 0 then
-        return
-    end
-
-    local ok, stream_metrics = pcall(require, "resty.apisix.stream.metrics")
-    if not ok then
-        core.log.warn("stream bandwidth and active connection metrics need a ",
-                      "runtime providing resty.apisix.stream.metrics")
-        return
-    end
-
-    local _, err = stream_metrics.dump()
-    if err then
-        core.log.warn("stream bandwidth and active connection metrics are off: ", err)
-        return
-    end
-
-    core.table.clear(stream_zone_totals)
-
-    local timer_ok, timer_err = ngx.timer.every(1, collect_stream_zone_metrics,
-                                                stream_metrics)
-    if not timer_ok then
-        core.log.error("failed to start the stream metrics timer: ", timer_err)
     end
 end
 
@@ -600,8 +663,6 @@ function _M.stream_init()
     prometheus = base_prometheus.init("prometheus-metrics", metric_prefix)
 
     init_stream_metrics()
-
-    init_stream_zone_collector()
 end
 
 
@@ -1031,6 +1092,10 @@ end
 local function collect(yieldable)
     -- collect ngx.shared.DICT status
     shared_dict_status()
+
+    -- the stream zone is process wide, reading it here keeps the exposition
+    -- exact at the moment of the scrape
+    collect_stream_zone_metrics()
 
     -- across all services
     nginx_status()

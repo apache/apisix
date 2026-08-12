@@ -125,8 +125,8 @@ qr/apisix_stream_status\{code="200",listen_addr="[^"]+",node="127.0.0.1:1995"\} 
 
 
 === TEST 4: bandwidth and active connections come from the nginx zone
-The collector publishes the zone once a second, so drive the traffic between
-two ticks instead of relying on whatever happened in the previous block.
+The zone is read while the metrics endpoint is served, so a session that is
+still open has to show up in that same scrape.
 
 The upstream has to stay open after answering: the shared fake upstreams close
 as soon as they have written their line, and nginx finalizes the session on the
@@ -193,19 +193,35 @@ server {
                 return
             end
 
-            -- The session is still open here, so the zone must be counting
-            -- it. Read the zone rather than the exposition: whether the
-            -- collector has published yet depends on when the stream plugins
-            -- finished loading, which is not what this case is about. TEST 9
-            -- covers the published gauge.
-            local zone = require("resty.apisix.stream.metrics")
-            local live = "no-slot"
-            for _, e in ipairs(zone.dump() or {}) do
-                if e.listen_addr == "0.0.0.0:1985" then
-                    live = e.active
-                end
+            -- The session is still open here, so this scrape has to report it.
+            -- Raw socket rather than ngx.location.capture: capturing into an
+            -- APISIX route leaves the upstream connect without a usable
+            -- api_ctx.
+            local scrape = ngx.socket.tcp()
+            ok, err = scrape:connect("127.0.0.1", 1984)
+            if not ok then
+                ngx.say("scrape connect: ", err)
+                return
             end
-            ngx.say("live=", live)
+
+            ok, err = scrape:send("GET /apisix/prometheus/metrics HTTP/1.0\r\n"
+                                  .. "Host: 127.0.0.1\r\n\r\n")
+            if not ok then
+                ngx.say("scrape send: ", err)
+                return
+            end
+
+            local body, rerr, partial = scrape:receive("*a")
+            scrape:close()
+            body = body or partial
+            if not body then
+                ngx.say("scrape: ", rerr)
+                return
+            end
+
+            local live = body:match('apisix_stream_active_connections'
+                .. '{listen_addr="0%.0%.0%.0:1985"[^}]*} (%d+)')
+            ngx.say("live=", live or "no-series")
 
             ok, err = sock:close()
             if not ok then
