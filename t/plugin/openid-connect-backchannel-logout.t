@@ -262,22 +262,9 @@ passed
     location /t {
         content_by_lua_block {
             local t = require "lib.test_admin"
-            local r_jwt = require "resty.jwt"
+            local bcl = require "lib.backchannel_logout"
 
-            local token = r_jwt:sign(t.read_file("t/certs/private.pem"), {
-                header = { typ = "JWT", alg = "RS256", kid = "bclkey" },
-                payload = {
-                    iss = "http://127.0.0.1:6724",
-                    aud = "bcl-client",
-                    iat = ngx.time(),
-                    exp = ngx.time() + 120,
-                    jti = "jti-test6",
-                    events = {
-                        ["http://schemas.openid.net/event/backchannel-logout"] = {}
-                    },
-                    sid = "sess-6",
-                }
-            })
+            local token = bcl.sign({ jti = "jti-test6", sid = "sess-6" })
 
             local res, err = t.req_self_with_http("/bcl", "POST",
                                                   "logout_token=" .. token)
@@ -308,22 +295,9 @@ OIDC backchannel logout accepted for sid sess-6
     location /t {
         content_by_lua_block {
             local t = require "lib.test_admin"
-            local r_jwt = require "resty.jwt"
+            local bcl = require "lib.backchannel_logout"
 
-            local token = r_jwt:sign(t.read_file("t/certs/private.pem"), {
-                header = { typ = "JWT", alg = "RS256", kid = "bclkey" },
-                payload = {
-                    iss = "http://127.0.0.1:6724",
-                    aud = "bcl-client",
-                    iat = ngx.time(),
-                    exp = ngx.time() + 120,
-                    jti = "jti-test7",
-                    events = {
-                        ["http://schemas.openid.net/event/backchannel-logout"] = {}
-                    },
-                    sid = "sess-7",
-                }
-            })
+            local token = bcl.sign({ jti = "jti-test7", sid = "sess-7" })
 
             local res1, err = t.req_self_with_http("/bcl", "POST",
                                                    "logout_token=" .. token)
@@ -357,22 +331,9 @@ a logout token with this jti was already received
     location /t {
         content_by_lua_block {
             local t = require "lib.test_admin"
-            local r_jwt = require "resty.jwt"
+            local bcl = require "lib.backchannel_logout"
 
-            local token = r_jwt:sign(t.read_file("t/certs/private.pem"), {
-                header = { typ = "JWT", alg = "RS256", kid = "bclkey" },
-                payload = {
-                    iss = "http://127.0.0.1:6724",
-                    aud = "bcl-client",
-                    iat = ngx.time(),
-                    exp = ngx.time() + 120,
-                    jti = "jti-test8",
-                    events = {
-                        ["http://schemas.openid.net/event/backchannel-logout"] = {}
-                    },
-                    sid = "sess-8",
-                }
-            })
+            local token = bcl.sign({ jti = "jti-test8", sid = "sess-8" })
             -- replace the signature's last two characters with a pair that
             -- is guaranteed to differ from the original
             local tail = token:sub(-2) == "xx" and "yy" or "xx"
@@ -517,18 +478,12 @@ signature validation failed
     location /t {
         content_by_lua_block {
             local t = require "lib.test_admin"
-            local r_jwt = require "resty.jwt"
+            local bcl = require "lib.backchannel_logout"
 
-            local token = r_jwt:sign(t.read_file("t/certs/private.pem"), {
-                header = { typ = "JWT", alg = "RS256", kid = "bclkey" },
-                payload = {
-                    iss = "http://127.0.0.1:6724",
-                    aud = "bcl-client",
-                    iat = ngx.time(),
-                    exp = ngx.time() + 120,
-                    jti = "jti-test10",
-                    sid = "sess-10",
-                }
+            local token = bcl.sign({
+                jti = "jti-test10",
+                sid = "sess-10",
+                events = bcl.OMIT,
             })
 
             local res, err = t.req_self_with_http("/bcl", "POST",
@@ -552,22 +507,12 @@ events claim does not contain the back-channel logout event
     location /t {
         content_by_lua_block {
             local t = require "lib.test_admin"
-            local r_jwt = require "resty.jwt"
+            local bcl = require "lib.backchannel_logout"
 
-            local token = r_jwt:sign(t.read_file("t/certs/private.pem"), {
-                header = { typ = "JWT", alg = "RS256", kid = "bclkey" },
-                payload = {
-                    iss = "http://127.0.0.1:6724",
-                    aud = "bcl-client",
-                    iat = ngx.time(),
-                    exp = ngx.time() + 120,
-                    jti = "jti-test11",
-                    nonce = "forged",
-                    events = {
-                        ["http://schemas.openid.net/event/backchannel-logout"] = {}
-                    },
-                    sid = "sess-11",
-                }
+            local token = bcl.sign({
+                jti = "jti-test11",
+                nonce = "forged",
+                sid = "sess-11",
             })
 
             local res, err = t.req_self_with_http("/bcl", "POST",
@@ -591,21 +536,9 @@ nonce claim is prohibited in a logout token
     location /t {
         content_by_lua_block {
             local t = require "lib.test_admin"
-            local r_jwt = require "resty.jwt"
+            local bcl = require "lib.backchannel_logout"
 
-            local token = r_jwt:sign(t.read_file("t/certs/private.pem"), {
-                header = { typ = "JWT", alg = "RS256", kid = "bclkey" },
-                payload = {
-                    iss = "http://127.0.0.1:6724",
-                    aud = "bcl-client",
-                    iat = ngx.time(),
-                    exp = ngx.time() + 120,
-                    jti = "jti-test12",
-                    events = {
-                        ["http://schemas.openid.net/event/backchannel-logout"] = {}
-                    },
-                }
-            })
+            local token = bcl.sign({ jti = "jti-test12" })
 
             local res, err = t.req_self_with_http("/bcl", "POST",
                                                   "logout_token=" .. token)
@@ -628,21 +561,9 @@ either a sub or a sid claim is required
     location /t {
         content_by_lua_block {
             local t = require "lib.test_admin"
-            local r_jwt = require "resty.jwt"
+            local bcl = require "lib.backchannel_logout"
 
-            local token = r_jwt:sign(t.read_file("t/certs/private.pem"), {
-                header = { typ = "JWT", alg = "RS256", kid = "bclkey" },
-                payload = {
-                    iss = "http://127.0.0.1:6724",
-                    aud = "bcl-client",
-                    iat = ngx.time(),
-                    exp = ngx.time() + 120,
-                    events = {
-                        ["http://schemas.openid.net/event/backchannel-logout"] = {}
-                    },
-                    sid = "sess-13",
-                }
-            })
+            local token = bcl.sign({ sid = "sess-13" })
 
             local res, err = t.req_self_with_http("/bcl", "POST",
                                                   "logout_token=" .. token)
@@ -665,21 +586,12 @@ jti claim is missing
     location /t {
         content_by_lua_block {
             local t = require "lib.test_admin"
-            local r_jwt = require "resty.jwt"
+            local bcl = require "lib.backchannel_logout"
 
-            local token = r_jwt:sign(t.read_file("t/certs/private.pem"), {
-                header = { typ = "JWT", alg = "RS256", kid = "bclkey" },
-                payload = {
-                    iss = "http://127.0.0.1:6724",
-                    aud = "bcl-client",
-                    iat = ngx.time() - 1200,
-                    exp = ngx.time() + 120,
-                    jti = "jti-test14",
-                    events = {
-                        ["http://schemas.openid.net/event/backchannel-logout"] = {}
-                    },
-                    sid = "sess-14",
-                }
+            local token = bcl.sign({
+                iat = ngx.time() - 1200,
+                jti = "jti-test14",
+                sid = "sess-14",
             })
 
             local res, err = t.req_self_with_http("/bcl", "POST",
@@ -703,21 +615,12 @@ iat is outside the acceptance window
     location /t {
         content_by_lua_block {
             local t = require "lib.test_admin"
-            local r_jwt = require "resty.jwt"
+            local bcl = require "lib.backchannel_logout"
 
-            local token = r_jwt:sign(t.read_file("t/certs/private.pem"), {
-                header = { typ = "JWT", alg = "RS256", kid = "bclkey" },
-                payload = {
-                    iss = "http://127.0.0.1:6724",
-                    aud = "some-other-client",
-                    iat = ngx.time(),
-                    exp = ngx.time() + 120,
-                    jti = "jti-test15",
-                    events = {
-                        ["http://schemas.openid.net/event/backchannel-logout"] = {}
-                    },
-                    sid = "sess-15",
-                }
+            local token = bcl.sign({
+                aud = "some-other-client",
+                jti = "jti-test15",
+                sid = "sess-15",
             })
 
             local res, err = t.req_self_with_http("/bcl", "POST",
@@ -1191,7 +1094,7 @@ OIDC session revoked by backchannel logout
     location /t {
         content_by_lua_block {
             local t = require "lib.test_admin"
-            local r_jwt = require "resty.jwt"
+            local bcl = require "lib.backchannel_logout"
 
             local code, body = t.test('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
@@ -1231,21 +1134,11 @@ OIDC session revoked by backchannel logout
                 return
             end
 
-            local token = r_jwt:sign(t.read_file("t/certs/private.pem"), {
-                header = { typ = "JWT", alg = "RS256", kid = "bclkey" },
-                payload = {
-                    iss = "http://127.0.0.1:6724",
-                    aud = "bcl-client",
-                    iat = ngx.time(),
-                    exp = ngx.time() + 120,
-                    -- unique per run: the jti replay guard lives in redis,
-                    -- which outlives the test nginx instances
-                    jti = "jti-test21-" .. ngx.now(),
-                    events = {
-                        ["http://schemas.openid.net/event/backchannel-logout"] = {}
-                    },
-                    sid = "sess-21",
-                }
+            -- unique per run: the jti replay guard lives in redis,
+            -- which outlives the test nginx instances
+            local token = bcl.sign({
+                jti = "jti-test21-" .. ngx.now(),
+                sid = "sess-21",
             })
 
             local res, err = t.req_self_with_http("/bcl", "POST",
@@ -1281,7 +1174,7 @@ OIDC backchannel logout accepted for sid sess-21
     location /t {
         content_by_lua_block {
             local t = require "lib.test_admin"
-            local r_jwt = require "resty.jwt"
+            local bcl = require "lib.backchannel_logout"
 
             local code, body = t.test('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
@@ -1322,21 +1215,11 @@ OIDC backchannel logout accepted for sid sess-21
                 return
             end
 
-            local token = r_jwt:sign(t.read_file("t/certs/private.pem"), {
-                header = { typ = "JWT", alg = "RS256", kid = "bclkey" },
-                payload = {
-                    iss = "http://127.0.0.1:6724",
-                    aud = "bcl-client",
-                    iat = ngx.time(),
-                    exp = ngx.time() + 120,
-                    -- unique per run: the jti replay guard lives in redis,
-                    -- which outlives the test nginx instances
-                    jti = "jti-test22-" .. ngx.now(),
-                    events = {
-                        ["http://schemas.openid.net/event/backchannel-logout"] = {}
-                    },
-                    sid = "sess-22",
-                }
+            -- unique per run: the jti replay guard lives in redis,
+            -- which outlives the test nginx instances
+            local token = bcl.sign({
+                jti = "jti-test22-" .. ngx.now(),
+                sid = "sess-22",
             })
 
             local res, err = t.req_self_with_http("/bcl", "POST",
@@ -1373,7 +1256,7 @@ OIDC backchannel logout accepted for sid sess-22
     location /t {
         content_by_lua_block {
             local t = require "lib.test_admin"
-            local r_jwt = require "resty.jwt"
+            local bcl = require "lib.backchannel_logout"
 
             local code, body = t.test('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
@@ -1413,20 +1296,7 @@ OIDC backchannel logout accepted for sid sess-22
                 return
             end
 
-            local token = r_jwt:sign(t.read_file("t/certs/private.pem"), {
-                header = { typ = "JWT", alg = "RS256", kid = "bclkey" },
-                payload = {
-                    iss = "http://127.0.0.1:6724",
-                    aud = "bcl-client",
-                    iat = ngx.time(),
-                    exp = ngx.time() + 120,
-                    jti = "jti-test23",
-                    events = {
-                        ["http://schemas.openid.net/event/backchannel-logout"] = {}
-                    },
-                    sid = "sess-23",
-                }
-            })
+            local token = bcl.sign({ jti = "jti-test23", sid = "sess-23" })
 
             local res, err = t.req_self_with_http("/bcl", "POST",
                                                   "logout_token=" .. token)
@@ -1549,7 +1419,7 @@ OIDC backchannel logout store failed
     location /t {
         content_by_lua_block {
             local t = require "lib.test_admin"
-            local r_jwt = require "resty.jwt"
+            local bcl = require "lib.backchannel_logout"
 
             local code, body = t.test('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
@@ -1590,21 +1460,11 @@ OIDC backchannel logout store failed
                 return
             end
 
-            local token = r_jwt:sign(t.read_file("t/certs/private.pem"), {
-                header = { typ = "JWT", alg = "RS256", kid = "bclkey" },
-                payload = {
-                    iss = "http://127.0.0.1:6724",
-                    aud = "bcl-client",
-                    iat = ngx.time(),
-                    exp = ngx.time() + 120,
-                    -- unique per run: the jti replay guard lives in redis,
-                    -- which outlives the test nginx instances
-                    jti = "jti-test27-" .. ngx.now(),
-                    events = {
-                        ["http://schemas.openid.net/event/backchannel-logout"] = {}
-                    },
-                    sid = "sess-27",
-                }
+            -- unique per run: the jti replay guard lives in redis,
+            -- which outlives the test nginx instances
+            local token = bcl.sign({
+                jti = "jti-test27-" .. ngx.now(),
+                sid = "sess-27",
             })
 
             local res, err = t.req_self_with_http("/bcl", "POST",
@@ -1643,7 +1503,7 @@ OIDC backchannel logout accepted for sid sess-27
     location /t {
         content_by_lua_block {
             local t = require "lib.test_admin"
-            local r_jwt = require "resty.jwt"
+            local bcl = require "lib.backchannel_logout"
 
             local code, body = t.test('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
@@ -1685,19 +1545,10 @@ OIDC backchannel logout accepted for sid sess-27
 
             -- Clearly earlier than receipt, but inside the iat acceptance slack.
             local past = ngx.time() - 60
-            local token = r_jwt:sign(t.read_file("t/certs/private.pem"), {
-                header = { typ = "JWT", alg = "RS256", kid = "bclkey" },
-                payload = {
-                    iss = "http://127.0.0.1:6724",
-                    aud = "bcl-client",
-                    iat = past,
-                    exp = ngx.time() + 120,
-                    jti = "jti-test28-" .. ngx.now(),
-                    events = {
-                        ["http://schemas.openid.net/event/backchannel-logout"] = {}
-                    },
-                    sub = "sub-28",
-                }
+            local token = bcl.sign({
+                iat = past,
+                jti = "jti-test28-" .. ngx.now(),
+                sub = "sub-28",
             })
 
             local res, err = t.req_self_with_http("/bcl", "POST",
