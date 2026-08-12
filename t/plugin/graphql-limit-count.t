@@ -633,3 +633,76 @@ Content-Type: application/json
 --- error_code: 200
 --- response_headers
 X-RateLimit-Remaining: 15
+
+
+
+=== TEST 27: set route: nested fragment expansion test
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "graphql-limit-count": {
+                            "count": 1000000,
+                            "time_window": 60,
+                            "rejected_code": 503,
+                            "key": "remote_addr"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 28: deeply reused fragments are measured once, not re-expanded
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local n = 34
+            local parts = {"fragment f0 on Query { __typename }"}
+            for i = 1, n do
+                parts[#parts + 1] = string.format(
+                    "fragment f%d on Query { ...f%d ...f%d }", i, i - 1, i - 1)
+            end
+            parts[#parts + 1] = string.format("query { ...f%d }", n)
+            local body = table.concat(parts, " ")
+            local httpc = http.new()
+            local res, err = httpc:request_uri(
+                "http://127.0.0.1:" .. ngx.var.server_port .. "/hello", {
+                    method = "POST",
+                    body = body,
+                    headers = { ["Content-Type"] = "application/graphql" },
+                })
+            if not res then
+                ngx.say(err)
+                return
+            end
+            ngx.say(res.status)
+        }
+    }
+--- request
+GET /t
+--- timeout: 10
+--- response_body
+200

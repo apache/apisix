@@ -90,8 +90,10 @@ local check_graphql_request = {
 -- Returns the maximum selection nesting depth of the GraphQL query AST.
 -- Fragment spreads are expanded in place using the provided fragment map;
 -- inline fragments are treated as transparent wrappers over their selections.
--- The visited table guards against fragment definition cycles.
-local function node_depth(node, fragments, visited)
+-- visited guards against fragment definition cycles; memo caches each
+-- fragment's resolved depth so a fragment is measured once regardless of how
+-- many times it is spread, keeping the traversal linear in the document size.
+local function node_depth(node, fragments, visited, memo)
     if type(node) ~= "table" then
         return 0
     end
@@ -101,13 +103,18 @@ local function node_depth(node, fragments, visited)
         if not name or visited[name] then
             return 0
         end
+        local cached = memo[name]
+        if cached then
+            return cached
+        end
         local frag = fragments[name]
         if not frag or not frag.selectionSet then
             return 0
         end
         visited[name] = true
-        local depth = node_depth(frag.selectionSet.selections, fragments, visited)
+        local depth = node_depth(frag.selectionSet.selections, fragments, visited, memo)
         visited[name] = nil
+        memo[name] = depth
         return depth
     end
 
@@ -115,16 +122,16 @@ local function node_depth(node, fragments, visited)
         if not node.selectionSet then
             return 0
         end
-        return node_depth(node.selectionSet.selections, fragments, visited)
+        return node_depth(node.selectionSet.selections, fragments, visited, memo)
     end
 
     local depth = 0
     for k, v in pairs(node) do
         local child
         if k == "selections" then
-            child = 1 + node_depth(v, fragments, visited)
+            child = 1 + node_depth(v, fragments, visited, memo)
         else
-            child = node_depth(v, fragments, visited)
+            child = node_depth(v, fragments, visited, memo)
         end
         depth = max(depth, child)
     end
@@ -191,8 +198,9 @@ function _M.access(conf, ctx)
     end
 
     local depth = 0
+    local memo = {}
     for _, op in ipairs(operations) do
-        local d = node_depth(op, fragments, {})
+        local d = node_depth(op, fragments, {}, memo)
         depth = max(depth, d)
     end
     depth = max(depth, 1)
