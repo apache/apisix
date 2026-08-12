@@ -1420,6 +1420,49 @@ local function handle_backchannel_logout(conf)
 end
 
 
+-- Checks the session's identity against the revocation store. Returns true
+-- (revoked), false (clean), or nil plus an error when the store cannot be
+-- reached - no verdict is not a verdict.
+local function session_revoked_by_backchannel_logout(conf, response, session)
+    local id_token = response.id_token
+    if not id_token then
+        return false
+    end
+
+    if id_token.sid then
+        local revoked_at, err = bcl_store_get(conf,
+            bcl_denylist_key("sid", conf, id_token.iss, id_token.sid))
+        if err then
+            return nil, err
+        end
+        if revoked_at then
+            return true
+        end
+    end
+
+    if id_token.sub then
+        local revoked_at, err = bcl_store_get(conf,
+            bcl_denylist_key("sub", conf, id_token.iss, id_token.sub))
+        if err then
+            return nil, err
+        end
+        if revoked_at then
+            -- A sub entry means "log out every session this user had when
+            -- the logout was received": a session authenticated after it
+            -- stays valid. A missing timestamp kills the session, erring
+            -- toward revocation.
+            local auth_at = session:get("last_authenticated")
+                            or id_token.auth_time or id_token.iat
+            if not auth_at or auth_at <= revoked_at then
+                return true
+            end
+        end
+    end
+
+    return false
+end
+
+
 function _M.rewrite(plugin_conf, ctx)
     local conf = core.table.clone(plugin_conf)
     flatten_openidc_options(conf)
@@ -1636,6 +1679,54 @@ function _M.rewrite(plugin_conf, ctx)
         end
 
         if response then
+            if conf.backchannel_logout then
+                local revoked, bcl_err =
+                    session_revoked_by_backchannel_logout(conf, response, session)
+
+                if bcl_err then
+                    -- No verdict: fail the request but keep the session, so
+                    -- a store hiccup neither forwards a possibly revoked
+                    -- token nor logs the whole user base out.
+                    core.log.error("OIDC backchannel logout store failed: ",
+                                   bcl_err)
+                    session:close()
+                    return 503
+                end
+
+                if revoked then
+                    core.log.warn("OIDC session revoked by backchannel logout")
+
+                    -- Drop the dead session. Every branch below returns, so
+                    -- the tail close() is never reached.
+                    session:clear_request_cookie()
+                    session:destroy()
+
+                    if conf.unauth_action == "pass" then
+                        return nil
+                    end
+
+                    if conf.unauth_action == "deny" then
+                        return 401
+                    end
+
+                    -- Start a fresh code flow; on success authenticate()
+                    -- redirects and does not return.
+                    local _, auth_err, _, new_session =
+                        openidc.authenticate(conf, nil, "auth",
+                                             build_session_opts(conf.session))
+                    if new_session then
+                        new_session:close()
+                    end
+
+                    if auth_err then
+                        core.log.error("OIDC re-authentication failed: ", auth_err)
+                        return 500
+                    end
+
+                    return
+                end
+            end
+
             local ok, err = validate_claims_in_oidcauth_response(response, conf)
             if not ok then
                 core.log.error("OIDC claim validation failed: ", err)

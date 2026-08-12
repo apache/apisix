@@ -321,7 +321,10 @@ a logout token with this jti was already received
                     sid = "sess-8",
                 }
             })
-            token = token:sub(1, -3) .. "xx"
+            -- replace the signature's last two characters with a pair that
+            -- is guaranteed to differ from the original
+            local tail = token:sub(-2) == "xx" and "yy" or "xx"
+            token = token:sub(1, -3) .. tail
 
             local res, err = t.req_self_with_http("/bcl", "POST",
                                                   "logout_token=" .. token)
@@ -628,3 +631,434 @@ aud does not contain the client_id
 --- response_body
 get: 405
 post without token: 400
+
+
+
+=== TEST 17: Set up the Keycloak route and register the BCL URL at the client.
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local keycloak = require "lib.keycloak"
+
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "openid-connect": {
+                                "discovery": "http://127.0.0.1:8080/realms/University/.well-known/openid-configuration",
+                                "realm": "University",
+                                "client_id": "course_management",
+                                "client_secret": "d1ec69e9-55d2-4109-a3ea-befa071579d5",
+                                "redirect_uri": "http://127.0.0.1:]] .. ngx.var.server_port .. [[/authenticated",
+                                "ssl_verify": false,
+                                "timeout": 10,
+                                "session": {
+                                    "secret": "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK"
+                                },
+                                "backchannel_logout": {
+                                    "path": "/logout/backchannel"
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/*"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            ngx.say(body)
+
+            local token, err = keycloak.get_admin_token()
+            if not token then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+            local url = "http://127.0.0.1:" .. ngx.var.server_port ..
+                        "/logout/backchannel"
+            local ok
+            ok, err = keycloak.set_backchannel_logout(token, url, true)
+            if not ok then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+            ngx.say("bcl configured")
+        }
+    }
+--- response_body
+passed
+bcl configured
+
+
+
+=== TEST 18: The session is rejected after the IdP delivers a back-channel logout (sid).
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local keycloak = require "lib.keycloak"
+
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/uri"
+
+            -- Absorb any stale pooled connection at Keycloak before the
+            -- delivery this test asserts on.
+            local pok, perr = keycloak.prime_backchannel_logout(uri)
+            if not pok then
+                ngx.status = 500
+                ngx.say(perr)
+                return
+            end
+
+            local res, err = keycloak.login_keycloak(uri,
+                                                     "teacher@gmail.com", "123456")
+            if err then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+
+            local cookie_str = keycloak.concatenate_cookies(
+                res.headers['Set-Cookie'])
+            local redirect_uri = "http://127.0.0.1:" .. ngx.var.server_port ..
+                                 res.headers['Location']
+            res, err = httpc:request_uri(redirect_uri, {
+                method = "GET",
+                headers = { ["Cookie"] = cookie_str }
+            })
+            if not res then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+            ngx.say("authenticated: ", res.status)
+
+            local token, terr = keycloak.get_admin_token()
+            if not token then
+                ngx.status = 500
+                ngx.say(terr)
+                return
+            end
+            local ok, lerr = keycloak.logout_user(token, "teacher@gmail.com")
+            if not ok then
+                ngx.status = 500
+                ngx.say(lerr)
+                return
+            end
+            ngx.say("logout: done")
+            -- Keycloak delivers the BCL POST while processing the logout;
+            -- the sleep absorbs scheduling jitter.
+            ngx.sleep(1)
+
+            res, err = httpc:request_uri(uri, {
+                method = "GET",
+                headers = { ["Cookie"] = cookie_str }
+            })
+            if not res then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+            ngx.say("after logout: ", res.status)
+        }
+    }
+--- timeout: 15
+--- response_body
+authenticated: 200
+logout: done
+after logout: 302
+--- error_log
+OIDC backchannel logout accepted for sid
+OIDC session revoked by backchannel logout
+
+
+
+=== TEST 19: With unauth_action deny, a revoked session gets 401.
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local t = require("lib.test_admin").test
+            local keycloak = require "lib.keycloak"
+
+            local route_tpl = [[{
+                        "plugins": {
+                            "openid-connect": {
+                                "discovery": "http://127.0.0.1:8080/realms/University/.well-known/openid-configuration",
+                                "realm": "University",
+                                "client_id": "course_management",
+                                "client_secret": "d1ec69e9-55d2-4109-a3ea-befa071579d5",
+                                "redirect_uri": "http://127.0.0.1:]] .. ngx.var.server_port .. [[/authenticated",
+                                "ssl_verify": false,
+                                "timeout": 10,
+                                %s
+                                "session": {
+                                    "secret": "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK"
+                                },
+                                "backchannel_logout": {
+                                    "path": "/logout/backchannel"
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/*"
+                }]]
+
+            -- Login must happen under the default auth action; deny would
+            -- answer 401 instead of driving the login redirect.
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT,
+                                 string.format(route_tpl, ""))
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/uri"
+
+            -- Absorb any stale pooled connection at Keycloak before the
+            -- delivery this test asserts on.
+            local pok, perr = keycloak.prime_backchannel_logout(uri)
+            if not pok then
+                ngx.status = 500
+                ngx.say(perr)
+                return
+            end
+
+            local res, err = keycloak.login_keycloak(uri,
+                                                     "teacher@gmail.com", "123456")
+            if err then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+
+            local cookie_str = keycloak.concatenate_cookies(
+                res.headers['Set-Cookie'])
+            local redirect_uri = "http://127.0.0.1:" .. ngx.var.server_port ..
+                                 res.headers['Location']
+            res, err = httpc:request_uri(redirect_uri, {
+                method = "GET",
+                headers = { ["Cookie"] = cookie_str }
+            })
+            if not res then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+            ngx.say("authenticated: ", res.status)
+
+            code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT,
+                           string.format(route_tpl,
+                                         '"unauth_action": "deny",'))
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            ngx.sleep(0.5)
+
+            local token, terr = keycloak.get_admin_token()
+            if not token then
+                ngx.status = 500
+                ngx.say(terr)
+                return
+            end
+            local ok, lerr = keycloak.logout_user(token, "teacher@gmail.com")
+            if not ok then
+                ngx.status = 500
+                ngx.say(lerr)
+                return
+            end
+            ngx.say("logout: done")
+            ngx.sleep(1)
+
+            res, err = httpc:request_uri(uri, {
+                method = "GET",
+                headers = { ["Cookie"] = cookie_str }
+            })
+            if not res then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+            ngx.say("after logout: ", res.status)
+        }
+    }
+--- timeout: 15
+--- response_body
+authenticated: 200
+logout: done
+after logout: 401
+--- error_log
+OIDC backchannel logout accepted for sid
+OIDC session revoked by backchannel logout
+
+
+
+=== TEST 20: A sub-only logout kills the session; a later login survives.
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local t = require("lib.test_admin").test
+            local keycloak = require "lib.keycloak"
+
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "openid-connect": {
+                                "discovery": "http://127.0.0.1:8080/realms/University/.well-known/openid-configuration",
+                                "realm": "University",
+                                "client_id": "course_management",
+                                "client_secret": "d1ec69e9-55d2-4109-a3ea-befa071579d5",
+                                "redirect_uri": "http://127.0.0.1:]] .. ngx.var.server_port .. [[/authenticated",
+                                "ssl_verify": false,
+                                "timeout": 10,
+                                "session": {
+                                    "secret": "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK"
+                                },
+                                "backchannel_logout": {
+                                    "path": "/logout/backchannel"
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/*"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local token, terr = keycloak.get_admin_token()
+            if not token then
+                ngx.status = 500
+                ngx.say(terr)
+                return
+            end
+            local url = "http://127.0.0.1:" .. ngx.var.server_port ..
+                        "/logout/backchannel"
+            -- session required off: the logout token carries only sub.
+            local ok, serr = keycloak.set_backchannel_logout(token, url, false)
+            if not ok then
+                ngx.status = 500
+                ngx.say(serr)
+                return
+            end
+
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/uri"
+
+            -- Absorb any stale pooled connection at Keycloak before the
+            -- delivery this test asserts on.
+            local pok, perr = keycloak.prime_backchannel_logout(uri)
+            if not pok then
+                ngx.status = 500
+                ngx.say(perr)
+                return
+            end
+
+            local res, err = keycloak.login_keycloak(uri,
+                                                     "teacher@gmail.com", "123456")
+            if err then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+
+            local cookie_str = keycloak.concatenate_cookies(
+                res.headers['Set-Cookie'])
+            local redirect_uri = "http://127.0.0.1:" .. ngx.var.server_port ..
+                                 res.headers['Location']
+            res, err = httpc:request_uri(redirect_uri, {
+                method = "GET",
+                headers = { ["Cookie"] = cookie_str }
+            })
+            if not res then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+            ngx.say("authenticated: ", res.status)
+
+            local lerr
+            ok, lerr = keycloak.logout_user(token, "teacher@gmail.com")
+            if not ok then
+                ngx.status = 500
+                ngx.say(lerr)
+                return
+            end
+            ngx.say("logout: done")
+            ngx.sleep(1)
+
+            res, err = httpc:request_uri(uri, {
+                method = "GET",
+                headers = { ["Cookie"] = cookie_str }
+            })
+            if not res then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+            ngx.say("after logout: ", res.status)
+
+            -- The sub rule kills sessions authenticated at or before the
+            -- revocation's second; move the new login past it.
+            ngx.sleep(1.5)
+
+            res, err = keycloak.login_keycloak(uri,
+                                               "teacher@gmail.com", "123456")
+            if err then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+            cookie_str = keycloak.concatenate_cookies(res.headers['Set-Cookie'])
+            redirect_uri = "http://127.0.0.1:" .. ngx.var.server_port ..
+                           res.headers['Location']
+            res, err = httpc:request_uri(redirect_uri, {
+                method = "GET",
+                headers = { ["Cookie"] = cookie_str }
+            })
+            if not res then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+            ngx.say("re-login: ", res.status)
+        }
+    }
+--- timeout: 25
+--- response_body
+authenticated: 200
+logout: done
+after logout: 302
+re-login: 200
+--- error_log
+OIDC backchannel logout accepted for sub
+OIDC session revoked by backchannel logout
