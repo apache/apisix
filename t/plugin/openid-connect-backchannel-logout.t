@@ -381,7 +381,86 @@ signature validation failed
 
 
 
-=== TEST 10: A token without the back-channel logout event is rejected.
+=== TEST 10: A route with accept_none_alg true still rejects an unsigned logout token.
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require "lib.test_admin"
+
+            local code, body = t.test('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "openid-connect": {
+                                "discovery": "http://127.0.0.1:6724/.well-known/openid-configuration",
+                                "client_id": "bcl-client",
+                                "client_secret": "dummy-not-used-by-the-endpoint",
+                                "ssl_verify": false,
+                                "timeout": 10,
+                                "accept_none_alg": true,
+                                "session": {
+                                    "secret": "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK"
+                                },
+                                "backchannel_logout": {
+                                    "path": "/bcl"
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/*"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local b64 = function(s)
+                return ngx.encode_base64(s):gsub("+", "-"):gsub("/", "_"):gsub("=", "")
+            end
+            local cjson = require "cjson.safe"
+            local header = b64(cjson.encode({ alg = "none", typ = "logout+jwt" }))
+            local payload = b64(cjson.encode({
+                iss = "http://127.0.0.1:6724",
+                aud = "bcl-client",
+                iat = ngx.time(),
+                jti = "jti-test9a",
+                events = {
+                    ["http://schemas.openid.net/event/backchannel-logout"] = {}
+                },
+                sid = "sess-9a",
+            }))
+            local token = header .. "." .. payload .. "."
+
+            local res, err = t.req_self_with_http("/bcl", "POST",
+                                                  "logout_token=" .. token)
+            if not res then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+            ngx.say("status: ", res.status)
+
+            local entry = ngx.shared.bcl:get(
+                "bcl:sid:http://127.0.0.1:6724#bcl-client#sess-9a")
+            ngx.say("denylist entry: ", entry ~= nil)
+        }
+    }
+--- response_body
+status: 400
+denylist entry: false
+--- error_log
+signature validation failed
+
+
+
+=== TEST 11: A token without the back-channel logout event is rejected.
 --- config
     location /t {
         content_by_lua_block {
@@ -416,7 +495,7 @@ events claim does not contain the back-channel logout event
 
 
 
-=== TEST 11: A token carrying a nonce is rejected.
+=== TEST 12: A token carrying a nonce is rejected.
 --- config
     location /t {
         content_by_lua_block {
@@ -455,7 +534,7 @@ nonce claim is prohibited in a logout token
 
 
 
-=== TEST 12: A token with neither sub nor sid is rejected.
+=== TEST 13: A token with neither sub nor sid is rejected.
 --- config
     location /t {
         content_by_lua_block {
@@ -492,7 +571,7 @@ either a sub or a sid claim is required
 
 
 
-=== TEST 13: A token without a jti is rejected.
+=== TEST 14: A token without a jti is rejected.
 --- config
     location /t {
         content_by_lua_block {
@@ -529,7 +608,7 @@ jti claim is missing
 
 
 
-=== TEST 14: A token with a stale iat is rejected.
+=== TEST 15: A token with a stale iat is rejected.
 --- config
     location /t {
         content_by_lua_block {
@@ -567,7 +646,7 @@ iat is outside the acceptance window
 
 
 
-=== TEST 15: A token whose aud names another client is rejected.
+=== TEST 16: A token whose aud names another client is rejected.
 --- config
     location /t {
         content_by_lua_block {
@@ -605,7 +684,7 @@ aud does not contain the client_id
 
 
 
-=== TEST 16: Transport-level failures: non-POST and missing logout_token.
+=== TEST 17: Transport-level failures: non-POST and missing logout_token.
 --- config
     location /t {
         content_by_lua_block {
@@ -634,7 +713,7 @@ post without token: 400
 
 
 
-=== TEST 17: Set up the Keycloak route and register the BCL URL at the client.
+=== TEST 18: Set up the Keycloak route and register the BCL URL at the client.
 --- config
     location /t {
         content_by_lua_block {
@@ -701,7 +780,7 @@ bcl configured
 
 
 
-=== TEST 18: The session is rejected after the IdP delivers a back-channel logout (sid).
+=== TEST 19: The session is rejected after the IdP delivers a back-channel logout (sid).
 --- config
     location /t {
         content_by_lua_block {
@@ -783,7 +862,7 @@ OIDC session revoked by backchannel logout
 
 
 
-=== TEST 19: With unauth_action deny, a revoked session gets 401.
+=== TEST 20: With unauth_action deny, a revoked session gets 401.
 --- config
     location /t {
         content_by_lua_block {
@@ -912,7 +991,7 @@ OIDC session revoked by backchannel logout
 
 
 
-=== TEST 20: A sub-only logout kills the session; a later login survives.
+=== TEST 21: A sub-only logout kills the session; a later login survives.
 --- config
     location /t {
         content_by_lua_block {
@@ -1065,7 +1144,7 @@ OIDC session revoked by backchannel logout
 
 
 
-=== TEST 21: With storage redis, an accepted logout token lands in redis.
+=== TEST 22: With storage redis, an accepted logout token lands in redis.
 --- config
     location /t {
         content_by_lua_block {
@@ -1156,7 +1235,7 @@ OIDC backchannel logout accepted for sid sess-21
 
 
 
-=== TEST 22: storage redis without an own redis block falls back to session.redis.
+=== TEST 23: storage redis without an own redis block falls back to session.redis.
 --- config
     location /t {
         content_by_lua_block {
@@ -1249,7 +1328,7 @@ OIDC backchannel logout accepted for sid sess-22
 
 
 
-=== TEST 23: The endpoint answers 400 when the redis store is unreachable.
+=== TEST 24: The endpoint answers 400 when the redis store is unreachable.
 --- config
     location /t {
         content_by_lua_block {
@@ -1325,7 +1404,7 @@ OIDC backchannel logout store failed
 
 
 
-=== TEST 24: A request with the store down gets 503 and the session is kept.
+=== TEST 25: A request with the store down gets 503 and the session is kept.
 --- config
     location /t {
         content_by_lua_block {

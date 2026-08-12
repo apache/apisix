@@ -1285,6 +1285,11 @@ local function bcl_validate_logout_token(conf, discovery, logout_token)
     conf.token_signing_alg_values_expected =
         discovery.id_token_signing_alg_values_supported
 
+    -- BCL endpoint is unauthenticated: always require a real JWKS-verified
+    -- signature, never alg:none or a static public_key.
+    conf.accept_none_alg = false
+    conf.public_key = nil
+
     local claims, err = openidc.jwt_verify(logout_token, conf)
     if err then
         return nil, "signature validation failed: " .. err
