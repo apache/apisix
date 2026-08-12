@@ -1216,11 +1216,10 @@ local function bcl_redis_connect(rconf)
 end
 
 
--- One revocation (or seen-jti) entry per key; the value is the unix time
--- the entry was written.
-local function bcl_store_set(conf, key, ttl)
-    local now = ngx.time()
-
+-- One revocation (or seen-jti) entry per key, holding the caller-supplied
+-- value (the logout token's iat, for entries the request path compares
+-- against).
+local function bcl_store_set(conf, key, value, ttl)
     if conf.backchannel_logout.storage == "redis" then
         local rconf = bcl_redis_conf(conf)
         local red, err = bcl_redis_connect(rconf)
@@ -1228,8 +1227,9 @@ local function bcl_store_set(conf, key, ttl)
             return false, err
         end
         local ok
-        ok, err = red:set(rconf.prefix .. ":" .. key, now, "EX", ttl)
+        ok, err = red:set(rconf.prefix .. ":" .. key, value, "EX", ttl)
         if not ok then
+            red:close()
             return false, "failed to write to redis: " .. err
         end
         red:set_keepalive(rconf.keepalive_timeout, 100)
@@ -1242,11 +1242,49 @@ local function bcl_store_set(conf, key, ttl)
     end
     -- safe_set: evicting an unexpired revocation to make room would silently
     -- re-admit a revoked session, so a full dict must fail the write instead.
-    local ok, err = dict:safe_set(key, now, ttl)
+    local ok, err = dict:safe_set(key, value, ttl)
     if not ok then
         return false, "failed to write to the shared dict: " .. err
     end
     return true
+end
+
+
+-- Atomic add-if-absent: writes value/ttl only when key has no entry yet.
+-- Returns (written, existed, err) - existed true means a replay.
+local function bcl_store_add(conf, key, value, ttl)
+    if conf.backchannel_logout.storage == "redis" then
+        local rconf = bcl_redis_conf(conf)
+        local red, err = bcl_redis_connect(rconf)
+        if not red then
+            return nil, nil, err
+        end
+        local res
+        res, err = red:set(rconf.prefix .. ":" .. key, value, "EX", ttl, "NX")
+        if res == "OK" or res == ngx.null then
+            red:set_keepalive(rconf.keepalive_timeout, 100)
+        end
+        if res == "OK" then
+            return true, false, nil
+        elseif res == ngx.null then
+            return false, true, nil
+        end
+        red:close()
+        return nil, nil, "failed to write to redis: " .. (err or "unknown")
+    end
+
+    local dict = ngx.shared.bcl
+    if not dict then
+        return nil, nil, "shared dict \"bcl\" is missing"
+    end
+    -- safe_add: never evicts, matching safe_set's rationale above.
+    local ok, err = dict:safe_add(key, value, ttl)
+    if ok then
+        return true, false, nil
+    elseif err == "exists" then
+        return false, true, nil
+    end
+    return nil, nil, "failed to write to the shared dict: " .. (err or "unknown")
 end
 
 
@@ -1263,6 +1301,7 @@ local function bcl_store_get(conf, key)
         local v
         v, err = red:get(rconf.prefix .. ":" .. key)
         if err then
+            red:close()
             return nil, "failed to read from redis: " .. err
         end
         red:set_keepalive(rconf.keepalive_timeout, 100)
@@ -1399,22 +1438,17 @@ local function handle_backchannel_logout(conf)
     end
 
     local jti_key = "bcl:jti:" .. discovery.issuer .. "#" .. claims.jti
-    local seen, store_err = bcl_store_get(conf, jti_key)
+    local _, existed, store_err = bcl_store_add(conf, jti_key, claims.iat, BCL_JTI_TTL)
     if store_err then
         core.log.error("OIDC backchannel logout store failed: ", store_err)
         return bcl_error("the revocation store is unavailable")
     end
-    if seen then
+    if existed then
         core.log.warn("OIDC backchannel logout token rejected: ",
                       "a logout token with this jti was already received")
         return bcl_error("a logout token with this jti was already received")
     end
-    local ok
-    ok, store_err = bcl_store_set(conf, jti_key, BCL_JTI_TTL)
-    if not ok then
-        core.log.error("OIDC backchannel logout store failed: ", store_err)
-        return bcl_error("the revocation store is unavailable")
-    end
+    -- not existed: written, fall through to the denylist write
 
     -- Section 2.4: a token with a sid revokes that one session; a sub-only
     -- token revokes every session the user had when it was received
@@ -1431,7 +1465,8 @@ local function handle_backchannel_logout(conf)
     if type(ttl) ~= "number" or ttl <= 0 then
         ttl = BCL_DENYLIST_TTL
     end
-    ok, store_err = bcl_store_set(conf, key, ttl)
+    local ok
+    ok, store_err = bcl_store_set(conf, key, claims.iat, ttl)
     if not ok then
         core.log.error("OIDC backchannel logout store failed: ", store_err)
         return bcl_error("the revocation store is unavailable")

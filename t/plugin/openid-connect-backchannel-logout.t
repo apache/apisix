@@ -1643,3 +1643,94 @@ redis entry: true
 redis ttl positive: true
 --- error_log
 OIDC backchannel logout accepted for sid sess-27
+
+
+
+=== TEST 28: With storage redis, the denylist entry stores the token's iat, not receipt time.
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require "lib.test_admin"
+            local r_jwt = require "resty.jwt"
+
+            local code, body = t.test('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "openid-connect": {
+                                "discovery": "http://127.0.0.1:6724/.well-known/openid-configuration",
+                                "client_id": "bcl-client",
+                                "client_secret": "dummy-not-used-by-the-endpoint",
+                                "ssl_verify": false,
+                                "timeout": 10,
+                                "session": {
+                                    "secret": "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK"
+                                },
+                                "backchannel_logout": {
+                                    "path": "/bcl",
+                                    "storage": "redis",
+                                    "redis": {
+                                        "host": "127.0.0.1",
+                                        "port": 6379
+                                    }
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/*"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            -- Clearly earlier than receipt, but inside the iat acceptance slack.
+            local past = ngx.time() - 60
+            local token = r_jwt:sign(t.read_file("t/certs/private.pem"), {
+                header = { typ = "JWT", alg = "RS256", kid = "bclkey" },
+                payload = {
+                    iss = "http://127.0.0.1:6724",
+                    aud = "bcl-client",
+                    iat = past,
+                    exp = ngx.time() + 120,
+                    jti = "jti-test28-" .. ngx.now(),
+                    events = {
+                        ["http://schemas.openid.net/event/backchannel-logout"] = {}
+                    },
+                    sub = "sub-28",
+                }
+            })
+
+            local res, err = t.req_self_with_http("/bcl", "POST",
+                                                  "logout_token=" .. token)
+            if not res then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+            ngx.say("status: ", res.status)
+
+            local resty_redis = require "resty.redis"
+            local red = resty_redis:new()
+            local ok, cerr = red:connect("127.0.0.1", 6379)
+            if not ok then
+                ngx.status = 500
+                ngx.say(cerr)
+                return
+            end
+            local v = red:get("bcl:bcl:sub:http://127.0.0.1:6724#bcl-client#sub-28")
+            ngx.say("stored value equals token iat: ", tonumber(v) == past)
+        }
+    }
+--- response_body
+status: 200
+stored value equals token iat: true
+--- error_log
+OIDC backchannel logout accepted for sub sub-28
