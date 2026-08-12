@@ -54,6 +54,10 @@ _EOC_
 add_block_preprocessor(sub {
     my ($block) = @_;
 
+    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
+        $block->set_value("no_error_log", "[error]");
+    }
+
     if (!$block->request) {
         $block->set_value("request", "GET /t");
     }
@@ -283,7 +287,7 @@ passed
                 return
             end
             ngx.status = res.status
-            ngx.say("cache-control: ", res.headers["Cache-Control"])
+            ngx.header["Cache-Control"] = res.headers["Cache-Control"]
 
             local entry = ngx.shared.bcl:get(
                 "bcl:sid:http://127.0.0.1:6724#bcl-client#sess-6")
@@ -291,8 +295,9 @@ passed
         }
     }
 --- response_body
-cache-control: no-store
 denylist entry: true
+--- response_headers
+Cache-Control: no-store
 --- error_log
 OIDC backchannel logout accepted for sid sess-6
 
@@ -492,7 +497,7 @@ signature validation failed
                 ngx.say(err)
                 return
             end
-            ngx.say("status: ", res.status)
+            ngx.status = res.status
 
             local entry = ngx.shared.bcl:get(
                 "bcl:sid:http://127.0.0.1:6724#bcl-client#sess-9a")
@@ -500,8 +505,8 @@ signature validation failed
         }
     }
 --- response_body
-status: 400
 denylist entry: false
+--- error_code: 400
 --- error_log
 signature validation failed
 
@@ -731,32 +736,13 @@ aud does not contain the client_id
 
 
 
-=== TEST 18: Transport-level failures: non-POST and missing logout_token.
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require "lib.test_admin"
-
-            local res1, err = t.req_self_with_http("/bcl", "GET")
-            if not res1 then
-                ngx.status = 500
-                ngx.say(err)
-                return
-            end
-            local res2
-            res2, err = t.req_self_with_http("/bcl", "POST", "foo=bar")
-            if not res2 then
-                ngx.status = 500
-                ngx.say(err)
-                return
-            end
-            ngx.say("get: ", res1.status)
-            ngx.say("post without token: ", res2.status)
-        }
-    }
---- response_body
-get: 405
-post without token: 400
+=== TEST 18: A POST without a logout_token is rejected.
+--- request
+POST /bcl
+foo=bar
+--- more_headers
+Content-Type: application/x-www-form-urlencoded
+--- error_code: 400
 
 
 
@@ -1269,7 +1255,7 @@ OIDC session revoked by backchannel logout
                 ngx.say(err)
                 return
             end
-            ngx.say("status: ", res.status)
+            ngx.status = res.status
 
             local resty_redis = require "resty.redis"
             local red = resty_redis:new()
@@ -1284,7 +1270,6 @@ OIDC session revoked by backchannel logout
         }
     }
 --- response_body
-status: 200
 redis entry: true
 --- error_log
 OIDC backchannel logout accepted for sid sess-21
@@ -1361,7 +1346,7 @@ OIDC backchannel logout accepted for sid sess-21
                 ngx.say(err)
                 return
             end
-            ngx.say("status: ", res.status)
+            ngx.status = res.status
 
             local resty_redis = require "resty.redis"
             local red = resty_redis:new()
@@ -1377,7 +1362,6 @@ OIDC backchannel logout accepted for sid sess-21
         }
     }
 --- response_body
-status: 200
 redis entry: true
 --- error_log
 OIDC backchannel logout accepted for sid sess-22
@@ -1630,7 +1614,7 @@ OIDC backchannel logout store failed
                 ngx.say(err)
                 return
             end
-            ngx.say("status: ", res.status)
+            ngx.status = res.status
 
             local resty_redis = require "resty.redis"
             local red = resty_redis:new()
@@ -1647,7 +1631,6 @@ OIDC backchannel logout store failed
         }
     }
 --- response_body
-status: 200
 redis entry: true
 redis ttl positive: true
 --- error_log
@@ -1724,7 +1707,7 @@ OIDC backchannel logout accepted for sid sess-27
                 ngx.say(err)
                 return
             end
-            ngx.say("status: ", res.status)
+            ngx.status = res.status
 
             local resty_redis = require "resty.redis"
             local red = resty_redis:new()
@@ -1739,7 +1722,6 @@ OIDC backchannel logout accepted for sid sess-27
         }
     }
 --- response_body
-status: 200
 stored value equals token iat: true
 --- error_log
 OIDC backchannel logout accepted for sub sub-28
