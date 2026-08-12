@@ -130,6 +130,67 @@ local function flatten_openidc_options(conf)
 end
 
 
+-- Redis connection fields shaped after lua-resty-session's session.redis
+-- options; shared by session storage and the back-channel logout store so
+-- both expose an identical config surface.
+local session_redis_schema = {
+    type = "object",
+    properties = {
+        host = {
+            type = "string", minLength = 2, default = "127.0.0.1"
+        },
+        port = {
+            type = "integer", minimum = 1, default = 6379,
+        },
+        username = {
+            type = "string", minLength = 1,
+        },
+        password = {
+            type = "string", minLength = 0,
+        },
+        database = {
+            type = "integer", minimum = 0, default = 0,
+            description = "redis database index",
+        },
+        prefix = {
+            type = "string",
+            default = "sessions",
+            description = "prefix for keys stored in redis"
+        },
+        ssl = {
+            type = "boolean", default = false,
+            description = "enable ssl",
+        },
+        ssl_verify = {
+            type = "boolean", default = true,
+            description = "verify ssl certificate",
+        },
+        server_name = {
+            type = "string",
+            description = "The server name for the new TLS SNI extension.",
+        },
+        connect_timeout = {
+            type = "integer", minimum = 1, default = 1000,
+            description = "connect timeout in milliseconds",
+        },
+        send_timeout = {
+            type = "integer", minimum = 1, default = 1000,
+            description = "send timeout in milliseconds",
+        },
+        read_timeout = {
+            type = "integer", minimum = 1, default = 1000,
+            description = "read timeout in milliseconds",
+        },
+        keepalive_timeout = {
+            type = "integer", minimum = 1000, default = 10000,
+            description = "keepalive timeout in milliseconds",
+        },
+    }
+}
+
+local bcl_redis_schema = core.table.deepcopy(session_redis_schema)
+bcl_redis_schema.properties.prefix.default = "bcl"
+
 local schema = {
     type = "object",
     properties = {
@@ -231,60 +292,7 @@ local schema = {
                     enum = {"cookie", "redis"},
                     default = "cookie",
                 },
-                redis = {
-                    type = "object",
-                    properties = {
-                        host = {
-                            type = "string", minLength = 2, default = "127.0.0.1"
-                        },
-                        port = {
-                            type = "integer", minimum = 1, default = 6379,
-                        },
-                        username = {
-                            type = "string", minLength = 1,
-                        },
-                        password = {
-                            type = "string", minLength = 0,
-                        },
-                        database = {
-                            type = "integer", minimum = 0, default = 0,
-                            description = "redis database index",
-                        },
-                        prefix = {
-                            type = "string",
-                            default = "sessions",
-                            description = "prefix for keys stored in redis"
-                        },
-                        ssl = {
-                            type = "boolean", default = false,
-                            description = "enable ssl",
-                        },
-                        ssl_verify = {
-                            type = "boolean", default = true,
-                            description = "verify ssl certificate",
-                        },
-                        server_name = {
-                            type = "string",
-                            description = "The server name for the new TLS SNI extension.",
-                        },
-                        connect_timeout = {
-                            type = "integer", minimum = 1, default = 1000,
-                            description = "connect timeout in milliseconds",
-                        },
-                        send_timeout = {
-                            type = "integer", minimum = 1, default = 1000,
-                            description = "send timeout in milliseconds",
-                        },
-                        read_timeout = {
-                            type = "integer", minimum = 1, default = 1000,
-                            description = "read timeout in milliseconds",
-                        },
-                        keepalive_timeout = {
-                            type = "integer", minimum = 1000, default = 10000,
-                            description = "keepalive timeout in milliseconds",
-                        },
-                    }
-                }
+                redis = session_redis_schema,
             },
             required = {"secret"},
             ["if"] = {
@@ -295,6 +303,30 @@ local schema = {
             ["then"] = {
                 required = {"redis"},
             },
+            additionalProperties = false,
+        },
+        backchannel_logout = {
+            type = "object",
+            description = "OIDC Back-Channel Logout 1.0 receiver: the identity "
+                .. "provider POSTs a logout_token to `path`, and the revoked "
+                .. "session is rejected from the next request on.",
+            properties = {
+                path = {
+                    type = "string",
+                    pattern = "^/",
+                    description = "in-route path that receives the provider's "
+                        .. "back-channel logout POST",
+                },
+                storage = {
+                    type = "string",
+                    enum = {"shm", "redis"},
+                    default = "shm",
+                    description = "where revocations are stored; shm is "
+                        .. "per-instance, redis is shared across nodes",
+                },
+                redis = bcl_redis_schema,
+            },
+            required = {"path"},
             additionalProperties = false,
         },
         realm = {
@@ -631,7 +663,8 @@ local schema = {
         }
     },
     encrypt_fields = {"client_secret", "client_rsa_private_key", "dpop.private_key",
-                      "session.secret", "session.redis.password"},
+                      "session.secret", "session.redis.password",
+                      "backchannel_logout.redis.password"},
     required = {"client_id", "discovery"}
 }
 
@@ -912,6 +945,19 @@ function _M.check_schema(conf)
     local ok, err = core.schema.check(schema, conf)
     if not ok then
         return false, err
+    end
+
+    if conf.backchannel_logout then
+        if conf.bearer_only then
+            return false, "backchannel_logout cannot be used with bearer_only"
+        end
+        if conf.backchannel_logout.storage == "redis"
+           and not conf.backchannel_logout.redis
+           and not (conf.session and conf.session.redis) then
+            return false, "backchannel_logout.redis is required when " ..
+                          "backchannel_logout.storage is redis and " ..
+                          "session.redis is not configured"
+        end
     end
 
     if conf.claim_schema and not secret.is_secret_ref(conf.claim_schema) then
