@@ -678,3 +678,47 @@ x-forwarded-proto: http
 x-real-ip: 127.0.0.1
 --- no_error_log
 [error]
+
+
+
+=== TEST 17: the client's original X-Forwarded-For stays readable after it is cleared
+--- yaml_config
+apisix:
+    node_listen: 1984
+    enable_admin: false
+    trusted_addresses:
+        - "10.0.0.0/8"
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
+--- apisix_yaml
+routes:
+  -
+    id: 1
+    uri: /old_uri
+    plugins:
+        serverless-pre-function:
+            phase: access
+            functions:
+              - "return function(conf, ctx) ngx.log(ngx.WARN, \"orig xff: \", tostring(ctx.var.apisix_orig_xf_for)) end"
+    upstream:
+        nodes:
+            "127.0.0.1:1980": 1
+        type: roundrobin
+#END
+--- request
+GET /old_uri
+--- more_headers
+X-Forwarded-For: 9.9.9.9, 8.8.8.8
+--- response_body
+uri: /old_uri
+host: localhost
+x-forwarded-for: 127.0.0.1
+x-forwarded-host: localhost
+x-forwarded-port: 1984
+x-forwarded-proto: http
+x-real-ip: 127.0.0.1
+--- error_log
+orig xff: 9.9.9.9, 8.8.8.8
+
