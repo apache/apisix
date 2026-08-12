@@ -716,6 +716,16 @@ end
 
 
 local function handle_trusted_x_forwarded_headers(api_ctx)
+    -- The other four originals are copied by the configuration; this one cannot be,
+    -- because naming `$http_x_forwarded_for` there would pin it in `r->variables[]`
+    -- and the clear below could not dislodge it. Copy it here instead, on every
+    -- path: the header is only destroyed further down, but a plugin reading
+    -- `ctx.var.original_x_forwarded_for` should not have to know that.
+    local inbound_xff = api_ctx.var.http_x_forwarded_for
+    if inbound_xff then
+        api_ctx.var.original_x_forwarded_for = inbound_xff
+    end
+
     if not trusted_addresses_util.is_configured() then
         return
     end
@@ -740,11 +750,7 @@ local function handle_trusted_x_forwarded_headers(api_ctx)
     -- `$proxy_add_x_forwarded_for`. Without a boundary the chain is preserved,
     -- which is the compatible default and is why this lives behind the check
     -- above rather than in the config.
-    local inbound_xff = api_ctx.var.http_x_forwarded_for
     if inbound_xff then
-        -- the config cannot take this copy without pinning the variable, so it is
-        -- taken here, where the value is about to be destroyed
-        api_ctx.var.original_x_forwarded_for = inbound_xff
         core.request.set_header(api_ctx, "X-Forwarded-For", nil)
         api_ctx.var.http_x_forwarded_for = nil
     end
