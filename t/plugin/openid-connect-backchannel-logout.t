@@ -760,7 +760,16 @@ post without token: 400
 
 
 
-=== TEST 19: Set up the Keycloak route and register the BCL URL at the client.
+=== TEST 19: A non-POST request to the back-channel logout endpoint returns 405 with an Allow header.
+--- request
+GET /bcl
+--- error_code: 405
+--- response_headers
+Allow: POST
+
+
+
+=== TEST 20: Set up the Keycloak route and register the BCL URL at the client.
 --- config
     location /t {
         content_by_lua_block {
@@ -827,7 +836,7 @@ bcl configured
 
 
 
-=== TEST 20: The session is rejected after the IdP delivers a back-channel logout (sid).
+=== TEST 21: The session is rejected after the IdP delivers a back-channel logout (sid).
 --- config
     location /t {
         content_by_lua_block {
@@ -909,7 +918,7 @@ OIDC session revoked by backchannel logout
 
 
 
-=== TEST 21: With unauth_action deny, a revoked session gets 401.
+=== TEST 22: With unauth_action deny, a revoked session gets 401.
 --- config
     location /t {
         content_by_lua_block {
@@ -1038,7 +1047,7 @@ OIDC session revoked by backchannel logout
 
 
 
-=== TEST 22: A sub-only logout kills the session; a later login survives.
+=== TEST 23: A sub-only logout kills the session; a later login survives.
 --- config
     location /t {
         content_by_lua_block {
@@ -1191,7 +1200,7 @@ OIDC session revoked by backchannel logout
 
 
 
-=== TEST 23: With storage redis, an accepted logout token lands in redis.
+=== TEST 24: With storage redis, an accepted logout token lands in redis.
 --- config
     location /t {
         content_by_lua_block {
@@ -1282,7 +1291,7 @@ OIDC backchannel logout accepted for sid sess-21
 
 
 
-=== TEST 24: storage redis without an own redis block falls back to session.redis.
+=== TEST 25: storage redis without an own redis block falls back to session.redis.
 --- config
     location /t {
         content_by_lua_block {
@@ -1375,7 +1384,7 @@ OIDC backchannel logout accepted for sid sess-22
 
 
 
-=== TEST 25: The endpoint answers 400 when the redis store is unreachable.
+=== TEST 26: The endpoint answers 400 when the redis store is unreachable.
 --- config
     location /t {
         content_by_lua_block {
@@ -1451,7 +1460,7 @@ OIDC backchannel logout store failed
 
 
 
-=== TEST 26: A request with the store down gets 503 and the session is kept.
+=== TEST 27: A request with the store down gets 503 and the session is kept.
 --- config
     location /t {
         content_by_lua_block {
@@ -1551,7 +1560,7 @@ OIDC backchannel logout store failed
 
 
 
-=== TEST 27: With storage redis, session.absolute_timeout 0 still falls back to a usable TTL.
+=== TEST 28: With storage redis, session.absolute_timeout 0 still falls back to a usable TTL.
 --- config
     location /t {
         content_by_lua_block {
@@ -1646,7 +1655,7 @@ OIDC backchannel logout accepted for sid sess-27
 
 
 
-=== TEST 28: With storage redis, the denylist entry stores the token's iat, not receipt time.
+=== TEST 29: With storage redis, the denylist entry stores the token's iat, not receipt time.
 --- config
     location /t {
         content_by_lua_block {

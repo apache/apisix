@@ -1414,6 +1414,7 @@ local function handle_backchannel_logout(conf)
     core.response.set_header("Cache-Control", "no-store")
 
     if ngx.req.get_method() ~= "POST" then
+        core.response.set_header("Allow", "POST")
         return 405
     end
 
