@@ -249,6 +249,8 @@ do
 
         rate_limiting_info         = true,
 
+        original_x_forwarded_for   = true,
+
     }
 
     -- sort in alphabetical

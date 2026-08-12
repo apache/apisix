@@ -740,7 +740,11 @@ local function handle_trusted_x_forwarded_headers(api_ctx)
     -- `$proxy_add_x_forwarded_for`. Without a boundary the chain is preserved,
     -- which is the compatible default and is why this lives behind the check
     -- above rather than in the config.
-    if api_ctx.var.http_x_forwarded_for then
+    local inbound_xff = api_ctx.var.http_x_forwarded_for
+    if inbound_xff then
+        -- the config cannot take this copy without pinning the variable, so it is
+        -- taken here, where the value is about to be destroyed
+        api_ctx.var.original_x_forwarded_for = inbound_xff
         core.request.set_header(api_ctx, "X-Forwarded-For", nil)
         api_ctx.var.http_x_forwarded_for = nil
     end

@@ -916,7 +916,16 @@ http {
             set $original_x_forwarded_proto $http_x_forwarded_proto;
             set $original_x_forwarded_host   $http_x_forwarded_host;
             set $original_x_forwarded_port   $http_x_forwarded_port;
-            set $original_x_forwarded_for    $http_x_forwarded_for;
+            # X-Forwarded-For is the one that cannot be copied here. Unlike
+            # `$http_x_forwarded_proto` and friends, which are prefix variables and
+            # are re-evaluated on every read, `$http_x_forwarded_for` is a dedicated
+            # entry in `ngx_http_core_variables[]`; naming it in the configuration
+            # makes it indexed, and this `set` would then pin the client's value in
+            # `r->variables[]` for the whole request -- surviving the clear below and
+            # feeding it back to route `vars`, rate-limit keys and every other
+            # `ctx.var` reader. Lua fills the slot instead, in the one branch that
+            # destroys the value.
+            set $original_x_forwarded_for    '';
             set $original_forwarded          $http_forwarded;
             more_set_input_headers "X-Forwarded-Proto: $scheme";
             more_set_input_headers "X-Forwarded-Host: $var_x_forwarded_host";

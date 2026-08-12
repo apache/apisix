@@ -963,7 +963,7 @@ _EOC_
             set \$original_x_forwarded_proto \$http_x_forwarded_proto;
             set \$original_x_forwarded_host   \$http_x_forwarded_host;
             set \$original_x_forwarded_port   \$http_x_forwarded_port;
-            set \$original_x_forwarded_for    \$http_x_forwarded_for;
+            set \$original_x_forwarded_for    '';
             set \$original_forwarded          \$http_forwarded;
             more_set_input_headers "X-Forwarded-Proto: \$scheme";
             more_set_input_headers "X-Forwarded-Host: \$var_x_forwarded_host";

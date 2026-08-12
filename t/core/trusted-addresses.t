@@ -628,6 +628,7 @@ GET /old_uri
 X-Forwarded-For: 9.9.9.9
 X-Forwarded-Proto: https
 X-Forwarded-Host: evil.com
+X-Forwarded-Port: 8443
 Forwarded: for=1.2.3.4
 --- response_body
 uri: /old_uri
@@ -701,7 +702,7 @@ routes:
         serverless-pre-function:
             phase: access
             functions:
-              - "return function(conf, ctx) ngx.log(ngx.WARN, \"orig xff: \", tostring(ctx.var.original_x_forwarded_for)) end"
+              - "return function(conf, ctx) ngx.log(ngx.WARN, \"orig xff: \", tostring(ctx.var.original_x_forwarded_for), \" current: \", tostring(ctx.var.http_x_forwarded_for)) end"
     upstream:
         nodes:
             "127.0.0.1:1980": 1
@@ -720,4 +721,35 @@ x-forwarded-port: 1984
 x-forwarded-proto: http
 x-real-ip: 127.0.0.1
 --- error_log
-orig xff: 9.9.9.9, 8.8.8.8
+orig xff: 9.9.9.9, 8.8.8.8 current: nil
+
+
+
+=== TEST 18: a route matching on http_x_forwarded_for does not see the cleared chain
+--- yaml_config
+apisix:
+    node_listen: 1984
+    enable_admin: false
+    trusted_addresses:
+        - "10.0.0.0/8"
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
+--- apisix_yaml
+routes:
+  -
+    id: 1
+    uri: /old_uri
+    vars:
+      - ["http_x_forwarded_for", "==", "9.9.9.9"]
+    upstream:
+        nodes:
+            "127.0.0.1:1980": 1
+        type: roundrobin
+#END
+--- request
+GET /old_uri
+--- more_headers
+X-Forwarded-For: 9.9.9.9
+--- error_code: 404
