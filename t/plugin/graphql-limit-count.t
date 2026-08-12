@@ -646,10 +646,11 @@ X-RateLimit-Remaining: 15
                  [[{
                     "plugins": {
                         "graphql-limit-count": {
-                            "count": 1000000,
+                            "count": 100,
                             "time_window": 60,
                             "rejected_code": 503,
-                            "key": "remote_addr"
+                            "key": "remote_addr",
+                            "show_limit_quota_header": true
                         }
                     },
                     "upstream": {
@@ -674,13 +675,17 @@ passed
 
 
 
-=== TEST 28: deeply reused fragments are measured once, not re-expanded
+=== TEST 28: deeply reused fragments are measured once and keep their depth
 --- config
     location /t {
         content_by_lua_block {
+            -- f0 nests three field levels (depth 3); every fN spreads the
+            -- previous fragment twice, so a naive expansion is O(2^N) while
+            -- the result stays depth 3. A completed request with the exact
+            -- quota proves the traversal is both linear and depth-correct.
             local http = require "resty.http"
             local n = 34
-            local parts = {"fragment f0 on Query { __typename }"}
+            local parts = {"fragment f0 on Query { a { b { c } } }"}
             for i = 1, n do
                 parts[#parts + 1] = string.format(
                     "fragment f%d on Query { ...f%d ...f%d }", i, i - 1, i - 1)
@@ -699,6 +704,7 @@ passed
                 return
             end
             ngx.say(res.status)
+            ngx.say(res.headers["X-RateLimit-Remaining"])
         }
     }
 --- request
@@ -706,3 +712,4 @@ GET /t
 --- timeout: 10
 --- response_body
 200
+97
