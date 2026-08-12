@@ -513,7 +513,7 @@ signature: ok
 
 
 
-=== TEST 12: create route for chunked-body framing check
+=== TEST 10: create route for chunked-body framing check
 --- config
     location /t {
         content_by_lua_block {
@@ -542,7 +542,7 @@ passed
 
 
 
-=== TEST 13: chunked client body is reframed with a correct Content-Length
+=== TEST 11: chunked client body is reframed with a correct Content-Length
 --- inside_lua_block
         ngx.req.read_body()
         local te = ngx.req.get_headers()["transfer-encoding"]
