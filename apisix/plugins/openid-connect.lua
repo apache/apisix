@@ -1420,8 +1420,10 @@ local function handle_backchannel_logout(conf)
         key = bcl_denylist_key("sub", conf, discovery.issuer, claims.sub)
         logged_target = "sub " .. claims.sub
     end
-    local ttl = (conf.session and conf.session.absolute_timeout)
-                or BCL_DENYLIST_TTL
+    local ttl = conf.session and conf.session.absolute_timeout
+    if type(ttl) ~= "number" or ttl <= 0 then
+        ttl = BCL_DENYLIST_TTL
+    end
     ok, store_err = bcl_store_set(conf, key, ttl)
     if not ok then
         core.log.error("OIDC backchannel logout store failed: ", store_err)

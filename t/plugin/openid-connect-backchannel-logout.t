@@ -1548,3 +1548,98 @@ session destroyed: false
 second request: 503
 --- error_log
 OIDC backchannel logout store failed
+
+
+
+=== TEST 27: With storage redis, session.absolute_timeout 0 still falls back to a usable TTL.
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require "lib.test_admin"
+            local r_jwt = require "resty.jwt"
+
+            local code, body = t.test('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "openid-connect": {
+                                "discovery": "http://127.0.0.1:6724/.well-known/openid-configuration",
+                                "client_id": "bcl-client",
+                                "client_secret": "dummy-not-used-by-the-endpoint",
+                                "ssl_verify": false,
+                                "timeout": 10,
+                                "session": {
+                                    "secret": "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
+                                    "absolute_timeout": 0
+                                },
+                                "backchannel_logout": {
+                                    "path": "/bcl",
+                                    "storage": "redis",
+                                    "redis": {
+                                        "host": "127.0.0.1",
+                                        "port": 6379
+                                    }
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/*"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local token = r_jwt:sign(t.read_file("t/certs/private.pem"), {
+                header = { typ = "JWT", alg = "RS256", kid = "bclkey" },
+                payload = {
+                    iss = "http://127.0.0.1:6724",
+                    aud = "bcl-client",
+                    iat = ngx.time(),
+                    exp = ngx.time() + 120,
+                    -- unique per run: the jti replay guard lives in redis,
+                    -- which outlives the test nginx instances
+                    jti = "jti-test27-" .. ngx.now(),
+                    events = {
+                        ["http://schemas.openid.net/event/backchannel-logout"] = {}
+                    },
+                    sid = "sess-27",
+                }
+            })
+
+            local res, err = t.req_self_with_http("/bcl", "POST",
+                                                  "logout_token=" .. token)
+            if not res then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+            ngx.say("status: ", res.status)
+
+            local resty_redis = require "resty.redis"
+            local red = resty_redis:new()
+            local ok, cerr = red:connect("127.0.0.1", 6379)
+            if not ok then
+                ngx.status = 500
+                ngx.say(cerr)
+                return
+            end
+            local v = red:get("bcl:bcl:sid:http://127.0.0.1:6724#bcl-client#sess-27")
+            ngx.say("redis entry: ", v ~= ngx.null)
+            local ttl = red:ttl("bcl:bcl:sid:http://127.0.0.1:6724#bcl-client#sess-27")
+            ngx.say("redis ttl positive: ", ttl ~= nil and ttl > 0)
+        }
+    }
+--- response_body
+status: 200
+redis entry: true
+redis ttl positive: true
+--- error_log
+OIDC backchannel logout accepted for sid sess-27
