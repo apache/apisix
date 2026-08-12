@@ -913,11 +913,11 @@ http {
             # handler -- but an access log format that names them logs what the
             # client sent. `$scheme` / `$var_x_forwarded_host` /
             # `$var_x_forwarded_port` are the sanitized values.
-            set $apisix_orig_xf_proto  $http_x_forwarded_proto;
-            set $apisix_orig_xf_host   $http_x_forwarded_host;
-            set $apisix_orig_xf_port   $http_x_forwarded_port;
-            set $apisix_orig_forwarded $http_forwarded;
-            set $apisix_orig_xf_for    $http_x_forwarded_for;
+            set $original_x_forwarded_proto $http_x_forwarded_proto;
+            set $original_x_forwarded_host   $http_x_forwarded_host;
+            set $original_x_forwarded_port   $http_x_forwarded_port;
+            set $original_x_forwarded_for    $http_x_forwarded_for;
+            set $original_forwarded          $http_forwarded;
             more_set_input_headers "X-Forwarded-Proto: $scheme";
             more_set_input_headers "X-Forwarded-Host: $var_x_forwarded_host";
             more_set_input_headers "X-Forwarded-Port: $var_x_forwarded_port";

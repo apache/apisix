@@ -701,7 +701,7 @@ routes:
         serverless-pre-function:
             phase: access
             functions:
-              - "return function(conf, ctx) ngx.log(ngx.WARN, \"orig xff: \", tostring(ctx.var.apisix_orig_xf_for)) end"
+              - "return function(conf, ctx) ngx.log(ngx.WARN, \"orig xff: \", tostring(ctx.var.original_x_forwarded_for)) end"
     upstream:
         nodes:
             "127.0.0.1:1980": 1

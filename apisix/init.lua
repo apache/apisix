@@ -724,13 +724,13 @@ local function handle_trusted_x_forwarded_headers(api_ctx)
         -- a trusted peer's own values go back, from the copies the config took
         -- before overwriting them
         restore_if_sent(api_ctx, "X-Forwarded-Proto", "http_x_forwarded_proto",
-                        api_ctx.var.apisix_orig_xf_proto)
+                        api_ctx.var.original_x_forwarded_proto)
         restore_if_sent(api_ctx, "X-Forwarded-Host", "http_x_forwarded_host",
-                        api_ctx.var.apisix_orig_xf_host)
+                        api_ctx.var.original_x_forwarded_host)
         restore_if_sent(api_ctx, "X-Forwarded-Port", "http_x_forwarded_port",
-                        api_ctx.var.apisix_orig_xf_port)
+                        api_ctx.var.original_x_forwarded_port)
         restore_if_sent(api_ctx, "Forwarded", "http_forwarded",
-                        api_ctx.var.apisix_orig_forwarded)
+                        api_ctx.var.original_forwarded)
 
         return
     end

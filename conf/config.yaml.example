@@ -177,13 +177,14 @@ apisix:
                                   # values; `core.request.header` and `ctx.var.http_x_forwarded_*` in Lua are
                                   # unaffected and always see the overridden ones.
                                   # What the client actually sent stays reachable through
-                                  # `$apisix_orig_xf_proto`, `$apisix_orig_xf_host`,
-                                  # `$apisix_orig_xf_port`, `$apisix_orig_xf_for` and
-                                  # `$apisix_orig_forwarded`, in a log format or from Lua as
-                                  # `ctx.var.apisix_orig_xf_*`. These replace the
-                                  # `ctx.var.original_x_forwarded_*` fields, and cover
-                                  # X-Forwarded-For, which is cleared rather than overwritten
-                                  # when a trust boundary is configured and the peer is outside it.
+                                  # `$original_x_forwarded_proto`, `$original_x_forwarded_host`,
+                                  # `$original_x_forwarded_port`, `$original_x_forwarded_for` and
+                                  # `$original_forwarded`, in a log format or from Lua as
+                                  # `ctx.var.original_x_forwarded_*` -- the same names the values
+                                  # were previously kept under, so a plugin reading them is
+                                  # unaffected. This matters most for X-Forwarded-For, which is
+                                  # cleared rather than overwritten when a trust boundary is
+                                  # configured and the peer is outside it.
   # fine tune the parameters of LRU cache for some features like secret
   lru:
     secret:
