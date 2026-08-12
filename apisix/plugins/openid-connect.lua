@@ -205,6 +205,13 @@ local session_redis_schema = {
 
 local bcl_redis_schema = core.table.deepcopy(session_redis_schema)
 bcl_redis_schema.properties.prefix.default = "bcl"
+-- apisix/utils/redis.lua has no server_name (SNI) support and applies a
+-- single timeout to connect, send and read; drop the fields it can't honor.
+bcl_redis_schema.properties.server_name = nil
+bcl_redis_schema.properties.send_timeout = nil
+bcl_redis_schema.properties.read_timeout = nil
+bcl_redis_schema.properties.connect_timeout.description =
+    "connection timeout in milliseconds, applied to connect, send and read"
 
 local schema = {
     type = "object",

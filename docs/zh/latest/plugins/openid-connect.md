@@ -105,7 +105,7 @@ import TabItem from '@theme/TabItem';
 | backchannel_logout | object | 否 | | | OIDC Back-Channel Logout 1.0 接收端。配置后，身份提供商可以向 `backchannel_logout.path` POST 一个 `logout_token`，被撤销的会话从下一个请求起即被拒绝。不能与 `bearer_only` 同时使用。 |
 | backchannel_logout.path | string | 是 | | | 接收身份提供商后端通道注销 POST 请求的路由内路径。路由必须覆盖该路径，且应在身份提供商处将完整的公开 URL 注册为客户端的 backchannel logout URL。 |
 | backchannel_logout.storage | string | 否 | shm | ["shm","redis"] | 撤销记录的存储位置。`shm` 为每个网关实例独立：多节点部署中身份提供商的 POST 只会到达一个节点，因此应使用 `redis`。设置为 `redis` 且未配置 `backchannel_logout.redis` 时，复用 `session.redis`。 |
-| backchannel_logout.redis | object | 否 | | | 撤销存储的 Redis 连接。字段与 `session.redis` 相同，但 `prefix` 默认为 `bcl`。 |
+| backchannel_logout.redis | object | 否 | | | 撤销存储的 Redis 连接。接受与 `session.redis` 相同的连接字段，但不包括 `server_name`、`send_timeout` 和 `read_timeout`；该存储使用 `connect_timeout` 作为连接、发送和读取共用的单一超时时间。`prefix` 默认为 `bcl`。 |
 | session_contents | object | 否 | | | 会话内容配置。如果未配置，所有数据将存储在会话中。 |
 | session_contents.access_token | boolean | 否 | | | 如果为 true，则在会话中存储访问令牌。 |
 | session_contents.id_token | boolean | 否 | | | 如果为 true，则在会话中存储 ID 令牌。 |

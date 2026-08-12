@@ -106,7 +106,7 @@ The `openid-connect` Plugin supports the integration with [OpenID Connect (OIDC)
 | backchannel_logout | object | False | | | OIDC Back-Channel Logout 1.0 receiver. When configured, the identity provider can POST a `logout_token` to `backchannel_logout.path`, and the revoked session is rejected from the next request on. Cannot be combined with `bearer_only`. |
 | backchannel_logout.path | string | True | | | In-route path that receives the provider's back-channel logout POST. The route must cover this path, and the full public URL should be registered at the provider as the client's backchannel logout URL. |
 | backchannel_logout.storage | string | False | shm | ["shm","redis"] | Where revocations are stored. `shm` is per-gateway-instance: in multi-node deployments the provider's POST only reaches one node, so use `redis`. When set to `redis` and `backchannel_logout.redis` is omitted, `session.redis` is reused. |
-| backchannel_logout.redis | object | False | | | Redis connection for the revocation store. Same fields as `session.redis`, except `prefix` defaults to `bcl`. |
+| backchannel_logout.redis | object | False | | | Redis connection for the revocation store. Accepts the same connection fields as `session.redis` except `server_name`, `send_timeout` and `read_timeout`; the store uses `connect_timeout` as a single timeout for connect, send and read. `prefix` defaults to `bcl`. |
 | session_contents | object | False | | | Session content configurations. If unconfigured, all data will be stored in the session. |
 | session_contents.access_token | boolean | False | | | If true, store the access token in the session. |
 | session_contents.id_token | boolean | False | | | If true, store the ID token in the session. |
