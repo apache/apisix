@@ -22,6 +22,7 @@ local openidc           = require("resty.openidc")
 local jsonschema        = require('jsonschema')
 local pkey              = require("resty.openssl.pkey")
 local dump_jwk          = require("resty.openssl.auxiliary.jwk").dump_jwk
+local redis             = require("apisix.utils.redis")
 local string            = string
 local ngx               = ngx
 local ipairs            = ipairs
@@ -40,6 +41,19 @@ local plugin_name       = "openid-connect"
 -- identical in lua-resty-openidc 1.8.0 and 1.9.0
 local STATE_MISMATCH_ERR =
     "state from argument does not match state restored from session"
+
+-- OIDC Back-Channel Logout 1.0
+-- (https://openid.net/specs/openid-connect-backchannel-1_0.html)
+local BCL_EVENT = "http://schemas.openid.net/event/backchannel-logout"
+-- Acceptance window for the logout token's iat, mirroring
+-- mod_auth_openidc's default OIDCIDTokenIatSlack.
+local BCL_IAT_SLACK = 600
+-- A seen jti only needs to be remembered while a token whose iat is still
+-- inside the acceptance window could arrive.
+local BCL_JTI_TTL = 2 * BCL_IAT_SLACK + 10
+-- Fallback lifetime of a revocation entry when the session has no
+-- absolute_timeout: an entry only needs to outlive the sessions it revokes.
+local BCL_DENYLIST_TTL = 86400
 
 
 -- Session config is passed as-is to resty.session.start(); the only
@@ -1163,6 +1177,249 @@ local function validate_claims_in_oidcauth_response(resp, conf)
 end
 
 
+local function bcl_redis_conf(conf)
+    return conf.backchannel_logout.redis
+           or (conf.session and conf.session.redis)
+end
+
+
+local function bcl_redis_connect(rconf)
+    local red, err = redis.new({
+        redis_host = rconf.host,
+        redis_port = rconf.port,
+        redis_username = rconf.username,
+        redis_password = rconf.password,
+        redis_database = rconf.database,
+        redis_ssl = rconf.ssl,
+        redis_ssl_verify = rconf.ssl_verify,
+        redis_timeout = rconf.connect_timeout,
+    })
+    if not red then
+        return nil, "failed to connect to redis: " .. err
+    end
+    return red
+end
+
+
+-- One revocation (or seen-jti) entry per key; the value is the unix time
+-- the entry was written.
+local function bcl_store_set(conf, key, ttl)
+    local now = ngx.time()
+
+    if conf.backchannel_logout.storage == "redis" then
+        local rconf = bcl_redis_conf(conf)
+        local red, err = bcl_redis_connect(rconf)
+        if not red then
+            return false, err
+        end
+        local ok
+        ok, err = red:set(rconf.prefix .. ":" .. key, now, "EX", ttl)
+        if not ok then
+            return false, "failed to write to redis: " .. err
+        end
+        red:set_keepalive(rconf.keepalive_timeout, 100)
+        return true
+    end
+
+    local dict = ngx.shared.bcl
+    if not dict then
+        return false, "shared dict \"bcl\" is missing"
+    end
+    -- safe_set: evicting an unexpired revocation to make room would silently
+    -- re-admit a revoked session, so a full dict must fail the write instead.
+    local ok, err = dict:safe_set(key, now, ttl)
+    if not ok then
+        return false, "failed to write to the shared dict: " .. err
+    end
+    return true
+end
+
+
+-- Returns the entry timestamp, nil when there is no entry, or nil plus an
+-- error when the store cannot be reached (the caller treats that as
+-- "no verdict", never as "clean").
+local function bcl_store_get(conf, key)
+    if conf.backchannel_logout.storage == "redis" then
+        local rconf = bcl_redis_conf(conf)
+        local red, err = bcl_redis_connect(rconf)
+        if not red then
+            return nil, err
+        end
+        local v
+        v, err = red:get(rconf.prefix .. ":" .. key)
+        if err then
+            return nil, "failed to read from redis: " .. err
+        end
+        red:set_keepalive(rconf.keepalive_timeout, 100)
+        if v == ngx.null then
+            return nil
+        end
+        return tonumber(v)
+    end
+
+    local dict = ngx.shared.bcl
+    if not dict then
+        return nil, "shared dict \"bcl\" is missing"
+    end
+    return dict:get(key)
+end
+
+
+-- The issuer scopes sid/sub values (unique per issuer, Back-Channel Logout
+-- 1.0 section 2.4); the client_id additionally scopes the entry to the
+-- client the logout token's aud named, so two clients of the same realm
+-- sharing a store cannot revoke each other's sessions.
+local function bcl_denylist_key(kind, conf, issuer, value)
+    return "bcl:" .. kind .. ":" .. issuer .. "#" .. conf.client_id .. "#" .. value
+end
+
+
+-- Validates a logout token per Back-Channel Logout 1.0 section 2.6 and
+-- returns its claims. Signature verification (JWKS fetch and cache via the
+-- discovery document, kid rollover, "none"-alg rejection) and exp checking
+-- (only when the claim is present; older providers omit it) are delegated
+-- to resty.openidc's JWT machinery.
+local function bcl_validate_logout_token(conf, discovery, logout_token)
+    conf.jwt_verification_cache_ignore = true
+    conf.token_signing_alg_values_expected =
+        discovery.id_token_signing_alg_values_supported
+
+    local claims, err = openidc.jwt_verify(logout_token, conf)
+    if err then
+        return nil, "signature validation failed: " .. err
+    end
+
+    if claims.iss ~= discovery.issuer then
+        return nil, "iss does not match the discovery issuer"
+    end
+
+    local aud_ok = false
+    if type(claims.aud) == "string" then
+        aud_ok = claims.aud == conf.client_id
+    elseif type(claims.aud) == "table" then
+        for _, aud in ipairs(claims.aud) do
+            if aud == conf.client_id then
+                aud_ok = true
+                break
+            end
+        end
+    end
+    if not aud_ok then
+        return nil, "aud does not contain the client_id"
+    end
+
+    if type(claims.iat) ~= "number" then
+        return nil, "iat claim is missing"
+    end
+    local now = ngx.time()
+    if claims.iat < now - BCL_IAT_SLACK or claims.iat > now + BCL_IAT_SLACK then
+        return nil, "iat is outside the acceptance window"
+    end
+
+    if type(claims.events) ~= "table"
+       or type(claims.events[BCL_EVENT]) ~= "table" then
+        return nil, "events claim does not contain the back-channel logout event"
+    end
+
+    if claims.nonce ~= nil then
+        return nil, "nonce claim is prohibited in a logout token"
+    end
+
+    if type(claims.jti) ~= "string" or claims.jti == "" then
+        return nil, "jti claim is missing"
+    end
+
+    if type(claims.sub) ~= "string" and type(claims.sid) ~= "string" then
+        return nil, "either a sub or a sid claim is required"
+    end
+
+    return claims
+end
+
+
+local function bcl_error(description)
+    return 400, core.json.encode({
+        error = "invalid_request",
+        error_description = description,
+    })
+end
+
+
+-- The back-channel logout endpoint: an unauthenticated server-to-server
+-- POST from the provider (Back-Channel Logout 1.0 section 2.5). Responses
+-- per section 2.8: empty 200 on success, 400 with an RFC 6749-style JSON
+-- error body otherwise, never cached. A store failure is a 400, not a 200:
+-- claiming success while dropping the revocation would end the provider's
+-- delivery attempts.
+local function handle_backchannel_logout(conf)
+    core.response.set_header("Cache-Control", "no-store")
+
+    if ngx.req.get_method() ~= "POST" then
+        return 405
+    end
+
+    ngx.req.read_body()
+    local args = ngx.req.get_post_args()
+    local logout_token = args and args.logout_token
+    if type(logout_token) ~= "string" or logout_token == "" then
+        return bcl_error("the logout_token parameter is missing")
+    end
+
+    local discovery, discovery_err = openidc.get_discovery_doc(conf)
+    if discovery_err then
+        core.log.error("OIDC backchannel logout discovery failed: ", discovery_err)
+        return bcl_error("failed to load the discovery document")
+    end
+
+    local claims, validate_err =
+        bcl_validate_logout_token(conf, discovery, logout_token)
+    if not claims then
+        core.log.warn("OIDC backchannel logout token rejected: ", validate_err)
+        return bcl_error(validate_err)
+    end
+
+    local jti_key = "bcl:jti:" .. discovery.issuer .. "#" .. claims.jti
+    local seen, store_err = bcl_store_get(conf, jti_key)
+    if store_err then
+        core.log.error("OIDC backchannel logout store failed: ", store_err)
+        return bcl_error("the revocation store is unavailable")
+    end
+    if seen then
+        core.log.warn("OIDC backchannel logout token rejected: ",
+                      "a logout token with this jti was already received")
+        return bcl_error("a logout token with this jti was already received")
+    end
+    local ok
+    ok, store_err = bcl_store_set(conf, jti_key, BCL_JTI_TTL)
+    if not ok then
+        core.log.error("OIDC backchannel logout store failed: ", store_err)
+        return bcl_error("the revocation store is unavailable")
+    end
+
+    -- Section 2.4: a token with a sid revokes that one session; a sub-only
+    -- token revokes every session the user had when it was received
+    -- (section 2.7).
+    local key, logged_target
+    if claims.sid then
+        key = bcl_denylist_key("sid", conf, discovery.issuer, claims.sid)
+        logged_target = "sid " .. claims.sid
+    else
+        key = bcl_denylist_key("sub", conf, discovery.issuer, claims.sub)
+        logged_target = "sub " .. claims.sub
+    end
+    local ttl = (conf.session and conf.session.absolute_timeout)
+                or BCL_DENYLIST_TTL
+    ok, store_err = bcl_store_set(conf, key, ttl)
+    if not ok then
+        core.log.error("OIDC backchannel logout store failed: ", store_err)
+        return bcl_error("the revocation store is unavailable")
+    end
+
+    core.log.warn("OIDC backchannel logout accepted for ", logged_target)
+    return 200
+end
+
+
 function _M.rewrite(plugin_conf, ctx)
     local conf = core.table.clone(plugin_conf)
     flatten_openidc_options(conf)
@@ -1208,6 +1465,12 @@ function _M.rewrite(plugin_conf, ctx)
     if not conf.ssl_verify then
         -- openidc use "no" to disable ssl verification
         conf.ssl_verify = "no"
+    end
+
+    -- ctx.var.uri is deliberate: it is the path without the query string,
+    -- so a provider that appends query parameters still reaches the endpoint.
+    if conf.backchannel_logout and ctx.var.uri == conf.backchannel_logout.path then
+        return handle_backchannel_logout(conf)
     end
 
     if path == (conf.logout_path or "/logout") then

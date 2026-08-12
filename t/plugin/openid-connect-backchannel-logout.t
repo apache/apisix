@@ -6,12 +6,45 @@ no_long_string();
 no_root_location();
 no_shuffle();
 
+my $stub_idp = <<_EOC_;
+    server {
+        listen 6724;
+        location = /.well-known/openid-configuration {
+            content_by_lua_block {
+                ngx.header.content_type = "application/json"
+                ngx.say([[{"issuer":"http://127.0.0.1:6724","authorization_endpoint":"http://127.0.0.1:6724/authorize","token_endpoint":"http://127.0.0.1:6724/token","jwks_uri":"http://127.0.0.1:6724/jwks","id_token_signing_alg_values_supported":["RS256"]}]])
+            }
+        }
+        location = /jwks {
+            content_by_lua_block {
+                local pkey = require "resty.openssl.pkey"
+                local dump_jwk = require("resty.openssl.auxiliary.jwk").dump_jwk
+                local cjson = require "cjson.safe"
+                local t = require "lib.test_admin"
+
+                local pub = pkey.new(t.read_file("t/certs/public.pem"))
+                local jwk = cjson.decode(dump_jwk(pub, false))
+                jwk.kid = "bclkey"
+                jwk.alg = "RS256"
+                jwk.use = "sig"
+
+                ngx.header.content_type = "application/json"
+                ngx.say(cjson.encode({ keys = { jwk } }))
+            }
+        }
+    }
+_EOC_
+
 add_block_preprocessor(sub {
     my ($block) = @_;
 
     if (!$block->request) {
         $block->set_value("request", "GET /t");
     }
+
+    my $http_config = $block->http_config // '';
+    $http_config .= $stub_idp;
+    $block->set_value("http_config", $http_config);
 });
 
 run_tests();
@@ -126,3 +159,472 @@ backchannel_logout.redis is required when backchannel_logout.storage is redis an
     }
 --- response_body
 rejected
+
+
+
+=== TEST 5: Set up a route against the stub IdP with the BCL endpoint enabled.
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "openid-connect": {
+                                "discovery": "http://127.0.0.1:6724/.well-known/openid-configuration",
+                                "client_id": "bcl-client",
+                                "client_secret": "dummy-not-used-by-the-endpoint",
+                                "ssl_verify": false,
+                                "timeout": 10,
+                                "session": {
+                                    "secret": "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK"
+                                },
+                                "backchannel_logout": {
+                                    "path": "/bcl"
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/*"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 6: A valid logout token is accepted and lands in the denylist.
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require "lib.test_admin"
+            local r_jwt = require "resty.jwt"
+
+            local token = r_jwt:sign(t.read_file("t/certs/private.pem"), {
+                header = { typ = "JWT", alg = "RS256", kid = "bclkey" },
+                payload = {
+                    iss = "http://127.0.0.1:6724",
+                    aud = "bcl-client",
+                    iat = ngx.time(),
+                    exp = ngx.time() + 120,
+                    jti = "jti-test6",
+                    events = {
+                        ["http://schemas.openid.net/event/backchannel-logout"] = {}
+                    },
+                    sid = "sess-6",
+                }
+            })
+
+            local res, err = t.req_self_with_http("/bcl", "POST",
+                                                  "logout_token=" .. token)
+            if not res then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+            ngx.status = res.status
+            ngx.say("cache-control: ", res.headers["Cache-Control"])
+
+            local entry = ngx.shared.bcl:get(
+                "bcl:sid:http://127.0.0.1:6724#bcl-client#sess-6")
+            ngx.say("denylist entry: ", entry ~= nil)
+        }
+    }
+--- response_body
+cache-control: no-store
+denylist entry: true
+--- error_log
+OIDC backchannel logout accepted for sid sess-6
+
+
+
+=== TEST 7: A replayed jti is rejected on the second delivery.
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require "lib.test_admin"
+            local r_jwt = require "resty.jwt"
+
+            local token = r_jwt:sign(t.read_file("t/certs/private.pem"), {
+                header = { typ = "JWT", alg = "RS256", kid = "bclkey" },
+                payload = {
+                    iss = "http://127.0.0.1:6724",
+                    aud = "bcl-client",
+                    iat = ngx.time(),
+                    exp = ngx.time() + 120,
+                    jti = "jti-test7",
+                    events = {
+                        ["http://schemas.openid.net/event/backchannel-logout"] = {}
+                    },
+                    sid = "sess-7",
+                }
+            })
+
+            local res1, err = t.req_self_with_http("/bcl", "POST",
+                                                   "logout_token=" .. token)
+            if not res1 then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+            local res2
+            res2, err = t.req_self_with_http("/bcl", "POST",
+                                             "logout_token=" .. token)
+            if not res2 then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+            ngx.say("first: ", res1.status)
+            ngx.say("second: ", res2.status)
+        }
+    }
+--- response_body
+first: 200
+second: 400
+--- error_log
+a logout token with this jti was already received
+
+
+
+=== TEST 8: A tampered signature is rejected.
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require "lib.test_admin"
+            local r_jwt = require "resty.jwt"
+
+            local token = r_jwt:sign(t.read_file("t/certs/private.pem"), {
+                header = { typ = "JWT", alg = "RS256", kid = "bclkey" },
+                payload = {
+                    iss = "http://127.0.0.1:6724",
+                    aud = "bcl-client",
+                    iat = ngx.time(),
+                    exp = ngx.time() + 120,
+                    jti = "jti-test8",
+                    events = {
+                        ["http://schemas.openid.net/event/backchannel-logout"] = {}
+                    },
+                    sid = "sess-8",
+                }
+            })
+            token = token:sub(1, -3) .. "xx"
+
+            local res, err = t.req_self_with_http("/bcl", "POST",
+                                                  "logout_token=" .. token)
+            if not res then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+            ngx.status = res.status
+        }
+    }
+--- error_code: 400
+--- error_log
+signature validation failed
+
+
+
+=== TEST 9: An unsigned token (alg none) is rejected.
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require "lib.test_admin"
+
+            local b64 = function(s)
+                return ngx.encode_base64(s):gsub("+", "-"):gsub("/", "_"):gsub("=", "")
+            end
+            local cjson = require "cjson.safe"
+            local header = b64(cjson.encode({ alg = "none", typ = "logout+jwt" }))
+            local payload = b64(cjson.encode({
+                iss = "http://127.0.0.1:6724",
+                aud = "bcl-client",
+                iat = ngx.time(),
+                jti = "jti-test9",
+                events = {
+                    ["http://schemas.openid.net/event/backchannel-logout"] = {}
+                },
+                sid = "sess-9",
+            }))
+            local token = header .. "." .. payload .. "."
+
+            local res, err = t.req_self_with_http("/bcl", "POST",
+                                                  "logout_token=" .. token)
+            if not res then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+            ngx.status = res.status
+        }
+    }
+--- error_code: 400
+--- error_log
+signature validation failed
+
+
+
+=== TEST 10: A token without the back-channel logout event is rejected.
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require "lib.test_admin"
+            local r_jwt = require "resty.jwt"
+
+            local token = r_jwt:sign(t.read_file("t/certs/private.pem"), {
+                header = { typ = "JWT", alg = "RS256", kid = "bclkey" },
+                payload = {
+                    iss = "http://127.0.0.1:6724",
+                    aud = "bcl-client",
+                    iat = ngx.time(),
+                    exp = ngx.time() + 120,
+                    jti = "jti-test10",
+                    sid = "sess-10",
+                }
+            })
+
+            local res, err = t.req_self_with_http("/bcl", "POST",
+                                                  "logout_token=" .. token)
+            if not res then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+            ngx.status = res.status
+        }
+    }
+--- error_code: 400
+--- error_log
+events claim does not contain the back-channel logout event
+
+
+
+=== TEST 11: A token carrying a nonce is rejected.
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require "lib.test_admin"
+            local r_jwt = require "resty.jwt"
+
+            local token = r_jwt:sign(t.read_file("t/certs/private.pem"), {
+                header = { typ = "JWT", alg = "RS256", kid = "bclkey" },
+                payload = {
+                    iss = "http://127.0.0.1:6724",
+                    aud = "bcl-client",
+                    iat = ngx.time(),
+                    exp = ngx.time() + 120,
+                    jti = "jti-test11",
+                    nonce = "forged",
+                    events = {
+                        ["http://schemas.openid.net/event/backchannel-logout"] = {}
+                    },
+                    sid = "sess-11",
+                }
+            })
+
+            local res, err = t.req_self_with_http("/bcl", "POST",
+                                                  "logout_token=" .. token)
+            if not res then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+            ngx.status = res.status
+        }
+    }
+--- error_code: 400
+--- error_log
+nonce claim is prohibited in a logout token
+
+
+
+=== TEST 12: A token with neither sub nor sid is rejected.
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require "lib.test_admin"
+            local r_jwt = require "resty.jwt"
+
+            local token = r_jwt:sign(t.read_file("t/certs/private.pem"), {
+                header = { typ = "JWT", alg = "RS256", kid = "bclkey" },
+                payload = {
+                    iss = "http://127.0.0.1:6724",
+                    aud = "bcl-client",
+                    iat = ngx.time(),
+                    exp = ngx.time() + 120,
+                    jti = "jti-test12",
+                    events = {
+                        ["http://schemas.openid.net/event/backchannel-logout"] = {}
+                    },
+                }
+            })
+
+            local res, err = t.req_self_with_http("/bcl", "POST",
+                                                  "logout_token=" .. token)
+            if not res then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+            ngx.status = res.status
+        }
+    }
+--- error_code: 400
+--- error_log
+either a sub or a sid claim is required
+
+
+
+=== TEST 13: A token without a jti is rejected.
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require "lib.test_admin"
+            local r_jwt = require "resty.jwt"
+
+            local token = r_jwt:sign(t.read_file("t/certs/private.pem"), {
+                header = { typ = "JWT", alg = "RS256", kid = "bclkey" },
+                payload = {
+                    iss = "http://127.0.0.1:6724",
+                    aud = "bcl-client",
+                    iat = ngx.time(),
+                    exp = ngx.time() + 120,
+                    events = {
+                        ["http://schemas.openid.net/event/backchannel-logout"] = {}
+                    },
+                    sid = "sess-13",
+                }
+            })
+
+            local res, err = t.req_self_with_http("/bcl", "POST",
+                                                  "logout_token=" .. token)
+            if not res then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+            ngx.status = res.status
+        }
+    }
+--- error_code: 400
+--- error_log
+jti claim is missing
+
+
+
+=== TEST 14: A token with a stale iat is rejected.
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require "lib.test_admin"
+            local r_jwt = require "resty.jwt"
+
+            local token = r_jwt:sign(t.read_file("t/certs/private.pem"), {
+                header = { typ = "JWT", alg = "RS256", kid = "bclkey" },
+                payload = {
+                    iss = "http://127.0.0.1:6724",
+                    aud = "bcl-client",
+                    iat = ngx.time() - 1200,
+                    exp = ngx.time() + 120,
+                    jti = "jti-test14",
+                    events = {
+                        ["http://schemas.openid.net/event/backchannel-logout"] = {}
+                    },
+                    sid = "sess-14",
+                }
+            })
+
+            local res, err = t.req_self_with_http("/bcl", "POST",
+                                                  "logout_token=" .. token)
+            if not res then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+            ngx.status = res.status
+        }
+    }
+--- error_code: 400
+--- error_log
+iat is outside the acceptance window
+
+
+
+=== TEST 15: A token whose aud names another client is rejected.
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require "lib.test_admin"
+            local r_jwt = require "resty.jwt"
+
+            local token = r_jwt:sign(t.read_file("t/certs/private.pem"), {
+                header = { typ = "JWT", alg = "RS256", kid = "bclkey" },
+                payload = {
+                    iss = "http://127.0.0.1:6724",
+                    aud = "some-other-client",
+                    iat = ngx.time(),
+                    exp = ngx.time() + 120,
+                    jti = "jti-test15",
+                    events = {
+                        ["http://schemas.openid.net/event/backchannel-logout"] = {}
+                    },
+                    sid = "sess-15",
+                }
+            })
+
+            local res, err = t.req_self_with_http("/bcl", "POST",
+                                                  "logout_token=" .. token)
+            if not res then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+            ngx.status = res.status
+        }
+    }
+--- error_code: 400
+--- error_log
+aud does not contain the client_id
+
+
+
+=== TEST 16: Transport-level failures: non-POST and missing logout_token.
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require "lib.test_admin"
+
+            local res1, err = t.req_self_with_http("/bcl", "GET")
+            if not res1 then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+            local res2
+            res2, err = t.req_self_with_http("/bcl", "POST", "foo=bar")
+            if not res2 then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+            ngx.say("get: ", res1.status)
+            ngx.say("post without token: ", res2.status)
+        }
+    }
+--- response_body
+get: 405
+post without token: 400
