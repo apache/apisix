@@ -345,6 +345,13 @@ end
 
 local function publish_stream_bytes(dict, listen_addr, direction, total)
     local field = direction[1]
+
+    if type(total) ~= "number" then
+        core.log.error("stream metrics zone reported no ", field, " for ",
+                       listen_addr)
+        return
+    end
+
     local key = STREAM_PUBLISHED_PREFIX .. listen_addr .. ":" .. field
 
     local published = dict:get(key)
@@ -364,7 +371,14 @@ local function publish_stream_bytes(dict, listen_addr, direction, total)
         return
     end
 
-    dict:set(key, total)
+    -- Advance the baseline before counting: a write that failed while the
+    -- delta was counted would re-count the same range on every later read.
+    local ok, err = dict:set(key, total)
+    if not ok then
+        core.log.error("failed to advance the stream bandwidth baseline for ",
+                       key, ": ", err)
+        return
+    end
 
     -- a total below what was published means the zone was recreated, which
     -- rebaselines rather than emitting a negative delta
@@ -385,8 +399,25 @@ local function collect_stream_zone_metrics()
         return
     end
 
+    local dict = prometheus.dict
+
+    -- Taken before the zone is sampled, not after: two readers that sampled at
+    -- different instants would otherwise serialize in the opposite order, and
+    -- the older sample would pull the baseline back over a range the fresher
+    -- one had already counted. shdict has no compare-and-set, so this is an
+    -- expiring key rather than a real mutex.
+    local publishing, add_err = dict:add(STREAM_PUBLISH_LOCK, true,
+                                         STREAM_PUBLISH_LOCK_TTL)
+    if not publishing and add_err ~= "exists" then
+        core.log.error("failed to take the stream bandwidth lock: ", add_err)
+    end
+
     local entries, err = lib.dump()
     if not entries then
+        if publishing then
+            dict:delete(STREAM_PUBLISH_LOCK)
+        end
+
         -- report the transition, not every read: without the zone in the
         -- configuration this is a steady state, not an incident
         if not stream_zone_unavailable then
@@ -397,15 +428,11 @@ local function collect_stream_zone_metrics()
     end
     stream_zone_unavailable = false
 
-    local dict = prometheus.dict
-
-    -- the gauge is set from the zone every time, it needs no baseline and
-    -- every reader writes the same value
-    local publishing = dict:add(STREAM_PUBLISH_LOCK, true, STREAM_PUBLISH_LOCK_TTL)
-
     for _, entry in ipairs(entries) do
         local listen_addr = entry.listen_addr
 
+        -- the gauge carries no baseline and every reader writes the same
+        -- value, so it is published whether or not this one took the lock
         metrics.stream_active_connections:set(entry.active, gen_arr(listen_addr))
 
         if publishing then

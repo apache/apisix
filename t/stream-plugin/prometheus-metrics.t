@@ -48,12 +48,16 @@ add_block_preprocessor(sub {
     # The endpoint serves a cache that the privileged agent refills on this
     # interval, so the zone is sampled there rather than per request. At the
     # default 15s no block would live long enough to see its own traffic.
+    # The cache expires after twice the interval and every refill makes two
+    # etcd round trips, so this keeps enough headroom that a slow runner does
+    # not serve an expired cache -- which logs an error and trips the
+    # no_error_log assertions.
     my $extra_yaml_config = <<_EOC_;
 stream_plugins:
     - prometheus
 plugin_attr:
     prometheus:
-        refresh_interval: 0.1
+        refresh_interval: 0.5
 _EOC_
 
     $block->set_value("extra_yaml_config", $extra_yaml_config);
@@ -213,7 +217,7 @@ server {
             -- Raw socket rather than ngx.location.capture: capturing into an
             -- APISIX route leaves the upstream connect without a usable
             -- api_ctx.
-            ngx.sleep(0.5)
+            ngx.sleep(1.5)
 
             local scrape = ngx.socket.tcp()
             ok, err = scrape:connect("127.0.0.1", 1984)
