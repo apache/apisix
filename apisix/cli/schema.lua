@@ -67,6 +67,18 @@ local etcd_schema = {
     required = {"prefix", "host"}
 }
 
+-- a keyring entry is used both as the AES key and as its IV, so only the two
+-- key lengths AES-CBC accepts here are allowed: 16 bytes (AES-128) and 32
+-- bytes (AES-256). Any other length would be dropped by
+-- core.data_encryption.init_iv_tbl and silently leave the data unencrypted.
+local keyring_key_schema = {
+    type = "string",
+    anyOf = {
+        {minLength = 16, maxLength = 16},
+        {minLength = 32, maxLength = 32},
+    }
+}
+
 local config_schema = {
     type = "object",
     properties = {
@@ -246,17 +258,9 @@ local config_schema = {
                                 {
                                     type = "array",
                                     minItems = 1,
-                                    items = {
-                                        type = "string",
-                                        minLength = 16,
-                                        maxLength = 16
-                                    }
+                                    items = keyring_key_schema
                                 },
-                                {
-                                    type = "string",
-                                    minLength = 16,
-                                    maxLength = 16
-                                }
+                                keyring_key_schema
                             }
                         },
                     }

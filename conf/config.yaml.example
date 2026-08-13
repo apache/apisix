@@ -144,8 +144,8 @@ apisix:
     enable_encrypt_fields: true   # Whether enable encrypt fields specified in `encrypt_fields` in plugin schema.
     keyring:                      # This field is used to encrypt the private key of SSL and the `encrypt_fields`
                                   # in plugin schema.
-      - qeddd145sfvddff3          # Set the encryption key for AES-128-CBC. It should be a hexadecimal string
-                                  # of length 16.
+      - qeddd145sfvddff3          # Set the encryption key. A key of length 16 selects AES-128-CBC and a key
+                                  # of length 32 selects AES-256-CBC; any other length is rejected on startup.
       - edd1c9f0985e76a2          # If not set, APISIX saves the original data into etcd.
                                   # CAUTION: If you would like to update the key, add the new key as the
                                   # first item in the array and keep the older keys below the newly added
