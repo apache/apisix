@@ -293,8 +293,9 @@ local STREAM_REASON_TO_CODE = {
 -- Active session counts and byte counters are maintained by nginx in a shared
 -- memory zone (apisix_stream_metrics_zone) so that they keep moving during a
 -- long-lived session instead of only landing when it ends. The zone holds
--- process wide totals, so it is read once per scrape, by whichever worker
--- happens to serve the metrics endpoint.
+-- process wide totals, so it is read while the exposition is built rather than
+-- on a timer of its own -- which means once per refresh_interval, in the
+-- privileged agent that fills the metrics cache.
 local STREAM_BANDWIDTH_DIRECTIONS = {
     {"downstream_ingress", "ingress", "downstream"},
     {"downstream_egress", "egress", "downstream"},
@@ -304,14 +305,26 @@ local STREAM_BANDWIDTH_DIRECTIONS = {
 
 -- How much of each zone total has already been added to the counter. This
 -- lives in the metric dict rather than in worker memory so that every worker
--- claims against the same value, and so that it is dropped together with the
--- counters it describes whenever that dict is flushed.
+-- reads the same value, and so that it is dropped together with the counters
+-- it describes whenever that dict is flushed.
 local STREAM_PUBLISHED_PREFIX = "stream_bytes_published:"
+
+-- Advancing a baseline is a read-modify-write and shdict has no
+-- compare-and-set, so only one reader converts totals to deltas at a time.
+-- Whoever loses the race leaves the baselines alone and the delta it skipped
+-- is picked up by the next read. The expiry keeps a worker that dies mid
+-- publish from wedging the metric.
+local STREAM_PUBLISH_LOCK = "stream_bytes_publishing"
+local STREAM_PUBLISH_LOCK_TTL = 10
 
 local stream_metrics_lib
 local stream_metrics_lib_checked = false
+local stream_zone_unavailable = false
 
 
+-- Only the runtime check is latched. Whether the zone itself is readable is
+-- decided per read: it comes and goes with the configuration, and caching a
+-- miss would leave the worker silently blind once it came back.
 local function stream_metrics_zone()
     if stream_metrics_lib_checked then
         return stream_metrics_lib
@@ -325,42 +338,8 @@ local function stream_metrics_zone()
         return nil
     end
 
-    local _, err = lib.dump()
-    if err then
-        core.log.warn("stream bandwidth and active connection metrics are off: ", err)
-        return nil
-    end
-
     stream_metrics_lib = lib
     return lib
-end
-
-
--- Move the published total forward and return how much of the move is ours to
--- count. Two workers scraping at the same instant read the same starting
--- point, so the range is claimed with an atomic incr rather than a
--- read-modify-write: the loser sees the key run past the zone total, hands the
--- excess back and counts only what is left.
-local function claim_stream_bytes(dict, key, total, delta)
-    -- the init argument covers the key being flushed between the read and the
-    -- claim: it rebaselines instead of failing
-    local claimed, err = dict:incr(key, delta, total - delta)
-    if not claimed then
-        core.log.error("failed to claim stream bandwidth for ", key, ": ", err)
-        return 0
-    end
-
-    if claimed <= total then
-        return delta
-    end
-
-    local excess = claimed - total
-    local _, incr_err = dict:incr(key, -excess)
-    if incr_err then
-        core.log.error("failed to return an over claim for ", key, ": ", incr_err)
-    end
-
-    return delta - excess
 end
 
 
@@ -368,44 +347,29 @@ local function publish_stream_bytes(dict, listen_addr, direction, total)
     local field = direction[1]
     local key = STREAM_PUBLISHED_PREFIX .. listen_addr .. ":" .. field
 
-    -- The zone counts from when nginx started while the counter outlives a
-    -- reload, so the first sight of a slot only takes a baseline; replaying
-    -- the whole total into a counter that survived would double it. The cost
-    -- is that traffic before the first scrape is not counted.
-    if dict:add(key, total) then
-        return
-    end
-
     local published = dict:get(key)
     if not published then
-        -- evicted between the add and the get, rebaseline on the next scrape
-        dict:set(key, total)
-        return
-    end
-
-    local delta = total - published
-    if delta == 0 then
-        return
-    end
-
-    if delta < 0 then
-        -- Either the zone was recreated under us, or another worker is midway
-        -- through a claim it has not handed back yet. Read once more before
-        -- rewinding: a claim in flight lasts microseconds, a recreated zone
-        -- stays low.
-        published = dict:get(key) or total
-        delta = total - published
-        if delta >= 0 then
-            return
+        -- The zone counts from when nginx started while the counter outlives a
+        -- reload, so the first sight of a slot only takes a baseline;
+        -- replaying the whole total into a counter that survived would double
+        -- it. The cost is that traffic before the first read is not counted.
+        local ok, err = dict:set(key, total)
+        if not ok then
+            core.log.error("failed to baseline stream bandwidth for ", key, ": ", err)
         end
-
-        dict:incr(key, delta)
         return
     end
 
-    local counted = claim_stream_bytes(dict, key, total, delta)
-    if counted > 0 then
-        metrics.stream_bandwidth:inc(counted,
+    if total == published then
+        return
+    end
+
+    dict:set(key, total)
+
+    -- a total below what was published means the zone was recreated, which
+    -- rebaselines rather than emitting a negative delta
+    if total > published then
+        metrics.stream_bandwidth:inc(total - published,
             gen_arr(listen_addr, direction[2], direction[3]))
     end
 end
@@ -423,20 +387,36 @@ local function collect_stream_zone_metrics()
 
     local entries, err = lib.dump()
     if not entries then
-        core.log.error("failed to read the stream metrics zone: ", err)
+        -- report the transition, not every read: without the zone in the
+        -- configuration this is a steady state, not an incident
+        if not stream_zone_unavailable then
+            stream_zone_unavailable = true
+            core.log.warn("stream bandwidth and active connection metrics are off: ", err)
+        end
         return
     end
+    stream_zone_unavailable = false
 
     local dict = prometheus.dict
+
+    -- the gauge is set from the zone every time, it needs no baseline and
+    -- every reader writes the same value
+    local publishing = dict:add(STREAM_PUBLISH_LOCK, true, STREAM_PUBLISH_LOCK_TTL)
 
     for _, entry in ipairs(entries) do
         local listen_addr = entry.listen_addr
 
         metrics.stream_active_connections:set(entry.active, gen_arr(listen_addr))
 
-        for _, direction in ipairs(STREAM_BANDWIDTH_DIRECTIONS) do
-            publish_stream_bytes(dict, listen_addr, direction, entry[direction[1]])
+        if publishing then
+            for _, direction in ipairs(STREAM_BANDWIDTH_DIRECTIONS) do
+                publish_stream_bytes(dict, listen_addr, direction, entry[direction[1]])
+            end
         end
+    end
+
+    if publishing then
+        dict:delete(STREAM_PUBLISH_LOCK)
     end
 end
 

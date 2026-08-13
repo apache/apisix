@@ -45,9 +45,15 @@ add_block_preprocessor(sub {
 
     # stream_plugins replaces the default list rather than extending it, so
     # every plugin these tests touch has to be named here
+    # The endpoint serves a cache that the privileged agent refills on this
+    # interval, so the zone is sampled there rather than per request. At the
+    # default 15s no block would live long enough to see its own traffic.
     my $extra_yaml_config = <<_EOC_;
 stream_plugins:
     - prometheus
+plugin_attr:
+    prometheus:
+        refresh_interval: 0.1
 _EOC_
 
     $block->set_value("extra_yaml_config", $extra_yaml_config);
@@ -202,10 +208,13 @@ server {
                 return
             end
 
-            -- The session is still open here, so this scrape has to report it.
+            -- The session is still open here, so the exposition has to report
+            -- it once the cache has been refilled with the session running.
             -- Raw socket rather than ngx.location.capture: capturing into an
             -- APISIX route leaves the upstream connect without a usable
             -- api_ctx.
+            ngx.sleep(0.5)
+
             local scrape = ngx.socket.tcp()
             ok, err = scrape:connect("127.0.0.1", 1984)
             if not ok then
