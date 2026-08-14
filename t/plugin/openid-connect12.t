@@ -311,10 +311,12 @@ restarting the authentication flow
             statuses[6] = res_f.status
             jar = cookie_of(res_f) or jar
 
-            -- ... so a later transient callback error is retried again
+            -- ... so a later transient callback error is retried again. The
+            -- first flow's state is still in-flight (only the completed flow's
+            -- state was consumed), so the callback passes the state check.
             local res_g = http.new():request_uri(
                 base .. "/oidc12/callback?error=temporarily_unavailable" ..
-                    "&error_description=authentication_expired&state=deadbeef", {
+                    "&error_description=authentication_expired&state=" .. state, {
                     headers = {Cookie = jar}
                 })
             statuses[7] = res_g.status
@@ -323,3 +325,57 @@ restarting the authentication flow
     }
 --- response_body
 302 302 302 500 302 404 302
+
+
+
+=== TEST 8: a temporarily unavailable callback whose state was never issued is not retried
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local base = "http://127.0.0.1:" .. ngx.var.server_port
+
+            local function cookie_of(res)
+                local c = res.headers["Set-Cookie"]
+                if type(c) == "table" then
+                    c = table.concat(c, "; ")
+                end
+                return c and c:match("^([^;]+)")
+            end
+
+            -- start a login flow so the session holds a valid in-flight state
+            local res_a = http.new():request_uri(base .. "/oidc12/page")
+            local state = res_a.headers["Location"]:match("state=([^&]+)")
+            local jar = cookie_of(res_a)
+
+            -- a forged callback (e.g. a cross-site request) carries a state the
+            -- session never issued, or none at all: it must not restart the
+            -- flow, so it cannot spend the restart budget of the real flow
+            local statuses = {}
+            local res_b = http.new():request_uri(
+                base .. "/oidc12/callback?error=temporarily_unavailable" ..
+                    "&error_description=authentication_expired&state=deadbeef", {
+                    headers = {Cookie = jar}
+                })
+            statuses[1] = res_b.status
+
+            local res_c = http.new():request_uri(
+                base .. "/oidc12/callback?error=temporarily_unavailable" ..
+                    "&error_description=authentication_expired", {
+                    headers = {Cookie = jar}
+                })
+            statuses[2] = res_c.status
+
+            -- the real flow's state is still accepted and still has its full
+            -- budget, so it restarts
+            local res_d = http.new():request_uri(
+                base .. "/oidc12/callback?error=temporarily_unavailable" ..
+                    "&error_description=authentication_expired&state=" .. state, {
+                    headers = {Cookie = jar}
+                })
+            statuses[3] = res_d.status
+            ngx.say(table.concat(statuses, " "))
+        }
+    }
+--- response_body
+500 500 302

@@ -1322,19 +1322,38 @@ function _M.rewrite(plugin_conf, ctx)
             -- Other OAuth2 error codes (access_denied, login_required, ...)
             -- reflect a deliberate outcome and are not retried.
             local restart_reason
+            local restart_url = target_url
             if err == STATE_MISMATCH_ERR then
+                -- state already matched by resty.openidc; no in-flight flow
+                -- for it, so its session-level original_url is all we have
                 restart_reason = "state mismatch (replayed or pruned callback)"
-            elseif core.string.has_prefix(err, UNHANDLED_REDIRECT_URI_ERR) then
+            elseif session and core.string.has_prefix(err, UNHANDLED_REDIRECT_URI_ERR) then
                 local uri_args = ngx.req.get_uri_args()
-                if uri_args.error == "temporarily_unavailable" then
+                -- resty.openidc bails on this path before validating state, so
+                -- match it here as it would: rejects a forged callback, and
+                -- recovers the original_url of the flow it belongs to (each
+                -- in-flight flow keeps its own since 1.9.0)
+                local authorization_state
+                if uri_args.error == "temporarily_unavailable" and uri_args.state then
+                    local states = session:get("authorization_states")
+                    authorization_state = states and states[uri_args.state]
+                    if not authorization_state
+                       and uri_args.state == session:get("state") then
+                        authorization_state = {
+                            original_url = session:get("original_url")
+                        }
+                    end
+                end
+                if authorization_state then
                     restart_reason = "authorization callback reported a " ..
                         "temporarily unavailable identity provider" ..
                         (type(uri_args.error_description) == "string" and
                             (" (" .. uri_args.error_description .. ")") or "")
+                    restart_url = authorization_state.original_url or target_url
                 end
             end
 
-            if restart_reason and target_url and session
+            if restart_reason and restart_url and session
                and ngx.req.get_method() == "GET" then
                 -- bound the redirect loop in case the failure is not
                 -- transient; the counter is reset once a request
@@ -1349,7 +1368,7 @@ function _M.rewrite(plugin_conf, ctx)
                     session:close()
                     core.log.warn("OIDC ", restart_reason,
                                   ", restarting the authentication flow")
-                    core.response.set_header("Location", target_url)
+                    core.response.set_header("Location", restart_url)
                     return 302
                 end
                 session:close()
