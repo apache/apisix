@@ -27,7 +27,7 @@ local setmetatable = setmetatable
 -- response bodies when body logging is on, so a log server that is slow or
 -- unreachable turns the backlog into unbounded worker memory. Cap it by default;
 -- the batch-processor documentation records what the cap costs per body size.
-local DEFAULT_MAX_PENDING_ENTRIES = 16384
+local DEFAULT_MAX_PENDING_ENTRIES = 8192
 -- Logging one line per discarded entry would itself become a flood during the very
 -- outage that causes the discards, so report a summary at most this often, in seconds.
 local DISCARD_LOG_INTERVAL = 1

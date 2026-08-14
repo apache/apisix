@@ -72,7 +72,7 @@ You can also configure log format on a global scale using the [Plugin Metadata](
 |------|------|----------|---------|--------------|-------------|
 | log_format | object | False |  |  | Custom log format as key-value pairs in JSON. Setting this **replaces** the default log entry with a flat custom format. Values support strings and nested objects (up to five levels deep; deeper fields are truncated). Within strings, [APISIX variables](../apisix-variable.md) and [NGINX variables](http://nginx.org/en/docs/varindex.html) can be referenced by prefixing with `$`. |
 | log_format_extra | object | False |  |  | Extra log fields **added on top of** the default log entry, keeping every default field instead of replacing them (unlike `log_format`). Same value syntax as `log_format`. Ignored when `log_format` is set. |
-| max_pending_entries | integer | False | 16384 | >= 1 | Maximum number of entries waiting to be processed. New entries are discarded while the backlog exceeds this, which stops a slow or unreachable log server from growing the worker's memory without bound. See [Batch Processor](../batch-processor.md#limiting-the-backlog) for the memory a backlog of this size costs. |
+| max_pending_entries | integer | False | 8192 | >= 1 | Maximum number of entries waiting to be processed. New entries are discarded while the backlog exceeds this, which stops a slow or unreachable log server from growing the worker's memory without bound. See [Batch Processor](../batch-processor.md#limiting-the-backlog) for the memory a backlog of this size costs. |
 
 ## Examples
 

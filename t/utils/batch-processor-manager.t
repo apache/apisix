@@ -58,7 +58,7 @@ __DATA__
 --- request
 GET /t
 --- response_body
-accepted: 16384
+accepted: 8192
 --- error_log
 max pending entries limit exceeded. discarding entry
 

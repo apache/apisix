@@ -70,7 +70,7 @@ This Plugin supports using batch processors to aggregate and process events in a
 
 | Name | Type | Required | Default | Description |
 |------|------|----------|---------|-------------|
-| max_pending_entries | integer | False | 16384 | Maximum number of entries waiting to be processed. New entries are discarded while the backlog exceeds this, which stops a slow or unreachable Lago service from growing the worker's memory without bound. See [Batch Processor](../batch-processor.md#limiting-the-backlog) for the memory a backlog of this size costs. |
+| max_pending_entries | integer | False | 8192 | Maximum number of entries waiting to be processed. New entries are discarded while the backlog exceeds this, which stops a slow or unreachable Lago service from growing the worker's memory without bound. See [Batch Processor](../batch-processor.md#limiting-the-backlog) for the memory a backlog of this size costs. |
 
 ## Examples
 

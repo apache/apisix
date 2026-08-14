@@ -43,24 +43,24 @@ or when the buffer duration exceeds.
 
 Entries that have been buffered but not yet delivered are held in the worker's memory. When the log server is slow or unreachable, entries arrive faster than they leave and the backlog — along with the worker's memory — grows with the request rate.
 
-Every logger built on the batch processor therefore accepts a `max_pending_entries` limit through its [plugin metadata](./terminology/plugin-metadata.md), which defaults to `16384`. While the backlog exceeds the limit, new entries are discarded and a summary is written to the error log at most once per second:
+Every logger built on the batch processor therefore accepts a `max_pending_entries` limit through its [plugin metadata](./terminology/plugin-metadata.md), which defaults to `8192`. While the backlog exceeds the limit, new entries are discarded and a summary is written to the error log at most once per second:
 
 ```text
-max pending entries limit exceeded. discarding entry. total_pushed_entries: 20481 total_processed_entries: 4096 max_pending_entries: 16384 discarded_entries: 3172
+max pending entries limit exceeded. discarding entry. total_pushed_entries: 12289 total_processed_entries: 4096 max_pending_entries: 8192 discarded_entries: 3172
 ```
 
 The limit counts entries, so what it costs in memory depends on how large each entry is — above all on whether `include_req_body` and `include_resp_body` are enabled and how large those bodies are. The figures below are the peak growth in a worker's resident memory while its log server accepted connections but never answered, measured with `http-logger`, both bodies logged, and otherwise stock batch processor settings:
 
 | Body logged per request | Peak worker memory at the default limit |
 |-------------------------|-----------------------------------------|
-| bodies not logged       | ~60 MB                                  |
-| 1 KB request + 1 KB response | ~170 MB                            |
-| 4 KB request + 4 KB response | ~470 MB                            |
-| 16 KB request + 16 KB response | ~1.6 GB                          |
+| bodies not logged       | ~40 MB |
+| 1 KB request + 1 KB response | ~100 MB |
+| 4 KB request + 4 KB response | ~250 MB |
+| 16 KB request + 16 KB response | ~840 MB |
 
 The cost grows roughly in proportion to the body size, so lower `max_pending_entries` if you log bodies larger than a few KB. The figures are higher than the entries alone would account for because batches already handed to the sender hold both their entries and the serialized payload built from them.
 
-The limit only comes into play when delivery falls behind. With a log server that keeps up, the backlog stays close to `batch_max_size` — under 1000 entries at 3000 requests per second in the same setup — so the default leaves ample room for healthy operation.
+The limit only comes into play when delivery falls behind. With a log server that keeps up, the backlog stays close to `batch_max_size` — under 1000 entries at 3000 requests per second in the same setup — so the default leaves about eight times the room healthy operation needs. Raising `batch_max_size` raises the healthy backlog with it, so raise `max_pending_entries` too if you do.
 
 The following code shows an example of how to use batch processor in your plugin:
 

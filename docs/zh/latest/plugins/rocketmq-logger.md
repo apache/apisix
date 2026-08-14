@@ -71,7 +71,7 @@ description: rocketmq-logger 插件将请求和响应日志以 JSON 对象批量
 | 名称                | 类型    | 必选项 | 默认值 | 描述                                                                                                                                               |
 |---------------------|---------|--------|---------|----------------------------------------------------------------------------------------------------------------------------------------------------|
 | log_format          | object  | False  |         | 以 JSON 键值对形式声明的自定义日志格式，值可以引用 [NGINX 变量](https://nginx.org/en/docs/http/ngx_http_core_module.html)。                         |
-| max_pending_entries | integer | False  | 16384 | 待处理条目数的上限。积压超过该值后新条目会被丢弃，避免日志服务变慢或不可达时 worker 内存无限增长。该上限对应的内存开销参见 [批处理器](../batch-processor.md#限制积压条目数)。 |
+| max_pending_entries | integer | False  | 8192 | 待处理条目数的上限。积压超过该值后新条目会被丢弃，避免日志服务变慢或不可达时 worker 内存无限增长。该上限对应的内存开销参见 [批处理器](../batch-processor.md#限制积压条目数)。 |
 :::info IMPORTANT
 
 插件元数据的配置为全局范围生效，将作用于所有使用 `rocketmq-logger` 插件的路由和服务。
