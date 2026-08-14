@@ -174,7 +174,8 @@ local function mask_json(obj, conf)
     end
 
     local masked = false
-    for _, node in ipairs(nodes) do
+    for ni = #nodes, 1, -1 do
+        local node = nodes[ni]
         local nested = obj
         -- first element is root($), last element is the field name
         for i = 2, #node.path - 1 do
