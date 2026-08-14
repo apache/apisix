@@ -1071,6 +1071,7 @@ success
 success
 
 
+
 === TEST 25: create route for removing non-contiguous JSON array elements
 --- config
     location /t {
@@ -1111,6 +1112,8 @@ success
             ngx.say(body)
         }
     }
+
+
 
 === TEST 26: verify removing non-contiguous array elements keeps the unmatched item
 --- config
