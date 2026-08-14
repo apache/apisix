@@ -168,6 +168,23 @@ apisix:
                                   # address, it is reset so the upstream only sees the APISIX-observed
                                   # connection IP; when `trusted_addresses` is not configured, it is
                                   # preserved and the connection IP is appended (compatible default).
+                                  # The override happens in the NGINX configuration, before any Lua runs.
+                                  # Lua always sees the overridden values -- `core.request.header` and
+                                  # `ctx.var.http_x_forwarded_*` alike. At config level it differs:
+                                  # naming `$http_x_forwarded_proto`, `$http_x_forwarded_host`,
+                                  # `$http_x_forwarded_port` or `$http_forwarded` in an access log
+                                  # format, an `if`, or a `map` reads the value cached when the
+                                  # override was applied, which is what the client sent. Use `$scheme`,
+                                  # `$var_x_forwarded_host` and `$var_x_forwarded_port` for the
+                                  # overridden ones. `$http_x_forwarded_for` is not affected.
+                                  # What the client sent is kept in `$original_x_forwarded_proto`,
+                                  # `$original_x_forwarded_host`, `$original_x_forwarded_port`,
+                                  # `$original_x_forwarded_for` and `$original_forwarded` -- readable
+                                  # from a log format, or from Lua as `ctx.var.original_x_forwarded_*`,
+                                  # the same names the values were previously kept under, so a plugin
+                                  # reading them is unaffected. This matters most for X-Forwarded-For,
+                                  # which is cleared rather than overwritten when a trust boundary is
+                                  # configured and the peer is outside it.
   # fine tune the parameters of LRU cache for some features like secret
   lru:
     secret:

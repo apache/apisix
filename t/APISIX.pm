@@ -238,9 +238,6 @@ my $disable_proxy_buffering_location = <<_EOC_;
             proxy_pass_header  Date;
 
             proxy_set_header   X-Forwarded-For      \$proxy_add_x_forwarded_for;
-            proxy_set_header   X-Forwarded-Proto    \$var_x_forwarded_proto;
-            proxy_set_header   X-Forwarded-Host     \$var_x_forwarded_host;
-            proxy_set_header   X-Forwarded-Port     \$var_x_forwarded_port;
 
             proxy_pass         \$upstream_scheme://apisix_backend\$upstream_uri;
             mirror             /proxy_mirror;
@@ -626,6 +623,16 @@ _EOC_
     $http_config .= <<_EOC_;
     $lua_deps_path
 
+    # mirrors apisix/cli/ngx_tpl.lua
+    map \$http_host \$var_x_forwarded_port {
+        default          \$server_port;
+        "~:(?<p>\\\\d+)\$" \$p;
+    }
+    map \$http_host \$var_x_forwarded_host {
+        default \$http_host;
+        ""      \$host;
+    }
+
     lua_shared_dict plugin-limit-req 10m;
     lua_shared_dict plugin-limit-count 10m;
     lua_shared_dict plugin-limit-count-lock 10m;
@@ -953,16 +960,19 @@ _EOC_
             proxy_set_header   X-Real-IP         \$remote_addr;
             proxy_pass_header  Date;
 
+            set \$original_x_forwarded_proto \$http_x_forwarded_proto;
+            set \$original_x_forwarded_host   \$http_x_forwarded_host;
+            set \$original_x_forwarded_port   \$http_x_forwarded_port;
+            set \$original_x_forwarded_for    '';
+            set \$original_forwarded          \$http_forwarded;
+            more_set_input_headers "X-Forwarded-Proto: \$scheme";
+            more_set_input_headers "X-Forwarded-Host: \$var_x_forwarded_host";
+            more_set_input_headers "X-Forwarded-Port: \$var_x_forwarded_port";
+            more_set_input_headers "Forwarded: ";
+
             ### the following x-forwarded-* headers is to send to upstream server
 
-            set \$var_x_forwarded_proto      \$scheme;
-            set \$var_x_forwarded_host       \$host;
-            set \$var_x_forwarded_port       \$server_port;
-
             proxy_set_header   X-Forwarded-For      \$proxy_add_x_forwarded_for;
-            proxy_set_header   X-Forwarded-Proto    \$var_x_forwarded_proto;
-            proxy_set_header   X-Forwarded-Host     \$var_x_forwarded_host;
-            proxy_set_header   X-Forwarded-Port     \$var_x_forwarded_port;
 
             proxy_pass         \$upstream_scheme://apisix_backend\$upstream_uri;
             mirror             /proxy_mirror;
