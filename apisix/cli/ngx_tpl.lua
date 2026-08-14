@@ -371,6 +371,7 @@ http {
     # for openid-connect plugin
     lua_shared_dict jwks {* http.lua_shared_dict["jwks"] *}; # cache for JWKs
     lua_shared_dict introspection {* http.lua_shared_dict["introspection"] *}; # cache for JWT verification results
+    lua_shared_dict bcl {* http.lua_shared_dict["bcl"] *}; # back-channel logout revocations
     {% end %}
 
     {% if enabled_plugins["cas-auth"] then %}

@@ -183,6 +183,7 @@ local _M = {
         discovery = "1m",
         jwks = "1m",
         introspection = "10m",
+        bcl = "1m",
         ["access-tokens"] = "1m",
         ["ext-plugin"] = "1m",
         tars = "1m",
