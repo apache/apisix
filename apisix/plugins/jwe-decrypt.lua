@@ -175,9 +175,14 @@ end
 function _M.rewrite(conf, ctx)
     -- fetch token and hide credentials if necessary
     local jwe_token, err = fetch_jwe_token(conf, ctx)
-    if not jwe_token and conf.strict then
-        core.log.info("failed to fetch JWE token: ", err)
-        return 403, { message = "missing JWE token in request" }
+    if not jwe_token then
+        -- If true, throw a 403 error if JWE token is missing from the request.
+        -- If false, do not throw an error when JWE token is not found.
+        if conf.strict then
+            core.log.info("failed to fetch JWE token: ", err)
+            return 403, { message = "missing JWE token in request" }
+        end
+        return
     end
 
     local jwe_obj = load_jwe_token(jwe_token)
