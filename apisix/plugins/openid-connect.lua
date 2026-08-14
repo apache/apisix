@@ -41,6 +41,15 @@ local plugin_name       = "openid-connect"
 local STATE_MISMATCH_ERR =
     "state from argument does not match state restored from session"
 
+-- prefix of the resty.openidc error returned when the redirect_uri is
+-- requested without an authorization response, e.g. an OAuth2 error
+-- redirect (RFC 6749 section 4.1.2.1) instead of a code
+local UNHANDLED_REDIRECT_URI_ERR = "unhandled request to the redirect_uri"
+
+-- max consecutive restarts of the authentication flow from failed
+-- authorization callbacks
+local MAX_AUTH_FLOW_RESTARTS = 3
+
 
 -- Session config is passed as-is to resty.session.start(); the only
 -- translation is the legacy session.cookie.lifetime alias from the
@@ -1294,34 +1303,88 @@ function _M.rewrite(plugin_conf, ctx)
                                                           build_session_opts(conf.session))
 
         if err then
-            if session then
-                session:close()
-            end
             if err == "unauthorized request" then
+                if session then
+                    session:close()
+                end
                 if conf.unauth_action == "pass" then
                     return nil
                 end
                 return 401
             end
 
-            -- Stale authorization callback: the session holds no authorization
-            -- state for the state in the callback, e.g. an already completed
-            -- callback was replayed, or the state was pruned after too many
-            -- concurrent flows. (Concurrent logins in several tabs are handled
-            -- by resty.openidc itself since 1.9.0, which keeps one
-            -- authorization state per in-flight flow.) The client is a browser
-            -- mid-navigation, so instead of a dead-end 500, send it back to the
-            -- original URL that resty.openidc returns alongside the error: a
-            -- fresh flow starts from there and completes without any user
-            -- interaction while the ID provider still holds an SSO session.
-            if err == STATE_MISMATCH_ERR and target_url
-               and ngx.req.get_method() == "GET" then
-                core.log.warn("OIDC state mismatch (replayed or pruned ",
-                              "callback), restarting the authentication flow")
-                core.response.set_header("Location", target_url)
-                return 302
+            -- Recoverable authorization-callback failures: a stale state
+            -- (replayed or pruned callback), or the ID provider redirecting
+            -- back with error=temporarily_unavailable, e.g. Keycloak after
+            -- its login session expired. The client is a browser
+            -- mid-navigation, so restart the authentication flow by sending
+            -- it back to the original URL instead of dead-ending with a 500.
+            -- Other OAuth2 error codes (access_denied, login_required, ...)
+            -- reflect a deliberate outcome and are not retried.
+            local restart_reason
+            local restart_url = target_url
+            if err == STATE_MISMATCH_ERR then
+                -- state already matched by resty.openidc; no in-flight flow
+                -- for it, so its session-level original_url is all we have
+                restart_reason = "state mismatch (replayed or pruned callback)"
+            elseif session and core.string.has_prefix(err, UNHANDLED_REDIRECT_URI_ERR) then
+                local uri_args = ngx.req.get_uri_args()
+                -- resty.openidc bails on this path before validating state, so
+                -- match it here as it would: rejects a forged callback, and
+                -- recovers the original_url of the flow it belongs to (each
+                -- in-flight flow keeps its own since 1.9.0)
+                local authorization_state
+                if uri_args.error == "temporarily_unavailable" and uri_args.state then
+                    local states = session:get("authorization_states")
+                    authorization_state = states and states[uri_args.state]
+                    if not authorization_state
+                       and uri_args.state == session:get("state") then
+                        authorization_state = {
+                            original_url = session:get("original_url")
+                        }
+                    end
+                end
+                if authorization_state then
+                    restart_reason = "authorization callback reported a " ..
+                        "temporarily unavailable identity provider" ..
+                        (type(uri_args.error_description) == "string" and
+                            (" (" .. uri_args.error_description .. ")") or "")
+                    restart_url = authorization_state.original_url or target_url
+                end
             end
 
+            if restart_reason and restart_url and session
+               and ngx.req.get_method() == "GET" then
+                -- bound the redirect loop in case the failure is not
+                -- transient; the counter is reset once a request
+                -- authenticates
+                local restarts = session:get("auth_flow_restarts") or 0
+                if restarts < MAX_AUTH_FLOW_RESTARTS then
+                    session:set("auth_flow_restarts", restarts + 1)
+                    local ok, save_err = session:save()
+                    if not ok then
+                        session:close()
+                        core.log.error("OIDC authentication failed: ", err,
+                                       " (could not persist the restart ",
+                                       "counter: ", save_err, ")")
+                        return 500
+                    end
+                    session:close()
+                    core.log.warn("OIDC ", restart_reason,
+                                  ", restarting the authentication flow")
+                    core.response.set_header("Location", restart_url)
+                    return 302
+                end
+                session:close()
+                core.log.error("OIDC authentication failed: ", err,
+                               " (giving up after ", restarts,
+                               " restarts of the authentication flow)")
+                return 500
+            end
+
+            if session then
+                session:close()
+            end
             core.log.error("OIDC authentication failed: ", err)
             return 500
         end
@@ -1364,6 +1427,15 @@ function _M.rewrite(plugin_conf, ctx)
             local enc_id_token = session:get("enc_id_token")
             if enc_id_token and conf.set_raw_id_token_header then
                 core.request.set_header(ctx, "X-Raw-ID-Token", enc_id_token)
+            end
+
+            -- a successful authentication resets the restart budget
+            if session:get("auth_flow_restarts") then
+                session:set("auth_flow_restarts", nil)
+                local ok, save_err = session:save()
+                if not ok then
+                    core.log.error("failed to save session: ", save_err)
+                end
             end
         end
     end
