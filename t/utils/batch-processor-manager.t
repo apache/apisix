@@ -212,46 +212,55 @@ done
                 "sls-logger", "splunk-hec-logging", "syslog", "tcp-logger",
                 "tencent-cloud-cls", "udp-logger",
             }
-            local is_logger = {}
+            -- the stream plugin and the shared syslog module both log as "syslog"
+            local modules = {["apisix.stream.plugins.syslog"] = "syslog"}
+            local order = {}
             for _, name in ipairs(loggers) do
-                is_logger[name] = true
+                modules["apisix.plugins." .. name] = name
+                table.insert(order, "apisix.plugins." .. name)
             end
+            table.insert(order, "apisix.stream.plugins.syslog")
 
             local bp_manager_mod = require("apisix.utils.batch-processor-manager")
-            local created = {}
             local orig_new = bp_manager_mod.new
-            bp_manager_mod.new = function(name, plugin_name)
-                local manager = orig_new(name, plugin_name)
-                table.insert(created, manager)
-                return manager
-            end
+            local created
+            local checked = 0
 
-            local modules = {"apisix.plugins.syslog.init",
-                             "apisix.stream.plugins.syslog"}
-            for _, name in ipairs(loggers) do
-                table.insert(modules, "apisix.plugins." .. name)
-            end
-            for _, path in ipairs(modules) do
+            for _, path in ipairs(order) do
+                -- syslog keeps its batch processor in a module shared with the
+                -- stream plugin; reload it alongside so whichever plugin is under
+                -- test is the one that builds it
+                package.loaded["apisix.plugins.syslog.init"] = nil
                 package.loaded[path] = nil
-            end
-            for _, path in ipairs(modules) do
-                require(path)
-            end
-            bp_manager_mod.new = orig_new
 
-            for _, manager in ipairs(created) do
-                if not is_logger[manager.plugin_name] then
-                    ngx.say(manager.name, " reads the metadata of '",
-                            manager.plugin_name, "', which is not a logger plugin")
+                created = {}
+                bp_manager_mod.new = function(name, plugin_name)
+                    local manager = orig_new(name, plugin_name)
+                    table.insert(created, manager)
+                    return manager
+                end
+                require(path)
+                bp_manager_mod.new = orig_new
+
+                if #created == 0 then
+                    ngx.say(path, " built no batch processor")
+                end
+                for _, manager in ipairs(created) do
+                    checked = checked + 1
+                    if manager.plugin_name ~= modules[path] then
+                        ngx.say(path, ": batch processor '", manager.name,
+                                "' reads the metadata of '", manager.plugin_name,
+                                "', expected '", modules[path], "'")
+                    end
                 end
             end
-            ngx.say("checked ", #created, " batch processors")
+            ngx.say("checked ", checked, " batch processors")
         }
     }
 --- request
 GET /t
 --- response_body
-checked 19 batch processors
+checked 20 batch processors
 
 
 
@@ -341,8 +350,16 @@ location /t {
         end
 
         local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
-        for _ = 1, 3 do
-            httpc:request_uri(uri, {method = "GET"})
+        for i = 1, 3 do
+            local res, err = httpc:request_uri(uri, {method = "GET"})
+            if not res then
+                ngx.say("request ", i, " failed: ", err)
+                return
+            end
+            if res.status ~= 200 then
+                ngx.say("request ", i, " returned ", res.status)
+                return
+            end
         end
         ngx.sleep(1)
         ngx.say("passed")
