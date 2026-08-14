@@ -14,10 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-use t::APISIX;
-
-# This test cannot be executed normally at the moment, so it will be temporarily skipped and fixed in a later PR.
-plan(skip_all => 'skip test case');
+use t::APISIX 'no_plan';
 
 repeat_each(1);
 no_long_string();
@@ -69,12 +66,58 @@ property "event_properties" validation failed: wrong type: expected object, got 
 
 
 
-=== TEST 2: test
---- timeout: 302
---- max_size: 2048000
---- exec
-cd t && pnpm test plugin/lago.spec.mts 2>&1
---- no_error_log
-failed to execute the script with status
---- response_body eval
-qr/PASS plugin\/lago.spec.mts/
+=== TEST 2: set up a route whose lago plugin sends events to the mock endpoint
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "lago": {
+                            "endpoint_addrs": ["http://127.0.0.1:1980"],
+                            "token": "test-token",
+                            "event_transaction_id": "txn-${request_id}",
+                            "event_subscription_id": "sub-1",
+                            "event_code": "test",
+                            "event_properties": {
+                                "tier": "normal",
+                                "status": "${status}"
+                            },
+                            "batch_max_size": 1
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 3: hitting the route batches one event and sends it to the mock
+--- request
+GET /hello
+--- wait: 2
+--- response_body
+hello world
+--- error_log
+lago auth: Bearer test-token
+"code":"test"
+"external_subscription_id":"sub-1"
+"transaction_id":"txn-
+"tier":"normal"
+"status":"200"
