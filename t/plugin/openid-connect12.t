@@ -379,3 +379,61 @@ restarting the authentication flow
     }
 --- response_body
 500 500 302
+
+
+
+=== TEST 9: a restart is not issued when the incremented counter cannot be persisted
+--- config
+    location /t {
+        content_by_lua_block {
+            -- force session:save() to fail for any request carrying the
+            -- forcesavefail argument, so the callback below exercises the
+            -- persistence-failure path while the flow still starts normally
+            -- (rawset: the module and session tables are read-only)
+            local r_session = require("resty.session")
+            if not rawget(r_session, "_save_patched") then
+                local orig_start = r_session.start
+                rawset(r_session, "start", function(...)
+                    local self, err = orig_start(...)
+                    if self and ngx.var.arg_forcesavefail then
+                        rawset(self, "save", function()
+                            return nil, "forced save failure"
+                        end)
+                    end
+                    return self, err
+                end)
+                rawset(r_session, "_save_patched", true)
+            end
+
+            local http = require "resty.http"
+            local base = "http://127.0.0.1:" .. ngx.var.server_port
+
+            local function cookie_of(res)
+                local c = res.headers["Set-Cookie"]
+                if type(c) == "table" then
+                    c = table.concat(c, "; ")
+                end
+                return c and c:match("^([^;]+)")
+            end
+
+            -- start a login flow so the session holds a valid in-flight state
+            local res_a = http.new():request_uri(base .. "/oidc12/page")
+            local state = res_a.headers["Location"]:match("state=([^&]+)")
+            local jar = cookie_of(res_a)
+
+            -- the callback would restart, but the incremented counter cannot be
+            -- persisted; without it the cap cannot bound the loop, so the plugin
+            -- must fail closed instead of redirecting
+            local res_b = http.new():request_uri(
+                base .. "/oidc12/callback?error=temporarily_unavailable" ..
+                    "&error_description=authentication_expired&forcesavefail=1" ..
+                    "&state=" .. state, {
+                    headers = {Cookie = jar}
+                })
+            ngx.say(res_b.status)
+        }
+    }
+--- response_body
+500
+--- error_log
+could not persist the restart counter

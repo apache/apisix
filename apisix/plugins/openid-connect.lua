@@ -1363,7 +1363,11 @@ function _M.rewrite(plugin_conf, ctx)
                     session:set("auth_flow_restarts", restarts + 1)
                     local ok, save_err = session:save()
                     if not ok then
-                        core.log.error("failed to save session: ", save_err)
+                        session:close()
+                        core.log.error("OIDC authentication failed: ", err,
+                                       " (could not persist the restart ",
+                                       "counter: ", save_err, ")")
+                        return 500
                     end
                     session:close()
                     core.log.warn("OIDC ", restart_reason,
