@@ -63,6 +63,7 @@ description: datadog 插件与 Datadog 集成，将指标批量发送到 DogStat
 | port          | integer | 否     | 8125                | DogStatsD 服务器端口。                                                                                                                 |
 | namespace     | string  | 否     | "apisix"            | APISIX agent 发送的所有自定义指标的前缀。有助于在指标图中定位实体，例如 `apisix.request.counter`。                                    |
 | constant_tags | array   | 否     | [ "source:apisix" ] | 嵌入到生成指标中的静态标签，便于按信号对指标进行分组。详见[标签定义](https://docs.datadoghq.com/getting_started/tagging/#defining-tags)。 |
+| max_pending_entries | integer | 否 | 16384 | 待处理条目数的上限。积压超过该值后新条目会被丢弃，避免日志服务变慢或不可达时 worker 内存无限增长。该上限对应的内存开销参见 [批处理器](../batch-processor.md#限制积压条目数)。 |
 
 ## 指标
 

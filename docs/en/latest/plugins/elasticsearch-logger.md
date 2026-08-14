@@ -67,7 +67,7 @@ This Plugin supports using batch processors to aggregate and process entries (lo
 |------|------|----------|---------|-------------|
 | log_format | object | False |  | Log format declared as key-value pairs in JSON. Values support strings and nested objects (up to five levels deep; deeper fields are truncated). Within strings, [APISIX](../apisix-variable.md) or [NGINX](http://nginx.org/en/docs/varindex.html) variables can be referenced by prefixing with `$`. |
 | log_format_extra | object | False |  | Extra log fields **added on top of** the default log entry, keeping every default field instead of replacing them (unlike `log_format`). Same value syntax as `log_format`. Ignored when `log_format` is set. |
-| max_pending_entries | integer | False | | Maximum number of pending entries that can be buffered in batch processor before it starts dropping them. |
+| max_pending_entries | integer | False | 16384 | Maximum number of entries waiting to be processed. New entries are discarded while the backlog exceeds this, which stops a slow or unreachable log server from growing the worker's memory without bound. See [Batch Processor](../batch-processor.md#limiting-the-backlog) for the memory a backlog of this size costs. |
 
 ## Examples
 

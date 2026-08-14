@@ -36,6 +36,30 @@ title: 批处理器
 | buffer_duration  | integer | 可选   | 60     | [1,...] | 必须先处理批次中最旧条目的最长期限（以秒为单位）。           |
 | max_retry_count  | integer | 可选   | 0      | [0,...] | 从处理管道中移除之前的最大重试次数。                         |
 | retry_delay      | integer | 可选   | 1      | [0,...] | 如果执行失败，则应延迟执行流程的秒数。                       |
+
+## 限制积压条目数
+
+已缓冲但尚未发送成功的条目保存在 worker 内存中。当日志服务变慢或不可达时，条目进入的速度快于离开的速度，积压量以及 worker 内存会随请求速率不断增长。
+
+因此所有基于批处理器的日志插件都通过[插件元数据](./terminology/plugin-metadata.md)提供 `max_pending_entries` 上限，默认值为 `16384`。积压超过该上限期间新条目会被丢弃，并且每秒最多向错误日志输出一条汇总信息：
+
+```text
+max pending entries limit exceeded. discarding entry. total_pushed_entries: 20481 total_processed_entries: 4096 max_pending_entries: 16384 discarded_entries: 3172
+```
+
+该上限限制的是条目数量，因此实际占用多少内存取决于单条条目有多大——尤其取决于是否开启 `include_req_body` 和 `include_resp_body`，以及 body 的大小。下表是日志服务接受连接但始终不响应时 worker 常驻内存的峰值增长，测试使用 `http-logger`、同时收集请求和响应 body，批处理器其余配置保持默认：
+
+| 每请求收集的 body | 默认上限下 worker 内存峰值 |
+|-------------------|----------------------------|
+| 不收集 body       | ~60 MB                     |
+| 1 KB 请求 + 1 KB 响应 | ~170 MB                |
+| 4 KB 请求 + 4 KB 响应 | ~470 MB                |
+| 16 KB 请求 + 16 KB 响应 | ~1.6 GB              |
+
+内存开销与 body 大小大致成正比，因此如果收集的 body 超过几 KB，应调低 `max_pending_entries`。表中数值高于条目本身的体积，是因为已经交给发送方的批次同时持有条目和由其序列化出的载荷。
+
+只有在发送跟不上时该上限才会起作用。日志服务正常的情况下，积压量接近 `batch_max_size`——在相同环境下 3000 QPS 时不足 1000 条，因此默认值为正常运行留出了充足余量。
+
 以下代码显示了如何在你的插件中使用批处理器：
 
 ```lua
@@ -43,12 +67,17 @@ local bp_manager_mod = require("apisix.utils.batch-processor-manager")
 ...
 
 local plugin_name = "xxx-logger"
-local batch_processor_manager = bp_manager_mod.new(plugin_name)
+-- 第二个参数指定 max_pending_entries 所在的插件元数据名称，
+-- 仅当批处理器自身的名称与插件名不同时才需要传入
+local batch_processor_manager = bp_manager_mod.new("xxx logger", plugin_name)
 local schema = {...}
+local metadata_schema = {...}
 local _M = {
     ...
     name = plugin_name,
     schema = batch_processor_manager:wrap_schema(schema),
+    -- 向插件的元数据 schema 中加入 max_pending_entries
+    metadata_schema = batch_processor_manager:wrap_metadata_schema(metadata_schema),
 }
 
 ...

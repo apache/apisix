@@ -31,9 +31,9 @@ add_block_preprocessor(sub {
     local bp_manager = require("apisix.utils.batch-processor-manager")
     local core = require("apisix.core")
     local old_f = bp_manager.add_entry_to_new_processor
-    bp_manager.add_entry_to_new_processor = function(self, conf, entry, ctx, func, max_pending_entries)
+    bp_manager.add_entry_to_new_processor = function(self, conf, entry, ctx, func)
         ngx.log(ngx.INFO, "batch_entry: ", entry.data or core.json.encode(entry))
-        return old_f(self, conf, entry, ctx, func, max_pending_entries)
+        return old_f(self, conf, entry, ctx, func)
     end
 _EOC_
 

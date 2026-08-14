@@ -71,10 +71,11 @@ This Plugin supports using batch processors to aggregate and process entries (lo
 
 You can also set the format of the logs by configuring the Plugin metadata. The following configurations are available:
 
-| Name       | Type   | Required | Description                                                                                                                                                              |
-|------------|--------|----------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| log_format | object | False    | Custom log format using key-value pairs in JSON format. Values can reference [NGINX variables](https://nginx.org/en/docs/http/ngx_http_core_module.html).                |
-| log_format_extra | object | False    | Extra log fields **added on top of** the default log entry, keeping every default field instead of replacing them (unlike `log_format`). Same value syntax as `log_format`. Ignored when `log_format` is set. |
+| Name       | Type   | Required | Default | Description                                                                                                                                                              |
+|------------|--------|----------|---------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| log_format | object | False    |         | Custom log format using key-value pairs in JSON format. Values can reference [NGINX variables](https://nginx.org/en/docs/http/ngx_http_core_module.html).                |
+| log_format_extra | object | False    |         | Extra log fields **added on top of** the default log entry, keeping every default field instead of replacing them (unlike `log_format`). Same value syntax as `log_format`. Ignored when `log_format` is set. |
+| max_pending_entries | integer | False | 16384 | Maximum number of entries waiting to be processed. New entries are discarded while the backlog exceeds this, which stops a slow or unreachable log server from growing the worker's memory without bound. See [Batch Processor](../batch-processor.md#limiting-the-backlog) for the memory a backlog of this size costs. |
 
 :::info IMPORTANT
 

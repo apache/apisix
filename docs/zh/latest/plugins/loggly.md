@@ -68,6 +68,7 @@ description: API 网关 Apache APISIX loggly 插件可用于将日志转发到 S
 | timeout    | integer | 否    | 5000                 |                                | 发送数据请求超时时间（以毫秒为单位）。                                 |
 | protocol   | string  | 否    | "syslog"             | [ "syslog", "http", "https" ]  | 将日志发送到 Loggly 的协议。                                          |
 | log_format | object  | 否    | nil                  |                                | 日志格式以 JSON 的键值对声明。值支持字符串和嵌套对象（最多五层，超出部分将被截断）。字符串中可通过在前面加上 `$` 来引用 [APISIX 变量](../../../en/latest/apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
+| max_pending_entries | integer | 否 | 16384 |  | 待处理条目数的上限。积压超过该值后新条目会被丢弃，避免日志服务变慢或不可达时 worker 内存无限增长。该上限对应的内存开销参见 [批处理器](../batch-processor.md#限制积压条目数)。 |
 
 APISIX 支持 [Syslog](https://documentation.solarwinds.com/en/success_center/loggly/content/admin/streaming-syslog-without-using-files.htm)、[HTTP/S](https://documentation.solarwinds.com/en/success_center/loggly/content/admin/http-bulk-endpoint.htm)（批量端点）协议将日志事件发送到 Loggly。**默认情况下 `protocol` 的值为 `syslog`**。该协议允许你通过一些细粒度的控制（基于上游 HTTP 响应代码的日志严重性映射）发送符合 RFC5424 的系统日志事件。但是 HTTP/S 批量端点非常适合以更快的传输速度发送更大量的日志事件。
 

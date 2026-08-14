@@ -18,21 +18,38 @@ local core = require("apisix.core")
 local plugin = require("apisix.plugin")
 local batch_processor = require("apisix.utils.batch-processor")
 local timer_at = ngx.timer.at
+local now = ngx.now
 local pairs = pairs
 local setmetatable = setmetatable
+
+
+-- A pending entry keeps a whole log payload alive, including the request and
+-- response bodies when body logging is on, so a log server that is slow or
+-- unreachable turns the backlog into unbounded worker memory. Cap it by default;
+-- the batch-processor documentation records what the cap costs per body size.
+local DEFAULT_MAX_PENDING_ENTRIES = 16384
+-- Logging one line per discarded entry would itself become a flood during the very
+-- outage that causes the discards, so report a summary at most this often, in seconds.
+local DISCARD_LOG_INTERVAL = 1
 
 
 local _M = {}
 local mt = { __index = _M }
 
 
-function _M.new(name)
+-- `name` labels the batch processor in logs and metrics and is not necessarily the
+-- plugin's name; `plugin_name` names the plugin whose metadata carries
+-- `max_pending_entries`, and defaults to `name`.
+function _M.new(name, plugin_name)
     return setmetatable({
         stale_timer_running = false,
         buffers = {},
         total_pushed_entries = 0,
         total_stale_processed_entries = 0,
+        discarded_entries = 0,
+        last_discard_log_time = 0,
         name = name,
+        plugin_name = plugin_name or name,
     }, mt)
 end
 
@@ -48,6 +65,20 @@ function _M:wrap_schema(schema)
     end
 
     properties.name.default = self.name
+    return schema
+end
+
+
+-- Every batch-processor based logger exposes the same backlog limit, so declare it
+-- here instead of repeating it in each plugin's metadata schema.
+function _M:wrap_metadata_schema(schema)
+    schema.properties.max_pending_entries = {
+        type = "integer",
+        minimum = 1,
+        default = DEFAULT_MAX_PENDING_ENTRIES,
+        description = "maximum number of entries waiting to be processed; new "
+                   .. "entries are discarded while the backlog exceeds it",
+    }
     return schema
 end
 
@@ -98,16 +129,37 @@ local function total_processed_entries(self)
     return processed_entries
 end
 
-function _M:add_entry(conf, entry, max_pending_entries)
-    if max_pending_entries then
-        local total_processed_entries_count = total_processed_entries(self)
-        if self.total_pushed_entries - total_processed_entries_count > max_pending_entries then
-            core.log.error("max pending entries limit exceeded. discarding entry.",
-                           " total_pushed_entries: ", self.total_pushed_entries,
-                           " total_processed_entries: ", total_processed_entries_count,
-                           " max_pending_entries: ", max_pending_entries)
-            return
-        end
+
+local function should_discard(self)
+    local metadata = plugin.plugin_metadata(self.plugin_name)
+    local max_pending_entries = metadata and metadata.value
+                                and metadata.value.max_pending_entries
+                                or DEFAULT_MAX_PENDING_ENTRIES
+
+    local total_processed_entries_count = total_processed_entries(self)
+    if self.total_pushed_entries - total_processed_entries_count <= max_pending_entries then
+        return false
+    end
+
+    self.discarded_entries = self.discarded_entries + 1
+    local time = now()
+    if time - self.last_discard_log_time >= DISCARD_LOG_INTERVAL then
+        core.log.error("max pending entries limit exceeded. discarding entry.",
+                       " total_pushed_entries: ", self.total_pushed_entries,
+                       " total_processed_entries: ", total_processed_entries_count,
+                       " max_pending_entries: ", max_pending_entries,
+                       " discarded_entries: ", self.discarded_entries)
+        self.last_discard_log_time = time
+        self.discarded_entries = 0
+    end
+
+    return true
+end
+
+
+function _M:add_entry(conf, entry)
+    if should_discard(self) then
+        return
     end
     check_stale(self)
 
@@ -122,16 +174,9 @@ function _M:add_entry(conf, entry, max_pending_entries)
 end
 
 
-function _M:add_entry_to_new_processor(conf, entry, ctx, func, max_pending_entries)
-    if max_pending_entries then
-        local total_processed_entries_count = total_processed_entries(self)
-        if self.total_pushed_entries - total_processed_entries_count > max_pending_entries then
-            core.log.error("max pending entries limit exceeded. discarding entry.",
-                           " total_pushed_entries: ", self.total_pushed_entries,
-                           " total_processed_entries: ", total_processed_entries_count,
-                           " max_pending_entries: ", max_pending_entries)
-            return
-        end
+function _M:add_entry_to_new_processor(conf, entry, ctx, func)
+    if should_discard(self) then
+        return
     end
     check_stale(self)
 

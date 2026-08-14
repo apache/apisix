@@ -63,6 +63,7 @@ You can configure the Plugin through Plugin metadata.
 | port          | integer | False    | 8125                | DogStatsD server port.                                                                                                                    |
 | namespace     | string  | False    | "apisix"            | Prefix for all custom metrics sent by the APISIX agent. Useful for finding entities for metrics graph. For example, `apisix.request.counter`. |
 | constant_tags | array   | False    | [ "source:apisix" ] | Static tags to embed into generated metrics. Useful for grouping metrics over certain signals. See [defining tags](https://docs.datadoghq.com/getting_started/tagging/#defining-tags) for more. |
+| max_pending_entries | integer | False | 16384 | Maximum number of entries waiting to be processed. New entries are discarded while the backlog exceeds this, which stops a slow or unreachable log server from growing the worker's memory without bound. See [Batch Processor](../batch-processor.md#limiting-the-backlog) for the memory a backlog of this size costs. |
 
 ## Metrics
 
