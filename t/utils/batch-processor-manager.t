@@ -58,7 +58,7 @@ __DATA__
 --- request
 GET /t
 --- response_body
-accepted: 16385
+accepted: 16384
 --- error_log
 max pending entries limit exceeded. discarding entry
 
@@ -106,7 +106,7 @@ max pending entries limit exceeded. discarding entry
 --- request
 GET /t
 --- response_body
-accepted: 4
+accepted: 3
 --- error_log
 max_pending_entries: 3
 
@@ -136,12 +136,21 @@ max_pending_entries: 3
             local ctx = {var = {route_id = "1", server_addr = "127.0.0.1"}}
             local func = function() return true end
 
-            for i = 1, 100 do
-                local ok = bp_manager:add_entry(conf, i)
-                if not ok then
-                    bp_manager:add_entry_to_new_processor(conf, i, ctx, func)
+            local push = function(n)
+                for i = 1, n do
+                    local ok = bp_manager:add_entry(conf, i)
+                    if not ok then
+                        bp_manager:add_entry_to_new_processor(conf, i, ctx, func)
+                    end
                 end
             end
+
+            -- one entry fits, the other 99 are discarded but reported only once
+            push(100)
+            -- past the interval the next discard reports, and its count covers
+            -- every entry discarded since the previous report
+            ngx.sleep(1.1)
+            push(5)
             ngx.say("done")
         }
     }
@@ -150,9 +159,10 @@ GET /t
 --- response_body
 done
 --- grep_error_log eval
-qr/max pending entries limit exceeded/
+qr/discarded_entries: \d+/
 --- grep_error_log_out
-max pending entries limit exceeded
+discarded_entries: 1
+discarded_entries: 99
 
 
 
@@ -167,8 +177,11 @@ max pending entries limit exceeded
                 "sls-logger", "splunk-hec-logging", "syslog", "tcp-logger",
                 "tencent-cloud-cls", "udp-logger",
             }
+            table.insert(loggers, "stream syslog")
             for _, name in ipairs(loggers) do
-                local mod = require("apisix.plugins." .. name)
+                local mod = require(name == "stream syslog"
+                                    and "apisix.stream.plugins.syslog"
+                                    or "apisix.plugins." .. name)
                 local schema = mod.metadata_schema
                 local prop = schema and schema.properties
                              and schema.properties.max_pending_entries
@@ -183,3 +196,162 @@ max pending entries limit exceeded
 GET /t
 --- response_body
 done
+
+
+
+=== TEST 5: every logger's batch processor reads its own plugin's metadata
+--- config
+    location /t {
+        content_by_lua_block {
+            -- a manager built without its plugin name looks metadata up under the
+            -- batch processor's display name, silently ignoring any override
+            local loggers = {
+                "clickhouse-logger", "datadog", "elasticsearch-logger",
+                "google-cloud-logging", "http-logger", "kafka-logger", "lago",
+                "loggly", "loki-logger", "rocketmq-logger", "skywalking-logger",
+                "sls-logger", "splunk-hec-logging", "syslog", "tcp-logger",
+                "tencent-cloud-cls", "udp-logger",
+            }
+            local is_logger = {}
+            for _, name in ipairs(loggers) do
+                is_logger[name] = true
+            end
+
+            local bp_manager_mod = require("apisix.utils.batch-processor-manager")
+            local created = {}
+            local orig_new = bp_manager_mod.new
+            bp_manager_mod.new = function(name, plugin_name)
+                local manager = orig_new(name, plugin_name)
+                table.insert(created, manager)
+                return manager
+            end
+
+            local modules = {"apisix.plugins.syslog.init",
+                             "apisix.stream.plugins.syslog"}
+            for _, name in ipairs(loggers) do
+                table.insert(modules, "apisix.plugins." .. name)
+            end
+            for _, path in ipairs(modules) do
+                package.loaded[path] = nil
+            end
+            for _, path in ipairs(modules) do
+                require(path)
+            end
+            bp_manager_mod.new = orig_new
+
+            for _, manager in ipairs(created) do
+                if not is_logger[manager.plugin_name] then
+                    ngx.say(manager.name, " reads the metadata of '",
+                            manager.plugin_name, "', which is not a logger plugin")
+                end
+            end
+            ngx.say("checked ", #created, " batch processors")
+        }
+    }
+--- request
+GET /t
+--- response_body
+checked 19 batch processors
+
+
+
+=== TEST 6: max_pending_entries is validated through each plugin's metadata schema
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local loggers = {
+                "clickhouse-logger", "datadog", "elasticsearch-logger",
+                "google-cloud-logging", "http-logger", "kafka-logger", "lago",
+                "loggly", "loki-logger", "rocketmq-logger", "skywalking-logger",
+                "sls-logger", "splunk-hec-logging", "syslog", "tcp-logger",
+                "tencent-cloud-cls", "udp-logger",
+            }
+            table.insert(loggers, "stream syslog")
+            for _, name in ipairs(loggers) do
+                local mod = require(name == "stream syslog"
+                                    and "apisix.stream.plugins.syslog"
+                                    or "apisix.plugins." .. name)
+                local ok, err = mod.check_schema({max_pending_entries = 100},
+                                                 core.schema.TYPE_METADATA)
+                if not ok then
+                    ngx.say(name, " rejected a valid override: ", err)
+                end
+                if mod.check_schema({max_pending_entries = 0},
+                                    core.schema.TYPE_METADATA) then
+                    ngx.say(name, " accepted max_pending_entries = 0")
+                end
+            end
+            ngx.say("done")
+        }
+    }
+--- request
+GET /t
+--- response_body
+done
+
+
+
+=== TEST 7: the limit reaches a plugin that never carried it before
+--- extra_yaml_config
+plugins:
+  - sls-logger
+--- config
+location /t {
+    content_by_lua_block {
+        local http = require "resty.http"
+        local httpc = http.new()
+        local t = require("lib.test_admin").test
+
+        local code, body = t('/apisix/admin/plugin_metadata/sls-logger',
+                             ngx.HTTP_PUT, {max_pending_entries = 1})
+        if code >= 300 then
+            ngx.status = code
+            ngx.say(body)
+            return
+        end
+
+        -- nothing listens on the log port, and retries keep the first entry
+        -- pending, so everything after it is over the limit
+        code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, {
+            plugins = {
+                ["sls-logger"] = {
+                    host = "127.0.0.1",
+                    port = 1234,
+                    project = "test-project",
+                    logstore = "test-logstore",
+                    access_key_id = "test-key-id",
+                    access_key_secret = "test-key-secret",
+                    batch_max_size = 1,
+                    max_retry_count = 10,
+                    retry_delay = 1,
+                    timeout = 1,
+                },
+            },
+            upstream = {
+                nodes = {["127.0.0.1:1980"] = 1},
+                type = "roundrobin",
+            },
+            uri = "/hello",
+        })
+        if code >= 300 then
+            ngx.status = code
+            ngx.say(body)
+            return
+        end
+
+        local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+        for _ = 1, 3 do
+            httpc:request_uri(uri, {method = "GET"})
+        end
+        ngx.sleep(1)
+        ngx.say("passed")
+    }
+}
+--- request
+GET /t
+--- response_body
+passed
+--- error_log
+max pending entries limit exceeded. discarding entry
+--- timeout: 5

@@ -25,7 +25,7 @@ local core            = require("apisix.core")
 local str_format      = core.string.format
 
 local plugin_name = "lago"
-local batch_processor_manager = bp_manager_mod.new("lago logger")
+local batch_processor_manager = bp_manager_mod.new("lago logger", plugin_name)
 
 local schema = {
     type = "object",

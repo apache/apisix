@@ -46,6 +46,7 @@ function _M.new(name, plugin_name)
         buffers = {},
         total_pushed_entries = 0,
         total_stale_processed_entries = 0,
+        processed_entries_snapshot = 0,
         discarded_entries = 0,
         last_discard_log_time = 0,
         name = name,
@@ -130,35 +131,50 @@ local function total_processed_entries(self)
 end
 
 
-local function should_discard(self)
+local function max_pending_entries(self)
     local metadata = plugin.plugin_metadata(self.plugin_name)
-    local max_pending_entries = metadata and metadata.value
-                                and metadata.value.max_pending_entries
-                                or DEFAULT_MAX_PENDING_ENTRIES
+    return metadata and metadata.value and metadata.value.max_pending_entries
+           or DEFAULT_MAX_PENDING_ENTRIES
+end
 
-    local total_processed_entries_count = total_processed_entries(self)
-    if self.total_pushed_entries - total_processed_entries_count <= max_pending_entries then
+
+-- The processed count only ever grows, so the last one we read is a lower bound on
+-- the current one, and `pushed - snapshot` is therefore an upper bound on the
+-- backlog. While that bound is under the limit the backlog certainly is too, which
+-- keeps the common path off the per-buffer walk: the walk only happens once the
+-- bound catches up with the limit, roughly once every `max_pending_entries` entries.
+local function backlog_is_full(self, limit)
+    if self.total_pushed_entries - self.processed_entries_snapshot < limit then
         return false
     end
 
+    self.processed_entries_snapshot = total_processed_entries(self)
+    return self.total_pushed_entries - self.processed_entries_snapshot >= limit
+end
+
+
+local function report_discard(self, limit)
     self.discarded_entries = self.discarded_entries + 1
+
     local time = now()
-    if time - self.last_discard_log_time >= DISCARD_LOG_INTERVAL then
-        core.log.error("max pending entries limit exceeded. discarding entry.",
-                       " total_pushed_entries: ", self.total_pushed_entries,
-                       " total_processed_entries: ", total_processed_entries_count,
-                       " max_pending_entries: ", max_pending_entries,
-                       " discarded_entries: ", self.discarded_entries)
-        self.last_discard_log_time = time
-        self.discarded_entries = 0
+    if time - self.last_discard_log_time < DISCARD_LOG_INTERVAL then
+        return
     end
 
-    return true
+    core.log.error("max pending entries limit exceeded. discarding entry.",
+                   " total_pushed_entries: ", self.total_pushed_entries,
+                   " total_processed_entries: ", self.processed_entries_snapshot,
+                   " max_pending_entries: ", limit,
+                   " discarded_entries: ", self.discarded_entries)
+    self.last_discard_log_time = time
+    self.discarded_entries = 0
 end
 
 
 function _M:add_entry(conf, entry)
-    if should_discard(self) then
+    local limit = max_pending_entries(self)
+    if backlog_is_full(self, limit) then
+        report_discard(self, limit)
         return
     end
     check_stale(self)
@@ -175,7 +191,10 @@ end
 
 
 function _M:add_entry_to_new_processor(conf, entry, ctx, func)
-    if should_discard(self) then
+    -- Callers reach this only after add_entry() declined, so a discarded entry has
+    -- already been counted and reported there; re-check the backlog so a direct
+    -- caller is still bounded, but do not count the same entry a second time.
+    if backlog_is_full(self, max_pending_entries(self)) then
         return
     end
     check_stale(self)
