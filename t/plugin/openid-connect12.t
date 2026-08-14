@@ -199,3 +199,127 @@ restarting the authentication flow
     }
 --- response_body
 500
+
+
+
+=== TEST 6: a callback error that keeps recurring stops being retried after 3 restarts
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local base = "http://127.0.0.1:" .. ngx.var.server_port
+
+            local function cookie_of(res)
+                local c = res.headers["Set-Cookie"]
+                if type(c) == "table" then
+                    c = table.concat(c, "; ")
+                end
+                return c and c:match("^([^;]+)")
+            end
+
+            local res_a = http.new():request_uri(base .. "/oidc12/page")
+            local state = res_a.headers["Location"]:match("state=([^&]+)")
+            local jar = cookie_of(res_a)
+
+            -- the browser keeps following the restart redirect into the same
+            -- failure; each response carries the session cookie updated with
+            -- the restart count
+            local statuses = {}
+            for i = 1, 5 do
+                local res = http.new():request_uri(
+                    base .. "/oidc12/callback?error=temporarily_unavailable" ..
+                        "&error_description=authentication_expired&state=" .. state, {
+                        headers = {Cookie = jar}
+                    })
+                statuses[i] = res.status
+                jar = cookie_of(res) or jar
+            end
+            ngx.say(table.concat(statuses, " "))
+        }
+    }
+--- response_body
+302 302 302 500 500
+
+
+
+=== TEST 7: a successful authentication resets the restart budget
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local concatenate_cookies = require("lib.keycloak").concatenate_cookies
+            local base = "http://127.0.0.1:" .. ngx.var.server_port
+
+            local function cookie_of(res)
+                local c = res.headers["Set-Cookie"]
+                if type(c) == "table" then
+                    c = table.concat(c, "; ")
+                end
+                return c and c:match("^([^;]+)")
+            end
+
+            -- exhaust the restart budget on failing callbacks
+            local res_a = http.new():request_uri(base .. "/oidc12/page")
+            local state = res_a.headers["Location"]:match("state=([^&]+)")
+            local jar = cookie_of(res_a)
+
+            local statuses = {}
+            for i = 1, 4 do
+                local res = http.new():request_uri(
+                    base .. "/oidc12/callback?error=temporarily_unavailable" ..
+                        "&error_description=authentication_expired&state=" .. state, {
+                        headers = {Cookie = jar}
+                    })
+                statuses[i] = res.status
+                jar = cookie_of(res) or jar
+            end
+
+            -- complete a login in the same browser session: fresh flow,
+            -- Keycloak login form, then the code callback
+            local res_b = http.new():request_uri(base .. "/oidc12/page", {
+                headers = {Cookie = jar}
+            })
+            jar = cookie_of(res_b) or jar
+
+            local httpc = http.new()
+            local res_c = httpc:request_uri(res_b.headers["Location"])
+            local action, params = res_c.body:match('.*action="(.*)%?(.*)" method="post">')
+            params = params:gsub("&amp;", "&")
+            local kc_cookies = concatenate_cookies(res_c.headers["Set-Cookie"])
+
+            local res_d = httpc:request_uri(action .. "?" .. params, {
+                method = "POST",
+                body = "username=jack&password=jack",
+                headers = {
+                    ["Content-Type"] = "application/x-www-form-urlencoded",
+                    Cookie = kc_cookies
+                }
+            })
+
+            local res_e = http.new():request_uri(res_d.headers["Location"], {
+                headers = {Cookie = jar}
+            })
+            statuses[5] = res_e.status
+            jar = cookie_of(res_e) or jar
+
+            -- the authenticated request resets the budget; it passes the
+            -- plugin and reaches the mock upstream, which has no
+            -- /oidc12/page route, hence its 404
+            local res_f = http.new():request_uri(base .. "/oidc12/page", {
+                headers = {Cookie = jar}
+            })
+            statuses[6] = res_f.status
+            jar = cookie_of(res_f) or jar
+
+            -- ... so a later transient callback error is retried again
+            local res_g = http.new():request_uri(
+                base .. "/oidc12/callback?error=temporarily_unavailable" ..
+                    "&error_description=authentication_expired&state=deadbeef", {
+                    headers = {Cookie = jar}
+                })
+            statuses[7] = res_g.status
+            ngx.say(table.concat(statuses, " "))
+        }
+    }
+--- response_body
+302 302 302 500 302 404 302
