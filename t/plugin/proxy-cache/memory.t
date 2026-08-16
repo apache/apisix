@@ -1564,6 +1564,13 @@ leftover=0
             local t = require("lib.test_admin").test
             local http = require("resty.http")
 
+            -- earlier tests left exact-match routes on /vary-encoding behind,
+            -- and an exact match wins over the prefix route below, so the
+            -- victim requests would otherwise never reach it
+            for _, id in ipairs({"proxy-cache-vary-enc", "proxy-cache-vary-purge"}) do
+                t('/apisix/admin/routes/' .. id, ngx.HTTP_DELETE)
+            end
+
             local code, body = t('/apisix/admin/routes/proxy-cache-vary-collision', ngx.HTTP_PUT, [[{
                 "uri": "/vary-encoding*",
                 "plugins": {
