@@ -64,6 +64,22 @@ server {
         }
     }
 
+    location = /query-cache-no-cache {
+        content_by_lua_block {
+            ngx.header["Cache-Control"] = "no-cache"
+            local value = ngx.shared["query-gateway-cache"]:incr("no-cache-counter", 1, 0)
+            ngx.say("counter: ", value)
+        }
+    }
+
+    location = /query-cache-repeated-cache-control {
+        content_by_lua_block {
+            ngx.header["Cache-Control"] = {"max-age=30", "max-age=30"}
+            local value = ngx.shared["query-gateway-cache"]:incr("repeated-response-counter", 1, 0)
+            ngx.say("counter: ", value)
+        }
+    }
+
     location = /echo {
         content_by_lua_block {
             ngx.req.read_body()
@@ -295,6 +311,7 @@ cache.redis_host is required/
                                 "enabled": true,
                                 "backend": "local",
                                 "ttl": 30,
+                                "cookie_names": ["a"],
                                 "max_request_body_size": 1024,
                                 "max_response_body_size": 1024
                             }
@@ -652,6 +669,184 @@ counter: 1
 Content-Type: application/json
 --- request
 QUERY /query-gateway/no-store
+{"query":"one"}
+--- response_body
+counter: 2
+
+
+
+=== TEST 28: bypass cache when the client requests no-cache
+--- more_headers
+Content-Type: application/json
+Cache-Control: no-cache
+--- request
+QUERY /query-gateway/cache
+{"query":"one"}
+--- response_body
+method: POST
+counter: 4
+
+
+
+=== TEST 29: add a no-cache upstream route
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.shared["query-gateway-cache"]:delete("no-cache-counter")
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/7',
+                 ngx.HTTP_PUT,
+                 [=[{
+                    "vars": [["request_method", "==", "QUERY"]],
+                    "plugins": {
+                        "proxy-rewrite": {
+                            "uri": "/query-cache-no-cache"
+                        },
+                        "query-gateway": {
+                            "cache": {
+                                "enabled": true,
+                                "backend": "local",
+                                "ttl": 30
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1986": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/query-gateway/no-cache"
+                }]=]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 30: do not store a no-cache upstream response
+--- more_headers
+Content-Type: application/json
+--- request
+QUERY /query-gateway/no-cache
+{"query":"one"}
+--- response_body
+counter: 1
+
+
+
+=== TEST 31: do not serve a no-cache upstream response from cache
+--- more_headers
+Content-Type: application/json
+--- request
+QUERY /query-gateway/no-cache
+{"query":"one"}
+--- response_body
+counter: 2
+
+
+
+=== TEST 32: bypass cache for repeated Content-Type request headers
+--- raw_request
+QUERY /query-gateway/shared HTTP/1.1
+Host: localhost
+Content-Type: application/json
+Content-Type: application/json
+Content-Length: 18
+
+{"query":"shared"}
+--- response_body
+method: POST
+counter: 2
+
+
+
+=== TEST 33: bypass cache for repeated Cookie request headers
+--- raw_request
+QUERY /query-gateway/shared HTTP/1.1
+Host: localhost
+Content-Type: application/json
+Cookie: a=one
+Cookie: a=two
+Content-Length: 18
+
+{"query":"shared"}
+--- response_body
+method: POST
+counter: 3
+
+
+
+=== TEST 34: add a route with repeated upstream Cache-Control
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.shared["query-gateway-cache"]:delete("repeated-response-counter")
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/8',
+                 ngx.HTTP_PUT,
+                 [=[{
+                    "vars": [["request_method", "==", "QUERY"]],
+                    "plugins": {
+                        "proxy-rewrite": {
+                            "uri": "/query-cache-repeated-cache-control"
+                        },
+                        "query-gateway": {
+                            "cache": {
+                                "enabled": true,
+                                "backend": "local",
+                                "ttl": 30
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1986": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/query-gateway/repeated-cache-control"
+                }]=]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 35: do not store a repeated upstream Cache-Control response
+--- more_headers
+Content-Type: application/json
+--- request
+QUERY /query-gateway/repeated-cache-control
+{"query":"one"}
+--- response_body
+counter: 1
+
+
+
+=== TEST 36: do not serve a repeated upstream Cache-Control response from cache
+--- more_headers
+Content-Type: application/json
+--- request
+QUERY /query-gateway/repeated-cache-control
 {"query":"one"}
 --- response_body
 counter: 2
