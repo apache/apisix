@@ -157,7 +157,7 @@ function _M.access(conf, ctx)
         -- explicitly certified it as read-only. Its cache identity is then
         -- the same as an equivalent RFC 10008 QUERY request.
         ctx.query_gateway_cache_method = "QUERY"
-        local entry, status = cache.fetch(cache_conf, ctx)
+        local entry = cache.fetch(cache_conf, ctx)
         if entry then
             ctx.query_gateway_cache_hit = true
             return cache.serve(entry)
