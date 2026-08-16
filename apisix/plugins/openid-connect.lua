@@ -19,6 +19,7 @@ local core              = require("apisix.core")
 local secret            = require("apisix.secret")
 local ngx_re            = require("ngx.re")
 local openidc           = require("resty.openidc")
+local jwt               = require("resty.jwt")
 local jsonschema        = require('jsonschema')
 local pkey              = require("resty.openssl.pkey")
 local dump_jwk          = require("resty.openssl.auxiliary.jwk").dump_jwk
@@ -1026,17 +1027,22 @@ local function introspect(ctx, conf)
         if not valid_issuers then
             local discovery, discovery_err = openidc.get_discovery_doc(conf)
             if discovery_err then
-                core.log.warn("OIDC access discovery url failed : ", discovery_err)
-            else
-                core.log.info("valid_issuers not provided explicitly," ..
-                              " using issuer from discovery doc: ",
-                              discovery.issuer)
-                valid_issuers = {discovery.issuer}
+                -- The discovery document is the only source of the trusted
+                -- issuer when valid_issuers is not configured. Continuing
+                -- would verify the signature with no issuer constraint at
+                -- all, so a token minted by another issuer holding the same
+                -- key would be accepted; fail closed instead.
+                core.log.error("OIDC access discovery url failed : ", discovery_err)
+                ngx.header["WWW-Authenticate"] = 'Bearer realm="' .. conf.realm ..
+                    '", error="invalid_token", error_description="issuer validation unavailable"'
+                return ngx.HTTP_UNAUTHORIZED, discovery_err, nil, nil
             end
+            core.log.info("valid_issuers not provided explicitly," ..
+                          " using issuer from discovery doc: ",
+                          discovery.issuer)
+            valid_issuers = {discovery.issuer}
         end
-        if valid_issuers then
-            opts.valid_issuers = valid_issuers
-        end
+        opts.valid_issuers = valid_issuers
         local res, err = openidc.bearer_jwt_verify(conf, opts)
         if err then
             -- Error while validating or token invalid.
@@ -1111,6 +1117,33 @@ local function required_scopes_present(required_scopes, http_scopes)
         end
     end
     return true
+end
+
+
+-- Resolve the scopes granted to a session established through the
+-- authorization code flow. lua-resty-openidc does not surface the `scope`
+-- field of the token endpoint response, so read the claim from the access
+-- token, which providers that support scope-based authorization issue as a
+-- JWT, and fall back to the ID token claims. Returns nil when the granted
+-- scopes cannot be determined, which the caller must not treat as "granted".
+local function session_scopes(response)
+    local scope
+    if type(response.access_token) == "string" then
+        local jwt_obj = jwt:load_jwt(response.access_token)
+        if jwt_obj and jwt_obj.valid and type(jwt_obj.payload) == "table" then
+            scope = jwt_obj.payload.scope
+        end
+    end
+
+    if not scope and type(response.id_token) == "table" then
+        scope = response.id_token.scope
+    end
+
+    if type(scope) ~= "string" then
+        return nil
+    end
+
+    return split_scopes_by_space(scope)
 end
 
 local function validate_claims_in_oidcauth_response(resp, conf)
@@ -1220,15 +1253,20 @@ function _M.rewrite(plugin_conf, ctx)
             local audience_claim = core.table.try_read_attr(conf, "claim_validator",
                                                              "audience", "claim") or "aud"
             local audience_value = response[audience_claim]
-            if core.table.try_read_attr(conf, "claim_validator", "audience", "required")
-                and not audience_value then
+            local match_with_client_id = core.table.try_read_attr(conf, "claim_validator",
+                                                                  "audience",
+                                                                  "match_with_client_id")
+            -- match_with_client_id cannot be satisfied by a token without the
+            -- audience claim, so it implies `required`: otherwise a token that
+            -- simply omits `aud` would skip the check the operator asked for.
+            if (core.table.try_read_attr(conf, "claim_validator", "audience", "required")
+                or match_with_client_id) and not audience_value then
                 core.log.error("OIDC introspection failed: required audience (",
                                 audience_claim, ") not present")
                 local error_response = { error = "required audience claim not present" }
                 return 403, core.json.encode(error_response)
             end
-            if core.table.try_read_attr(conf, "claim_validator", "audience", "match_with_client_id")
-                and audience_value ~= nil then
+            if match_with_client_id then
                 local error_response = { error = "mismatched audience" }
                 local matched = false
                 if type(audience_value) == "table" then
@@ -1290,6 +1328,13 @@ function _M.rewrite(plugin_conf, ctx)
         if conf.set_raw_id_token_header and conf.session_contents then
             conf.session_contents = core.table.clone(conf.session_contents)
             conf.session_contents.enc_id_token = true
+        end
+
+        -- The granted scopes are read from the access token, so it has to be
+        -- part of the session when required_scopes is enforced.
+        if conf.required_scopes and conf.session_contents then
+            conf.session_contents = core.table.clone(conf.session_contents)
+            conf.session_contents.access_token = true
         end
 
         -- Authenticate the request. This will validate the access token if it
@@ -1396,6 +1441,28 @@ function _M.rewrite(plugin_conf, ctx)
                 ngx.header["WWW-Authenticate"] = 'Bearer realm="' .. conf.realm ..
                         '", error="invalid_token", error_description="' .. err .. '"'
                 return ngx.HTTP_UNAUTHORIZED
+            end
+
+            -- The session flow is authorized by the same required_scopes as the
+            -- token flow above. A session whose granted scopes cannot be read
+            -- is denied rather than allowed unchecked: the operator asked for
+            -- scope-based authorization, so silently skipping it would let any
+            -- authenticated user through.
+            if conf.required_scopes then
+                local http_scopes = session_scopes(response)
+                if not http_scopes then
+                    core.log.error("OIDC authentication failed: the scopes granted to ",
+                                   "the session are unknown, so required scopes ",
+                                   concat(conf.required_scopes, ", "), " cannot be checked")
+                    return 403, core.json.encode({ error = "required scopes not present" })
+                end
+                if not required_scopes_present(conf.required_scopes, http_scopes) then
+                    core.log.error("OIDC authentication failed: required scopes not present")
+                    return 403, core.json.encode({
+                        error = "required scopes " .. concat(conf.required_scopes, ", ") ..
+                                " not present"
+                    })
+                end
             end
             -- If the openidc module has returned a response, it may contain,
             -- respectively, the access token, the ID token, the refresh token,

@@ -46,7 +46,7 @@ import TabItem from '@theme/TabItem';
 | client_secret | string | 是 | | | OAuth 客户端密钥。 |
 | discovery | string | 是 | | | OpenID 提供商的 well-known 发现文档 URL，包含 OP API 端点列表。插件可直接使用发现文档中的端点。你也可以单独配置这些端点，单独配置的值优先于发现文档中提供的端点。 |
 | scope | string | 否 | openid | | 与认证用户相关信息对应的 OIDC 范围，也称为 [claims](https://openid.net/specs/openid-connect-core-1_0.html#StandardClaims)。用于授权具有适当权限的用户。默认值为 `openid`，这是 OIDC 返回唯一标识认证用户的 `sub` claim 所需的范围。可以附加额外的范围并以空格分隔，例如 `openid email profile`。 |
-| required_scopes | array[string] | 否 | | | 访问令牌中必须存在的范围。在 `bearer_only` 为 `true` 时与 introspection 端点结合使用。如果缺少任何必需范围，插件将以 403 forbidden 错误拒绝请求。 |
+| required_scopes | array[string] | 否 | | | 访问令牌中必须存在的范围。如果缺少任何必需范围，插件将以 403 forbidden 错误拒绝请求。在授权码流程中，已授予的范围取自访问令牌的 `scope` 声明，当访问令牌不是 JWT 时则取自 ID 令牌；无法确定已授予范围的会话同样会被拒绝。 |
 | realm | string | 否 | apisix | | 由于无效 bearer token 导致 401 未授权请求时，[`WWW-Authenticate`](https://www.rfc-editor.org/rfc/rfc6750#section-3) 响应头中的 Realm 值。 |
 | bearer_only | boolean | 否 | false | | 如果为 true，则严格要求请求中携带 bearer 访问令牌进行身份验证。 |
 | logout_path | string | 否 | /logout | | 触发注销的路径。 |
@@ -137,11 +137,11 @@ import TabItem from '@theme/TabItem';
 | introspection_expiry_claim | string | 否 | exp | | 过期 claim 的名称，用于控制缓存和内省的访问令牌的 TTL。 |
 | introspection_addon_headers | array[string] | 否 | | | 用于向内省 HTTP 请求追加额外头值。如果指定的头在原始请求中不存在，则不会追加该值。 |
 | claim_validator | object | 否 | | | JWT claim 验证配置。 |
-| claim_validator.issuer.valid_issuers | array[string] | 否 | | | 受信任的 JWT 颁发者数组。如果未配置，将使用发现端点返回的颁发者。如果两者均不可用，则不验证颁发者。 |
+| claim_validator.issuer.valid_issuers | array[string] | 否 | | | 受信任的 JWT 颁发者数组。如果未配置，将使用发现端点返回的颁发者；在发现文档无法获取期间令牌会被拒绝，因为此时没有已知的受信任颁发者。 |
 | claim_validator.audience | object | 否 | | | [受众 claim](https://openid.net/specs/openid-connect-core-1_0.html) 验证配置。 |
 | claim_validator.audience.claim | string | 否 | aud | | 包含受众的 claim 名称。 |
 | claim_validator.audience.required | boolean | 否 | false | | 如果为 true，则受众 claim 为必填项，claim 名称为 `claim` 中定义的名称。 |
-| claim_validator.audience.match_with_client_id | boolean | 否 | false | | 如果为 true，则要求受众与客户端 ID 匹配。如果受众是字符串，则必须与客户端 ID 完全匹配。如果受众是字符串数组，则至少一个值必须与客户端 ID 匹配。如果未找到匹配，将收到 `mismatched audience` 错误。OpenID Connect 规范规定了此要求，以确保令牌是为特定客户端颁发的。 |
+| claim_validator.audience.match_with_client_id | boolean | 否 | false | | 如果为 true，则要求受众与客户端 ID 匹配。如果受众是字符串，则必须与客户端 ID 完全匹配。如果受众是字符串数组，则至少一个值必须与客户端 ID 匹配。如果未找到匹配，将收到 `mismatched audience` 错误。不含受众声明的令牌同样会被拒绝，因为它无法与客户端 ID 匹配。OpenID Connect 规范规定了此要求，以确保令牌是为特定客户端颁发的。 |
 | claim_schema | object | 否 | | | OIDC 响应 claim 的 JSON schema。示例：`{"type":"object","properties":{"access_token":{"type":"string"}},"required":["access_token"]}` - 验证响应包含必填的字符串字段 `access_token`。 |
 
 注意：`par` 和 `dpop` 所对应的 `lua-resty-openidc` 扁平选项名（`use_par`、`pushed_authorization_request_endpoint`、`pushed_authorization_request_endpoint_auth_method`、`use_dpop`、`dpop_signing_alg`、`dpop_private_key`、`dpop_public_jwk`）会被拒绝。直接设置它们会绕过嵌套对象提供的校验以及 `dpop.private_key` 的加密存储，请改用嵌套属性。
