@@ -91,7 +91,13 @@ local check_graphql_request = {
 -- Fragment spreads are expanded in place using the provided fragment map;
 -- inline fragments are treated as transparent wrappers over their selections.
 -- The visited table guards against fragment definition cycles.
-local function node_depth(node, fragments, visited)
+-- The depth of a fragment does not depend on where it is spread from, so it is
+-- computed once and memoized in `depths`. Without that, a document whose
+-- fragments each spread the next one twice re-walks the whole remaining chain
+-- per spread, which costs 2^n traversals for n fragments: a request body of a
+-- few hundred bytes is enough to burn a worker's CPU here, before the rate
+-- limit this plugin applies is even consulted.
+local function node_depth(node, fragments, visited, depths)
     if type(node) ~= "table" then
         return 0
     end
@@ -101,13 +107,21 @@ local function node_depth(node, fragments, visited)
         if not name or visited[name] then
             return 0
         end
+        local cached = depths[name]
+        if cached then
+            return cached
+        end
         local frag = fragments[name]
         if not frag or not frag.selectionSet then
             return 0
         end
         visited[name] = true
-        local depth = node_depth(frag.selectionSet.selections, fragments, visited)
+        local depth = node_depth(frag.selectionSet.selections, fragments, visited, depths)
         visited[name] = nil
+        -- a fragment reached through a cycle contributes 0 to its own depth,
+        -- so what is memoized here can be short for a cyclic document; those
+        -- are invalid GraphQL and the traversal already reported them short.
+        depths[name] = depth
         return depth
     end
 
@@ -115,16 +129,16 @@ local function node_depth(node, fragments, visited)
         if not node.selectionSet then
             return 0
         end
-        return node_depth(node.selectionSet.selections, fragments, visited)
+        return node_depth(node.selectionSet.selections, fragments, visited, depths)
     end
 
     local depth = 0
     for k, v in pairs(node) do
         local child
         if k == "selections" then
-            child = 1 + node_depth(v, fragments, visited)
+            child = 1 + node_depth(v, fragments, visited, depths)
         else
-            child = node_depth(v, fragments, visited)
+            child = node_depth(v, fragments, visited, depths)
         end
         depth = max(depth, child)
     end
@@ -190,9 +204,12 @@ function _M.access(conf, ctx)
         return 400, {message = "Invalid graphql request: empty graphql query"}
     end
 
+    -- fragments are document scoped, so their depths are shared by every
+    -- operation in the document
+    local depths = {}
     local depth = 0
     for _, op in ipairs(operations) do
-        local d = node_depth(op, fragments, {})
+        local d = node_depth(op, fragments, {}, depths)
         depth = max(depth, d)
     end
     depth = max(depth, 1)

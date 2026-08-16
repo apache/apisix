@@ -633,3 +633,79 @@ Content-Type: application/json
 --- error_code: 200
 --- response_headers
 X-RateLimit-Remaining: 15
+
+
+
+=== TEST 27: set route: repeated fragment spread test
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "graphql-limit-count": {
+                            "count": 100,
+                            "time_window": 60,
+                            "rejected_code": 503,
+                            "key": "remote_addr",
+                            "show_limit_quota_header": true
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 28: a fragment spread twice per level is expanded once per fragment
+--- config
+    location /t {
+        content_by_lua_block {
+            -- every fragment spreads the next one twice: expanding each spread
+            -- separately costs 2^n traversals, expanding each fragment once
+            -- costs n
+            local levels = 26
+            local query = {"query { ...F0 }"}
+            for i = 0, levels - 1 do
+                query[#query + 1] = ("fragment F%d on T { x { ...F%d ...F%d } }"):format(i, i + 1, i + 1)
+            end
+            query[#query + 1] = ("fragment F%d on T { x }"):format(levels)
+
+            local httpc = require("resty.http").new()
+            local res, err = httpc:request_uri("http://127.0.0.1:" .. ngx.var.server_port .. "/hello", {
+                method = "POST",
+                body = table.concat(query, "\n"),
+                headers = { ["Content-Type"] = "application/graphql" },
+            })
+            if not res then
+                ngx.say(err)
+                return
+            end
+            ngx.say("status: ", res.status)
+            ngx.say("remaining: ", res.headers["X-RateLimit-Remaining"])
+        }
+    }
+--- request
+GET /t
+--- timeout: 5
+--- response_body
+status: 200
+remaining: 73
