@@ -177,3 +177,76 @@ passed
 {"error":"required scopes super-admin not present"}
 --- error_log
 required scopes not present
+
+
+
+=== TEST 5: restricting session_contents does not drop the scope check
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, [[{
+                "uri": "/*",
+                "plugins": {
+                    "openid-connect": {
+                        "client_id": "apisix",
+                        "client_secret": "secret",
+                        "discovery": "http://127.0.0.1:8080/realms/basic/.well-known/openid-configuration",
+                        "redirect_uri": "http://127.0.0.1:1984/authenticated",
+                        "ssl_verify": false,
+                        "session": { "secret": "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK" },
+                        "session_contents": { "id_token": true },
+                        "required_scopes": ["profile"]
+                    }
+                },
+                "upstream": {
+                    "type": "roundrobin",
+                    "nodes": { "127.0.0.1:1980": 1 }
+                }
+            }]])
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 6: the granted scope is still read from the session
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local login_keycloak = require("lib.keycloak").login_keycloak
+            local concatenate_cookies = require("lib.keycloak").concatenate_cookies
+
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/uri"
+            local res, err = login_keycloak(uri, "jack", "jack")
+            if not res then
+                ngx.say(err)
+                return
+            end
+
+            local location = res.headers['Location']
+            if location:sub(1, 1) == "/" then
+                location = "http://127.0.0.1:" .. ngx.var.server_port .. location
+            end
+
+            local httpc = http.new()
+            res, err = httpc:request_uri(location, {
+                method = "GET",
+                headers = { ["Cookie"] = concatenate_cookies(res.headers['Set-Cookie']) },
+            })
+            if not res then
+                ngx.say(err)
+                return
+            end
+            ngx.say(res.status)
+        }
+    }
+--- response_body
+200

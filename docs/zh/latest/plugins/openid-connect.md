@@ -46,7 +46,7 @@ import TabItem from '@theme/TabItem';
 | client_secret | string | 是 | | | OAuth 客户端密钥。 |
 | discovery | string | 是 | | | OpenID 提供商的 well-known 发现文档 URL，包含 OP API 端点列表。插件可直接使用发现文档中的端点。你也可以单独配置这些端点，单独配置的值优先于发现文档中提供的端点。 |
 | scope | string | 否 | openid | | 与认证用户相关信息对应的 OIDC 范围，也称为 [claims](https://openid.net/specs/openid-connect-core-1_0.html#StandardClaims)。用于授权具有适当权限的用户。默认值为 `openid`，这是 OIDC 返回唯一标识认证用户的 `sub` claim 所需的范围。可以附加额外的范围并以空格分隔，例如 `openid email profile`。 |
-| required_scopes | array[string] | 否 | | | 访问令牌中必须存在的范围。如果缺少任何必需范围，插件将以 403 forbidden 错误拒绝请求。在授权码流程中，已授予的范围取自访问令牌的 `scope` 声明，当访问令牌不是 JWT 时则取自 ID 令牌；无法确定已授予范围的会话同样会被拒绝。 |
+| required_scopes | array[string] | 否 | | | 访问令牌中必须存在的范围。如果缺少任何必需范围，插件将以 403 forbidden 错误拒绝请求。在授权码流程中，已授予的范围取自访问令牌的 `scope` 声明；当访问令牌中没有该声明时，回退到 ID 令牌的同名声明。两者都无法确定已授予范围的会话会被拒绝。 |
 | realm | string | 否 | apisix | | 由于无效 bearer token 导致 401 未授权请求时，[`WWW-Authenticate`](https://www.rfc-editor.org/rfc/rfc6750#section-3) 响应头中的 Realm 值。 |
 | bearer_only | boolean | 否 | false | | 如果为 true，则严格要求请求中携带 bearer 访问令牌进行身份验证。 |
 | logout_path | string | 否 | /logout | | 触发注销的路径。 |

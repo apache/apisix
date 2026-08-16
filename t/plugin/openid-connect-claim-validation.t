@@ -183,10 +183,14 @@ passed
             })
 
             local httpc = http.new()
-            local res = httpc:request_uri("http://127.0.0.1:" .. ngx.var.server_port .. "/hello", {
+            local res, req_err = httpc:request_uri("http://127.0.0.1:" .. ngx.var.server_port .. "/hello", {
                 method = "GET",
                 headers = { Authorization = "Bearer " .. tok },
             })
+            if not res then
+                ngx.say("request failed: ", req_err)
+                return
+            end
             ngx.say(res.status)
             ngx.say(res.headers["WWW-Authenticate"])
         }

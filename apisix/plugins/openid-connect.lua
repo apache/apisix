@@ -1035,7 +1035,9 @@ local function introspect(ctx, conf)
                 core.log.error("OIDC access discovery url failed : ", discovery_err)
                 ngx.header["WWW-Authenticate"] = 'Bearer realm="' .. conf.realm ..
                     '", error="invalid_token", error_description="issuer validation unavailable"'
-                return ngx.HTTP_UNAUTHORIZED, discovery_err, nil, nil
+                -- the discovery error is logged above; the caller logs whatever
+                -- is returned here again, and it can carry the discovery URL
+                return ngx.HTTP_UNAUTHORIZED, "issuer validation unavailable", nil, nil
             end
             core.log.info("valid_issuers not provided explicitly," ..
                           " using issuer from discovery doc: ",
@@ -1336,6 +1338,7 @@ function _M.rewrite(plugin_conf, ctx)
             conf.session_contents = core.table.clone(conf.session_contents)
             conf.session_contents.access_token = true
         end
+
 
         -- Authenticate the request. This will validate the access token if it
         -- is stored in a sessions cookie, and also renew the token if required.
