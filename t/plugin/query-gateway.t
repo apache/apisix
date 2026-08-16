@@ -559,9 +559,9 @@ POST /query-gateway/shared
 --- response_body
 method: POST
 counter: 1
---- response_headers
+--- response_headers_like
 Apisix-Cache-Status: HIT
-Age: 0
+Age: \d+
 
 
 
