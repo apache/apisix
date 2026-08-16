@@ -169,6 +169,8 @@ passed
 
 
 === TEST 4: transform QUERY to POST and preserve the original method
+--- more_headers
+Content-Type: application/json
 --- request
 QUERY /query-gateway
 --- response_body
@@ -427,6 +429,8 @@ passed
 
 
 === TEST 17: preserve QUERY when the upstream supports it
+--- more_headers
+Content-Type: application/json
 --- request
 QUERY /query-gateway/native
 --- response_body
