@@ -53,6 +53,7 @@ For Route:
 | use_tls  | boolean | False    | `false` | If set to `true` uses TLS.                                             |
 | tls_verify| boolean  | False     | `false`        | Whether to verify the server certificate when `use_tls` is enabled; If set to `true`, you must set `ssl_trusted_certificate` in `config.yaml`, and make sure the host of `ldap_uri` matches the host in server certificate. |
 | uid      | string  | False    | `cn`    | uid attribute.                                                         |
+| hide_credentials | boolean | False | `false` | If true, do not pass the `Authorization` request header to the Upstream service. The header carries the directory password, which is usually reusable beyond this API. |
 | realm    | string  | False    | ldap    | The realm to include in the `WWW-Authenticate` header when authentication fails.                 |
 
 ## Enable plugin

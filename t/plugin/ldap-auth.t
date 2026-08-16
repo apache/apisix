@@ -650,3 +650,120 @@ Authorization: bASiC dXNlcjAxOnBhc3N3b3JkMQ==
 hello world
 --- error_log
 find consumer user01
+
+
+
+=== TEST 29: enable ldap-auth without hide_credentials
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "user01",
+                    "plugins": {
+                        "ldap-auth": {
+                            "user_dn": "cn=user01,ou=users,dc=example,dc=org"
+                        }
+                    }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "ldap-auth": {
+                            "base_dn": "ou=users,dc=example,dc=org",
+                            "ldap_uri": "127.0.0.1:1389",
+                            "uid": "cn"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/uri"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 30: the credentials reach the upstream
+--- request
+GET /uri
+--- more_headers
+Authorization: Basic dXNlcjAxOnBhc3N3b3JkMQ==
+--- response_body
+uri: /uri
+authorization: Basic dXNlcjAxOnBhc3N3b3JkMQ==
+host: localhost
+x-consumer-username: user01
+x-real-ip: 127.0.0.1
+
+
+
+=== TEST 31: enable ldap-auth with hide_credentials
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "ldap-auth": {
+                            "base_dn": "ou=users,dc=example,dc=org",
+                            "ldap_uri": "127.0.0.1:1389",
+                            "uid": "cn",
+                            "hide_credentials": true
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/uri"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 32: the credentials do not reach the upstream
+--- request
+GET /uri
+--- more_headers
+Authorization: Basic dXNlcjAxOnBhc3N3b3JkMQ==
+--- response_body
+uri: /uri
+host: localhost
+x-consumer-username: user01
+x-real-ip: 127.0.0.1
