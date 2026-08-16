@@ -1595,7 +1595,8 @@ leftover=0
                     headers = { ["Accept-Encoding"] = enc },
                 })
                 if not res then return nil, err end
-                return res.headers["Apisix-Cache-Status"], res.body:gsub("%s+$", "")
+                local body = res.body and res.body:gsub("%s+$", "") or ""
+                return res.headers["Apisix-Cache-Status"], body
             end
 
             -- the variant key the plugin derives for this request

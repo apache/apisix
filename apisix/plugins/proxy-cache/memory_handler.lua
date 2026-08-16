@@ -37,8 +37,10 @@ local pairs = pairs
 local time = ngx.now
 local max = math.max
 
--- Bumped from 1 to 2 for the Vary variant layout.
-local CACHE_VERSION = 2
+-- Bumped from 1 to 2 for the Vary variant layout, and to 3 for the
+-- length-prefixed storage keys: an entry written under the old layout must
+-- never be served under the new one, whatever the cache key looks like.
+local CACHE_VERSION = 3
 local VARY_INDEX_SUFFIX = "::__vary"
 local MAX_VARIANTS = 64
 
@@ -134,8 +136,9 @@ end
 
 
 -- Purge every variant entry referenced by the index, then the index itself,
--- and finally the legacy base-key entry (which may exist if the URL ever
--- cached a no-Vary response in the past). The index is read stale-tolerant:
+-- and finally the entry stored directly under the cache key (which may exist
+-- if the URL ever cached a no-Vary response in the past). The index is read
+-- stale-tolerant:
 -- it can outlive or be outlived by its variants (variant TTLs diverge when
 -- cache_control derives them per response), and an expired index must still
 -- be usable to enumerate the variant keys it references.
