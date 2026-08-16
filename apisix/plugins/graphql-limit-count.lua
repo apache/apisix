@@ -118,9 +118,11 @@ local function node_depth(node, fragments, visited, depths)
         visited[name] = true
         local depth = node_depth(frag.selectionSet.selections, fragments, visited, depths)
         visited[name] = nil
-        -- a spread that closes a cycle contributes 0, so for a cyclic
-        -- document the memoized depth can be short -- as it already was
-        -- before memoization, and such a document is invalid GraphQL anyway.
+        -- exact for a valid document: `visited` only ever holds fragments on
+        -- the current spread chain, which an acyclic fragment can never be a
+        -- member of. A cyclic one can memoize the truncated depth it got on
+        -- the chain that closed the cycle, but fragment cycles are invalid
+        -- GraphQL and were already measured short before memoization.
         depths[name] = depth
         return depth
     end
