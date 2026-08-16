@@ -56,6 +56,14 @@ server {
         }
     }
 
+    location = /query-cache-no-store {
+        content_by_lua_block {
+            ngx.header["Cache-Control"] = "no-store"
+            local value = ngx.shared["query-gateway-cache"]:incr("no-store-counter", 1, 0)
+            ngx.say("counter: ", value)
+        }
+    }
+
     location = /echo {
         content_by_lua_block {
             ngx.req.read_body()
@@ -218,7 +226,15 @@ qr/{"query":"apisix"}/
 
 
 
-=== TEST 7: do not match POST on a QUERY-only route
+=== TEST 7: reject a QUERY without Content-Type even when cache is disabled
+--- request
+QUERY /query-gateway/body
+{"query":"missing-type"}
+--- error_code: 400
+
+
+
+=== TEST 8: do not match POST on a QUERY-only route
 --- request
 POST /query-gateway/body
 {"query":"apisix"}
@@ -226,7 +242,7 @@ POST /query-gateway/body
 
 
 
-=== TEST 8: reject incomplete Redis cache configuration
+=== TEST 9: reject incomplete Redis cache configuration
 --- config
     location /t {
         content_by_lua_block {
@@ -249,7 +265,7 @@ cache.redis_host is required/
 
 
 
-=== TEST 9: add a body-aware QUERY cache route
+=== TEST 10: add a body-aware QUERY cache route
 --- upstream_server_config
         location = /query-cache {
             content_by_lua_block {
@@ -305,7 +321,7 @@ passed
 
 
 
-=== TEST 10: store a QUERY response under its request body digest
+=== TEST 11: store a QUERY response under its request body digest
 --- more_headers
 Content-Type: application/json
 --- request
@@ -319,7 +335,7 @@ Apisix-Cache-Status: MISS
 
 
 
-=== TEST 11: serve the same QUERY body from the local cache
+=== TEST 12: serve the same QUERY body from the local cache
 --- more_headers
 Content-Type: application/json
 --- request
@@ -333,7 +349,7 @@ Apisix-Cache-Status: HIT
 
 
 
-=== TEST 12: do not collide cache entries for different QUERY bodies
+=== TEST 13: do not collide cache entries for different QUERY bodies
 --- more_headers
 Content-Type: application/json
 --- request
@@ -347,7 +363,7 @@ Apisix-Cache-Status: MISS
 
 
 
-=== TEST 13: bypass cache for a request cookie
+=== TEST 14: bypass cache for a request cookie
 --- more_headers
 Content-Type: application/json
 Cookie: session=private
@@ -360,7 +376,7 @@ counter: 3
 
 
 
-=== TEST 14: reject a cacheable QUERY without Content-Type
+=== TEST 15: reject a cacheable QUERY without Content-Type
 --- request
 QUERY /query-gateway/cache
 {"query":"missing-type"}
@@ -368,7 +384,7 @@ QUERY /query-gateway/cache
 
 
 
-=== TEST 15: add a route that preserves QUERY for a native QUERY upstream
+=== TEST 16: add a route that preserves QUERY for a native QUERY upstream
 --- config
     location /t {
         content_by_lua_block {
@@ -410,7 +426,7 @@ passed
 
 
 
-=== TEST 16: preserve QUERY when the upstream supports it
+=== TEST 17: preserve QUERY when the upstream supports it
 --- request
 QUERY /query-gateway/native
 --- response_body
@@ -419,7 +435,7 @@ x-original-method: QUERY
 
 
 
-=== TEST 17: add a route that accepts an existing POST query
+=== TEST 18: add a route that accepts an existing POST query
 --- config
     location /t {
         content_by_lua_block {
@@ -456,10 +472,182 @@ passed
 
 
 
-=== TEST 18: preserve an existing POST request
+=== TEST 19: preserve an existing POST request
 --- request
 POST /query-gateway/post
 {"query":"apisix"}
 --- response_body
 method: POST
 x-original-method: nil
+
+
+
+=== TEST 20: add a route that shares explicit read-only POST and QUERY cache entries
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.shared["query-gateway-cache"]:delete("test-counter")
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/5',
+                 ngx.HTTP_PUT,
+                 [=[{
+                    "plugins": {
+                        "proxy-rewrite": {
+                            "uri": "/query-cache"
+                        },
+                        "query-gateway": {
+                            "post": {
+                                "cache_enabled": true,
+                                "read_only": true
+                            },
+                            "cache": {
+                                "enabled": true,
+                                "backend": "local",
+                                "ttl": 30,
+                                "max_request_body_size": 1024,
+                                "max_response_body_size": 1024
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1986": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/query-gateway/shared"
+                }]=]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 21: store a QUERY response for an explicit read-only POST route
+--- more_headers
+Content-Type: application/json
+--- request
+QUERY /query-gateway/shared
+{"query":"shared"}
+--- response_body
+method: POST
+counter: 1
+--- response_headers
+Apisix-Cache-Status: MISS
+
+
+
+=== TEST 22: serve an equivalent explicit read-only POST from the QUERY cache entry
+--- more_headers
+Content-Type: application/json
+--- request
+POST /query-gateway/shared
+{"query":"shared"}
+--- response_body
+method: POST
+counter: 1
+--- response_headers
+Apisix-Cache-Status: HIT
+Age: 0
+
+
+
+=== TEST 23: bypass cache when the client requests no-store
+--- more_headers
+Content-Type: application/json
+Cache-Control: no-store
+--- request
+QUERY /query-gateway/cache
+{"query":"one"}
+--- response_body
+method: POST
+counter: 2
+
+
+
+=== TEST 24: bypass cache for conditional QUERY requests
+--- more_headers
+Content-Type: application/json
+If-None-Match: "query-v1"
+--- request
+QUERY /query-gateway/cache
+{"query":"one"}
+--- response_body
+method: POST
+counter: 3
+
+
+
+=== TEST 25: add a no-store upstream route
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.shared["query-gateway-cache"]:delete("no-store-counter")
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/6',
+                 ngx.HTTP_PUT,
+                 [=[{
+                    "vars": [["request_method", "==", "QUERY"]],
+                    "plugins": {
+                        "proxy-rewrite": {
+                            "uri": "/query-cache-no-store"
+                        },
+                        "query-gateway": {
+                            "cache": {
+                                "enabled": true,
+                                "backend": "local",
+                                "ttl": 30
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1986": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/query-gateway/no-store"
+                }]=]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 26: do not store a no-store upstream response
+--- more_headers
+Content-Type: application/json
+--- request
+QUERY /query-gateway/no-store
+{"query":"one"}
+--- response_body
+counter: 1
+
+
+
+=== TEST 27: do not serve a no-store upstream response from cache
+--- more_headers
+Content-Type: application/json
+--- request
+QUERY /query-gateway/no-store
+{"query":"one"}
+--- response_body
+counter: 2

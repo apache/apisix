@@ -46,6 +46,8 @@ Configure the Plugin only on Routes that explicitly match `request_method == QUE
 | `cache.backend` | string | False | `local` | `local`, `redis`, or `redis-cluster`. |
 | `cache.ttl` | integer | False | `30` | Maximum freshness lifetime in seconds. A shorter upstream max-age is honored. |
 | `cache.fallback_ttl` | integer | False | `5` | Node-local cache lifetime while a Redis backend is unavailable. |
+| `cache.write_queue_size` | integer | False | `1024` | Maximum pending Redis or Redis Cluster cache writes. Full queues drop cache writes without affecting client responses. |
+| `cache.write_batch_size` | integer | False | `32` | Maximum Redis or Redis Cluster writes processed by one background drain iteration. |
 | `cache.max_request_body_size` | integer | False | `262144` | Maximum in-memory request body size eligible for cache-key generation. Larger or file-backed bodies bypass cache. |
 | `cache.max_response_body_size` | integer | False | `1048576` | Maximum response body size stored in cache. |
 | `cache.cookie_names` | array[string] | False | | Explicit request-cookie allowlist. A request containing an unlisted cookie bypasses cache. |
@@ -100,15 +102,21 @@ Content-Type: application/json
 ## Notes
 
 - Client `QUERY` requests are forwarded as POST by default. Set `query.upstream_method: query` only for a native QUERY-capable Upstream.
-- Client POST requests are passed through unchanged. Enable their cache eligibility only with both `post.cache_enabled: true` and `post.read_only: true`.
+- Client POST requests are passed through unchanged. Enable their cache eligibility only with both `post.cache_enabled: true` and `post.read_only: true`. Such a POST uses the same canonical cache identity as an equivalent QUERY request on the Route; the Upstream forwarding method never changes that identity.
 - Match client methods explicitly in the Route when the route should serve only one method.
+- The Plugin does not rewrite `OPTIONS`; use the `cors` Plugin when browser clients require QUERY CORS preflight handling.
 - Enable cache only for read endpoints whose responses are safe to share.
-- Cache keys include the client method, route scope, target URI, Content-Type, Content-Encoding, Content-Language, request negotiation headers, consumer identity, allowlisted cookies, and the SHA-256 digest of the unmodified request body. The key does not depend on the Upstream forwarding method.
+- QUERY requires `Content-Type` as defined by RFC 10008, regardless of whether caching is enabled. APISIX returns `400` when it is missing.
+- Cache keys include the RFC QUERY cache method, route scope, target URI, Content-Type, Content-Encoding, Content-Language, request negotiation headers, consumer identity, allowlisted cookies, and the SHA-256 digest of the unmodified request body. The key does not depend on the Upstream forwarding method.
+
+## Relationship with proxy-cache
+
+Use `proxy-cache` for conventional GET, HEAD, or POST response caching where an NGINX-variable cache key and its disk or memory strategies are sufficient. `query-gateway` is separate because it defines a body-aware SHA-256 cache identity, validates RFC 10008 QUERY requests, preserves client QUERY semantics while supporting POST-only Upstreams, and only admits POST after the Route owner explicitly declares it read-only.
 
 ## Cache Safety
 
-The cache is deliberately conservative. It bypasses cache lookup and storage for requests with `Authorization`, `Range`, `Cookie` unless every cookie is allowlisted, `Cache-Control: no-store` or `no-cache`, `Pragma: no-cache`, oversized bodies, and bodies not available in memory.
+The cache is deliberately conservative. It bypasses cache lookup and storage for requests with `Authorization`, `Range`, conditional request headers, `Cookie` unless every cookie is allowlisted, repeated cache-relevant headers, `Cache-Control: no-store` or `no-cache`, `Pragma: no-cache`, oversized bodies, and bodies not available in memory.
 
 It never stores responses with `Set-Cookie`, `WWW-Authenticate`, `Proxy-Authenticate`, `Content-Range`, `Cache-Control: private`, `no-store`, `no-cache`, `max-age=0`, `s-maxage=0`, or unsupported `Vary` values. `Vary: Accept`, `Accept-Encoding`, and `Accept-Language` are included in the key. `Vary: Cookie`, `Authorization`, and `*` bypass cache.
 
-When Redis or Redis Cluster cannot be reached, the Plugin opens a per-node circuit breaker and uses the local shared-memory cache for `cache.fallback_ttl` seconds. It never fails the client request because the cache backend is unavailable.
+When Redis or Redis Cluster cannot be reached, the Plugin opens a per-node circuit breaker and uses the local shared-memory cache for `cache.fallback_ttl` seconds. Remote writes use a bounded shared-memory queue and a single drain timer per backend, so cache misses do not create one timer per response. A full queue drops only the cache write; it never fails the client request. Cache hits preserve the origin `Date` value and emit a calculated `Age` value.

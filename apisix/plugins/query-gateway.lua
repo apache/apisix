@@ -31,6 +31,8 @@ local cache_schema = {
         },
         ttl = {type = "integer", minimum = 1, default = 30},
         fallback_ttl = {type = "integer", minimum = 1, default = 5},
+        write_queue_size = {type = "integer", minimum = 1, default = 1024},
+        write_batch_size = {type = "integer", minimum = 1, default = 32},
         max_request_body_size = {type = "integer", minimum = 1, default = 262144},
         max_response_body_size = {type = "integer", minimum = 1, default = 1048576},
         cookie_names = {
@@ -101,7 +103,7 @@ local schema = {
 }
 
 local _M = {
-    version  = 0.3,
+    version  = 0.1,
     priority = -1001,
     name     = plugin_name,
     schema   = schema,
@@ -143,18 +145,24 @@ function _M.access(conf, ctx)
 
     ctx.query_gateway_client_method = method
 
+    local content_type = method == "QUERY" and core.request.header(ctx, "Content-Type")
+    if method == "QUERY" and (not content_type or content_type == "") then
+        return 400
+    end
+
     local cache_conf = conf.cache
     local post_cache_enabled = conf.post and conf.post.cache_enabled and conf.post.read_only
     if cache_conf and cache_conf.enabled and (method == "QUERY" or post_cache_enabled) then
+        -- A POST enters this cache namespace only after the route owner has
+        -- explicitly certified it as read-only. Its cache identity is then
+        -- the same as an equivalent RFC 10008 QUERY request.
+        ctx.query_gateway_cache_method = "QUERY"
         local entry, status = cache.fetch(cache_conf, ctx)
         if entry then
             ctx.query_gateway_cache_hit = true
             return cache.serve(entry)
         end
 
-        if method == "QUERY" and status == "missing content-type" then
-            return 400
-        end
     end
 
     if method ~= "QUERY" then
