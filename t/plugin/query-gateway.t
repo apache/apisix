@@ -850,3 +850,119 @@ QUERY /query-gateway/repeated-cache-control
 {"query":"one"}
 --- response_body
 counter: 2
+
+
+
+=== TEST 37: bypass safely when the cache shared dictionary is unavailable
+--- config
+    location /t {
+        content_by_lua_block {
+            local real_require = require
+            local fake_ngx = {
+                null = {},
+                req = {
+                    read_body = function() end,
+                    get_body_data = function() return "{}" end,
+                },
+                shared = {},
+            }
+            local fake_core = {
+                log = {warn = function() end},
+                request = {
+                    headers = function()
+                        return { ["content-type"] = "application/json" }
+                    end,
+                },
+            }
+            local function fake_require(name)
+                if name == "apisix.core" then
+                    return fake_core
+                end
+                return real_require(name)
+            end
+            local path = assert(package.searchpath("apisix.plugins.query-gateway.cache",
+                                                   package.path))
+            local chunk = assert(loadfile(path))
+            setfenv(chunk, setmetatable({ngx = fake_ngx, require = fake_require},
+                                        {__index = _G}))
+            local cache = chunk()
+            local ok, entry, status = pcall(cache.fetch,
+                                            {backend = "local", max_request_body_size = 1024},
+                                            {var = {request_uri = "/query"}})
+            ngx.say(ok)
+            ngx.say(entry == nil)
+            ngx.say(status)
+        }
+    }
+--- request
+GET /t
+--- response_body
+true
+true
+miss
+
+
+
+=== TEST 38: drop a remote cache write when the bounded queue is full
+--- config
+    location /t {
+        content_by_lua_block {
+            local real_require = require
+            local pushed = false
+            local fake_dict = {
+                llen = function() return 1 end,
+                lpush = function()
+                    pushed = true
+                    return true
+                end,
+            }
+            local fake_ngx = {
+                arg = {"", true},
+                encode_base64 = function(value) return value end,
+                shared = { ["query-gateway-cache"] = fake_dict },
+            }
+            local fake_core = {
+                json = {encode = function() return "{}" end},
+                log = {warn = function() end},
+            }
+            local function fake_require(name)
+                if name == "apisix.core" then
+                    return fake_core
+                end
+                return real_require(name)
+            end
+            local path = assert(package.searchpath("apisix.plugins.query-gateway.cache",
+                                                   package.path))
+            local chunk = assert(loadfile(path))
+            setfenv(chunk, setmetatable({ngx = fake_ngx, require = fake_require},
+                                        {__index = _G}))
+            local cache = chunk()
+            local ok, err = pcall(cache.body_filter,
+                                  {
+                                      backend = "redis",
+                                      redis_host = "127.0.0.1",
+                                      write_queue_size = 1,
+                                  },
+                                  {
+                                      query_gateway_cache_key = "cache-key",
+                                      query_gateway_cache_entry = {
+                                          headers = {},
+                                          status = 200,
+                                          chunks = {},
+                                          size = 0,
+                                          ttl = 30,
+                                          stored_at = 1,
+                                          age = 0,
+                                      },
+                                  })
+            ngx.say(ok)
+            ngx.say(err == nil)
+            ngx.say(pushed)
+        }
+    }
+--- request
+GET /t
+--- response_body
+true
+true
+false
