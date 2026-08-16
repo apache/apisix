@@ -1339,7 +1339,6 @@ function _M.rewrite(plugin_conf, ctx)
             conf.session_contents.access_token = true
         end
 
-
         -- Authenticate the request. This will validate the access token if it
         -- is stored in a sessions cookie, and also renew the token if required.
         -- If no token can be extracted, the response will redirect to the ID
@@ -1457,10 +1456,12 @@ function _M.rewrite(plugin_conf, ctx)
                     core.log.error("OIDC authentication failed: the scopes granted to ",
                                    "the session are unknown, so required scopes ",
                                    concat(conf.required_scopes, ", "), " cannot be checked")
+                    session:close()
                     return 403, core.json.encode({ error = "required scopes not present" })
                 end
                 if not required_scopes_present(conf.required_scopes, http_scopes) then
                     core.log.error("OIDC authentication failed: required scopes not present")
+                    session:close()
                     return 403, core.json.encode({
                         error = "required scopes " .. concat(conf.required_scopes, ", ") ..
                                 " not present"
