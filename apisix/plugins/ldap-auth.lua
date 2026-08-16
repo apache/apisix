@@ -169,7 +169,7 @@ function _M.rewrite(conf, ctx)
         core.request.set_header(ctx, "Authorization", nil)
     end
 
-    core.log.info("hit basic-auth access")
+    core.log.info("hit ldap-auth access")
 end
 
 return _M
