@@ -80,6 +80,14 @@ server {
         }
     }
 
+    location = /query-cache-repeated-request {
+        content_by_lua_block {
+            local value = ngx.shared["query-gateway-cache"]:incr("repeated-request-counter", 1, 0)
+            ngx.say("method: ", ngx.req.get_method())
+            ngx.say("counter: ", value)
+        }
+    }
+
     location = /echo {
         content_by_lua_block {
             ngx.req.read_body()
@@ -755,12 +763,71 @@ counter: 2
 
 
 
-=== TEST 32: bypass cache for repeated Content-Type request headers
+=== TEST 32: add a route for repeated request-header tests
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.shared["query-gateway-cache"]:delete("repeated-request-counter")
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/9',
+                 ngx.HTTP_PUT,
+                 [=[{
+                    "vars": [["request_method", "==", "QUERY"]],
+                    "plugins": {
+                        "proxy-rewrite": {
+                            "uri": "/query-cache-repeated-request"
+                        },
+                        "query-gateway": {
+                            "cache": {
+                                "enabled": true,
+                                "backend": "local",
+                                "ttl": 30,
+                                "cookie_names": ["a"]
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1986": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/query-gateway/repeated-request"
+                }]=]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 33: bypass cache for repeated Content-Type request headers
 --- raw_request eval
-"QUERY /query-gateway/shared HTTP/1.1\r\n" .
+"QUERY /query-gateway/repeated-request HTTP/1.1\r\n" .
 "Host: localhost\r\n" .
 "Content-Type: application/json\r\n" .
 "Content-Type: application/json\r\n" .
+"Content-Length: 18\r\nConnection: close\r\n\r\n{\"query\":\"shared\"}"
+--- response_body
+method: POST
+counter: 1
+
+
+
+=== TEST 34: bypass cache for repeated Cookie request headers
+--- raw_request eval
+"QUERY /query-gateway/repeated-request HTTP/1.1\r\n" .
+"Host: localhost\r\n" .
+"Content-Type: application/json\r\n" .
+"Cookie: a=one\r\nCookie: a=two\r\n" .
 "Content-Length: 18\r\nConnection: close\r\n\r\n{\"query\":\"shared\"}"
 --- response_body
 method: POST
@@ -768,20 +835,7 @@ counter: 2
 
 
 
-=== TEST 33: bypass cache for repeated Cookie request headers
---- raw_request eval
-"QUERY /query-gateway/shared HTTP/1.1\r\n" .
-"Host: localhost\r\n" .
-"Content-Type: application/json\r\n" .
-"Cookie: a=one\r\nCookie: a=two\r\n" .
-"Content-Length: 18\r\nConnection: close\r\n\r\n{\"query\":\"shared\"}"
---- response_body
-method: POST
-counter: 3
-
-
-
-=== TEST 34: add a route with repeated upstream Cache-Control
+=== TEST 35: add a route with repeated upstream Cache-Control
 --- config
     location /t {
         content_by_lua_block {
@@ -826,7 +880,7 @@ passed
 
 
 
-=== TEST 35: do not store a repeated upstream Cache-Control response
+=== TEST 36: do not store a repeated upstream Cache-Control response
 --- more_headers
 Content-Type: application/json
 --- request
@@ -837,7 +891,7 @@ counter: 1
 
 
 
-=== TEST 36: do not serve a repeated upstream Cache-Control response from cache
+=== TEST 37: do not serve a repeated upstream Cache-Control response from cache
 --- more_headers
 Content-Type: application/json
 --- request
@@ -848,7 +902,7 @@ counter: 2
 
 
 
-=== TEST 37: bypass safely when the cache shared dictionary is unavailable
+=== TEST 38: bypass safely when the cache shared dictionary is unavailable
 --- config
     location /t {
         content_by_lua_block {
@@ -898,7 +952,7 @@ miss
 
 
 
-=== TEST 38: drop a remote cache write when the bounded queue is full
+=== TEST 39: drop a remote cache write when the bounded queue is full
 --- config
     location /t {
         content_by_lua_block {
