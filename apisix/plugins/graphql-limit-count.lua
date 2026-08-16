@@ -118,9 +118,9 @@ local function node_depth(node, fragments, visited, depths)
         visited[name] = true
         local depth = node_depth(frag.selectionSet.selections, fragments, visited, depths)
         visited[name] = nil
-        -- a fragment reached through a cycle contributes 0 to its own depth,
-        -- so what is memoized here can be short for a cyclic document; those
-        -- are invalid GraphQL and the traversal already reported them short.
+        -- a spread that closes a cycle contributes 0, so for a cyclic
+        -- document the memoized depth can be short -- as it already was
+        -- before memoization, and such a document is invalid GraphQL anyway.
         depths[name] = depth
         return depth
     end
