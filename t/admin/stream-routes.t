@@ -690,7 +690,8 @@ passed
 
             local res = assert(etcd.get('/stream_routes/enc'))
             local stored = res.body.node.value.upstream.tls.client_key
-            assert(stored ~= ssl_key, "the client key must be encrypted at rest")
+            assert(not core.string.find(stored, "PRIVATE KEY"),
+                   "the client key must be encrypted at rest")
 
             code, body = t.test('/apisix/admin/stream_routes/enc', ngx.HTTP_GET)
             assert(not core.string.find(body, "PRIVATE KEY"),
