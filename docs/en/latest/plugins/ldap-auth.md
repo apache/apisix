@@ -44,6 +44,8 @@ For Consumer:
 | ------- | ------ | -------- | -------------------------------------------------------------------------------- |
 | user_dn | string | True     | User dn of the LDAP client. For example, `cn=user01,ou=users,dc=example,dc=org`. This field supports saving the value in Secret Manager using the [APISIX Secret](../terminology/secret.md) resource. |
 
+The Plugin builds the user dn as `<uid>=<username>,<base_dn>`, taking the username from the `Authorization` header. Characters that carry structural meaning in a distinguished name (`,` `+` `=` `<` `>` `;` `"` `\`) are escaped per [RFC 4514](https://datatracker.ietf.org/doc/html/rfc4514#section-2.4), so `user_dn` must use the escaped form to match. A user named `comma,user` under `ou=users,dc=example,dc=org` is configured as `cn=comma\,user,ou=users,dc=example,dc=org`.
+
 For Route:
 
 | Name     | Type    | Required | Default | Description                                                            |

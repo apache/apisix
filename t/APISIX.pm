@@ -445,9 +445,15 @@ _EOC_
             ngx.say("hello world")
 _EOC_
 
+    # backs apisix_stream_active_connections and apisix_stream_bandwidth
+    my $stream_metrics_zone = $version =~ m/\/apisix-nginx-module/
+                              ? "apisix_stream_metrics_zone 1m;" : "";
+
     my $stream_config = $block->stream_config // <<_EOC_;
     $lua_deps_path
     lua_socket_log_errors off;
+
+    $stream_metrics_zone
 
     lua_shared_dict lrucache-lock-stream 10m;
     lua_shared_dict plugin-limit-conn-stream 10m;
