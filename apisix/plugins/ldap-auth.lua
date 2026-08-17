@@ -138,14 +138,14 @@ function _M.rewrite(conf, ctx)
         attribute = conf.uid,
         keepalive = 60000,
     }
-    local res, err = ldap.ldap_authenticate(user.username, user.password, ldapconf)
+    -- the third return value is the bind DN the client assembled, with the
+    -- username escaped per RFC 4514. Rebuilding it here would drop that escaping.
+    local res, err, user_dn = ldap.ldap_authenticate(user.username, user.password, ldapconf)
     if not res then
         core.log.warn("ldap-auth failed: ", err)
         core.response.set_header("WWW-Authenticate", "Basic realm=\"" .. conf.realm .. "\"")
         return 401, { message = "Invalid user authorization" }
     end
-
-    local user_dn =  conf.uid .. "=" .. user.username .. "," .. conf.base_dn
 
     -- 3. Retrieve consumer for authorization plugin
     local consumer_conf = consumer_mod.plugin(plugin_name)
