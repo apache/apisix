@@ -1328,3 +1328,164 @@ success
     }
 --- response_body
 success
+
+
+
+=== TEST 31: header masking when APISIX rewrites the response status to 400
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "data-mask": {
+                                "request": [
+                                    {
+                                        "action": "replace",
+                                        "name": "x-secret",
+                                        "type": "header",
+                                        "value": "*****"
+                                    }
+                                ]
+                            },
+                            "response-rewrite": {
+                                "status_code": 400
+                            },
+                            "file-logger": {
+                                "path": "mask-rewrite-400.log"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+
+
+
+=== TEST 32: verify the mask holds when the upstream succeeded
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+
+            local headers = {}
+            headers["x-secret"] = "PLAINTEXT"
+            t("/hello", ngx.HTTP_GET, "", nil, headers)
+            ngx.sleep(0.5)
+
+            local fd, err = io.open("mask-rewrite-400.log", "r")
+            if not fd then
+                core.log.error("failed to open file: ", err)
+                return
+            end
+            local line = fd:read()
+            fd:close()
+            os.remove("mask-rewrite-400.log")
+
+            local log = core.json.decode(line)
+            if log.request.headers["x-secret"] ~= "*****" then
+                ngx.say("header mask failed: ", log.request.headers["x-secret"])
+                return
+            end
+            ngx.say("success")
+        }
+    }
+--- response_body
+success
+
+
+
+=== TEST 33: header masking when APISIX rejects the request with 400
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "data-mask": {
+                                "request": [
+                                    {
+                                        "action": "replace",
+                                        "name": "x-secret",
+                                        "type": "header",
+                                        "value": "*****"
+                                    }
+                                ]
+                            },
+                            "fault-injection": {
+                                "abort": {
+                                    "http_status": 400,
+                                    "body": "rejected"
+                                }
+                            },
+                            "file-logger": {
+                                "path": "mask-abort-400.log"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+
+
+
+=== TEST 34: verify the mask holds when the upstream is never reached
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+
+            local headers = {}
+            headers["x-secret"] = "PLAINTEXT"
+            t("/hello", ngx.HTTP_GET, "", nil, headers)
+            ngx.sleep(0.5)
+
+            local fd, err = io.open("mask-abort-400.log", "r")
+            if not fd then
+                core.log.error("failed to open file: ", err)
+                return
+            end
+            local line = fd:read()
+            fd:close()
+            os.remove("mask-abort-400.log")
+
+            local log = core.json.decode(line)
+            if log.request.headers["x-secret"] ~= "*****" then
+                ngx.say("header mask failed: ", log.request.headers["x-secret"])
+                return
+            end
+            ngx.say("success")
+        }
+    }
+--- response_body
+success
