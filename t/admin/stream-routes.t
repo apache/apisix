@@ -694,6 +694,7 @@ passed
                    "the client key must be encrypted at rest")
 
             code, body = t.test('/apisix/admin/stream_routes/enc', ngx.HTTP_GET)
+            assert(code == 200, "the admin API must return the stream route")
             assert(not core.string.find(body, "PRIVATE KEY"),
                    "the admin API must not return the plaintext client key")
             ngx.say("encrypted")
