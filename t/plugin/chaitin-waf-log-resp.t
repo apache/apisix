@@ -135,7 +135,8 @@ passed
             if not res then
                 return ngx.say("request failed: ", err)
             end
-            ngx.say("upstream response: ", res.body)
+            -- res.body already ends in a newline
+            ngx.print("upstream response: ", res.body)
             ngx.say("waf header: ", res.headers["X-APISIX-CHAITIN-WAF"])
 
             -- give the timer that reports the response a chance to run
@@ -299,7 +300,8 @@ lua-resty-t1k: response body received completely, total size: 4096 bytes, trunca
             if not res then
                 return ngx.say("request failed: ", err)
             end
-            ngx.say("upstream response: ", res.body)
+            -- res.body already ends in a newline
+            ngx.print("upstream response: ", res.body)
 
             ngx.sleep(0.3)
         }
@@ -457,7 +459,8 @@ lua-resty-t1k: skip response logging
                 return ngx.say("request failed: ", err)
             end
             -- the response still reaches the client unharmed
-            ngx.say("upstream response: ", res.body)
+            -- res.body already ends in a newline
+            ngx.print("upstream response: ", res.body)
             ngx.say("waf header: ", res.headers["X-APISIX-CHAITIN-WAF"])
 
             ngx.sleep(0.3)

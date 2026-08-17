@@ -187,6 +187,20 @@ local metadata_schema = {
     required = { "nodes" },
 }
 
+-- every field of the config object, both in plugin_schema and metadata_schema
+local config_fields = {
+    "connect_timeout",
+    "send_timeout",
+    "read_timeout",
+    "req_body_size",
+    "keepalive_size",
+    "keepalive_timeout",
+    "real_client_ip",
+    "log_resp",
+    "resp_body_size",
+    "extra_ignored_content_types",
+}
+
 local _M = {
     version = 0.1,
     priority = 2700,
@@ -300,28 +314,18 @@ local function get_conf(conf, metadata)
         real_client_ip = true,
     }
 
+    -- only copy what the config actually sets, so that a plugin level config
+    -- overrides the metadata defaults field by field instead of wholesale
     local function apply(config)
         if not config then
             return
         end
 
-        t.connect_timeout = config.connect_timeout
-        t.send_timeout = config.send_timeout
-        t.read_timeout = config.read_timeout
-        t.req_body_size = config.req_body_size
-        t.keepalive_size = config.keepalive_size
-        t.keepalive_timeout = config.keepalive_timeout
-        if config.real_client_ip ~= nil then
-            t.real_client_ip = config.real_client_ip
-        end
-        if config.log_resp ~= nil then
-            t.log_resp = config.log_resp
-        end
-        if config.resp_body_size ~= nil then
-            t.resp_body_size = config.resp_body_size
-        end
-        if config.extra_ignored_content_types ~= nil then
-            t.extra_ignored_content_types = config.extra_ignored_content_types
+        for _, name in ipairs(config_fields) do
+            local value = config[name]
+            if value ~= nil then
+                t[name] = value
+            end
         end
     end
 
