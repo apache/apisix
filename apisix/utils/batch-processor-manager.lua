@@ -171,11 +171,17 @@ local function report_discard(self, limit)
 end
 
 
+-- Returns true once the entry needs nothing further from the caller, which covers
+-- both pushing it to an existing processor and discarding it over the backlog
+-- limit; false means there is no processor yet and the caller should build one.
+-- Reporting a discard as handled matters on the path where it happens: the caller
+-- would otherwise build the batch-processing closure and take the backlog check a
+-- second time, for every request, throughout the outage that caused the discards.
 function _M:add_entry(conf, entry)
     local limit = max_pending_entries(self)
     if backlog_is_full(self, limit) then
         report_discard(self, limit)
-        return
+        return true
     end
     check_stale(self)
 
@@ -191,9 +197,9 @@ end
 
 
 function _M:add_entry_to_new_processor(conf, entry, ctx, func)
-    -- Callers reach this only after add_entry() declined, so a discarded entry has
-    -- already been counted and reported there; re-check the backlog so a direct
-    -- caller is still bounded, but do not count the same entry a second time.
+    -- add_entry() reports a discard as handled, so the usual caller never arrives
+    -- here over the limit; this keeps a caller that skips add_entry() bounded, and
+    -- deliberately does not count, to leave the discard total to add_entry().
     if backlog_is_full(self, max_pending_entries(self)) then
         return
     end

@@ -42,23 +42,24 @@ __DATA__
             local ctx = {var = {route_id = "1", server_addr = "127.0.0.1"}}
             local func = function() return true end
 
-            local accepted = 0
+            -- a discard is reported as handled, so the caller only falls through
+            -- while there is still no processor to push to
+            local fell_through = 0
             for i = 1, 20000 do
-                local ok = bp_manager:add_entry(conf, i)
-                if not ok then
-                    ok = bp_manager:add_entry_to_new_processor(conf, i, ctx, func)
-                end
-                if ok then
-                    accepted = accepted + 1
+                if not bp_manager:add_entry(conf, i) then
+                    fell_through = fell_through + 1
+                    bp_manager:add_entry_to_new_processor(conf, i, ctx, func)
                 end
             end
-            ngx.say("accepted: ", accepted)
+            ngx.say("pushed: ", bp_manager.total_pushed_entries)
+            ngx.say("fell through: ", fell_through)
         }
     }
 --- request
 GET /t
 --- response_body
-accepted: 8192
+pushed: 8192
+fell through: 1
 --- error_log
 max pending entries limit exceeded. discarding entry
 
@@ -90,23 +91,22 @@ max pending entries limit exceeded. discarding entry
             local ctx = {var = {route_id = "1", server_addr = "127.0.0.1"}}
             local func = function() return true end
 
-            local accepted = 0
+            local fell_through = 0
             for i = 1, 10 do
-                local ok = bp_manager:add_entry(conf, i)
-                if not ok then
-                    ok = bp_manager:add_entry_to_new_processor(conf, i, ctx, func)
-                end
-                if ok then
-                    accepted = accepted + 1
+                if not bp_manager:add_entry(conf, i) then
+                    fell_through = fell_through + 1
+                    bp_manager:add_entry_to_new_processor(conf, i, ctx, func)
                 end
             end
-            ngx.say("accepted: ", accepted)
+            ngx.say("pushed: ", bp_manager.total_pushed_entries)
+            ngx.say("fell through: ", fell_through)
         }
     }
 --- request
 GET /t
 --- response_body
-accepted: 3
+pushed: 3
+fell through: 1
 --- error_log
 max_pending_entries: 3
 
