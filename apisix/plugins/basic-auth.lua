@@ -98,6 +98,7 @@ local function extract_auth_header(authorization)
             return nil, "Failed to decode authentication header: " .. m[1]
         end
 
+        -- https://www.rfc-editor.org/info/rfc7617/#section-2 Page 4
         -- RFC 7617: split on the first colon only; the password may contain ':'
         local sep = str_find(decoded, ":", 1, true)
         if not sep then
