@@ -90,17 +90,23 @@ local check_graphql_request = {
 -- Returns the maximum selection nesting depth of the GraphQL query AST.
 -- Fragment spreads are expanded in place using the provided fragment map;
 -- inline fragments are treated as transparent wrappers over their selections.
--- visited guards against fragment definition cycles; memo caches each
--- fragment's resolved depth so a fragment is measured once regardless of how
--- many times it is spread, keeping the traversal linear in the document size.
-local function node_depth(node, fragments, visited, memo)
+-- visited tracks the current recursion path: a spread back onto it is a
+-- fragment cycle (invalid GraphQL), flagged via cycle.found so the caller can
+-- reject the request instead of trusting a traversal-order-dependent depth.
+-- memo caches each fragment's resolved depth so a fragment is measured once,
+-- keeping the traversal linear in the document size.
+local function node_depth(node, fragments, visited, memo, cycle)
     if type(node) ~= "table" then
         return 0
     end
 
     if node.kind == "fragmentSpread" then
         local name = node.name and node.name.value
-        if not name or visited[name] then
+        if not name then
+            return 0
+        end
+        if visited[name] then
+            cycle.found = true
             return 0
         end
         local cached = memo[name]
@@ -112,7 +118,7 @@ local function node_depth(node, fragments, visited, memo)
             return 0
         end
         visited[name] = true
-        local depth = node_depth(frag.selectionSet.selections, fragments, visited, memo)
+        local depth = node_depth(frag.selectionSet.selections, fragments, visited, memo, cycle)
         visited[name] = nil
         memo[name] = depth
         return depth
@@ -122,16 +128,16 @@ local function node_depth(node, fragments, visited, memo)
         if not node.selectionSet then
             return 0
         end
-        return node_depth(node.selectionSet.selections, fragments, visited, memo)
+        return node_depth(node.selectionSet.selections, fragments, visited, memo, cycle)
     end
 
     local depth = 0
     for k, v in pairs(node) do
         local child
         if k == "selections" then
-            child = 1 + node_depth(v, fragments, visited, memo)
+            child = 1 + node_depth(v, fragments, visited, memo, cycle)
         else
-            child = node_depth(v, fragments, visited, memo)
+            child = node_depth(v, fragments, visited, memo, cycle)
         end
         depth = max(depth, child)
     end
@@ -199,10 +205,17 @@ function _M.access(conf, ctx)
 
     local depth = 0
     local memo = {}
+    local cycle = {found = false}
     for _, op in ipairs(operations) do
-        local d = node_depth(op, fragments, {}, memo)
+        local d = node_depth(op, fragments, {}, memo, cycle)
         depth = max(depth, d)
     end
+
+    if cycle.found then
+        core.log.error("invalid graphql request: fragment spreads form a cycle")
+        return 400, {message = "Invalid graphql request: fragment spreads must not form cycles"}
+    end
+
     depth = max(depth, 1)
     core.log.info("graphql query depth: ", depth)
 

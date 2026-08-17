@@ -507,7 +507,7 @@ X-RateLimit-Remaining: 16
 
 
 
-=== TEST 22: fragment cycle does not cause infinite recursion
+=== TEST 22: fragment cycle is rejected
 --- request
 POST /hello
 {
@@ -515,9 +515,11 @@ POST /hello
 }
 --- more_headers
 Content-Type: application/json
---- error_code: 200
---- response_headers_like
-X-RateLimit-Remaining: \d+
+--- error_code: 400
+--- error_log
+invalid graphql request: fragment spreads form a cycle
+--- response_body eval
+qr/fragment spreads must not form cycles/
 
 
 
@@ -713,3 +715,35 @@ GET /t
 --- response_body
 200
 97
+
+
+
+=== TEST 29: mutually recursive fragments are rejected
+--- request
+POST /hello
+{
+  "query": "query { ...A } fragment A on Query { x { ...B } } fragment B on Query { y { ...A } }"
+}
+--- more_headers
+Content-Type: application/json
+--- error_code: 400
+--- error_log
+invalid graphql request: fragment spreads form a cycle
+--- response_body eval
+qr/fragment spreads must not form cycles/
+
+
+
+=== TEST 30: mutual recursion reached at a different depth and order is rejected
+--- request
+POST /hello
+{
+  "query": "query { ...B } fragment A on Query { ...B } fragment B on Query { m { n { ...A } } }"
+}
+--- more_headers
+Content-Type: application/json
+--- error_code: 400
+--- error_log
+invalid graphql request: fragment spreads form a cycle
+--- response_body eval
+qr/fragment spreads must not form cycles/
