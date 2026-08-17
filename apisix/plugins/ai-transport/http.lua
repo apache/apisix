@@ -149,19 +149,6 @@ function _M.request(params, timeout)
     local upstream_scheme = params.scheme or "http"
     local t0 = ngx_now()
 
-    if http_client.needs_resolve(name) then
-        local resolved, rerr = http_client.resolve_upstream_host(params)
-        if not resolved then
-            return nil, "connect: " .. rerr, {
-                upstream_addr = upstream_addr,
-                upstream_host = upstream_host,
-                upstream_scheme = upstream_scheme,
-                upstream_uri = params.path,
-                t0 = t0,
-            }
-        end
-    end
-
     local ok, err = httpc:connect(params)
     if not ok then
         return nil, "connect: " .. (err or "unknown"), {

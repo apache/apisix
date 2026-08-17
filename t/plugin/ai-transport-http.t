@@ -396,6 +396,7 @@ request: connection reset by peer => 500
             }
 
             package.loaded["resty.ngx_http_ffi_client"] = {
+                set_resolver = function() end,
                 new = function()
                     return {
                         set_timeout = function() end,
@@ -450,6 +451,7 @@ status: 200
 
             -- the Lua half loads even when the C module is not built in
             package.loaded["resty.ngx_http_ffi_client"] = {
+                set_resolver = function() end,
                 new = function()
                     return nil, "ngx_http_ffi_client_module is not loaded"
                 end,
@@ -685,53 +687,41 @@ invalid plugin_attr.ai-proxy: property "http_client" validation failed
 
 
 
-=== TEST 14: the C client resolves a hostname through the gateway's resolver
+=== TEST 14: the C client is given the gateway's resolver
 --- config
     location /t {
         content_by_lua_block {
+            local core = require("apisix.core")
             local orig_ffi = package.loaded["resty.ngx_http_ffi_client"]
-            local orig_transport = package.loaded["apisix.plugins.ai-transport.http"]
+            local orig_utils = package.loaded["apisix.utils.http"]
 
-            -- the C client dials on its own, so the transport has to hand it an
-            -- address; the name has to survive in the Host header
+            local installed
             package.loaded["resty.ngx_http_ffi_client"] = {
+                set_resolver = function(fn)
+                    installed = fn
+                end,
                 new = function()
-                    return {
-                        set_timeout = function() end,
-                        connect = function(_, params)
-                            ngx.say("connect host: ", params.host)
-                            ngx.say("ssl_server_name: ", params.ssl_server_name)
-                            return 1
-                        end,
-                        request = function(_, params)
-                            ngx.say("Host header: ", params.headers["Host"])
-                            return {headers = {}, status = 200}
-                        end,
-                    }
+                    return {}
                 end,
             }
 
-            package.loaded["apisix.plugins.ai-transport.http"] = nil
-            local transport = require("apisix.plugins.ai-transport.http")
-            local res, err = transport.request({
-                scheme = "http",
-                host = "localhost",
-                port = 1980,
-                path = "/v1/chat/completions",
-                headers = {["content-type"] = "application/json"},
-                body = {model = "m"},
-            }, 1000)
-            ngx.say("status: ", res and res.status or err)
+            package.loaded["apisix.utils.http"] = nil
+            local http_client = require("apisix.utils.http")
+            http_client.new(http_client.FFI_CLIENT)
+
+            -- the C client dials on its own, so what it resolves names with has
+            -- to be the resolver every other socket in the gateway uses
+            ngx.say("gateway resolver installed: ",
+                    installed == core.resolver.parse_domain)
+            ngx.say("resolves through it: ", installed("localhost"))
 
             package.loaded["resty.ngx_http_ffi_client"] = orig_ffi
-            package.loaded["apisix.plugins.ai-transport.http"] = orig_transport
+            package.loaded["apisix.utils.http"] = orig_utils
         }
     }
 --- response_body
-connect host: 127.0.0.1
-ssl_server_name: localhost
-Host header: localhost:1980
-status: 200
+gateway resolver installed: true
+resolves through it: 127.0.0.1
 --- no_error_log
 [error]
 
@@ -949,8 +939,8 @@ saw done: true
 
     location /t {
         content_by_lua_block {
-            -- "localhost" only resolves through core.resolver, so this drives
-            -- resolve_upstream_host with the real client behind it
+            -- "localhost" only resolves through core.resolver, so this proves
+            -- the real client is going through the resolver it was given
             local transport = require("apisix.plugins.ai-transport.http")
             local res, err = transport.request({
                 method = "POST",
@@ -1019,3 +1009,37 @@ status: 200
 tls ok
 --- no_error_log
 [error]
+
+
+
+=== TEST 21: a client that cannot take a resolver fails the request
+--- config
+    location /t {
+        content_by_lua_block {
+            local orig_ffi = package.loaded["resty.ngx_http_ffi_client"]
+            local orig_utils = package.loaded["apisix.utils.http"]
+
+            -- a runtime older than the pinned one: the module is there, but it
+            -- resolves names by nginx's rules rather than the gateway's
+            package.loaded["resty.ngx_http_ffi_client"] = {
+                new = function()
+                    return {}
+                end,
+            }
+
+            package.loaded["apisix.utils.http"] = nil
+            local http_client = require("apisix.utils.http")
+            for _ = 1, 2 do
+                local client, err = http_client.new(http_client.FFI_CLIENT)
+                ngx.say("client: ", client and "created" or err)
+            end
+
+            package.loaded["resty.ngx_http_ffi_client"] = orig_ffi
+            package.loaded["apisix.utils.http"] = orig_utils
+        }
+    }
+--- response_body
+client: resty.ngx_http_ffi_client does not support set_resolver, the runtime is older than the pinned one
+client: resty.ngx_http_ffi_client does not support set_resolver, the runtime is older than the pinned one
+--- error_log
+does not support set_resolver

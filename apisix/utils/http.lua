@@ -24,7 +24,6 @@
 local core = require("apisix.core")
 local pcall = pcall
 local require = require
-local tonumber = tonumber
 local tostring = tostring
 local type = type
 
@@ -81,6 +80,24 @@ local function load_client(name)
         return nil, module_name .. " is not available: " .. tostring(mod)
     end
 
+    -- Cosockets have their names resolved by apisix/patch.lua, which routes
+    -- them through core.resolver and so honours dns_resolver, /etc/hosts and
+    -- the search domains. The C client dials from C and never touches a
+    -- cosocket, so without this it would see only nginx's `resolver`. Handing
+    -- it the same resolver keeps every outbound name on one set of rules.
+    -- A client too old to take one is an error rather than a client quietly
+    -- resolving names by different rules than the rest of the gateway.
+    if name == FFI_CLIENT then
+        if type(mod.set_resolver) ~= "function" then
+            core.log.error(module_name, " does not support set_resolver, ",
+                           "the runtime is older than the pinned one")
+            return nil, module_name .. " does not support set_resolver, "
+                        .. "the runtime is older than the pinned one"
+        end
+
+        mod.set_resolver(core.resolver.parse_domain)
+    end
+
     loaded[name] = mod
 
     return mod
@@ -102,53 +119,6 @@ function _M.new(name)
     -- The Lua half of `ngx_http_ffi_client` loads even when the C module is
     -- not compiled into the runtime; new() is what reports that.
     return mod.new()
-end
-
-
---- Whether a client name needs resolve_upstream_host() before connecting.
-function _M.needs_resolve(name)
-    return (name or _M.DEFAULT_CLIENT) == FFI_CLIENT
-end
-
-
---- Resolve the upstream name the way every other socket in the gateway does.
--- Cosockets are patched (apisix/patch.lua) to run names through core.resolver,
--- which honours dns_resolver, /etc/hosts and the search domains. A client that
--- dials from C never touches a cosocket and only sees nginx's `resolver`, so
--- the name is resolved here and kept for the Host header and the SNI.
--- Mutates `params` in place.
--- @treturn boolean|nil true on success
--- @treturn string|nil error message
-function _M.resolve_upstream_host(params)
-    local host = params.host
-    if not host
-       or core.utils.parse_ipv4(host)
-       or core.utils.parse_ipv6(host)
-    then
-        return true
-    end
-
-    local ip, err = core.resolver.parse_domain(host)
-    if not ip then
-        return nil, "failed to parse domain: " .. (err or "unknown")
-    end
-
-    params.ssl_server_name = params.ssl_server_name or host
-
-    local headers = params.headers or {}
-    if not headers["Host"] and not headers["host"] then
-        local default_port = params.scheme == "https" and 443 or 80
-        if params.port and tonumber(params.port) ~= default_port then
-            headers["Host"] = host .. ":" .. params.port
-        else
-            headers["Host"] = host
-        end
-    end
-    params.headers = headers
-
-    params.host = ip
-
-    return true
 end
 
 
