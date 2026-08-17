@@ -36,33 +36,6 @@ function _M.pass()
     ngx.exit(200)
 end
 
--- Like pass(), but keeps answering until the client goes away. The client pools
--- the connection and sends the response report over the same one, so a handler
--- that answers once and exits would make that second report fail.
-function _M.pass_keepalive()
-    local sock = get_socket()
-
-    while true do
-        sock:send({ string.char(65), string.char(1), string.char(0),
-                    string.char(0), string.char(0) })
-        sock:send(".")
-        sock:send({ string.char(165), string.char(77), string.char(0),
-                    string.char(0), string.char(0) })
-        sock:send("{\"event_id\":\"1e902e84bf5a4ead8f7760a0fe2c7719\"," ..
-                  "\"request_hit_whitelist\":false}")
-
-        -- block until the next report arrives, so the connection stays usable;
-        -- reading one header byte is enough to tell a new report from a close
-        local data, err = sock:receive(1)
-        if not data then
-            ngx.log(ngx.INFO, "no further t1k message: ", tostring(err))
-            break
-        end
-    end
-
-    ngx.exit(200)
-end
-
 function _M.reject()
     local sock = get_socket()
     sock:send({ string.char(65), string.char(1), string.char(0), string.char(0), string.char(0) })

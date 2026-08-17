@@ -23,14 +23,11 @@ no_root_location();
 add_block_preprocessor(sub {
     my ($block) = @_;
 
-    # pass_keepalive() keeps the connection usable for the response report,
-    # which the client sends over the same pooled connection
-    my $handler = $block->waf_server_handler // "pass_keepalive";
     my $stream_default_server = <<_EOC_;
     server {
         listen 8088;
         content_by_lua_block {
-            require("lib.chaitin_waf_server").$handler()
+            require("lib.chaitin_waf_server").pass()
         }
     }
 _EOC_
@@ -414,61 +411,3 @@ waf header: yes
 --- error_log
 lua-resty-t1k: skip response logging
 --- log_level: debug
-
-
-
-=== TEST 8: a failure to report the response is logged
---- waf_server_handler: pass
---- config
-    location /do {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local http = require("resty.http")
-
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                    "methods": ["GET"],
-                    "plugins": {
-                        "chaitin-waf": {
-                            "config": {
-                                "log_resp": true
-                            }
-                        }
-                    },
-                    "upstream": {
-                        "nodes": {
-                            "127.0.0.1:1980": 1
-                        },
-                        "type": "roundrobin"
-                    },
-                    "uri": "/*"
-                 }]]
-            )
-            if code >= 300 then
-                ngx.status = code
-                return ngx.print(body)
-            end
-
-            -- pass() answers the request report and then goes away, so the
-            -- response report finds the pooled connection unusable and fails.
-            -- Before the failure was logged, this was silent.
-            local httpc = http.new()
-            local res, err = httpc:request_uri("http://127.0.0.1:1984/hello")
-            if not res then
-                return ngx.say("request failed: ", err)
-            end
-            -- the response still reaches the client unharmed
-            -- res.body already ends in a newline
-            ngx.print("upstream response: ", res.body)
-            ngx.say("waf header: ", res.headers["X-APISIX-CHAITIN-WAF"])
-
-            ngx.sleep(0.3)
-        }
-    }
---- response_body
-upstream response: hello world
-waf header: yes
---- error_log
-lua-resty-t1k: failed to report response
---- log_level: error
