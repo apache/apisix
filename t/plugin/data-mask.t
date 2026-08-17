@@ -1157,3 +1157,174 @@ success
     }
 --- response_body
 success
+
+
+
+=== TEST 27: header masking with a logger, upstream returns 400
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "data-mask": {
+                                "request": [
+                                    {
+                                        "action": "replace",
+                                        "name": "x-secret",
+                                        "type": "header",
+                                        "value": "*****"
+                                    }
+                                ]
+                            },
+                            "file-logger": {
+                                "path": "mask-header-400.log"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/specific_status"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+
+
+
+=== TEST 28: verify the header is masked for every response status
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+
+            local function req(status)
+                local headers = {}
+                headers["x-secret"] = "PLAINTEXT"
+                headers["x-test-upstream-status"] = status
+                t("/specific_status", ngx.HTTP_GET, "", nil, headers)
+            end
+
+            req("500")
+            req("400")
+            ngx.sleep(0.5)
+
+            local fd, err = io.open("mask-header-400.log", "r")
+            if not fd then
+                core.log.error("failed to open file: ", err)
+                return
+            end
+            for line in fd:lines() do
+                local log = core.json.decode(line)
+                local value = log.request.headers["x-secret"]
+                if value ~= "*****" then
+                    ngx.say("status ", log.response.status, " header mask failed: ", value)
+                    fd:close()
+                    return
+                end
+            end
+            fd:close()
+            os.remove("mask-header-400.log")
+            ngx.say("success")
+        }
+    }
+--- response_body
+success
+
+
+
+=== TEST 29: header masking with a custom log_format, upstream returns 400
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "data-mask": {
+                                "request": [
+                                    {
+                                        "action": "replace",
+                                        "name": "x-secret",
+                                        "type": "header",
+                                        "value": "*****"
+                                    }
+                                ]
+                            },
+                            "file-logger": {
+                                "path": "mask-header-fmt-400.log",
+                                "log_format": {
+                                    "status": "$status",
+                                    "secret": "$http_x_secret"
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/specific_status"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+
+
+
+=== TEST 30: verify the custom log_format value is masked for every response status
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+
+            local function req(status)
+                local headers = {}
+                headers["x-secret"] = "PLAINTEXT"
+                headers["x-test-upstream-status"] = status
+                t("/specific_status", ngx.HTTP_GET, "", nil, headers)
+            end
+
+            req("500")
+            req("400")
+            ngx.sleep(0.5)
+
+            local fd, err = io.open("mask-header-fmt-400.log", "r")
+            if not fd then
+                core.log.error("failed to open file: ", err)
+                return
+            end
+            for line in fd:lines() do
+                local log = core.json.decode(line)
+                if log.secret ~= "*****" then
+                    ngx.say("status ", log.status, " header mask failed: ", log.secret)
+                    fd:close()
+                    return
+                end
+            end
+            fd:close()
+            os.remove("mask-header-fmt-400.log")
+            ngx.say("success")
+        }
+    }
+--- response_body
+success
