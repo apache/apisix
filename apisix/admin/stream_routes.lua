@@ -152,10 +152,6 @@ local function delete_checker(id)
 end
 
 
--- Only the upstream, unlike routes.lua and services.lua which also encrypt
--- their plugin confs: stream_plugin_checker() has no decrypt_conf() step, so
--- an encrypted stream plugin conf would reach the stream runtime as
--- ciphertext.
 local function encrypt_conf(id, conf)
     apisix_upstream.encrypt_conf(conf.upstream)
 end
