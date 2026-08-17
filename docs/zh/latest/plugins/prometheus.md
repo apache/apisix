@@ -130,6 +130,9 @@ Prometheus 中有不同类型的指标。要了解它们之间的区别，请参
 | apisix_shared_dict_free_space_bytes | gauge     | [NGINX 共享字典](https://github.com/openresty/lua-nginx-module#ngxshareddict) 中剩余的空间。                                                                                   |
 | apisix_upstream_status   | gauge     | 上游节点的健康检查状态，如果在上游配置了健康检查，则可用。值为 `1` 表示健康，`0` 表示不健康。                                                                                   |
 | apisix_stream_connection_total | counter   | 每个 Stream Route 处理的总连接数。                                                                                                                                         |
+| apisix_stream_active_connections | gauge   | 当前正在代理的 Stream 会话数，按监听地址区分。同时覆盖 TCP 连接与 UDP 会话。                                                                                                 |
+| apisix_stream_status          | counter   | 每条 Stream 会话结束时计数一次，按结束方式分类。                                                                                                                           |
+| apisix_stream_bandwidth       | counter   | Stream 子系统代理的总流量（字节），按监听地址与方向区分。                                                                                                                   |
 
 ## 标签
 
