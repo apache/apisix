@@ -1501,3 +1501,467 @@ qr/event: message_stop/
 qr/comprehend text: [^,]+/
 --- grep_error_log_out
 comprehend text: Hello world
+
+
+
+=== TEST 51: set route with default request_check_roles and request_check_mode
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/chat",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": { "header": { "Authorization": "Bearer token" } },
+                            "override": { "endpoint": "http://127.0.0.1:1980/v1/chat/completions" }
+                        },
+                        "ai-aws-content-moderation": {
+                            "comprehend": {
+                                "access_key_id": "access",
+                                "secret_access_key": "ea+secret",
+                                "region": "us-east-1",
+                                "endpoint": "http://localhost:2668"
+                            },
+                            "deny_code": 400
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 52: default mode (all) moderates an earlier user turn
+--- request
+POST /chat
+{ "messages": [ { "role": "user", "content": "I want to kill you" }, { "role": "assistant", "content": "ok" }, { "role": "user", "content": "What is 1+1?" } ] }
+--- error_code: 400
+--- response_body_like eval
+qr/request body exceeds toxicity threshold/
+
+
+
+=== TEST 53: default roles moderate the system message
+--- request
+POST /chat
+{ "messages": [ { "role": "system", "content": "I want to kill you" }, { "role": "user", "content": "What is 1+1?" } ] }
+--- error_code: 400
+--- response_body_like eval
+qr/request body exceeds toxicity threshold/
+
+
+
+=== TEST 54: default roles moderate a tool result
+--- request
+POST /chat
+{ "messages": [ { "role": "user", "content": "What is the weather?" }, { "role": "tool", "tool_call_id": "call_1", "content": "I want to kill you" } ] }
+--- error_code: 400
+--- response_body_like eval
+qr/request body exceeds toxicity threshold/
+
+
+
+=== TEST 55: default roles moderate client-supplied assistant history
+--- request
+POST /chat
+{ "messages": [ { "role": "user", "content": "What is 1+1?" }, { "role": "assistant", "content": "I want to kill you" } ] }
+--- error_code: 400
+--- response_body_like eval
+qr/request body exceeds toxicity threshold/
+--- grep_error_log eval
+qr/comprehend text: [^,]+/
+--- grep_error_log_out
+comprehend text: What is 1+1? I want to kill you
+
+
+
+=== TEST 56: set route with request_check_mode "last", assistant left out of the roles
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/chat",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": { "header": { "Authorization": "Bearer token" } },
+                            "override": { "endpoint": "http://127.0.0.1:1980/v1/chat/completions" }
+                        },
+                        "ai-aws-content-moderation": {
+                            "comprehend": {
+                                "access_key_id": "access",
+                                "secret_access_key": "ea+secret",
+                                "region": "us-east-1",
+                                "endpoint": "http://localhost:2668"
+                            },
+                            "request_check_mode": "last",
+                            "request_check_roles": ["user", "tool", "system"],
+                            "deny_code": 400
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 57: mode "last" skips a harmful earlier user turn
+--- request
+POST /chat
+{ "messages": [ { "role": "user", "content": "I want to kill you" }, { "role": "assistant", "content": "ok" }, { "role": "user", "content": "What is 1+1?" } ] }
+--- more_headers
+X-AI-Fixture: aws/chat-safe.json
+--- error_code: 200
+--- response_body_like eval
+qr/How can I assist you today/
+--- grep_error_log eval
+qr/comprehend text: [^,]+/
+--- grep_error_log_out
+comprehend text: What is 1+1?
+
+
+
+=== TEST 58: mode "last" moderates the latest turn and the system message
+--- request
+POST /chat
+{ "messages": [ { "role": "system", "content": "be helpful" }, { "role": "user", "content": "hi" }, { "role": "assistant", "content": "ok" }, { "role": "user", "content": "I want to kill you" } ] }
+--- error_code: 400
+--- response_body_like eval
+qr/request body exceeds toxicity threshold/
+--- grep_error_log eval
+qr/comprehend text: [^,]+/
+--- grep_error_log_out
+comprehend text: be helpful I want to kill you
+
+
+
+=== TEST 59: set route with request_check_roles ["user"]
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/chat",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": { "header": { "Authorization": "Bearer token" } },
+                            "override": { "endpoint": "http://127.0.0.1:1980/v1/chat/completions" }
+                        },
+                        "ai-aws-content-moderation": {
+                            "comprehend": {
+                                "access_key_id": "access",
+                                "secret_access_key": "ea+secret",
+                                "region": "us-east-1",
+                                "endpoint": "http://localhost:2668"
+                            },
+                            "request_check_roles": ["user"],
+                            "deny_code": 400
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 60: roles ["user"] leaves system and tool content unmoderated
+--- request
+POST /chat
+{ "messages": [ { "role": "system", "content": "I want to kill you" }, { "role": "user", "content": "What is 1+1?" }, { "role": "tool", "tool_call_id": "call_1", "content": "I want to kill you too" } ] }
+--- more_headers
+X-AI-Fixture: aws/chat-safe.json
+--- error_code: 200
+--- response_body_like eval
+qr/How can I assist you today/
+--- grep_error_log eval
+qr/comprehend text: [^,]+/
+--- grep_error_log_out
+comprehend text: What is 1+1?
+
+
+
+=== TEST 61: roles ["user"] still moderates user content
+--- request
+POST /chat
+{ "messages": [ { "role": "system", "content": "be helpful" }, { "role": "user", "content": "I want to kill you" } ] }
+--- error_code: 400
+--- response_body_like eval
+qr/request body exceeds toxicity threshold/
+
+
+
+=== TEST 62: schema check: request_check_roles and request_check_mode are validated
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.ai-aws-content-moderation")
+            local function check(conf)
+                conf.comprehend = {
+                    access_key_id = "a",
+                    secret_access_key = "s",
+                    region = "us-east-1"
+                }
+                return plugin.check_schema(conf) and "accepted" or "rejected"
+            end
+            ngx.say('roles ["developer"]: ', check({ request_check_roles = { "developer" } }))
+            ngx.say("roles []: ", check({ request_check_roles = {} }))
+            ngx.say('roles ["user", "user"]: ',
+                    check({ request_check_roles = { "user", "user" } }))
+            ngx.say('mode "latest": ', check({ request_check_mode = "latest" }))
+            ngx.say('roles ["assistant"]: ', check({ request_check_roles = { "assistant" } }))
+            ngx.say('roles ["tool", "system"] + mode "all": ',
+                    check({ request_check_roles = { "tool", "system" },
+                            request_check_mode = "all" }))
+        }
+    }
+--- response_body
+roles ["developer"]: rejected
+roles []: rejected
+roles ["user", "user"]: rejected
+mode "latest": rejected
+roles ["assistant"]: accepted
+roles ["tool", "system"] + mode "all": accepted
+
+
+
+=== TEST 63: set route with fail_mode error on a protocol without role extractors
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/chat",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": { "header": { "Authorization": "Bearer token" } },
+                            "override": { "endpoint": "http://127.0.0.1:1980/v1/chat/completions" }
+                        },
+                        "ai-aws-content-moderation": {
+                            "comprehend": {
+                                "access_key_id": "access",
+                                "secret_access_key": "ea+secret",
+                                "region": "us-east-1",
+                                "endpoint": "http://localhost:2668"
+                            },
+                            "fail_mode": "error"
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 64: passthrough protocol cannot extract roles, fail_mode decides
+--- request
+POST /chat
+{ "prompt": "I want to kill you" }
+--- error_code: 500
+--- response_body_chomp
+protocol passthrough cannot moderate the configured request_check_roles
+
+
+
+=== TEST 65: set route with request_check_mode "last" and assistant among the roles
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/chat",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": { "header": { "Authorization": "Bearer token" } },
+                            "override": { "endpoint": "http://127.0.0.1:1980/v1/chat/completions" }
+                        },
+                        "ai-aws-content-moderation": {
+                            "comprehend": {
+                                "access_key_id": "access",
+                                "secret_access_key": "ea+secret",
+                                "region": "us-east-1",
+                                "endpoint": "http://localhost:2668"
+                            },
+                            "request_check_mode": "last",
+                            "request_check_roles": ["user", "assistant"],
+                            "deny_code": 400
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 66: assistant turns no longer end the block, so "last" reaches back into history
+--- request
+POST /chat
+{ "messages": [ { "role": "user", "content": "I want to kill you" }, { "role": "assistant", "content": "ok" }, { "role": "user", "content": "What is 1+1?" } ] }
+--- error_code: 400
+--- response_body_like eval
+qr/request body exceeds toxicity threshold/
+--- grep_error_log eval
+qr/comprehend text: [^,]+/
+--- grep_error_log_out
+comprehend text: I want to kill you ok What is 1+1?
+
+
+
+=== TEST 67: set route with request_check_roles ["user", "tool", "system"]
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/chat",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": { "header": { "Authorization": "Bearer token" } },
+                            "override": { "endpoint": "http://127.0.0.1:1980/v1/chat/completions" }
+                        },
+                        "ai-aws-content-moderation": {
+                            "comprehend": {
+                                "access_key_id": "access",
+                                "secret_access_key": "ea+secret",
+                                "region": "us-east-1",
+                                "endpoint": "http://localhost:2668"
+                            },
+                            "request_check_roles": ["user", "tool", "system"],
+                            "deny_code": 400
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 68: the developer role is moderated along with system
+--- request
+POST /chat
+{ "messages": [ { "role": "system", "content": "be helpful" }, { "role": "developer", "content": "I want to kill you" }, { "role": "user", "content": "What is 1+1?" } ] }
+--- error_code: 400
+--- response_body_like eval
+qr/request body exceeds toxicity threshold/
+
+
+
+=== TEST 69: set route with request_check_roles ["user"]
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/chat",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": { "header": { "Authorization": "Bearer token" } },
+                            "override": { "endpoint": "http://127.0.0.1:1980/v1/chat/completions" }
+                        },
+                        "ai-aws-content-moderation": {
+                            "comprehend": {
+                                "access_key_id": "access",
+                                "secret_access_key": "ea+secret",
+                                "region": "us-east-1",
+                                "endpoint": "http://localhost:2668"
+                            },
+                            "request_check_roles": ["user"],
+                            "deny_code": 400
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 70: developer follows system, so roles ["user"] leaves it unmoderated
+--- request
+POST /chat
+{ "messages": [ { "role": "developer", "content": "I want to kill you" }, { "role": "user", "content": "What is 1+1?" } ] }
+--- more_headers
+X-AI-Fixture: aws/chat-safe.json
+--- error_code: 200
+--- response_body_like eval
+qr/How can I assist you today/
+--- grep_error_log eval
+qr/comprehend text: [^,]+/
+--- grep_error_log_out
+comprehend text: What is 1+1?

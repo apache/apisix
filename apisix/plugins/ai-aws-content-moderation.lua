@@ -31,6 +31,7 @@ local pairs    = pairs
 local unpack   = unpack
 local type     = type
 local ipairs   = ipairs
+local next     = next
 local table    = table
 local str_byte = string.byte
 local str_sub  = string.sub
@@ -91,6 +92,31 @@ local schema = {
         },
         check_request = { type = "boolean", default = true },
         check_response = { type = "boolean", default = false },
+        request_check_roles = {
+            type = "array",
+            items = { type = "string", enum = { "user", "tool", "system", "assistant" } },
+            minItems = 1,
+            uniqueItems = true,
+            default = { "user", "tool", "system", "assistant" },
+            description = "which message roles to moderate on the request side. user, tool " ..
+                          "and assistant follow request_check_mode; system is checked on " ..
+                          "every request because it can be poisoned by malicious ToolCall " ..
+                          "arguments. assistant messages are client-supplied history, so " ..
+                          "they are moderated by default too. Note: tool-result moderation " ..
+                          "applies to OpenAI-compatible formats where the tool output is a " ..
+                          "distinct tool role/item; for Anthropic/Bedrock (tool results are " ..
+                          "nested blocks inside user messages) tool content is not extracted.",
+        },
+        request_check_mode = {
+            type = "string",
+            enum = { "last", "all" },
+            default = "all",
+            description = "which user/tool/assistant messages to moderate: last (only the " ..
+                          "latest consecutive block of selected-role messages) | all (every " ..
+                          "selected-role message). Does not apply to the system role, which " ..
+                          "is always checked. Note that selecting assistant together with " ..
+                          "last widens the block, since assistant turns no longer end it.",
+        },
         request_check_length_limit = {
             type = "integer",
             minimum = MIN_SEGMENT_BYTES,
@@ -479,7 +505,54 @@ function _M.access(conf, ctx)
         return
     end
 
-    local contents = proto.extract_request_content(request_tab)
+    local roles = {}
+    for _, role in ipairs(conf.request_check_roles) do
+        roles[role] = true
+    end
+    -- every role but system is a turn role, extracted through extract_turn_content
+    local turn_roles = {}
+    for role in pairs(roles) do
+        if role ~= "system" then
+            turn_roles[role] = true
+        end
+    end
+
+    -- A configured role whose extractor this protocol doesn't implement would
+    -- otherwise pass unmoderated. Route that through fail_mode instead of
+    -- silently skipping the configured moderation.
+    if (roles.system and not proto.extract_system_content)
+            or (next(turn_roles) and not proto.extract_turn_content) then
+        local handled, code, body = binding.on_unsupported(
+            conf.fail_mode, _M.name, ctx,
+            "protocol cannot extract configured request_check_roles",
+            HTTP_INTERNAL_SERVER_ERROR,
+            "protocol " .. (ctx.ai_client_protocol or "unknown")
+                .. " cannot moderate the configured request_check_roles")
+        if handled then
+            return code, body
+        end
+        return
+    end
+
+    -- Collect the text of every configured role and score it in one pass:
+    -- Comprehend takes a flat list of text segments with no role field, so
+    -- per-role calls would only cost extra requests. system is always included
+    -- (not subject to request_check_mode, it can be poisoned by malicious
+    -- ToolCall arguments); the turn roles follow request_check_mode.
+    local contents = {}
+    if roles.system then
+        local system_texts = proto.extract_system_content(request_tab)
+        for i = 1, #system_texts do
+            contents[#contents + 1] = system_texts[i]
+        end
+    end
+    if next(turn_roles) then
+        local turn_texts = proto.extract_turn_content(request_tab,
+                                                      conf.request_check_mode, turn_roles)
+        for i = 1, #turn_texts do
+            contents[#contents + 1] = turn_texts[i]
+        end
+    end
     local content = table.concat(contents, " ")
     if content == "" then
         return

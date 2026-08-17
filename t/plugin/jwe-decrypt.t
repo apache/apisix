@@ -577,3 +577,50 @@ done
     }
 --- response_body
 status: 400
+
+
+
+=== TEST 24: enable jwe-decrypt with strict=false
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/11',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "jwe-decrypt": {
+                            "header": "Authorization",
+                            "forward_header": "Authorization",
+                            "strict": false
+                        },
+                        "proxy-rewrite": {
+                            "uri": "/hello"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello-nonstrict"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 25: missing token with strict=false is allowed
+--- request
+GET /hello-nonstrict
+--- response_body
+hello world

@@ -18,6 +18,7 @@ local ngx       = ngx
 local ipairs    = ipairs
 local next      = next
 local type      = type
+local t_remove  = table.remove
 local re_sub    = ngx.re.sub
 local core      = require("apisix.core")
 local jp        = require("jsonpath")
@@ -173,7 +174,8 @@ local function mask_json(obj, conf)
     end
 
     local masked = false
-    for _, node in ipairs(nodes) do
+    for ni = #nodes, 1, -1 do
+        local node = nodes[ni]
         local nested = obj
         -- first element is root($), last element is the field name
         for i = 2, #node.path - 1 do
@@ -181,7 +183,11 @@ local function mask_json(obj, conf)
         end
         local index = table_index(node.path[#node.path])
         if conf.action == "remove" then
-            nested[index] = nil
+            if type(index) == "number" then
+                t_remove(nested, index)
+            else
+                nested[index] = nil
+            end
             masked = true
         elseif conf.action == "replace" then
             nested[index] = conf.value

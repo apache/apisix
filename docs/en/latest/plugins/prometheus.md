@@ -130,6 +130,9 @@ The following metrics are exported by the `prometheus` Plugin by default. See [g
 | apisix_shared_dict_free_space_bytes   | gauge     | The remaining space in an [NGINX shared dictionary](https://github.com/openresty/lua-nginx-module#ngxshareddict).                                                                                                                   |
 | apisix_upstream_status                | gauge     | Health check status of upstream nodes, available if health checks are configured on the upstream. A value of `1` represents healthy and `0` represents unhealthy.                                                                 |
 | apisix_stream_connection_total        | counter   | Total number of connections handled per Stream Route.                                                                                                               |
+| apisix_stream_active_connections      | gauge     | Number of Stream sessions currently being proxied, per listening address. Covers TCP connections and UDP sessions alike.                                             |
+| apisix_stream_status                  | counter   | Counted once per Stream session when it ends, classified by how it ended.                                                                                            |
+| apisix_stream_bandwidth               | counter   | Total bandwidth in bytes proxied by the Stream subsystem, per listening address and direction.                                                                       |
 
 ## Labels
 
@@ -154,6 +157,49 @@ The following labels are used to differentiate `apisix_http_status` metrics.
 | node         | IP address of the upstream node.                                                                                          |
 | request_type       | traditional_http / ai_chat / ai_stream                                                                                          |
 | llm_model       | For non-traditional_http requests, name of the llm_model                                                                                          |
+
+### Labels for `apisix_stream_active_connections`
+
+The gauge is incremented when a session is accepted and decremented when it
+ends, so it reflects live concurrency without waiting for sessions to finish.
+
+| Name        | Description                                                                             |
+| ----------- | --------------------------------------------------------------------------------------- |
+| listen_addr | Listening address the client connected to, for example `0.0.0.0:9100`.                   |
+
+### Labels for `apisix_stream_status`
+
+NGINX reports a Stream `$status` of 200 for every failure that happens after
+the upstream connection is established, so a timeout or a reset is
+indistinguishable from a clean close on its own. This metric narrows 200 down
+to sessions that really ended on a close signal, using the termination reason
+the runtime records, and folds the rest onto the status codes NGINX itself
+uses for Stream sessions. No synthetic code is introduced.
+
+| Name        | Description                                                                             |
+| ----------- | --------------------------------------------------------------------------------------- |
+| code        | How the session ended: `200` normal close, `400` client-side problem such as a reset or invalid preread data, `403` rejected by an access rule, `500` internal error, `502` upstream or transport problem such as a connect failure, a reset, or an idle timeout, `503` rejected by a connection limit. |
+| listen_addr | Listening address the client connected to, for example `0.0.0.0:9100`.                   |
+| node        | Address of the upstream node used, empty when no node was selected.                      |
+
+For UDP only a subset of the codes occurs, since UDP has no close, FIN or
+reset to observe.
+
+### Labels for `apisix_stream_bandwidth`
+
+Bytes keep accumulating while a connection is open rather than only at session
+end, so a long-lived connection is visible as it runs. Only Stream traffic is
+counted; the HTTP subsystem cannot contribute to it.
+
+| Name        | Description                                                                             |
+| ----------- | --------------------------------------------------------------------------------------- |
+| listen_addr | Listening address the client connected to, for example `0.0.0.0:9100`.                   |
+| side        | Which connection the bytes crossed: `downstream` between APISIX and the client, `upstream` between APISIX and the upstream. |
+| type        | Direction relative to APISIX, matching `apisix_bandwidth`: `ingress` for bytes APISIX received, `egress` for bytes APISIX sent. |
+
+Under plain forwarding `downstream`/`ingress` tracks `upstream`/`egress`, and
+`upstream`/`ingress` tracks `downstream`/`egress`; a lasting mismatch is itself
+a signal that one side stopped reading.
 
 ### Labels for `apisix_bandwidth`
 
@@ -665,4 +711,23 @@ You should see an output similar to the following:
 # HELP apisix_stream_connection_total Total number of connections handled per Stream Route in APISIX
 # TYPE apisix_stream_connection_total counter
 apisix_stream_connection_total{route="1"} 1
+# HELP apisix_stream_active_connections Number of stream sessions currently being proxied per listening address
+# TYPE apisix_stream_active_connections gauge
+apisix_stream_active_connections{listen_addr="0.0.0.0:9100"} 1
+# HELP apisix_stream_status Stream sessions per termination status in APISIX
+# TYPE apisix_stream_status counter
+apisix_stream_status{code="200",listen_addr="0.0.0.0:9100",node="127.0.0.1:1995"} 1
+# HELP apisix_stream_bandwidth Total bandwidth in bytes proxied by the stream subsystem in APISIX
+# TYPE apisix_stream_bandwidth counter
+apisix_stream_bandwidth{listen_addr="0.0.0.0:9100",type="ingress",side="downstream"} 5
+apisix_stream_bandwidth{listen_addr="0.0.0.0:9100",type="egress",side="upstream"} 5
 ```
+
+:::note
+
+`apisix_stream_active_connections` and `apisix_stream_bandwidth` are backed by
+an NGINX shared memory zone, sized by `nginx_config.stream.metrics_zone_size`
+(default `1m`). They require APISIX-Runtime; on a runtime without it the two
+metrics are simply not published.
+
+:::

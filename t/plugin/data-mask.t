@@ -897,3 +897,263 @@ nginx_config:
 GET /hello?password=secret&token=mytoken
 --- access_log eval
 qr/GET \/hello\?token=\*\*\*\*\* HTTP\/\d+\.\d+/
+
+
+
+=== TEST 21: create route for removing a middle JSON array element
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "data-mask": {
+                                "request": [
+                                    {
+                                        "action": "remove",
+                                        "body_format": "json",
+                                        "name": "$.items[1]",
+                                        "type": "body"
+                                    }
+                                ]
+                            },
+                            "file-logger": {
+                                "include_req_body": true,
+                                "path": "mask-json-array-hole.log"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+
+
+
+=== TEST 22: verify removing a middle array element compacts the array
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+
+            os.remove("mask-json-array-hole.log")
+            local code = t("/hello", ngx.HTTP_POST, [[{"items":["a","drop-me","c"]}]])
+
+            local fd, err = io.open("mask-json-array-hole.log", "r")
+            if not fd then
+                core.log.error("failed to open file: ", err)
+                return
+            end
+            local line = fd:read()
+            local log = core.json.decode(line)
+            os.remove("mask-json-array-hole.log")
+
+            if not log or not log.request or not log.request.body then
+                ngx.say("missing logged request body")
+                return
+            end
+
+            local body = core.json.decode(log.request.body)
+            if not body or type(body.items) ~= "table" then
+                ngx.say("items missing: " .. tostring(log.request.body))
+                return
+            end
+            if #body.items ~= 2 then
+                ngx.say("expected compacted array of 2, got: " .. core.json.encode(body.items))
+                return
+            end
+            if body.items[1] ~= "a" or body.items[2] ~= "c" then
+                ngx.say("array not compacted: " .. core.json.encode(body.items))
+                return
+            end
+            ngx.say("success")
+        }
+    }
+--- response_body
+success
+
+
+
+=== TEST 23: create route for removing all JSON array elements
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "data-mask": {
+                                "request": [
+                                    {
+                                        "action": "remove",
+                                        "body_format": "json",
+                                        "name": "$.items[*]",
+                                        "type": "body"
+                                    }
+                                ]
+                            },
+                            "file-logger": {
+                                "include_req_body": true,
+                                "path": "mask-json-array-star.log"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+
+
+
+=== TEST 24: verify removing all array elements yields an empty array
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+
+            os.remove("mask-json-array-star.log")
+            local code = t("/hello", ngx.HTTP_POST, [[{"items":["a","b","c"]}]])
+
+            local fd, err = io.open("mask-json-array-star.log", "r")
+            if not fd then
+                core.log.error("failed to open file: ", err)
+                return
+            end
+            local line = fd:read()
+            local log = core.json.decode(line)
+            os.remove("mask-json-array-star.log")
+
+            if not log or not log.request or not log.request.body then
+                ngx.say("missing logged request body")
+                return
+            end
+
+            local body = core.json.decode(log.request.body)
+            if not body or type(body.items) ~= "table" then
+                ngx.say("items missing: " .. tostring(log.request.body))
+                return
+            end
+            if #body.items ~= 0 then
+                ngx.say("expected empty array, got: " .. core.json.encode(body.items))
+                return
+            end
+            ngx.say("success")
+        }
+    }
+--- response_body
+success
+
+
+
+=== TEST 25: create route for removing non-contiguous JSON array elements
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "data-mask": {
+                                "request": [
+                                    {
+                                        "action": "remove",
+                                        "body_format": "json",
+                                        "name": "$.items[0,2]",
+                                        "type": "body"
+                                    }
+                                ]
+                            },
+                            "file-logger": {
+                                "include_req_body": true,
+                                "path": "mask-json-array-multi.log"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+
+
+
+=== TEST 26: verify removing non-contiguous array elements keeps the unmatched item
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+
+            os.remove("mask-json-array-multi.log")
+            local code = t("/hello", ngx.HTTP_POST, [[{"items":["a","b","c"]}]])
+
+            local fd, err = io.open("mask-json-array-multi.log", "r")
+            if not fd then
+                core.log.error("failed to open file: ", err)
+                return
+            end
+            local line = fd:read()
+            local log = core.json.decode(line)
+            os.remove("mask-json-array-multi.log")
+
+            if not log or not log.request or not log.request.body then
+                ngx.say("missing logged request body")
+                return
+            end
+
+            local body = core.json.decode(log.request.body)
+            if not body or type(body.items) ~= "table" then
+                ngx.say("items missing: " .. tostring(log.request.body))
+                return
+            end
+            if #body.items ~= 1 then
+                ngx.say("expected compacted array of 1, got: " .. core.json.encode(body.items))
+                return
+            end
+            if body.items[1] ~= "b" then
+                ngx.say("wrong remaining element: " .. core.json.encode(body.items))
+                return
+            end
+            ngx.say("success")
+        }
+    }
+--- response_body
+success

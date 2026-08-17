@@ -15,7 +15,6 @@
 -- limitations under the License.
 --
 local bp_manager_mod  = require("apisix.utils.batch-processor-manager")
-local plugin          = require("apisix.plugin")
 local log_util        = require("apisix.utils.log-util")
 local core            = require("apisix.core")
 local http            = require("resty.http")
@@ -25,7 +24,7 @@ local tostring = tostring
 local ipairs   = ipairs
 
 local plugin_name = "http-logger"
-local batch_processor_manager = bp_manager_mod.new("http logger")
+local batch_processor_manager = bp_manager_mod.new("http logger", plugin_name)
 
 local schema = {
     type = "object",
@@ -71,11 +70,6 @@ local metadata_schema = {
         log_format = {
             type = "object"
         },
-        max_pending_entries = {
-            type = "integer",
-            description = "maximum number of pending entries in the batch processor",
-            minimum = 1,
-        },
     },
 }
 
@@ -85,7 +79,7 @@ local _M = {
     priority = 410,
     name = plugin_name,
     schema = batch_processor_manager:wrap_schema(schema),
-    metadata_schema = metadata_schema,
+    metadata_schema = batch_processor_manager:wrap_metadata_schema(metadata_schema),
 }
 
 
@@ -183,16 +177,13 @@ end
 
 
 function _M.log(conf, ctx)
-    local metadata = plugin.plugin_metadata(plugin_name)
-    local max_pending_entries = metadata and metadata.value and
-                                metadata.value.max_pending_entries or nil
     local entry = log_util.get_log_entry(plugin_name, conf, ctx)
 
     if not entry.route_id then
         entry.route_id = "no-matched"
     end
 
-    if batch_processor_manager:add_entry(conf, entry, max_pending_entries) then
+    if batch_processor_manager:add_entry(conf, entry) then
         return
     end
 
@@ -234,7 +225,7 @@ function _M.log(conf, ctx)
         return send_http_data(conf, data)
     end
 
-    batch_processor_manager:add_entry_to_new_processor(conf, entry, ctx, func, max_pending_entries)
+    batch_processor_manager:add_entry_to_new_processor(conf, entry, ctx, func)
 end
 
 
