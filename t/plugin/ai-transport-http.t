@@ -353,3 +353,93 @@ connect: operation timed out => 504
 connect: Operation timed out => 504
 request: connection refused => 500
 request: connection reset by peer => 500
+
+
+
+=== TEST 8: AI transport applies independent connect send and read timeouts
+--- config
+    location /t {
+        content_by_lua_block {
+            local orig_http = package.loaded["resty.http"]
+            local orig_transport = package.loaded["apisix.plugins.ai-transport.http"]
+
+            package.loaded["resty.http"] = {
+                new = function()
+                    return {
+                        set_timeout = function()
+                            error("legacy set_timeout must not be used")
+                        end,
+                        set_timeouts = function(_, connect, send, read)
+                            ngx.say(connect, ",", send, ",", read)
+                        end,
+                        connect = function() return true end,
+                        request = function() return {headers = {}, status = 200} end,
+                    }
+                end,
+            }
+
+            package.loaded["apisix.plugins.ai-transport.http"] = nil
+            local transport = require("apisix.plugins.ai-transport.http")
+            local res, err = transport.request({
+                host = "127.0.0.1",
+                port = 80,
+                path = "/",
+                body = {},
+            }, {
+                connect_timeout = 101,
+                send_timeout = 202,
+                read_timeout = 303,
+            })
+            if not res then
+                ngx.say(err)
+            end
+
+            package.loaded["resty.http"] = orig_http
+            package.loaded["apisix.plugins.ai-transport.http"] = orig_transport
+        }
+    }
+--- response_body
+101,202,303
+
+
+
+=== TEST 9: AI transport keeps numeric timeout callers on set_timeout
+--- config
+    location /t {
+        content_by_lua_block {
+            local orig_http = package.loaded["resty.http"]
+            local orig_transport = package.loaded["apisix.plugins.ai-transport.http"]
+
+            package.loaded["resty.http"] = {
+                new = function()
+                    return {
+                        set_timeout = function(_, timeout)
+                            ngx.say(timeout)
+                        end,
+                        set_timeouts = function()
+                            error("set_timeouts must not be used for numeric callers")
+                        end,
+                        connect = function() return true end,
+                        request = function() return {headers = {}, status = 200} end,
+                    }
+                end,
+            }
+
+            package.loaded["apisix.plugins.ai-transport.http"] = nil
+            local transport = require("apisix.plugins.ai-transport.http")
+            local res, err = transport.request({
+                host = "127.0.0.1",
+                port = 80,
+                path = "/",
+                body = {},
+            }, 456)
+            if not res then
+                ngx.say(err)
+            end
+
+            package.loaded["resty.http"] = orig_http
+            package.loaded["apisix.plugins.ai-transport.http"] = orig_transport
+        }
+    }
+--- response_body
+456

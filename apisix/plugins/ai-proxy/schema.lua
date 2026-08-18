@@ -344,6 +344,21 @@ _M.ai_proxy_schema = {
             default = 30000,
             description = "timeout in milliseconds",
         },
+        connect_timeout = {
+            type = "integer",
+            minimum = 1,
+            maximum = 600000,
+        },
+        send_timeout = {
+            type = "integer",
+            minimum = 1,
+            maximum = 600000,
+        },
+        read_timeout = {
+            type = "integer",
+            minimum = 1,
+            maximum = 600000,
+        },
         max_req_body_size = {
             type = "integer",
             minimum = 1,
@@ -477,6 +492,21 @@ _M.ai_proxy_multi_schema = {
             maximum = 600000,
             default = 30000,
             description = "timeout in milliseconds",
+        },
+        connect_timeout = {
+            type = "integer",
+            minimum = 1,
+            maximum = 600000,
+        },
+        send_timeout = {
+            type = "integer",
+            minimum = 1,
+            maximum = 600000,
+        },
+        read_timeout = {
+            type = "integer",
+            minimum = 1,
+            maximum = 600000,
         },
         max_req_body_size = {
             type = "integer",
