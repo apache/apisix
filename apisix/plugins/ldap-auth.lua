@@ -31,6 +31,7 @@ local schema = {
         use_tls = { type = "boolean", default = false },
         tls_verify = { type = "boolean", default = false },
         uid = { type = "string", default = "cn" },
+        hide_credentials = { type = "boolean", default = false },
         realm = schema_def.get_realm_schema("ldap"),
     },
     required = {"base_dn","ldap_uri"},
@@ -162,7 +163,13 @@ function _M.rewrite(conf, ctx)
     end
     consumer_mod.attach_consumer(ctx, consumer, consumer_conf)
 
-    core.log.info("hit basic-auth access")
+    -- the header carries the directory password, which is usually reusable
+    -- beyond this API, so it should not reach the upstream unless asked for
+    if conf.hide_credentials then
+        core.request.set_header(ctx, "Authorization", nil)
+    end
+
+    core.log.info("hit ldap-auth access")
 end
 
 return _M
