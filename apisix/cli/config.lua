@@ -309,6 +309,9 @@ local _M = {
   },
   stream_plugins = { "ip-restriction", "limit-conn", "mqtt-proxy", "syslog", "traffic-split" },
   plugin_attr = {
+    ["ai-proxy"] = {
+      http_client = "ngx_http_ffi_client"
+    },
     ["log-rotate"] = {
       timeout = 10000,
       interval = 3600,

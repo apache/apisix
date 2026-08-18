@@ -152,6 +152,23 @@ By default, `ai-proxy-multi` forwards the incoming client request headers to the
 
 Because the LLM upstream is often a third-party service, be aware that any header the client sends (for example `Authorization`, `Cookie`, or internal application headers) is forwarded to that provider unless it is overridden by `auth.header`. If the client should not expose certain headers to the LLM provider, strip them before the request reaches `ai-proxy-multi`, for example with the [`proxy-rewrite`](./proxy-rewrite.md) plugin.
 
+## Upstream HTTP Client
+
+Requests to the LLM upstream go through `ngx_http_ffi_client`, a C HTTP client that costs around half the outbound CPU time of `lua-resty-http`. Both clients behave the same on the wire.
+
+`plugin_attr.ai-proxy.http_client` in `config.yaml` names the client:
+
+```yaml
+plugin_attr:
+  ai-proxy:
+    http_client: ngx_http_ffi_client # or lua-resty-http
+```
+
+- `ngx_http_ffi_client` (default): the C client. It requires an APISIX runtime built with the module, which the runtime pinned in `.requirements` is. On a runtime without it, the request fails and the error names the missing module; the plugin never silently switches clients.
+- `lua-resty-http`: the Lua client, on every runtime.
+
+The setting covers `ai-proxy`, `ai-proxy-multi`, and `ai-request-rewrite`, which share the same transport.
+
 ## Upstream Error Responses
 
 When the selected LLM upstream returns a `429` or `5xx` status, `ai-proxy-multi` reads the upstream error body before deciding whether to fall back:
