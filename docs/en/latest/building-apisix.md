@@ -125,14 +125,7 @@ This operation will remove the files completely.
 
 APISIX uses [etcd](https://github.com/etcd-io/etcd) to save and synchronize configuration. Before running APISIX, you need to install etcd on your machine. Installation methods based on your operating system are mentioned below.
 
-<Tabs
-  groupId="os"
-  defaultValue="linux"
-  values={[
-    {label: 'Linux', value: 'linux'},
-    {label: 'macOS', value: 'mac'},
-  ]}>
-<TabItem value="linux">
+To install etcd on Linux:
 
 ```shell
 ETCD_VERSION='3.4.18'
@@ -142,18 +135,6 @@ tar -xvf etcd-v${ETCD_VERSION}-linux-amd64.tar.gz && \
   sudo cp -a etcd etcdctl /usr/bin/
 nohup etcd >/tmp/etcd.log 2>&1 &
 ```
-
-</TabItem>
-
-<TabItem value="mac">
-
-```shell
-brew install etcd
-brew services start etcd
-```
-
-</TabItem>
-</Tabs>
 
 ## Running and managing APISIX server
 
