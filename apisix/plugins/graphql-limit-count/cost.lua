@@ -20,10 +20,12 @@
 -- Implements the `complexity` and `node_quantifier` cost strategies on the AST
 -- produced by the `graphql` rock.
 --
--- Cost decorations are keyed by `<GraphQL type>.<field>`, so matching a query
--- field against a decoration requires the upstream schema: the walker carries a
--- type cursor that descends alongside the selection tree. Without a schema no
--- decoration can match and every node falls back to its default weights.
+-- Cost decorations are keyed by a position in the schema graph -- a `<GraphQL
+-- type>`, or a `<GraphQL type>` followed by the chain of fields that reaches it
+-- -- so matching a query field against a decoration requires the upstream schema:
+-- the walker carries a type cursor that descends alongside the selection tree.
+-- Without a schema no decoration can match and every node falls back to its
+-- default weights.
 --
 local core   = require("apisix.core")
 
@@ -464,7 +466,14 @@ end
 -- @tparam table  fragments     named fragment definitions, keyed by name
 -- @tparam table  opts          decorations (an index from _M.build_index), schema
 --                              (index built by introspection.lua), variables,
---                              use_defaults
+--                              use_defaults. `variables` is the request's map and
+--                              `use_defaults` is an independent switch: it alone
+--                              gates the two defaults, so a caller that passes
+--                              only `variables` gets the supplied values and
+--                              nothing else. A quantifier resolves in the order
+--                              supplied value > the default the operation
+--                              declares for the variable > the schema's default
+--                              for the argument.
 -- @treturn number the raw cost, before the `+0.01` floor and `score_factor`
 function _M.query_cost(strategy, operations, fragments, opts)
     local index = opts.decorations or EMPTY_INDEX
@@ -491,7 +500,7 @@ function _M.query_cost(strategy, operations, fragments, opts)
         -- a single token path names a type rather than a field, so the seed can
         -- already carry a decoration: `Query` weights the whole operation
         local operation_deco = queue and matched_decoration(queue) or nil
-        state.var_defaults = variable_defaults(operation)
+        state.var_defaults = opts.use_defaults and variable_defaults(operation) or nil
 
         local operation_cost
         if strategy == "node_quantifier" then

@@ -784,7 +784,7 @@ _M.credential = {
     additionalProperties = false,
 }
 
--- A GraphQL cost decoration: the weight of one field of the upstream GraphQL
+-- A GraphQL cost decoration: the weight of one position in the upstream GraphQL
 -- schema, consumed by the graphql-limit-count plugin. Owned by a service --
 -- service_id is taken from the Admin API path, never from the request body.
 _M.graphql_cost_decoration = {
@@ -800,7 +800,9 @@ _M.graphql_cost_decoration = {
                           .. "type; <GraphQL type>.<field> weights that field "
                           .. "wherever it is selected; further field segments pin "
                           .. "the decoration to one chain of selections, as in "
-                          .. "Query.products.nodes.reviews",
+                          .. "Query.products.nodes.reviews. The root type "
+                          .. "(Query / Mutation) names the operation itself, and "
+                          .. "so weights the whole query",
         },
         -- cost(field) = ( sum of the children ) * mul + add
         add_value = {

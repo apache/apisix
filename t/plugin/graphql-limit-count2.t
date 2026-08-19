@@ -1575,6 +1575,26 @@ node_quantifier: 1 1
 
             -- a type nothing returns weights nothing
             ngx.say(raw_cost({{field_path = "Review", mul_value = 10}}))
+
+            -- under node_quantifier only a node that carries a quantifier in this
+            -- query is charged. The operation node never carries one, so a root
+            -- type rule contributes nothing; a rule on a type reached through a
+            -- quantified field still does.
+            local function nq_cost(list)
+                local ast = parse(query)
+                local operations = {}
+                for _, def in ipairs(ast.definitions) do
+                    operations[#operations + 1] = def
+                end
+
+                return cost.query_cost("node_quantifier", operations, {},
+                                       {decorations = cost.build_index(list),
+                                        schema = schema})
+            end
+
+            ngx.say(nq_cost({{field_path = "Query", mul_value = 10}}))
+            ngx.say(nq_cost({{field_path = "Query.products",
+                              mul_arguments = {"first"}}}))
         }
     }
 --- response_body
@@ -1584,6 +1604,8 @@ node_quantifier: 1 1
 7
 7
 5
+0
+1
 
 
 
@@ -1772,12 +1794,144 @@ X-Graphql-Query-Cost: 14
 
 
 
-=== TEST 49: hit - a variable the operation defaults is charged as executed
+=== TEST 49: set a service that weights a quantifier taken from the request
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            t('/apisix/admin/services/var-default-svc', ngx.HTTP_DELETE)
+
+            local code = t('/apisix/admin/services/var-default-svc',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "upstream": {
+                        "nodes": {"127.0.0.1:1980": 1},
+                        "type": "roundrobin"
+                    },
+                    "plugins": {
+                        "graphql-limit-count": {
+                            "count": 100000,
+                            "time_window": 60,
+                            "rejected_code": 429,
+                            "key": "remote_addr",
+                            "cost_strategy": "complexity"
+                        }
+                    }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                return
+            end
+
+            code = t('/apisix/admin/services/var-default-svc/graphql_cost_decorations/v1',
+                 ngx.HTTP_PUT,
+                 [[{"field_path": "Query.products", "mul_arguments": ["first"]}]])
+            if code >= 300 then
+                ngx.status = code
+                return
+            end
+
+            local body
+            code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "service_id": "var-default-svc",
+                    "uri": "/graphql"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 50: hit - the literal quantifier, as the baseline
 --- request
 POST /graphql
-{"query":"query Q($m: Int = 10) { products(first: 2) { nodes { name } } }"}
+{"query":"query { products(first: 50) { nodes { name } } }"}
 --- more_headers
 Content-Type: application/json
 --- error_code: 200
 --- response_headers
-X-Graphql-Query-Cost: 14
+X-Graphql-Query-Cost: 103
+
+
+
+=== TEST 51: hit - the same value declared as a variable default, no variables sent
+--- request
+POST /graphql
+{"query":"query Q($n: Int = 50) { products(first: $n) { nodes { name } } }"}
+--- more_headers
+Content-Type: application/json
+--- error_code: 200
+--- response_headers
+X-Graphql-Query-Cost: 103
+
+
+
+=== TEST 52: hit - a supplied value wins over the default the operation declares
+--- request
+POST /graphql
+{"query":"query Q($n: Int = 50) { products(first: $n) { nodes { name } } }","variables":{"n":2}}
+--- more_headers
+Content-Type: application/json
+--- error_code: 200
+--- response_headers
+X-Graphql-Query-Cost: 7
+
+
+
+=== TEST 53: update the service: disable resolve_variables
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/services/var-default-svc',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "upstream": {
+                        "nodes": {"127.0.0.1:1980": 1},
+                        "type": "roundrobin"
+                    },
+                    "plugins": {
+                        "graphql-limit-count": {
+                            "count": 100000,
+                            "time_window": 60,
+                            "rejected_code": 429,
+                            "key": "remote_addr",
+                            "cost_strategy": "complexity",
+                            "resolve_variables": false
+                        }
+                    }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+=== TEST 54: hit - with resolve_variables off the declared default is invisible too
+--- request
+POST /graphql
+{"query":"query Q($n: Int = 50) { products(first: $n) { nodes { name } } }"}
+--- more_headers
+Content-Type: application/json
+--- error_code: 200
+--- response_headers
+X-Graphql-Query-Cost: 5
