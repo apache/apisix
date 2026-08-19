@@ -52,22 +52,38 @@ local UNHANDLED_REDIRECT_URI_ERR = "unhandled request to the redirect_uri"
 local MAX_AUTH_FLOW_RESTARTS = 3
 
 
--- Session config is passed as-is to resty.session.start(); the only
--- translation is the legacy session.cookie.lifetime alias from the
--- lua-resty-session 3.x schema, which is mapped to absolute_timeout
--- when the latter is unset.
+-- Session config is passed to resty.session.start(). The legacy
+-- session.cookie.lifetime alias is mapped to absolute_timeout, and the Redis
+-- role marker is mapped to lua-resty-session's explicit revocation backend.
 local function build_session_opts(session_conf)
     if not session_conf then
         return nil
     end
-    if session_conf.cookie and session_conf.cookie.lifetime then
-        if not session_conf.absolute_timeout then
-            session_conf.absolute_timeout = session_conf.cookie.lifetime
+
+    -- Derive onto a copy: the plugin conf is only shallow cloned per request,
+    -- so mutating it here would persist fields that the session schema forbids.
+    local opts = core.table.clone(session_conf)
+
+    if opts.cookie and opts.cookie.lifetime then
+        if not opts.absolute_timeout then
+            opts.absolute_timeout = opts.cookie.lifetime
             core.log.warn("session.cookie.lifetime is deprecated; ",
                           "use session.absolute_timeout instead")
         end
     end
-    return session_conf
+
+    -- Revocation is only meaningful for cookie (stateless) sessions.
+    -- Server-side session storage already deletes on destroy, so never enable
+    -- a denylist when storage is redis (even if mode is set incorrectly).
+    if opts.redis then
+        local redis_mode = opts.redis.mode
+        local cookie_storage = opts.storage == nil or opts.storage == "cookie"
+        if cookie_storage and (redis_mode == "revocation" or redis_mode == nil) then
+            opts.revocation = "redis"
+        end
+    end
+
+    return opts
 end
 
 
@@ -244,6 +260,15 @@ local schema = {
                 redis = {
                     type = "object",
                     properties = {
+                        mode = {
+                            type = "string",
+                            enum = {"storage", "revocation"},
+                            description =
+                                "Whether this Redis connection stores session data "
+                                .. "or the session revocation denylist. Use "
+                                .. "\"storage\" with session.storage=redis; use "
+                                .. "\"revocation\" only with session.storage=cookie.",
+                        },
                         host = {
                             type = "string", minLength = 2, default = "127.0.0.1"
                         },
@@ -294,7 +319,15 @@ local schema = {
                             description = "keepalive timeout in milliseconds",
                         },
                     }
-                }
+                },
+                revocation_fail_mode = {
+                    type = "string",
+                    enum = {"open", "closed"},
+                    default = "open",
+                    description =
+                        "When the revocation store is unreachable: open treats the "
+                        .. "session as not revoked; closed rejects open/destroy.",
+                },
             },
             required = {"secret"},
             ["if"] = {
@@ -922,6 +955,13 @@ function _M.check_schema(conf)
     local ok, err = core.schema.check(schema, conf)
     if not ok then
         return false, err
+    end
+
+    local session = conf.session
+    if session and session.storage == "redis"
+       and session.redis and session.redis.mode == "revocation" then
+        return false,
+            "session.redis.mode cannot be \"revocation\" when session.storage is \"redis\""
     end
 
     if conf.claim_schema and not secret.is_secret_ref(conf.claim_schema) then
