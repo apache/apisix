@@ -1926,6 +1926,7 @@ GET /t
 passed
 
 
+
 === TEST 54: hit - with resolve_variables off the declared default is invisible too
 --- request
 POST /graphql
