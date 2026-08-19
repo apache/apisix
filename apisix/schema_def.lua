@@ -794,10 +794,13 @@ _M.graphql_cost_decoration = {
         service_id = id_schema,
         field_path = {
             type = "string",
-            pattern = [[^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)+$]],
-            description = "the decorated field, as <GraphQL type>.<field>; further "
-                          .. "field segments pin the decoration to one chain of "
-                          .. "selections, as in Query.products.nodes.reviews",
+            pattern = [[^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)*$]],
+            description = "the decorated position in the schema graph. A single "
+                          .. "<GraphQL type> weights every field returning that "
+                          .. "type; <GraphQL type>.<field> weights that field "
+                          .. "wherever it is selected; further field segments pin "
+                          .. "the decoration to one chain of selections, as in "
+                          .. "Query.products.nodes.reviews",
         },
         -- cost(field) = ( sum of the children ) * mul + add
         add_value = {

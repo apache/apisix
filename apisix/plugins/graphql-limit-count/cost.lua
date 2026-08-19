@@ -52,10 +52,12 @@ local function field_name(node)
 end
 
 
--- A field_path is a chain of GraphQL name tokens. `Person.name` weights the field
--- `name` wherever it is selected on a `Person`; `Query.products.nodes.reviews`
--- pins one specific chain of fields. Both live in the same trie, one node per
--- token, so matching is a walk rather than a string compare.
+-- A field_path is a chain of GraphQL name tokens naming a position in the schema
+-- graph. `Person` weights every field that returns a `Person`; `Person.name`
+-- weights the field `name` wherever it is selected on a `Person`;
+-- `Query.products.nodes.reviews` pins one specific chain of fields. All three live
+-- in the same trie, one node per token, so matching is a walk rather than a string
+-- compare.
 local function insert_path(root, deco)
     local node = root
     local depth = 0
@@ -76,8 +78,9 @@ local function insert_path(root, deco)
         node = child
     end
 
-    -- a single token names a type, not a field, and weights nothing
-    if depth < 2 then
+    -- an empty path names nothing; decorating the trie root would weight every
+    -- field in the document
+    if depth == 0 then
         return 0
     end
 
@@ -99,7 +102,10 @@ function _M.build_index(list)
             local depth = insert_path(index.root, deco)
             if depth == 2 then
                 index.flat[deco.field_path] = deco
-            elseif depth > 2 then
+            elseif depth ~= 0 then
+                -- a single token is a type level rule and a longer path is pinned
+                -- to a chain; neither can be answered by the `<type>.<field>`
+                -- lookup, so the whole index falls back to the trie walk
                 index.deep = true
             end
         end
@@ -188,26 +194,45 @@ end
 
 -- Resolves a GraphQL argument literal to a Lua value.
 -- Only scalar literals carry a `.value`; list / inputObject nodes do not and are
--- therefore reported as absent. A variable resolves only when the caller passed
--- the request's `variables` map (`resolve_variables`).
-local function literal_value(value_node, variables)
+-- therefore reported as absent. A variable resolves only under
+-- `resolve_variables`, from the request's `variables` map first and then from the
+-- default the operation declares for it.
+local function literal_value(state, value_node)
     if type(value_node) ~= "table" then
         return nil
     end
 
     if value_node.kind == "variable" then
         local name = value_node.name and value_node.name.value
-        if not name or not variables then
+        if not name then
             return nil
         end
-        return variables[name]
+
+        if state.variables then
+            local value = state.variables[name]
+            if value ~= nil then
+                return value
+            end
+        end
+
+        -- The client did not supply the variable, so the upstream executes with
+        -- the default the operation itself declares. Reading only the supplied
+        -- map would let `query Q($n: Int = 10000)` sent with no variables at all
+        -- cost the same as an absent quantifier -- the bypass `resolve_variables`
+        -- exists to close, reached through the document instead of the map.
+        if state.use_defaults then
+            local var_default = state.var_defaults and state.var_defaults[name]
+            return var_default and var_default.value
+        end
+
+        return nil
     end
 
     return value_node.value
 end
 
 
-local function argument_literal(node, name, variables)
+local function argument_literal(state, node, name)
     local args = node.arguments
     if not args then
         return nil
@@ -215,7 +240,7 @@ local function argument_literal(node, name, variables)
 
     for _, arg in ipairs(args) do
         if arg.name and arg.name.value == name then
-            return literal_value(arg.value, variables)
+            return literal_value(state, arg.value)
         end
     end
 
@@ -228,7 +253,7 @@ end
 -- must not reach the arithmetic: treating it as absent keeps the request on the
 -- fast path instead of turning a client-controlled value into a 500.
 local function resolve_argument(state, node, name, field_def)
-    local value = argument_literal(node, name, state.variables)
+    local value = argument_literal(state, node, name)
 
     -- By default a query that omits a paginating argument is free, because the
     -- schema default is not consulted; `resolve_variables` opts into reading it.
@@ -396,6 +421,28 @@ local function node_quantifier_cost(state, node, deco, field_def, sel_type, mul,
 end
 
 
+-- `$n` in `query Q($n: Int = 100)` resolves to 100 when the client sends no value
+-- for it, because that is what the upstream executes with. Built per operation,
+-- since two operations in one document declare their own variables.
+local function variable_defaults(operation)
+    local defs = operation.variableDefinitions
+    if not defs then
+        return nil
+    end
+
+    local defaults
+    for _, def in ipairs(defs) do
+        local name = def.variable and def.variable.name and def.variable.name.value
+        if name and def.defaultValue then
+            defaults = defaults or {}
+            defaults[name] = def.defaultValue
+        end
+    end
+
+    return defaults
+end
+
+
 local function root_type(schema, operation)
     if not schema then
         return nil
@@ -441,12 +488,18 @@ function _M.query_cost(strategy, operations, fragments, opts)
         -- name of its own, so nothing is advanced yet
         local queue = state.deep and sel_type
                       and advance(state.root, nil, sel_type, nil) or nil
+        -- a single token path names a type rather than a field, so the seed can
+        -- already carry a decoration: `Query` weights the whole operation
+        local operation_deco = queue and matched_decoration(queue) or nil
+        state.var_defaults = variable_defaults(operation)
+
         local operation_cost
         if strategy == "node_quantifier" then
-            operation_cost = node_quantifier_cost(state, operation, nil, nil,
-                                                  sel_type, 1, queue)
+            operation_cost = node_quantifier_cost(state, operation, operation_deco,
+                                                  nil, sel_type, 1, queue)
         else
-            operation_cost = complexity_cost(state, operation, nil, nil, sel_type, queue)
+            operation_cost = complexity_cost(state, operation, operation_deco, nil,
+                                             sel_type, queue)
         end
         cost = math_max(cost, operation_cost)
 

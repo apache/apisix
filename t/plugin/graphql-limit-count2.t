@@ -1515,3 +1515,269 @@ under a second: true
 --- response_body
 complexity: 20002 20002
 node_quantifier: 1 1
+
+
+
+=== TEST 44: cost engine - a single token field_path is a type level rule
+--- config
+    location /t {
+        content_by_lua_block {
+            local parse = require("graphql").parse
+            local cost = require("apisix.plugins.graphql-limit-count.cost")
+
+            local schema = {
+                query_type = "Query",
+                types = {
+                    Query = {fields = {products = {type = "ProductConnection"}}},
+                    ProductConnection = {fields = {nodes = {type = "Product"}}},
+                    Product = {fields = {id = {type = "ID"}, name = {type = "String"}}},
+                },
+            }
+
+            local query = [[query { products(first: 4) { nodes { id name } } }]]
+
+            local function raw_cost(list)
+                local ast = parse(query)
+                local operations = {}
+                for _, def in ipairs(ast.definitions) do
+                    operations[#operations + 1] = def
+                end
+
+                return cost.query_cost("complexity", operations, {},
+                                       {decorations = cost.build_index(list),
+                                        schema = schema})
+            end
+
+            -- undecorated: operation + products + nodes + id + name
+            ngx.say(raw_cost({}))
+
+            -- `Query` names the root type, so it weights the operation node itself:
+            -- (products = nodes(2) + 1 = 4) * 10 + 1
+            ngx.say(raw_cost({{field_path = "Query", mul_value = 10}}))
+
+            -- `Product` weights every field returning a Product, here `nodes`:
+            -- nodes = (id + name) * 10 + 1 = 21 ; products = 22 ; op = 23
+            ngx.say(raw_cost({{field_path = "Product", mul_value = 10}}))
+
+            -- a type level rule and a field level rule can name the same node; the
+            -- longer path is the more specific one and wins, so `nodes` multiplies
+            -- by 2 rather than by 10
+            ngx.say(raw_cost({
+                {field_path = "Product", mul_value = 10},
+                {field_path = "ProductConnection.nodes", mul_value = 2},
+            }))
+
+            -- and the answer does not depend on the order they are stored in
+            ngx.say(raw_cost({
+                {field_path = "ProductConnection.nodes", mul_value = 2},
+                {field_path = "Product", mul_value = 10},
+            }))
+
+            -- a type nothing returns weights nothing
+            ngx.say(raw_cost({{field_path = "Review", mul_value = 10}}))
+        }
+    }
+--- response_body
+5
+41
+23
+7
+7
+5
+
+
+
+=== TEST 45: cost engine - a variable defaulted by the operation is not free
+--- config
+    location /t {
+        content_by_lua_block {
+            local parse = require("graphql").parse
+            local cost = require("apisix.plugins.graphql-limit-count.cost")
+
+            local schema = {
+                query_type = "Query",
+                types = {
+                    Query = {fields = {products = {type = "ProductConnection"}}},
+                    ProductConnection = {fields = {nodes = {type = "Product"}}},
+                    Product = {fields = {id = {type = "ID"}}},
+                },
+            }
+            local decos = cost.build_index({
+                {field_path = "Query.products", mul_arguments = {"first"}},
+            })
+
+            local function raw_cost(query, opts)
+                local ast = parse(query)
+                local operations = {}
+                for _, def in ipairs(ast.definitions) do
+                    operations[#operations + 1] = def
+                end
+
+                opts = opts or {}
+                opts.decorations = decos
+                opts.schema = schema
+                return cost.query_cost("complexity", operations, {}, opts)
+            end
+
+            local defaulted =
+                [[query Q($n: Int = 100) { products(first: $n) { nodes { id } } }]]
+
+            -- the upstream executes this with first = 100, so it must not cost the
+            -- same as an absent quantifier: products = nodes(2) * 100 + 1 ; op = 202
+            ngx.say(raw_cost(defaulted, {use_defaults = true}))
+
+            -- a supplied value wins over the default the operation declares
+            ngx.say(raw_cost(defaulted, {use_defaults = true, variables = {n = 3}}))
+
+            -- with resolve_variables off the variable stays invisible, default or not
+            ngx.say(raw_cost(defaulted))
+
+            -- a variable with no default and no supplied value is still absent
+            ngx.say(raw_cost(
+                [[query Q($n: Int) { products(first: $n) { nodes { id } } }]],
+                {use_defaults = true}))
+        }
+    }
+--- response_body
+202
+8
+4
+4
+
+
+
+=== TEST 46: cost engine - variable defaults do not leak between operations
+--- config
+    location /t {
+        content_by_lua_block {
+            local parse = require("graphql").parse
+            local cost = require("apisix.plugins.graphql-limit-count.cost")
+
+            local schema = {
+                query_type = "Query",
+                types = {
+                    Query = {fields = {products = {type = "ProductConnection"}}},
+                    ProductConnection = {fields = {nodes = {type = "Product"}}},
+                    Product = {fields = {id = {type = "ID"}}},
+                },
+            }
+            local decos = cost.build_index({
+                {field_path = "Query.products", mul_arguments = {"first"}},
+            })
+
+            local function raw_cost(query)
+                local ast = parse(query)
+                local operations = {}
+                for _, def in ipairs(ast.definitions) do
+                    operations[#operations + 1] = def
+                end
+
+                return cost.query_cost("complexity", operations, {},
+                                       {decorations = decos, schema = schema,
+                                        use_defaults = true})
+            end
+
+            -- A declares $n = 2 and B declares none; B's `first: $n` is an
+            -- undeclared variable and must not pick A's default up
+            ngx.say(raw_cost([[
+                query A($n: Int = 2) { products(first: $n) { nodes { id } } }
+            ]]))
+            ngx.say(raw_cost([[
+                query B { products(first: $n) { nodes { id } } }
+            ]]))
+            ngx.say(raw_cost([[
+                query A($n: Int = 2) { products(first: $n) { nodes { id } } }
+                query B { products(first: $n) { nodes { id } } }
+            ]]))
+        }
+    }
+--- response_body
+6
+4
+6
+
+
+
+=== TEST 47: set a service whose decoration is a type level rule
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            -- drop the service first so a repeated run does not inherit
+            -- decorations an earlier run left on it
+            t('/apisix/admin/services/type-rule-svc', ngx.HTTP_DELETE)
+
+            local code = t('/apisix/admin/services/type-rule-svc',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "upstream": {
+                        "nodes": {"127.0.0.1:1980": 1},
+                        "type": "roundrobin"
+                    },
+                    "plugins": {
+                        "graphql-limit-count": {
+                            "count": 100000,
+                            "time_window": 60,
+                            "rejected_code": 429,
+                            "key": "remote_addr",
+                            "cost_strategy": "complexity"
+                        }
+                    }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                return
+            end
+
+            code = t('/apisix/admin/services/type-rule-svc/graphql_cost_decorations/t1',
+                 ngx.HTTP_PUT,
+                 [[{"field_path": "Product", "mul_value": 10}]])
+            if code >= 300 then
+                ngx.status = code
+                return
+            end
+
+            local body
+            code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "service_id": "type-rule-svc",
+                    "uri": "/graphql"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 48: hit - the type level rule weights every field returning a Product
+--- request
+POST /graphql
+{"query":"query { products(first: 2) { nodes { name } } }"}
+--- more_headers
+Content-Type: application/json
+--- error_code: 200
+--- response_headers
+X-Graphql-Query-Cost: 14
+
+
+
+=== TEST 49: hit - a variable the operation defaults is charged as executed
+--- request
+POST /graphql
+{"query":"query Q($m: Int = 10) { products(first: 2) { nodes { name } } }"}
+--- more_headers
+Content-Type: application/json
+--- error_code: 200
+--- response_headers
+X-Graphql-Query-Cost: 14

@@ -89,7 +89,7 @@ This Plugin shares the same schema as the [limit-count](./limit-count.md) Plugin
 | cost_strategy | string | False | depth | ["depth", "complexity", "node_quantifier"] | How the cost of a query is computed. See [Cost strategies](#cost-strategies). |
 | max_cost | number | False | 0 | >= 0 | Reject a query costing more than this with a 403, regardless of the remaining quota. `0` disables the check. |
 | score_factor | number | False | 1 | > 0 | Scales the computed cost before it is charged, so a cost model with large numbers still fits a sane quota. |
-| resolve_variables | boolean | False | true | | When true, a quantifier passed as a GraphQL variable, or defaulted by the schema, is read. Turning it off makes a variable contribute nothing, which lets a client move a fan-out value into a variable and pay less for it. |
+| resolve_variables | boolean | False | true | | When true, a quantifier passed as a GraphQL variable is read, whether the client supplies its value, the operation declares a default for it (`query Q($n: Int = 100)`), or the schema defaults the argument. Turning it off makes a variable contribute nothing, which lets a client move a fan-out value into a variable and pay less for it. |
 | introspection_endpoint | string | False | | `^https?://` | Where to fetch the upstream schema from. Derived from the Service's upstream when unset. |
 | pass_all_downstream_headers | boolean | False | false | | When true, forward the downstream request headers on the introspection request. Only the `Authorization` header is forwarded when false. |
 
@@ -106,7 +106,7 @@ They belong to the Service rather than to a Plugin instance because they describ
 
 | Name | Type | Required | Default | Valid values | Description |
 |------|------|----------|---------|--------------|-------------|
-| field_path | string | True | | | The weighted field, as `<GraphQL type>.<field>`. Further field segments pin the weight to one chain of selections, as in `Query.products.nodes.reviews`. |
+| field_path | string | True | | | The weighted position in the schema graph. A lone `<GraphQL type>` weights every field returning that type; `<GraphQL type>.<field>` weights that field wherever it is selected; further field segments pin the weight to one chain of selections, as in `Query.products.nodes.reviews`. |
 | add_value | number | False | 1 | >= 0 | The field's own cost. |
 | add_arguments | array[string] | False | | | Query arguments whose values are added to `add_value`. |
 | mul_value | number | False | 1 | >= 0 | Multiplies the cost of everything selected under the field. |
@@ -116,6 +116,14 @@ They belong to the Service rather than to a Plugin instance because they describ
 | labels | object | False | | | Attributes of the decoration, as key/value pairs. |
 
 `service_id` is taken from the path, so sending a different one in the body is rejected. A `field_path` may be decorated at most once per Service.
+
+A `field_path` is matched by walking it token by token. Every position on the path is a GraphQL type, and every segment after the first is the field that leads to the next one:
+
+- `Product` weights **every field that returns a `Product`**, wherever it is selected. The root type is the degenerate case: `Query` weights the operation itself, and so the whole query.
+- `Product.reviews` weights `reviews` wherever it is selected on a `Product`.
+- `Query.products.nodes.reviews` weights only the `reviews` reached through that exact chain, and leaves a `reviews` reached any other way alone.
+
+Where a shorter and a longer path name the same field, they are merged key by key with the longer path last, so the more specific rule wins and the answer does not depend on the order the decorations happen to be stored in.
 
 ## Cost strategies
 

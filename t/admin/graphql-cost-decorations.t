@@ -162,7 +162,7 @@ qr/"error_msg":"field_path Query.products is already decorated on this service b
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/services/shop/graphql_cost_decorations/d2',
                 ngx.HTTP_PUT,
-                [[{"field_path": "Query"}]]
+                [[{"field_path": "9Query.products"}]]
             )
 
             ngx.status = code
@@ -544,7 +544,7 @@ after valid put: 0
                 [[{"field_path": "Query.products.nodes.reviews", "add_value": 7}]])
             ngx.say("deep path: ", code)
 
-            -- a dot alone is still not a path, and neither is a single token
+            -- a dot alone is still not a path
             code = t('/apisix/admin/services/deep-svc/graphql_cost_decorations/bad1',
                 ngx.HTTP_PUT, [[{"field_path": "Query."}]])
             ngx.say("trailing dot: ", code)
@@ -564,4 +564,57 @@ service: 201
 deep path: 201
 trailing dot: 400
 empty segment: 400
+cleanup: 200
+
+
+
+=== TEST 19: accept a single token field_path as a type level rule
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            local code = t('/apisix/admin/services/type-level-svc',
+                ngx.HTTP_PUT,
+                [[{"upstream": {"nodes": {"127.0.0.1:1980": 1}, "type": "roundrobin"}}]])
+            ngx.say("service: ", code)
+
+            -- a single token names a type, so the rule applies to every field
+            -- returning it; the root type names the operation node itself
+            code = t('/apisix/admin/services/type-level-svc/graphql_cost_decorations/t1',
+                ngx.HTTP_PUT, [[{"field_path": "Product", "mul_value": 10}]])
+            ngx.say("object type: ", code)
+
+            code = t('/apisix/admin/services/type-level-svc/graphql_cost_decorations/t2',
+                ngx.HTTP_PUT, [[{"field_path": "Query", "mul_value": 2}]])
+            ngx.say("root type: ", code)
+
+            -- a type level rule and a field level rule on the same type coexist
+            code = t('/apisix/admin/services/type-level-svc/graphql_cost_decorations/t3',
+                ngx.HTTP_PUT, [[{"field_path": "Product.reviews", "add_value": 5}]])
+            ngx.say("field on the same type: ", code)
+
+            -- but a second rule on the same type is still a duplicate
+            code = t('/apisix/admin/services/type-level-svc/graphql_cost_decorations/t4',
+                ngx.HTTP_PUT, [[{"field_path": "Product", "add_value": 1}]])
+            ngx.say("duplicate type: ", code)
+
+            -- a leading digit is not a GraphQL name
+            code = t('/apisix/admin/services/type-level-svc/graphql_cost_decorations/bad',
+                ngx.HTTP_PUT, [[{"field_path": "9Product"}]])
+            ngx.say("leading digit: ", code)
+
+            code = t('/apisix/admin/services/type-level-svc', ngx.HTTP_DELETE)
+            ngx.say("cleanup: ", code)
+        }
+    }
+--- request
+GET /t
+--- response_body
+service: 201
+object type: 201
+root type: 201
+field on the same type: 201
+duplicate type: 400
+leading digit: 400
 cleanup: 200
