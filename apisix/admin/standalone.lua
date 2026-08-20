@@ -333,7 +333,10 @@ function _M.init_worker()
 
     -- due to the event module can not broadcast events between http and stream subsystems,
     -- we need to poll the shared dict to keep the config in sync
-    local last_modified_per_worker
+    -- The timestamp only has second resolution, so two updates landing in the
+    -- same second are indistinguishable by it and the later one would never
+    -- reach this worker. The digest changes with the content, so compare both.
+    local last_modified_per_worker, digest_per_worker
     timer_every(1, function ()
         if not exiting() then
             local config, err = get_config()
@@ -343,9 +346,12 @@ function _M.init_worker()
                 end
             else
                 local last_modified = config[METADATA_LAST_MODIFIED]
-                if last_modified_per_worker ~= last_modified then
+                local digest = config[METADATA_DIGEST]
+                if last_modified_per_worker ~= last_modified
+                   or digest_per_worker ~= digest then
                     update_config(config)
                     last_modified_per_worker = last_modified
+                    digest_per_worker = digest
                 end
             end
         end
