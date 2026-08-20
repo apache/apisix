@@ -475,7 +475,15 @@ Authorization: Basic Zm9vOmJhcg==
 
 
 
-=== TEST 22: set basic-auth conf: password uses secret ref
+=== TEST 22: store secret into vault
+--- exec
+VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault kv put kv/apisix/foo passwd=bar
+--- response_body
+Success! Data written to: kv/apisix/foo
+
+
+
+=== TEST 23: set basic-auth conf: password uses secret ref
 --- request
 GET /t
 --- config
@@ -542,14 +550,6 @@ GET /t
     }
 --- response_body
 passed
-
-
-
-=== TEST 23: store secret into vault
---- exec
-VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault kv put kv/apisix/foo passwd=bar
---- response_body
-Success! Data written to: kv/apisix/foo
 
 
 
