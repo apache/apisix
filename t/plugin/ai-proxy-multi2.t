@@ -282,3 +282,67 @@ X-AI-Fixture: openai/chat-basic.json
 --- error_code: 200
 --- response_body eval
 qr/"content": "1 \+ 1 = 2\."/
+
+
+
+=== TEST 9: Set up new route access the AI server via http proxy
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-proxy-multi": {
+                            "instances": [
+                                {
+                                    "name": "openai-official",
+                                    "provider": "openai",
+                                    "weight": 1,
+                                    "auth": {
+                                        "query": {
+                                            "api_key": "apikey"
+                                        }
+                                    },
+                                    "options": {
+                                        "model": "gpt-35-turbo-instruct",
+                                        "max_tokens": 512,
+                                        "temperature": 1.0
+                                    },
+                                    "override": {
+                                        "endpoint": "http://127.0.0.1:1980"
+                                    }
+                                }
+                            ],
+                            "ssl_verify": false,
+                            "proxy_opts": {
+                                "http_proxy": "http://127.0.0.1:8080",
+                                "http_proxy_authorization": "Basic dXNlcm5hbWU6cGFzc3dvcmQK"
+                            },
+                        }
+                    }
+                 }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 10: send request
+--- request
+POST /anything
+{ "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
+--- more_headers
+X-AI-Fixture: openai/chat-basic.json
+--- error_code: 200
+--- response_body eval
+qr/"content": "1 \+ 1 = 2\."/
