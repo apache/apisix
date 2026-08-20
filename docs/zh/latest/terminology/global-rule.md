@@ -33,7 +33,7 @@ description: 本文介绍了全局规则的概念以及如何启用全局规则�
 
 如果你需要一个能作用于所有请求的 Plugin，可以通过 Global Rules 启用一个全局的插件配置。
 
-全局规则相对于 Route、Service、Plugin Config、Consumer 中的插件配置，Global Rules 中的插件总是优先执行。
+自 APISIX 3.17.0 起，同一阶段内的全局规则插件会先于局部绑定的插件执行。但是，局部绑定插件的 `rewrite` 处理函数会先于全局规则插件的 `access` 处理函数执行。完整顺序以及早期版本的行为请参见[插件执行顺序](./plugin.md#插件执行顺序)。
 
 ## 使用示例
 

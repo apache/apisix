@@ -95,17 +95,16 @@ When a request goes through APISIX, the plugin's corresponding methods are execu
 
 ## Plugins execution order
 
-In general, plugins are executed in the following order:
+Starting with APISIX 3.17.0, global and locally bound plugins for a matched HTTP Route are interleaved by phase:
 
-1. Plugins in [global rules](./global-rule.md)
-   1. plugins in rewrite phase
-   2. plugins in access phase
+1. global-rule plugins in the `rewrite` phase;
+2. locally bound plugins in the `rewrite` phase;
+3. global-rule plugins in the `access` phase; and
+4. locally bound plugins in the `access` phase.
 
-2. Plugins bound to other objects
-   1. plugins in rewrite phase
-   2. plugins in access phase
+In APISIX 3.16.0 and earlier, both global-rule phases ran before the locally bound plugin phases. With the current order, a locally bound `rewrite` handler runs before every global-rule `access` handler. If a `rewrite` handler terminates the request, the `access` handlers scheduled after it do not run, but `log` handlers still run.
 
-Within each phase, you can optionally define a new priority number in the `_meta.priority` field of the plugin, which takes precedence over the default plugins priority during execution. Plugins with higher priority numbers are executed first.
+Within each of these groups, you can optionally define a new priority number in the `_meta.priority` field of the plugin, which takes precedence over the default plugin priority during execution. Plugins with higher priority numbers are executed first. A priority does not move a plugin across phase or global/local groups.
 
 For example, if you want to have `limit-count` (priority 1002) run before `ip-restriction` (priority 3000) when requests hit a route, you can do so by passing a higher priority number to `_meta.priority` field of `limit-count`:
 
