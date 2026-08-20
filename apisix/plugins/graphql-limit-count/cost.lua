@@ -33,6 +33,7 @@ local ipairs     = ipairs
 local type       = type
 local tonumber   = tonumber
 local math_max   = math.max
+local math_huge  = math.huge
 local str_gmatch = string.gmatch
 local tab_sort   = table.sort
 
@@ -254,6 +255,12 @@ end
 -- absent or not usable in arithmetic. `first: "ten"` is client-controlled, so it
 -- must not reach the arithmetic: treating it as absent keeps the request on the
 -- fast path instead of turning a client-controlled value into a 500.
+--
+-- A quantifier is a count, so it has to be finite and not negative. A negative one
+-- is not merely wrong, it is a discount: it flips the sign of everything selected
+-- under the node, and the floor of 1 then charges an arbitrarily expensive query
+-- the minimum. Anything that is not a usable count is treated as absent, which
+-- charges the query's structure without its fan-out.
 local function resolve_argument(state, node, name, field_def)
     local value = argument_literal(state, node, name)
 
@@ -264,7 +271,12 @@ local function resolve_argument(state, node, name, field_def)
         value = arg_def and arg_def.default_value
     end
 
-    return tonumber(value)
+    local number = tonumber(value)
+    if not number or number < 0 or number ~= number or number == math_huge then
+        return nil
+    end
+
+    return number
 end
 
 
@@ -315,6 +327,33 @@ local each_field
 -- interface looks `expensive` up on the interface, misses a `Product.expensive`
 -- weight and undercharges the query. Only move it when the schema actually knows
 -- the type, so an unknown condition degrades instead of losing the cursor.
+-- A fragment's typeCondition narrows the selection to a concrete type, so the
+-- candidates for its selection set are the parent's still-live pinned ones plus a
+-- fresh one seeded from that type -- exactly the shape `advance` builds for a
+-- field. Without the reseed a `<type>.<field>` rule silently stops matching inside
+-- a fragment as soon as anything else puts the index in deep mode, because the
+-- queue would still be seeded from the abstract type the parent selected.
+local function reseed_fragment(state, queue, type_name, parent_type)
+    if not state.deep or type_name == parent_type then
+        return queue
+    end
+
+    local seed = type_name and state.root.children[type_name]
+    if not seed then
+        return queue
+    end
+
+    local next_queue = {seed}
+    if queue then
+        for _, candidate in ipairs(queue) do
+            next_queue[#next_queue + 1] = candidate
+        end
+    end
+
+    return next_queue
+end
+
+
 local function fragment_type(state, node, sel_type)
     local condition = node.typeCondition
     local name = condition and condition.name and condition.name.value
@@ -366,7 +405,9 @@ function each_field(state, node, sel_type, queue, fn)
             fn(sel, deco, field_def, child_type, child_queue)
 
         elseif kind == "inlineFragment" then
-            each_field(state, sel, fragment_type(state, sel, sel_type), queue, fn)
+            local frag_type = fragment_type(state, sel, sel_type)
+            each_field(state, sel, frag_type,
+                       reseed_fragment(state, queue, frag_type, sel_type), fn)
 
         elseif kind == "fragmentSpread" then
             local name = sel.name and sel.name.value
@@ -375,7 +416,9 @@ function each_field(state, node, sel_type, queue, fn)
             -- in the same selection set is still counted twice.
             if frag and not state.visiting[name] then
                 state.visiting[name] = true
-                each_field(state, frag, fragment_type(state, frag, sel_type), queue, fn)
+                local frag_type = fragment_type(state, frag, sel_type)
+                each_field(state, frag, frag_type,
+                           reseed_fragment(state, queue, frag_type, sel_type), fn)
                 state.visiting[name] = nil
             end
         end

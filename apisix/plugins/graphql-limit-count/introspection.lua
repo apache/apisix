@@ -61,7 +61,10 @@ fragment WrappedTypeRef on __Type {
     ofType { ...TypeAttr
       ofType { ...TypeAttr
         ofType { ...TypeAttr
-          ofType { ...TypeAttr } } } }
+          ofType { ...TypeAttr
+            ofType { ...TypeAttr
+              ofType { ...TypeAttr
+                ofType { ...TypeAttr } } } } } } }
 }
 
 query {
@@ -368,10 +371,12 @@ function _M.get(conf, ctx)
     -- The derived endpoint embeds the request path, so it is not a safe cache key
     -- (a route matching many paths would grow the table without bound). The schema
     -- belongs to the upstream, and decorations only exist per service, so the
-    -- service is both the correct and the bounded key. An explicit endpoint is its
-    -- own key: it does not vary per request.
-    local cache_key = conf.introspection_endpoint
-                      or (ctx.service_id and tostring(ctx.service_id))
+    -- service is both the correct and the bounded key -- and it has to win over an
+    -- explicit endpoint, because two services may point at one URL while
+    -- configuring different introspection_headers and being answered different
+    -- schemas. The endpoint is only a fallback for a caller that has no service.
+    local cache_key = (ctx.service_id and tostring(ctx.service_id))
+                      or conf.introspection_endpoint
     if not cache_key then
         return nil, "the route is not bound to a service, set introspection_endpoint"
     end

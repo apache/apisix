@@ -2180,3 +2180,436 @@ Content-Type: application/json
 --- error_code: 200
 --- response_headers
 X-Graphql-Query-Cost: 7
+
+
+
+=== TEST 61: cost engine - a quantifier that is not a count is treated as absent
+--- config
+    location /t {
+        content_by_lua_block {
+            local parse = require("graphql").parse
+            local cost = require("apisix.plugins.graphql-limit-count.cost")
+
+            local schema = {
+                query_type = "Query",
+                types = {
+                    Query = {fields = {products = {type = "ProductConnection"}}},
+                    ProductConnection = {fields = {nodes = {type = "Product"}}},
+                    Product = {fields = {id = {type = "ID"},
+                                         reviews = {type = "ReviewConnection"}}},
+                    ReviewConnection = {fields = {nodes = {type = "Review"}}},
+                    Review = {fields = {id = {type = "ID"}}},
+                },
+            }
+            local decos = cost.build_index({
+                {field_path = "Query.products", mul_arguments = {"first"}},
+                {field_path = "Product.reviews", mul_arguments = {"first"}},
+            })
+
+            local function raw_cost(first)
+                local ast = parse("query { products(first: " .. first ..
+                                  ") { nodes { reviews(first: 1000) " ..
+                                  "{ nodes { id } } } } }")
+                local operations = {}
+                for _, def in ipairs(ast.definitions) do
+                    operations[#operations + 1] = def
+                end
+
+                return cost.query_cost("complexity", operations, {},
+                                       {decorations = decos, schema = schema})
+            end
+
+            -- the honest query, and the same one with the outer count omitted
+            ngx.say(raw_cost("1000"))
+            ngx.say(raw_cost("1"))
+
+            -- a negative count is not a discount: it would flip the sign of the
+            -- whole sub-tree and the floor of 1 would then charge the minimum for
+            -- an arbitrarily expensive query
+            ngx.say(raw_cost("-1"))
+            ngx.say(raw_cost("-1000"))
+
+            -- nor is anything else that is not a finite count
+            ngx.say(raw_cost("1e400"))
+
+            -- zero is a real count: the upstream resolves nothing under it
+            ngx.say(raw_cost("0"))
+        }
+    }
+--- response_body
+2002002
+2004
+2004
+2004
+2004
+2
+
+
+
+=== TEST 62: cost engine - a fragment keeps matching once the index goes deep
+--- config
+    location /t {
+        content_by_lua_block {
+            local parse = require("graphql").parse
+            local cost = require("apisix.plugins.graphql-limit-count.cost")
+
+            local schema = {
+                query_type = "Query",
+                types = {
+                    Query = {fields = {node = {type = "Node"}}},
+                    Node = {fields = {id = {type = "ID"}}},
+                    Product = {fields = {id = {type = "ID"},
+                                         expensive = {type = "String"}}},
+                    Unrelated = {fields = {x = {type = "ID"}}},
+                },
+            }
+
+            local function raw_cost(query, list)
+                local ast = parse(query)
+                local fragments, operations = {}, {}
+                for _, def in ipairs(ast.definitions) do
+                    if def.kind == "fragmentDefinition" then
+                        fragments[def.name.value] = def
+                    else
+                        operations[#operations + 1] = def
+                    end
+                end
+
+                return cost.query_cost("complexity", operations, fragments,
+                                       {decorations = cost.build_index(list),
+                                        schema = schema})
+            end
+
+            local inline = [[query { node { ... on Product { expensive } } }]]
+            local named = [[
+                query { node { ...pf } }
+                fragment pf on Product { expensive }
+            ]]
+
+            local weight = {field_path = "Product.expensive", add_value = 100}
+
+            -- with only <type>.<field> rules the index stays flat and the weight is
+            -- found by lookup; the deep walk has to reach the same answer, or an
+            -- unrelated rule elsewhere on the service silently drops this one
+            for _, query in ipairs({inline, named}) do
+                ngx.say(raw_cost(query, {weight}), " ",
+                        raw_cost(query, {weight,
+                                         {field_path = "Query.node.id", add_value = 9}}),
+                        " ",
+                        raw_cost(query, {weight,
+                                         {field_path = "Unrelated", add_value = 1}}))
+            end
+
+            -- and the deep path really is the one being taken: a three segment
+            -- rule reaching past the fragment still applies, so the reseed adds
+            -- the fragment's type without dropping the inherited candidates
+            ngx.say(raw_cost(
+                [[query { node { id ... on Product { expensive } } }]],
+                {weight, {field_path = "Query.node.id", add_value = 9}}))
+
+            -- a condition the schema does not know still leaves the cursor alone
+            ngx.say(raw_cost([[query { node { ... on Unknown { id } } }]],
+                             {weight, {field_path = "Unrelated", add_value = 1}}))
+        }
+    }
+--- response_body
+102 102 102
+102 102 102
+111
+3
+
+
+
+=== TEST 63: schema - introspection_headers is encrypted like any other credential
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.graphql-limit-count")
+
+            local fields = {}
+            for _, name in ipairs(plugin.schema.encrypt_fields or {}) do
+                fields[name] = true
+            end
+
+            -- the list came with limit-count's schema; the introspection
+            -- credentials are this plugin's own and have to join it
+            ngx.say("redis_password: ", fields.redis_password and "yes" or "no")
+            ngx.say("introspection_headers: ",
+                    fields.introspection_headers and "yes" or "no")
+        }
+    }
+--- response_body
+redis_password: yes
+introspection_headers: yes
+
+
+
+=== TEST 64: introspection - the query asks for enough wrapper depth to name a type
+--- config
+    location /t {
+        content_by_lua_block {
+            local introspection =
+                require("apisix.plugins.graphql-limit-count.introspection")
+
+            local function upvalue(fn, name)
+                local i = 1
+                while true do
+                    local key, value = debug.getupvalue(fn, i)
+                    if not key then
+                        return nil
+                    end
+                    if key == name then
+                        return value
+                    end
+                    i = i + 1
+                end
+            end
+
+            local fetch_and_cache = upvalue(introspection.get, "fetch_and_cache")
+            local fetch_schema = upvalue(fetch_and_cache, "fetch_schema")
+            local query = upvalue(fetch_schema, "INTROSPECTION_QUERY")
+            local build_index = upvalue(fetch_schema, "build_index")
+
+            -- The unwrapping can descend forever, but it can only descend through
+            -- links the query asked for: an upstream answers exactly as deep as it
+            -- was asked and no deeper, so a chain longer than that comes back with
+            -- no name and every decoration under the field is silently missed.
+            -- [[Product!]!]! is already five wrappers.
+            local _, links = query:gsub("ofType", "")
+            ngx.say("ofType links in the query: ", links)
+
+            local function wrap(depth)
+                local ref = {kind = "OBJECT", name = "Product"}
+                for i = 1, depth do
+                    ref = {kind = (i % 2 == 1) and "NON_NULL" or "LIST",
+                           name = nil, ofType = ref}
+                end
+                return ref
+            end
+
+            -- what an upstream truncated to the depth the query expresses looks
+            -- like: the deepest link the query did not ask for is simply absent
+            local function truncate(ref, budget)
+                if budget == 0 then
+                    return {kind = ref.kind, name = ref.name}
+                end
+                if not ref.ofType then
+                    return {kind = ref.kind, name = ref.name}
+                end
+                return {kind = ref.kind, name = ref.name,
+                        ofType = truncate(ref.ofType, budget - 1)}
+            end
+
+            local function resolved(depth)
+                local index = build_index({
+                    __schema = {
+                        queryType = {name = "Query"},
+                        types = {
+                            {kind = "OBJECT", name = "Query",
+                             fields = {{name = "grid",
+                                        type = truncate(wrap(depth), links),
+                                        args = {}}}},
+                        },
+                    },
+                })
+                return index.types.Query.fields.grid.type or "unresolved"
+            end
+
+            for _, depth in ipairs({1, 3, 5}) do
+                ngx.say(depth, " wrappers -> ", resolved(depth))
+            end
+        }
+    }
+--- response_body
+ofType links in the query: 7
+1 wrappers -> Product
+3 wrappers -> Product
+5 wrappers -> Product
+
+
+
+=== TEST 65: two services sharing one introspection endpoint keep separate schemas
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            -- Both point at the same guarded URL, but only one is given the
+            -- credentials for it. Keying the cache by the endpoint would let
+            -- whichever service warms the worker answer for the other.
+            local services = {
+                {id = "shared-a", uri = "/graphql-shared-a",
+                 token = "Bearer operator-token"},
+                {id = "shared-b", uri = "/graphql-shared-b",
+                 token = "Bearer wrong-token"},
+            }
+
+            for _, svc in ipairs(services) do
+                t('/apisix/admin/services/' .. svc.id, ngx.HTTP_DELETE)
+
+                local body = string.format([[{
+                    "upstream": {"nodes": {"127.0.0.1:1980": 1}, "type": "roundrobin"},
+                    "plugins": {
+                        "graphql-limit-count": {
+                            "count": 100000, "time_window": 60,
+                            "rejected_code": 429, "key": "remote_addr",
+                            "cost_strategy": "complexity",
+                            "introspection_endpoint": "http://127.0.0.1:1980/graphql-guarded",
+                            "introspection_headers": {"Authorization": "%s"}
+                        }
+                    }
+                }]], svc.token)
+
+                local code = t('/apisix/admin/services/' .. svc.id, ngx.HTTP_PUT, body)
+                if code >= 300 then
+                    ngx.status = code
+                    return
+                end
+
+                code = t('/apisix/admin/services/' .. svc.id ..
+                         '/graphql_cost_decorations/d', ngx.HTTP_PUT,
+                         [[{"field_path": "Query.products", "mul_arguments": ["first"]}]])
+                if code >= 300 then
+                    ngx.status = code
+                    return
+                end
+
+                code = t('/apisix/admin/routes/' .. svc.id, ngx.HTTP_PUT,
+                         string.format([[{"service_id": "%s", "uri": "%s"}]],
+                                       svc.id, svc.uri))
+                if code >= 300 then
+                    ngx.status = code
+                    return
+                end
+            end
+
+            ngx.say("passed")
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 66: one worker, both services: neither inherits the other's schema
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+
+            -- Both requests are made inside one block so they share a worker, and
+            -- therefore the schema cache. Test::Nginx starts a fresh server per
+            -- block, so two separate blocks could never observe the leak.
+            local function hit(path)
+                local httpc = http.new()
+                local res, err = httpc:request_uri("http://127.0.0.1:1984" .. path, {
+                    method = "POST",
+                    headers = {["Content-Type"] = "application/json"},
+                    body = '{"query":"query { products(first: 2) { nodes { name } } }"}',
+                })
+                if not res then
+                    return "error: " .. err
+                end
+                return res.status .. " " ..
+                       (res.headers["X-Graphql-Query-Cost"] or "no-cost-header")
+            end
+
+            -- the one holding the credentials warms the cache first
+            ngx.say("with credentials:    ", hit("/graphql-shared-a"))
+            -- the one without must still be refused, not answered from that entry
+            ngx.say("without credentials: ", hit("/graphql-shared-b"))
+            -- and the first must keep working afterwards
+            ngx.say("with credentials:    ", hit("/graphql-shared-a"))
+        }
+    }
+--- request
+GET /t
+--- response_body
+with credentials:    200 7
+without credentials: 400 no-cost-header
+with credentials:    200 7
+--- error_log
+unexpected status 401
+
+
+
+=== TEST 67: a decoration id colliding with a service id does not answer for it
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local http = require("resty.http")
+
+            -- The services watcher carries the decorations too, and the health
+            -- check lookup only compares ids, so a decoration named after a
+            -- service could answer for it and report no checker. It cannot: the
+            -- runtime id of a decoration is its whole sub path
+            -- (`<service>/graphql_cost_decorations/<id>`), which no service id can
+            -- be, since those admit no slash. This pins that -- the owner is named
+            -- so the decoration is reached first if it ever could match.
+            for _, id in ipairs({"aaa-owner", "hc-svc"}) do
+                t('/apisix/admin/services/' .. id, ngx.HTTP_DELETE)
+            end
+
+            local code = t('/apisix/admin/services/aaa-owner', ngx.HTTP_PUT,
+                [[{"upstream": {"nodes": {"127.0.0.1:1980": 1}, "type": "roundrobin"}}]])
+            ngx.say("owner: ", code)
+
+            code = t('/apisix/admin/services/aaa-owner/graphql_cost_decorations/hc-svc',
+                     ngx.HTTP_PUT, [[{"field_path": "Query.products"}]])
+            ngx.say("colliding decoration: ", code)
+
+            code = t('/apisix/admin/services/hc-svc', ngx.HTTP_PUT, [[{
+                "upstream": {
+                    "nodes": {"127.0.0.1:1980": 1},
+                    "type": "roundrobin",
+                    "checks": {
+                        "active": {
+                            "http_path": "/status",
+                            "healthy": {"interval": 1, "successes": 1},
+                            "unhealthy": {"interval": 1, "http_failures": 1}
+                        }
+                    }
+                }
+            }]])
+            ngx.say("service with a checker: ", code)
+
+            code = t('/apisix/admin/routes/hc-route', ngx.HTTP_PUT,
+                     [[{"service_id": "hc-svc", "uri": "/hc-probe"}]])
+            ngx.say("route: ", code)
+
+            -- the checker is created lazily on the first request through it
+            local httpc = http.new()
+            httpc:request_uri("http://127.0.0.1:1984/hc-probe")
+
+            local res
+            for _ = 1, 10 do
+                httpc = http.new()
+                res = httpc:request_uri(
+                    "http://127.0.0.1:1984/v1/healthcheck/services/hc-svc")
+                if res and res.status == 200 then
+                    break
+                end
+                ngx.sleep(0.1)
+            end
+
+            ngx.say("healthcheck: ", res and res.status,
+                    " ", res and res.body and res.body:find("hc%-svc") and "names the service"
+                        or (res and res.body or ""))
+
+            for _, id in ipairs({"aaa-owner", "hc-svc"}) do
+                t('/apisix/admin/routes/hc-route', ngx.HTTP_DELETE)
+                t('/apisix/admin/services/' .. id, ngx.HTTP_DELETE)
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+owner: 201
+colliding decoration: 201
+service with a checker: 201
+route: 201
+healthcheck: 200 names the service

@@ -88,6 +88,11 @@ schema.properties.introspection_headers = {
                   "upstream whose introspection needs credentials",
 }
 
+-- limit-count's own list came along with the schema deepcopy; the introspection
+-- credentials are this plugin's own and have to be added to it, or they sit in
+-- etcd as plaintext while data encryption is on.
+core.table.insert(schema.encrypt_fields, "introspection_headers")
+
 local _M = {
     version = 0.1,
     priority = 1004,
@@ -386,9 +391,13 @@ function _M.access(conf, ctx)
                                   .. "upstream graphql schema"}
     end
 
-    -- The +0.01 floor makes a query whose nodes are all undecorated still cost 1.
-    -- "depth" is never 0 and has always charged exactly the depth, so it is left
-    -- alone: with the default score_factor of 1 the cost is unchanged.
+    -- A deliberate epsilon, not a floor: `max(..., 1)` already guarantees the
+    -- minimum charge, so what this does is round every cost strictly up -- a raw
+    -- 51 is charged 52. It is part of the cost model's definition rather than an
+    -- artefact, and the published cost of every documented example includes it, so
+    -- it cannot be dropped without restating them all. "depth" is never 0 and has
+    -- always charged exactly the depth, so it is left alone: with the default
+    -- score_factor of 1 the cost is unchanged.
     if conf.cost_strategy ~= "depth" then
         raw_cost = raw_cost + 0.01
     end

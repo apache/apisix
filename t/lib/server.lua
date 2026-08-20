@@ -1388,6 +1388,10 @@ end
 
 _M.graphql_alt = _M.graphql
 _M.graphql_plain = _M.graphql
+-- two routes proxying to one upstream, to assert that two services which
+-- share an introspection endpoint do not share its cached schema
+_M.graphql_shared_a = _M.graphql
+_M.graphql_shared_b = _M.graphql
 
 
 -- An upstream that requires credentials to introspect. The plugin must send the

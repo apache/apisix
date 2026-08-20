@@ -91,7 +91,7 @@ This Plugin shares the same schema as the [limit-count](./limit-count.md) Plugin
 | score_factor | number | False | 1 | > 0 | Scales the computed cost before it is charged, so a cost model with large numbers still fits a sane quota. |
 | resolve_variables | boolean | False | true | | When true, a quantifier passed as a GraphQL variable is read, whether the client supplies its value, the operation declares a default for it (`query Q($n: Int = 100)`), or the schema defaults the argument. Turning it off makes a variable contribute nothing, which lets a client move a fan-out value into a variable and pay less for it. |
 | introspection_endpoint | string | False | | `^https?://` | Where to fetch the upstream schema from. Derived from the Service's upstream when unset. |
-| introspection_headers | object | False | | | Headers sent on the schema introspection request, for an upstream whose introspection needs credentials. Nothing is taken from the client request: the schema is cached per Service, so an introspection that varied by caller would let whichever request warms a worker choose the schema every later request is costed against, and would let one caller's rejected credentials cache a failure that answers 400 to everyone else. |
+| introspection_headers | object | False | | | Headers sent on the schema introspection request, for an upstream whose introspection needs credentials. Nothing is taken from the client request: the schema is cached per Service, so an introspection that varied by caller would let whichever request warms a worker choose the schema every later request is costed against, and would let one caller's rejected credentials cache a failure that answers 400 to everyone else. Encrypted at rest with the other credential fields. |
 
 ## GraphQL cost decorations
 
@@ -140,7 +140,7 @@ The two strategies differ in what they charge for:
 - `complexity` charges every node in the query, so the weights compound down the tree.
 - `node_quantifier` charges only the fields that actually carry one of their `mul_arguments` in the query, multiplied by how many times the field is resolved. This tracks the number of upstream records a query touches rather than the size of the document.
 
-A field with no decoration weighs 1 and multiplies by 1, so a query against a Service with no decorations is charged its node count. A Route that is not bound to a Service has nowhere to hang decorations, so the cost degenerates to the node count there as well.
+Under `complexity`, a field with no decoration weighs 1 and multiplies by 1, so a query against a Service with no decorations is charged its node count. A Route that is not bound to a Service has nowhere to hang decorations, so the cost degenerates to the node count there as well. Under `node_quantifier` only a node that carries a quantifier argument is charged at all, so the same query costs the 1 that every charge is floored at.
 
 The response carries the computed cost in `X-Graphql-Query-Cost` when `show_limit_quota_header` is true.
 
