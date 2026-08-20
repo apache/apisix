@@ -1390,6 +1390,31 @@ _M.graphql_alt = _M.graphql
 _M.graphql_plain = _M.graphql
 
 
+-- An upstream that requires credentials to introspect. The plugin must send the
+-- operator's configured credentials and nothing taken from the caller: a schema
+-- cached per service cannot be fetched with per-caller identity.
+function _M.graphql_guarded()
+    ngx.req.read_body()
+    local body = ngx.req.get_body_data() or ""
+
+    if string.find(body, "__schema", 1, true) then
+        if ngx.var.http_authorization ~= "Bearer operator-token" then
+            ngx.status = 401
+            ngx.header["Content-Type"] = "application/json"
+            ngx.print('{"errors":[{"message":"introspection requires credentials"}]}')
+            return
+        end
+
+        ngx.header["Content-Type"] = "application/json"
+        ngx.print(gql_introspection_response)
+        return
+    end
+
+    ngx.header["Content-Type"] = "application/json"
+    ngx.print('{"data":{"ok":true}}')
+end
+
+
 -- An upstream whose introspection endpoint is unusable, to assert the 400 path.
 function _M.graphql_broken()
     ngx.req.read_body()

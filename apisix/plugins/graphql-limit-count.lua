@@ -76,7 +76,17 @@ schema.properties.introspection_endpoint = {
     description = "explicit schema introspection endpoint, derived from the " ..
                   "upstream when unset",
 }
-schema.properties.pass_all_downstream_headers = {type = "boolean", default = false}
+schema.properties.introspection_headers = {
+    type = "object",
+    patternProperties = {["^[^:]+$"] = {type = "string"}},
+    -- Deliberately not taken from the request. The schema is cached per service,
+    -- so an introspection whose result depends on the caller would let whichever
+    -- request warms a worker pick the schema every later request is costed
+    -- against, and would let one caller's bad credentials cache a failure that
+    -- rejects everyone else. Credentials for it belong to the operator.
+    description = "headers sent on the schema introspection request, for an " ..
+                  "upstream whose introspection needs credentials",
+}
 
 local _M = {
     version = 0.1,
@@ -118,14 +128,15 @@ function _M.check_schema(conf, schema_type)
 end
 
 
-local GRAPHQL_REQ_QUERY          = "query"
-local GRAPHQL_REQ_VARIABLES      = "variables"
-local GRAPHQL_REQ_OPERATION_NAME = "operationName"
-local GRAPHQL_REQ_MIME_JSON      = "application/json"
-local GRAPHQL_REQ_MIME_GQL       = "application/graphql"
+local GRAPHQL_REQ_QUERY              = "query"
+local GRAPHQL_REQ_VARIABLES          = "variables"
+local GRAPHQL_REQ_OPERATION_NAME     = "operationName"
+local GRAPHQL_REQ_MIME_JSON          = "application/json"
+local GRAPHQL_REQ_MIME_GRAPHQL       = "application/graphql"
 
 
 local fetch_graphql_body = {
+    -- TODO: support get method
     ["POST"] = function(ctx, max_size)
         local body, err = core.request.get_body(max_size, ctx)
         if not body then
@@ -138,6 +149,7 @@ local fetch_graphql_body = {
 
 
 local check_graphql_request = {
+    -- TODO: support get method
     ["POST"] = function(ctx, body)
         local content_type = core.request.header(ctx, "Content-Type") or ""
 
@@ -165,7 +177,7 @@ local check_graphql_request = {
             return true, res[GRAPHQL_REQ_QUERY], variables, operation_name
         end
 
-        if core.string.has_prefix(content_type, GRAPHQL_REQ_MIME_GQL) then
+        if core.string.has_prefix(content_type, GRAPHQL_REQ_MIME_GRAPHQL) then
             return true, body
         end
 

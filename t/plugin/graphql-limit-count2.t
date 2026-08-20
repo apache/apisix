@@ -1988,3 +1988,195 @@ X-Graphql-Query-Cost: 5
 --- response_body
 primed: 1 1
 after destroy: 0 0
+
+
+
+=== TEST 56: introspection - the request contributes no headers, the config does
+--- config
+    location /t {
+        content_by_lua_block {
+            local introspection =
+                require("apisix.plugins.graphql-limit-count.introspection")
+
+            local function upvalue(fn, name)
+                local i = 1
+                while true do
+                    local key, value = debug.getupvalue(fn, i)
+                    if not key then
+                        return nil
+                    end
+                    if key == name then
+                        return value
+                    end
+                    i = i + 1
+                end
+            end
+
+            -- reached through the shipped module rather than copied, so this
+            -- asserts what the introspection request actually sends
+            local fetch_and_cache = upvalue(introspection.get, "fetch_and_cache")
+            local fetch_schema = upvalue(fetch_and_cache, "fetch_schema")
+            local build_headers = upvalue(fetch_schema, "build_headers")
+
+            local function show(headers)
+                local names = {}
+                for name in pairs(headers) do
+                    names[#names + 1] = name
+                end
+                table.sort(names)
+                local out = {}
+                for _, name in ipairs(names) do
+                    out[#out + 1] = name .. "=" .. headers[name]
+                end
+                return table.concat(out, " ")
+            end
+
+            -- the caller sends credentials; none of them may reach the
+            -- introspection request, because its result is cached per service and
+            -- shared with every other caller
+            ngx.req.set_header("Authorization", "Bearer caller-token")
+            ngx.req.set_header("Cookie", "session=caller")
+
+            ngx.say(show(build_headers({}, nil)))
+            ngx.say(show(build_headers({}, "shop.example.com")))
+            ngx.say(show(build_headers(
+                {introspection_headers = {Authorization = "Bearer operator-token"}},
+                "shop.example.com")))
+
+            -- applied last, so the operator can override what the plugin sets
+            ngx.say(show(build_headers(
+                {introspection_headers = {["Content-Type"] = "application/graphql"}},
+                nil)))
+        }
+    }
+--- response_body
+Content-Type=application/json
+Content-Type=application/json Host=shop.example.com
+Authorization=Bearer operator-token Content-Type=application/json Host=shop.example.com
+Content-Type=application/graphql
+
+
+
+=== TEST 57: set a service whose upstream needs credentials to introspect
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            t('/apisix/admin/services/guarded-svc', ngx.HTTP_DELETE)
+
+            local code = t('/apisix/admin/services/guarded-svc',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "upstream": {
+                        "nodes": {"127.0.0.1:1980": 1},
+                        "type": "roundrobin"
+                    },
+                    "plugins": {
+                        "graphql-limit-count": {
+                            "count": 100000,
+                            "time_window": 60,
+                            "rejected_code": 429,
+                            "key": "remote_addr",
+                            "cost_strategy": "complexity"
+                        }
+                    }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                return
+            end
+
+            code = t('/apisix/admin/services/guarded-svc/graphql_cost_decorations/g1',
+                 ngx.HTTP_PUT,
+                 [[{"field_path": "Query.products", "mul_arguments": ["first"]}]])
+            if code >= 300 then
+                ngx.status = code
+                return
+            end
+
+            local body
+            code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "service_id": "guarded-svc",
+                    "uri": "/graphql-guarded"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 58: hit - the caller's own credentials do not introspect for it
+--- request
+POST /graphql-guarded
+{"query":"query { products(first: 2) { nodes { name } } }"}
+--- more_headers
+Content-Type: application/json
+Authorization: Bearer operator-token
+--- error_code: 400
+--- response_body_like
+.*failed to introspect the upstream graphql schema.*
+--- error_log
+unexpected status 401
+
+
+
+=== TEST 59: set the operator's introspection credentials on the service
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/services/guarded-svc',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "upstream": {
+                        "nodes": {"127.0.0.1:1980": 1},
+                        "type": "roundrobin"
+                    },
+                    "plugins": {
+                        "graphql-limit-count": {
+                            "count": 100000,
+                            "time_window": 60,
+                            "rejected_code": 429,
+                            "key": "remote_addr",
+                            "cost_strategy": "complexity",
+                            "introspection_headers": {
+                                "Authorization": "Bearer operator-token"
+                            }
+                        }
+                    }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 60: hit - with the operator's credentials the schema is introspected
+--- request
+POST /graphql-guarded
+{"query":"query { products(first: 2) { nodes { name } } }"}
+--- more_headers
+Content-Type: application/json
+--- error_code: 200
+--- response_headers
+X-Graphql-Query-Cost: 7

@@ -80,17 +80,6 @@ query {
 }
 ]]
 
--- Headers that describe the downstream request body or connection and must not be
--- copied onto the introspection request when pass_all_downstream_headers is on.
-local SKIPPED_DOWNSTREAM_HEADERS = {
-    ["host"]              = true,
-    ["content-length"]    = true,
-    ["content-type"]      = true,
-    ["transfer-encoding"] = true,
-    ["connection"]        = true,
-    ["expect"]            = true,
-}
-
 -- Per-worker, keyed by the owning service (or by the explicit endpoint when one
 -- is configured). Never invalidated: an upstream schema change only takes effect
 -- after a reload. Keying on the service rather than on the derived endpoint is
@@ -264,7 +253,13 @@ local function resolve_endpoint(conf, ctx)
 end
 
 
-local function build_headers(conf, ctx, host)
+-- Nothing here comes from the request. The schema is cached per service, so an
+-- introspection that varied with the caller would mean the request which happens
+-- to warm a worker picks the schema every later request on it is costed against,
+-- and one caller's rejected credentials would cache a failure that answers 400 to
+-- everyone else for as long as it lives. Introspection is the operator's call to
+-- the upstream, made with the operator's credentials.
+local function build_headers(conf, host)
     local headers = {["Content-Type"] = "application/json"}
 
     -- request_uri would otherwise send the node address as the Host, which breaks
@@ -273,24 +268,17 @@ local function build_headers(conf, ctx, host)
         headers["Host"] = host
     end
 
-    if conf.pass_all_downstream_headers then
-        for name, value in pairs(core.request.headers(ctx)) do
-            if not SKIPPED_DOWNSTREAM_HEADERS[name:lower()] then
-                headers[name] = value
-            end
-        end
-    else
-        local authorization = core.request.header(ctx, "Authorization")
-        if authorization then
-            headers["Authorization"] = authorization
-        end
+    -- applied last, so an operator who needs a different Host or Content-Type on
+    -- the introspection request can say so
+    for name, value in pairs(conf.introspection_headers or {}) do
+        headers[name] = value
     end
 
     return headers
 end
 
 
-local function fetch_schema(conf, ctx, endpoint, host)
+local function fetch_schema(conf, endpoint, host)
     local httpc, err = http.new()
     if not httpc then
         return nil, "failed to create http client: " .. err
@@ -306,7 +294,7 @@ local function fetch_schema(conf, ctx, endpoint, host)
     res, err = httpc:request_uri(endpoint, {
         method  = "POST",
         body    = core.json.encode({query = INTROSPECTION_QUERY}),
-        headers = build_headers(conf, ctx, host),
+        headers = build_headers(conf, host),
         -- The introspection target is the upstream this route already proxies to,
         -- whose certificate the proxy path does not verify either.
         ssl_verify = false,
@@ -335,12 +323,12 @@ local function fetch_schema(conf, ctx, endpoint, host)
 end
 
 
-local function fetch_and_cache(conf, ctx, cache_key, endpoint, host)
+local function fetch_and_cache(conf, cache_key, endpoint, host)
     local lock, err = resty_lock:new(LOCK_SHDICT_NAME)
     if not lock then
         core.log.warn("failed to create the introspection lock: ", err,
                       ", fetching the schema without single-flight protection")
-        return fetch_schema(conf, ctx, endpoint, host)
+        return fetch_schema(conf, endpoint, host)
     end
 
     local elapsed
@@ -348,7 +336,7 @@ local function fetch_and_cache(conf, ctx, cache_key, endpoint, host)
     if not elapsed then
         core.log.warn("failed to acquire the introspection lock: ", err,
                       ", fetching the schema without single-flight protection")
-        return fetch_schema(conf, ctx, endpoint, host)
+        return fetch_schema(conf, endpoint, host)
     end
 
     -- another request may have populated the cache while this one waited
@@ -358,7 +346,7 @@ local function fetch_and_cache(conf, ctx, cache_key, endpoint, host)
         return cached
     end
 
-    local schema, ferr = fetch_schema(conf, ctx, endpoint, host)
+    local schema, ferr = fetch_schema(conf, endpoint, host)
     if schema then
         schema_cache[cache_key] = schema
         failure_cache[cache_key] = nil
@@ -406,7 +394,7 @@ function _M.get(conf, ctx)
         return nil, err
     end
 
-    return fetch_and_cache(conf, ctx, cache_key, endpoint, host)
+    return fetch_and_cache(conf, cache_key, endpoint, host)
 end
 
 

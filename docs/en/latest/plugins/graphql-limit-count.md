@@ -91,7 +91,7 @@ This Plugin shares the same schema as the [limit-count](./limit-count.md) Plugin
 | score_factor | number | False | 1 | > 0 | Scales the computed cost before it is charged, so a cost model with large numbers still fits a sane quota. |
 | resolve_variables | boolean | False | true | | When true, a quantifier passed as a GraphQL variable is read, whether the client supplies its value, the operation declares a default for it (`query Q($n: Int = 100)`), or the schema defaults the argument. Turning it off makes a variable contribute nothing, which lets a client move a fan-out value into a variable and pay less for it. |
 | introspection_endpoint | string | False | | `^https?://` | Where to fetch the upstream schema from. Derived from the Service's upstream when unset. |
-| pass_all_downstream_headers | boolean | False | false | | When true, forward the downstream request headers on the introspection request. Only the `Authorization` header is forwarded when false. |
+| introspection_headers | object | False | | | Headers sent on the schema introspection request, for an upstream whose introspection needs credentials. Nothing is taken from the client request: the schema is cached per Service, so an introspection that varied by caller would let whichever request warms a worker choose the schema every later request is costed against, and would let one caller's rejected credentials cache a failure that answers 400 to everyone else. |
 
 ## GraphQL cost decorations
 
