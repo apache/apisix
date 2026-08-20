@@ -1938,6 +1938,7 @@ Content-Type: application/json
 X-Graphql-Query-Cost: 5
 
 
+
 === TEST 55: cost engine - destroy drops the per-worker schema cache
 --- config
     location /t {
