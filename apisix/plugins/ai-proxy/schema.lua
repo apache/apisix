@@ -176,7 +176,10 @@ local ai_instance_schema = {
                 type = "string",
                 minLength = 1,
                 maxLength = 100,
-                description = "Name of the AI service instance.",
+                description = "Name of the AI service instance. Must be "
+                    .. "unique within `instances`: it identifies the instance "
+                    .. "in the balancer, in its health checker and in other "
+                    .. "plugins that reference it, such as ai-rate-limiting.",
             },
             provider = {
                 type = "string",
