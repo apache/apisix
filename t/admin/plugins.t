@@ -157,6 +157,7 @@ clickhouse-logger
 tencent-cloud-cls
 inspect
 example-plugin
+query-gateway
 aws-lambda
 azure-functions
 openwhisk
