@@ -1936,3 +1936,54 @@ Content-Type: application/json
 --- error_code: 200
 --- response_headers
 X-Graphql-Query-Cost: 5
+
+
+=== TEST 55: cost engine - destroy drops the per-worker schema cache
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.graphql-limit-count")
+            local introspection = require("apisix.plugins.graphql-limit-count.introspection")
+
+            -- reach the file-local caches through the upvalue chain rather than
+            -- copying them, so this asserts the shipped state and not a replica
+            local function upvalue(fn, name)
+                local i = 1
+                while true do
+                    local key, value = debug.getupvalue(fn, i)
+                    if not key then
+                        return nil
+                    end
+                    if key == name then
+                        return value
+                    end
+                    i = i + 1
+                end
+            end
+
+            local function count(t)
+                local n = 0
+                for _ in pairs(t or {}) do
+                    n = n + 1
+                end
+                return n
+            end
+
+            -- prime both caches the way a served request and a failed
+            -- introspection leave them
+            local schema_cache = upvalue(introspection.flush, "schema_cache")
+            local failure_cache = upvalue(introspection.flush, "failure_cache")
+            schema_cache["svc#1"] = {query_type = "Query", types = {}}
+            failure_cache["svc#2"] = {err = "boom", expire_at = ngx.now() + 10}
+            ngx.say("primed: ", count(schema_cache), " ", count(failure_cache))
+
+            -- a plugin reload calls destroy() on the outgoing instance
+            -- (apisix/plugin.lua), which must not leave a stale schema behind
+            plugin.destroy()
+            ngx.say("after destroy: ", count(upvalue(introspection.flush, "schema_cache")),
+                    " ", count(upvalue(introspection.flush, "failure_cache")))
+        }
+    }
+--- response_body
+primed: 1 1
+after destroy: 0 0
