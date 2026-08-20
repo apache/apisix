@@ -934,7 +934,8 @@ local function retry_on_error(ctx, conf, code, body)
     ctx.server_picker.after_balance(ctx, true)
     if (code == 429 and fallback_strategy_has(conf.fallback_strategy, "http_429")) or
        (code >= 500 and code < 600 and
-       fallback_strategy_has(conf.fallback_strategy, "http_5xx")) then
+       fallback_strategy_has(conf.fallback_strategy, "http_5xx")) or
+       base.is_fallback_http_status(conf, code) then
         -- Slow-failure guard: only retry when the failed attempt finished within
         -- retry_on_failure_within_ms. A slow failure (e.g. a 5xx returned after
         -- minutes) is given back to the client directly, so fallback never doubles

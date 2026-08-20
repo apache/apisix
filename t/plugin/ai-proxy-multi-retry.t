@@ -64,6 +64,32 @@ _EOC_
               }
             }
         }
+        # Instances whose API key is rejected or out of quota. Neither status
+        # takes the 429/5xx error path, so they exercise fallback_http_statuses.
+        server {
+            server_name unauthorized_instance;
+            default_type 'application/json';
+            listen 6735;
+            location / {
+              content_by_lua_block {
+                ngx.status = 401
+                ngx.say([[{ "error": {"message":"invalid api key"}}]])
+                return
+              }
+            }
+        }
+        server {
+            server_name payment_required_instance;
+            default_type 'application/json';
+            listen 6736;
+            location / {
+              content_by_lua_block {
+                ngx.status = 402
+                ngx.say([[{ "error": {"message":"insufficient balance"}}]])
+                return
+              }
+            }
+        }
         server {
             server_name success_instance;
             default_type 'application/json';
@@ -307,3 +333,170 @@ model=upstream-model-B
 no temperature leak
 --- error_log
 FALLBACKVARS request_llm_model=client-model llm_model=upstream-model-B
+
+
+
+=== TEST 9: fallback_http_statuses makes 401 and 402 fall back to another instance
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-proxy-multi": {
+                            "fallback_http_statuses": [401, 402],
+                            "instances": [
+                                {"name":"expired-key","provider":"openai-compatible","weight":1,"priority":20,"auth":{"header":{"Authorization":"Bearer token"}},"options":{"model":"gpt-4"},"override":{"endpoint":"http://127.0.0.1:6735"}},
+                                {"name":"drained-key","provider":"openai-compatible","weight":1,"priority":10,"auth":{"header":{"Authorization":"Bearer token"}},"options":{"model":"gpt-4"},"override":{"endpoint":"http://127.0.0.1:6736"}},
+                                {"name":"good-key","provider":"openai-compatible","weight":1,"priority":0,"auth":{"header":{"Authorization":"Bearer token"}},"options":{"model":"gpt-4"},"override":{"endpoint":"http://127.0.0.1:6733"}}
+                            ],
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 10: the request is served by the instance with a working key
+--- request
+POST /anything
+{ "messages": [ { "role": "user", "content": "What is 1+1?"} ] }
+--- response_body chomp
+success
+--- error_code: 200
+--- error_log
+returned status 401, falling back to
+returned status 402, falling back to
+
+
+
+=== TEST 11: max_retries also bounds the fallback_http_statuses retries
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-proxy-multi": {
+                            "fallback_http_statuses": [401, 402],
+                            "max_retries": 0,
+                            "instances": [
+                                {"name":"expired-key","provider":"openai-compatible","weight":1,"priority":20,"auth":{"header":{"Authorization":"Bearer token"}},"options":{"model":"gpt-4"},"override":{"endpoint":"http://127.0.0.1:6735"}},
+                                {"name":"good-key","provider":"openai-compatible","weight":1,"priority":0,"auth":{"header":{"Authorization":"Bearer token"}},"options":{"model":"gpt-4"},"override":{"endpoint":"http://127.0.0.1:6733"}}
+                            ],
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 12: the upstream status and error body reach the client once retries are capped
+--- request
+POST /anything
+{ "messages": [ { "role": "user", "content": "What is 1+1?"} ] }
+--- error_code: 401
+--- response_body eval
+qr/invalid api key/
+--- error_log
+reached max_retries 0
+
+
+
+=== TEST 13: without fallback_http_statuses a 401 is still returned as is
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-proxy-multi": {
+                            "fallback_strategy": ["http_429", "http_5xx"],
+                            "instances": [
+                                {"name":"expired-key","provider":"openai-compatible","weight":1,"priority":20,"auth":{"header":{"Authorization":"Bearer token"}},"options":{"model":"gpt-4"},"override":{"endpoint":"http://127.0.0.1:6735"}},
+                                {"name":"good-key","provider":"openai-compatible","weight":1,"priority":0,"auth":{"header":{"Authorization":"Bearer token"}},"options":{"model":"gpt-4"},"override":{"endpoint":"http://127.0.0.1:6733"}}
+                            ],
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 14: the 401 is not retried and reaches the client
+--- request
+POST /anything
+{ "messages": [ { "role": "user", "content": "What is 1+1?"} ] }
+--- error_code: 401
+--- response_body eval
+qr/invalid api key/
+--- no_error_log
+falling back to
+
+
+
+=== TEST 15: fallback_http_statuses only accepts error statuses
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-proxy-multi": {
+                            "fallback_http_statuses": [200],
+                            "instances": [
+                                {"name":"good-key","provider":"openai-compatible","weight":1,"auth":{"header":{"Authorization":"Bearer token"}},"options":{"model":"gpt-4"},"override":{"endpoint":"http://127.0.0.1:6733"}}
+                            ],
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- error_code: 400
+--- response_body eval
+qr/expected 200 to be at least 400/
