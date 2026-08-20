@@ -30,7 +30,7 @@ description: This article describes how to use global rules.
 
 A [Plugin](./plugin.md) configuration can be bound directly to a [Route](./route.md), a [Service](./service.md) or a [Consumer](./consumer.md). But what if we want a Plugin to work on all requests? This is where we register a global Plugin with Global Rule.
 
-Starting with APISIX 3.17.0, a global-rule plugin runs before a locally bound plugin in the same phase. However, locally bound `rewrite` handlers run before global-rule `access` handlers. See [Plugins execution order](./plugin.md#plugins-execution-order) for the complete order and the behavior in earlier versions.
+A global-rule plugin runs before a locally bound plugin in the same phase. However, locally bound `rewrite` handlers run before global-rule `access` handlers. See [Plugins execution order](./plugin.md#plugins-execution-order) for the complete order.
 
 ## Example
 
