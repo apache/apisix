@@ -708,3 +708,56 @@ Authorization: bASiC Zm9vOmJhcg==
 hello world
 --- error_log
 find consumer foo
+
+
+
+=== TEST 31: extra colon suffix after a colon-less password is rejected
+--- request
+GET /hello
+--- more_headers
+Authorization: Basic Zm9vOmJhcjpleHRyYQ==
+--- error_code: 401
+--- response_body
+{"message":"Invalid user authorization"}
+
+
+
+=== TEST 32: add consumer with colon in password
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "johndoe-colon",
+                    "plugins": {
+                        "basic-auth": {
+                            "username": "johndoe-colon",
+                            "password": "john:key"
+                        }
+                    }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 33: verify password containing colon
+--- request
+GET /hello
+--- more_headers
+Authorization: Basic am9obmRvZS1jb2xvbjpqb2huOmtleQ==
+--- response_body
+hello world
+--- error_log
+find consumer johndoe-colon
