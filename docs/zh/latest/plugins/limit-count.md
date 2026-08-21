@@ -51,7 +51,7 @@ import TabItem from '@theme/TabItem';
 | count | integer 或 string | 否 | | > 0 | 给定时间间隔内允许的最大请求数。如果未配置 `rules`，则此项必填。支持从 APISIX 3.16.0 起使用 [lua-resty-expr](https://github.com/api7/lua-resty-expr)。 |
 | time_window | integer 或 string | 否 | | > 0 | 速率限制 `count` 对应的时间间隔（以秒为单位）。如果未配置 `rules`，则此项必填。支持从 APISIX 3.16.0 起使用 [lua-resty-expr](https://github.com/api7/lua-resty-expr)。 |
 | window_type | string | 否 | fixed | ["fixed","sliding"] | 插件使用的窗口算法。 |
-| rules | array[object] | 否 | | | 速率限制规则列表。每个规则是一个包含 `count`、`time_window` 和 `key` 的对象。如果配置了 `rules`，则顶层的 `count` 和 `time_window` 将被忽略。 |
+| rules | array[object] | 否 | | | 速率限制规则列表。每个规则是一个包含 `count`、`time_window` 和 `key` 的对象，且每条规则必须使用唯一的 `key`。不能与顶层的 `count`、`time_window` 或 `group` 同时配置。 |
 | rules.count | integer 或 string | 是 | | > 0 | 给定时间间隔内允许的最大请求数。支持 [lua-resty-expr](https://github.com/api7/lua-resty-expr)。 |
 | rules.time_window | integer 或 string | 是 | | > 0 | 速率限制 `count` 对应的时间间隔（以秒为单位）。支持 [lua-resty-expr](https://github.com/api7/lua-resty-expr)。 |
 | rules.key | string | 是 | | | 用于统计请求的键。如果配置的键不存在，则不会执行该规则。`key` 被解释为变量的组合，例如：`$http_custom_a $http_custom_b`。 |
@@ -62,8 +62,8 @@ import TabItem from '@theme/TabItem';
 | rejected_msg | string | 否 | | 非空 | 请求因超出阈值而被拒绝时返回的响应主体。 |
 | policy | string | 否 | local | ["local","redis","redis-cluster","redis-sentinel"] | 速率限制计数器的策略。如果是 `local`，则计数器存储在本地内存中。如果是 `redis`，则计数器存储在 Redis 实例上。如果是 `redis-cluster`，则计数器存储在 Redis 集群中。如果是 `redis-sentinel`，则计数器存储在通过 Sentinel 发现的 Redis 主节点上。 |
 | allow_degradation | boolean | 否 | false | | 如果为 true，则允许 APISIX 在插件或其依赖项不可用时继续处理没有插件的请求。 |
-| show_limit_quota_header | boolean | 否 | true | | 如果为 true，则在响应标头中包含 `X-RateLimit-Limit` 以显示总配额和 `X-RateLimit-Remaining` 以显示剩余配额。 |
-| sync_interval | number | 否 | | -1 或 >= 0.1 | Redis 类策略的延迟同步间隔，单位为秒。设置为 `-1` 可显式禁用延迟同步。 |
+| show_limit_quota_header | boolean | 否 | true | | 如果为 true，则在响应标头中包含 `X-RateLimit-Limit`、`X-RateLimit-Remaining` 和 `X-RateLimit-Reset`。 |
+| sync_interval | number | 否 | -1 | -1 或 >= 0.1 | Redis 类策略的延迟同步间隔，单位为秒。设置为 `-1` 时，每个请求都会与 Redis 同步。正数值必须小于数值型 `time_window`；如果动态 `time_window` 解析后的值小于或等于 `sync_interval`，APISIX 会对该请求直接同步。 |
 | group | string | 否 | | 非空 | 插件的 `group` ID，以便同一 `group` 的路由可以共享相同的速率限制计数器。 |
 | redis_host | string | 否 | | | Redis 节点的地址。当 `policy` 为 `redis` 时必填。 |
 | redis_port | integer | 否 | 6379 | [1,...] | 当 `policy` 为 `redis` 时，Redis 节点的端口。 |
@@ -73,7 +73,7 @@ import TabItem from '@theme/TabItem';
 | redis_ssl_verify | boolean | 否 | false | | 如果为 true，则在 `policy` 为 `redis` 时验证服务器 SSL 证书。 |
 | redis_database | integer | 否 | 0 | >= 0 | 当 `policy` 为 `redis` 或 `redis-sentinel` 时，Redis 中的数据库编号。 |
 | redis_timeout | integer | 否 | 1000 | [1,...] | 当 `policy` 为 `redis` 或 `redis-cluster` 时，Redis 超时值（以毫秒为单位）。 |
-| redis_keepalive_timeout | integer | 否 | 10000 | ≥ 1000 | 当 `policy` 为 `redis` 或 `redis-cluster` 时，与 Redis 的空闲连接超时时间，单位为毫秒。 |
+| redis_keepalive_timeout | integer | 否 | `redis` 和 `redis-cluster` 为 10000；`redis-sentinel` 为 60000 | `redis` 和 `redis-cluster` >= 1000；`redis-sentinel` >= 1 | Redis 空闲连接超时时间，单位为毫秒。 |
 | redis_keepalive_pool | integer | 否 | 100 | ≥ 1 | 当 `policy` 为 `redis` 或 `redis-cluster` 时，与 Redis 的连接池最大连接数。 |
 | redis_cluster_nodes | array[string] | 否 | | | 具有至少一个地址的 Redis 集群节点列表。当 `policy` 为 `redis-cluster` 时必填。 |
 | redis_cluster_name | string | 否 | | | Redis 集群的名称。当 `policy` 为 `redis-cluster` 时必填。 |
@@ -1518,7 +1518,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-`sync_interval` 必须不小于 `0.1` 且小于 `time_window`。延迟同步使用 `plugin-limit-count-lock` 共享字典，该字典默认已配置，因此无需额外配置。
+`sync_interval` 必须不小于 `0.1` 且小于数值型 `time_window`。如果动态 `time_window` 解析后的值小于或等于 `sync_interval`，APISIX 会回退为对该请求直接同步。延迟同步使用 `plugin-limit-count-lock` 共享字典，该字典默认已配置，因此无需额外配置。
 
 向路由发送请求：
 
