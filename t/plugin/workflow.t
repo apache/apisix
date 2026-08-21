@@ -145,6 +145,37 @@ __DATA__
                             }
                         }
                     }
+                },
+                {
+                    rules = {
+                        {
+                            case = {
+                                {"uri", "=", "/hello"}
+                            },
+                            actions = {
+                                {
+                                    "return",
+                                    {
+                                        code = 403
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    rules = {
+                        {
+                            case = {
+                                {"uri", "==", "/hello"}
+                            },
+                            actions = {
+                                {
+                                    "return"
+                                }
+                            }
+                        }
+                    }
                 }
             }
 
@@ -166,6 +197,8 @@ failed to validate the 'return' action: property "code" is required
 failed to validate the 'return' action: property "code" validation failed: wrong type: expected integer, got string
 property "rules" validation failed: failed to validate item 1: property "case" validation failed: expect array to have at least 1 items
 unsupported action: fake
+failed to validate the 'case' expression: invalid operator '='
+failed to validate the 'return' action: configuration is required
 
 
 

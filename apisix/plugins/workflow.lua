@@ -122,7 +122,7 @@ function _M.check_schema(conf)
     for idx, rule in ipairs(conf.rules) do
          if rule.case then
             local expr, err = expr.new(rule.case)
-            if not ok then
+            if not expr then
                 return false, "failed to validate the 'case' expression: " .. err
             end
             local mt = getmetatable(rule)
@@ -139,6 +139,10 @@ function _M.check_schema(conf)
 
             if not support_action[action[1]] then
                 return false, "unsupported action: " .. action[1]
+            end
+
+            if type(action[2]) ~= "table" then
+                return false, "failed to validate the '" .. action[1] .. "' action: configuration is required"
             end
 
             -- use the action's idx as an identifier to isolate between confs
