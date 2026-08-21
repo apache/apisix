@@ -42,7 +42,7 @@ The `proxy-rewrite` Plugin offers options to rewrite requests that APISIX forwar
 |-----------------------------|---------------|----------|---------|----------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | uri                         | string        | False    |         |                                                                                                                                        |  New Upstream URI path. Value supports [NGINX variables](https://nginx.org/en/docs/http/ngx_http_core_module.html). For example, `$arg_name`.                                                                                                                                                                                                                                                                                                                       |
 | method                      | string        | False    |         | ["GET", "POST", "PUT", "HEAD", "DELETE", "OPTIONS", "MKCOL", "COPY", "MOVE", "PROPFIND", "LOCK", "UNLOCK", "PATCH", "TRACE"] | HTTP method to rewrite requests to use.                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| regex_uri                   | array[string] | False    |         |                                                                                                                                        | Regular expressions used to match the URI path from client requests and compose a new Upstream URI path. When both `uri` and `regex_uri` are configured, `uri` has a higher priority. The array should contain one or more **key-value pairs**, with the key being the regular expression to match URI against and value being the new Upstream URI path. For example, with `["^/iresty/(. *)/(. *)", "/$1-$2", ^/theothers/*", "/theothers"]`, if a request is originally sent to `/iresty/hello/world`, the Plugin will rewrite the Upstream URI path to `/iresty/hello-world`; if a request is originally sent to `/theothers/hello/world`, the Plugin will rewrite the Upstream URI path to `/theothers`. |
+| regex_uri                   | array[string] | False    |         |                                                                                                                                        | Regular expressions used to match the URI path from client requests and compose a new Upstream URI path. When both `uri` and `regex_uri` are configured, `uri` has a higher priority. The array should contain one or more pattern-replacement pairs. For example, with `["^/test/(.*)/(.*)", "/$1-$2"]`, a request to `/test/user/agent` is rewritten to `/user-agent`. |
 | host                        | string        | False    |         |                                                                                                                                        | Set [`Host`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Host) request header.                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | headers                     | object        | False    |         |                                                                                                                                   |   Header actions to be executed. Can be set to objects of action verbs `add`, `remove`, and/or `set`; or an object consisting of headers to be `set`. When multiple action verbs are configured, actions are executed in the order of `add`, `remove`, and `set`.                |
 | headers.add     | object   | False     |        |                 | Headers to append to requests. If a header already present in the request, the header value will be appended. Header value could be set to a constant, one or more [NGINX variables](https://nginx.org/en/docs/http/ngx_http_core_module.html), or the matched result of `regex_uri` using variables such as `$1-$2-$3`. A value could also be an array of such values (e.g. `["val1", "val2"]`) to append the header multiple times, resulting in multiple headers with the same name.                                                                                              |
@@ -111,7 +111,7 @@ You should see a response similar to the following:
 
 ### Rewrite URI And Set Headers
 
-The following example demonstrates how you can rewrite the request Upstream URI and set additional header values. If the same headers present in the client request, the corresponding header values set in the Plugin will overwrite the values present in the client request.
+The following example demonstrates how you can rewrite the request Upstream URI and set additional header values. If the same headers are present in the client request, the values configured in the Plugin overwrite the incoming values.
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -143,7 +143,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 Send a request to verify:
 
 ```shell
-curl "http://127.0.0.1:9080/" -H '"X-Api-Version": "v2"'
+curl "http://127.0.0.1:9080/" -H "X-Api-Version: v2"
 ```
 
 You should see a response similar to the following:
@@ -170,11 +170,11 @@ You should see a response similar to the following:
 }
 ```
 
-Note that both headers present and the header value of `X-Api-Version` configured in the Plugin overwrites the header value passed in the request.
+Both configured headers are present, and the Plugin overwrites the incoming `X-Api-Version: v2` value with `X-Api-Version: v1`.
 
 ### Rewrite URI And Append Headers
 
-The following example demonstrates how you can rewrite the request Upstream URI and append additional header values. If the same headers present in the client request, their headers values will append to the configured header values in the plugin.
+The following example demonstrates how you can rewrite the request Upstream URI and append additional header values. If the same headers are present in the client request, the Plugin appends its configured values to the incoming values.
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -206,7 +206,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 Send a request to verify:
 
 ```shell
-curl "http://127.0.0.1:9080/" -H '"X-Api-Version": "v2"'
+curl "http://127.0.0.1:9080/" -H "X-Api-Version: v2"
 ```
 
 You should see a response similar to the following:
@@ -219,13 +219,13 @@ You should see a response similar to the following:
     "User-Agent": "curl/8.2.1",
     "X-Amzn-Trace-Id": "Root=1-64fed73a-59cd3bd640d76ab16c97f1f1",
     "X-Api-Engine": "apisix",
-    "X-Api-Version": "v1,v2",
+    "X-Api-Version": "v2,v1",
     "X-Forwarded-Host": "127.0.0.1"
   }
 }
 ```
 
-Note that both headers present and the header value of `X-Api-Version` configured in the Plugin is appended by the header value passed in the request.
+Both configured headers are present. The incoming `X-Api-Version: v2` value is preserved, and the Plugin appends its configured `v1` value.
 
 ### Set or Append Multiple Values for the Same Header
 

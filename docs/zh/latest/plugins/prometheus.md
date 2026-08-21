@@ -70,7 +70,11 @@ plugin_attr:
     #    expire: 0                          # 指标的过期时间（秒）。
                                             # 0 表示指标不会过期。
     # default_buckets:                      # 设置 `http_latency` 指标直方图的默认桶。
+    #   - 1
+    #   - 2
+    #   - 5
     #   - 10
+    #   - 20
     #   - 50
     #   - 100
     #   - 200
@@ -81,7 +85,6 @@ plugin_attr:
     #   - 10000
     #   - 30000
     #   - 60000
-    #   - 500
 ```
 
 你可以使用 [Nginx 变量](https://nginx.org/en/docs/http/ngx_http_core_module.html)创建 `extra_labels`。请参见[为指标添加额外标签](#为指标添加额外标签)。
@@ -106,13 +109,13 @@ plugin_attr:
 
 示例请参见[通过禁用标签降低指标基数](#通过禁用标签降低指标基数)。
 
-`request_llm_model` 与 `llm_model` 标签值来源于客户端提供的模型名称。为了限制基数，APISIX 在记录前会将这两个标签值截断为 128 字节。如果你不需要按模型细分，可将 `request_llm_model` 和 `llm_model` 列入 LLM 指标的 `disabled_labels`，从而将其折叠为一条空值时间序列。
+`request_llm_model` 标签来自客户端请求的模型。`llm_model` 标签表示实际使用的目标模型：优先使用 AI 实例中配置的模型，否则使用客户端请求的模型。为了限制基数，APISIX 在记录前会将这两个标签值分别截断为 128 字节。如果你不需要按模型细分，可将 `request_llm_model` 和 `llm_model` 列入 LLM 指标的 `disabled_labels`，从而将其折叠为一条空值时间序列。
 
 ## 指标
 
 Prometheus 中有不同类型的指标。要了解它们之间的区别，请参见[指标类型](https://prometheus.io/docs/concepts/metric_types/)。
 
-以下是 `prometheus` 插件默认导出的指标。有关示例，请参见[获取 APISIX 指标](#获取 APISIX 指标)。请注意，一些指标，例如 `apisix_batch_process_entries`，如果没有数据，将不可见。
+下表列出由 `prometheus` 插件直接注册的核心指标。已配置的 xRPC 协议还可以注册额外的协议专用指标。例如，Redis xRPC 会注册 `apisix_redis_commands_total` 和 `apisix_redis_commands_latency_seconds`。有关示例，请参见[获取 APISIX 指标](#获取 APISIX 指标)。只有对应数据源启用后，相关指标序列才会出现。例如，Stream 指标要求将 `prometheus` 启用为 Stream 插件，LLM 指标要求存在 AI 流量，AI 缓存指标要求启用 `ai-cache` 插件，而 `apisix_batch_process_entries` 只有在批处理插件产生数据后才会出现。
 
 | 名称                    | 类型      | 描述                                                                                                                                                                   |
 | ----------------------- | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -120,11 +123,21 @@ Prometheus 中有不同类型的指标。要了解它们之间的区别，请参
 | apisix_etcd_modify_indexes | gauge     | APISIX 键的 etcd 修改次数。                                                                                                                                          |
 | apisix_batch_process_entries | gauge     | 发送数据时批处理中的剩余条目数，例如使用 `http logger` 和其他日志插件。                                                                                             |
 | apisix_etcd_reachable   | gauge     | APISIX 是否可以访问 etcd。值为 `1` 表示可达，`0` 表示不可达。                                                                                                      |
-| apisix_http_status      | counter   | 从上游服务返回的 HTTP 状态代码。                                                                                                                                     |
+| apisix_http_status      | counter   | 返回给客户端的 HTTP 状态代码。                                                                                                                                       |
 | apisix_http_requests_total | gauge     | 来自客户端的 HTTP 请求数量。                                                                                                                                         |
 | apisix_nginx_http_current_connections | gauge     | 当前与客户端的连接数量。                                                                                                                                             |
 | apisix_nginx_metric_errors_total | counter   | `nginx-lua-prometheus` 错误的总数。                                                                                                                                 |
 | apisix_http_latency     | histogram | HTTP 请求延迟（毫秒）。                                                                                                                                               |
+| apisix_llm_latency      | histogram | LLM 请求延迟（毫秒），包括总延迟和首 token 延迟。                                                                                                                    |
+| apisix_llm_prompt_tokens | counter  | LLM 请求消耗的 prompt token 总数。                                                                                                                                    |
+| apisix_llm_completion_tokens | counter | LLM 请求生成的 completion token 总数。                                                                                                                             |
+| apisix_llm_active_connections | gauge | 记录 LLM 上游活动的 gauge。没有回退重试时，它反映活跃请求数；`ai-proxy-multi` 回退重试可能导致失败实例的序列被高估。详情请参见[标签说明](#apisix_llm_active_connections-的标签)。 |
+| apisix_llm_prompt_tokens_dist | histogram | 每个 LLM 请求消耗的 prompt token 数量分布。                                                                                                                       |
+| apisix_llm_completion_tokens_dist | histogram | 每个 LLM 请求生成的 completion token 数量分布。                                                                                                                 |
+| apisix_ai_cache_hits_total | counter | AI 缓存命中总数，按缓存层区分。                                                                                                                                       |
+| apisix_ai_cache_misses_total | counter | AI 缓存未命中总数。                                                                                                                                                  |
+| apisix_ai_cache_bypasses_total | counter | 绕过 AI 缓存的请求总数。                                                                                                                                          |
+| apisix_ai_cache_embedding_latency | histogram | AI 缓存 embedding 调用延迟（毫秒）。                                                                                                                           |
 | apisix_node_info        | gauge     | APISIX 节点的信息，例如主机名和当前的 APISIX 版本号。                                                                                                                                       |
 | apisix_shared_dict_capacity_bytes | gauge     | [NGINX 共享字典](https://github.com/openresty/lua-nginx-module#ngxshareddict) 的总容量。                                                                                     |
 | apisix_shared_dict_free_space_bytes | gauge     | [NGINX 共享字典](https://github.com/openresty/lua-nginx-module#ngxshareddict) 中剩余的空间。                                                                                   |
@@ -148,15 +161,49 @@ Prometheus 中有不同类型的指标。要了解它们之间的区别，请参
 
 | 名称   | 描述                                                                                                                   |
 | ------ | ---------------------------------------------------------------------------------------------------------------------- |
-| code   | 上游节点返回的 HTTP 响应代码。                                                                                       |
+| code   | 返回给客户端的 HTTP 响应代码。                                                                                         |
 | route  | HTTP 状态来源的路由 ID，当 `prefer_name` 为 `false`（默认）时，使用路由 ID，当 `prefer_name` 为 `true` 时，使用路由名称。如果请求不匹配任何路由，则默认为空字符串。 |
 | matched_uri | 匹配请求的路由 URI。如果请求不匹配任何路由，则默认为空字符串。                                                       |
 | matched_host | 匹配请求的路由主机。如果请求不匹配任何路由，或路由未配置主机，则默认为空字符串。                                     |
 | service | HTTP 状态来源的服务 ID，当 `prefer_name` 为 `false`（默认）时，使用服务 ID，当 `prefer_name` 为 `true` 时，使用服务名称。如果匹配的路由不属于任何服务，则默认为路由上配置的主机值。 |
 | consumer | 与请求关联的消费者名称。如果请求没有与之关联的消费者，则默认为空字符串。                                             |
 | node   | 上游节点的 IP 地址。                                                                                                   |
-| request_type       | traditional_http / ai_chat / ai_stream                                                                                          |
-| llm_model       | 对于非传统的 http 请求，llm 模型的名称                                                                                          |
+| request_type       | 请求类别：`traditional_http`、`ai_chat` 或 `ai_stream`。                                                                         |
+| request_llm_model  | 客户端请求的模型名称。                                                                                                           |
+| llm_model          | AI 请求实际使用的目标模型。优先使用 AI 实例中配置的模型，否则使用客户端请求的模型；传统 HTTP 流量中为空字符串。 |
+| response_source    | 响应来源：`apisix` 表示由 APISIX 生成，`nginx` 表示 NGINX 代理错误，`upstream` 表示来自上游服务的响应。                              |
+
+### `apisix_stream_active_connections` 的标签
+
+接受会话时，该 gauge 会递增；会话结束时递减，因此无需等到会话结束即可反映实时并发量。
+
+| 名称 | 描述 |
+| --- | --- |
+| listen_addr | 客户端连接的监听地址，例如 `0.0.0.0:9100`。 |
+
+### `apisix_stream_status` 的标签
+
+上游连接建立后发生的故障在 NGINX Stream `$status` 中都可能显示为 200，因此仅凭该值无法区分超时、连接重置和正常关闭。此指标利用运行时记录的终止原因，将已识别的原因映射到 NGINX Stream 使用的状态代码中。`200` 还包含 worker 关闭的情况；如果未记录终止原因或该原因无法识别，也会回退为 `200`，因此该值不一定表示正常关闭。此指标不引入自定义状态代码。
+
+| 名称 | 描述 |
+| --- | --- |
+| code | 会话结束方式：`200` 表示正常关闭、worker 关闭，或终止原因缺失或无法识别；`400` 表示客户端重置或预读数据无效等客户端问题；`403` 表示被访问规则拒绝；`500` 表示内部错误；`502` 表示连接失败、重置或空闲超时等上游或传输问题；`503` 表示被连接数限制拒绝。 |
+| listen_addr | 客户端连接的监听地址，例如 `0.0.0.0:9100`。 |
+| node | 使用的上游节点地址；未选择节点时为空。 |
+
+UDP 没有关闭、FIN 或重置信号，因此只会出现其中一部分状态代码。
+
+### `apisix_stream_bandwidth` 的标签
+
+字节计数在连接保持打开时持续累积，因此可观察长连接的实时流量。该指标只统计 Stream 流量，不包含 HTTP 子系统流量。
+
+| 名称 | 描述 |
+| --- | --- |
+| listen_addr | 客户端连接的监听地址，例如 `0.0.0.0:9100`。 |
+| side | 字节经过的连接侧：`downstream` 表示 APISIX 与客户端之间，`upstream` 表示 APISIX 与上游之间。 |
+| type | 相对 APISIX 的方向，与 `apisix_bandwidth` 一致：`ingress` 表示 APISIX 接收的字节，`egress` 表示 APISIX 发送的字节。 |
+
+在普通转发中，`downstream`/`ingress` 通常对应 `upstream`/`egress`，`upstream`/`ingress` 通常对应 `downstream`/`egress`；持续不一致可能表示某一侧停止读取。
 
 ### `apisix_bandwidth` 的标签
 
@@ -169,8 +216,9 @@ Prometheus 中有不同类型的指标。要了解它们之间的区别，请参
 | service | 请求对应的服务 ID，当 `prefer_name` 为 `false`（默认）时，使用服务 ID，当 `prefer_name` 为 `true` 时，使用服务名称。如果匹配的路由不属于任何服务，则默认为路由上配置的主机值。 |
 | consumer | 与请求关联的消费者名称。如果请求没有与之关联的消费者，则默认为空字符串。                                             |
 | node   | 上游节点的 IP 地址。                                                                                                   |
-| request_type       | traditional_http / ai_chat / ai_stream                                                                                          |
-| llm_model       | 对于非传统的 http 请求，llm 模型的名称                                                                                          |
+| request_type       | 请求类别：`traditional_http`、`ai_chat` 或 `ai_stream`。                                                                         |
+| request_llm_model  | 客户端请求的模型名称。                                                                                                           |
+| llm_model          | AI 请求实际使用的目标模型。优先使用 AI 实例中配置的模型，否则使用客户端请求的模型；传统 HTTP 流量中为空字符串。 |
 
 ### `apisix_llm_latency` 的标签
 
@@ -179,52 +227,60 @@ Prometheus 中有不同类型的指标。要了解它们之间的区别，请参
 - `total`：完整的响应延迟，`ai_chat` 和 `ai_stream` 请求都会记录。
 - `ttft`：首个 token 到达时间，仅 `ai_stream` 请求记录（非流式响应没有"首个 token"这一时刻）。
 
+对于按请求记录的 LLM 指标，名为 `route_id` 和 `service_id` 的标签遵循 `prefer_name`：默认保存 ID，`prefer_name` 为 `true` 时保存名称。`apisix_llm_active_connections` 不同，它会分别导出名称和 ID 标签。
+
 | 名称 | 描述 |
 | ---------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | type          | 延迟类型：`total` 或 `ttft`。                                                                                                    |
 | route_id      | 请求对应的路由 ID，当 `prefer_name` 为 `false`（默认）时，使用路由 ID，当 `prefer_name` 为 `true` 时，使用路由名称。如果请求不匹配任何路由，则默认为空字符串。                        |
-| service_id    | 请求对应的服务 ID，当 `prefer_name` 为 `false`（默认）时，使用服务 ID，当 `prefer_name` 为 `true` 时，使用服务名称。如果匹配的路由不属于任何服务，则默认为路由上配置的主机值。 |
+| service_id    | 指标对应的服务 ID；`prefer_name` 为 `true` 时保存服务名称。如果匹配路由未引用服务，则默认为空字符串。              |
 | consumer   | 与请求关联的消费者名称。如果请求没有与之关联的消费者，则默认为空字符串。                       |
-| node       | 上游节点的 IP 地址。                                                                                          |
-| request_type       | traditional_http / ai_chat / ai_stream                                                                                          |
-| llm_model       | 对于非传统的 http 请求，llm 模型的名称                                                                                          |
+| node       | 所选 AI 上游的标识，通常是 `ai-proxy` 或 `ai-proxy-multi` 上报的 LLM 实例名称。                                |
+| request_type       | 请求类别：`ai_chat` 或 `ai_stream`。                                                                                             |
+| request_llm_model  | 客户端请求的模型名称。                                                                                                           |
+| llm_model          | AI 请求实际使用的目标模型。优先使用 AI 实例中配置的模型，否则使用客户端请求的模型。 |
 
 ### `apisix_llm_active_connections` 的标签
 
+APISIX 在开始 LLM 上游尝试时递增该 gauge，并在请求的日志阶段递减一次。没有回退重试时，它反映活跃的 LLM 上游请求。当 `ai-proxy-multi` 发生回退重试时，每次重试都会递增新的实例序列，但该请求只会使用最终标签递减一次。因此，失败实例的序列可能高于实际活跃数，而且在默认不过期的指标配置下，该数值可能一直保留到指标存储被重置。发生回退重试时，应将该 gauge 视为近似值。
+
 | 名称 | 描述 |
 | ---------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| route      | 请求对应的路由名称。如果请求不匹配任何路由，则默认为空字符串。                                                                                 |
-| route_id      | 请求对应的路由 ID，当 `prefer_name` 为 `false`（默认）时，使用路由 ID，当 `prefer_name` 为 `true` 时，使用路由名称。如果请求不匹配任何路由，则默认为空字符串。                         |
+| route      | 匹配路由的名称。如果路由没有名称或请求未匹配任何路由，则默认为空字符串。                                          |
+| route_id   | 匹配路由的 ID。如果请求未匹配任何路由，则默认为空字符串。                                                        |
 | matched_uri | 匹配请求的路由 URI。如果请求不匹配任何路由，则默认为空字符串。                                                       |
 | matched_host | 匹配请求的路由主机。如果请求不匹配任何路由，或路由未配置主机，则默认为空字符串。                                     |
-| service    | 请求对应的服务名称。如果匹配的路由不属于任何服务，则默认为路由上配置的主机值。 |
-| service_id    | 请求对应的服务 ID，当 `prefer_name` 为 `false`（默认）时，使用服务 ID，当 `prefer_name` 为 `true` 时，使用服务名称。如果匹配的路由不属于任何服务，则默认为路由上配置的主机值。 |
+| service    | 匹配路由引用的服务名称。如果路由未引用服务，则默认为空字符串。                                                      |
+| service_id | 匹配路由引用的服务 ID。如果路由未引用服务，则默认为空字符串。                                                        |
 | consumer   | 与请求关联的消费者名称。如果请求没有与之关联的消费者，则默认为空字符串。                       |
-| node       | 上游节点的 IP 地址。                                                                                          |
-| request_type       | traditional_http / ai_chat / ai_stream                                                                                          |
-| llm_model       | 对于非传统的 http 请求，llm 模型的名称                                                                                          |
+| node       | 所选 AI 上游的标识，通常是 `ai-proxy` 或 `ai-proxy-multi` 上报的 LLM 实例名称。                                |
+| request_type       | 请求类别：`ai_chat` 或 `ai_stream`。                                                                                             |
+| request_llm_model  | 客户端请求的模型名称。                                                                                                           |
+| llm_model          | AI 请求实际使用的目标模型。优先使用 AI 实例中配置的模型，否则使用客户端请求的模型。 |
 
 ### `apisix_llm_completion_tokens` 的标签
 
 | 名称 | 描述 |
 | ---------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| route_id      | 请求对应的路由 ID，当 `prefer_name` 为 `false`（默认）时，使用路由 ID，当 `prefer_name` 为 `true` 时，使用路由名称。如果请求不匹配任何路由，则默认为空字符串。                         |
-| service_id    | 请求对应的服务 ID，当 `prefer_name` 为 `false`（默认）时，使用服务 ID，当 `prefer_name` 为 `true` 时，使用服务名称。如果匹配的路由不属于任何服务，则默认为路由上配置的主机值。 |
+| route_id      | 指标对应的路由 ID；`prefer_name` 为 `true` 时保存路由名称。如果请求未匹配任何路由，则默认为空字符串。              |
+| service_id    | 指标对应的服务 ID；`prefer_name` 为 `true` 时保存服务名称。如果匹配路由未引用服务，则默认为空字符串。              |
 | consumer   | 与请求关联的消费者名称。如果请求没有与之关联的消费者，则默认为空字符串。                       |
-| node       | 上游节点的 IP 地址。                                                                                          |
-| request_type       | traditional_http / ai_chat / ai_stream                                                                                          |
-| llm_model       | 对于非传统的 http 请求，llm 模型的名称                                                                                          |
+| node       | 所选 AI 上游的标识，通常是 `ai-proxy` 或 `ai-proxy-multi` 上报的 LLM 实例名称。                                |
+| request_type       | 请求类别：`ai_chat` 或 `ai_stream`。                                                                                             |
+| request_llm_model  | 客户端请求的模型名称。                                                                                                           |
+| llm_model          | AI 请求实际使用的目标模型。优先使用 AI 实例中配置的模型，否则使用客户端请求的模型。 |
 
 ### `apisix_llm_prompt_tokens` 的标签
 
 | 名称 | 描述 |
 | ---------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| route_id      | 请求对应的路由 ID，当 `prefer_name` 为 `false`（默认）时，使用路由 ID，当 `prefer_name` 为 `true` 时，使用路由名称。如果请求不匹配任何路由，则默认为空字符串。                         |
-| service_id    | 请求对应的服务 ID，当 `prefer_name` 为 `false`（默认）时，使用服务 ID，当 `prefer_name` 为 `true` 时，使用服务名称。如果匹配的路由不属于任何服务，则默认为路由上配置的主机值。 |
+| route_id      | 指标对应的路由 ID；`prefer_name` 为 `true` 时保存路由名称。如果请求未匹配任何路由，则默认为空字符串。              |
+| service_id    | 指标对应的服务 ID；`prefer_name` 为 `true` 时保存服务名称。如果匹配路由未引用服务，则默认为空字符串。              |
 | consumer   | 与请求关联的消费者名称。如果请求没有与之关联的消费者，则默认为空字符串。                       |
-| node       | 上游节点的 IP 地址。                                                                                          |
-| request_type       | traditional_http / ai_chat / ai_stream                                                                                          |
-| llm_model       | 对于非传统的 http 请求，llm 模型的名称                                                                                          |
+| node       | 所选 AI 上游的标识，通常是 `ai-proxy` 或 `ai-proxy-multi` 上报的 LLM 实例名称。                                |
+| request_type       | 请求类别：`ai_chat` 或 `ai_stream`。                                                                                             |
+| request_llm_model  | 客户端请求的模型名称。                                                                                                           |
+| llm_model          | AI 请求实际使用的目标模型。优先使用 AI 实例中配置的模型，否则使用客户端请求的模型。 |
 
 ### `apisix_llm_prompt_tokens_dist` 的标签
 
@@ -232,12 +288,13 @@ Prometheus 中有不同类型的指标。要了解它们之间的区别，请参
 
 | 名称 | 描述 |
 | ---------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| route_id      | 请求对应的路由 ID，当 `prefer_name` 为 `false`（默认）时，使用路由 ID，当 `prefer_name` 为 `true` 时，使用路由名称。如果请求不匹配任何路由，则默认为空字符串。                         |
-| service_id    | 请求对应的服务 ID，当 `prefer_name` 为 `false`（默认）时，使用服务 ID，当 `prefer_name` 为 `true` 时，使用服务名称。如果匹配的路由不属于任何服务，则默认为路由上配置的主机值。 |
+| route_id      | 指标对应的路由 ID；`prefer_name` 为 `true` 时保存路由名称。如果请求未匹配任何路由，则默认为空字符串。              |
+| service_id    | 指标对应的服务 ID；`prefer_name` 为 `true` 时保存服务名称。如果匹配路由未引用服务，则默认为空字符串。              |
 | consumer   | 与请求关联的消费者名称。如果请求没有与之关联的消费者，则默认为空字符串。                       |
-| node       | 上游节点的 IP 地址。                                                                                          |
-| request_type       | traditional_http / ai_chat / ai_stream                                                                                          |
-| llm_model       | 对于非传统的 http 请求，llm 模型的名称                                                                                          |
+| node       | 所选 AI 上游的标识，通常是 `ai-proxy` 或 `ai-proxy-multi` 上报的 LLM 实例名称。                                |
+| request_type       | 请求类别：`ai_chat` 或 `ai_stream`。                                                                                             |
+| request_llm_model  | 客户端请求的模型名称。                                                                                                           |
+| llm_model          | AI 请求实际使用的目标模型。优先使用 AI 实例中配置的模型，否则使用客户端请求的模型。 |
 
 ### `apisix_llm_completion_tokens_dist` 的标签
 
@@ -245,12 +302,13 @@ Prometheus 中有不同类型的指标。要了解它们之间的区别，请参
 
 | 名称 | 描述 |
 | ---------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| route_id      | 请求对应的路由 ID，当 `prefer_name` 为 `false`（默认）时，使用路由 ID，当 `prefer_name` 为 `true` 时，使用路由名称。如果请求不匹配任何路由，则默认为空字符串。                         |
-| service_id    | 请求对应的服务 ID，当 `prefer_name` 为 `false`（默认）时，使用服务 ID，当 `prefer_name` 为 `true` 时，使用服务名称。如果匹配的路由不属于任何服务，则默认为路由上配置的主机值。 |
+| route_id      | 指标对应的路由 ID；`prefer_name` 为 `true` 时保存路由名称。如果请求未匹配任何路由，则默认为空字符串。              |
+| service_id    | 指标对应的服务 ID；`prefer_name` 为 `true` 时保存服务名称。如果匹配路由未引用服务，则默认为空字符串。              |
 | consumer   | 与请求关联的消费者名称。如果请求没有与之关联的消费者，则默认为空字符串。                       |
-| node       | 上游节点的 IP 地址。                                                                                          |
-| request_type       | traditional_http / ai_chat / ai_stream                                                                                          |
-| llm_model       | 对于非传统的 http 请求，llm 模型的名称                                                                                          |
+| node       | 所选 AI 上游的标识，通常是 `ai-proxy` 或 `ai-proxy-multi` 上报的 LLM 实例名称。                                |
+| request_type       | 请求类别：`ai_chat` 或 `ai_stream`。                                                                                             |
+| request_llm_model  | 客户端请求的模型名称。                                                                                                           |
+| llm_model          | AI 请求实际使用的目标模型。优先使用 AI 实例中配置的模型，否则使用客户端请求的模型。 |
 
 ### `apisix_ai_cache_*` 系列指标的标签
 
@@ -272,9 +330,9 @@ Prometheus 中有不同类型的指标。要了解它们之间的区别，请参
 | service_id    | 匹配路由所属的服务 ID。如果匹配的路由不属于任何服务，则默认为空字符串。 |
 | consumer   | 与请求关联的消费者名称。如果请求没有与之关联的消费者，则默认为空字符串。                       |
 | node       | `ai-proxy` 或 `ai-proxy-multi` 插件选中的 LLM 实例名称，例如 `ai-proxy-openai`。这些插件上报的是实例名称而非上游 IP 地址，缓存命中与未命中时均是如此。                                                                                          |
-| request_type       | traditional_http / ai_chat / ai_stream                                                                                          |
+| request_type       | AI 请求类别：`ai_chat` 或 `ai_stream`。                                                                                          |
 | request_llm_model       | 客户端请求的模型名称。                                                                                          |
-| llm_model       | LLM 响应中报告的模型名称。缓存命中的请求不会到达 LLM，此标签为空字符串。                                                                                          |
+| llm_model       | 上游 AI 请求实际使用的目标模型。优先使用 AI 实例中配置的模型，否则使用客户端请求的模型。缓存命中的请求不会到达 LLM，因此该标签为空字符串。 |
 
 ### `apisix_http_latency` 的标签
 
@@ -287,8 +345,9 @@ Prometheus 中有不同类型的指标。要了解它们之间的区别，请参
 | service | 延迟对应的服务 ID，当 `prefer_name` 为 `false`（默认）时，使用服务 ID，当 `prefer_name` 为 `true` 时，使用服务名称。如果匹配的路由不属于任何服务，则默认为路由上配置的主机值。 |
 | consumer | 与延迟关联的消费者名称。如果请求没有与之关联的消费者，则默认为空字符串。                                             |
 | node   | 与延迟关联的上游节点的 IP 地址。                                                                                     |
-| request_type       | traditional_http / ai_chat / ai_stream                                                                                          |
-| llm_model       | 对于非传统的 http 请求，llm 模型的名称                                                                                          |
+| request_type       | 请求类别：`traditional_http`、`ai_chat` 或 `ai_stream`。                                                                         |
+| request_llm_model  | 客户端请求的模型名称。                                                                                                           |
+| llm_model          | AI 请求实际使用的目标模型。优先使用 AI 实例中配置的模型，否则使用客户端请求的模型；传统 HTTP 流量中为空字符串。 |
 
 #### 延迟类型
 
@@ -488,11 +547,7 @@ apisix_upstream_status{name="/apisix/routes/1",ip="127.0.0.1",port="20001"} 0
 
 以下示例演示如何为指标添加额外标签，并在标签值中使用 [Nginx 变量](https://nginx.org/en/docs/http/ngx_http_core_module.html)。
 
-目前，仅以下指标支持额外标签：
-
-* apisix_http_status
-* apisix_http_latency
-* apisix_bandwidth
+`apisix_http_status`、`apisix_http_latency`、`apisix_bandwidth`、上文列出的所有 `apisix_llm_*` 指标，以及四个 `apisix_ai_cache_*` 指标均支持额外标签。
 
 在配置文件中包含以下配置以为指标添加标签，并重新加载 APISIX 以使更改生效：
 
