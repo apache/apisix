@@ -50,6 +50,16 @@ server {
     }
 }
 
+server {
+    listen 8768 ssl;
+    ssl_certificate ../../certs/apisix.crt;
+    ssl_certificate_key ../../certs/apisix.key;
+
+    location /hello {
+        return 200 'ok\n';
+    }
+}
+
 _EOC_
         $block->set_value("http_config", $http_config);
     }
@@ -162,7 +172,98 @@ ok
 
 
 
-=== TEST 6: grpcs upstream is verified by default
+=== TEST 6: an upstream the trusted certificate does not cover is rejected
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "methods": ["GET"],
+                    "upstream": {
+                        "scheme": "https",
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:8768": 1
+                        },
+                        "pass_host": "rewrite",
+                        "upstream_host": "test.com",
+                        "tls": {
+                            "verify": true
+                        }
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 7: hit
+--- request
+GET /hello
+--- error_code: 502
+--- error_log
+upstream SSL certificate verify error
+
+
+
+=== TEST 8: ca_certs alone, without a client certificate
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin")
+            local json = require("toolkit.json")
+            local data = {
+                upstream = {
+                    scheme = "https",
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:8768"] = 1,
+                    },
+                    pass_host = "rewrite",
+                    upstream_host = "test.com",
+                    tls = {
+                        verify = true,
+                        ca_certs = {t.read_file("t/certs/apisix.crt")},
+                    }
+                },
+                uri = "/hello"
+            }
+            local code, body = t.test('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                json.encode(data)
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 9: hit
+--- request
+GET /hello
+--- response_body
+ok
+
+
+
+=== TEST 10: grpcs upstream is verified by default
 --- http2
 --- http_config
 grpc_ssl_trusted_certificate ../../certs/mtls_ca.crt;
@@ -189,7 +290,7 @@ upstream SSL certificate verify error
 
 
 
-=== TEST 7: tls.verify survives the internal redirect to @grpc_pass
+=== TEST 11: tls.verify survives the internal redirect to @grpc_pass
 --- http2
 --- http_config
 grpc_ssl_trusted_certificate ../../certs/mtls_ca.crt;
@@ -220,7 +321,7 @@ grpcurl -import-path ./t/grpc_server_example/proto -proto helloworld.proto -plai
 
 
 
-=== TEST 8: tls.ca_certs survives the internal redirect to @grpc_pass
+=== TEST 12: tls.ca_certs survives the internal redirect to @grpc_pass
 The upstream serves a certificate that grpc_ssl_trusted_certificate does not
 trust, so the request only succeeds if ca_certs reached the handshake.
 --- http2
