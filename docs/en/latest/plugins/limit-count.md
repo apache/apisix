@@ -37,11 +37,13 @@ import TabItem from '@theme/TabItem';
 
 The `limit-count` plugin uses fixed or sliding window algorithms to limit the rate of requests by the number of requests within a given time interval. Requests exceeding the configured quota will be rejected.
 
-You may see the following rate limiting headers in the response:
+With the default response header names, single-limit mode includes the following rate limiting headers when `show_limit_quota_header` is `true`:
 
 * `X-RateLimit-Limit`: the total quota
 * `X-RateLimit-Remaining`: the remaining quota
 * `X-RateLimit-Reset`: number of seconds left for the counter to reset
+
+In `rules` mode, every rule uses a prefixed form of these headers, such as `X-Jack-RateLimit-Reset` or `X-1-RateLimit-Reset`. See `rules.header_prefix` for details.
 
 ## Attributes
 
@@ -61,8 +63,8 @@ You may see the following rate limiting headers in the response:
 | rejected_msg            | string            | False                                     |               | non-empty                  | The response body returned when a request is rejected for exceeding the threshold. |
 | policy                  | string            | False                                     | local         | ["local","redis","redis-cluster","redis-sentinel"] | The policy for the rate limiting counter. If it is `local`, the counter is stored in local memory. If it is `redis`, the counter is stored on a Redis instance. If it is `redis-cluster`, the counter is stored in a Redis cluster. If it is `redis-sentinel`, the counter is stored on the Redis master discovered through Sentinel. |
 | allow_degradation       | boolean           | False                                     | false         |                            | If true, allow APISIX to continue handling requests without the plugin when the plugin or its dependencies become unavailable. |
-| show_limit_quota_header | boolean           | False                                     | true          |                            | If true, include `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset` in the response headers. |
-| sync_interval           | number            | False                                     | -1            | -1 or >= 0.1               | The delayed synchronization interval in seconds for Redis-based policies. Set to `-1` to synchronize on every request. A positive value must be smaller than a numeric `time_window`; if a dynamic `time_window` resolves to a value less than or equal to `sync_interval`, APISIX synchronizes that request directly. |
+| show_limit_quota_header | boolean           | False                                     | true          |                            | If true, include quota information in the response headers. With the default Plugin metadata, single-limit mode uses `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset`. In `rules` mode, each rule emits the prefixed headers described by `rules.header_prefix`. |
+| sync_interval           | number            | False                                     | -1            | -1 or >= 0.1               | The delayed synchronization interval in seconds for Redis-based policies. Set to `-1` to synchronize on every request. A positive value must be smaller than a numeric top-level `time_window`. If a `rules.time_window` value or a dynamic top-level `time_window` resolves to a value less than or equal to `sync_interval`, APISIX synchronizes that request directly. |
 | group                   | string            | False                                     |               | non-empty                  | The `group` ID for the plugin, such that routes of the same `group` can share the same rate limiting counter. |
 | redis_host              | string            | False                                     |               |                            | The address of the Redis node. Required when `policy` is `redis`. |
 | redis_port              | integer           | False                                     | 6379          | [1,...]                    | The port of the Redis node when `policy` is `redis`. |
@@ -1517,7 +1519,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-`sync_interval` must be at least `0.1` and smaller than a numeric `time_window`. If a dynamic `time_window` resolves to a value less than or equal to `sync_interval`, APISIX falls back to synchronizing that request directly. Delayed synchronization uses the `plugin-limit-count-lock` shared dictionary, which is provisioned by default, so no additional configuration is required.
+`sync_interval` must be at least `0.1`. In single-limit mode, it must also be smaller than a numeric top-level `time_window`. If a `rules.time_window` value or a dynamic top-level `time_window` resolves to a value less than or equal to `sync_interval`, APISIX falls back to synchronizing that request directly. Resolved windows larger than `sync_interval` continue to use delayed synchronization. Delayed synchronization uses the `plugin-limit-count-lock` shared dictionary, which is provisioned by default, so no additional configuration is required.
 
 Send requests to the Route:
 

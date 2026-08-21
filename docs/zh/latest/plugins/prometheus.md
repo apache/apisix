@@ -115,7 +115,7 @@ plugin_attr:
 
 Prometheus 中有不同类型的指标。要了解它们之间的区别，请参见[指标类型](https://prometheus.io/docs/concepts/metric_types/)。
 
-`prometheus` 插件会注册以下指标。有关示例，请参见[获取 APISIX 指标](#获取 APISIX 指标)。只有对应数据源启用后，相关指标序列才会出现。例如，Stream 指标要求将 `prometheus` 启用为 Stream 插件，LLM 指标要求存在 AI 流量，AI 缓存指标要求启用 `ai-cache` 插件，而 `apisix_batch_process_entries` 只有在批处理插件产生数据后才会出现。
+下表列出由 `prometheus` 插件直接注册的核心指标。已配置的 xRPC 协议还可以注册额外的协议专用指标。例如，Redis xRPC 会注册 `apisix_redis_commands_total` 和 `apisix_redis_commands_latency_seconds`。有关示例，请参见[获取 APISIX 指标](#获取 APISIX 指标)。只有对应数据源启用后，相关指标序列才会出现。例如，Stream 指标要求将 `prometheus` 启用为 Stream 插件，LLM 指标要求存在 AI 流量，AI 缓存指标要求启用 `ai-cache` 插件，而 `apisix_batch_process_entries` 只有在批处理插件产生数据后才会出现。
 
 | 名称                    | 类型      | 描述                                                                                                                                                                   |
 | ----------------------- | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -131,7 +131,7 @@ Prometheus 中有不同类型的指标。要了解它们之间的区别，请参
 | apisix_llm_latency      | histogram | LLM 请求延迟（毫秒），包括总延迟和首 token 延迟。                                                                                                                    |
 | apisix_llm_prompt_tokens | counter  | LLM 请求消耗的 prompt token 总数。                                                                                                                                    |
 | apisix_llm_completion_tokens | counter | LLM 请求生成的 completion token 总数。                                                                                                                             |
-| apisix_llm_active_connections | gauge | 到 LLM 服务的活跃连接数。                                                                                                                                             |
+| apisix_llm_active_connections | gauge | 记录 LLM 上游活动的 gauge。没有回退重试时，它反映活跃请求数；`ai-proxy-multi` 回退重试可能导致失败实例的序列被高估。详情请参见[标签说明](#apisix_llm_active_connections-的标签)。 |
 | apisix_llm_prompt_tokens_dist | histogram | 每个 LLM 请求消耗的 prompt token 数量分布。                                                                                                                       |
 | apisix_llm_completion_tokens_dist | histogram | 每个 LLM 请求生成的 completion token 数量分布。                                                                                                                 |
 | apisix_ai_cache_hits_total | counter | AI 缓存命中总数，按缓存层区分。                                                                                                                                       |
@@ -183,11 +183,11 @@ Prometheus 中有不同类型的指标。要了解它们之间的区别，请参
 
 ### `apisix_stream_status` 的标签
 
-上游连接建立后发生的故障在 NGINX Stream `$status` 中都可能显示为 200，因此仅凭该值无法区分超时、连接重置和正常关闭。此指标利用运行时记录的终止原因，将会话归类到 NGINX Stream 使用的状态代码中，不引入自定义状态代码。
+上游连接建立后发生的故障在 NGINX Stream `$status` 中都可能显示为 200，因此仅凭该值无法区分超时、连接重置和正常关闭。此指标利用运行时记录的终止原因，将已识别的原因映射到 NGINX Stream 使用的状态代码中。`200` 还包含 worker 关闭的情况；如果未记录终止原因或该原因无法识别，也会回退为 `200`，因此该值不一定表示正常关闭。此指标不引入自定义状态代码。
 
 | 名称 | 描述 |
 | --- | --- |
-| code | 会话结束方式：`200` 表示正常关闭；`400` 表示客户端重置或预读数据无效等客户端问题；`403` 表示被访问规则拒绝；`500` 表示内部错误；`502` 表示连接失败、重置或空闲超时等上游或传输问题；`503` 表示被连接数限制拒绝。 |
+| code | 会话结束方式：`200` 表示正常关闭、worker 关闭，或终止原因缺失或无法识别；`400` 表示客户端重置或预读数据无效等客户端问题；`403` 表示被访问规则拒绝；`500` 表示内部错误；`502` 表示连接失败、重置或空闲超时等上游或传输问题；`503` 表示被连接数限制拒绝。 |
 | listen_addr | 客户端连接的监听地址，例如 `0.0.0.0:9100`。 |
 | node | 使用的上游节点地址；未选择节点时为空。 |
 
@@ -241,6 +241,8 @@ UDP 没有关闭、FIN 或重置信号，因此只会出现其中一部分状态
 | llm_model          | AI 请求实际使用的目标模型。优先使用 AI 实例中配置的模型，否则使用客户端请求的模型。 |
 
 ### `apisix_llm_active_connections` 的标签
+
+APISIX 在开始 LLM 上游尝试时递增该 gauge，并在请求的日志阶段递减一次。没有回退重试时，它反映活跃的 LLM 上游请求。当 `ai-proxy-multi` 发生回退重试时，每次重试都会递增新的实例序列，但该请求只会使用最终标签递减一次。因此，失败实例的序列可能高于实际活跃数，而且在默认不过期的指标配置下，该数值可能一直保留到指标存储被重置。发生回退重试时，应将该 gauge 视为近似值。
 
 | 名称 | 描述 |
 | ---------- | ----------------------------------------------------------------------------------------------------------------------------- |

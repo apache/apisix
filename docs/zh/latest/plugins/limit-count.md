@@ -38,11 +38,13 @@ import TabItem from '@theme/TabItem';
 
 `limit-count` 插件使用固定窗口或滑动窗口算法，通过给定时间间隔内的请求数量来限制请求速率。超过配置配额的请求将被拒绝。
 
-你可能会在响应中看到以下速率限制标头：
+使用默认响应标头名称时，在单限流模式下将 `show_limit_quota_header` 设置为 `true`，响应中会包含以下速率限制标头：
 
 * `X-RateLimit-Limit`：总配额
 * `X-RateLimit-Remaining`：剩余配额
 * `X-RateLimit-Reset`：计数器重置的剩余秒数
+
+在 `rules` 模式下，每条规则都会使用带前缀的标头，例如 `X-Jack-RateLimit-Reset` 或 `X-1-RateLimit-Reset`。详情请参见 `rules.header_prefix`。
 
 ## 属性
 
@@ -62,8 +64,8 @@ import TabItem from '@theme/TabItem';
 | rejected_msg | string | 否 | | 非空 | 请求因超出阈值而被拒绝时返回的响应主体。 |
 | policy | string | 否 | local | ["local","redis","redis-cluster","redis-sentinel"] | 速率限制计数器的策略。如果是 `local`，则计数器存储在本地内存中。如果是 `redis`，则计数器存储在 Redis 实例上。如果是 `redis-cluster`，则计数器存储在 Redis 集群中。如果是 `redis-sentinel`，则计数器存储在通过 Sentinel 发现的 Redis 主节点上。 |
 | allow_degradation | boolean | 否 | false | | 如果为 true，则允许 APISIX 在插件或其依赖项不可用时继续处理没有插件的请求。 |
-| show_limit_quota_header | boolean | 否 | true | | 如果为 true，则在响应标头中包含 `X-RateLimit-Limit`、`X-RateLimit-Remaining` 和 `X-RateLimit-Reset`。 |
-| sync_interval | number | 否 | -1 | -1 或 >= 0.1 | Redis 类策略的延迟同步间隔，单位为秒。设置为 `-1` 时，每个请求都会与 Redis 同步。正数值必须小于数值型 `time_window`；如果动态 `time_window` 解析后的值小于或等于 `sync_interval`，APISIX 会对该请求直接同步。 |
+| show_limit_quota_header | boolean | 否 | true | | 如果为 true，则在响应标头中包含配额信息。使用默认插件元数据时，单限流模式使用 `X-RateLimit-Limit`、`X-RateLimit-Remaining` 和 `X-RateLimit-Reset`。在 `rules` 模式下，每条规则都会输出 `rules.header_prefix` 中说明的带前缀标头。 |
+| sync_interval | number | 否 | -1 | -1 或 >= 0.1 | Redis 类策略的延迟同步间隔，单位为秒。设置为 `-1` 时，每个请求都会与 Redis 同步。正数值必须小于顶层的数值型 `time_window`。如果 `rules.time_window` 的值或顶层的动态 `time_window` 解析后的值小于或等于 `sync_interval`，APISIX 会对该请求直接同步。 |
 | group | string | 否 | | 非空 | 插件的 `group` ID，以便同一 `group` 的路由可以共享相同的速率限制计数器。 |
 | redis_host | string | 否 | | | Redis 节点的地址。当 `policy` 为 `redis` 时必填。 |
 | redis_port | integer | 否 | 6379 | [1,...] | 当 `policy` 为 `redis` 时，Redis 节点的端口。 |
@@ -1518,7 +1520,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-`sync_interval` 必须不小于 `0.1` 且小于数值型 `time_window`。如果动态 `time_window` 解析后的值小于或等于 `sync_interval`，APISIX 会回退为对该请求直接同步。延迟同步使用 `plugin-limit-count-lock` 共享字典，该字典默认已配置，因此无需额外配置。
+`sync_interval` 必须不小于 `0.1`。在单限流模式下，它还必须小于顶层的数值型 `time_window`。如果 `rules.time_window` 的值或顶层的动态 `time_window` 解析后的值小于或等于 `sync_interval`，APISIX 会回退为对该请求直接同步。解析后的时间窗口大于 `sync_interval` 时，仍使用延迟同步。延迟同步使用 `plugin-limit-count-lock` 共享字典，该字典默认已配置，因此无需额外配置。
 
 向路由发送请求：
 
