@@ -25,8 +25,16 @@ add_block_preprocessor(sub {
     my ($block) = @_;
 
     my $http_config = $block->http_config // <<_EOC_;
+    lua_shared_dict oas_neg_count 1m;
     server {
         listen 1979;
+        location /count-fail.json {
+            content_by_lua_block {
+                ngx.shared.oas_neg_count:incr("n", 1, 0)
+                ngx.status = 404
+                ngx.print("not found")
+            }
+        }
         location /spec.json {
             content_by_lua_block {
                 local file = io.open("t/spec/spec.json", "r")
@@ -562,3 +570,70 @@ status: 200
     }
 --- response_body
 passed
+
+
+
+=== TEST 24: create route whose spec_url always fails (for negative cache)
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.shared.oas_neg_count:set("n", 0)
+            local t = require("lib.test_admin")
+            local code, body = t.test('/apisix/admin/routes/2',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/negcache",
+                    "plugins": {
+                        "oas-validator": {
+                            "spec_url": "http://127.0.0.1:1979/count-fail.json"
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1970": 1
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 25: failing spec_url is fetched once then negatively cached
+--- config
+    location /t {
+        content_by_lua_block {
+            -- give the route created in the previous test time to propagate
+            ngx.sleep(0.3)
+            local http = require("resty.http")
+            local port = ngx.var.server_port
+            for i = 1, 3 do
+                local httpc = http.new()
+                local res, err = httpc:request_uri(
+                    "http://127.0.0.1:" .. port .. "/negcache",
+                    { method = "POST", body = "{}",
+                      headers = { ["Content-Type"] = "application/json" } })
+                if not res then
+                    ngx.say("request failed: " .. err)
+                    return
+                end
+                if res.status ~= 500 then
+                    ngx.say("unexpected status: " .. res.status)
+                    return
+                end
+            end
+            ngx.say("fetches=" .. (ngx.shared.oas_neg_count:get("n") or 0))
+        }
+    }
+--- response_body
+fetches=1
+--- error_log
+spec URL returned status 404
