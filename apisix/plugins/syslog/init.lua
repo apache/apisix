@@ -63,8 +63,7 @@ local function send_syslog_data(conf, log_message, api_ctx)
     )
 
     if not logger then
-        res = false
-        err_msg = "failed when initiating the sys logger processor".. err
+        return false, "failed when initiating the sys logger processor" .. err
     end
 
     -- reuse the logger object
