@@ -1,5 +1,5 @@
 ---
-title: Retrieval-Augmented Generation (ai-rag)
+title: ai-rag
 keywords:
   - Apache APISIX
   - API Gateway
