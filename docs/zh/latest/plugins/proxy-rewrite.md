@@ -42,11 +42,11 @@ description: proxy-rewrite 插件支持重写 APISIX 转发到上游服务的请
 |-----------------------------|-----------|----------|---------|------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | uri | string | 否 | | | 新的上游 URI 路径。值支持 [NGINX 变量](https://nginx.org/en/docs/http/ngx_http_core_module.html)。例如，`$arg_name`。 |
 | method | string | 否 | | ["GET", "POST", "PUT", "HEAD", "DELETE", "OPTIONS", "MKCOL", "COPY", "MOVE", "PROPFIND", "LOCK", "UNLOCK", "PATCH", "TRACE"] | 要使用的重写请求的 HTTP 方法。 |
-| regex_uri | array[string] | 否 | | | 用于匹配客户端请求 URI 路径并生成新的上游 URI 路径的正则表达式。当同时配置 `uri` 和 `regex_uri` 时，`uri` 的优先级更高。该数组应包含一个或多个正则表达式与替换值组成的配对。例如，配置 `["^/test/(.*)/(.*)", "/$1-$2"]` 后，发送到 `/test/user/agent` 的请求会被重写为 `/user-agent`。|
+| regex_uri | array[string] | 否 | | | 用于匹配客户端请求 URI 路径并生成新的上游 URI 路径的正则表达式。当同时配置 `uri` 和 `regex_uri` 时，`uri` 的优先级更高。请在一个扁平数组中提供一个或多个“匹配模式 - 替换值”配对。插件按顺序检查各配对，并应用第一个匹配项。例如，配置 `["^/test/(.*)/(.*)", "/$1-$2", "^/other/(.*)", "/other"]` 后，发送到 `/test/user/agent` 的请求会被重写为 `/user-agent`，发送到 `/other/hello` 的请求会被重写为 `/other`。|
 | host | string | 否 | | | 设置 [`Host`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Host) 请求标头。|
 | headers | object | 否 | | | 要执行的标头操作。可以设置为动作动词 `add`、`remove` 和/或 `set` 的对象；或由要 `set` 的标头组成的对象。当配置了多个动作动词时，动作将按照“添加”、“删除”和“设置”的顺序执行。|
-| headers.add | object | 否 | | | 要附加到请求的标头。如果请求中已经存在标头，则会附加标头值。标头值可以设置为常量、一个或多个 [NGINX 变量](https://nginx.org/en/docs/http/ngx_http_core_module.html)，或者 `regex_uri` 的匹配结果（使用变量，例如 `$1-$2-$3`）。标头值也可以是上述值的数组（例如 `["val1", "val2"]`），从而多次附加该标头，生成多个同名标头。|
-| headers.set | object | 否 | | | 要设置请求的标头。如果请求中已经存在标头，则会覆盖标头值。标头值可以设置为常量、一个或多个 [NGINX 变量](https://nginx.org/en/docs/http/ngx_http_core_module.html)，或者 `regex_uri` 的匹配结果（使用变量，例如 `$1-$2-$3`）。标头值也可以是上述值的数组（例如 `["val1", "val2"]`），从而将该标头替换为多个值（多个同名标头）。不应将其用于设置 `Host`。|
+| headers.add | object | 否 | | | 要附加到请求的标头。如果请求中已经存在该标头，插件会追加配置值。值可以是常量、一个或多个 [NGINX 变量](https://nginx.org/en/docs/http/ngx_http_core_module.html)，或者 `$1-$2-$3` 等 `regex_uri` 捕获结果。值也可以是数组；插件会分别解析每个元素，并按数组顺序将其追加为单独的标头行。APISIX 3.18.0 及后续版本支持数组值。|
+| headers.set | object | 否 | | | 要在请求中设置的标头。如果请求中已经存在该标头，插件会覆盖原有值。值可以是常量、一个或多个 [NGINX 变量](https://nginx.org/en/docs/http/ngx_http_core_module.html)，或者 `$1-$2-$3` 等 `regex_uri` 捕获结果。值也可以是数组；插件会分别解析每个元素，并用按数组顺序生成的多个标头行替换原有值。APISIX 3.18.0 及后续版本支持数组值。请勿使用此字段设置 `Host`。|
 | headers.remove | array[string] | 否 | | | 从请求中删除的标头。
 | use_real_request_uri_unsafe | boolean | 否 | false | | 如果为 True，则绕过 URI 规范化并允许完整的原始请求 URI。启用此选项被视为不安全。|
 
@@ -111,7 +111,7 @@ curl "http://127.0.0.1:9080/headers"
 
 ### 重写 URI 并设置标头
 
-以下示例演示了如何重写请求上游 URI 并设置其他标头值。如果客户端请求中存在相同的标头，则插件中设置的相应标头值将覆盖客户端请求中存在的值。
+以下示例重写上游 URI 并设置请求标头。标量值会设置一个标头行，数组值会按数组顺序设置多个同名标头行。在本例中，`X-Api-Engine` 仍为标量，而 `X-Api-Version` 会用两个值替换客户端传入的值。
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -125,7 +125,10 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
         "uri": "/anything",
         "headers": {
           "set": {
-            "X-Api-Version": "v1",
+            "X-Api-Version": [
+              "v1",
+              "v2"
+            ],
             "X-Api-Engine": "apisix"
           }
         }
@@ -134,7 +137,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     "upstream": {
       "type": "roundrobin",
       "nodes": {
-        "httpbin.org:80": 1
+        "httpbingo.org:80": 1
       }
     }
   }'
@@ -143,38 +146,30 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 发送请求以验证：
 
 ```shell
-curl "http://127.0.0.1:9080/" -H "X-Api-Version: v2"
+curl "http://127.0.0.1:9080/" -H "X-Api-Version: client"
 ```
 
 你应该看到类似于以下内容的响应：
 
-```text
+```json
 {
-  "args": {},
-  "data": "",
-  "files": {},
-  "form": {},
   "headers": {
-    "Accept": "*/*",
-    "Host": "httpbin.org",
-    "User-Agent": "curl/8.2.1",
-    "X-Amzn-Trace-Id": "Root=1-64fed73a-59cd3bd640d76ab16c97f1f1",
-    "X-Api-Engine": "apisix",
-    "X-Api-Version": "v1",
-    "X-Forwarded-Host": "127.0.0.1"
-  },
-  "json": null,
-  "method": "GET",
-  "origin": "::1, 103.248.35.179",
-  "url": "http://localhost/anything"
+    "X-Api-Engine": [
+      "apisix"
+    ],
+    "X-Api-Version": [
+      "v1",
+      "v2"
+    ]
+  }
 }
 ```
 
-两个配置的标头均存在，且插件将请求中的 `X-Api-Version: v2` 覆盖为 `X-Api-Version: v1`。
+插件会按配置顺序发送两个 `X-Api-Version` 标头行。由于 `headers.set` 会替换原有值，请求中的 `client` 不会保留。标量配置 `X-Api-Engine` 仍只设置一个标头行。
 
 ### 重写 URI 并附加标头
 
-以下示例演示了如何重写请求上游 URI 并附加其他标头值。如果客户端请求中存在相同的标头，则它们的标头值将附加到插件中配置的标头值。
+以下示例重写请求上游 URI 并附加其他标头值。如果客户端请求中存在相同标头，插件会保留传入值，并按数组顺序将每个配置元素追加为单独的标头行。
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -185,10 +180,13 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     "uri": "/",
     "plugins": {
       "proxy-rewrite": {
-        "uri": "/headers",
+        "uri": "/anything",
         "headers": {
           "add": {
-            "X-Api-Version": "v1",
+            "X-Api-Version": [
+              "v1",
+              "v2"
+            ],
             "X-Api-Engine": "apisix"
           }
         }
@@ -197,7 +195,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     "upstream": {
       "type": "roundrobin",
       "nodes": {
-        "httpbin.org:80": 1
+        "httpbingo.org:80": 1
       }
     }
   }'
@@ -206,60 +204,27 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 发送请求以验证：
 
 ```shell
-curl "http://127.0.0.1:9080/" -H "X-Api-Version: v2"
+curl "http://127.0.0.1:9080/" -H "X-Api-Version: client"
 ```
 
 你应该会看到类似以下内容的响应：
 
-```text
+```json
 {
   "headers": {
-    "Accept": "*/*",
-    "Host": "httpbin.org",
-    "User-Agent": "curl/8.2.1",
-    "X-Amzn-Trace-Id": "Root=1-64fed73a-59cd3bd640d76ab16c97f1f1",
-    "X-Api-Engine": "apisix",
-    "X-Api-Version": "v2,v1",
-    "X-Forwarded-Host": "127.0.0.1"
+    "X-Api-Engine": [
+      "apisix"
+    ],
+    "X-Api-Version": [
+      "client",
+      "v1",
+      "v2"
+    ]
   }
 }
 ```
 
-两个配置的标头均存在。请求中的 `X-Api-Version: v2` 会被保留，插件在其后追加配置的 `v1` 值。
-
-### 为同一标头设置或附加多个值
-
-`set` 和 `add` 都支持数组值，用于生成多个同名标头。使用 `set` 将传入标头替换为列表中的多个值，或使用 `add` 在已有标头之上追加这些值。
-
-以下示例在上游请求上设置两个 `X-Api-Version` 标头：
-
-```shell
-curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
-  -H "X-API-KEY: ${admin_key}" \
-  -d '{
-    "id": "proxy-rewrite-route",
-    "methods": ["GET"],
-    "uri": "/",
-    "plugins": {
-      "proxy-rewrite": {
-        "uri": "/headers",
-        "headers": {
-          "set": {
-            "X-Api-Version": ["v1", "v2"]
-          }
-        }
-      }
-    },
-    "upstream": {
-      "type": "roundrobin",
-      "nodes": {
-        "httpbin.org:80": 1
-      }
-    }
-  }'
-```
-
-上游会收到 `X-Api-Version: v1` 和 `X-Api-Version: v2`。将 `set` 替换为 `add` 则保留客户端请求中已有的 `X-Api-Version`，并在其后追加 `v1` 和 `v2`。
+请求中的 `client` 值会被保留，后面依次是配置的 `v1` 和 `v2`。标量配置 `X-Api-Engine` 会添加一个标头行。
 
 ### 删除现有标头
 

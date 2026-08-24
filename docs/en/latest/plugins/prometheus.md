@@ -41,6 +41,8 @@ After enabling the Plugin, APISIX will start collecting relevant metrics, such a
 
 By default, `prometheus` configurations are pre-configured in the [default configuration](https://github.com/apache/apisix/blob/master/apisix/cli/config.lua).
 
+The prompt- and completion-token histograms default to buckets at `1`, `10`, `50`, `100`, `200`, `500`, `1000`, `2000`, `5000`, `10000`, `20000`, `50000`, `100000`, `200000`, `500000`, and `1000000` tokens. Configure `llm_prompt_tokens_buckets` and `llm_completion_tokens_buckets` when different boundaries better fit the workload.
+
 To customize these values, add the corresponding configurations to `config.yaml`. For example:
 
 ```yaml
@@ -69,7 +71,8 @@ plugin_attr:
     #      - upstream_addr: $upstream_addr
     #    expire: 0                          # The expiration time of metrics in seconds.
                                             # 0 means the metrics will not expire.
-    # default_buckets:                      # Set the default buckets for the `http_latency` metrics histogram.
+    # default_buckets:                      # Built-in `http_latency` histogram buckets in milliseconds when this key is omitted.
+                                            # Uncomment the list only to override those defaults.
     #   - 1
     #   - 2
     #   - 5
@@ -85,6 +88,20 @@ plugin_attr:
     #   - 10000
     #   - 30000
     #   - 60000
+    # llm_latency_buckets:                  # Buckets for `apisix_llm_latency`, in milliseconds.
+                                            # Applies to both `type=total` and `type=ttft` in APISIX 3.18.0 and later.
+    #   - 100
+    #   - 500
+    #   - 1000
+    #   - 5000
+    # llm_prompt_tokens_buckets:            # Buckets for `apisix_llm_prompt_tokens_dist`, in tokens.
+    #   - 100
+    #   - 1000
+    #   - 10000
+    # llm_completion_tokens_buckets:        # Buckets for `apisix_llm_completion_tokens_dist`, in tokens.
+    #   - 100
+    #   - 1000
+    #   - 10000
 ```
 
 You can use the [Nginx variable](https://nginx.org/en/docs/http/ngx_http_core_module.html) to create `extra_labels`. See [add extra labels](#add-extra-labels-for-metrics).
@@ -105,6 +122,18 @@ You can configure the Plugin through its [Plugin Metadata](../terminology/plugin
 | --------------- | ------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | disabled_labels | object | False    | Per-metric map of built-in label names whose values are collapsed to an empty string `""` to reduce metric cardinality. Keyed by metric name: `http_status`, `http_latency`, `bandwidth`, `llm_latency`, `llm_prompt_tokens`, `llm_completion_tokens`, `llm_active_connections`, `llm_prompt_tokens_dist`, `llm_completion_tokens_dist`, `ai_cache_hits_total`, `ai_cache_misses_total`, `ai_cache_bypasses_total`, `ai_cache_embedding_latency`. Structural labels that define a metric's identity (`code` on `http_status`, `type` on `http_latency`, `bandwidth` and `llm_latency`, `layer` on `ai_cache_hits_total`) cannot be disabled. |
 
+The following built-in labels can be disabled for each metadata key:
+
+| Metadata key | Labels that can be disabled |
+| ------------ | --------------------------- |
+| `http_status` | `route`, `matched_uri`, `matched_host`, `service`, `consumer`, `node`, `request_type`, `request_llm_model`, `llm_model`, `response_source` |
+| `http_latency` | `route`, `service`, `consumer`, `node`, `request_type`, `request_llm_model`, `llm_model` |
+| `bandwidth` | `route`, `service`, `consumer`, `node`, `request_type`, `request_llm_model`, `llm_model` |
+| `llm_latency` | `route_id`, `service_id`, `consumer`, `node`, `request_type`, `request_llm_model`, `llm_model` |
+| `llm_prompt_tokens`, `llm_completion_tokens`, `llm_prompt_tokens_dist`, `llm_completion_tokens_dist` | `route_id`, `service_id`, `consumer`, `node`, `request_type`, `request_llm_model`, `llm_model` |
+| `llm_active_connections` | `route`, `route_id`, `matched_uri`, `matched_host`, `service`, `service_id`, `consumer`, `node`, `request_type`, `request_llm_model`, `llm_model` |
+| `ai_cache_hits_total`, `ai_cache_misses_total`, `ai_cache_bypasses_total`, `ai_cache_embedding_latency` | `route`, `route_id`, `service`, `service_id`, `consumer`, `node`, `request_type`, `request_llm_model`, `llm_model` |
+
 Collapsing a label's value to `""` keeps the label registered in the metric schema, so existing dashboards, `absent()` alerts, and recording rules keep working — only the high-cardinality time series that differ solely by those labels are collapsed into one. This is useful in dynamic environments such as Kubernetes autoscaling, where the upstream node IP (`node` label) churns rapidly and would otherwise overflow the `prometheus-metrics` shared dict.
 
 See [Reduce Metric Cardinality by Disabling Labels](#reduce-metric-cardinality-by-disabling-labels) for an example.
@@ -123,7 +152,7 @@ The following table lists the core metrics registered directly by the `prometheu
 | apisix_etcd_modify_indexes            | gauge     | Number of changes to etcd by APISIX keys.                                                                                                                                         |
 | apisix_batch_process_entries          | gauge     | Number of remaining entries in a batch when sending data in batches, such as with `http logger`, and other logging Plugins.  |
 | apisix_etcd_reachable                 | gauge     | Whether APISIX can reach etcd. A value of `1` represents reachable and `0` represents unreachable.                                          |
-| apisix_http_status                    | counter   | HTTP status codes returned to clients.                                                                         |
+| apisix_http_status                    | counter   | HTTP status codes returned to clients after Plugin processing and proxying. This value can differ from the Upstream status. |
 | apisix_http_requests_total            | gauge     | Number of HTTP requests from clients.                                                                                                                                     |
 | apisix_nginx_http_current_connections | gauge     | Number of current connections with clients.                                                                                   |
 | apisix_nginx_metric_errors_total      | counter   | Total number of `nginx-lua-prometheus` errors.                                                                                                                                |
@@ -167,7 +196,7 @@ The following labels are used to differentiate `apisix_http_status` metrics.
 | matched_host | Host of the Route that matches the request. Default to an empty string if a request does not match any Route, or host is not configured on the Route.                             |
 | service      | ID of the Service that the HTTP status originates from when `prefer_name` is `false` (default), and name of the Service when `prefer_name` to `true`. Default to the configured value of host on the Route if the matched Route does not belong to any Service. |
 | consumer     | Name of the Consumer associated with a request. Default to an empty string if no Consumer is associated with the request.                       |
-| node         | IP address of the upstream node.                                                                                          |
+| node         | IP address of the Upstream node. For AI Routes, this is the LLM instance name reported by `ai-proxy` or `ai-proxy-multi`. |
 | request_type       | Request category: `traditional_http`, `ai_chat`, or `ai_stream`.                                                               |
 | request_llm_model  | Model name requested by the client.                                                                                            |
 | llm_model          | Effective target model for the AI request. Uses the model configured on the AI instance when present; otherwise uses the model requested by the client. Empty for traditional HTTP traffic. |
@@ -227,7 +256,7 @@ The following labels are used to differentiate `apisix_bandwidth` metrics.
 | route      | ID of the Route that bandwidth corresponds to when `prefer_name` is `false` (default), and name of the Route when `prefer_name` to `true`. Default to an empty string if a request does not match any Route.                         |
 | service    | ID of the Service that bandwidth corresponds to when `prefer_name` is `false` (default), and name of the Service when `prefer_name` to `true`. Default to the configured value of host on the Route if the matched Route does not belong to any Service. |
 | consumer   | Name of the Consumer associated with a request. Default to an empty string if no Consumer is associated with the request.                       |
-| node       | IP address of the upstream node.                                                                                          |
+| node       | IP address of the Upstream node. For AI Routes, this is the LLM instance name reported by `ai-proxy` or `ai-proxy-multi`. |
 | request_type       | Request category: `traditional_http`, `ai_chat`, or `ai_stream`.                                                               |
 | request_llm_model  | Model name requested by the client.                                                                                            |
 | llm_model          | Effective target model for the AI request. Uses the model configured on the AI instance when present; otherwise uses the model requested by the client. Empty for traditional HTTP traffic. |
@@ -356,7 +385,7 @@ The following labels are used to differentiate `apisix_http_latency` metrics.
 | route      | ID of the Route that latencies correspond to when `prefer_name` is `false` (default), and name of the Route when `prefer_name` to `true`. Default to an empty string if a request does not match any Route.                         |
 | service    | ID of the Service that latencies correspond to when `prefer_name` is `false` (default), and name of the Service when `prefer_name` to `true`. Default to the configured value of host on the Route if the matched Route does not belong to any Service. |
 | consumer   | Name of the Consumer associated with latencies. Default to an empty string if no Consumer is associated with the request.                             |
-| node       | IP address of the upstream node associated with latencies.                                                                                                |
+| node       | IP address of the Upstream node associated with latencies. For AI Routes, this is the LLM instance name reported by `ai-proxy` or `ai-proxy-multi`. |
 | request_type       | Request category: `traditional_http`, `ai_chat`, or `ai_stream`.                                                               |
 | request_llm_model  | Model name requested by the client.                                                                                            |
 | llm_model          | Effective target model for the AI request. Uses the model configured on the AI instance when present; otherwise uses the model requested by the client. Empty for traditional HTTP traffic. |
@@ -681,7 +710,7 @@ apisix_http_status{code="200",route="prometheus-route",matched_uri="/get",matche
 
 The following example demonstrates how to collect TCP/UDP traffic metrics in APISIX.
 
-Include the following configurations in `config.yaml` to enable stream proxy and `prometheus` Plugin for stream proxy. Reload APISIX for changes to take effect:
+Include the following configurations in `config.yaml` to enable Stream proxy and add `prometheus` to the existing Stream Plugin list. Preserve any other Stream Plugins used by the deployment. Reload APISIX for changes to take effect:
 
 ```yaml title="conf/config.yaml"
 apisix:
@@ -734,18 +763,22 @@ You should see an output similar to the following:
 ```text
 # HELP apisix_stream_connection_total Total number of connections handled per Stream Route in APISIX
 # TYPE apisix_stream_connection_total counter
-apisix_stream_connection_total{route="1"} 1
+apisix_stream_connection_total{route="prometheus-route"} 1
 # HELP apisix_stream_active_connections Number of stream sessions currently being proxied per listening address
 # TYPE apisix_stream_active_connections gauge
-apisix_stream_active_connections{listen_addr="0.0.0.0:9100"} 1
+apisix_stream_active_connections{listen_addr="0.0.0.0:9100"} 0
 # HELP apisix_stream_status Stream sessions per termination status in APISIX
 # TYPE apisix_stream_status counter
-apisix_stream_status{code="200",listen_addr="0.0.0.0:9100",node="127.0.0.1:1995"} 1
+apisix_stream_status{code="200",listen_addr="0.0.0.0:9100",node="54.237.103.220:80"} 1
 # HELP apisix_stream_bandwidth Total bandwidth in bytes proxied by the stream subsystem in APISIX
 # TYPE apisix_stream_bandwidth counter
-apisix_stream_bandwidth{listen_addr="0.0.0.0:9100",type="ingress",side="downstream"} 5
-apisix_stream_bandwidth{listen_addr="0.0.0.0:9100",type="egress",side="upstream"} 5
+apisix_stream_bandwidth{listen_addr="0.0.0.0:9100",type="ingress",side="downstream"} 78
+apisix_stream_bandwidth{listen_addr="0.0.0.0:9100",type="egress",side="downstream"} 219
+apisix_stream_bandwidth{listen_addr="0.0.0.0:9100",type="egress",side="upstream"} 78
+apisix_stream_bandwidth{listen_addr="0.0.0.0:9100",type="ingress",side="upstream"} 219
 ```
+
+The exact Upstream address and byte counts depend on the request. The active-connections gauge is `0` above because the request completed before the scrape; scrape while a connection remains open to observe a positive value.
 
 :::note
 

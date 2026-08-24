@@ -41,6 +41,8 @@ description:  本文将介绍 prometheus 插件，以及将 APISIX 与 Prometheu
 
 默认情况下，已在默认配置文件 [`config.lua`](https://github.com/apache/apisix/blob/master/apisix/cli/config.lua) 中对 `prometheus` 进行预配置。
 
+prompt token 和 completion token 直方图的默认桶边界为 `1`、`10`、`50`、`100`、`200`、`500`、`1000`、`2000`、`5000`、`10000`、`20000`、`50000`、`100000`、`200000`、`500000` 和 `1000000` 个 token。如果这些边界不适合实际负载，可通过 `llm_prompt_tokens_buckets` 和 `llm_completion_tokens_buckets` 自定义。
+
 要自定义这些值，请将相应的配置添加到 config.yaml 中。例如：
 
 ```yaml
@@ -69,7 +71,8 @@ plugin_attr:
     #      - upstream_addr: $upstream_addr
     #    expire: 0                          # 指标的过期时间（秒）。
                                             # 0 表示指标不会过期。
-    # default_buckets:                      # 设置 `http_latency` 指标直方图的默认桶。
+    # default_buckets:                      # 省略此键时使用的内置 `http_latency` 直方图桶，单位为毫秒。
+                                            # 仅在需要覆盖默认值时取消下列配置的注释。
     #   - 1
     #   - 2
     #   - 5
@@ -85,6 +88,20 @@ plugin_attr:
     #   - 10000
     #   - 30000
     #   - 60000
+    # llm_latency_buckets:                  # `apisix_llm_latency` 的桶，单位为毫秒。
+                                            # APISIX 3.18.0 及后续版本同时应用于 `type=total` 和 `type=ttft`。
+    #   - 100
+    #   - 500
+    #   - 1000
+    #   - 5000
+    # llm_prompt_tokens_buckets:            # `apisix_llm_prompt_tokens_dist` 的桶，单位为 token。
+    #   - 100
+    #   - 1000
+    #   - 10000
+    # llm_completion_tokens_buckets:        # `apisix_llm_completion_tokens_dist` 的桶，单位为 token。
+    #   - 100
+    #   - 1000
+    #   - 10000
 ```
 
 你可以使用 [Nginx 变量](https://nginx.org/en/docs/http/ngx_http_core_module.html)创建 `extra_labels`。请参见[为指标添加额外标签](#为指标添加额外标签)。
@@ -105,6 +122,18 @@ plugin_attr:
 | --------------- | ------ | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | disabled_labels | object | 否     | 按指标配置的内置标签列表，列出的标签其值会被设置为空字符串 `""` 以降低指标基数。以指标名称作为键：`http_status`、`http_latency`、`bandwidth`、`llm_latency`、`llm_prompt_tokens`、`llm_completion_tokens`、`llm_active_connections`、`llm_prompt_tokens_dist`、`llm_completion_tokens_dist`、`ai_cache_hits_total`、`ai_cache_misses_total`、`ai_cache_bypasses_total`、`ai_cache_embedding_latency`。定义指标本身含义的结构性标签（`http_status` 的 `code`、`http_latency`、`bandwidth` 与 `llm_latency` 的 `type`、`ai_cache_hits_total` 的 `layer`）不可被禁用。 |
 
+每个元数据键可禁用的内置标签如下：
+
+| 元数据键 | 可禁用标签 |
+| -------- | ---------- |
+| `http_status` | `route`、`matched_uri`、`matched_host`、`service`、`consumer`、`node`、`request_type`、`request_llm_model`、`llm_model`、`response_source` |
+| `http_latency` | `route`、`service`、`consumer`、`node`、`request_type`、`request_llm_model`、`llm_model` |
+| `bandwidth` | `route`、`service`、`consumer`、`node`、`request_type`、`request_llm_model`、`llm_model` |
+| `llm_latency` | `route_id`、`service_id`、`consumer`、`node`、`request_type`、`request_llm_model`、`llm_model` |
+| `llm_prompt_tokens`、`llm_completion_tokens`、`llm_prompt_tokens_dist`、`llm_completion_tokens_dist` | `route_id`、`service_id`、`consumer`、`node`、`request_type`、`request_llm_model`、`llm_model` |
+| `llm_active_connections` | `route`、`route_id`、`matched_uri`、`matched_host`、`service`、`service_id`、`consumer`、`node`、`request_type`、`request_llm_model`、`llm_model` |
+| `ai_cache_hits_total`、`ai_cache_misses_total`、`ai_cache_bypasses_total`、`ai_cache_embedding_latency` | `route`、`route_id`、`service`、`service_id`、`consumer`、`node`、`request_type`、`request_llm_model`、`llm_model` |
+
 将标签值设置为 `""` 时，标签仍保留在指标 schema 中，因此现有的仪表盘、`absent()` 告警和 recording rule 都不受影响——只是将仅因这些标签而不同的高基数时间序列合并为一条。这在 Kubernetes 弹性伸缩等动态环境中尤其有用：此时上游节点 IP（`node` 标签）频繁变化，否则会很快撑爆 `prometheus-metrics` 共享字典。
 
 示例请参见[通过禁用标签降低指标基数](#通过禁用标签降低指标基数)。
@@ -115,7 +144,7 @@ plugin_attr:
 
 Prometheus 中有不同类型的指标。要了解它们之间的区别，请参见[指标类型](https://prometheus.io/docs/concepts/metric_types/)。
 
-下表列出由 `prometheus` 插件直接注册的核心指标。已配置的 xRPC 协议还可以注册额外的协议专用指标。例如，Redis xRPC 会注册 `apisix_redis_commands_total` 和 `apisix_redis_commands_latency_seconds`。有关示例，请参见[获取 APISIX 指标](#获取 APISIX 指标)。只有对应数据源启用后，相关指标序列才会出现。例如，Stream 指标要求将 `prometheus` 启用为 Stream 插件，LLM 指标要求存在 AI 流量，AI 缓存指标要求启用 `ai-cache` 插件，而 `apisix_batch_process_entries` 只有在批处理插件产生数据后才会出现。
+下表列出由 `prometheus` 插件直接注册的核心指标。已配置的 xRPC 协议还可以注册额外的协议专用指标。例如，Redis xRPC 会注册 `apisix_redis_commands_total` 和 `apisix_redis_commands_latency_seconds`。有关示例，请参见[获取 APISIX 指标](#获取-apisix-指标)。只有对应数据源启用后，相关指标序列才会出现。例如，Stream 指标要求将 `prometheus` 启用为 Stream 插件，LLM 指标要求存在 AI 流量，AI 缓存指标要求启用 `ai-cache` 插件，而 `apisix_batch_process_entries` 只有在批处理插件产生数据后才会出现。
 
 | 名称                    | 类型      | 描述                                                                                                                                                                   |
 | ----------------------- | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -123,7 +152,7 @@ Prometheus 中有不同类型的指标。要了解它们之间的区别，请参
 | apisix_etcd_modify_indexes | gauge     | APISIX 键的 etcd 修改次数。                                                                                                                                          |
 | apisix_batch_process_entries | gauge     | 发送数据时批处理中的剩余条目数，例如使用 `http logger` 和其他日志插件。                                                                                             |
 | apisix_etcd_reachable   | gauge     | APISIX 是否可以访问 etcd。值为 `1` 表示可达，`0` 表示不可达。                                                                                                      |
-| apisix_http_status      | counter   | 返回给客户端的 HTTP 状态代码。                                                                                                                                       |
+| apisix_http_status      | counter   | 插件处理和代理完成后返回给客户端的 HTTP 状态代码。该值可能与上游状态不同。                                                                                           |
 | apisix_http_requests_total | gauge     | 来自客户端的 HTTP 请求数量。                                                                                                                                         |
 | apisix_nginx_http_current_connections | gauge     | 当前与客户端的连接数量。                                                                                                                                             |
 | apisix_nginx_metric_errors_total | counter   | `nginx-lua-prometheus` 错误的总数。                                                                                                                                 |
@@ -167,7 +196,7 @@ Prometheus 中有不同类型的指标。要了解它们之间的区别，请参
 | matched_host | 匹配请求的路由主机。如果请求不匹配任何路由，或路由未配置主机，则默认为空字符串。                                     |
 | service | HTTP 状态来源的服务 ID，当 `prefer_name` 为 `false`（默认）时，使用服务 ID，当 `prefer_name` 为 `true` 时，使用服务名称。如果匹配的路由不属于任何服务，则默认为路由上配置的主机值。 |
 | consumer | 与请求关联的消费者名称。如果请求没有与之关联的消费者，则默认为空字符串。                                             |
-| node   | 上游节点的 IP 地址。                                                                                                   |
+| node   | 上游节点的 IP 地址。对于 AI 路由，该值为 `ai-proxy` 或 `ai-proxy-multi` 上报的 LLM 实例名称。                           |
 | request_type       | 请求类别：`traditional_http`、`ai_chat` 或 `ai_stream`。                                                                         |
 | request_llm_model  | 客户端请求的模型名称。                                                                                                           |
 | llm_model          | AI 请求实际使用的目标模型。优先使用 AI 实例中配置的模型，否则使用客户端请求的模型；传统 HTTP 流量中为空字符串。 |
@@ -215,7 +244,7 @@ UDP 没有关闭、FIN 或重置信号，因此只会出现其中一部分状态
 | route  | 请求对应的路由 ID，当 `prefer_name` 为 `false`（默认）时，使用路由 ID，当 `prefer_name` 为 `true` 时，使用路由名称。如果请求不匹配任何路由，则默认为空字符串。 |
 | service | 请求对应的服务 ID，当 `prefer_name` 为 `false`（默认）时，使用服务 ID，当 `prefer_name` 为 `true` 时，使用服务名称。如果匹配的路由不属于任何服务，则默认为路由上配置的主机值。 |
 | consumer | 与请求关联的消费者名称。如果请求没有与之关联的消费者，则默认为空字符串。                                             |
-| node   | 上游节点的 IP 地址。                                                                                                   |
+| node   | 上游节点的 IP 地址。对于 AI 路由，该值为 `ai-proxy` 或 `ai-proxy-multi` 上报的 LLM 实例名称。                           |
 | request_type       | 请求类别：`traditional_http`、`ai_chat` 或 `ai_stream`。                                                                         |
 | request_llm_model  | 客户端请求的模型名称。                                                                                                           |
 | llm_model          | AI 请求实际使用的目标模型。优先使用 AI 实例中配置的模型，否则使用客户端请求的模型；传统 HTTP 流量中为空字符串。 |
@@ -344,7 +373,7 @@ APISIX 在开始 LLM 上游尝试时递增该 gauge，并在请求的日志阶�
 | route  | 延迟对应的路由 ID，当 `prefer_name` 为 `false`（默认）时，使用路由 ID，当 `prefer_name` 为 `true` 时，使用路由名称。如果请求不匹配任何路由，则默认为空字符串。 |
 | service | 延迟对应的服务 ID，当 `prefer_name` 为 `false`（默认）时，使用服务 ID，当 `prefer_name` 为 `true` 时，使用服务名称。如果匹配的路由不属于任何服务，则默认为路由上配置的主机值。 |
 | consumer | 与延迟关联的消费者名称。如果请求没有与之关联的消费者，则默认为空字符串。                                             |
-| node   | 与延迟关联的上游节点的 IP 地址。                                                                                     |
+| node   | 与延迟关联的上游节点 IP 地址。对于 AI 路由，该值为 `ai-proxy` 或 `ai-proxy-multi` 上报的 LLM 实例名称。               |
 | request_type       | 请求类别：`traditional_http`、`ai_chat` 或 `ai_stream`。                                                                         |
 | request_llm_model  | 客户端请求的模型名称。                                                                                                           |
 | llm_model          | AI 请求实际使用的目标模型。优先使用 AI 实例中配置的模型，否则使用客户端请求的模型；传统 HTTP 流量中为空字符串。 |
@@ -668,7 +697,7 @@ apisix_http_status{code="200",route="prometheus-route",matched_uri="/get",matche
 
 以下示例演示如何在 APISIX 中收集 TCP/UDP 流量指标。
 
-在 `config.yaml` 中包含以下配置以启用 Stream proxy 和 `prometheus` 插件。重新加载 APISIX 以使更改生效：
+在 `config.yaml` 中包含以下配置以启用 Stream 代理，并将 `prometheus` 添加到现有 Stream 插件列表中。请保留部署正在使用的其他 Stream 插件。重新加载 APISIX 以使更改生效：
 
 ```yaml title="conf/config.yaml"
 apisix:
@@ -721,5 +750,25 @@ curl "http://127.0.0.1:9091/apisix/prometheus/metrics"
 ```text
 # HELP apisix_stream_connection_total APISIX 中每个 Stream Route 处理的总连接数
 # TYPE apisix_stream_connection_total counter
-apisix_stream_connection_total{route="1"} 1
+apisix_stream_connection_total{route="prometheus-route"} 1
+# HELP apisix_stream_active_connections Number of stream sessions currently being proxied per listening address
+# TYPE apisix_stream_active_connections gauge
+apisix_stream_active_connections{listen_addr="0.0.0.0:9100"} 0
+# HELP apisix_stream_status Stream sessions per termination status in APISIX
+# TYPE apisix_stream_status counter
+apisix_stream_status{code="200",listen_addr="0.0.0.0:9100",node="54.237.103.220:80"} 1
+# HELP apisix_stream_bandwidth Total bandwidth in bytes proxied by the stream subsystem in APISIX
+# TYPE apisix_stream_bandwidth counter
+apisix_stream_bandwidth{listen_addr="0.0.0.0:9100",type="ingress",side="downstream"} 78
+apisix_stream_bandwidth{listen_addr="0.0.0.0:9100",type="egress",side="downstream"} 219
+apisix_stream_bandwidth{listen_addr="0.0.0.0:9100",type="egress",side="upstream"} 78
+apisix_stream_bandwidth{listen_addr="0.0.0.0:9100",type="ingress",side="upstream"} 219
 ```
+
+实际的上游地址和字节数取决于请求。上例中的活跃连接 gauge 为 `0`，因为抓取指标时请求已完成；如需观察正值，请在连接保持打开时抓取指标。
+
+:::note
+
+`apisix_stream_active_connections` 和 `apisix_stream_bandwidth` 使用由 `nginx_config.stream.metrics_zone_size` 配置的 NGINX 共享内存区，默认大小为 `1m`。这两个指标依赖 APISIX-Runtime；如果运行时不提供对应模块，则不会发布这两个指标。
+
+:::
