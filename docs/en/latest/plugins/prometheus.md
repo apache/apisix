@@ -271,7 +271,7 @@ The `type` label distinguishes the kind of latency, similar to `apisix_http_late
 For request-scoped LLM metrics, the labels named `route_id` and `service_id` follow `prefer_name`: they contain IDs by default and names when `prefer_name` is `true`. `apisix_llm_active_connections` is different because it exports separate name and ID labels.
 
 | Name | Description                                                                                                                   |
-| ---------- | ----------------------------------------------------------------------------------------------------------------------------- |                                                                                             |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | type          | Kind of latency: `total` or `ttft`.                                                                                             |
 | route_id      | ID of the Route that the metric corresponds to when `prefer_name` is `false` (default), and name of the Route when `prefer_name` is `true`. Defaults to an empty string if a request does not match any Route.                         |
 | service_id    | ID of the Service that the metric corresponds to when `prefer_name` is `false` (default), and name of the Service when `prefer_name` is `true`. Defaults to an empty string if the matched Route does not belong to any Service. |
@@ -302,7 +302,7 @@ APISIX increments this gauge when an LLM upstream attempt starts and decrements 
 ### Labels for `apisix_llm_completion_tokens`
 
 | Name | Description                                                                                                                   |
-| ---------- | ----------------------------------------------------------------------------------------------------------------------------- |                                                                                             |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | route_id      | ID of the Route that the metric corresponds to when `prefer_name` is `false` (default), and name of the Route when `prefer_name` is `true`. Defaults to an empty string if no Route is matched. |
 | service_id    | ID of the Service that the metric corresponds to when `prefer_name` is `false` (default), and name of the Service when `prefer_name` is `true`. Defaults to an empty string if the matched Route does not reference a Service. |
 | consumer   | Name of the Consumer associated with a request. Default to an empty string if no Consumer is associated with the request.                       |
@@ -314,7 +314,7 @@ APISIX increments this gauge when an LLM upstream attempt starts and decrements 
 ### Labels for `apisix_llm_prompt_tokens`
 
 | Name | Description                                                                                                                   |
-| ---------- | ----------------------------------------------------------------------------------------------------------------------------- |                                                                                             |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | route_id      | ID of the Route that the metric corresponds to when `prefer_name` is `false` (default), and name of the Route when `prefer_name` is `true`. Defaults to an empty string if no Route is matched. |
 | service_id    | ID of the Service that the metric corresponds to when `prefer_name` is `false` (default), and name of the Service when `prefer_name` is `true`. Defaults to an empty string if the matched Route does not reference a Service. |
 | consumer   | Name of the Consumer associated with a request. Default to an empty string if no Consumer is associated with the request.                       |
