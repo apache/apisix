@@ -576,13 +576,15 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
             res._upstream_bytes = bytes_read
             ctx.var.apisix_upstream_response_time = math.floor(
                 (ngx_now() - ctx.llm_request_start_time) * 1000)
-            if converter and not output_sent then
+            if not output_sent then
                 if flush_thread then
                     ngx.thread.kill(flush_thread)
                 end
-                local msg = "streaming response completed without producing "
-                            .. "any output; the upstream likely returned a "
-                            .. "different stream format than the converter expects"
+                local msg = converter
+                    and "streaming response completed without producing "
+                        .. "any output; the upstream likely returned a "
+                        .. "different stream format than the converter expects"
+                    or "upstream returned an empty stream"
                 core.log.error(msg)
                 return 502, msg
             end
