@@ -177,6 +177,8 @@ When the selected LLM upstream returns a `429` or `5xx` status, `ai-proxy-multi`
 - If the request is retried on another instance (per `fallback_strategy`, `fallback_http_statuses`, `max_retries`, and `retry_on_failure_within_ms`), the failed instance's error body is recorded in the error log for diagnostics, since a later attempt's response is sent to the client instead.
 - If the request is not retried (no matching `fallback_strategy` or `fallback_http_statuses`, retries exhausted, or the failure took longer than `retry_on_failure_within_ms`), the upstream status code and error body are returned to the client, preserving the upstream `Content-Type`.
 
+A streaming response is different once part of it has been delivered. The downstream response is committed as `200` with the first SSE event, so a later failure to read from the upstream (a connection reset or a read timeout) can no longer change the status, and falling back would bill another instance for a response the client can never receive. In that case `ai-proxy-multi` stops reading, closes the upstream connection, and ends the downstream stream where it is, without a protocol-specific terminator such as `[DONE]`, `message_stop`, or `response.completed`; well-behaved clients should treat a missing terminator as an incomplete response. A read error that happens before any event reaches the client is unaffected: it still maps to `504` for a timeout and `500` otherwise, and is still eligible for fallback.
+
 ## Examples
 
 The examples below demonstrate how you can configure `ai-proxy-multi` for different scenarios.

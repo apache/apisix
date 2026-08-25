@@ -555,7 +555,13 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
 
         local chunk, err = body_reader()
         if err then
-            ctx.ai_stream_aborted = "read_error"
+            -- A read error that arrives after the protocol's completion event
+            -- means the stream itself finished and only the transport died late,
+            -- so the response is complete rather than aborted.
+            local completed = ctx.var.llm_request_done
+            if not completed then
+                ctx.ai_stream_aborted = "read_error"
+            end
             ctx.var.apisix_upstream_response_time = math.floor(
                 (ngx_now() - ctx.llm_request_start_time) * 1000)
             core.log.warn("failed to read response chunk: ", err)
@@ -563,6 +569,29 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
             if flush_thread then
                 ngx.thread.kill(flush_thread)
                 flush_thread = nil
+            end
+            -- The connection broke mid-body, so it must never go back into the
+            -- keepalive pool: drop it before ai-proxy's set_keepalive() runs.
+            if res._httpc then
+                res._httpc:close()
+                res._httpc = nil
+            end
+            if output_sent then
+                -- The downstream response is already committed as 200 and part of
+                -- the stream has reached the client, so the status can no longer
+                -- be changed and ai-proxy-multi must not bill another instance for
+                -- a retry. Mirror the max_stream_duration_ms path: one last
+                -- body_filter pass with llm_request_done set, so plugins that
+                -- buffer the whole stream flush what they hold instead of
+                -- stranding it. No terminator is synthesized -- the client detects
+                -- the truncation from the missing protocol completion event (e.g.
+                -- OpenAI [DONE], Anthropic message_stop, Responses
+                -- response.completed).
+                if not completed then
+                    ctx.var.llm_request_done = true
+                    plugin.lua_response_filter(ctx, res.headers, "", nil, true)
+                end
+                return
             end
             return transport_http.handle_error(err)
         end
