@@ -38,7 +38,7 @@ import TabItem from '@theme/TabItem';
 
 ## Description
 
-The `ai-rag` Plugin implements the retrieval step of a Retrieval-Augmented Generation (RAG) request flow. It generates an embedding from the request, performs a vector search, appends the retrieved content to the LLM messages, and removes the `ai_rag` request object before the request is proxied.
+The `ai-rag` Plugin implements the retrieval step of a Retrieval-Augmented Generation (RAG) request flow. It generates an embedding from the request, performs a vector search, adds the retrieved content to the protocol-specific LLM request input, and removes the `ai_rag` request object before the request is proxied.
 
 The current implementation supports [Azure OpenAI](https://azure.microsoft.com/en-us/products/ai-services/openai-service) for embeddings and [Azure AI Search](https://azure.microsoft.com/en-us/products/ai-services/ai-search) for vector search. Use the [`ai-proxy`](./ai-proxy.md) Plugin in the same request flow to proxy the augmented request to the LLM provider. The Plugin does not create or populate a search index; prepare the index and its content before sending requests through APISIX.
 

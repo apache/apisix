@@ -49,7 +49,7 @@ The current implementation reads `kid` from the decoded header but does not vali
 
 :::caution
 
-The decrypted plaintext is forwarded in a request header. Use TLS on the upstream connection when the plaintext is sensitive, restrict access to the upstream, and avoid logging the configured forwarding header.
+The decrypted plaintext is forwarded in a request header. For sensitive plaintext, do not rely on an HTTPS Upstream alone: APISIX does not verify server certificates for standard HTTP Upstreams. Send the request over an authenticated, protected network path, such as through a proxy or service mesh that validates the upstream server's identity. Restrict access to the upstream and avoid logging the configured forwarding header.
 
 :::
 
@@ -60,7 +60,7 @@ The decrypted plaintext is forwarded in a request header. Use TLS on the upstrea
 | Name              | Type    | Required | Default | Valid values   | Description                                                                                                                              |
 | ----------------- | ------- | -------- | ------- | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
 | key               | string  | True     |         |                | A unique key that identifies the Credential for a Consumer.                                                                              |
-| secret            | string  | True     |         | 32 bytes       | The shared symmetric key. It can be stored in an environment variable using `env://` or in a supported secret manager using `secret://`. |
+| secret            | string  | True     |         | 32 bytes       | A shared symmetric key. Use a [secret reference](../terminology/secret.md), such as `$env://...` or `$secret://...`.                     |
 | is_base64_encoded | boolean | False    | false   |                | Set to true if the secret is base64url encoded. The decoded secret must still be 32 bytes.                                               |
 
 ### Route or Service
@@ -254,7 +254,7 @@ adc sync -f adc.yaml
 <Tabs groupId="k8s-api">
 <TabItem value="gateway-api" label="Gateway API">
 
-The following Gateway API configuration uses public HTTPBin only with the non-sensitive demonstration payload shown on this page. Before forwarding real decrypted data, replace it with a controlled upstream and configure TLS for the entire upstream connection.
+The following Gateway API configuration uses public HTTPBin only with the non-sensitive demonstration payload shown on this page. Before forwarding real decrypted data, replace it with a controlled upstream and use an authenticated, protected network path. An APISIX HTTPS Upstream does not validate the upstream server certificate by itself; use a proxy or service mesh that validates the upstream server's identity.
 
 ```yaml title="jwe-decrypt-ic.yaml"
 apiVersion: v1
