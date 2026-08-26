@@ -1446,3 +1446,136 @@ X-AI-Cache-Status: MISS
     }
 --- response_body
 passed
+
+
+
+=== TEST 58: passthrough folds the client method, path and query into the fingerprint (key.lua unit)
+--- config
+    location /t {
+        content_by_lua_block {
+            local key = require("apisix.plugins.ai-cache.key")
+
+            local inst = { provider = "openai", options = {}, override = {} }
+            local body = { model = "dall-e-3", prompt = "otter" }
+
+            local function fp(protocol, var)
+                local ctx = { ai_client_protocol = protocol, var = var,
+                              picked_ai_instance = inst }
+                return key.fingerprint(ctx, body)
+            end
+
+            local base = { request_method = "POST", uri = "/v1/images/generations", args = nil }
+            local pt   = fp("passthrough", base)
+
+            assert(fp("passthrough", base) == pt, "identical passthrough request must match")
+            assert(fp("passthrough", { request_method = "POST", uri = "/v1/images/edits" }) ~= pt,
+                   "different path")
+            assert(fp("passthrough", { request_method = "POST", uri = "/v1/images/generations",
+                                       args = "api-version=2024-02-01" }) ~= pt,
+                   "different query string")
+            assert(fp("passthrough", { request_method = "GET", uri = "/v1/images/generations" }) ~= pt,
+                   "different method")
+
+            -- other protocols build a fixed upstream request from the body alone,
+            -- so the client path stays out of their fingerprint
+            local chat = { request_method = "POST", uri = "/a" }
+            local chat_ctx = { ai_client_protocol = "openai-chat", var = chat, picked_ai_instance = inst }
+            local chat_body = { model = "gpt-4o", messages = {{ role = "user", content = "hi" }} }
+            local chat_fp = key.fingerprint(chat_ctx, chat_body)
+            chat_ctx.var = { request_method = "POST", uri = "/b" }
+            assert(key.fingerprint(chat_ctx, chat_body) == chat_fp,
+                   "non-passthrough fingerprint ignores the client path")
+
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 59: wildcard passthrough route: ai-proxy without an endpoint path forwards the client URI
+--- config
+    location /t {
+        content_by_lua_block {
+            require("lib.test_redis").flush_port("127.0.0.1", 6379)
+
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/v1/*",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": { "header": { "Authorization": "Bearer test-key" } },
+                            "override": { "endpoint": "http://127.0.0.1:1980" }
+                        },
+                        "ai-cache": {
+                            "redis_host": "127.0.0.1",
+                            "redis_port": 6379
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 60: passthrough body to /v1/images/generations is a MISS and is proxied
+--- request
+POST /v1/images/generations
+{"model":"dall-e-3","prompt":"ai-cache passthrough same body"}
+--- more_headers
+X-AI-Fixture: openai/images-generation.json
+--- response_headers
+X-AI-Cache-Status: MISS
+--- response_body_like eval
+qr/baby sea otter/
+--- wait: 0.3
+
+
+
+=== TEST 61: the SAME body to a different upstream path is a MISS, not the cached images response
+--- request
+POST /v1/chat/completions
+{"model":"dall-e-3","prompt":"ai-cache passthrough same body"}
+--- more_headers
+X-AI-Fixture: openai/chat-basic.json
+--- response_headers
+X-AI-Cache-Status: MISS
+--- response_body_like eval
+qr/1 \+ 1 = 2/
+--- wait: 0.3
+
+
+
+=== TEST 62: the SAME body and path with a different query string is a MISS
+--- request
+POST /v1/images/generations?api-version=2024-02-01
+{"model":"dall-e-3","prompt":"ai-cache passthrough same body"}
+--- more_headers
+X-AI-Fixture: openai/images-generation.json
+--- response_headers
+X-AI-Cache-Status: MISS
+--- response_body_like eval
+qr/baby sea otter/
+--- wait: 0.3
+
+
+
+=== TEST 63: repeating the first passthrough request exactly is a HIT
+--- request
+POST /v1/images/generations
+{"model":"dall-e-3","prompt":"ai-cache passthrough same body"}
+--- response_headers_like
+X-AI-Cache-Status: HIT
+--- response_body_like eval
+qr/baby sea otter/
