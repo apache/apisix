@@ -554,12 +554,16 @@ function _M.init_worker()
     events = require("apisix.events")
     events:register(reload_plugins, reload_event, "PUT")
 
-    if plugins_conf_ver_dict and not is_yaml_config_provider then
+    if plugins_conf_ver_dict then
         -- The events broadcast has no delivery guarantee: a process that is
         -- (re)connecting to the events broker loses the event for good, which
         -- leaves it running e.g. the timers of plugins that were removed.
         -- Reconcile against the version in the shared dict, the same pattern
         -- admin/standalone.lua uses for the same reason.
+        --
+        -- This is not gated on the config provider: /v1/plugins/reload bumps
+        -- the same version and stays reachable in standalone mode, so a worker
+        -- that missed its broadcast has to be able to converge there too.
         applied_plugins_conf_version =
             plugins_conf_ver_dict:get(PLUGINS_CONF_VERSION_KEY) or 0
 

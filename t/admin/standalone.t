@@ -378,3 +378,36 @@ X-Digest: t17
 --- error_code: 202
 --- no_error_log
 report_failure(): update endpoint: http://127.0.0.1:2379 to unhealthy
+
+
+
+=== TEST 18: a pushed configuration never reaches the log
+--- request
+PUT /apisix/admin/configs
+{
+    "consumers": [
+        {
+            "username": "jack",
+            "plugins": {"key-auth": {"key": "SENTINEL-CREDENTIAL-MUST-NOT-BE-LOGGED"}}
+        }
+    ]
+}
+--- more_headers
+X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
+X-Digest: t18
+--- error_code: 202
+--- no_error_log
+SENTINEL-CREDENTIAL-MUST-NOT-BE-LOGGED
+
+
+
+=== TEST 19: an unparsable body never reaches the log
+--- request
+PUT /apisix/admin/configs
+{"consumers": [ SENTINEL-BROKEN-BODY
+--- more_headers
+X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
+X-Digest: t19
+--- error_code: 400
+--- no_error_log
+SENTINEL-BROKEN-BODY

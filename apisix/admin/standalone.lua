@@ -68,7 +68,9 @@ local function update_and_broadcast_config(apisix_yaml)
         if not ok then
             return nil, "failed to save config to shared dict: " .. err
         end
-        core.log.info("standalone config updated: ", raw)
+        -- the payload is a full declarative configuration and can carry TLS
+        -- private keys and plugin credentials; log its size, not its contents
+        core.log.info("standalone config updated, size: ", #raw)
     else
         core.log.crit(config_yaml.ERR_NO_SHARED_DICT)
     end
@@ -108,7 +110,8 @@ local function update(ctx)
         data, err = core.json.decode(req_body)
     end
     if err then
-        core.log.error("invalid request body: ", req_body, " err: ", err)
+        -- same reason as above: the body is the configuration itself
+        core.log.error("invalid request body, err: ", err)
         core.response.exit(400, {error_msg = "invalid request body: " .. err})
     end
     req_body = data
