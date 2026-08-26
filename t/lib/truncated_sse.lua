@@ -66,6 +66,33 @@ function _M.serve(events)
 end
 
 
+local done_then_truncate_hits = 0
+
+-- First call answers with a [DONE]-only stream. Behind a protocol converter
+-- that yields no downstream event for it, the attempt sets llm_request_done
+-- while output_sent stays false, so EOF becomes the 502 that ai-proxy-multi
+-- falls back on. Every later call emits one real event and then truncates,
+-- which is the attempt that must not inherit the first one's completion state.
+function _M.serve_done_then_truncate()
+    done_then_truncate_hits = done_then_truncate_hits + 1
+    if done_then_truncate_hits == 1 then
+        ngx.header["Content-Type"] = "text/event-stream"
+        ngx.print("data: [DONE]\n\n")
+        return ngx.flush(true)
+    end
+    return _M.serve({
+        'data: {"id":"chatcmpl-1","object":"chat.completion.chunk",'
+        .. '"choices":[{"index":0,"delta":{"content":"hello"},'
+        .. '"finish_reason":null}]}\n\n',
+        -- a usage event, so the content-moderation final_packet path has an
+        -- assembled completion to work with before the transport dies
+        'data: {"id":"chatcmpl-1","object":"chat.completion.chunk",'
+        .. '"choices":[],"usage":{"prompt_tokens":1,'
+        .. '"completion_tokens":1,"total_tokens":2}}\n\n',
+    })
+end
+
+
 local aborts = 0
 
 -- First call closes right after the headers, before any body byte; every later

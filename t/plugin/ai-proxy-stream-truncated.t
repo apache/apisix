@@ -15,6 +15,12 @@
 # limitations under the License.
 #
 
+# The control API v1 mounts a "/v1/" prefix route that would shadow the
+# "/v1/messages" route TEST 9 needs to activate the Anthropic client protocol.
+BEGIN {
+    $ENV{TEST_ENABLE_CONTROL_API_V1} = "0";
+}
+
 use t::APISIX 'no_plan';
 
 log_level("info");
@@ -85,6 +91,15 @@ _EOC_
         location /v1/chat/completions-abort-once {
             content_by_lua_block {
                 require("lib.truncated_sse").serve_abort_once()
+            }
+        }
+
+        # First hit answers with a [DONE]-only stream (no downstream output once
+        # the anthropic converter has skipped it, so the attempt 502s and is
+        # retryable); the retry emits one event and then truncates.
+        location /v1/chat/completions-done-then-truncate {
+            content_by_lua_block {
+                require("lib.truncated_sse").serve_done_then_truncate()
             }
         }
 
@@ -296,4 +311,65 @@ POST /truncated
 qr/^(?!.*\[DONE\])(?=.*"content":"hello")(?=.*"risk_level":"none")/s
 --- error_log
 failed to read response chunk: closed
+--- timeout: 10
+
+
+
+=== TEST 9: ai-proxy-multi + a converter, where attempt 1 is a [DONE]-only stream
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, [[{
+                "uri": "/v1/messages",
+                "plugins": {
+                    "ai-proxy-multi": {
+                        "fallback_strategy": ["http_5xx"],
+                        "ssl_verify": false,
+                        "instances": [
+                            {"name":"primary","provider":"openai","weight":1,
+                             "auth":{"header":{"Authorization":"Bearer test"}},
+                             "options":{"model":"gpt-4","stream":true},
+                             "override":{"endpoint":"http://127.0.0.1:6724/v1/chat/completions-done-then-truncate"}},
+                            {"name":"spare","provider":"openai","weight":0,
+                             "auth":{"header":{"Authorization":"Bearer test"}},
+                             "options":{"model":"gpt-4","stream":true},
+                             "override":{"endpoint":"http://127.0.0.1:6724/v1/chat/completions-done-then-truncate"}}
+                        ]
+                    },
+                    "ai-aliyun-content-moderation": {
+                        "endpoint": "http://127.0.0.1:6724",
+                        "region_id": "cn-shanghai",
+                        "access_key_id": "fake-key-id",
+                        "access_key_secret": "fake-key-secret",
+                        "risk_level_bar": "high",
+                        "check_request": false,
+                        "check_response": true,
+                        "stream_check_mode": "final_packet"
+                    }
+                }
+            }]])
+            if code >= 300 then ngx.status = code end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 10: the retried attempt does not inherit the first attempt's completion state
+--- request
+POST /v1/messages
+{"model":"claude-3-5-sonnet","max_tokens":64,"stream":true,"messages":[{"role":"user","content":"hi"}]}
+--- more_headers
+Content-Type: application/json
+--- response_body_like eval
+# Inheriting the first attempt's completion state makes the retry look finished
+# from its very first chunk: the abort marker is never set, so the moderation
+# plugin appends a message_stop and reports the truncated stream as complete.
+qr/^(?!.*message_stop)(?=.*"text":"hello")/s
+--- error_log
+failed to read response chunk: closed
+falling back to
 --- timeout: 10
