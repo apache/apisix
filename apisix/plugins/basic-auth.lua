@@ -43,7 +43,7 @@ local consumer_schema = {
     title = "work with consumer object",
     properties = {
         username = { type = "string" },
-        password = { type = "string" },
+        password = { type = "string", minLength = 1 },
     },
     encrypt_fields = {"password"},
     required = {"username", "password"},
@@ -148,7 +148,19 @@ local function find_consumer(ctx)
         return nil, nil, "Invalid user authorization"
     end
 
-    if cur_consumer.auth_conf.password ~= password then
+    -- fail closed: a consumer written before the schema required a non-empty
+    -- password, or a secret reference that resolves to "", must never authenticate
+    local expected = cur_consumer.auth_conf.password
+    if expected == "" then
+        err = "empty password configured for consumer: " .. cur_consumer.consumer_name
+        if auth_utils.is_running_under_multi_auth(ctx) then
+            return nil, nil, err
+        end
+        core.log.warn(err)
+        return nil, nil, "Invalid user authorization"
+    end
+
+    if expected ~= password then
         return nil, nil, "Invalid user authorization"
     end
 
