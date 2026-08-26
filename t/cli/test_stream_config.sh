@@ -45,6 +45,30 @@ fi
 
 echo "passed: enable stream proxy only by default"
 
+# the export server is what puts that http{} block there, so turning it off
+# takes it away again
+echo "
+apisix:
+    enable_admin: false
+    proxy_mode: stream
+    stream_proxy:
+        tcp:
+            - addr: 9100
+plugin_attr:
+    prometheus:
+        enable_export_server: false
+" > conf/config.yaml
+
+make init
+
+count=$(grep -c "lua_package_path" conf/nginx.conf)
+if [ "$count" -ne 1 ]; then
+    echo "failed: the prometheus export server was rendered with no export server configured"
+    exit 1
+fi
+
+echo "passed: no http block in stream only mode without the export server"
+
 echo "
 apisix:
     enable_admin: false
