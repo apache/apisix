@@ -30,9 +30,16 @@ apisix:
 
 make init
 
+# Two, not one: the stream subsystem has no server of its own to export metrics
+# from, so an http{} block is rendered to host the prometheus export server.
 count=$(grep -c "lua_package_path" conf/nginx.conf)
-if [ "$count" -ne 1 ]; then
+if [ "$count" -ne 2 ]; then
     echo "failed: failed to enable stream proxy only by default"
+    exit 1
+fi
+
+if grep "apisix.http_access_phase" conf/nginx.conf > /dev/null; then
+    echo "failed: the http proxy is enabled in stream only mode"
     exit 1
 fi
 
@@ -74,6 +81,8 @@ fi
 
 echo "passed: enable stream proxy and http proxy"
 
+# see the same check in t/cli/test_http_config.sh: the config file plugin list
+# is only the boot-time default, so nginx.conf must not depend on it
 echo "
 apisix:
     proxy_mode: http&stream
@@ -86,26 +95,9 @@ stream_plugins:
 
 make init
 
-if grep "plugin-limit-conn-stream" conf/nginx.conf > /dev/null; then
-    echo "failed: enable shdict on demand"
-    exit 1
-fi
-
-echo "
-apisix:
-    proxy_mode: http&stream
-    stream_proxy:
-        tcp:
-            - addr: 9100
-stream_plugins:
-    - limit-conn
-" > conf/config.yaml
-
-make init
-
 if ! grep "plugin-limit-conn-stream" conf/nginx.conf > /dev/null; then
-    echo "failed: enable shdict on demand"
+    echo "failed: shdict gated on the config file plugin list"
     exit 1
 fi
 
-echo "passed: enable shdict on demand"
+echo "passed: shdict does not depend on the config file plugin list"

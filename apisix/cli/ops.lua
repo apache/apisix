@@ -708,7 +708,7 @@ Please modify "admin_key" in conf/config.yaml .
     end
 
     local zipkin_set_ngx_var
-    if enabled_plugins["zipkin"] and yaml_conf.plugin_attr["zipkin"] then
+    if yaml_conf.plugin_attr["zipkin"] then
         zipkin_set_ngx_var = yaml_conf.plugin_attr["zipkin"].set_ngx_var
     end
 
@@ -724,8 +724,6 @@ Please modify "admin_key" in conf/config.yaml .
         enable_http = enable_http,
         enable_stream = enable_stream,
         enabled_discoveries = enabled_discoveries,
-        enabled_plugins = enabled_plugins,
-        enabled_stream_plugins = enabled_stream_plugins,
         dubbo_upstream_multiplex_count = dubbo_upstream_multiplex_count,
         status_server_addr = status_server_addr,
         admin_server_addr = admin_server_addr,
