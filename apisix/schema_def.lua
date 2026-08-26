@@ -784,6 +784,60 @@ _M.credential = {
     additionalProperties = false,
 }
 
+-- A GraphQL cost decoration: the weight of one position in the upstream GraphQL
+-- schema, consumed by the graphql-limit-count plugin. Owned by a service --
+-- service_id is taken from the Admin API path, never from the request body.
+_M.graphql_cost_decoration = {
+    type = "object",
+    properties = {
+        id = id_schema,
+        service_id = id_schema,
+        field_path = {
+            type = "string",
+            pattern = [[^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)*$]],
+            description = "the decorated position in the schema graph. A single "
+                          .. "<GraphQL type> weights every field returning that "
+                          .. "type; <GraphQL type>.<field> weights that field "
+                          .. "wherever it is selected; further field segments pin "
+                          .. "the decoration to one chain of selections, as in "
+                          .. "Query.products.nodes.reviews. The root type "
+                          .. "(Query / Mutation) names the operation itself, and "
+                          .. "so weights the whole query",
+        },
+        -- cost(field) = ( sum of the children ) * mul + add
+        add_value = {
+            type = "number",
+            minimum = 0,
+            default = 1,
+            description = "the field's own cost",
+        },
+        add_arguments = {
+            type = "array",
+            items = {type = "string", minLength = 1},
+            description = "query arguments whose values are added to add_value",
+        },
+        mul_value = {
+            type = "number",
+            minimum = 0,
+            default = 1,
+            description = "multiplies the cost of everything selected under the field",
+        },
+        mul_arguments = {
+            type = "array",
+            items = {type = "string", minLength = 1},
+            description = "query arguments whose values are multiplied into mul_value",
+        },
+        name = rule_name_def,
+        desc = desc_def,
+        labels = labels_def,
+        create_time = timestamp_def,
+        update_time = timestamp_def,
+    },
+    required = {"field_path"},
+    additionalProperties = false,
+}
+
+
 _M.upstream = upstream_schema
 
 

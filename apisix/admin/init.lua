@@ -71,6 +71,7 @@ local resources = {
     plugin_configs  = require("apisix.admin.plugin_config"),
     consumer_groups = require("apisix.admin.consumer_group"),
     secrets         = require("apisix.admin.secrets"),
+    graphql_cost_decorations = require("apisix.admin.graphql_cost_decorations"),
 }
 
 
@@ -197,6 +198,13 @@ local function run()
     end
 
     if seg_res == "consumers" and #uri_segs >= 6 and uri_segs[6] == "credentials" then
+        seg_sub_path = seg_id .. "/" .. seg_sub_path
+        seg_res = uri_segs[6]
+        seg_id = uri_segs[7]
+    end
+
+    if seg_res == "services" and #uri_segs >= 6
+       and uri_segs[6] == "graphql_cost_decorations" then
         seg_sub_path = seg_id .. "/" .. seg_sub_path
         seg_res = uri_segs[6]
         seg_id = uri_segs[7]

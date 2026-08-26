@@ -19,7 +19,8 @@ local core = require("apisix.core")
 local plugin = require("apisix.plugin")
 local get_routes = require("apisix.router").http_routes
 local get_stream_routes = require("apisix.router").stream_routes
-local get_services = require("apisix.http.service").services
+local get_service_mod = require("apisix.http.service")
+local get_services = get_service_mod.services
 local upstream_mod = require("apisix.upstream")
 local healthcheck_manager = require("apisix.healthcheck_manager")
 local get_upstreams = upstream_mod.upstreams
@@ -30,6 +31,11 @@ local str_format = string.format
 local ngx = ngx
 local ngx_var = ngx.var
 local events = require("apisix.events")
+-- Shared with apisix/admin/init.lua: the admin reload path bumps this version and
+-- runs a periodic reconciliation timer that reloads any worker whose applied
+-- version is behind. Keep the dict name and key in sync with admin/init.lua.
+local plugins_conf_ver_dict = ngx.shared["internal-status"]
+local PLUGINS_CONF_VERSION_KEY = "plugins_conf_version"
 
 
 local _M = {}
@@ -51,6 +57,7 @@ function _M.schema()
             consumer = core.schema.consumer,
             consumer_group = core.schema.consumer_group,
             global_rule = core.schema.global_rule,
+            graphql_cost_decoration = core.schema.graphql_cost_decoration,
             plugin_config = core.schema.plugin_config,
             plugins = core.schema.plugins,
             proto = core.schema.proto,
@@ -273,7 +280,6 @@ local function iter_add_get_routes_info(values, route_id)
         new_route.checker = nil
         new_route.checker_idx = nil
         new_route.checker_upstream = nil
-        new_route.clean_handlers = nil
         core.table.insert(infos, new_route)
         -- check the route id
         if route_id and route.value.id == route_id then
@@ -351,17 +357,23 @@ end
 local function iter_add_get_services_info(values, svc_id)
     local infos = {}
     for _, svc in core.config_util.iterate_values(values) do
+        -- the services watcher also carries the graphql cost decorations
+        if get_service_mod.is_graphql_cost_decoration_key(svc.key) then
+            goto CONTINUE
+        end
+
         local new_svc = core.table.deepcopy(svc)
         -- remove healthcheck info
         new_svc.checker = nil
         new_svc.checker_idx = nil
         new_svc.checker_upstream = nil
-        new_svc.clean_handlers = nil
         core.table.insert(infos, new_svc)
         -- check the service id
         if svc_id and svc.value.id == svc_id then
             return new_svc
         end
+
+        ::CONTINUE::
     end
     if not svc_id then
         return infos
@@ -409,6 +421,19 @@ function _M.dump_plugin_metadata()
 end
 
 function _M.post_reload_plugins()
+    -- Bump the shared version before broadcasting so that a worker which misses the
+    -- event (the resty.events broker gives no delivery guarantee while a worker is
+    -- reconnecting) still converges through the admin reconciliation timer. This is
+    -- the same guard the admin reload path added in #13714; the control path was
+    -- left out. When the admin is disabled the timer is absent and this is a no-op.
+    if plugins_conf_ver_dict then
+        local _, incr_err = plugins_conf_ver_dict:incr(PLUGINS_CONF_VERSION_KEY, 1, 0)
+        if incr_err then
+            core.log.error("failed to increase plugins conf version: ", incr_err)
+            core.response.exit(503, {error_msg = "failed to record plugins reload"})
+        end
+    end
+
     local success, err = events:post(_M.RELOAD_EVENT, ngx.req.get_method(), ngx.time())
     if not success then
         core.response.exit(503, err)

@@ -117,6 +117,7 @@ local _M = {
       access_log_format = "$remote_addr [$time_local] $protocol $status $bytes_sent $bytes_received $session_time",
       -- luacheck: pop
       access_log_format_escape = "default",
+      metrics_zone_size = "1m",
       lua_shared_dict = {
         ["etcd-cluster-health-check-stream"] = "10m",
         ["lrucache-lock-stream"] = "10m",
@@ -222,6 +223,7 @@ local _M = {
     "authz-casbin",
     "authz-casdoor",
     "wolf-rbac",
+    "ldap-auth-advanced",
     "ldap-auth",
     "hmac-auth",
     "basic-auth",
@@ -307,6 +309,9 @@ local _M = {
   },
   stream_plugins = { "ip-restriction", "limit-conn", "mqtt-proxy", "syslog", "traffic-split" },
   plugin_attr = {
+    ["ai-proxy"] = {
+      http_client = "ngx_http_ffi_client"
+    },
     ["log-rotate"] = {
       timeout = 10000,
       interval = 3600,

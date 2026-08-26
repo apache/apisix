@@ -40,7 +40,7 @@ import TabItem from '@theme/TabItem';
 
 `ai-aws-content-moderation` 插件集成了 [AWS Comprehend](https://aws.amazon.com/comprehend/)，用于在代理请求到 LLM 时检查请求内容中的有害内容，例如亵渎、仇恨言论、侮辱、骚扰、暴力等，如果评估结果超过配置的阈值则拒绝请求。
 
-该插件支持 Chat Completions、Responses API、Embeddings、Anthropic Messages 和 Bedrock Converse 请求。它会使用检测到的协议的原生内容结构提取文本，并仅审核解码后的文本，而不是原始请求体。被拒绝的请求使用检测到的协议对应的响应格式。
+该插件支持 Chat Completions、Responses API、Embeddings、Anthropic Messages 和 Bedrock Converse 请求。它会使用检测到的协议的原生内容结构提取文本，并仅审核解码后的文本，而不是原始请求体。被拒绝的请求使用检测到的协议对应的响应格式。`request_check_roles` 用于选择审核哪些消息角色，`request_check_mode` 可将 `user`/`tool`/`assistant` 的审核范围收窄到最新一轮，避免每次请求都重复审核历史对话。
 
 `ai-aws-content-moderation` 插件应与 [`ai-proxy`](./ai-proxy.md) 或 [`ai-proxy-multi`](./ai-proxy-multi.md) 插件一起使用，以代理 LLM 请求。
 
@@ -57,6 +57,8 @@ import TabItem from '@theme/TabItem';
 | `moderation_categories` | object | 否 | | | 审核类别及其对应阈值的键值对。在每个键值对中，键应为 `PROFANITY`、`HATE_SPEECH`、`INSULT`、`HARASSMENT_OR_ABUSE`、`SEXUAL` 或 `VIOLENCE_OR_THREAT` 之一；阈值应在 0 到 1 之间（包含）。 |
 | `moderation_threshold` | number | 否 | 0.5 | 0 - 1 | 整体毒性阈值。值越高，允许的有害内容越多。此选项与 `moderation_categories` 中的单独类别阈值不同。例如，如果 `moderation_categories` 中设置了 `PROFANITY` 阈值为 `0.5`，而请求的 `PROFANITY` 分数为 `0.1`，则请求不会超过类别阈值。但如果请求的其他类别（如 `SEXUAL` 或 `VIOLENCE_OR_THREAT`）超过了 `moderation_threshold`，则请求将被拒绝。 |
 | `check_request` | boolean | 否 | `true` | | 如果为 `true`，则审核请求内容。 |
+| `request_check_roles` | array[string] | 否 | `["user","tool","system","assistant"]` | 取值为 `user`、`tool`、`system`、`assistant` | 请求侧审核哪些消息角色。`user`、`tool` 与 `assistant` 遵循 `request_check_mode`；`system` 每次请求都审核（其可能被恶意 ToolCall 参数覆盖篡改），并且同时覆盖 OpenAI 的 `developer` 角色（新模型上用于替代 `system`）。请求中的 `assistant` 消息由客户端提供，而非模型自身的输出，因此默认也会被审核。注意：tool 结果审核适用于 OpenAI 兼容格式（tool 输出为独立的 `tool` 角色/项）；Anthropic、Bedrock 的 tool 结果以嵌套 block 形式存在于 user 消息中，其内容不会被抽取。 |
+| `request_check_mode` | string | 否 | `all` | `last`、`all` | 审核哪些 user/tool/assistant 消息。`last`：仅审核最后一段连续的所选角色消息（最新一轮）；`all`：审核所有所选角色消息。不作用于 `system`——只要通过 `request_check_roles` 启用，`system` 每次都审核。注意：`last` 与 `assistant` 同时使用会扩大而非缩小审核范围，因为 assistant 消息不再中断该连续块；若只想审核最新一轮，请从 `request_check_roles` 中移除 `assistant`。 |
 | `deny_code` | integer | 否 | `200` | [200, 599] | 请求被拒绝时返回的 HTTP 状态码。默认为 `200`，使兼容 provider 的拒绝响应在客户端 SDK 中被解析为正常补全；设置为 4xx 可将拒绝暴露为 HTTP 错误。 |
 | `deny_message` | string | 否 | | | 请求被拒绝时返回的消息。未设置时，返回审核原因（例如 `request body exceeds toxicity threshold`）。 |
 | `fail_mode` | string | 否 | `skip` | `skip`、`warn`、`error` | 当请求未经过 `ai-proxy`/`ai-proxy-multi`，因而无法作为 AI 请求进行审核时的处理行为。`skip`：放行请求且不做检查；`warn`：放行并记录 warning 日志；`error`：拒绝请求。 |

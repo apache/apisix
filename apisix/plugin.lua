@@ -818,7 +818,14 @@ local function merge_consumer_route(route_conf, consumer_conf, consumer_group_co
         return route_conf
     end
 
-    local new_route_conf = core.table.deepcopy(route_conf)
+    -- some plugins cache request-time state on their conf object (resolved DNS
+    -- nodes, probed backend versions, ...). Deep-copying the plugin confs would
+    -- hand every consumer its own copy and drop that state, so keep them shared
+    -- by reference, as they already are on the route without consumer auth. The
+    -- `plugins` container itself is still a fresh table, so the merge below
+    -- overwrites its keys without touching the original route conf.
+    local new_route_conf = core.table.deepcopy(route_conf,
+        { shallow_prefix = "self.value.plugins" })
 
     if has_group_plugins then
         for name, conf in pairs(consumer_group_conf.value.plugins) do
@@ -1017,8 +1024,16 @@ local function check_single_plugin_schema(name, plugin_conf, schema_type, skip_d
     if plugin_obj.check_schema then
         local ok, err = plugin_obj.check_schema(plugin_conf, schema_type)
         if not ok then
-            return false, "failed to check the configuration of plugin "
-                .. name .. " err: " .. err
+            if check_disable(plugin_conf) ~= true then
+                return false, "failed to check the configuration of plugin "
+                    .. name .. " err: " .. err
+            end
+
+            -- the plugin is disabled via _meta.disable so it will never be
+            -- executed: an environment dependent failure (e.g. proxy-cache
+            -- cache_zone not found on this node) must not invalidate the item
+            core.log.warn("failed to check the configuration of disabled plugin ",
+                          name, ", accepting it anyway")
         end
 
         if plugin_conf._meta then
@@ -1262,8 +1277,13 @@ local function stream_check_schema(plugins_conf, schema_type, skip_disabled_plug
         if plugin_obj.check_schema then
             local ok, err = plugin_obj.check_schema(plugin_conf, schema_type)
             if not ok then
-                return false, "failed to check the configuration of "
-                              .. "stream plugin [" .. name .. "]: " .. err
+                if check_disable(plugin_conf) ~= true then
+                    return false, "failed to check the configuration of "
+                                  .. "stream plugin [" .. name .. "]: " .. err
+                end
+
+                core.log.warn("failed to check the configuration of disabled ",
+                              "stream plugin [", name, "], accepting it anyway")
             end
         end
 
@@ -1390,6 +1410,11 @@ function _M.run_plugin(phase, plugins, api_ctx)
                             core.log.warn(plugins[i].name, " exits with status code ", code)
                         end
 
+                        -- a stream session is rejected by closing it, so the
+                        -- code never reaches $status; keep it for the log
+                        -- phase, which still runs after ngx_exit
+                        api_ctx.stream_rejected_code = code
+
                         ngx_exit(1)
                     end
                 end
@@ -1481,7 +1506,6 @@ local function merge_global_rules(global_rules, conf_version)
         },
         createdIndex = conf_version,
         modifiedIndex = conf_version,
-        clean_handlers = {},
     }
 
     return dummy_global_rule
@@ -1506,17 +1530,37 @@ function _M.run_global_rules(api_ctx, global_rules, conf_version, phase_name)
                                                              global_rules,
                                                              conf_version)
 
-        local plugins = core.tablepool.fetch("plugins", 32, 0)
         local route = api_ctx.matched_route
         api_ctx.conf_type = "global_rule"
         api_ctx.conf_version = dummy_global_rule.modifiedIndex
         api_ctx.conf_id = dummy_global_rule.value.id
 
-        core.table.clear(plugins)
-        plugins = _M.filter(api_ctx, dummy_global_rule, plugins, route)
+        -- The filtered set depends only on the merged global rule (itself cached
+        -- per conf_version) and on the matched route, so it does not need
+        -- recomputing in every phase. This matters most for body_filter, which
+        -- runs once per response buffer. Route plugins are already reused this
+        -- way through api_ctx.plugins; global rules were not.
+        -- The route is part of the key because plugins with
+        -- run_policy == "prefer_route" are skipped when the route configures the
+        -- same plugin, and api_ctx.matched_route is replaced when a consumer's
+        -- configuration is merged in -- which happens after the rewrite phase
+        -- has run but before access.
+        -- The table is returned to the pool in http_log_phase.
+        local plugins = api_ctx.global_plugins
+        if not (plugins
+                and api_ctx.global_plugins_route == route
+                and api_ctx.global_plugins_version == dummy_global_rule.modifiedIndex)
+        then
+            plugins = plugins or core.tablepool.fetch("global_plugins", 32, 0)
+            core.table.clear(plugins)
+            plugins = _M.filter(api_ctx, dummy_global_rule, plugins, route)
+
+            api_ctx.global_plugins = plugins
+            api_ctx.global_plugins_route = route
+            api_ctx.global_plugins_version = dummy_global_rule.modifiedIndex
+        end
 
         _M.run_plugin(phase_name, plugins, api_ctx)
-        core.tablepool.release("plugins", plugins)
 
         api_ctx.conf_type = orig_conf_type
         api_ctx.conf_version = orig_conf_version

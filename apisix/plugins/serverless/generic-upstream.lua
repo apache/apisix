@@ -69,6 +69,11 @@ return function(plugin_name, version, priority, request_processor, authz_schema,
         local uri_args = core.request.get_uri_args(ctx)
         local headers = core.request.headers(ctx) or {}
 
+        -- body is already de-chunked by nginx; drop the client's framing headers
+        -- so the http client reframes it with a correct Content-Length
+        headers["transfer-encoding"] = nil
+        headers["content-length"] = nil
+
         local req_body, err = core.request.get_body(conf.max_req_body_size)
 
         if err then

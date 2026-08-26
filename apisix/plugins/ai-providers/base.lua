@@ -460,6 +460,12 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
     -- attempt emitted no output (with headers sent, the retry dies earlier in
     -- core.response.set_header), so the flag is stale, not protective
     ctx.ai_stream_aborted = nil
+    -- same for the completion flag. An attempt can set it and still produce no
+    -- downstream output -- a converter fed a [DONE]-only stream emits nothing --
+    -- which returns 502 and lets ai-proxy-multi fall back inside this same
+    -- request context. Left set, it would make the next attempt look finished
+    -- before it has parsed a completion event of its own.
+    ctx.var.llm_request_done = nil
     ngx.status = res.status
     local body_reader = res.body_reader
     local contents = {}
@@ -475,6 +481,10 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
     -- all events may be skipped and no output produced, leaving the response
     -- uncommitted and causing nginx to fall through to the balancer phase.
     local output_sent = false
+    -- Set when THIS attempt parses the protocol's completion event. The read
+    -- error path must not consult ctx.var.llm_request_done for that: it is
+    -- shared across fallback attempts and is also set on abort finalization.
+    local protocol_completed = false
 
     -- Runaway-upstream safeguards. Both are opt-in; unset means no cap.
     local max_duration_ms = conf and conf.max_stream_duration_ms
@@ -555,7 +565,12 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
 
         local chunk, err = body_reader()
         if err then
-            ctx.ai_stream_aborted = "read_error"
+            -- A read error that arrives after the protocol's completion event
+            -- means the stream itself finished and only the transport died late,
+            -- so the response is complete rather than aborted.
+            if not protocol_completed then
+                ctx.ai_stream_aborted = "read_error"
+            end
             ctx.var.apisix_upstream_response_time = math.floor(
                 (ngx_now() - ctx.llm_request_start_time) * 1000)
             core.log.warn("failed to read response chunk: ", err)
@@ -563,6 +578,29 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
             if flush_thread then
                 ngx.thread.kill(flush_thread)
                 flush_thread = nil
+            end
+            -- The connection broke mid-body, so it must never go back into the
+            -- keepalive pool: drop it before ai-proxy's set_keepalive() runs.
+            if res._httpc then
+                res._httpc:close()
+                res._httpc = nil
+            end
+            if output_sent then
+                -- The downstream response is already committed as 200 and part of
+                -- the stream has reached the client, so the status can no longer
+                -- be changed and ai-proxy-multi must not bill another instance for
+                -- a retry. Mirror the max_stream_duration_ms path: one last
+                -- body_filter pass with llm_request_done set, so plugins that
+                -- buffer the whole stream flush what they hold instead of
+                -- stranding it. No terminator is synthesized -- the client detects
+                -- the truncation from the missing protocol completion event (e.g.
+                -- OpenAI [DONE], Anthropic message_stop, Responses
+                -- response.completed).
+                if not protocol_completed then
+                    ctx.var.llm_request_done = true
+                    plugin.lua_response_filter(ctx, res.headers, "", nil, true)
+                end
+                return
             end
             return transport_http.handle_error(err)
         end
@@ -576,13 +614,15 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
             res._upstream_bytes = bytes_read
             ctx.var.apisix_upstream_response_time = math.floor(
                 (ngx_now() - ctx.llm_request_start_time) * 1000)
-            if converter and not output_sent then
+            if not output_sent then
                 if flush_thread then
                     ngx.thread.kill(flush_thread)
                 end
-                local msg = "streaming response completed without producing "
-                            .. "any output; the upstream likely returned a "
-                            .. "different stream format than the converter expects"
+                local msg = converter
+                    and "streaming response completed without producing "
+                        .. "any output; the upstream likely returned a "
+                        .. "different stream format than the converter expects"
+                    or "upstream returned an empty stream"
                 core.log.error(msg)
                 return 502, msg
             end
@@ -632,6 +672,11 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
         end
         sse_parts = {remainder}
         ctx.llm_response_contents_in_chunk = {}
+        -- Bumped with every reset so body_filter hooks can tell which upstream
+        -- chunk the texts above belong to. A converter dispatches one upstream
+        -- chunk as several downstream chunks, running those hooks more than
+        -- once for the same texts.
+        ctx.llm_response_chunk_seq = (ctx.llm_response_chunk_seq or 0) + 1
         local converted_chunks = {}
 
         for _, event in ipairs(events) do
@@ -678,6 +723,7 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
 
             if parsed.type == "done" or parsed.type == "usage_and_done" then
                 ctx.var.llm_request_done = true
+                protocol_completed = true
             end
 
             ::CONTINUE::

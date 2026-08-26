@@ -1,5 +1,5 @@
 {
-  "version": "3.17.0",
+  "version": "3.18.0",
   "sidebar": [
     {
       "type": "category",
@@ -138,6 +138,7 @@
             "plugins/hmac-auth",
             "plugins/authz-casbin",
             "plugins/ldap-auth",
+            "plugins/ldap-auth-advanced",
             "plugins/opa",
             "plugins/forward-auth",
             "plugins/multi-auth",

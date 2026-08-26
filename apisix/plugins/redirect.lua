@@ -26,6 +26,7 @@ local ipairs = ipairs
 local ngx = ngx
 local str_find = core.string.find
 local str_sub  = string.sub
+local str_lower = string.lower
 local type = type
 local math_random = math.random
 
@@ -198,7 +199,9 @@ function _M.rewrite(conf, ctx)
     local regex_uri = conf.regex_uri
 
     local proxy_proto = core.request.header(ctx, "X-Forwarded-Proto")
-    local _scheme = proxy_proto or core.request.get_scheme(ctx)
+    -- a URI scheme is case-insensitive (RFC 3986, Section 3.1), so a proxy that
+    -- forwards `HTTPS` is stating the same thing as one that forwards `https`
+    local _scheme = str_lower(proxy_proto or core.request.get_scheme(ctx))
     if conf.http_to_https and _scheme ~= "https" then
         if ret_port == nil or ret_port == 443 or ret_port <= 0 or ret_port > 65535  then
             uri = "https://$host$request_uri"

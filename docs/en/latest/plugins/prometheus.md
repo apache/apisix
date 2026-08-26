@@ -41,6 +41,8 @@ After enabling the Plugin, APISIX will start collecting relevant metrics, such a
 
 By default, `prometheus` configurations are pre-configured in the [default configuration](https://github.com/apache/apisix/blob/master/apisix/cli/config.lua).
 
+The prompt- and completion-token histograms default to buckets at `1`, `10`, `50`, `100`, `200`, `500`, `1000`, `2000`, `5000`, `10000`, `20000`, `50000`, `100000`, `200000`, `500000`, and `1000000` tokens. Configure `llm_prompt_tokens_buckets` and `llm_completion_tokens_buckets` when different boundaries better fit the workload.
+
 To customize these values, add the corresponding configurations to `config.yaml`. For example:
 
 ```yaml
@@ -69,8 +71,13 @@ plugin_attr:
     #      - upstream_addr: $upstream_addr
     #    expire: 0                          # The expiration time of metrics in seconds.
                                             # 0 means the metrics will not expire.
-    # default_buckets:                      # Set the default buckets for the `http_latency` metrics histogram.
+    # default_buckets:                      # Built-in `http_latency` histogram buckets in milliseconds when this key is omitted.
+                                            # Uncomment the list only to override those defaults.
+    #   - 1
+    #   - 2
+    #   - 5
     #   - 10
+    #   - 20
     #   - 50
     #   - 100
     #   - 200
@@ -81,7 +88,20 @@ plugin_attr:
     #   - 10000
     #   - 30000
     #   - 60000
+    # llm_latency_buckets:                  # Buckets for `apisix_llm_latency`, in milliseconds.
+                                            # Applies to both `type=total` and `type=ttft` in APISIX 3.18.0 and later.
+    #   - 100
     #   - 500
+    #   - 1000
+    #   - 5000
+    # llm_prompt_tokens_buckets:            # Buckets for `apisix_llm_prompt_tokens_dist`, in tokens.
+    #   - 100
+    #   - 1000
+    #   - 10000
+    # llm_completion_tokens_buckets:        # Buckets for `apisix_llm_completion_tokens_dist`, in tokens.
+    #   - 100
+    #   - 1000
+    #   - 10000
 ```
 
 You can use the [Nginx variable](https://nginx.org/en/docs/http/ngx_http_core_module.html) to create `extra_labels`. See [add extra labels](#add-extra-labels-for-metrics).
@@ -102,17 +122,29 @@ You can configure the Plugin through its [Plugin Metadata](../terminology/plugin
 | --------------- | ------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | disabled_labels | object | False    | Per-metric map of built-in label names whose values are collapsed to an empty string `""` to reduce metric cardinality. Keyed by metric name: `http_status`, `http_latency`, `bandwidth`, `llm_latency`, `llm_prompt_tokens`, `llm_completion_tokens`, `llm_active_connections`, `llm_prompt_tokens_dist`, `llm_completion_tokens_dist`, `ai_cache_hits_total`, `ai_cache_misses_total`, `ai_cache_bypasses_total`, `ai_cache_embedding_latency`. Structural labels that define a metric's identity (`code` on `http_status`, `type` on `http_latency`, `bandwidth` and `llm_latency`, `layer` on `ai_cache_hits_total`) cannot be disabled. |
 
+The following built-in labels can be disabled for each metadata key:
+
+| Metadata key | Labels that can be disabled |
+| ------------ | --------------------------- |
+| `http_status` | `route`, `matched_uri`, `matched_host`, `service`, `consumer`, `node`, `request_type`, `request_llm_model`, `llm_model`, `response_source` |
+| `http_latency` | `route`, `service`, `consumer`, `node`, `request_type`, `request_llm_model`, `llm_model` |
+| `bandwidth` | `route`, `service`, `consumer`, `node`, `request_type`, `request_llm_model`, `llm_model` |
+| `llm_latency` | `route_id`, `service_id`, `consumer`, `node`, `request_type`, `request_llm_model`, `llm_model` |
+| `llm_prompt_tokens`, `llm_completion_tokens`, `llm_prompt_tokens_dist`, `llm_completion_tokens_dist` | `route_id`, `service_id`, `consumer`, `node`, `request_type`, `request_llm_model`, `llm_model` |
+| `llm_active_connections` | `route`, `route_id`, `matched_uri`, `matched_host`, `service`, `service_id`, `consumer`, `node`, `request_type`, `request_llm_model`, `llm_model` |
+| `ai_cache_hits_total`, `ai_cache_misses_total`, `ai_cache_bypasses_total`, `ai_cache_embedding_latency` | `route`, `route_id`, `service`, `service_id`, `consumer`, `node`, `request_type`, `request_llm_model`, `llm_model` |
+
 Collapsing a label's value to `""` keeps the label registered in the metric schema, so existing dashboards, `absent()` alerts, and recording rules keep working — only the high-cardinality time series that differ solely by those labels are collapsed into one. This is useful in dynamic environments such as Kubernetes autoscaling, where the upstream node IP (`node` label) churns rapidly and would otherwise overflow the `prometheus-metrics` shared dict.
 
 See [Reduce Metric Cardinality by Disabling Labels](#reduce-metric-cardinality-by-disabling-labels) for an example.
 
-The `request_llm_model` and `llm_model` label values are derived from client-supplied model names. To bound cardinality, APISIX truncates each of these label values to 128 bytes before recording. If you do not need per-model breakdowns, list `request_llm_model` and `llm_model` under `disabled_labels` for the LLM metrics to collapse them to a single empty-valued series.
+The `request_llm_model` label comes from the model requested by the client. The `llm_model` label identifies the effective target model: it uses the model configured on the AI instance when present, otherwise it uses the requested model. To bound cardinality, APISIX truncates each label value to 128 bytes before recording. If you do not need per-model breakdowns, list `request_llm_model` and `llm_model` under `disabled_labels` for the LLM metrics to collapse them to a single empty-valued series.
 
 ## Metrics
 
 There are different types of metrics in Prometheus. To understand their differences, see [metrics types](https://prometheus.io/docs/concepts/metric_types/).
 
-The following metrics are exported by the `prometheus` Plugin by default. See [get APISIX metrics](#get-apisix-metrics) for an example. Note that some metrics, such as `apisix_batch_process_entries`, are not readily visible if there are no data.
+The following table lists the core metrics registered directly by the `prometheus` Plugin. Configured xRPC protocols can register additional protocol-specific metrics. For example, Redis xRPC registers `apisix_redis_commands_total` and `apisix_redis_commands_latency_seconds`. See [get APISIX metrics](#get-apisix-metrics) for an example. A metric series appears only after its data source is active. For example, Stream metrics require `prometheus` to be enabled as a Stream Plugin, LLM metrics require AI traffic, AI cache metrics require the `ai-cache` Plugin, and `apisix_batch_process_entries` requires a batch-processing Plugin to have data.
 
 | Name                    | Type      | Description                                                                                                                                                                   |
 | ------------------------------ | --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -120,16 +152,29 @@ The following metrics are exported by the `prometheus` Plugin by default. See [g
 | apisix_etcd_modify_indexes            | gauge     | Number of changes to etcd by APISIX keys.                                                                                                                                         |
 | apisix_batch_process_entries          | gauge     | Number of remaining entries in a batch when sending data in batches, such as with `http logger`, and other logging Plugins.  |
 | apisix_etcd_reachable                 | gauge     | Whether APISIX can reach etcd. A value of `1` represents reachable and `0` represents unreachable.                                          |
-| apisix_http_status                    | counter   | HTTP status codes returned from upstream Services.                                                            |
+| apisix_http_status                    | counter   | HTTP status codes returned to clients after Plugin processing and proxying. This value can differ from the Upstream status. |
 | apisix_http_requests_total            | gauge     | Number of HTTP requests from clients.                                                                                                                                     |
 | apisix_nginx_http_current_connections | gauge     | Number of current connections with clients.                                                                                   |
 | apisix_nginx_metric_errors_total      | counter   | Total number of `nginx-lua-prometheus` errors.                                                                                                                                |
 | apisix_http_latency                   | histogram | HTTP request latency in milliseconds.                                                                                                              |
+| apisix_llm_latency                    | histogram | LLM request latency in milliseconds, including total latency and time to first token.                                                              |
+| apisix_llm_prompt_tokens              | counter   | Total number of prompt tokens consumed by LLM requests.                                                                                            |
+| apisix_llm_completion_tokens          | counter   | Total number of completion tokens generated by LLM requests.                                                                                       |
+| apisix_llm_active_connections         | gauge     | Gauge of LLM upstream activity. It reflects active requests without fallback retries, but `ai-proxy-multi` fallback retries can overcount failed-instance series. See the [label reference](#labels-for-apisix_llm_active_connections) for details. |
+| apisix_llm_prompt_tokens_dist         | histogram | Distribution of prompt tokens consumed per LLM request.                                                                                            |
+| apisix_llm_completion_tokens_dist     | histogram | Distribution of completion tokens generated per LLM request.                                                                                       |
+| apisix_ai_cache_hits_total            | counter   | Total number of AI cache hits, grouped by cache layer.                                                                                             |
+| apisix_ai_cache_misses_total          | counter   | Total number of AI cache misses.                                                                                                                    |
+| apisix_ai_cache_bypasses_total        | counter   | Total number of requests that bypassed the AI cache.                                                                                                |
+| apisix_ai_cache_embedding_latency     | histogram | Latency of AI cache embedding calls in milliseconds.                                                                                               |
 | apisix_node_info                      | gauge     | Information of the APISIX node, such as host name and the current APISIX version.                                                                                                                                                         |
 | apisix_shared_dict_capacity_bytes     | gauge     | The total capacity of an [NGINX shared dictionary](https://github.com/openresty/lua-nginx-module#ngxshareddict).                                                                                                                     |
 | apisix_shared_dict_free_space_bytes   | gauge     | The remaining space in an [NGINX shared dictionary](https://github.com/openresty/lua-nginx-module#ngxshareddict).                                                                                                                   |
 | apisix_upstream_status                | gauge     | Health check status of upstream nodes, available if health checks are configured on the upstream. A value of `1` represents healthy and `0` represents unhealthy.                                                                 |
 | apisix_stream_connection_total        | counter   | Total number of connections handled per Stream Route.                                                                                                               |
+| apisix_stream_active_connections      | gauge     | Number of Stream sessions currently being proxied, per listening address. Covers TCP connections and UDP sessions alike.                                             |
+| apisix_stream_status                  | counter   | Counted once per Stream session when it ends, classified by how it ended.                                                                                            |
+| apisix_stream_bandwidth               | counter   | Total bandwidth in bytes proxied by the Stream subsystem, per listening address and direction.                                                                       |
 
 ## Labels
 
@@ -145,15 +190,61 @@ The following labels are used to differentiate `apisix_http_status` metrics.
 
 | Name   | Description                                                                                                                   |
 | ------------ | ----------------------------------------------------------------------------------------------------------------------------- |
-| code         | HTTP response code returned by the upstream node.                                                                            |
+| code         | HTTP response code returned to the client.                                                                                    |
 | route        | ID of the Route that the HTTP status originates from when `prefer_name` is `false` (default), and name of the Route when `prefer_name` to `true`. Default to an empty string if a request does not match any Route.                         |
 | matched_uri  | URI of the Route that matches the request. Default to an empty string if a request does not match any Route.                              |
 | matched_host | Host of the Route that matches the request. Default to an empty string if a request does not match any Route, or host is not configured on the Route.                             |
 | service      | ID of the Service that the HTTP status originates from when `prefer_name` is `false` (default), and name of the Service when `prefer_name` to `true`. Default to the configured value of host on the Route if the matched Route does not belong to any Service. |
 | consumer     | Name of the Consumer associated with a request. Default to an empty string if no Consumer is associated with the request.                       |
-| node         | IP address of the upstream node.                                                                                          |
-| request_type       | traditional_http / ai_chat / ai_stream                                                                                          |
-| llm_model       | For non-traditional_http requests, name of the llm_model                                                                                          |
+| node         | IP address of the Upstream node. For AI Routes, this is the LLM instance name reported by `ai-proxy` or `ai-proxy-multi`. |
+| request_type       | Request category: `traditional_http`, `ai_chat`, or `ai_stream`.                                                               |
+| request_llm_model  | Model name requested by the client.                                                                                            |
+| llm_model          | Effective target model for the AI request. Uses the model configured on the AI instance when present; otherwise uses the model requested by the client. Empty for traditional HTTP traffic. |
+| response_source    | Response origin: `apisix` for responses generated by APISIX, `nginx` for NGINX proxy errors, or `upstream` for responses received from the Upstream. |
+
+### Labels for `apisix_stream_active_connections`
+
+The gauge is incremented when a session is accepted and decremented when it
+ends, so it reflects live concurrency without waiting for sessions to finish.
+
+| Name        | Description                                                                             |
+| ----------- | --------------------------------------------------------------------------------------- |
+| listen_addr | Listening address the client connected to, for example `0.0.0.0:9100`.                   |
+
+### Labels for `apisix_stream_status`
+
+NGINX reports a Stream `$status` of 200 for failures that happen after the
+upstream connection is established, so a timeout or a reset is
+indistinguishable from a clean close on its own. This metric maps recognized
+termination reasons onto the status codes NGINX uses for Stream sessions. A
+code of `200` also covers worker shutdown and is the fallback when the runtime
+does not record a recognized termination reason, so it does not always prove a
+clean close. No synthetic code is introduced.
+
+| Name        | Description                                                                             |
+| ----------- | --------------------------------------------------------------------------------------- |
+| code        | How the session ended: `200` for a normal close, worker shutdown, or a missing or unrecognized termination reason; `400` for a client-side problem such as a reset or invalid preread data; `403` when rejected by an access rule; `500` for an internal error; `502` for an upstream or transport problem such as a connect failure, reset, or idle timeout; `503` when rejected by a connection limit. |
+| listen_addr | Listening address the client connected to, for example `0.0.0.0:9100`.                   |
+| node        | Address of the upstream node used, empty when no node was selected.                      |
+
+For UDP only a subset of the codes occurs, since UDP has no close, FIN or
+reset to observe.
+
+### Labels for `apisix_stream_bandwidth`
+
+Bytes keep accumulating while a connection is open rather than only at session
+end, so a long-lived connection is visible as it runs. Only Stream traffic is
+counted; the HTTP subsystem cannot contribute to it.
+
+| Name        | Description                                                                             |
+| ----------- | --------------------------------------------------------------------------------------- |
+| listen_addr | Listening address the client connected to, for example `0.0.0.0:9100`.                   |
+| side        | Which connection the bytes crossed: `downstream` between APISIX and the client, `upstream` between APISIX and the upstream. |
+| type        | Direction relative to APISIX, matching `apisix_bandwidth`: `ingress` for bytes APISIX received, `egress` for bytes APISIX sent. |
+
+Under plain forwarding `downstream`/`ingress` tracks `upstream`/`egress`, and
+`upstream`/`ingress` tracks `downstream`/`egress`; a lasting mismatch is itself
+a signal that one side stopped reading.
 
 ### Labels for `apisix_bandwidth`
 
@@ -165,9 +256,10 @@ The following labels are used to differentiate `apisix_bandwidth` metrics.
 | route      | ID of the Route that bandwidth corresponds to when `prefer_name` is `false` (default), and name of the Route when `prefer_name` to `true`. Default to an empty string if a request does not match any Route.                         |
 | service    | ID of the Service that bandwidth corresponds to when `prefer_name` is `false` (default), and name of the Service when `prefer_name` to `true`. Default to the configured value of host on the Route if the matched Route does not belong to any Service. |
 | consumer   | Name of the Consumer associated with a request. Default to an empty string if no Consumer is associated with the request.                       |
-| node       | IP address of the upstream node.                                                                                          |
-| request_type       | traditional_http / ai_chat / ai_stream                                                                                          |
-| llm_model       | For non-traditional_http requests, name of the llm_model                                                                                          |
+| node       | IP address of the Upstream node. For AI Routes, this is the LLM instance name reported by `ai-proxy` or `ai-proxy-multi`. |
+| request_type       | Request category: `traditional_http`, `ai_chat`, or `ai_stream`.                                                               |
+| request_llm_model  | Model name requested by the client.                                                                                            |
+| llm_model          | Effective target model for the AI request. Uses the model configured on the AI instance when present; otherwise uses the model requested by the client. Empty for traditional HTTP traffic. |
 
 ### Labels for `apisix_llm_latency`
 
@@ -176,52 +268,60 @@ The `type` label distinguishes the kind of latency, similar to `apisix_http_late
 - `total`: the full response latency, recorded for both `ai_chat` and `ai_stream` requests.
 - `ttft`: the time to first token, recorded for `ai_stream` requests only (non-streaming responses do not expose a first-token moment).
 
-| Name | Description                                                                                                                   |
-| ---------- | ----------------------------------------------------------------------------------------------------------------------------- |                                                                                             |
-| type          | Kind of latency: `total` or `ttft`.                                                                                             |
-| route_id      | ID of the Route that bandwidth corresponds to when `prefer_name` is `false` (default), and name of the Route when `prefer_name` to `true`. Default to an empty string if a request does not match any Route.                         |
-| service_id    | ID of the Service that bandwidth corresponds to when `prefer_name` is `false` (default), and name of the Service when `prefer_name` to `true`. Default to the configured value of host on the Route if the matched Route does not belong to any Service. |
-| consumer   | Name of the Consumer associated with a request. Default to an empty string if no Consumer is associated with the request.                       |
-| node       | IP address of the upstream node.                                                                                          |
-| request_type       | traditional_http / ai_chat / ai_stream                                                                                          |
-| llm_model       | For non-traditional_http requests, name of the llm_model                                                                                          |
-
-### Labels for `apisix_llm_active_connections`
+For request-scoped LLM metrics, the labels named `route_id` and `service_id` follow `prefer_name`: they contain IDs by default and names when `prefer_name` is `true`. `apisix_llm_active_connections` is different because it exports separate name and ID labels.
 
 | Name | Description                                                                                                                   |
 | ---------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| route      | Name of the Route that bandwidth corresponds to. Default to an empty string if a request does not match any Route.                                                                                 |
-| route_id      | ID of the Route that bandwidth corresponds to when `prefer_name` is `false` (default), and name of the Route when `prefer_name` to `true`. Default to an empty string if a request does not match any Route.                         |
+| type          | Kind of latency: `total` or `ttft`.                                                                                             |
+| route_id      | ID of the Route that the metric corresponds to when `prefer_name` is `false` (default), and name of the Route when `prefer_name` is `true`. Defaults to an empty string if a request does not match any Route.                         |
+| service_id    | ID of the Service that the metric corresponds to when `prefer_name` is `false` (default), and name of the Service when `prefer_name` is `true`. Defaults to an empty string if the matched Route does not belong to any Service. |
+| consumer   | Name of the Consumer associated with a request. Default to an empty string if no Consumer is associated with the request.                       |
+| node       | Identifier of the selected AI Upstream, typically the LLM instance name reported by `ai-proxy` or `ai-proxy-multi`.       |
+| request_type       | Request category: `ai_chat` or `ai_stream`.                                                                                     |
+| request_llm_model  | Model name requested by the client.                                                                                            |
+| llm_model          | Effective target model for the AI request. Uses the model configured on the AI instance when present; otherwise uses the model requested by the client. |
+
+### Labels for `apisix_llm_active_connections`
+
+APISIX increments this gauge when an LLM upstream attempt starts and decrements it once during the request log phase. Without fallback retries, it represents active LLM upstream requests. With `ai-proxy-multi` fallback retries, each retry increments a new per-instance series, while the request is decremented only once using the final labels. A failed-instance series can therefore remain above the actual active count and, with the default non-expiring metric, remain until the metric storage is reset. Treat this gauge as approximate when fallback retries occur.
+
+| Name | Description                                                                                                                   |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| route      | Name of the matched Route. Defaults to an empty string if the Route has no name or no Route is matched.                    |
+| route_id   | ID of the matched Route. Defaults to an empty string if no Route is matched.                                                |
 | matched_uri  | URI of the Route that matches the request. Default to an empty string if a request does not match any Route.                              |
 | matched_host | Host of the Route that matches the request. Default to an empty string if a request does not match any Route, or host is not configured on the Route.                             |
-| service    | Name of the Service that bandwidth corresponds to. Default to the configured value of host on the Route if the matched Route does not belong to any Service. |
-| service_id    | ID of the Service that bandwidth corresponds to when `prefer_name` is `false` (default), and name of the Service when `prefer_name` to `true`. Default to the configured value of host on the Route if the matched Route does not belong to any Service. |
+| service    | Name of the Service referenced by the matched Route. Defaults to an empty string if the Route does not reference a Service. |
+| service_id | ID of the Service referenced by the matched Route. Defaults to an empty string if the Route does not reference a Service.   |
 | consumer   | Name of the Consumer associated with a request. Default to an empty string if no Consumer is associated with the request.                       |
-| node       | IP address of the upstream node.                                                                                          |
-| request_type       | traditional_http / ai_chat / ai_stream                                                                                          |
-| llm_model       | For non-traditional_http requests, name of the llm_model                                                                                          |
+| node       | Identifier of the selected AI Upstream, typically the LLM instance name reported by `ai-proxy` or `ai-proxy-multi`.       |
+| request_type       | Request category: `ai_chat` or `ai_stream`.                                                                                     |
+| request_llm_model  | Model name requested by the client.                                                                                            |
+| llm_model          | Effective target model for the AI request. Uses the model configured on the AI instance when present; otherwise uses the model requested by the client. |
 
 ### Labels for `apisix_llm_completion_tokens`
 
 | Name | Description                                                                                                                   |
-| ---------- | ----------------------------------------------------------------------------------------------------------------------------- |                                                                                             |
-| route_id      | ID of the Route that bandwidth corresponds to when `prefer_name` is `false` (default), and name of the Route when `prefer_name` to `true`. Default to an empty string if a request does not match any Route.                         |
-| service_id    | ID of the Service that bandwidth corresponds to when `prefer_name` is `false` (default), and name of the Service when `prefer_name` to `true`. Default to the configured value of host on the Route if the matched Route does not belong to any Service. |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| route_id      | ID of the Route that the metric corresponds to when `prefer_name` is `false` (default), and name of the Route when `prefer_name` is `true`. Defaults to an empty string if no Route is matched. |
+| service_id    | ID of the Service that the metric corresponds to when `prefer_name` is `false` (default), and name of the Service when `prefer_name` is `true`. Defaults to an empty string if the matched Route does not reference a Service. |
 | consumer   | Name of the Consumer associated with a request. Default to an empty string if no Consumer is associated with the request.                       |
-| node       | IP address of the upstream node.                                                                                          |
-| request_type       | traditional_http / ai_chat / ai_stream                                                                                          |
-| llm_model       | For non-traditional_http requests, name of the llm_model                                                                                          |
+| node       | Identifier of the selected AI Upstream, typically the LLM instance name reported by `ai-proxy` or `ai-proxy-multi`.       |
+| request_type       | Request category: `ai_chat` or `ai_stream`.                                                                                     |
+| request_llm_model  | Model name requested by the client.                                                                                            |
+| llm_model          | Effective target model for the AI request. Uses the model configured on the AI instance when present; otherwise uses the model requested by the client. |
 
 ### Labels for `apisix_llm_prompt_tokens`
 
 | Name | Description                                                                                                                   |
-| ---------- | ----------------------------------------------------------------------------------------------------------------------------- |                                                                                             |
-| route_id      | ID of the Route that bandwidth corresponds to when `prefer_name` is `false` (default), and name of the Route when `prefer_name` to `true`. Default to an empty string if a request does not match any Route.                         |
-| service_id    | ID of the Service that bandwidth corresponds to when `prefer_name` is `false` (default), and name of the Service when `prefer_name` to `true`. Default to the configured value of host on the Route if the matched Route does not belong to any Service. |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| route_id      | ID of the Route that the metric corresponds to when `prefer_name` is `false` (default), and name of the Route when `prefer_name` is `true`. Defaults to an empty string if no Route is matched. |
+| service_id    | ID of the Service that the metric corresponds to when `prefer_name` is `false` (default), and name of the Service when `prefer_name` is `true`. Defaults to an empty string if the matched Route does not reference a Service. |
 | consumer   | Name of the Consumer associated with a request. Default to an empty string if no Consumer is associated with the request.                       |
-| node       | IP address of the upstream node.                                                                                          |
-| request_type       | traditional_http / ai_chat / ai_stream                                                                                          |
-| llm_model       | For non-traditional_http requests, name of the llm_model                                                                                          |
+| node       | Identifier of the selected AI Upstream, typically the LLM instance name reported by `ai-proxy` or `ai-proxy-multi`.       |
+| request_type       | Request category: `ai_chat` or `ai_stream`.                                                                                     |
+| request_llm_model  | Model name requested by the client.                                                                                            |
+| llm_model          | Effective target model for the AI request. Uses the model configured on the AI instance when present; otherwise uses the model requested by the client. |
 
 ### Labels for `apisix_llm_prompt_tokens_dist`
 
@@ -230,11 +330,12 @@ The `type` label distinguishes the kind of latency, similar to `apisix_http_late
 | Name | Description                                                                                                                   |
 | ---------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | route_id      | ID of the Route that the metric corresponds to when `prefer_name` is `false` (default), and name of the Route when `prefer_name` to `true`. Default to an empty string if a request does not match any Route.                         |
-| service_id    | ID of the Service that the metric corresponds to when `prefer_name` is `false` (default), and name of the Service when `prefer_name` to `true`. Default to the configured value of host on the Route if the matched Route does not belong to any Service. |
+| service_id    | ID of the Service that the metric corresponds to when `prefer_name` is `false` (default), and name of the Service when `prefer_name` is `true`. Defaults to an empty string if the matched Route does not reference a Service. |
 | consumer   | Name of the Consumer associated with a request. Default to an empty string if no Consumer is associated with the request.                       |
-| node       | IP address of the upstream node.                                                                                          |
-| request_type       | traditional_http / ai_chat / ai_stream                                                                                          |
-| llm_model       | For non-traditional_http requests, name of the llm_model                                                                                          |
+| node       | Identifier of the selected AI Upstream, typically the LLM instance name reported by `ai-proxy` or `ai-proxy-multi`.       |
+| request_type       | Request category: `ai_chat` or `ai_stream`.                                                                                     |
+| request_llm_model  | Model name requested by the client.                                                                                            |
+| llm_model          | Effective target model for the AI request. Uses the model configured on the AI instance when present; otherwise uses the model requested by the client. |
 
 ### Labels for `apisix_llm_completion_tokens_dist`
 
@@ -243,11 +344,12 @@ The `type` label distinguishes the kind of latency, similar to `apisix_http_late
 | Name | Description                                                                                                                   |
 | ---------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | route_id      | ID of the Route that the metric corresponds to when `prefer_name` is `false` (default), and name of the Route when `prefer_name` to `true`. Default to an empty string if a request does not match any Route.                         |
-| service_id    | ID of the Service that the metric corresponds to when `prefer_name` is `false` (default), and name of the Service when `prefer_name` to `true`. Default to the configured value of host on the Route if the matched Route does not belong to any Service. |
+| service_id    | ID of the Service that the metric corresponds to when `prefer_name` is `false` (default), and name of the Service when `prefer_name` is `true`. Defaults to an empty string if the matched Route does not reference a Service. |
 | consumer   | Name of the Consumer associated with a request. Default to an empty string if no Consumer is associated with the request.                       |
-| node       | IP address of the upstream node.                                                                                          |
-| request_type       | traditional_http / ai_chat / ai_stream                                                                                          |
-| llm_model       | For non-traditional_http requests, name of the llm_model                                                                                          |
+| node       | Identifier of the selected AI Upstream, typically the LLM instance name reported by `ai-proxy` or `ai-proxy-multi`.       |
+| request_type       | Request category: `ai_chat` or `ai_stream`.                                                                                     |
+| request_llm_model  | Model name requested by the client.                                                                                            |
+| llm_model          | Effective target model for the AI request. Uses the model configured on the AI instance when present; otherwise uses the model requested by the client. |
 
 ### Labels for the `apisix_ai_cache_*` metrics
 
@@ -269,9 +371,9 @@ They share the following labels:
 | service_id    | ID of the Service that the matched Route belongs to. Default to an empty string if the matched Route does not belong to any Service. |
 | consumer   | Name of the Consumer associated with a request. Default to an empty string if no Consumer is associated with the request.                       |
 | node       | Name of the LLM instance picked by the `ai-proxy` or `ai-proxy-multi` Plugin, such as `ai-proxy-openai`. These Plugins report the instance name instead of an upstream IP address, on cache hits and misses alike.                                                                                          |
-| request_type       | traditional_http / ai_chat / ai_stream                                                                                          |
+| request_type       | AI request category: `ai_chat` or `ai_stream`.                                                                                  |
 | request_llm_model       | Model name requested by the client.                                                                                          |
-| llm_model       | Model name reported by the LLM response. Empty on cache hits, which are served without reaching the LLM.                                                                                          |
+| llm_model       | Effective target model for the Upstream AI request. Uses the model configured on the AI instance when present; otherwise uses the model requested by the client. Empty on cache hits, which are served without reaching the LLM. |
 
 ### Labels for `apisix_http_latency`
 
@@ -283,9 +385,10 @@ The following labels are used to differentiate `apisix_http_latency` metrics.
 | route      | ID of the Route that latencies correspond to when `prefer_name` is `false` (default), and name of the Route when `prefer_name` to `true`. Default to an empty string if a request does not match any Route.                         |
 | service    | ID of the Service that latencies correspond to when `prefer_name` is `false` (default), and name of the Service when `prefer_name` to `true`. Default to the configured value of host on the Route if the matched Route does not belong to any Service. |
 | consumer   | Name of the Consumer associated with latencies. Default to an empty string if no Consumer is associated with the request.                             |
-| node       | IP address of the upstream node associated with latencies.                                                                                                |
-| request_type       | traditional_http / ai_chat / ai_stream                                                                                          |
-| llm_model       | For non-traditional_http requests, name of the llm_model                                                                                          |
+| node       | IP address of the Upstream node associated with latencies. For AI Routes, this is the LLM instance name reported by `ai-proxy` or `ai-proxy-multi`. |
+| request_type       | Request category: `traditional_http`, `ai_chat`, or `ai_stream`.                                                               |
+| request_llm_model  | Model name requested by the client.                                                                                            |
+| llm_model          | Effective target model for the AI request. Uses the model configured on the AI instance when present; otherwise uses the model requested by the client. Empty for traditional HTTP traffic. |
 
 #### Latency Types
 
@@ -485,11 +588,7 @@ This shows that the upstream node `httpbin.org:80` is healthy and the upstream n
 
 The following example demonstrates how to add additional labels to metrics and use the [Nginx variable](https://nginx.org/en/docs/http/ngx_http_core_module.html) in label values.
 
-Currently, only the following metrics support extra labels:
-
-* apisix_http_status
-* apisix_http_latency
-* apisix_bandwidth
+Extra labels are supported for `apisix_http_status`, `apisix_http_latency`, `apisix_bandwidth`, all `apisix_llm_*` metrics listed above, and all four `apisix_ai_cache_*` metrics.
 
 Include the following configurations in the configuration file to add labels for metrics and reload APISIX for changes to take effect:
 
@@ -611,7 +710,7 @@ apisix_http_status{code="200",route="prometheus-route",matched_uri="/get",matche
 
 The following example demonstrates how to collect TCP/UDP traffic metrics in APISIX.
 
-Include the following configurations in `config.yaml` to enable stream proxy and `prometheus` Plugin for stream proxy. Reload APISIX for changes to take effect:
+Include the following configurations in `config.yaml` to enable Stream proxy and add `prometheus` to the existing Stream Plugin list. Preserve any other Stream Plugins used by the deployment. Reload APISIX for changes to take effect:
 
 ```yaml title="conf/config.yaml"
 apisix:
@@ -664,5 +763,28 @@ You should see an output similar to the following:
 ```text
 # HELP apisix_stream_connection_total Total number of connections handled per Stream Route in APISIX
 # TYPE apisix_stream_connection_total counter
-apisix_stream_connection_total{route="1"} 1
+apisix_stream_connection_total{route="prometheus-route"} 1
+# HELP apisix_stream_active_connections Number of stream sessions currently being proxied per listening address
+# TYPE apisix_stream_active_connections gauge
+apisix_stream_active_connections{listen_addr="0.0.0.0:9100"} 0
+# HELP apisix_stream_status Stream sessions per termination status in APISIX
+# TYPE apisix_stream_status counter
+apisix_stream_status{code="200",listen_addr="0.0.0.0:9100",node="54.237.103.220:80"} 1
+# HELP apisix_stream_bandwidth Total bandwidth in bytes proxied by the stream subsystem in APISIX
+# TYPE apisix_stream_bandwidth counter
+apisix_stream_bandwidth{listen_addr="0.0.0.0:9100",type="ingress",side="downstream"} 78
+apisix_stream_bandwidth{listen_addr="0.0.0.0:9100",type="egress",side="downstream"} 219
+apisix_stream_bandwidth{listen_addr="0.0.0.0:9100",type="egress",side="upstream"} 78
+apisix_stream_bandwidth{listen_addr="0.0.0.0:9100",type="ingress",side="upstream"} 219
 ```
+
+The exact Upstream address and byte counts depend on the request. The active-connections gauge is `0` above because the request completed before the scrape; scrape while a connection remains open to observe a positive value.
+
+:::note
+
+`apisix_stream_active_connections` and `apisix_stream_bandwidth` are backed by
+an NGINX shared memory zone, sized by `nginx_config.stream.metrics_zone_size`
+(default `1m`). They require APISIX-Runtime; on a runtime without it the two
+metrics are simply not published.
+
+:::
