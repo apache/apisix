@@ -111,4 +111,32 @@ function _M.serve_abort_once()
 end
 
 
+-- Minimal AWS Comprehend detectToxicContent stand-in: answers one clean result
+-- per submitted segment. The truncation tests only need the moderation plugin to
+-- reach its terminator-synthesis branch, not a particular verdict.
+function _M.serve_clean_comprehend()
+    local json = require("cjson.safe")
+    ngx.req.read_body()
+    local body = json.decode(ngx.req.get_body_data() or "{}") or {}
+    local results = {}
+    for i in ipairs(body.TextSegments or {}) do
+        results[i] = {
+            Toxicity = 0.01,
+            Labels = {
+                { Name = "PROFANITY", Score = 0.01 },
+                { Name = "HATE_SPEECH", Score = 0.01 },
+                { Name = "INSULT", Score = 0.01 },
+                { Name = "GRAPHIC", Score = 0.01 },
+                { Name = "HARASSMENT_OR_ABUSE", Score = 0.01 },
+                { Name = "SEXUAL", Score = 0.01 },
+                { Name = "VIOLENCE_OR_THREAT", Score = 0.01 },
+            },
+        }
+    end
+    ngx.status = 200
+    ngx.header["Content-Type"] = "application/json"
+    ngx.say(json.encode({ ResultList = results }))
+end
+
+
 return _M
