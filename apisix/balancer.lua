@@ -27,6 +27,8 @@ local set_more_tries   = balancer.set_more_tries
 local get_last_failure = balancer.get_last_failure
 local set_timeouts     = balancer.set_timeouts
 local ngx_now          = ngx.now
+local ngx_md5          = ngx.md5
+local tostring         = tostring
 
 local module_name = "balancer"
 local pickers = {}
@@ -369,6 +371,18 @@ end
 _M.pick_server = pick_server
 
 
+-- Keyed by the `ca_certs` array itself: a config update always rebuilds that
+-- table, so a stale digest can never outlive the certificates it was made from.
+local ca_certs_digest_cache = core.lrucache.new({
+    ttl = 300, count = 256,
+})
+
+
+local function ca_certs_digest(ca_certs)
+    return ngx_md5(core.table.concat(ca_certs, "\n"))
+end
+
+
 local set_current_peer
 do
     local pool_opt = {}
@@ -409,12 +423,25 @@ do
                 local sni = ctx.var.upstream_host
                 pool = pool .. "#" .. sni
 
+                local tls = up_conf.tls
                 -- separate the pool by client cert so referenced SSL objects
                 -- don't share a connection
-                if up_conf.tls and up_conf.tls.client_cert then
-                    pool = pool .. "#" .. up_conf.tls.client_cert
-                elseif up_conf.tls and up_conf.tls.client_cert_id then
-                    pool = pool .. "#" .. up_conf.tls.client_cert_id
+                if tls and tls.client_cert then
+                    pool = pool .. "#" .. tls.client_cert
+                elseif tls and tls.client_cert_id then
+                    pool = pool .. "#" .. tls.client_cert_id
+                end
+
+                -- and by the verification policy, which is applied while the
+                -- connection is being established: a pooled connection keeps
+                -- whatever policy it was handshaked under, so reusing it across
+                -- policies would skip the verification the config asks for
+                if tls and (tls.verify ~= nil or tls.ca_certs) then
+                    pool = pool .. "#" .. tostring(tls.verify)
+                    if tls.ca_certs then
+                        pool = pool .. "#" .. ca_certs_digest_cache(tls.ca_certs, nil,
+                                                        ca_certs_digest, tls.ca_certs)
+                    end
                 end
             end
             pool_opt.pool = pool

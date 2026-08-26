@@ -263,7 +263,81 @@ ok
 
 
 
-=== TEST 10: grpcs upstream is verified by default
+=== TEST 10: a pooled connection does not carry a stale verification policy
+--- config
+    location /t1 {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "methods": ["GET"],
+                    "upstream": {
+                        "scheme": "https",
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:8768": 1
+                        },
+                        "pass_host": "rewrite",
+                        "upstream_host": "test.com",
+                        "tls": {
+                            "verify": false
+                        }
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.sleep(0.5)
+            ngx.say(body)
+        }
+    }
+
+    location /t2 {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "methods": ["GET"],
+                    "upstream": {
+                        "scheme": "https",
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:8768": 1
+                        },
+                        "pass_host": "rewrite",
+                        "upstream_host": "test.com",
+                        "tls": {
+                            "verify": true
+                        }
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.sleep(0.5)
+            ngx.say(body)
+        }
+    }
+--- request eval
+["GET /t1", "GET /hello", "GET /t2", "GET /hello"]
+--- error_code eval
+[200, 200, 200, 502]
+--- response_body eval
+["passed\n", "ok\n", "passed\n", qr/502 Bad Gateway/]
+--- no_error_log
+[alert]
+
+
+
+=== TEST 11: grpcs upstream is verified by default
 --- http2
 --- http_config
 grpc_ssl_trusted_certificate ../../certs/mtls_ca.crt;
@@ -290,7 +364,7 @@ upstream SSL certificate verify error
 
 
 
-=== TEST 11: tls.verify survives the internal redirect to @grpc_pass
+=== TEST 12: tls.verify survives the internal redirect to @grpc_pass
 --- http2
 --- http_config
 grpc_ssl_trusted_certificate ../../certs/mtls_ca.crt;
@@ -321,7 +395,7 @@ grpcurl -import-path ./t/grpc_server_example/proto -proto helloworld.proto -plai
 
 
 
-=== TEST 12: tls.ca_certs survives the internal redirect to @grpc_pass
+=== TEST 13: tls.ca_certs survives the internal redirect to @grpc_pass
 The upstream serves a certificate that grpc_ssl_trusted_certificate does not
 trust, so the request only succeeds if ca_certs reached the handshake.
 --- http2
