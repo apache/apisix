@@ -708,3 +708,81 @@ Authorization: bASiC Zm9vOmJhcg==
 hello world
 --- error_log
 find consumer foo
+
+
+=== TEST 40: consumer schema rejects empty password
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local plugin = require("apisix.plugins.basic-auth")
+            local ok, err = plugin.check_schema({username = 'foo', password = ''}, core.schema.TYPE_CONSUMER)
+            if ok then
+                ngx.say("unexpected: schema accepted empty password")
+                return
+            end
+            ngx.say(err or "rejected")
+        }
+    }
+--- request
+GET /t
+--- response_body_like
+property "password" validation failed
+--- no_error_log
+unexpected
+
+
+
+=== TEST 41: admin api rejects consumer with empty password
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "empty-pass",
+                    "plugins": {
+                        "basic-auth": {
+                            "username": "empty-pass",
+                            "password": ""
+                        }
+                    }
+                }]]
+                )
+            if code < 400 then
+                ngx.status = 500
+                ngx.say("unexpected: admin api accepted empty password")
+                return
+            end
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body_like
+property "password" validation failed
+--- no_error_log
+unexpected
+
+
+
+=== TEST 42: empty password in Authorization header is rejected
+--- request
+GET /hello
+--- more_headers
+Authorization: Basic Zm9vOg==
+--- error_code: 401
+
+
+
+=== TEST 43: whitespace-only password in Authorization header is rejected
+--- request
+GET /hello
+--- more_headers
+Authorization: Basic Zm9vOiA=
+--- error_code: 401
+--- response_body
+{"message":"Invalid user authorization"}

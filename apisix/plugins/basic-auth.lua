@@ -43,7 +43,10 @@ local consumer_schema = {
     title = "work with consumer object",
     properties = {
         username = { type = "string" },
-        password = { type = "string" },
+        password = {
+            type = "string",
+            minLength = 1,
+        },
     },
     encrypt_fields = {"password"},
     required = {"username", "password"},
@@ -145,6 +148,13 @@ local function find_consumer(ctx)
             return nil, nil, err
         end
         core.log.warn(err)
+        return nil, nil, "Invalid user authorization"
+    end
+
+    -- RFC 8265 section 4.1: a password MUST NOT be zero-length. Fail closed
+    -- when the resolved password is empty, which also covers existing data
+    -- and $secret:// / $ENV:// references that resolve to "".
+    if password == "" or cur_consumer.auth_conf.password == "" then
         return nil, nil, "Invalid user authorization"
     end
 
