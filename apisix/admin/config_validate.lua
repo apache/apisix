@@ -251,9 +251,11 @@ function _M.validate()
     local ok, valid, validation_results = pcall(_M.validate_configuration, data, true)
     if not ok then
         core.log.warn("unexpected error during validation: ", tostring(valid))
+        -- the raw Lua error carries the source path and whatever the failing
+        -- code put in it; keep it in the log, not in the response
         return core.response.exit(400, {
             error_msg = "Configuration validation failed",
-            errors = {{error = tostring(valid)}}
+            errors = {{error = "unexpected validation error"}}
         })
     end
     if not valid then
