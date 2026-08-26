@@ -125,9 +125,30 @@ function _M.validate_configuration(req_body, collect_all_errors)
     local is_valid = true
     local validation_results = {}
 
+    if type(req_body) ~= "table" then
+        local err_msg = "invalid request body: it should be an object"
+        if not collect_all_errors then
+            return false, err_msg
+        end
+        return false, {{resource_type = "", error = err_msg}}
+    end
+
     for key, conf_version_key in pairs(ALL_RESOURCE_KEYS) do
         local items = req_body[key]
         local resource = resources[key] or {}
+
+        -- a client can send any JSON/YAML value here; `#items` and `ipairs`
+        -- raise a Lua error on a scalar, and admin/standalone.lua calls this
+        -- without a pcall
+        if items ~= nil and type(items) ~= "table" then
+            local err_msg = key .. " must be an array, got " .. type(items)
+            if not collect_all_errors then
+                return false, err_msg
+            end
+            is_valid = false
+            table_insert(validation_results, {resource_type = key, error = err_msg})
+            items = nil
+        end
 
         -- Validate conf_version_key if present
         local new_conf_version = req_body[conf_version_key]
@@ -221,7 +242,9 @@ function _M.validate()
     end
 
     if err then
-        core.log.warn("invalid request body: ", req_body, " err: ", err)
+        -- the body is a full declarative configuration and can carry plugin
+        -- credentials and TLS private keys; log the parser error only
+        core.log.warn("invalid request body, err: ", err)
         return core.response.exit(400, {error_msg = "invalid request body: " .. err})
     end
 

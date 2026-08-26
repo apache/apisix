@@ -656,3 +656,98 @@ location /t {
 --- error_code: 400
 --- response_body
 passed
+
+
+
+=== TEST 17: validate configs - a resource list that is not an array
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        local json = require("cjson")
+        local code, body = t('/apisix/admin/configs/validate',
+            ngx.HTTP_POST,
+            [[{"routes": "not-an-array"}]]
+            )
+
+        ngx.status = code
+        local data = json.decode(body)
+        assert(data.error_msg == "Configuration validation failed",
+            "expected validation failed, got: " .. tostring(data.error_msg))
+        assert(data.errors[1].error == "routes must be an array, got string",
+            "unexpected error: " .. body)
+        ngx.say("passed")
+    }
+}
+--- error_code: 400
+--- response_body
+passed
+
+
+
+=== TEST 18: validate configs - a scalar request body
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        local json = require("cjson")
+        local code, body = t('/apisix/admin/configs/validate',
+            ngx.HTTP_POST,
+            [[123]]
+            )
+
+        ngx.status = code
+        local data = json.decode(body)
+        assert(data.error_msg == "Configuration validation failed",
+            "expected validation failed, got: " .. tostring(data.error_msg))
+        assert(data.errors[1].error == "invalid request body: it should be an object",
+            "unexpected error: " .. body)
+        ngx.say("passed")
+    }
+}
+--- error_code: 400
+--- response_body
+passed
+
+
+
+=== TEST 19: validate configs - a stream route may not name itself as superior_id
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        local json = require("cjson")
+        local code, body = t('/apisix/admin/configs/validate',
+            ngx.HTTP_POST,
+            [[{
+                "stream_routes": [
+                    {
+                        "id": "r1",
+                        "server_addr": "127.0.0.1",
+                        "server_port": 1985,
+                        "protocol": {
+                            "name": "redis",
+                            "superior_id": "r1"
+                        },
+                        "upstream": {
+                            "nodes": {"127.0.0.1:1995": 1},
+                            "type": "roundrobin"
+                        }
+                    }
+                ]
+            }]]
+            )
+
+        ngx.status = code
+        local data = json.decode(body)
+        assert(data.error_msg == "Configuration validation failed",
+            "expected validation failed, got: " .. tostring(data.error_msg))
+        assert(string.find(data.errors[1].error,
+                           "stream route can not set itself as superior_id", 1, true),
+            "unexpected error: " .. body)
+        ngx.say("passed")
+    }
+}
+--- error_code: 400
+--- response_body
+passed
