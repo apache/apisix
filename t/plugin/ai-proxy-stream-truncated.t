@@ -43,6 +43,7 @@ plugins:
   - ai-proxy
   - ai-proxy-multi
   - ai-aliyun-content-moderation
+  - ai-aws-content-moderation
 plugin_attr:
     ai-proxy:
         http_client: lua-resty-http
@@ -51,7 +52,21 @@ _EOC_
         $block->set_value("extra_yaml_config", $user_yaml_config);
     }
 
+    my $main_config = $block->main_config // <<_EOC_;
+    env AWS_REGION=us-east-1;
+_EOC_
+    $block->set_value("main_config", $main_config);
+
     my $http_config = $block->http_config // <<_EOC_;
+    server {
+        listen 2668;
+        location / {
+            content_by_lua_block {
+                require("lib.truncated_sse").serve_clean_comprehend()
+            }
+        }
+    }
+
     server {
         listen 6724;
 
@@ -372,4 +387,58 @@ qr/^(?!.*message_stop)(?=.*"text":"hello")/s
 --- error_log
 failed to read response chunk: closed
 falling back to
+--- timeout: 10
+
+
+
+=== TEST 11: ai-proxy + ai-aws-content-moderation on the usage-then-truncate upstream
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, [[{
+                "uri": "/truncated",
+                "plugins": {
+                    "ai-proxy": {
+                        "provider": "openai",
+                        "auth": {"header": {"Authorization": "Bearer test"}},
+                        "options": {"model": "gpt-4", "stream": true},
+                        "override": {
+                            "endpoint": "http://127.0.0.1:6724/v1/chat/completions-usage-then-truncate"
+                        },
+                        "ssl_verify": false
+                    },
+                    "ai-aws-content-moderation": {
+                        "comprehend": {
+                            "access_key_id": "access",
+                            "secret_access_key": "ea+secret",
+                            "region": "us-east-1",
+                            "endpoint": "http://127.0.0.1:2668"
+                        },
+                        "moderation_categories": {"PROFANITY": 0.5},
+                        "check_request": false,
+                        "check_response": true,
+                        "stream_check_mode": "final_packet"
+                    }
+                }
+            }]])
+            if code >= 300 then ngx.status = code end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 12: the AWS moderation path does not terminate a truncated stream either
+--- request
+POST /truncated
+{"messages":[{"role":"user","content":"hi"}],"model":"gpt-4","stream":true}
+--- response_body_like eval
+# Same assertion as TEST 8, against the second plugin whose terminator
+# synthesis this change gates on ctx.ai_stream_aborted.
+qr/^(?!.*\[DONE\])(?=.*"content":"hello")(?=.*"risk_level":)/s
+--- error_log
+failed to read response chunk: closed
 --- timeout: 10
