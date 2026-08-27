@@ -32,8 +32,17 @@ make init
 
 # Two, not one: the stream subsystem has no server of its own to export metrics
 # from, so an http{} block is rendered to host the prometheus export server.
+# That block sits inside the template's `use_apisix_base` guard, so stock
+# OpenResty renders the stream block alone. This file is not guarded by
+# exit_if_not_customed_nginx -- the rest of it is runtime independent -- so
+# only the count is.
+expected_package_path=1
+if openresty -V 2>&1 | grep apisix-nginx-module > /dev/null; then
+    expected_package_path=2
+fi
+
 count=$(grep -c "lua_package_path" conf/nginx.conf)
-if [ "$count" -ne 2 ]; then
+if [ "$count" -ne "$expected_package_path" ]; then
     echo "failed: failed to enable stream proxy only by default"
     exit 1
 fi
