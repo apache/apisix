@@ -860,3 +860,25 @@ status: 400 body: {"message":"unsupported alg or enc in JWE token"}
     }
 --- response_body
 status: 400 body: {"message":"unsupported alg or enc in JWE token"}
+
+
+
+=== TEST 36: token whose header omits alg and enc is still accepted
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            -- the plugin never read alg or enc before, so a token minted with
+            -- a minimal header keeps working; only a header naming another
+            -- algorithm is rejected
+            local token = "eyJraWQiOiJqd2UtZmFpbC1rZXkifQ."
+                          .. ".MTIzNDU2Nzg5MDEy.6JeRgm0.rNt131nG5wMvUD1KXbwLGA"
+
+            local code = t('/jwe-decrypt-fail', ngx.HTTP_GET, nil, nil,
+                           { Authorization = "Bearer " .. token })
+            ngx.say("status: ", code)
+        }
+    }
+--- response_body
+status: 200
