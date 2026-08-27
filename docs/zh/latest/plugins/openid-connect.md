@@ -88,7 +88,8 @@ import TabItem from '@theme/TabItem';
 | session.absolute_timeout | integer | 否 | | | 会话绝对生存时间（秒）。作为 `absolute_timeout` 透传到 lua-resty-session。 |
 | session.cookie.lifetime | integer | 否 | | | 已弃用。当未设置 `session.absolute_timeout` 时，运行时会将该值映射到 `session.absolute_timeout`。请改用 `session.absolute_timeout`。 |
 | session.storage | string | 否 | cookie | ["cookie", "redis"] | 会话存储方式。 |
-| session.redis | object | 否 | | | `storage` 为 `redis` 时的 Redis 配置。 |
+| session.redis | object | 否 | | | Redis 连接配置。当 `storage` 为 `redis`，或使用 `revocation_fail_mode` 启用 Cookie 会话吊销时必填。 |
+| session.revocation_fail_mode | string | 否 | | ["open", "closed"] | 为 Cookie 会话启用基于 Redis 的吊销功能。当吊销存储不可用时，`open` 将会话视为未吊销，`closed` 则拒绝打开和销毁会话。必须配置 `session.redis`，且不能在 `session.storage` 为 `redis` 时使用。 |
 | session.redis.host | string | 否 | 127.0.0.1 | | Redis 主机。 |
 | session.redis.port | integer | 否 | 6379 | | Redis 端口。 |
 | session.redis.username | string | 否 | | | Redis 用户名。 |
@@ -352,6 +353,25 @@ spec:
 </Tabs>
 
 详见[实现授权码授权](../tutorials/keycloak-oidc.md#实现-authorization-code-grant)，获取使用 `openid-connect` 插件与 Keycloak 集成并使用授权码流程的完整示例。
+
+### Cookie 会话吊销
+
+Cookie 会话存储在客户端，APISIX 通常无法单独将其失效。要启用服务端吊销，请配置 Redis 拒绝列表并设置 `session.revocation_fail_mode`：
+
+```json
+"session": {
+  "secret": "your-session-secret-min-16-chars",
+  "storage": "cookie",
+  "redis": {
+    "host": "127.0.0.1",
+    "port": 6379,
+    "prefix": "oidc:session:"
+  },
+  "revocation_fail_mode": "closed"
+}
+```
+
+当吊销存储不可用时，使用 `open` 可继续接受会话，使用 `closed` 则会拒绝打开和销毁会话。省略 `revocation_fail_mode` 即不启用 Cookie 会话吊销。
 
 ### 使用 PAR 和 DPoP 的授权码流程
 

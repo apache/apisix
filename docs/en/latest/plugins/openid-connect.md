@@ -89,7 +89,8 @@ The `openid-connect` Plugin supports the integration with [OpenID Connect (OIDC)
 | session.absolute_timeout | integer | False | | | Absolute session lifetime in seconds. Forwarded to lua-resty-session as `absolute_timeout`. |
 | session.cookie.lifetime | integer | False | | | Deprecated. Mapped to `session.absolute_timeout` at runtime when `absolute_timeout` is not set. Use `session.absolute_timeout` instead. |
 | session.storage | string | False | cookie | ["cookie", "redis"] | Session storage method. |
-| session.redis | object | False | | | Redis configuration when `storage` is `redis`. |
+| session.redis | object | False | | | Redis connection. Required when `storage` is `redis`, or when `revocation_fail_mode` enables cookie-session revocation. |
+| session.revocation_fail_mode | string | False | | ["open", "closed"] | Enables Redis-backed revocation for cookie sessions. When the revocation store is unreachable, `open` treats the session as not revoked, while `closed` rejects session open and destroy operations. Requires `session.redis` and cannot be used when `session.storage` is `redis`. |
 | session.redis.host | string | False | 127.0.0.1 | | Redis host. |
 | session.redis.port | integer | False | 6379 | | Redis port. |
 | session.redis.username | string | False | | | Redis username. |
@@ -353,6 +354,25 @@ spec:
 </Tabs>
 
 See [Implement Authorization Code Grant](../tutorials/keycloak-oidc.md#implement-authorization-code-grant) for a complete example to use the `openid-connect` Plugin to integrate with Keycloak using the authorization code flow.
+
+### Cookie Session Revocation
+
+Cookie sessions are stored by the client and cannot normally be invalidated individually by APISIX. To enable server-side revocation, configure a Redis denylist and set `session.revocation_fail_mode`:
+
+```json
+"session": {
+  "secret": "your-session-secret-min-16-chars",
+  "storage": "cookie",
+  "redis": {
+    "host": "127.0.0.1",
+    "port": 6379,
+    "prefix": "oidc:session:"
+  },
+  "revocation_fail_mode": "closed"
+}
+```
+
+Use `open` to continue accepting sessions if the revocation store is unavailable, or `closed` to reject session open and destroy operations. Omit `revocation_fail_mode` to leave cookie-session revocation disabled.
 
 ### Authorization Code Flow with PAR and DPoP
 
