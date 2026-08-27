@@ -218,22 +218,32 @@ function _M.sum_counters(pattern, opts)
     return total
 end
 
--- Bounded poll for an asynchronous counter write. 100 iterations gave up after
--- one second, which a loaded CI runner exceeds often enough to make callers
--- flaky; 500 gives it five. The loop still returns as soon as the counter
--- moves, so a healthy run costs the same as before.
+-- Bounded poll for an asynchronous counter write. The old bound, 100 iterations
+-- of a 10ms sleep, gave up after roughly one second, which a loaded CI runner
+-- exceeds often enough to make callers flaky. Bound the wait by wall clock
+-- rather than by iteration count: every pass also does a full sum_counters()
+-- round trip, so counting iterations understates the ceiling exactly when redis
+-- is the slow part. The loop still returns as soon as the counter moves, so a
+-- healthy run costs what it did before.
+local WAIT_COUNTERS_TIMEOUT = 5
+
 function _M.wait_counters_above(pattern, previous, opts)
     local last_err
-    for _ = 1, 500 do
+    ngx.update_time()
+    local deadline = ngx.now() + WAIT_COUNTERS_TIMEOUT
+
+    repeat
         local total, err = _M.sum_counters(pattern, opts)
         if total and total > previous then
             return true
         end
         last_err = err
         ngx.sleep(0.01)
-    end
+        ngx.update_time()
+    until ngx.now() >= deadline
 
     return nil, "counters matching " .. pattern .. " stayed at " .. previous ..
+                " for " .. WAIT_COUNTERS_TIMEOUT .. "s" ..
                 (last_err and (", last error: " .. last_err) or "")
 end
 
