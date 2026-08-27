@@ -39,11 +39,11 @@ import TabItem from '@theme/TabItem';
 
 The `jwe-decrypt` Plugin reads a five-part compact token from a request header, selects a [Consumer](../terminology/consumer.md) by the token's `kid`, decrypts the ciphertext with AES-256-GCM, and writes the plaintext to a configured header before proxying the request. You can enable the Plugin on APISIX [Routes](../terminology/route.md) or [Services](../terminology/service.md).
 
-The token resembles [JWE Compact Serialization](https://datatracker.ietf.org/doc/html/rfc7516#section-3.1), but the current Plugin uses a Plugin-specific format. Configure a 32-byte decryption secret on the Consumer.
+The token uses [JWE Compact Serialization](https://datatracker.ietf.org/doc/html/rfc7516#section-3.1) with the `dir` key management algorithm and the `A256GCM` content encryption algorithm, so a token produced by a standard JWE library is accepted. Configure a 32-byte decryption secret on the Consumer.
 
 :::warning
 
-The current implementation reads `kid` from the decoded header but does not validate the `alg` or `enc` fields and does not use the protected-header segment as AES-GCM additional authenticated data (AAD). Standard RFC 7516 JWE libraries are therefore not directly interoperable. Generate tokens with the exact format described below, use a fixed trusted token generator, and do not treat header fields as authenticated.
+For backward compatibility, the Plugin also accepts a token whose ciphertext was encrypted without the protected header as AES-GCM additional authenticated data (AAD), which is how APISIX itself used to generate them. The header of such a token, including its `kid`, is not authenticated. Use a trusted token generator, and prefer a JWE library that follows RFC 7516 so that the header is covered by the AAD.
 
 :::
 
@@ -69,7 +69,7 @@ The decrypted plaintext is forwarded in a request header. For sensitive plaintex
 | -------------- | ------- | -------- | ------------- | ------------ | --------------------------------------------------------------------------------------------------------------------------------- |
 | header         | string  | True     | Authorization |              | The header to get the token from.                                                                                                 |
 | forward_header | string  | True     | Authorization |              | Name of the header that passes the plaintext to the Upstream.                                                                     |
-| strict         | boolean | False    | true          |              | If true, return a 403 error when the encrypted plugin token is missing. If false, continue when the token is not found.           |
+| strict         | boolean | False    | true          |              | If true, return a 403 error when the JWE token is missing. If false, continue when the token is not found.                        |
 
 ## Examples
 
@@ -87,7 +87,7 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 ### Create a Consumer with the Decryption Key
 
-The following example demonstrates how to create a Consumer with the decryption key and generate an encrypted plugin token for it.
+The following example demonstrates how to create a Consumer with the decryption key and generate a JWE token for it.
 
 Create a Consumer with `jwe-decrypt` and configure the decryption key:
 
@@ -172,13 +172,15 @@ kubectl apply -f jwe-consumer-ic.yaml
 </TabItem>
 </Tabs>
 
-To generate a token for the Consumer, encrypt the payload offline with AES-256-GCM without protected-header AAD, using the Consumer secret as the key. Standard RFC 7516 libraries normally authenticate the protected header as AAD and are not directly interoperable with this Plugin. Use the following exact token structure:
+To generate a JWE token for the Consumer, use any JWE library that supports direct encryption with `A256GCM`, with the Consumer secret as the key. The token structure is:
 
 ```text
 base64url(header).<empty>.base64url(iv).base64url(ciphertext).base64url(tag)
 ```
 
-where the header is `{"alg":"dir","enc":"A256GCM","kid":"<consumer-key>"}`. The fields describe the intended algorithm and identify the Consumer, but the current Plugin does not authenticate or validate them. The IV must be unique and randomly generated for every token; never reuse an IV with the same key.
+where the header is `{"alg":"dir","enc":"A256GCM","kid":"<consumer-key>"}`; `alg` and `enc` are rejected if they are set to anything else. The IV must be unique and randomly generated for every token; never reuse an IV with the same key.
+
+As [RFC 7516](https://datatracker.ietf.org/doc/html/rfc7516#section-5.1) requires, a JWE library authenticates the encoded protected header as the AES-GCM additional authenticated data (AAD), which makes the `kid` tamper-proof. Tokens encrypted without AAD, such as the ones APISIX itself used to generate, are still accepted for backward compatibility.
 
 For example, the following token encrypts the payload `{"uid":10000,"uname":"test"}` for the Consumer key `jack-key` with the secret configured above:
 
@@ -186,9 +188,9 @@ For example, the following token encrypts the payload `{"uid":10000,"uname":"tes
 eyJraWQiOiJqYWNrLWtleSIsImFsZyI6ImRpciIsImVuYyI6IkEyNTZHQ00ifQ..vi29KBCQKcVmPwTT.VToyPMFbq-ZY05MIpntP1N3AmYeq3zELQ0B6iQ.vuTPG2ODc-DjUTjNCzfA2A
 ```
 
-### Decrypt Data from the Plugin Token
+### Decrypt Data with JWE
 
-The following example demonstrates how to decrypt the plugin token generated above.
+The following example demonstrates how to decrypt the JWE token generated above.
 
 Create a Route with `jwe-decrypt` to decrypt the authorization header:
 
@@ -320,7 +322,7 @@ kubectl apply -f jwe-decrypt-ic.yaml
 </TabItem>
 </Tabs>
 
-Send a request to the Route with the encrypted plugin token in the `Authorization` header:
+Send a request to the Route with the JWE encrypted data in the `Authorization` header:
 
 ```shell
 curl "http://127.0.0.1:9080/anything/jwe" -H 'Authorization: eyJraWQiOiJqYWNrLWtleSIsImFsZyI6ImRpciIsImVuYyI6IkEyNTZHQ00ifQ..vi29KBCQKcVmPwTT.VToyPMFbq-ZY05MIpntP1N3AmYeq3zELQ0B6iQ.vuTPG2ODc-DjUTjNCzfA2A'

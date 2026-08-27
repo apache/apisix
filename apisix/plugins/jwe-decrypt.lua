@@ -138,6 +138,17 @@ local function load_jwe_token(jwe_token)
 end
 
 
+-- the plugin only implements direct encryption with A256GCM; reject a token
+-- that asks for anything else instead of failing later with a decrypt error
+local function unsupported_header(header_obj)
+    if header_obj.alg and header_obj.alg ~= "dir" then
+        return true
+    end
+
+    return header_obj.enc and header_obj.enc ~= "A256GCM"
+end
+
+
 local function jwe_decrypt_with_obj(o, consumer)
     local secret = get_secret(consumer.auth_conf)
     if not secret then
@@ -160,7 +171,20 @@ local function jwe_decrypt_with_obj(o, consumer)
         return nil, err
     end
 
-    return aes_default:decrypt(ciphertext, tag)
+    -- RFC 7516 authenticates the encoded protected header as the AES-GCM
+    -- additional authenticated data, which is what JWE libraries produce
+    local decrypted, decrypt_err = aes_default:decrypt(ciphertext, tag, o.header)
+    if decrypted then
+        return decrypted
+    end
+
+    -- tokens built the way APISIX used to build them carry no AAD
+    local plaintext, legacy_err = aes_default:decrypt(ciphertext, tag)
+    if not plaintext then
+        return nil, decrypt_err or legacy_err
+    end
+
+    return plaintext
 end
 
 
@@ -210,6 +234,10 @@ function _M.rewrite(conf, ctx)
 
     if not jwe_obj.header_obj.kid then
         return 400, { message = "missing kid in JWE token" }
+    end
+
+    if unsupported_header(jwe_obj.header_obj) then
+        return 400, { message = "unsupported alg or enc in JWE token" }
     end
 
     local consumer = get_consumer(jwe_obj.header_obj.kid)

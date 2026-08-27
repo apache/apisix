@@ -762,3 +762,101 @@ status: 400
     }
 --- response_body
 status: 400
+
+
+
+=== TEST 31: RFC 7516 token authenticating the protected header is accepted
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            -- generated with an independent JWE producer (python cryptography),
+            -- so the tag covers the encoded protected header as the AES-GCM AAD
+            local token = "eyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2R0NNIiwia2lkIjoiandlLWZhaWwta2V5In0."
+                          .. ".MTIzNDU2Nzg5MDEy.6JeRgm0.KaxbSD-kuYBVck03POSk7w"
+
+            local code = t('/jwe-decrypt-fail', ngx.HTTP_GET, nil, nil,
+                           { Authorization = "Bearer " .. token })
+            ngx.say("status: ", code)
+        }
+    }
+--- response_body
+status: 200
+
+
+
+=== TEST 32: token without AAD is still accepted
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            -- same payload, encrypted the way APISIX used to generate tokens
+            local token = "eyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2R0NNIiwia2lkIjoiandlLWZhaWwta2V5In0."
+                          .. ".MTIzNDU2Nzg5MDEy.6JeRgm0.rNt131nG5wMvUD1KXbwLGA"
+
+            local code = t('/jwe-decrypt-fail', ngx.HTTP_GET, nil, nil,
+                           { Authorization = "Bearer " .. token })
+            ngx.say("status: ", code)
+        }
+    }
+--- response_body
+status: 200
+
+
+
+=== TEST 33: replacing the kid of an RFC 7516 token is rejected
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            -- the TEST 26 token with its kid changed to another Consumer that
+            -- happens to share the secret: the tag no longer covers the header
+            local token = "eyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2R0NNIiwia2lkIjoidXNlci1rZXkifQ."
+                          .. ".MTIzNDU2Nzg5MDEy.6JeRgm0.KaxbSD-kuYBVck03POSk7w"
+
+            local code, body = t('/jwe-decrypt-fail', ngx.HTTP_GET, nil, nil,
+                                 { Authorization = "Bearer " .. token })
+            ngx.say("status: ", code, " body: ", ((body or ""):gsub("%s+$", "")))
+        }
+    }
+--- response_body
+status: 400 body: {"message":"failed to decrypt JWE token"}
+
+
+
+=== TEST 34: unsupported alg is rejected
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local token = "eyJhbGciOiJSU0EtT0FFUCIsImVuYyI6IkEyNTZHQ00iLCJraWQiOiJqd2UtZmFpbC1rZXkifQ."
+                          .. ".MTIzNDU2Nzg5MDEy.6JeRgm0.7QVBNAw7GFOQRLCtZWtdsA"
+
+            local code, body = t('/jwe-decrypt-fail', ngx.HTTP_GET, nil, nil,
+                                 { Authorization = "Bearer " .. token })
+            ngx.say("status: ", code, " body: ", ((body or ""):gsub("%s+$", "")))
+        }
+    }
+--- response_body
+status: 400 body: {"message":"unsupported alg or enc in JWE token"}
+
+
+
+=== TEST 35: unsupported enc is rejected
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local token = "eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4R0NNIiwia2lkIjoiandlLWZhaWwta2V5In0."
+                          .. ".MTIzNDU2Nzg5MDEy.6JeRgm0.99OmOTEx2wPsqhsx0FjM8Q"
+
+            local code, body = t('/jwe-decrypt-fail', ngx.HTTP_GET, nil, nil,
+                                 { Authorization = "Bearer " .. token })
+            ngx.say("status: ", code, " body: ", ((body or ""):gsub("%s+$", "")))
+        }
+    }
+--- response_body
+status: 400 body: {"message":"unsupported alg or enc in JWE token"}
