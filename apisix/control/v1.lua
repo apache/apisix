@@ -27,6 +27,7 @@ local get_upstreams = upstream_mod.upstreams
 local collectgarbage = collectgarbage
 local ipairs = ipairs
 local pcall = pcall
+local setmetatable = setmetatable
 local str_format = string.format
 local ngx = ngx
 local ngx_var = ngx.var
@@ -85,6 +86,11 @@ local function extra_checker_info(value)
     local nodes, err = healthcheck.get_target_list(name, "upstream-healthcheck")
     if err then
         core.log.error("healthcheck.get_target_list failed: ", err)
+    end
+    if nodes then
+        -- the checker has no target registered until the upstream is first used,
+        -- so keep the field a JSON array to report `[]` instead of `{}` then
+        setmetatable(nodes, core.json.array_mt)
     end
     return {
         name = value.key,
@@ -184,7 +190,8 @@ end
 
 
 local function _get_health_checkers()
-    local infos = {}
+    -- same as the nodes field: report `[]` rather than `{}` when nothing is checked
+    local infos = setmetatable({}, core.json.array_mt)
     local routes = get_routes()
     iter_and_add_healthcheck_info(infos, routes)
     local stream_routes = get_stream_routes()

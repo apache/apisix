@@ -293,7 +293,7 @@ unhealthy TCP increment (2/2) for '127.0.0.1(127.0.0.1:1988)'
         }
     }
 --- response_body
-{}
+[]
 --- timeout: 5
 
 
@@ -405,3 +405,54 @@ unhealthy HTTP increment (2/3) for '127.0.0.1(127.0.0.1:1980)'
 unhealthy HTTP increment (3/3) for '127.0.0.1(127.0.0.1:1980)'
 --- response_body
 {"name":"/routes/1","nodes":[{"counter":{"http_failure":3,"success":0,"tcp_failure":0,"timeout_failure":0},"hostname":"127.0.0.1","ip":"127.0.0.1","port":1980,"status":"unhealthy"},{"counter":{"http_failure":3,"success":0,"tcp_failure":0,"timeout_failure":0},"hostname":"127.0.0.2","ip":"127.0.0.2","port":1980,"status":"unhealthy"}],"type":"http"}
+
+
+
+=== TEST 8: nodes stays a JSON array before the health checker is created
+--- yaml_config
+apisix:
+    node_listen: 1984
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
+--- apisix_yaml
+routes:
+  -
+    id: 1
+    uris:
+        - /hello
+    upstream:
+      nodes:
+        "127.0.0.1:1980": 1
+      type: roundrobin
+      checks:
+        active:
+            http_path: "/status"
+            healthy:
+                interval: 1
+                successes: 1
+            unhealthy:
+                interval: 1
+                http_failures: 1
+#END
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin")
+
+            -- no request is proxied, so the checker is not created yet and the
+            -- target list is empty
+            local _, _, res = t.test('/v1/healthcheck', ngx.HTTP_GET)
+            assert(res:find('"nodes":[]', 1, true),
+                   "/v1/healthcheck: nodes is not an array: " .. res)
+
+            local _, _, res = t.test('/v1/healthcheck/routes/1', ngx.HTTP_GET)
+            assert(res:find('"nodes":[]', 1, true),
+                   "/v1/healthcheck/routes/1: nodes is not an array: " .. res)
+
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
