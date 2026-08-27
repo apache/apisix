@@ -1002,6 +1002,9 @@ http {
             grpc_set_header   Content-Type application/grpc;
             grpc_set_header   TE trailers;
             grpc_socket_keepalive on;
+            # only consulted once upstream.tls.verify turns verification on;
+            # without it the certificate would be checked against "apisix_backend"
+            grpc_ssl_name     $upstream_host;
             grpc_pass         $upstream_scheme://apisix_backend;
 
             {% if enabled_plugins["proxy-mirror"] then %}
