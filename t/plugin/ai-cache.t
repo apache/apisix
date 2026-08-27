@@ -1464,25 +1464,30 @@ passed
                 return key.fingerprint(ctx, body)
             end
 
-            local base = { request_method = "POST", uri = "/v1/images/generations", args = nil }
+            local base = { uri = "/v1/images/generations", args = nil }
             local pt   = fp("passthrough", base)
 
             assert(fp("passthrough", base) == pt, "identical passthrough request must match")
-            assert(fp("passthrough", { request_method = "POST", uri = "/v1/images/edits" }) ~= pt,
-                   "different path")
-            assert(fp("passthrough", { request_method = "POST", uri = "/v1/images/generations",
+            assert(fp("passthrough", { uri = "/v1/images/edits" }) ~= pt, "different path")
+            assert(fp("passthrough", { uri = "/v1/images/generations",
                                        args = "api-version=2024-02-01" }) ~= pt,
                    "different query string")
-            assert(fp("passthrough", { request_method = "GET", uri = "/v1/images/generations" }) ~= pt,
-                   "different method")
+
+            -- the method is read live from the request (a rewrite changes it), so
+            -- flip it the way proxy-rewrite does rather than through ctx.var
+            ngx.req.set_method(ngx.HTTP_POST)
+            local posted = fp("passthrough", base)
+            assert(posted ~= pt, "different method")
+            ngx.req.set_method(ngx.HTTP_GET)
+            assert(fp("passthrough", base) == pt, "method restored")
 
             -- other protocols build a fixed upstream request from the body alone,
             -- so the client path stays out of their fingerprint
-            local chat = { request_method = "POST", uri = "/a" }
-            local chat_ctx = { ai_client_protocol = "openai-chat", var = chat, picked_ai_instance = inst }
+            local chat_ctx = { ai_client_protocol = "openai-chat", var = { uri = "/a" },
+                               picked_ai_instance = inst }
             local chat_body = { model = "gpt-4o", messages = {{ role = "user", content = "hi" }} }
             local chat_fp = key.fingerprint(chat_ctx, chat_body)
-            chat_ctx.var = { request_method = "POST", uri = "/b" }
+            chat_ctx.var = { uri = "/b" }
             assert(key.fingerprint(chat_ctx, chat_body) == chat_fp,
                    "non-passthrough fingerprint ignores the client path")
 
@@ -1575,6 +1580,82 @@ qr/baby sea otter/
 --- request
 POST /v1/images/generations
 {"model":"dall-e-3","prompt":"ai-cache passthrough same body"}
+--- response_headers_like
+X-AI-Cache-Status: HIT
+--- response_body_like eval
+qr/baby sea otter/
+
+
+
+=== TEST 64: passthrough route with proxy-rewrite forcing the upstream method to POST
+--- config
+    location /t {
+        content_by_lua_block {
+            require("lib.test_redis").flush_port("127.0.0.1", 6379)
+
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/v1/*",
+                    "plugins": {
+                        "proxy-rewrite": { "method": "POST" },
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": { "header": { "Authorization": "Bearer test-key" } },
+                            "override": { "endpoint": "http://127.0.0.1:1980" }
+                        },
+                        "ai-cache": {
+                            "redis_host": "127.0.0.1",
+                            "redis_port": 6379
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- extra_yaml_config
+plugins:
+  - proxy-rewrite
+  - ai-proxy
+  - ai-cache
+--- response_body
+passed
+
+
+
+=== TEST 65: POST passthrough request is a MISS
+--- request
+POST /v1/images/generations
+{"model":"dall-e-3","prompt":"ai-cache passthrough rewritten method"}
+--- more_headers
+X-AI-Fixture: openai/images-generation.json
+--- extra_yaml_config
+plugins:
+  - proxy-rewrite
+  - ai-proxy
+  - ai-cache
+--- response_headers
+X-AI-Cache-Status: MISS
+--- response_body_like eval
+qr/baby sea otter/
+--- wait: 0.3
+
+
+
+=== TEST 66: PUT with the same body is rewritten to POST upstream, so it is a HIT on the POST entry
+--- request
+PUT /v1/images/generations
+{"model":"dall-e-3","prompt":"ai-cache passthrough rewritten method"}
+--- extra_yaml_config
+plugins:
+  - proxy-rewrite
+  - ai-proxy
+  - ai-cache
 --- response_headers_like
 X-AI-Cache-Status: HIT
 --- response_body_like eval
