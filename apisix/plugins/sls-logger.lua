@@ -82,7 +82,7 @@ local _M = {
     priority = 406,
     name = plugin_name,
     schema = batch_processor_manager:wrap_schema(schema),
-    metadata_schema = metadata_schema,
+    metadata_schema = batch_processor_manager:wrap_metadata_schema(metadata_schema),
 }
 
 function _M.check_schema(conf,schema_type)

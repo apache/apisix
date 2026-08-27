@@ -146,6 +146,13 @@ stream {
     lua_max_running_timers {* max_running_timers *};
     {% end %}
 
+    # backs apisix_stream_active_connections and apisix_stream_bandwidth; the
+    # counters live in nginx so that they keep moving during a long-lived
+    # session instead of only being known once it ends
+    {% if use_apisix_base and enabled_stream_plugins["prometheus"] and stream.metrics_zone_size then %}
+    apisix_stream_metrics_zone {* stream.metrics_zone_size *};
+    {% end %}
+
     lua_shared_dict lrucache-lock-stream {* stream.lua_shared_dict["lrucache-lock-stream"] *};
     lua_shared_dict etcd-cluster-health-check-stream {* stream.lua_shared_dict["etcd-cluster-health-check-stream"] *};
     lua_shared_dict worker-events-stream {* stream.lua_shared_dict["worker-events-stream"] *};
@@ -995,6 +1002,9 @@ http {
             grpc_set_header   Content-Type application/grpc;
             grpc_set_header   TE trailers;
             grpc_socket_keepalive on;
+            # only consulted once upstream.tls.verify turns verification on;
+            # without it the certificate would be checked against "apisix_backend"
+            grpc_ssl_name     $upstream_host;
             grpc_pass         $upstream_scheme://apisix_backend;
 
             {% if enabled_plugins["proxy-mirror"] then %}

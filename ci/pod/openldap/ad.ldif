@@ -100,3 +100,14 @@ cn: Secret User
 sn: Secret
 uid: secretuser
 userPassword: secretpass
+
+# The RDN value carries a literal comma, so its DN only round-trips when the
+# username is escaped per RFC 4514.
+dn: cn=comma\,user,ou=users,dc=example,dc=org
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+cn: comma,user
+sn: Comma
+uid: commauser
+userPassword: commapass

@@ -19,7 +19,8 @@ local core = require("apisix.core")
 local plugin = require("apisix.plugin")
 local get_routes = require("apisix.router").http_routes
 local get_stream_routes = require("apisix.router").stream_routes
-local get_services = require("apisix.http.service").services
+local get_service_mod = require("apisix.http.service")
+local get_services = get_service_mod.services
 local upstream_mod = require("apisix.upstream")
 local healthcheck_manager = require("apisix.healthcheck_manager")
 local get_upstreams = upstream_mod.upstreams
@@ -56,6 +57,7 @@ function _M.schema()
             consumer = core.schema.consumer,
             consumer_group = core.schema.consumer_group,
             global_rule = core.schema.global_rule,
+            graphql_cost_decoration = core.schema.graphql_cost_decoration,
             plugin_config = core.schema.plugin_config,
             plugins = core.schema.plugins,
             proto = core.schema.proto,
@@ -355,6 +357,11 @@ end
 local function iter_add_get_services_info(values, svc_id)
     local infos = {}
     for _, svc in core.config_util.iterate_values(values) do
+        -- the services watcher also carries the graphql cost decorations
+        if get_service_mod.is_graphql_cost_decoration_key(svc.key) then
+            goto CONTINUE
+        end
+
         local new_svc = core.table.deepcopy(svc)
         -- remove healthcheck info
         new_svc.checker = nil
@@ -365,6 +372,8 @@ local function iter_add_get_services_info(values, svc_id)
         if svc_id and svc.value.id == svc_id then
             return new_svc
         end
+
+        ::CONTINUE::
     end
     if not svc_id then
         return infos

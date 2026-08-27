@@ -39,6 +39,7 @@ local ipairs = ipairs
 local type = type
 local string = string
 local sub = string.sub
+local str_format = string.format
 local url = require("socket.url")
 
 local priority_balancer = require("apisix.balancer.priority")
@@ -124,7 +125,21 @@ function _M.check_schema(conf)
         return false, err
     end
 
-    for _, instance in ipairs(conf.instances) do
+    -- `instance.name` is the only identifier the runtime has: it keys the
+    -- balancer nodes, the health checker and the health status, none of which
+    -- include the priority. Two instances sharing a name therefore collapse
+    -- into a single logical node with a single checker, so one instance's
+    -- health decides the other's fate while requests keep using the first
+    -- instance's auth. Reject duplicates instead of routing on an ambiguity.
+    local seen_names = core.table.new(0, #conf.instances)
+    for i, instance in ipairs(conf.instances) do
+        if seen_names[instance.name] then
+            return false, str_format("duplicate instance name '%s' at " ..
+                                     "instances[%d] and instances[%d]",
+                                     instance.name, seen_names[instance.name], i)
+        end
+        seen_names[instance.name] = i
+
         local endpoint = instance and instance.override and instance.override.endpoint
         if endpoint then
             local scheme, host, _ = endpoint:match(endpoint_regex)
@@ -919,7 +934,8 @@ local function retry_on_error(ctx, conf, code, body)
     ctx.server_picker.after_balance(ctx, true)
     if (code == 429 and fallback_strategy_has(conf.fallback_strategy, "http_429")) or
        (code >= 500 and code < 600 and
-       fallback_strategy_has(conf.fallback_strategy, "http_5xx")) then
+       fallback_strategy_has(conf.fallback_strategy, "http_5xx")) or
+       base.is_fallback_http_status(conf, code) then
         -- Slow-failure guard: only retry when the failed attempt finished within
         -- retry_on_failure_within_ms. A slow failure (e.g. a 5xx returned after
         -- minutes) is given back to the client directly, so fallback never doubles

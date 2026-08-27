@@ -1410,6 +1410,11 @@ function _M.run_plugin(phase, plugins, api_ctx)
                             core.log.warn(plugins[i].name, " exits with status code ", code)
                         end
 
+                        -- a stream session is rejected by closing it, so the
+                        -- code never reaches $status; keep it for the log
+                        -- phase, which still runs after ngx_exit
+                        api_ctx.stream_rejected_code = code
+
                         ngx_exit(1)
                     end
                 end

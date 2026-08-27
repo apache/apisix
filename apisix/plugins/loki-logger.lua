@@ -17,7 +17,6 @@
 local bp_manager_mod  = require("apisix.utils.batch-processor-manager")
 local log_util        = require("apisix.utils.log-util")
 local core            = require("apisix.core")
-local plugin          = require("apisix.plugin")
 local http            = require("resty.http")
 local new_tab         = require("table.new")
 
@@ -32,7 +31,7 @@ local ngx          = ngx
 local str_format   = core.string.format
 
 local plugin_name = "loki-logger"
-local batch_processor_manager = bp_manager_mod.new("loki logger")
+local batch_processor_manager = bp_manager_mod.new("loki logger", plugin_name)
 
 local schema = {
     type = "object",
@@ -125,11 +124,6 @@ local metadata_schema = {
         log_format_extra = {
             type = "object"
         },
-        max_pending_entries = {
-            type = "integer",
-            description = "maximum number of pending entries in the batch processor",
-            minimum = 1,
-        },
     },
 }
 
@@ -139,7 +133,7 @@ local _M = {
     priority = 414,
     name = plugin_name,
     schema = batch_processor_manager:wrap_schema(schema),
-    metadata_schema = metadata_schema,
+    metadata_schema = batch_processor_manager:wrap_metadata_schema(metadata_schema),
 }
 
 
@@ -228,9 +222,6 @@ end
 
 
 function _M.log(conf, ctx)
-    local metadata = plugin.plugin_metadata(plugin_name)
-    local max_pending_entries = metadata and metadata.value and
-                                metadata.value.max_pending_entries or nil
     local entry = log_util.get_log_entry(plugin_name, conf, ctx)
 
     if not entry.route_id then
@@ -258,7 +249,7 @@ function _M.log(conf, ctx)
     end
     entry.loki_labels = labels
 
-    if batch_processor_manager:add_entry(conf, entry, max_pending_entries) then
+    if batch_processor_manager:add_entry(conf, entry) then
         return
     end
 
@@ -305,7 +296,7 @@ function _M.log(conf, ctx)
         return send_http_data(conf, data)
     end
 
-    batch_processor_manager:add_entry_to_new_processor(conf, entry, ctx, func, max_pending_entries)
+    batch_processor_manager:add_entry_to_new_processor(conf, entry, ctx, func)
 end
 
 
