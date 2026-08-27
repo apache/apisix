@@ -446,6 +446,8 @@ routes:
             local code, _, res = t.test('/v1/healthcheck', ngx.HTTP_GET)
             assert(code == ngx.HTTP_OK,
                    "/v1/healthcheck returned HTTP " .. tostring(code))
+            assert(res:find("^%s*%["),
+                   "/v1/healthcheck: result is not a JSON array: " .. res)
             assert(res:find('"nodes":[]', 1, true),
                    "/v1/healthcheck: nodes is not an array: " .. res)
 
