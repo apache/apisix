@@ -443,11 +443,15 @@ routes:
 
             -- no request is proxied, so the checker is not created yet and the
             -- target list is empty
-            local _, _, res = t.test('/v1/healthcheck', ngx.HTTP_GET)
+            local code, _, res = t.test('/v1/healthcheck', ngx.HTTP_GET)
+            assert(code == ngx.HTTP_OK,
+                   "/v1/healthcheck returned HTTP " .. tostring(code))
             assert(res:find('"nodes":[]', 1, true),
                    "/v1/healthcheck: nodes is not an array: " .. res)
 
-            local _, _, res = t.test('/v1/healthcheck/routes/1', ngx.HTTP_GET)
+            local code, _, res = t.test('/v1/healthcheck/routes/1', ngx.HTTP_GET)
+            assert(code == ngx.HTTP_OK,
+                   "/v1/healthcheck/routes/1 returned HTTP " .. tostring(code))
             assert(res:find('"nodes":[]', 1, true),
                    "/v1/healthcheck/routes/1: nodes is not an array: " .. res)
 
