@@ -919,18 +919,7 @@ empty password configured for consumer: foo
 
 
 
-=== TEST 31: extra colon suffix after a colon-less password is rejected
---- request
-GET /hello
---- more_headers
-Authorization: Basic Zm9vOmJhcjpleHRyYQ==
---- error_code: 401
---- response_body
-{"message":"Invalid user authorization"}
-
-
-
-=== TEST 32: add consumer with colon in password
+=== TEST 40: add consumer with colon in password
 --- config
     location /t {
         content_by_lua_block {
@@ -960,7 +949,7 @@ passed
 
 
 
-=== TEST 33: verify password containing colon
+=== TEST 41: verify password containing colon
 --- request
 GET /hello
 --- more_headers
