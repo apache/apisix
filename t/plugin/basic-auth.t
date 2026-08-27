@@ -919,12 +919,49 @@ empty password configured for consumer: foo
 
 
 
-=== TEST 40: add consumer with colon in password
+=== TEST 40: restore foo/bar, route, and add consumer with colon in password
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "foo",
+                    "plugins": {
+                        "basic-auth": {
+                            "username": "foo",
+                            "password": "bar"
+                        }
+                    }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                return ngx.say(body)
+            end
+
+            code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "basic-auth": {}
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                return ngx.say(body)
+            end
+
+            code, body = t('/apisix/admin/consumers',
                 ngx.HTTP_PUT,
                 [[{
                     "username": "johndoe-colon",
@@ -949,7 +986,18 @@ passed
 
 
 
-=== TEST 41: verify password containing colon
+=== TEST 41: extra colon suffix after a colon-less password is rejected
+--- request
+GET /hello
+--- more_headers
+Authorization: Basic Zm9vOmJhcjpleHRyYQ==
+--- error_code: 401
+--- response_body
+{"message":"Invalid user authorization"}
+
+
+
+=== TEST 42: verify password containing colon
 --- request
 GET /hello
 --- more_headers
