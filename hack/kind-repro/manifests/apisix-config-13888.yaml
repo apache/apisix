@@ -1,0 +1,97 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: apisix-repro-config
+data:
+  config.yaml: |
+    deployment:
+      role: data_plane
+      role_data_plane:
+        config_provider: yaml
+    nginx_config:
+      # Deliberately higher than the IMP-3253 test's worker_processes=2 --
+      # more workers means more contention for the broker's per-worker event
+      # queues (now capped at 2, see hack/kind-repro/Dockerfile
+      # SHRINK_EVENTS_QUEUE), which is what we want for THIS test.
+      worker_processes: 6
+      error_log_level: warn
+  apisix.yaml: |
+    routes:
+      -
+        id: healthz
+        uri: /healthz
+        plugins:
+          serverless-pre-function:
+            _meta:
+              disable: false
+            phase: rewrite
+            functions:
+              - "return function(conf, ctx) ngx.header['X-Repro-Probe'] = 'process-only'; ngx.say('ok'); ngx.exit(200) end"
+      -
+        id: stall
+        uri: /stall
+        plugins:
+          serverless-pre-function:
+            _meta:
+              disable: false
+            phase: rewrite
+            functions:
+              - "return function(conf, ctx) local dur = tonumber(ngx.var.arg_s) or 3; local start = ngx.now(); local n = 0; while true do ngx.update_time(); if ngx.now() - start >= dur then break end; n = n + 1 end; ngx.say('stalled worker ', ngx.worker.pid(), ' for ', dur, 's (', n, ' spins)'); ngx.exit(200) end"
+      -
+        id: pay
+        uri: /pay
+        upstream_id: online-payment-write
+        plugins:
+          serverless-pre-function:
+            _meta:
+              disable: false
+            phase: header_filter
+            functions:
+              - "return function(conf, ctx) ngx.header['X-Worker-Pid'] = ngx.worker.pid() end"
+    upstreams:
+      -
+        id: online-payment-write
+        type: roundrobin
+        scheme: http
+        pass_host: node
+        retries: 2
+        retry_timeout: 0
+        timeout:
+          connect: 2
+          send: 2
+          read: 2
+        checks:
+          active:
+            type: http
+            timeout: 2
+            http_path: /apisix-health-v2-online-payment-write
+            healthy:
+              interval: 1
+              http_statuses: [200, 404]
+              successes: 2
+            unhealthy:
+              interval: 1
+              http_statuses: [500, 502, 503, 504]
+              http_failures: 2
+              tcp_failures: 2
+              timeouts: 2
+          passive:
+            type: http
+            healthy:
+              http_statuses: [200, 201]
+              successes: 2
+            unhealthy:
+              http_statuses: [500, 502, 503, 504]
+              http_failures: 2
+              tcp_failures: 2
+              timeouts: 2
+        nodes:
+          - host: mock-payments-api
+            port: 80
+            weight: 100
+            priority: 0
+          - host: mock-payproc
+            port: 80
+            weight: 50
+            priority: -1
+    #END

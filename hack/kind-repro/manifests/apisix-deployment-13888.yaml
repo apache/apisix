@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: apisix-repro
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: apisix-repro}
+  template:
+    metadata:
+      labels: {app: apisix-repro}
+    spec:
+      containers:
+        - name: apisix
+          image: __APISIX_IMAGE__
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: APISIX_STAND_ALONE
+              value: "true"
+          ports:
+            - containerPort: 9080
+          readinessProbe:
+            httpGet: {path: /healthz, port: 9080}
+            initialDelaySeconds: 0
+            periodSeconds: 2
+            failureThreshold: 1
+          volumeMounts:
+            - name: config
+              mountPath: /usr/local/apisix/conf/config.yaml
+              subPath: config.yaml
+            - name: config
+              mountPath: /usr/local/apisix/conf/apisix.yaml
+              subPath: apisix.yaml
+      volumes:
+        - name: config
+          configMap:
+            name: apisix-repro-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: apisix-repro
+spec:
+  type: NodePort
+  selector: {app: apisix-repro}
+  ports:
+    - port: 9080
+      targetPort: 9080
+      nodePort: 30980

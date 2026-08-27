@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: apisix-repro-coldstart
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: apisix-repro-coldstart}
+  template:
+    metadata:
+      labels: {app: apisix-repro-coldstart}
+    spec:
+      containers:
+        - name: apisix
+          image: apisix-repro:coldstart-gate
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: APISIX_STAND_ALONE
+              value: "true"
+          ports:
+            - containerPort: 9080
+          readinessProbe:
+            httpGet: {path: /health_check_internal/ready, port: 9080}
+            initialDelaySeconds: 0
+            periodSeconds: 1
+            failureThreshold: 1
+          volumeMounts:
+            - name: config
+              mountPath: /usr/local/apisix/conf/config.yaml
+              subPath: config.yaml
+            - name: config
+              mountPath: /usr/local/apisix/conf/apisix.yaml
+              subPath: apisix.yaml
+      volumes:
+        - name: config
+          configMap:
+            name: apisix-repro-coldstart-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: apisix-repro-coldstart
+spec:
+  selector: {app: apisix-repro-coldstart}
+  ports:
+    - port: 9080
+      targetPort: 9080

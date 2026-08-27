@@ -1,0 +1,46 @@
+routes:
+  -
+    id: pay
+    uri: /pay
+    upstream_id: online-payment-write
+upstreams:
+  -
+    id: online-payment-write
+    type: roundrobin
+    scheme: http
+    pass_host: node
+    checks:
+      active:
+        type: http
+        timeout: 2
+        http_path: /apisix-health-v2-online-payment-write
+        healthy:
+          interval: 3
+          http_statuses: [200, 404]
+          successes: 2
+        unhealthy:
+          interval: 3
+          http_statuses: [500, 502, 503, 504]
+          http_failures: 2
+          tcp_failures: 2
+          timeouts: 2
+      passive:
+        type: http
+        healthy:
+          http_statuses: [200, 201]
+          successes: PASSIVE_SUCCESSES_PLACEHOLDER
+        unhealthy:
+          http_statuses: [500, 502, 503, 504]
+          http_failures: 2
+          tcp_failures: 2
+          timeouts: 2
+    nodes:
+      - host: mock-payments-api
+        port: 80
+        weight: 100
+        priority: 0
+      - host: mock-payproc
+        port: 80
+        weight: 50
+        priority: -1
+#END

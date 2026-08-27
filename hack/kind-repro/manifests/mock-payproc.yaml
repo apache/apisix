@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mock-payproc
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: mock-payproc}
+  template:
+    metadata:
+      labels: {app: mock-payproc}
+    spec:
+      containers:
+        - name: nginx
+          image: apisix-repro/mock-payproc:local
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mock-payproc
+spec:
+  selector: {app: mock-payproc}
+  ports:
+    - port: 80
+      targetPort: 80

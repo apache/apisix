@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mock-payments-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: mock-payments-api}
+  template:
+    metadata:
+      labels: {app: mock-payments-api}
+    spec:
+      containers:
+        - name: nginx
+          image: apisix-repro/mock-payments-api:local
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: state
+              mountPath: /state
+      volumes:
+        - name: state
+          hostPath:
+            path: /mnt/state/payments-api
+            type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mock-payments-api
+spec:
+  selector: {app: mock-payments-api}
+  ports:
+    - port: 80
+      targetPort: 80
