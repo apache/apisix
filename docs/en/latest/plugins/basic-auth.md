@@ -48,7 +48,7 @@ For Consumer/Credentials:
 | Name | Type | Required | Default | Valid values | Description |
 |------|------|----------|---------|--------------|-------------|
 | username | string | True | | | Unique basic auth username for a Consumer. |
-| password | string | True | | | Basic auth password for the Consumer. The password is encrypted with AES before being stored in etcd. You can also store it in an environment variable and reference it using the `env://` prefix, or in a secret manager such as HashiCorp Vault's KV secrets engine, and reference it using the `secret://` prefix. |
+| password | string | True | | non-empty string | Basic auth password for the Consumer. The password is encrypted with AES before being stored in etcd. You can also store it in an environment variable and reference it using the `env://` prefix, or in a secret manager such as HashiCorp Vault's KV secrets engine, and reference it using the `secret://` prefix. |
 
 For Route:
 

@@ -264,7 +264,7 @@ plugins:
                 ngx.HTTP_GET,
                 nil,
                 [[
-{"title":"work with consumer object","required":["username","password"],"properties":{"username":{"type":"string"},"password":{"type":"string"}},"type":"object"}
+{"title":"work with consumer object","required":["username","password"],"properties":{"username":{"type":"string"},"password":{"type":"string","minLength":1}},"type":"object"}
                 ]]
                 )
 
@@ -371,7 +371,7 @@ qr/\[\{"name":"multi-auth","priority":2600\},\{"name":"wolf-rbac","priority":255
         }
     }
 --- response_body eval
-qr/\{"encrypt_fields":\["password"\],"properties":\{"password":\{"type":"string"\},"username":\{"type":"string"\}\},"required":\["username","password"\],"title":"work with consumer object","type":"object"\}/
+qr/\{"encrypt_fields":\["password"\],"properties":\{"password":\{"minLength":1,"type":"string"\},"username":\{"type":"string"\}\},"required":\["username","password"\],"title":"work with consumer object","type":"object"\}/
 
 
 
