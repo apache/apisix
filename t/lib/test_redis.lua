@@ -218,9 +218,13 @@ function _M.sum_counters(pattern, opts)
     return total
 end
 
+-- Bounded poll for an asynchronous counter write. 100 iterations gave up after
+-- one second, which a loaded CI runner exceeds often enough to make callers
+-- flaky; 500 gives it five. The loop still returns as soon as the counter
+-- moves, so a healthy run costs the same as before.
 function _M.wait_counters_above(pattern, previous, opts)
     local last_err
-    for _ = 1, 100 do
+    for _ = 1, 500 do
         local total, err = _M.sum_counters(pattern, opts)
         if total and total > previous then
             return true
