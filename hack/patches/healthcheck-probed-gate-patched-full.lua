@@ -589,7 +589,7 @@ local function clear_target_data_from_shm(self, ip, port, hostname)
     end
     ok, err = self.shm:set(key_for(self.TARGET_PROBED, ip, port, hostname), nil)
     if not ok then
-      self:log(ERR, "failed to clear probed flag from shm: ", err)
+      self:log(ERR, "failed to clear probe count from shm: ", err)
     end
 end
 
@@ -1054,17 +1054,20 @@ end
 -- Runs a single healthcheck probe
 function checker:run_single_check(ip, port, hostname, hostheader)
 
-  -- Mark the target as probed *before* the attempt, not after: "probed" means
-  -- an active check was actually dispatched for this target at least once
-  -- (success, failure, or timeout all count), which is what a cold-start
-  -- readiness gate needs to know -- not whether the check succeeded. Written
-  -- to shm (not a local field) since a readiness probe can land on any
-  -- worker, not just whichever one holds the periodic-probe lock and runs
-  -- this function.
-  local probed_ok, probed_err = self.shm:set(
-    key_for(self.TARGET_PROBED, ip, port, hostname), true)
+  -- Count the attempt *before* the check runs, not after: a readiness gate
+  -- needs to know how many consecutive active-check attempts have actually
+  -- been dispatched for this target (success, failure, or timeout all count),
+  -- not whether any one of them succeeded. A single attempt is not enough on
+  -- its own -- with e.g. unhealthy.http_failures = 2 configured, the target's
+  -- real internal_health only converges after two consecutive attempts, so
+  -- the gate needs the count, not just a boolean "was it ever probed".
+  -- Written to shm (not a local field) since a readiness probe can land on
+  -- any worker, not just whichever one holds the periodic-probe lock and
+  -- runs this function.
+  local probed_key = key_for(self.TARGET_PROBED, ip, port, hostname)
+  local probed_ok, probed_err = self.shm:incr(probed_key, 1, 0)
   if not probed_ok then
-    self:log(ERR, "failed to mark target as probed in shm: ", probed_err)
+    self:log(ERR, "failed to increment probe count in shm: ", probed_err)
   end
 
   local sock, err = ngx.socket.tcp()
@@ -2009,7 +2012,7 @@ function _M.get_target_list(name, shm_name)
       local state_key = key_for(self.TARGET_STATE, target.ip, target.port, target.hostname)
       target.status = INTERNAL_STATES[self.shm:get(state_key)]
       local probed_key = key_for(self.TARGET_PROBED, target.ip, target.port, target.hostname)
-      target.probed = self.shm:get(probed_key) == true
+      target.probe_count = self.shm:get(probed_key) or 0
       if not target.hostheader then
         target.hostheader = nil
       end
@@ -2051,16 +2054,25 @@ end
 
 
 -- Returns true only if the checker has at least one target AND every one of
--- them has had at least one active-check attempt ("probed" means attempted,
--- not "healthy" -- a failed or timed-out check still counts). false if there
--- are no targets yet (nothing to probe) or any target is unprobed. nil+err on
--- a shm read failure, mirroring get_target_list's own error contract.
+-- them has had at least `min_attempts` consecutive active-check attempts
+-- ("probed" means attempted, not "healthy" -- a failed or timed-out check
+-- still counts toward the count). false if there are no targets yet (nothing
+-- to probe) or any target has not yet reached min_attempts. nil+err on a shm
+-- read failure, mirroring get_target_list's own error contract.
+--
+-- min_attempts defaults to 1 for backward compatibility, but a caller that
+-- knows the checker's own unhealthy/healthy thresholds should pass the
+-- worst-case one: with e.g. unhealthy.http_failures = 2 configured, a
+-- target's real internal_health only converges after two consecutive
+-- attempts, so requiring only 1 would let a readiness gate open before the
+-- target's true state is actually known.
 --
 -- Deliberately a module function operating on shm (like get_target_list),
--- not a `checker:` instance method: the probed bit must be readable from any
--- worker evaluating a readiness gate, not just whichever one created the
+-- not a `checker:` instance method: the probe count must be readable from
+-- any worker evaluating a readiness gate, not just whichever one created the
 -- checker locally or holds the periodic-probe lock.
-function _M.all_targets_probed(name, shm_name)
+function _M.all_targets_probed(name, shm_name, min_attempts)
+  min_attempts = min_attempts or 1
   local targets, err = _M.get_target_list(name, shm_name)
   if not targets then
     return nil, err
@@ -2069,7 +2081,7 @@ function _M.all_targets_probed(name, shm_name)
     return false
   end
   for _, target in ipairs(targets) do
-    if not target.probed then
+    if (target.probe_count or 0) < min_attempts then
       return false
     end
   end

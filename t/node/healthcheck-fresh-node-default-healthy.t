@@ -272,3 +272,84 @@ GET /t
 ensure_checker: true nil
 resource probed after ensure_checker with zero traffic: true
 --- timeout: 5
+
+
+
+=== TEST 5: all_targets_probed() with min_attempts > 1 waits for real convergence
+# Closes a gap found via live kind testing: a single active-check attempt is
+# not enough to know a target's real state when unhealthy.http_failures (or
+# .tcp_failures/.timeouts, or healthy.successes) is configured above 1 --
+# internal_health only actually converges after that many CONSECUTIVE
+# attempts. A readiness gate that opens after just 1 attempt can still route
+# real traffic to a target whose true state has not yet been reached. This
+# is why the shm value is now a per-target probe *count*
+# (hack/patches/lua-resty-healthcheck-probed-gate.patch), not a boolean, and
+# why all_targets_probed() takes an explicit min_attempts argument that
+# apisix.healthcheck_manager.is_resource_probed() computes from the
+# checker's own thresholds (required_probe_attempts()).
+--- config
+    location /t {
+        content_by_lua_block {
+            local healthcheck = require("resty.healthcheck")
+
+            local checker = healthcheck.new({
+                name = "test-ps12691-min-attempts",
+                shm_name = "upstream-healthcheck",
+                checks = {
+                    active = {
+                        type = "http",
+                        -- a path the mock backend does not serve: 404 is in
+                        -- the default active.unhealthy.http_statuses list,
+                        -- so every attempt fails deterministically without
+                        -- needing a dedicated always-500 mock endpoint
+                        http_path = "/definitely-not-a-real-endpoint-ps12691",
+                        timeout = 1,
+                        healthy = { interval = 1, successes = 1 },
+                        unhealthy = { interval = 1, http_failures = 2 },
+                    },
+                },
+                events_module = "resty.events",
+            })
+            if not checker then
+                ngx.say("failed to create checker")
+                return
+            end
+
+            local ok, err = checker:add_target("127.0.0.1", 1980, nil, true, nil)
+            if not ok then
+                ngx.say("failed to add target: ", err)
+                return
+            end
+            ngx.sleep(0.2) -- let add_target's own event settle locally
+
+            ngx.sleep(1.5) -- past one interval: exactly one attempt has fired
+
+            local after_one = healthcheck.all_targets_probed(
+                "test-ps12691-min-attempts", "upstream-healthcheck", 2)
+            ngx.say("after 1 attempt, min_attempts=2: ", tostring(after_one))
+
+            -- min_attempts=1 must already be satisfied after just 1 attempt,
+            -- proving the gap is specifically about the threshold, not a
+            -- broken counter.
+            local after_one_threshold_one = healthcheck.all_targets_probed(
+                "test-ps12691-min-attempts", "upstream-healthcheck", 1)
+            ngx.say("after 1 attempt, min_attempts=1: ", tostring(after_one_threshold_one))
+
+            ngx.sleep(1.2) -- past a second interval: a second attempt has fired
+
+            local after_two = healthcheck.all_targets_probed(
+                "test-ps12691-min-attempts", "upstream-healthcheck", 2)
+            ngx.say("after 2 attempts, min_attempts=2: ", tostring(after_two))
+
+            checker:stop()
+        }
+    }
+--- request
+GET /t
+--- response_body
+after 1 attempt, min_attempts=2: false
+after 1 attempt, min_attempts=1: true
+after 2 attempts, min_attempts=2: true
+--- no_error_log
+[error]
+--- timeout: 8
