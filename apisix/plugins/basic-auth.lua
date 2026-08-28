@@ -98,7 +98,11 @@ local function extract_auth_header(authorization)
         end
 
         local res
-        res, err = ngx_re.split(decoded, ":")
+        -- Split only on the first colon: RFC 7617 allows colons in passwords,
+        -- so `user:pass:word` must yield username="user", password="pass:word".
+        -- ngx.re.split's 5th arg (max) caps the number of substrings returned,
+        -- so 2 keeps the username + the remainder (colons included).
+        res, err = ngx_re.split(decoded, ":", nil, nil, 2)
         if err then
             return nil, "Split authorization err:" .. err
         end
@@ -120,6 +124,10 @@ local function extract_auth_header(authorization)
     end
 
 end
+
+-- Exported for unit testing (t/plugin/basic-auth.t) without loading the
+-- full plugin runtime.
+_M.extract_auth_header = extract_auth_header
 
 
 local function find_consumer(ctx)
