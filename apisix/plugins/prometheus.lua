@@ -107,19 +107,4 @@ function _M.api()
 end
 
 
-function _M.init()
-    local local_conf = core.config.local_conf()
-    -- Not `stream_plugins` from config.yaml: that list is only the boot-time
-    -- default, and /apisix/plugins in etcd can turn the stream prometheus
-    -- plugin on later. This runs whenever the plugin is loaded, so building
-    -- `metrics` without the L4 gauges here would leave
-    -- collect_stream_zone_metrics() stopped at its first guard for the rest of
-    -- the process's life. Whether the stream subsystem runs at all is the
-    -- thing that does not change under APISIX.
-    local proxy_mode = local_conf.apisix.proxy_mode
-    local stream_enabled = proxy_mode == "stream" or proxy_mode == "http&stream"
-    exporter.http_init(stream_enabled)
-end
-
-
 return _M
