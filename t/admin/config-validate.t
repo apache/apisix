@@ -674,7 +674,7 @@ location /t {
         local data = json.decode(body)
         assert(data.error_msg == "Configuration validation failed",
             "expected validation failed, got: " .. tostring(data.error_msg))
-        assert(data.errors[1].error == "routes must be an array, got string",
+        assert(string.find(data.errors[1].error, "invalid request body", 1, true),
             "unexpected error: " .. body)
         ngx.say("passed")
     }
@@ -700,7 +700,7 @@ location /t {
         local data = json.decode(body)
         assert(data.error_msg == "Configuration validation failed",
             "expected validation failed, got: " .. tostring(data.error_msg))
-        assert(data.errors[1].error == "invalid request body: it should be an object",
+        assert(string.find(data.errors[1].error, "invalid request body", 1, true),
             "unexpected error: " .. body)
         ngx.say("passed")
     }
@@ -744,6 +744,110 @@ location /t {
             "expected validation failed, got: " .. tostring(data.error_msg))
         assert(string.find(data.errors[1].error,
                            "stream route can not set itself as superior_id", 1, true),
+            "unexpected error: " .. body)
+        ngx.say("passed")
+    }
+}
+--- error_code: 400
+--- response_body
+passed
+
+
+
+=== TEST 20: a top-level array is rejected
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        local json = require("cjson")
+        local code, body = t('/apisix/admin/configs/validate',
+            ngx.HTTP_POST,
+            [==[[{"routes": []}]]==]
+            )
+
+        ngx.status = code
+        local data = json.decode(body)
+        assert(data.error_msg == "Configuration validation failed",
+            "expected validation failed, got: " .. tostring(data.error_msg))
+        assert(string.find(data.errors[1].error, "invalid request body", 1, true),
+            "unexpected error: " .. body)
+        ngx.say("passed")
+    }
+}
+--- error_code: 400
+--- response_body
+passed
+
+
+
+=== TEST 21: a resource section that is not an array is rejected
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        local json = require("cjson")
+        local code, body = t('/apisix/admin/configs/validate',
+            ngx.HTTP_POST,
+            [[{"routes": {"id": "r1"}}]]
+            )
+
+        ngx.status = code
+        local data = json.decode(body)
+        assert(data.error_msg == "Configuration validation failed",
+            "expected validation failed, got: " .. tostring(data.error_msg))
+        assert(string.find(data.errors[1].error, "invalid request body", 1, true),
+            "unexpected error: " .. body)
+        ngx.say("passed")
+    }
+}
+--- error_code: 400
+--- response_body
+passed
+
+
+
+=== TEST 22: a scalar element is rejected
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        local json = require("cjson")
+        local code, body = t('/apisix/admin/configs/validate',
+            ngx.HTTP_POST,
+            [[{"routes": [123]}]]
+            )
+
+        ngx.status = code
+        local data = json.decode(body)
+        assert(data.error_msg == "Configuration validation failed",
+            "expected validation failed, got: " .. tostring(data.error_msg))
+        assert(string.find(data.errors[1].error, "invalid request body", 1, true),
+            "unexpected error: " .. body)
+        ngx.say("passed")
+    }
+}
+--- error_code: 400
+--- response_body
+passed
+
+
+
+=== TEST 23: a null element is rejected
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        local json = require("cjson")
+        local code, body = t('/apisix/admin/configs/validate',
+            ngx.HTTP_POST,
+            [[{"routes": [null]}]]
+            )
+
+        ngx.status = code
+        local data = json.decode(body)
+        assert(data.error_msg == "Configuration validation failed",
+            "expected validation failed, got: " .. tostring(data.error_msg))
+        assert(string.find(data.errors[1].error, "invalid request body", 1, true),
             "unexpected error: " .. body)
         ngx.say("passed")
     }

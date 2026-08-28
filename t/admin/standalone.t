@@ -411,3 +411,46 @@ X-Digest: t19
 --- error_code: 400
 --- no_error_log
 SENTINEL-BROKEN-BODY
+
+
+
+=== TEST 20: seed a config
+--- request
+PUT /apisix/admin/configs
+{"routes":[{"id":"r1","uri":"/r1","upstream":{"nodes":{"127.0.0.1:1980":1},"type":"roundrobin"}}]}
+--- more_headers
+X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
+X-Digest: t20
+--- error_code: 202
+
+
+
+=== TEST 21: a resource section that is not an array is rejected
+--- request
+PUT /apisix/admin/configs
+{"routes": {"id": "r1"}}
+--- more_headers
+X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
+X-Digest: t21
+--- error_code: 400
+
+
+
+=== TEST 22: a top-level array is rejected
+--- request
+PUT /apisix/admin/configs
+[{"routes": []}]
+--- more_headers
+X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
+X-Digest: t22
+--- error_code: 400
+
+
+
+=== TEST 23: the rejected pushes left the config and its version untouched
+--- request
+GET /apisix/admin/configs
+--- more_headers
+X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
+--- error_code: 200
+--- response_body_like: .*X-Digest.*t20.*

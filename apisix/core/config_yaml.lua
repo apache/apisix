@@ -404,7 +404,8 @@ local function _automatic_fetch(premature, self)
             log.info("no config found in shared dict")
             goto SKIP_SHARED_DICT
         end
-        log.info("startup config loaded from shared dict: ", config)
+        -- the payload can carry TLS private keys and plugin credentials
+        log.info("startup config loaded from shared dict, size: ", #config)
 
         config, err = json.decode(tostring(config))
         if not config then
