@@ -69,6 +69,19 @@ status_of() {
     curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:9080/hello"
 }
 
+# deadline-bounded, so the test does not depend on a fixed reload latency
+wait_for_status() {
+    local i
+    for i in $(seq 1 50); do
+        if [ "$(status_of)" = "$1" ]; then
+            return 0
+        fi
+        sleep 0.2
+    done
+    echo "failed: $2 (last status: $(status_of))"
+    exit 1
+}
+
 write_config "    - key-auth"
 make init
 make run
@@ -90,13 +103,7 @@ curl -s -o /dev/null -XPUT "http://127.0.0.1:9180/apisix/admin/configs" \
         ]
     }'
 
-sleep 2
-
-code=$(status_of)
-if [ "$code" != "401" ]; then
-    echo "failed: key-auth should reject an unauthenticated request, got: $code"
-    exit 1
-fi
+wait_for_status 401 "key-auth should reject an unauthenticated request"
 
 echo "passed: key-auth is in effect on a standalone configuration"
 
@@ -104,13 +111,7 @@ echo "unloading key-auth"
 write_config "    - ip-restriction"
 curl -s -o /dev/null -XPUT http://127.0.0.1:9090/v1/plugins/reload
 
-sleep 2
-
-code=$(status_of)
-if [ "$code" != "502" ]; then
-    echo "failed: the request should reach the proxy once key-auth is unloaded, got: $code"
-    exit 1
-fi
+wait_for_status 502 "the request should reach the proxy once key-auth is unloaded"
 
 echo "passed: key-auth was unloaded by a reload"
 
@@ -118,12 +119,6 @@ echo "loading key-auth again"
 write_config "    - key-auth"
 curl -s -o /dev/null -XPUT http://127.0.0.1:9090/v1/plugins/reload
 
-sleep 2
-
-code=$(status_of)
-if [ "$code" != "401" ]; then
-    echo "failed: key-auth should be in effect again after reloading it, got: $code"
-    exit 1
-fi
+wait_for_status 401 "key-auth should be in effect again after reloading it"
 
 echo "passed: key-auth was loaded again by a reload"
