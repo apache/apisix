@@ -74,12 +74,13 @@ end
 local config_schema
 do
     local properties = {}
-    for key, conf_version_key in pairs(ALL_RESOURCE_KEYS) do
+    -- only the resource sections: the *_conf_version fields keep their own
+    -- checks below and in standalone.update(), whose messages callers rely on
+    for key in pairs(ALL_RESOURCE_KEYS) do
         properties[key] = {
             type = "array",
             items = {type = "object"},
         }
-        properties[conf_version_key] = {type = "integer", minimum = 0}
     end
     config_schema = {
         type = "object",
