@@ -303,7 +303,6 @@ local schema = {
                 revocation_fail_mode = {
                     type = "string",
                     enum = {"open", "closed"},
-                    default = "open",
                     description =
                         "When the revocation store is unreachable, open treats the "
                         .. "session as not revoked and closed rejects open/destroy.",

@@ -152,7 +152,7 @@ replayed=302
             local secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK"
             local test_cases = {
                 {
-                    name = "revocation defaults to fail open",
+                    name = "revocation uses library fail-open default",
                     session = {
                         secret = secret,
                         storage = "cookie",
@@ -164,7 +164,7 @@ replayed=302
                     },
                     check = function(opts)
                         assert(opts.revocation == "redis")
-                        assert(opts.revocation_fail_mode == "open")
+                        assert(opts.revocation_fail_mode == nil)
                         assert(opts.redis.host == "127.0.0.1")
                         assert(opts.redis.prefix == "oidc:session:")
                     end,
@@ -204,7 +204,7 @@ replayed=302
                     },
                     check = function(opts)
                         assert(opts.revocation == nil)
-                        assert(opts.revocation_fail_mode == "open")
+                        assert(opts.revocation_fail_mode == nil)
                     end,
                 },
                 {
@@ -217,6 +217,7 @@ replayed=302
                     check = function(opts)
                         assert(opts.storage == "redis")
                         assert(opts.revocation == nil)
+                        assert(opts.revocation_fail_mode == nil)
                         assert(opts.redis.host == "127.0.0.1")
                     end,
                 },
