@@ -82,8 +82,10 @@ local router
 local function check_token(ctx)
     local local_conf = core.config.local_conf()
 
-    -- check if admin_key is required
-    if local_conf.deployment.admin.admin_key_required == false then
+    -- check if admin_key is required; `admin:` written as YAML null makes
+    -- merge_conf drop the default table, so it cannot be indexed blindly
+    if core.table.try_read_attr(local_conf, "deployment", "admin",
+                                "admin_key_required") == false then
         return true
     end
 
@@ -347,6 +349,13 @@ end
 local function sync_local_conf_to_etcd(reset)
     local local_conf = core.config.local_conf()
 
+    if local_conf.deployment.config_provider == "yaml" then
+        -- standalone keeps its configuration in the shared dict, there is no
+        -- etcd to sync to. Guarded here rather than at the call sites so a new
+        -- caller cannot reintroduce the write.
+        return
+    end
+
     local plugins = {}
     for _, name in ipairs(local_conf.plugins) do
         core.table.insert(plugins, {
@@ -583,8 +592,9 @@ function _M.init_worker()
     end
 
     if ngx_worker_id() == 0 then
-        -- check if admin_key is required
-        if local_conf.deployment.admin.admin_key_required == false then
+        -- see check_token for why this is not indexed blindly
+        if core.table.try_read_attr(local_conf, "deployment", "admin",
+                                    "admin_key_required") == false then
             core.log.warn("Admin key is bypassed! ",
                 "If you are deploying APISIX in a production environment, ",
                 "please enable `admin_key_required` and set a secure admin key!")

@@ -159,7 +159,6 @@ function _M.validate_configuration(req_body, collect_all_errors)
         local items = req_body[key]
         local resource = resources[key] or {}
 
-
         -- Validate conf_version_key if present
         local new_conf_version = req_body[conf_version_key]
         if new_conf_version and type(new_conf_version) ~= "number" then

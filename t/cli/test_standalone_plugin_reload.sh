@@ -49,22 +49,9 @@ $1
 " > conf/config.yaml
 }
 
-# bounded readiness polling, the gateway needs a moment after make run
-wait_for_port() {
-    local i
-    for i in $(seq 1 30); do
-        if curl -s -o /dev/null "http://127.0.0.1:$1/"; then
-            return 0
-        fi
-        sleep 0.5
-    done
-    echo "failed: nothing listening on port $1"
-    exit 1
-}
-
-# The upstream is deliberately not listening, so the status tells the two states
-# apart without needing a backend: 401 means key-auth ran and rejected the
-# request, 502 means the request got past the plugins and reached the proxy.
+# Port 9 (discard) is never listening, so the status tells the two states apart
+# without needing a backend: 401 means key-auth ran and rejected the request,
+# 502 means the request got past the plugins and reached the proxy.
 status_of() {
     curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:9080/hello"
 }
@@ -72,12 +59,15 @@ status_of() {
 # deadline-bounded, so the test does not depend on a fixed reload latency
 wait_for_status() {
     local i
+    { set +x; } 2>/dev/null
     for i in $(seq 1 50); do
         if [ "$(status_of)" = "$1" ]; then
+            set -x
             return 0
         fi
         sleep 0.2
     done
+    set -x
     echo "failed: $2 (last status: $(status_of))"
     exit 1
 }
@@ -85,7 +75,7 @@ wait_for_status() {
 write_config "    - key-auth"
 make init
 make run
-wait_for_port 9180
+wait_for_tcp 127.0.0.1 9180
 
 curl -s -o /dev/null -XPUT "http://127.0.0.1:9180/apisix/admin/configs" \
     -H "X-API-KEY: $ADMIN_KEY" -H "X-Digest: reload-1" \
@@ -95,7 +85,7 @@ curl -s -o /dev/null -XPUT "http://127.0.0.1:9180/apisix/admin/configs" \
                 "id": "r1",
                 "uri": "/hello",
                 "plugins": {"key-auth": {}},
-                "upstream": {"nodes": {"127.0.0.1:1980": 1}, "type": "roundrobin"}
+                "upstream": {"nodes": {"127.0.0.1:9": 1}, "type": "roundrobin"}
             }
         ],
         "consumers": [
@@ -122,3 +112,10 @@ curl -s -o /dev/null -XPUT http://127.0.0.1:9090/v1/plugins/reload
 wait_for_status 401 "key-auth should be in effect again after reloading it"
 
 echo "passed: key-auth was loaded again by a reload"
+
+if grep -q "sync local conf to etcd" logs/error.log; then
+    echo "failed: standalone has no etcd, the reload path must not sync to it"
+    exit 1
+fi
+
+echo "passed: no etcd sync was attempted"

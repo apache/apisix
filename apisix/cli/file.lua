@@ -266,7 +266,9 @@ function _M.read_yaml_conf(apisix_home)
 
     if not is_empty_file then
         local user_conf = yaml.load(user_conf_yaml)
-        if not user_conf then
+        -- lyaml returns a scalar for a document such as `foo`, which would blow
+        -- up in resolve_conf_var's pairs() below
+        if type(user_conf) ~= "table" then
             return nil, "invalid config.yaml file"
         end
 
