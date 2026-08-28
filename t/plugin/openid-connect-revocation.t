@@ -60,12 +60,12 @@ __DATA__
                             "session": {
                                 "secret": "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
                                 "storage": "cookie",
+                                "revocation": "redis",
                                 "redis": {
                                     "host": "127.0.0.1",
                                     "port": 6379,
                                     "prefix": "oidc:revocation:"
-                                },
-                                "revocation_fail_mode": "closed"
+                                }
                             }
                         }
                     },
@@ -129,47 +129,51 @@ __DATA__
                 ngx.say(err)
                 return
             end
+            if res.status ~= 302 then
+                ngx.status = 500
+                ngx.say("replayed request was not redirected: ", res.status)
+                return
+            end
 
             ngx.say("authenticated=", 200)
-            ngx.say("replayed_authenticated=", res.status == 200)
+            ngx.say("replayed=", res.status)
         }
     }
 --- response_body
 authenticated=200
-replayed_authenticated=false
---- no_error_log
-[crit]
+replayed=302
 
 
 
-=== TEST 2: mapped and optional session revocation paths
+=== TEST 2: forwarded and optional session revocation paths
 --- config
     location /t {
         content_by_lua_block {
             local secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK"
             local test_cases = {
                 {
-                    name = "fail closed enables revocation",
+                    name = "revocation defaults to fail open",
                     session = {
                         secret = secret,
                         storage = "cookie",
+                        revocation = "redis",
                         redis = {
                             host = "127.0.0.1",
                             prefix = "oidc:session:",
                         },
-                        revocation_fail_mode = "closed",
                     },
                     check = function(opts)
                         assert(opts.revocation == "redis")
-                        assert(opts.revocation_fail_mode == "closed")
+                        assert(opts.revocation_fail_mode == "open")
                         assert(opts.redis.host == "127.0.0.1")
                         assert(opts.redis.prefix == "oidc:session:")
                     end,
                 },
                 {
-                    name = "fail open enables revocation with default cookie storage",
+                    name = "explicit fail open",
                     session = {
                         secret = secret,
+                        revocation = "redis",
                         redis = { host = "127.0.0.1" },
                         revocation_fail_mode = "open",
                     },
@@ -179,7 +183,20 @@ replayed_authenticated=false
                     end,
                 },
                 {
-                    name = "omitting fail mode leaves revocation disabled",
+                    name = "fail closed with default cookie storage",
+                    session = {
+                        secret = secret,
+                        revocation = "redis",
+                        redis = { host = "127.0.0.1" },
+                        revocation_fail_mode = "closed",
+                    },
+                    check = function(opts)
+                        assert(opts.revocation == "redis")
+                        assert(opts.revocation_fail_mode == "closed")
+                    end,
+                },
+                {
+                    name = "omitting revocation leaves it disabled",
                     session = {
                         secret = secret,
                         storage = "cookie",
@@ -187,7 +204,7 @@ replayed_authenticated=false
                     },
                     check = function(opts)
                         assert(opts.revocation == nil)
-                        assert(opts.revocation_fail_mode == nil)
+                        assert(opts.revocation_fail_mode == "open")
                     end,
                 },
                 {
@@ -232,9 +249,19 @@ done
             local secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK"
             local test_cases = {
                 {
+                    name = "invalid revocation backend",
+                    session = {
+                        secret = secret,
+                        revocation = "invalid",
+                        redis = { host = "127.0.0.1" },
+                    },
+                    error_field = "revocation",
+                },
+                {
                     name = "invalid fail mode",
                     session = {
                         secret = secret,
+                        revocation = "redis",
                         redis = { host = "127.0.0.1" },
                         revocation_fail_mode = "invalid",
                     },
@@ -244,19 +271,19 @@ done
                     name = "missing redis",
                     session = {
                         secret = secret,
-                        revocation_fail_mode = "open",
+                        revocation = "redis",
                     },
-                    error_field = "redis",
+                    error_field = "allOf",
                 },
                 {
                     name = "redis session storage",
                     session = {
                         secret = secret,
                         storage = "redis",
+                        revocation = "redis",
                         redis = { host = "127.0.0.1" },
-                        revocation_fail_mode = "open",
                     },
-                    error_field = "storage",
+                    error_field = "allOf",
                 },
             }
 

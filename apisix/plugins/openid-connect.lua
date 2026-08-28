@@ -52,31 +52,22 @@ local UNHANDLED_REDIRECT_URI_ERR = "unhandled request to the redirect_uri"
 local MAX_AUTH_FLOW_RESTARTS = 3
 
 
--- Session config is passed to resty.session.start(). The legacy
--- session.cookie.lifetime alias is mapped to absolute_timeout, and setting
--- revocation_fail_mode enables lua-resty-session's Redis revocation backend.
+-- Session config is passed as-is to resty.session.start(); the only
+-- translation is the legacy session.cookie.lifetime alias from the
+-- lua-resty-session 3.x schema, which is mapped to absolute_timeout
+-- when the latter is unset.
 local function build_session_opts(session_conf)
     if not session_conf then
         return nil
     end
-
-    -- Derive onto a copy: the plugin conf is only shallow cloned per request,
-    -- so mutating it here would persist fields that the session schema forbids.
-    local opts = core.table.clone(session_conf)
-
-    if opts.cookie and opts.cookie.lifetime then
-        if not opts.absolute_timeout then
-            opts.absolute_timeout = opts.cookie.lifetime
+    if session_conf.cookie and session_conf.cookie.lifetime then
+        if not session_conf.absolute_timeout then
+            session_conf.absolute_timeout = session_conf.cookie.lifetime
             core.log.warn("session.cookie.lifetime is deprecated; ",
                           "use session.absolute_timeout instead")
         end
     end
-
-    if opts.redis and opts.storage ~= "redis" and opts.revocation_fail_mode then
-        opts.revocation = "redis"
-    end
-
-    return opts
+    return session_conf
 end
 
 
@@ -304,12 +295,17 @@ local schema = {
                         },
                     }
                 },
+                revocation = {
+                    type = "string",
+                    enum = {"redis"},
+                    description = "Redis-backed revocation for cookie sessions.",
+                },
                 revocation_fail_mode = {
                     type = "string",
                     enum = {"open", "closed"},
+                    default = "open",
                     description =
-                        "Enables Redis-backed revocation for cookie sessions. When "
-                        .. "the revocation store is unreachable, open treats the "
+                        "When the revocation store is unreachable, open treats the "
                         .. "session as not revoked and closed rejects open/destroy.",
                 },
             },
@@ -325,7 +321,7 @@ local schema = {
             allOf = {
                 {
                     ["if"] = {
-                        required = {"revocation_fail_mode"},
+                        required = {"revocation"},
                     },
                     ["then"] = {
                         required = {"redis"},
