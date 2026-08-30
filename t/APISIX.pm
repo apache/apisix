@@ -655,6 +655,7 @@ _EOC_
     lua_shared_dict balancer-ewma 1m;
     lua_shared_dict balancer-ewma-locks 1m;
     lua_shared_dict balancer-ewma-last-touched-at 1m;
+    lua_shared_dict plugin-limit-req-global 10m;
     lua_shared_dict plugin-limit-req-redis-cluster-slot-lock 1m;
     lua_shared_dict plugin-limit-count-redis-cluster-slot-lock 1m;
     lua_shared_dict plugin-limit-conn-redis-cluster-slot-lock 1m;
