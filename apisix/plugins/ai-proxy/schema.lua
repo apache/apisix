@@ -44,6 +44,15 @@ local auth_schema = {
                     type = "string",
                     description = "GCP service account JSON content for authentication",
                 },
+                use_metadata_server = {
+                    type = "boolean",
+                    description = "Fetch the access token from the GCE/GKE metadata server " ..
+                                  "(Application Default Credentials / Workload Identity) " ..
+                                  "instead of a service account key. When no service account " ..
+                                  "key is configured, the metadata server is used " ..
+                                  "automatically.",
+                    default = false,
+                },
                 max_ttl = {
                     type = "integer",
                     minimum = 1,
