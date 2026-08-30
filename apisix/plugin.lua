@@ -166,24 +166,92 @@ end
 local PLUGIN_TYPE_HTTP = 1
 local PLUGIN_TYPE_STREAM = 2
 local PLUGIN_TYPE_HTTP_WASM = 3
-local function unload_plugin(name, plugin_type)
-    if plugin_type == PLUGIN_TYPE_HTTP_WASM then
-        return
-    end
 
-    -- Don't unload stream plugins in the HTTP subsystem.
-    if plugin_type == PLUGIN_TYPE_STREAM and is_http then
-        return
-    end
-
-    local pkg_name = "apisix.plugins." .. name
+local function plugin_pkg_name(name, plugin_type)
     if plugin_type == PLUGIN_TYPE_STREAM then
-        pkg_name = "apisix.stream.plugins." .. name
+        return "apisix.stream.plugins." .. name
     end
 
+    return "apisix.plugins." .. name
+end
+
+
+-- whether the init/destroy hooks of this plugin type run in the current
+-- subsystem: stream plugins are also loaded in the HTTP subsystem so that
+-- the Admin API can validate their schemas, but their hooks must only run
+-- in the stream subsystem; wasm plugins have no init/destroy hooks
+local function has_lifecycle(plugin_type)
+    if plugin_type == PLUGIN_TYPE_HTTP_WASM then
+        return false
+    end
+
+    if plugin_type == PLUGIN_TYPE_STREAM and is_http then
+        return false
+    end
+
+    return true
+end
+
+
+local function http_plugin_type(plugin)
+    if plugin.type == "wasm" then
+        return PLUGIN_TYPE_HTTP_WASM
+    end
+
+    return PLUGIN_TYPE_HTTP
+end
+
+
+local function destroy_plugin(plugin, plugin_type)
+    if not has_lifecycle(plugin_type) then
+        return
+    end
+
+    if type(plugin.destroy) ~= "function" then
+        return
+    end
+
+    local ok, err = pcall(plugin.destroy)
+    if not ok then
+        core.log.error("failed to destroy plugin [", plugin.name, "]: ", err)
+    end
+end
+
+
+local function init_plugin(plugin, plugin_type)
+    if not has_lifecycle(plugin_type) then
+        return true
+    end
+
+    if plugin.init then
+        local ok, err = pcall(plugin.init)
+        if not ok then
+            return nil, "failed to init plugin [" .. tostring(plugin.name)
+                        .. "]: " .. tostring(err)
+        end
+    end
+
+    if plugin.workflow_handler then
+        local ok, err = pcall(plugin.workflow_handler)
+        if not ok then
+            return nil, "failed to run the workflow handler of plugin ["
+                        .. tostring(plugin.name) .. "]: " .. tostring(err)
+        end
+    end
+
+    return true
+end
+
+
+local function unload_plugin(name, plugin_type)
+    if not has_lifecycle(plugin_type) then
+        return
+    end
+
+    local pkg_name = plugin_pkg_name(name, plugin_type)
     local old_plugin = pkg_loaded[pkg_name]
-    if old_plugin and type(old_plugin.destroy) == "function" then
-        old_plugin.destroy()
+    if old_plugin then
+        destroy_plugin(old_plugin, plugin_type)
     end
 
     pkg_loaded[pkg_name] = nil
@@ -192,38 +260,41 @@ end
 
 local function load_plugin(name, plugins_list, plugin_type)
     local ok, plugin
+    local pkg_name
     if plugin_type == PLUGIN_TYPE_HTTP_WASM  then
         -- for wasm plugin, we pass the whole attrs instead of name
         ok, plugin = wasm.require(name)
         name = name.name
     else
-        local pkg_name = "apisix.plugins." .. name
-        if plugin_type == PLUGIN_TYPE_STREAM then
-            pkg_name = "apisix.stream.plugins." .. name
-        end
-
+        pkg_name = plugin_pkg_name(name, plugin_type)
         ok, plugin = pcall(require, pkg_name)
     end
 
+    -- a module which does not make it into the plugin list must not stay in
+    -- package.loaded: nothing drops it later, since a reload only drops the
+    -- modules of the live set, so require() would keep handing back this
+    -- rejected version even after the file on disk is fixed
+    local function reject(...)
+        core.log.error(...)
+        if pkg_name then
+            pkg_loaded[pkg_name] = nil
+        end
+    end
+
     if not ok then
-        core.log.error("failed to load plugin [", name, "] err: ", plugin)
-        return
+        return reject("failed to load plugin [", name, "] err: ", plugin)
     end
 
     if not plugin.priority then
-        core.log.error("invalid plugin [", name,
-                        "], missing field: priority")
-        return
+        return reject("invalid plugin [", name, "], missing field: priority")
     end
 
     if not plugin.version then
-        core.log.error("invalid plugin [", name, "] missing field: version")
-        return
+        return reject("invalid plugin [", name, "] missing field: version")
     end
 
     if type(plugin.schema) ~= "table" then
-        core.log.error("invalid plugin [", name, "] schema field")
-        return
+        return reject("invalid plugin [", name, "] schema field")
     end
 
     if not plugin.schema.properties then
@@ -235,9 +306,8 @@ local function load_plugin(name, plugins_list, plugin_type)
 
     if plugin.schema['$comment'] ~= plugin_injected_schema['$comment'] then
         if properties._meta then
-            core.log.error("invalid plugin [", name,
-                           "]: found forbidden '_meta' field in the schema")
-            return
+            return reject("invalid plugin [", name,
+                          "]: found forbidden '_meta' field in the schema")
         end
 
         properties._meta = plugin_injected_schema._meta
@@ -252,21 +322,9 @@ local function load_plugin(name, plugins_list, plugin_type)
     plugin.attr = plugin_attr(name)
     core.table.insert(plugins_list, plugin)
 
-    -- Don't initialize stream plugins in the HTTP subsystem.
-    -- The modules are loaded for schema validation (admin API),
-    -- but init/workflow_handler functions must only run in the stream subsystem.
-    if plugin_type == PLUGIN_TYPE_STREAM and is_http then
-        return
-    end
-
-    if plugin.init then
-        plugin.init()
-    end
-
-    if plugin.workflow_handler then
-        plugin.workflow_handler()
-    end
-
+    -- the init/workflow_handler hooks are not run here: they are run by the
+    -- caller once the whole new plugin set has been built, so that a failing
+    -- hook can be rolled back without leaving a half-built plugin table
     return
 end
 
@@ -286,32 +344,120 @@ local function load(plugin_names, wasm_plugin_names)
 
     core.log.warn("new plugins: ", core.json.delay_encode(processed))
 
-    for name, plugin in pairs(local_plugins_hash) do
-        local ty = PLUGIN_TYPE_HTTP
-        if plugin.type == "wasm" then
-            ty = PLUGIN_TYPE_HTTP_WASM
+    -- phase 1: build the new plugin set in a local table. The tables read by
+    -- the request path (local_plugins / local_plugins_hash) keep serving and
+    -- stay untouched if anything below fails. Drop the cached modules of the
+    -- currently loaded plugins so require() re-reads their code from disk on a
+    -- reload, and snapshot them for the rollback. Only the already-loaded set
+    -- is dropped: on the first load there is nothing to drop, so the modules
+    -- initialized in init_by_lua are reused as-is.
+    local pkg_snapshot = {}
+    for name, old_plugin in pairs(local_plugins_hash) do
+        if old_plugin.type ~= "wasm" then
+            local pkg_name = plugin_pkg_name(name, PLUGIN_TYPE_HTTP)
+            pkg_snapshot[pkg_name] = pkg_loaded[pkg_name] or false
+            pkg_loaded[pkg_name] = nil
         end
-        unload_plugin(name, ty)
     end
 
-    core.table.clear(local_plugins)
-    core.table.clear(local_plugins_hash)
-
+    local new_plugins = core.table.new(32, 0)
     for name, value in pairs(processed) do
         local ty = PLUGIN_TYPE_HTTP
         if type(value) == "table" then
             ty = PLUGIN_TYPE_HTTP_WASM
             name = value
         end
-        load_plugin(name, local_plugins, ty)
+        load_plugin(name, new_plugins, ty)
     end
 
     -- sort by plugin's priority
-    if #local_plugins > 1 then
-        sort_tab(local_plugins, sort_plugin)
+    if #new_plugins > 1 then
+        sort_tab(new_plugins, sort_plugin)
     end
 
-    for i, plugin in ipairs(local_plugins) do
+    -- phase 2: destroy the old instances first, then run the init hooks of the
+    -- new instances. The order matters: some plugins register global resources
+    -- keyed by name (timers.register_timer), so a new instance registering
+    -- before the old one unregisters would lose the resource. If any hook
+    -- fails, roll everything back and keep serving with the current set.
+    -- destroy() runs in the reverse order of init(): plugins which wrap a
+    -- shared function (gm, then ocsp-stapling on top of it) restore what they
+    -- saved, so the wrappers have to be unwound LIFO, the last one installed
+    -- first. Only the new instances whose init() actually ran are destroyed
+    -- during the rollback: destroy() of an instance that was never initialized
+    -- would publish its uninitialized state, e.g. set
+    -- radixtree_sni.set_cert_and_key to a nil upvalue.
+    local old_plugins = core.table.clone(local_plugins)
+    for i = #old_plugins, 1, -1 do
+        local old_plugin = old_plugins[i]
+        destroy_plugin(old_plugin, http_plugin_type(old_plugin))
+    end
+
+    local load_err
+    local inited = 0
+    for i, plugin in ipairs(new_plugins) do
+        local ok, err = init_plugin(plugin, http_plugin_type(plugin))
+        if not ok then
+            load_err = err
+            break
+        end
+        inited = i
+    end
+
+    if load_err then
+        for i = inited, 1, -1 do
+            local plugin = new_plugins[i]
+            destroy_plugin(plugin, http_plugin_type(plugin))
+        end
+
+        -- drop what this aborted reload cached: a plugin the reload introduces
+        -- has no pkg_snapshot entry, so restoring the snapshot alone would
+        -- leave its module in package.loaded. Phase 1 of the next reload only
+        -- drops the modules of the live set, which does not include it, so
+        -- require() would keep returning the stale module even after the
+        -- operator fixed the file on disk.
+        for _, plugin in ipairs(new_plugins) do
+            if plugin.type ~= "wasm" then
+                pkg_loaded[plugin_pkg_name(plugin.name, PLUGIN_TYPE_HTTP)] = nil
+            end
+        end
+
+        for pkg_name, mod in pairs(pkg_snapshot) do
+            pkg_loaded[pkg_name] = mod or nil
+        end
+
+        for _, old_plugin in ipairs(old_plugins) do
+            local ok, err = init_plugin(old_plugin, http_plugin_type(old_plugin))
+            if not ok then
+                core.log.error("failed to restore the old plugin after the ",
+                               "aborted reload: ", err)
+            end
+        end
+
+        return nil, load_err
+    end
+
+    -- phase 3: commit. Unload the modules of the removed plugins, then
+    -- repopulate the live tables in place: their identity never changes
+    -- (_M.plugins / _M.plugins_hash keep pointing to them) and there is no
+    -- yield point between the clear and the end of the loop, so concurrent
+    -- requests never observe a partially updated plugin set.
+    local new_names = core.table.new(0, #new_plugins)
+    for _, plugin in ipairs(new_plugins) do
+        new_names[plugin.name] = true
+    end
+
+    for name, old_plugin in pairs(local_plugins_hash) do
+        if not new_names[name] and old_plugin.type ~= "wasm" then
+            pkg_loaded[plugin_pkg_name(name, PLUGIN_TYPE_HTTP)] = nil
+        end
+    end
+
+    core.table.clear(local_plugins)
+    core.table.clear(local_plugins_hash)
+
+    for i, plugin in ipairs(new_plugins) do
+        local_plugins[i] = plugin
         local_plugins_hash[plugin.name] = plugin
         if enable_debug() then
             core.log.warn("loaded plugin and sort by priority:",
@@ -336,23 +482,90 @@ local function load_stream(plugin_names)
 
     core.log.warn("new plugins: ", core.json.delay_encode(processed))
 
-    for name in pairs(stream_local_plugins_hash) do
-        unload_plugin(name, PLUGIN_TYPE_STREAM)
+    -- the three phases below mirror load(), see the comments there. Only the
+    -- already-loaded stream plugins are dropped, so the first load reuses the
+    -- modules initialized in init_by_lua.
+    local pkg_snapshot = {}
+    if has_lifecycle(PLUGIN_TYPE_STREAM) then
+        for name in pairs(stream_local_plugins_hash) do
+            local pkg_name = plugin_pkg_name(name, PLUGIN_TYPE_STREAM)
+            pkg_snapshot[pkg_name] = pkg_loaded[pkg_name] or false
+            pkg_loaded[pkg_name] = nil
+        end
+    end
+
+    local new_plugins = core.table.new(32, 0)
+    for name in pairs(processed) do
+        load_plugin(name, new_plugins, PLUGIN_TYPE_STREAM)
+    end
+
+    -- sort by plugin's priority
+    if #new_plugins > 1 then
+        sort_tab(new_plugins, sort_plugin)
+    end
+
+    local old_plugins = core.table.clone(stream_local_plugins)
+    for i = #old_plugins, 1, -1 do
+        destroy_plugin(old_plugins[i], PLUGIN_TYPE_STREAM)
+    end
+
+    local load_err
+    local inited = 0
+    for i, plugin in ipairs(new_plugins) do
+        local ok, err = init_plugin(plugin, PLUGIN_TYPE_STREAM)
+        if not ok then
+            load_err = err
+            break
+        end
+        inited = i
+    end
+
+    if load_err then
+        for i = inited, 1, -1 do
+            destroy_plugin(new_plugins[i], PLUGIN_TYPE_STREAM)
+        end
+
+        -- see load(): the modules this aborted reload cached have to go, or a
+        -- later reload would not re-read them from disk
+        if has_lifecycle(PLUGIN_TYPE_STREAM) then
+            for _, plugin in ipairs(new_plugins) do
+                pkg_loaded[plugin_pkg_name(plugin.name, PLUGIN_TYPE_STREAM)] = nil
+            end
+        end
+
+        for pkg_name, mod in pairs(pkg_snapshot) do
+            pkg_loaded[pkg_name] = mod or nil
+        end
+
+        for _, old_plugin in ipairs(old_plugins) do
+            local ok, err = init_plugin(old_plugin, PLUGIN_TYPE_STREAM)
+            if not ok then
+                core.log.error("failed to restore the old stream plugin after ",
+                               "the aborted reload: ", err)
+            end
+        end
+
+        return nil, load_err
+    end
+
+    if has_lifecycle(PLUGIN_TYPE_STREAM) then
+        local new_names = core.table.new(0, #new_plugins)
+        for _, plugin in ipairs(new_plugins) do
+            new_names[plugin.name] = true
+        end
+
+        for name in pairs(stream_local_plugins_hash) do
+            if not new_names[name] then
+                pkg_loaded[plugin_pkg_name(name, PLUGIN_TYPE_STREAM)] = nil
+            end
+        end
     end
 
     core.table.clear(stream_local_plugins)
     core.table.clear(stream_local_plugins_hash)
 
-    for name in pairs(processed) do
-        load_plugin(name, stream_local_plugins, PLUGIN_TYPE_STREAM)
-    end
-
-    -- sort by plugin's priority
-    if #stream_local_plugins > 1 then
-        sort_tab(stream_local_plugins, sort_plugin)
-    end
-
-    for i, plugin in ipairs(stream_local_plugins) do
+    for i, plugin in ipairs(new_plugins) do
+        stream_local_plugins[i] = plugin
         stream_local_plugins_hash[plugin.name] = plugin
         if enable_debug() then
             core.log.warn("loaded stream plugin and sort by priority:",
@@ -413,6 +626,7 @@ function _M.load(config)
         return local_plugins
     end
 
+    local load_err
     if ngx.config.subsystem == "http" then
         if not http_plugin_names then
             core.log.error("failed to read plugin list from local file")
@@ -425,6 +639,7 @@ function _M.load(config)
             local ok, err = load(http_plugin_names, wasm_plugin_names)
             if not ok then
                 core.log.error("failed to load plugins: ", err)
+                load_err = err
             end
         end
     end
@@ -435,7 +650,12 @@ function _M.load(config)
         local ok, err = load_stream(stream_plugin_names)
         if not ok then
             core.log.error("failed to load stream plugins: ", err)
+            load_err = load_err or err
         end
+    end
+
+    if load_err then
+        return nil, load_err
     end
 
     -- for test
@@ -444,19 +664,17 @@ end
 
 
 function _M.exit_worker()
-    for name, plugin in pairs(local_plugins_hash) do
-        local ty = PLUGIN_TYPE_HTTP
-        if plugin.type == "wasm" then
-            ty = PLUGIN_TYPE_HTTP_WASM
-        end
-        unload_plugin(name, ty)
+    -- same LIFO unwind as a reload does, see load()
+    for i = #local_plugins, 1, -1 do
+        local plugin = local_plugins[i]
+        unload_plugin(plugin.name, http_plugin_type(plugin))
     end
 
     -- we need to load stream plugin so that we can check their schemas in
     -- Admin API. Maybe we can avoid calling `load` in this case? So that
     -- we don't need to call `destroy` too
-    for name in pairs(stream_local_plugins_hash) do
-        unload_plugin(name, PLUGIN_TYPE_STREAM)
+    for i = #stream_local_plugins, 1, -1 do
+        unload_plugin(stream_local_plugins[i].name, PLUGIN_TYPE_STREAM)
     end
 end
 
@@ -928,7 +1146,13 @@ end
 function _M.init_worker()
     -- someone's plugin needs to be initialized after prometheus
     -- see https://github.com/apache/apisix/issues/3286
-    _M.load()
+    local _, err = _M.load()
+    if err then
+        -- fail loudly on the initial load, like the unprotected init() used
+        -- to: starting with a silently reduced plugin set would fail open,
+        -- e.g. the auth plugins would simply be skipped
+        error("failed to load the plugins: " .. err)
+    end
 
     if local_conf and not local_conf.apisix.enable_admin then
         init_plugins_syncer()
