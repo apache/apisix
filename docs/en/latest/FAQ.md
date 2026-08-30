@@ -730,6 +730,46 @@ The `tls.client_cert`, `tls.client_key`, and `tls.client_cert_id` in upstream ar
 
 The `ssl_trusted_certificate` in `config.yaml` configures a trusted CA certificate. It is used for verifying some certificates signed by private authorities within APISIX, to avoid APISIX rejects the certificate. Note that APISIX does not verify the certificate of an upstream unless that upstream sets `tls.verify` to `true`, so by default an upstream using an invalid TLS certificate can still be accessed. Once `tls.verify` is enabled, the certificate is checked against the upstream's own `tls.ca_certs` if set, and against `ssl_trusted_certificate` otherwise.
 
+## Why does my custom APISIX image start but APISIX is not running (exits 0, no logs)?
+
+This happens when the image's `CMD` is no longer `["docker-start"]`. The
+`/docker-entrypoint.sh` script only starts APISIX when its first argument is
+`docker-start`; otherwise it falls through to `exec "$@"` and the container
+exits immediately. The usual cause is building the image from a `docker commit`
+of a container that was started with a shell:
+
+```bash
+docker run -it --user root apache/apisix:3.17.0-ubuntu /bin/bash   # shell becomes the runtime CMD
+docker commit <container> my/apisix:custom                         # bakes /bin/bash into CMD
+```
+
+After `commit`, `docker inspect` shows `Config.Cmd` as `["/bin/bash"]` instead
+of `["docker-start"]`, so the entrypoint runs the shell (no stdin) and exits 0.
+
+Fix: build from the official image and switch user inside the Dockerfile instead
+of committing a shell session. `apt-get` works as `root` without changing the
+image's `CMD`:
+
+```dockerfile
+FROM apache/apisix:3.17.0-ubuntu
+
+USER root
+RUN apt-get update && apt-get install -y --no-install-recommends openjdk-21-jdk-headless \
+    && rm -rf /var/lib/apt/lists/*
+COPY target/*.jar /usr/local/apisix/
+RUN chown -R apisix:root /usr/local/apisix/
+
+USER apisix
+```
+
+If you must override the command in Kubernetes, keep the entrypoint and pass the
+argument:
+
+```yaml
+command: ["/docker-entrypoint.sh"]
+args: ["docker-start"]
+```
+
 ## Where can I find more answers?
 
 You can find more answers on:

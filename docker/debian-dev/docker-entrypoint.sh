@@ -61,4 +61,17 @@ _EOC_
     exec /usr/local/openresty/bin/openresty -p /usr/local/apisix -g 'daemon off;'
 fi
 
+# If we get here, the first argument was not "docker-start". The container will
+# run "$@" and exit. That is expected when the user overrides the command on
+# purpose (e.g. to run a shell), but it is the classic symptom of a broken image
+# where `docker commit` baked a shell into CMD and dropped the official
+# `["docker-start"]`. Warn so the silent "exits 0, no logs" failure is obvious.
+if [ -n "$1" ] && [ "$1" != "docker-start" ]; then
+    echo "WARNING: apisix entrypoint received [$1] instead of 'docker-start'." >&2
+    echo "         APISIX did not start. If your image was created with 'docker commit'," >&2
+    echo "         the committed CMD likely replaced the official ['docker-start']." >&2
+    echo "         Fix the image by building from apache/apisix and dropping 'docker commit'," >&2
+    echo "         or run the container with: command: ['/docker-entrypoint.sh'] args: ['docker-start']" >&2
+fi
+
 exec "$@"
