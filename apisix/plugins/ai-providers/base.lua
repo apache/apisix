@@ -299,6 +299,10 @@ function _M.build_request(self, conf, body, opts)
         end
     end
 
+    if conf.proxy_opts then
+        params.proxy_opts = conf.proxy_opts
+    end
+
     return params
 end
 
