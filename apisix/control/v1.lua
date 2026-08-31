@@ -26,7 +26,9 @@ local healthcheck_manager = require("apisix.healthcheck_manager")
 local get_upstreams = upstream_mod.upstreams
 local collectgarbage = collectgarbage
 local ipairs = ipairs
+local pairs = pairs
 local pcall = pcall
+local setmetatable = setmetatable
 local str_format = string.format
 local ngx = ngx
 local ngx_var = ngx.var
@@ -76,19 +78,26 @@ function _M.schema()
 end
 
 local healthcheck
-local function extra_checker_info(value)
+-- `value` is anything get_healthchecker_name() accepts: a resource config, or a
+-- bare {resource_key = ...} for a checker a plugin owns.
+local function get_checker_nodes(value)
     if not healthcheck then
         healthcheck = require("resty.healthcheck")
     end
 
-    local name = healthcheck_manager.get_healthchecker_name(value.value)
+    local name = healthcheck_manager.get_healthchecker_name(value)
     local nodes, err = healthcheck.get_target_list(name, "upstream-healthcheck")
     if err then
         core.log.error("healthcheck.get_target_list failed: ", err)
     end
+    return nodes
+end
+
+
+local function extra_checker_info(value)
     return {
         name = value.key,
-        nodes = nodes,
+        nodes = get_checker_nodes(value.value),
     }
 end
 
@@ -98,6 +107,36 @@ local function get_checker_type(checks)
         return checks.active.type
     elseif checks.passive and checks.passive.type then
         return checks.passive.type
+    end
+end
+
+
+-- A plugin can run active health checks of its own on nodes that belong to no
+-- upstream -- ai-proxy-multi probes every LLM instance and skips the unhealthy
+-- ones when it picks a target. Those checkers are keyed by the resource key plus
+-- a JSON path, a layout only the plugin knows, so ask the plugin for them
+-- instead of guessing. What a checker stands for is the plugin's business too:
+-- it names itself in `meta`, reported verbatim.
+local function add_plugin_healthcheck_info(infos, value)
+    local plugins = value.value.plugins
+    if not plugins then
+        return
+    end
+
+    for name, plugin_conf in pairs(plugins) do
+        local plugin_obj = plugin.get(name)
+        if plugin_obj and plugin_obj.list_healthcheck_targets then
+            local targets = plugin_obj.list_healthcheck_targets(plugin_conf, value.key)
+            for _, target in ipairs(targets or {}) do
+                core.table.insert(infos, {
+                    name = target.resource_path,
+                    plugin = name,
+                    meta = target.meta,
+                    type = get_checker_type(target.checks),
+                    nodes = get_checker_nodes({resource_key = target.resource_path}),
+                })
+            end
+        end
     end
 end
 
@@ -114,6 +153,7 @@ local function iter_and_add_healthcheck_info(infos, values)
             info.type = get_checker_type(checks)
             core.table.insert(infos, info)
         end
+        add_plugin_healthcheck_info(infos, value)
     end
 end
 
@@ -234,13 +274,48 @@ local function iter_and_find_healthcheck_info(values, src_type, src_id)
 end
 
 
+-- Every checker a resource owns, in the same entry shape the /v1/healthcheck
+-- listing uses. A resource can own more than one -- its upstream plus one per
+-- plugin instance -- which the single object returned by
+-- /v1/healthcheck/{src_type}/{src_id} cannot express, so this is a sub-resource
+-- of its own rather than a new field on that object. A resource with no health
+-- check at all is not an error here: it owns an empty set of checkers.
+local function iter_and_find_resource_checkers(values, src_type, src_id)
+    if not values then
+        return nil, str_format("%s[%s] not found", src_type, src_id)
+    end
+
+    for _, value in core.config_util.iterate_values(values) do
+        if value.value.id == src_id then
+            local infos = core.table.new(1, 0)
+            local checks = value.value.checks or
+                (value.value.upstream and value.value.upstream.checks)
+            if checks then
+                local info = extra_checker_info(value)
+                info.type = get_checker_type(checks)
+                core.table.insert(infos, info)
+            end
+            add_plugin_healthcheck_info(infos, value)
+            -- an empty result must still serialize as [], not {}
+            return setmetatable(infos, core.json.array_mt)
+        end
+    end
+
+    return nil, str_format("%s[%s] not found", src_type, src_id)
+end
+
+
 function _M.get_health_checker()
     local uri_segs = core.utils.split_uri(ngx_var.uri)
     core.log.info("healthcheck uri: ", core.json.delay_encode(uri_segs))
 
-    local src_type, src_id = uri_segs[4], uri_segs[5]
+    local src_type, src_id, sub_res = uri_segs[4], uri_segs[5], uri_segs[6]
     if not src_id then
         return 404, {error_msg = str_format("missing src id for src type %s", src_type)}
+    end
+
+    if sub_res and (sub_res ~= "checkers" or uri_segs[7]) then
+        return 400, {error_msg = str_format("invalid sub resource %s", sub_res)}
     end
 
     local values
@@ -254,6 +329,22 @@ function _M.get_health_checker()
         values = get_stream_routes()
     else
         return 400, {error_msg = str_format("invalid src type %s", src_type)}
+    end
+
+    if sub_res then
+        local infos, err = iter_and_find_resource_checkers(values, src_type, src_id)
+        if not infos then
+            return 404, {error_msg = err}
+        end
+        local out, err = try_render_html({stats = infos})
+        if out then
+            core.response.set_header("Content-Type", "text/html")
+            return 200, out
+        end
+        if err then
+            return 503, {error_msg = err}
+        end
+        return 200, infos
     end
 
     local info, err = iter_and_find_healthcheck_info(values, src_type, src_id)
