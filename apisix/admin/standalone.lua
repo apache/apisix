@@ -103,9 +103,10 @@ local function update(ctx)
     -- parse the request body
     local data
     if core.string.has_prefix(content_type, "application/yaml") then
-        -- yaml.load raises on a malformed document, it does not return an error
         local ok, result = pcall(yaml.load, req_body, { all = false })
-        if not ok or type(result) ~= "table" then
+        -- a null document (`~`) loads as lyaml's sentinel table, which would
+        -- otherwise pass as an empty object and clear every resource
+        if not ok or type(result) ~= "table" or result == yaml.null then
             err = "invalid yaml request body"
         else
             data = result

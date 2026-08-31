@@ -65,3 +65,18 @@ if ! echo "$out" | grep -F 'Please modify "admin_key" in conf/config.yaml'; then
 fi
 
 echo "passed: a null deployment.admin reports a missing admin key"
+
+echo 'just-a-scalar' > conf/config.yaml
+
+out=$(make init 2>&1 || true)
+if echo "$out" | grep -F "bad argument"; then
+    echo "failed: a scalar config.yaml should not raise a Lua error"
+    exit 1
+fi
+
+if ! echo "$out" | grep -F "invalid config.yaml file"; then
+    echo "failed: a scalar config.yaml should be reported as invalid"
+    exit 1
+fi
+
+echo "passed: a scalar config.yaml is reported as invalid"

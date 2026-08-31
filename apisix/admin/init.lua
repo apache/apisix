@@ -414,6 +414,16 @@ local function sync_local_conf_to_etcd(reset)
 end
 
 
+-- /v1/plugins/reload bumps the shared version and control/router.lua loads the
+-- plugins in its own handler for that event. Record the version it applied, or
+-- the reconciliation timer below sees a mismatch and loads them a second time.
+local function ack_plugins_reload()
+    if plugins_conf_ver_dict then
+        applied_plugins_conf_version = plugins_conf_ver_dict:get(PLUGINS_CONF_VERSION_KEY)
+    end
+end
+
+
 local function reload_plugins(data, event, source, pid)
     core.log.info("start to hot reload plugins")
 
@@ -562,6 +572,7 @@ function _M.init_worker()
     -- register reload plugin handler
     events = require("apisix.events")
     events:register(reload_plugins, reload_event, "PUT")
+    events:register(ack_plugins_reload, require("apisix.control.v1").RELOAD_EVENT, "PUT")
 
     if plugins_conf_ver_dict then
         -- The events broadcast has no delivery guarantee: a process that is

@@ -454,3 +454,51 @@ GET /apisix/admin/configs
 X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
 --- error_code: 200
 --- response_body_like: .*X-Digest.*t20.*
+
+
+
+=== TEST 24: a malformed yaml body is rejected
+--- request
+PUT /apisix/admin/configs
+routes: [
+--- more_headers
+Content-Type: application/yaml
+X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
+X-Digest: t24
+--- error_code: 400
+--- response_body_like: .*invalid yaml request body.*
+
+
+
+=== TEST 25: a yaml null document is rejected
+--- request
+PUT /apisix/admin/configs
+~
+--- more_headers
+Content-Type: application/yaml
+X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
+X-Digest: t25
+--- error_code: 400
+--- response_body_like: .*invalid yaml request body.*
+
+
+
+=== TEST 26: a malformed yaml body is rejected by the validate endpoint too
+--- request
+POST /apisix/admin/configs/validate
+routes: [
+--- more_headers
+Content-Type: application/yaml
+X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
+--- error_code: 400
+--- response_body_like: .*invalid yaml request body.*
+
+
+
+=== TEST 27: the rejected yaml pushes left the config and its version untouched
+--- request
+GET /apisix/admin/configs
+--- more_headers
+X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
+--- error_code: 200
+--- response_body_like: .*X-Digest.*t20.*
