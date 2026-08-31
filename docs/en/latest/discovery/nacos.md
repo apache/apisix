@@ -1,5 +1,10 @@
 ---
-title: nacos
+title: Nacos Service Discovery
+keywords:
+  - Apache APISIX
+  - Nacos
+  - Service Discovery
+description: Configure Apache APISIX to discover healthy L7 or L4 upstream nodes from Nacos, including namespace, group, refresh, and failover behavior.
 ---
 
 <!--
@@ -23,19 +28,25 @@ title: nacos
 
 ## Service discovery via Nacos
 
-The performance of this module needs to be improved:
+The Nacos discovery client lets an APISIX Upstream reference a Nacos service by name instead of listing nodes statically. APISIX queries Nacos for healthy instances, converts the returned addresses and weights into upstream nodes, and refreshes the cached node set at `fetch_interval`.
 
-1. send the request parallelly.
+Nacos discovery is available for HTTP and stream routes. Use `discovery_args` to select a non-default namespace or group. For an overview of the discovery interface and supported registries, see [Service Discovery](../discovery.md).
+
+:::note
+
+The client polls the referenced Nacos services sequentially. When multiple `host` entries are configured, APISIX starts from a randomized host and tries another host only if no referenced service was fetched successfully from the selected host. A partial refresh is accepted: services that failed are not retried against the next host, and their cached registry entries can be removed during cleanup. If every host fails completely, APISIX logs the failure and schedules the next refresh. Monitor per-service refresh errors and node freshness; multiple hosts do not provide per-service failover, and cached discovery data is not proof that a backend remains healthy between polls.
+
+:::
 
 ### Configuration for Nacos
 
-Add following configuration in `conf/config.yaml` :
+Add the following configuration in `conf/config.yaml`:
 
 ```yaml
 discovery:
   nacos:
     host:
-      - "http://${username}:${password}@${host1}:${port1}"
+      - "https://${{NACOS_USERNAME}}:${{NACOS_PASSWORD}}@${{NACOS_HOST}}:${{NACOS_PORT}}"
     prefix: "/nacos/v1/"
     fetch_interval: 30    # default 30 sec
     # `weight` is the `default_weight` that will be attached to each discovered node that
@@ -47,7 +58,7 @@ discovery:
       read: 5000          # default 5000 ms
 ```
 
-And you can config it in short by default value:
+The minimal configuration below is only for an isolated local Nacos instance without authentication or TLS:
 
 ```yaml
 discovery:
@@ -56,23 +67,27 @@ discovery:
       - "http://192.168.33.1:8848"
 ```
 
+Use the APISIX `${{VARIABLE}}` syntax for environment interpolation; `${name}` is only a literal string in this configuration. Supply the username and password as their original values: the Nacos client encodes them when it builds the login request, so pre-encoding the values can break authentication. For a private CA, configure the CA bundle with `apisix.ssl.ssl_trusted_certificate` and verify the effective TLS connection. Do not commit real usernames, passwords, access keys, or secret keys to the configuration repository. Supply them through the secret-delivery mechanism used by your deployment and verify the effective configuration before starting traffic. The optional `access_key` and `secret_key` fields are for Alibaba Cloud MSE Nacos request signing.
+
 ### Upstream setting
 
 #### L7
 
-Here is an example of routing a request with an URI of "/nacos/*" to a service which named "http://192.168.33.1:8848/nacos/v1/ns/instance/list?serviceName=APISIX-NACOS" and use nacos discovery client in the registry:
+The following example routes requests matching `/nacos/*` to healthy instances registered as `APISIX-NACOS` in the default Nacos namespace and group:
 
 :::note
-You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
+Reuse the resolved Admin API secret from the environment that starts APISIX:
 
 ```bash
-admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+admin_key="${ADMIN_KEY:?ADMIN_KEY is not set}"
 ```
+
+If a local test configuration contains the actual key rather than an environment or secret reference, you can read that literal value with `admin_key="$(yq -r '.deployment.admin.admin_key[0].key' conf/config.yaml)"`. `yq` does not resolve `${{VARIABLE}}` templates or external secrets.
 
 :::
 
 ```shell
-$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -i -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -i -d '
 {
     "uri": "/nacos/*",
     "upstream": {
@@ -83,38 +98,14 @@ $ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X
 }'
 ```
 
-The formatted response as below:
-
-```json
-{
-  "node": {
-    "key": "\/apisix\/routes\/1",
-    "value": {
-      "id": "1",
-      "create_time": 1615796097,
-      "status": 1,
-      "update_time": 1615799165,
-      "upstream": {
-        "hash_on": "vars",
-        "pass_host": "pass",
-        "scheme": "http",
-        "service_name": "APISIX-NACOS",
-        "type": "roundrobin",
-        "discovery_type": "nacos"
-      },
-      "priority": 0,
-      "uri": "\/nacos\/*"
-    }
-  }
-}
-```
+A successful response returns the saved Route in the current Admin API response format.
 
 #### L4
 
-Nacos service discovery also supports use in L4, the configuration method is similar to L7.
+Nacos supports L4 service discovery; the configuration is similar to L7.
 
 ```shell
-$ curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H "X-API-KEY: $admin_key" -X PUT -i -d '
+curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H "X-API-KEY: $admin_key" -X PUT -i -d '
 {
     "remote_addr": "127.0.0.1",
     "upstream": {
@@ -128,17 +119,17 @@ $ curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H "X-API-KEY: $admin_
 
 ### discovery_args
 
-| Name         | Type   | Requirement | Default | Valid | Description                                                  |
-| ------------ | ------ | ----------- | ------- | ----- | ------------------------------------------------------------ |
-| namespace_id | string | optional    | public     |       | This parameter is used to specify the namespace of the corresponding service |
-| group_name   | string | optional    | DEFAULT_GROUP       |       | This parameter is used to specify the group of the corresponding service |
+| Name           | Type   | Required | Default         | Description                                          |
+| -------------- | ------ | -------- | --------------- | ---------------------------------------------------- |
+| `namespace_id` | string | No       | `public`        | Nacos namespace containing the service.              |
+| `group_name`   | string | No       | `DEFAULT_GROUP` | Nacos group containing the service in the namespace. |
 
 #### Specify the namespace
 
-Example of routing a request with an URI of "/nacosWithNamespaceId/*" to a service with name, namespaceId "http://192.168.33.1:8848/nacos/v1/ns/instance/list?serviceName=APISIX-NACOS&namespaceId=test_ns" and use nacos discovery client in the registry:
+The following Route selects service `APISIX-NACOS` in namespace `test_ns`:
 
 ```shell
-$ curl http://127.0.0.1:9180/apisix/admin/routes/2 -H "X-API-KEY: $admin_key" -X PUT -i -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/2 -H "X-API-KEY: $admin_key" -X PUT -i -d '
 {
     "uri": "/nacosWithNamespaceId/*",
     "upstream": {
@@ -152,41 +143,14 @@ $ curl http://127.0.0.1:9180/apisix/admin/routes/2 -H "X-API-KEY: $admin_key" -X
 }'
 ```
 
-The formatted response as below:
-
-```json
-{
-  "node": {
-    "key": "\/apisix\/routes\/2",
-    "value": {
-      "id": "2",
-      "create_time": 1615796097,
-      "status": 1,
-      "update_time": 1615799165,
-      "upstream": {
-        "hash_on": "vars",
-        "pass_host": "pass",
-        "scheme": "http",
-        "service_name": "APISIX-NACOS",
-        "type": "roundrobin",
-        "discovery_type": "nacos",
-        "discovery_args": {
-          "namespace_id": "test_ns"
-        }
-      },
-      "priority": 0,
-      "uri": "\/nacosWithNamespaceId\/*"
-    }
-  }
-}
-```
+A successful response returns the saved Route in the current Admin API response format.
 
 #### Specify the group
 
-Example of routing a request with an URI of "/nacosWithGroupName/*" to a service with name, groupName "http://192.168.33.1:8848/nacos/v1/ns/instance/list?serviceName=APISIX-NACOS&groupName=test_group" and use nacos discovery client in the registry:
+The following Route selects service `APISIX-NACOS` in group `test_group`:
 
 ```shell
-$ curl http://127.0.0.1:9180/apisix/admin/routes/3 -H "X-API-KEY: $admin_key" -X PUT -i -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/3 -H "X-API-KEY: $admin_key" -X PUT -i -d '
 {
     "uri": "/nacosWithGroupName/*",
     "upstream": {
@@ -200,41 +164,14 @@ $ curl http://127.0.0.1:9180/apisix/admin/routes/3 -H "X-API-KEY: $admin_key" -X
 }'
 ```
 
-The formatted response as below:
-
-```json
-{
-  "node": {
-    "key": "\/apisix\/routes\/3",
-    "value": {
-      "id": "3",
-      "create_time": 1615796097,
-      "status": 1,
-      "update_time": 1615799165,
-      "upstream": {
-        "hash_on": "vars",
-        "pass_host": "pass",
-        "scheme": "http",
-        "service_name": "APISIX-NACOS",
-        "type": "roundrobin",
-        "discovery_type": "nacos",
-        "discovery_args": {
-          "group_name": "test_group"
-        }
-      },
-      "priority": 0,
-      "uri": "\/nacosWithGroupName\/*"
-    }
-  }
-}
-```
+A successful response returns the saved Route in the current Admin API response format.
 
 #### Specify the namespace and group
 
-Example of routing a request with an URI of "/nacosWithNamespaceIdAndGroupName/*" to a service with name, namespaceId, groupName "http://192.168.33.1:8848/nacos/v1/ns/instance/list?serviceName=APISIX-NACOS&namespaceId=test_ns&groupName=test_group" and use nacos discovery client in the registry:
+The following Route selects service `APISIX-NACOS` in namespace `test_ns` and group `test_group`:
 
 ```shell
-$ curl http://127.0.0.1:9180/apisix/admin/routes/4 -H "X-API-KEY: $admin_key" -X PUT -i -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/4 -H "X-API-KEY: $admin_key" -X PUT -i -d '
 {
     "uri": "/nacosWithNamespaceIdAndGroupName/*",
     "upstream": {
@@ -249,32 +186,4 @@ $ curl http://127.0.0.1:9180/apisix/admin/routes/4 -H "X-API-KEY: $admin_key" -X
 }'
 ```
 
-The formatted response as below:
-
-```json
-{
-  "node": {
-    "key": "\/apisix\/routes\/4",
-    "value": {
-      "id": "4",
-      "create_time": 1615796097,
-      "status": 1,
-      "update_time": 1615799165,
-      "upstream": {
-        "hash_on": "vars",
-        "pass_host": "pass",
-        "scheme": "http",
-        "service_name": "APISIX-NACOS",
-        "type": "roundrobin",
-        "discovery_type": "nacos",
-        "discovery_args": {
-          "namespace_id": "test_ns",
-          "group_name": "test_group"
-        }
-      },
-      "priority": 0,
-      "uri": "\/nacosWithNamespaceIdAndGroupName\/*"
-    }
-  }
-}
-```
+A successful response returns the saved Route in the current Admin API response format.

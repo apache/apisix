@@ -1,9 +1,10 @@
 ---
-title: Installation
+title: Install Apache APISIX
 keywords:
   - APISIX
-  - Installation
-description: This document walks you through the different Apache APISIX installation methods.
+  - APISIX Installation
+  - Install APISIX
+description: Choose and verify an Apache APISIX installation with Docker Compose, Helm, Linux packages, or a source build, then configure its deployment mode.
 ---
 
 <!--
@@ -28,255 +29,169 @@ description: This document walks you through the different Apache APISIX install
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-This guide walks you through how you can install and run Apache APISIX in your environment.
+This guide lists the supported installation paths for Apache APISIX and the checks to run before you configure routes. For a short local walkthrough, start with [Getting Started](./getting-started/README.md).
 
-Refer to the [Getting Started](./getting-started/README.md) guide for a quick walk-through on running Apache APISIX.
+## Choose an installation method
 
-## Installing APISIX
+| Method | Appropriate starting point |
+| --- | --- |
+| Docker Compose | Local evaluation or a reproducible container-based environment |
+| Helm | Kubernetes deployment managed with the official APISIX chart |
+| RPM or DEB | A supported Linux distribution managed by system packages |
+| Source build | Development or a build that requires reviewed compile-time changes |
 
-APISIX can be installed by the different methods listed below:
+APISIX supports Linux for production. Confirm the supported architecture, distribution, and component versions for the release you intend to deploy. Do not copy a package filename or image tag from an older guide into production without verifying that release.
+
+## Install APISIX
 
 <Tabs
   groupId="install-method"
   defaultValue="docker"
   values={[
-    {label: 'Docker', value: 'docker'},
+    {label: 'Docker Compose', value: 'docker'},
     {label: 'Helm', value: 'helm'},
     {label: 'RPM', value: 'rpm'},
     {label: 'DEB', value: 'deb'},
-    {label: 'Source Code', value: 'source code'},
+    {label: 'Source Code', value: 'source'},
   ]}>
+
 <TabItem value="docker">
 
-First clone the [apisix-docker](https://github.com/apache/apisix-docker) repository:
+Clone the [apisix-docker](https://github.com/apache/apisix-docker) repository:
 
 ```shell
 git clone https://github.com/apache/apisix-docker.git
 cd apisix-docker/example
 ```
 
-Now, you can use `docker-compose` to start APISIX.
+:::warning Local example only
 
-<Tabs
-  groupId="cpu-arch"
-  defaultValue="x86"
-  values={[
-    {label: 'x86', value: 'x86'},
-    {label: 'ARM/M1', value: 'arm'},
-  ]}>
-<TabItem value="x86">
+The example configuration is not safe to expose on a shared or untrusted network. Before starting it, bind the published Admin API (`9180`) and Control API (`9092`) ports to `127.0.0.1` or remove those host-port mappings. Never expose the [Control API](./control-api.md) to public traffic. Restrict the metrics port (`9091`) to the intended monitoring path. If host access to etcd is required, bind `2379` to `127.0.0.1`; otherwise remove its host-port mapping. Also restrict `allow_admin` to the intended operator address and replace the example Admin API keys. The bundled etcd is configured for an isolated example, not as a secured production configuration store.
 
-```shell
-docker-compose -p docker-apisix up -d
+:::
+
+Start the Compose file that matches the host architecture:
+
+```shell title="x86_64"
+docker compose -p docker-apisix up -d
 ```
 
-</TabItem>
-
-<TabItem value="arm">
-
-```shell
-docker-compose -p docker-apisix -f docker-compose-arm64.yml up -d
+```shell title="ARM64"
+docker compose -p docker-apisix -f docker-compose-arm64.yml up -d
 ```
 
-</TabItem>
-</Tabs>
+The example starts APISIX and its required configuration store. Review the Compose file, image tags, exposed ports, credentials, volumes, and network settings before every use and before adapting it to another environment.
 
 </TabItem>
 
 <TabItem value="helm">
 
-To install APISIX via Helm, run:
+Add the official chart repository and install APISIX in a dedicated namespace:
 
 ```shell
-helm repo add apisix https://charts.apiseven.com
+helm repo add apisix https://apache.github.io/apisix-helm-chart
 helm repo update
-helm install apisix apisix/apisix --create-namespace  --namespace apisix
+helm install apisix apisix/apisix \
+  --namespace ingress-apisix \
+  --create-namespace
 ```
 
-You can find other Helm charts on the [apisix-helm-chart](https://github.com/apache/apisix-helm-chart) repository.
+:::warning Production configuration
+
+The chart's bundled etcd configuration is intended for development and testing,
+not as a production configuration store. For production, use a supported,
+version-pinned external etcd deployment with authentication, TLS, persistent
+storage, backup and recovery, and network isolation; configure the chart to use
+that deployment. Also review the rendered Services and network policies so the
+Admin API is reachable only from the intended operator path.
+
+:::
+
+See the [apisix-helm-chart repository](https://github.com/apache/apisix-helm-chart) for current values, supported Kubernetes versions, upgrade notes, and optional components. Pin the chart and image versions used by your deployment.
 
 </TabItem>
 
 <TabItem value="rpm">
 
-This installation method is suitable for Redhat 8 and compatible systems. If you choose this method to install APISIX, you need to install etcd first. For the specific installation method, please refer to [Installing etcd](#installing-etcd).
-
-### Installation via RPM repository
+For a distribution supported by the APISIX RPM repository, add the repository and install the package:
 
 ```shell
-sudo yum-config-manager --add-repo https://repos.apiseven.com/packages/redhat/apache-apisix.repo
+sudo dnf install -y dnf-plugins-core
+sudo dnf config-manager --add-repo \
+  https://repos.apiseven.com/packages/redhat/apache-apisix.repo
+sudo dnf install -y apisix
 ```
 
-Then, to install APISIX, run:
-
-```shell
-sudo yum install apisix
-```
-
-:::tip
-
-You can also install a specific version of APISIX by specifying it:
-
-```shell
-sudo yum install apisix-3.8.0
-```
-
-:::
-
-### Installation via RPM offline package
-
-First, download APISIX RPM offline package to an `apisix` folder:
-
-```shell
-sudo mkdir -p apisix
-sudo yum install -y https://repos.apiseven.com/packages/redhat/8/x86_64/apisix-3.13.0-0.ubi8.6.x86_64.rpm
-sudo yum clean all && yum makecache
-sudo yum install -y --downloadonly --downloaddir=./apisix apisix
-```
-
-Then copy the `apisix` folder to the target host and run:
-
-```shell
-sudo yum install ./apisix/*.rpm
-```
-
-### Managing APISIX server
-
-Once APISIX is installed, you can initialize the configuration file and etcd by running:
-
-```shell
-apisix init
-```
-
-To start APISIX server, run:
-
-```shell
-apisix start
-```
-
-:::tip
-
-Run `apisix help` to get a list of all available operations.
-
-:::
+On releases that use `yum` rather than `dnf`, install the repository-management plugin supplied by that distribution before adding the repository. Do not start APISIX until you complete the configuration-source and Admin API steps below. Use `apisix help` to list the management commands available in the installed release.
 
 </TabItem>
 
 <TabItem value="deb">
 
-### Installation via DEB repository
-
-Currently the only DEB repository supported by APISIX is Debian 12 and supports both amd64 and arm64 architectures.
+The APISIX DEB repository supports selected Debian versions and architectures. Verify the current repository support before installation. The following example uses a dedicated keyring rather than the deprecated `apt-key` command:
 
 ```shell
-# amd64
-wget -O - http://repos.apiseven.com/pubkey.gpg | sudo apt-key add -
-echo "deb http://repos.apiseven.com/packages/debian debian12 main" | sudo tee /etc/apt/sources.list.d/apisix.list
+sudo apt update
+sudo apt install -y ca-certificates curl gnupg
 
-# arm64
-wget -O - http://repos.apiseven.com/pubkey.gpg | sudo apt-key add -
-echo "deb http://repos.apiseven.com/packages/arm64/debian debian12 main" | sudo tee /etc/apt/sources.list.d/apisix.list
-```
+curl -fsSL https://repos.apiseven.com/pubkey.gpg \
+  | sudo gpg --dearmor -o /usr/share/keyrings/apache-apisix.gpg
 
-Then, to install APISIX, run:
+case "$(dpkg --print-architecture)" in
+  amd64) repo_url="https://repos.apiseven.com/packages/debian" ;;
+  arm64) repo_url="https://repos.apiseven.com/packages/arm64/debian" ;;
+  *) echo "Unsupported architecture" >&2; exit 1 ;;
+esac
 
-```shell
+echo "deb [signed-by=/usr/share/keyrings/apache-apisix.gpg] ${repo_url} debian12 main" \
+  | sudo tee /etc/apt/sources.list.d/apache-apisix.list
+
 sudo apt update
 sudo apt install -y apisix
 ```
 
-### Managing APISIX server
-
-Once APISIX is installed, you can initialize the configuration file and etcd by running:
-
-```shell
-sudo apisix init
-```
-
-To start APISIX server, run:
-
-```shell
-sudo apisix start
-```
-
-:::tip
-
-Run `apisix help` to get a list of all available operations.
-
-:::
+Do not start APISIX until you complete the configuration-source and Admin API steps below.
 
 </TabItem>
 
-<TabItem value="source code">
+<TabItem value="source">
 
-If you want to build APISIX from source, please refer to [Building APISIX from source](./building-apisix.md).
+Follow [Building APISIX from source](./building-apisix.md). Record the source commit, OpenResty version, dependencies, build options, and generated package or image so the build can be reproduced.
 
 </TabItem>
+
 </Tabs>
 
-## Installing etcd
+## Select the configuration source
 
-APISIX uses [etcd](https://github.com/etcd-io/etcd) to save and synchronize configuration. Before installing APISIX, you need to install etcd on your machine.
+Choose the [deployment mode](./deployment-modes.md) before starting a production node:
 
-It would be installed automatically if you choose the Docker or Helm install method while installing APISIX. If you choose a different method or you need to install it manually, follow the steps shown below:
+- **Traditional and decoupled modes** use etcd as the configuration store. Secure a networked etcd deployment with authentication, TLS, and network isolation.
+- **Standalone file-driven mode** loads a full YAML or JSON configuration from the local filesystem and does not use etcd as its configuration center.
+- **Standalone API-driven mode** stores full configuration in memory and is intended for defined integrations such as the APISIX Ingress Controller and ADC. Review its full-replacement and versioning behavior before use.
 
-<Tabs
-  groupId="os"
-  defaultValue="linux"
-  values={[
-    {label: 'Linux', value: 'linux'},
-    {label: 'macOS', value: 'mac'},
-  ]}>
-<TabItem value="linux">
+Docker Compose and Helm examples can provision an example etcd instance for you;
+do not treat that as a production etcd design. For a production deployment or a
+package or source installation in an etcd-backed mode, install a supported etcd
+release by following the
+[official etcd installation documentation](https://etcd.io/docs/). Confirm
+connectivity and version compatibility before starting APISIX.
 
-```shell
-ETCD_VERSION='3.5.4'
-wget https://github.com/etcd-io/etcd/releases/download/v${ETCD_VERSION}/etcd-v${ETCD_VERSION}-linux-amd64.tar.gz
-tar -xvf etcd-v${ETCD_VERSION}-linux-amd64.tar.gz && \
-  cd etcd-v${ETCD_VERSION}-linux-amd64 && \
-  sudo cp -a etcd etcdctl /usr/bin/
-nohup etcd >/tmp/etcd.log 2>&1 &
-```
+## Configure APISIX
 
-</TabItem>
-
-<TabItem value="mac">
+APISIX reads `conf/config.yaml` by default. Use `--config` or `-c` to select another file when validating or running a management command:
 
 ```shell
-brew install etcd
-brew services start etcd
+apisix test -c /path/to/config.yaml
 ```
 
-</TabItem>
-</Tabs>
+Only include values you need to override. APISIX uses its packaged defaults for other settings. Do not edit the generated `conf/nginx.conf` directly.
 
-## Next steps
-
-### Configuring APISIX
-
-You can configure your APISIX deployment in two ways:
-
-1. By directly changing your configuration file (`conf/config.yaml`).
-2. By using the `--config` or the `-c` flag to pass the path to your configuration file while starting APISIX.
-
-   ```shell
-   apisix start -c <path to config file>
-   ```
-
-APISIX will use the configurations added in this configuration file and will fall back to the default configuration if anything is not configured. The default configurations can be found in `apisix/cli/config.lua` and should not be modified.
-
-For example, to configure the default listening port to be `8000` without changing other configurations, your configuration file could look like this:
+For example, an etcd-backed traditional node can set its listener and etcd endpoint as follows:
 
 ```yaml title="conf/config.yaml"
 apisix:
-  node_listen: 8000
-```
-
-Now, if you decide you want to change the etcd address to `http://foo:2379`, you can add it to your configuration file. This will not change other configurations.
-
-```yaml title="conf/config.yaml"
-apisix:
-  node_listen: 8000
+  node_listen: 9080
 
 deployment:
   role: traditional
@@ -284,49 +199,71 @@ deployment:
     config_provider: etcd
   etcd:
     host:
-      - "http://foo:2379"
+      - "https://etcd.example:2379"
 ```
 
-:::warning
+Configure etcd authentication and TLS fields for the selected environment. A URL beginning with `https://` alone is not sufficient proof that peer verification and credentials are correct.
 
-The `conf/nginx.conf` file is automatically generated and should not be modified.
+## Protect the Admin API
 
-:::
+Replace the documented development key, restrict `allow_admin` to operator networks, and deliver the key through the secret mechanism used by your deployment. The environment variable below must exist in the APISIX process environment; defining it only in an interactive shell does not configure a service managed by systemd or another supervisor.
 
-### APISIX deployment modes
+For a local package evaluation, generate a key before writing the configuration:
 
-APISIX has three different deployment modes for different use cases. To learn more and configure deployment modes, see the [documentation](./deployment-modes.md).
+```shell
+export ADMIN_KEY="$(openssl rand -hex 32)"
+```
 
-### Updating Admin API key
-
-It is recommended to modify the Admin API key to ensure security.
-
-You can update your configuration file as shown below:
+Then reference that variable in `conf/config.yaml`:
 
 ```yaml title="conf/config.yaml"
 deployment:
   admin:
+    allow_admin:
+      - 127.0.0.0/24
     admin_key:
-      - name: "admin"
-        key: newsupersecurekey
+      - name: admin
+        key: ${{ADMIN_KEY}}
         role: admin
 ```
 
-Now, to access the Admin API, you can use the new key:
+The data-plane rate-limiting plugins do not protect the Admin API. Keep the Admin API off untrusted networks and apply the operational controls described in the [Admin API documentation](./admin-api.md).
+
+After configuring the selected mode and its actual configuration source, preserve the key across the first privileged APISIX commands:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes?api_key=newsupersecurekey -i
+sudo --preserve-env=ADMIN_KEY apisix init
+sudo --preserve-env=ADMIN_KEY apisix test
+sudo --preserve-env=ADMIN_KEY apisix start
 ```
 
-### Adding APISIX systemd unit file
+For a managed installation, inject the same value through a restricted service environment file or secret manager instead of relying on a shell export. Configure and verify etcd first when using an etcd-backed mode. After any configuration change, run `apisix test` and then reload or restart APISIX in the same controlled environment.
 
-If you installed APISIX via RPM, the APISIX unit file will already be configured and you can start APISIX by:
+Do not put an Admin API key in a URL. Once APISIX is running, send it in the required header:
 
 ```shell
-systemctl start apisix
-systemctl stop apisix
+curl "http://127.0.0.1:9180/apisix/admin/routes" \
+  -H "X-API-KEY: ${ADMIN_KEY}"
 ```
 
-If you installed APISIX through other methods, you can create `/usr/lib/systemd/system/apisix.service` and add the [configuration from the template](https://github.com/api7/apisix-build-tools/blob/master/usr/lib/systemd/system/apisix.service).
+## Verify the installation
 
-See the [Getting Started](./getting-started/README.md) guide for a quick walk-through of using APISIX.
+For a package or source installation, validate the generated NGINX configuration before start or reload:
+
+```shell
+apisix version
+apisix test
+curl -i "http://127.0.0.1:9080/"
+```
+
+Before a Route is configured, the data-plane request can return `404`; the purpose of this check is to confirm that the intended listener responds. Use the Admin API check above to confirm control-plane access.
+
+For a container or Kubernetes installation, use the corresponding container and workload status commands, then inspect the APISIX logs. Verify all of the following before configuring production traffic:
+
+- the expected APISIX version and image or package digest are running;
+- the data-plane and Admin API ports are exposed only where intended;
+- the selected configuration source is reachable and updates are applied;
+- the Admin API rejects missing or invalid credentials; and
+- a test Route reaches its intended upstream and fails safely when that upstream is unavailable.
+
+Continue with [Getting Started](./getting-started/README.md) to create and verify a Route.
