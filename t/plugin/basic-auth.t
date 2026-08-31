@@ -51,7 +51,33 @@ done
 
 
 
-=== TEST 2: wrong type of string
+=== TEST 2: password containing a colon (RFC 7617)
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.basic-auth")
+            -- decoded form is "user:pass:word"; only the first colon
+            -- separates user from password.
+            local decoded = ngx.encode_base64("user:pass:word")
+            local user, pass, err = plugin.extract_auth_header("Basic " .. decoded)
+            if err then
+                ngx.say("err: ", err)
+                return
+            end
+            ngx.say("username=", user)
+            ngx.say("password=", pass)
+        }
+    }
+--- request
+GET /t
+--- response_body
+username=user
+password=pass:word
+--- no_error_log
+[error]
+
+
+=== TEST 3: wrong type of string
 --- config
     location /t {
         content_by_lua_block {
