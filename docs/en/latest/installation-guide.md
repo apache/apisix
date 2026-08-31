@@ -1,5 +1,5 @@
 ---
-title: Install Apache APISIX
+title: Installation
 keywords:
   - APISIX
   - APISIX Installation

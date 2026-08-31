@@ -1,5 +1,5 @@
 ---
-title: Nacos Service Discovery
+title: nacos
 keywords:
   - Apache APISIX
   - Nacos

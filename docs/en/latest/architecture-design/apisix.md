@@ -1,5 +1,5 @@
 ---
-title: Apache APISIX Architecture
+title: Architecture
 keywords:
   - API Gateway
   - Apache APISIX

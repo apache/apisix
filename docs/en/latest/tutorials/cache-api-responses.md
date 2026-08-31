@@ -1,5 +1,5 @@
 ---
-title: Cache API Responses
+title: Cache API responses
 keywords:
   - API Gateway
   - Apache APISIX
