@@ -4,7 +4,7 @@ keywords:
   - Apache APISIX
   - API Gateway
   - Gateway
-description: This article mainly introduces the role of the API gateway and why it is needed.
+description: Learn what an API gateway does, where it fits in an API architecture, and which responsibilities remain with services and other infrastructure.
 ---
 
 <!--
@@ -28,17 +28,24 @@ description: This article mainly introduces the role of the API gateway and why 
 
 ## Description
 
-An API gateway is a software pattern that sits in front of an application programming interface (API) or group of microservices, to facilitate requests and delivery of data and services. Its primary role is to act as a single entry point and standardized process for interactions between an organization's apps, data, and services and internal and external customers. The API gateway can also perform various other functions to support and manage API usage, from authentication to rate limiting to analytics.
+An API gateway is a reverse-proxy component placed between API clients and upstream services. It matches incoming requests, selects an upstream, and proxies the request and response across that boundary. A deployment can use one public gateway, several gateways by region or environment, or a gateway dedicated to a particular application audience.
 
-An API gateway also acts as a gateway between the API and the underlying infrastructure. It can be used to route requests to different backends, such as a load balancer, or route requests to different services based on the request headers.
+Depending on the product and enabled policies, an API gateway can also perform authentication, traffic limiting, request or response transformation, observability, and other cross-cutting functions. These capabilities are not enabled automatically and do not replace service-level authorization, data validation, workflow state, or business logic.
 
 ## Why use an API gateway?
 
-An API gateway comes with a lot of benefits over a traditional API microservice. The following are some of the benefits:
+An API gateway can provide:
 
-- It is a single entry point for all API requests.
-- It can be used to route requests to different backends, such as a load balancer, or route requests to different services based on the request headers.
-- It can be used to perform authentication, authorization, and rate-limiting.
-- It can be used to support analytics, such as monitoring, logging, and tracing.
-- It can protect the API from malicious attack vectors such as SQL injections, DDOS attacks, and XSS.
-- It decreases the complexity of the API and microservices.
+- a controlled entry point for selected APIs;
+- routing and load balancing across upstream services;
+- consistent enforcement of configured authentication and traffic policies;
+- protocol- and request-level telemetry at the gateway boundary; and
+- a place to apply shared transformations when their ownership and failure behavior are clear.
+
+The gateway is one component in the request path. A service must still authorize access to its resources and enforce business invariants. Rate limiting can reduce abusive traffic but does not, by itself, provide complete denial-of-service protection. Request filtering also does not make an upstream safe from every injection or application vulnerability.
+
+## API gateway in Apache APISIX
+
+Apache APISIX matches [Routes](./route.md), selects [Upstreams](./upstream.md), and runs explicitly configured [plugins](https://apisix.apache.org/plugins/) on the request path. Its topology and configuration source depend on the selected [deployment mode](../deployment-modes.md), including traditional, decoupled, and standalone modes.
+
+For implementation details, see the [APISIX architecture](../architecture-design/apisix.md) and [getting started guide](../getting-started/README.md).
