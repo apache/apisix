@@ -179,10 +179,16 @@ connectivity and version compatibility before starting APISIX.
 
 ## Configure APISIX
 
-APISIX reads `conf/config.yaml` by default. Use `--config` or `-c` to select another file when validating or running a management command:
+APISIX reads `conf/config.yaml` by default. Edit that file before running the configuration test:
 
 ```shell
-apisix test -c /path/to/config.yaml
+apisix test
+```
+
+To start APISIX with a different configuration file, pass `--config` or `-c` to `apisix start`. The `apisix test` command does not accept this option:
+
+```shell
+apisix start -c /path/to/config.yaml
 ```
 
 Only include values you need to override. APISIX uses its packaged defaults for other settings. Do not edit the generated `conf/nginx.conf` directly.
