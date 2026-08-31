@@ -604,12 +604,52 @@ bad sub resource: 400 {"error_msg":"invalid sub resource nodes"}
 
 
 
-=== TEST 8: clean up
+=== TEST 8: a disabled plugin owns no checkers
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin")
-            for _, id in ipairs({1, 2, 3, 4, 5, 6}) do
+            local json = require("toolkit.json")
+
+            -- a disabled plugin is kept even when its configuration does not pass
+            -- check_schema(), so `instances` here is not even an array
+            local code, body = t.test("/apisix/admin/routes/7", ngx.HTTP_PUT, json.encode({
+                uri = "/ai7",
+                plugins = {
+                    ["ai-proxy-multi"] = {
+                        _meta = {disable = true},
+                        instances = "not an array",
+                    },
+                },
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {["127.0.0.1:1980"] = 1},
+                },
+            }))
+            assert(code < 300, body)
+
+            ngx.sleep(1)
+
+            local code, body, res = t.test("/v1/healthcheck", ngx.HTTP_GET)
+            ngx.say("list: ", code)
+
+            local code, body, res = t.test("/v1/healthcheck/routes/7/checkers", ngx.HTTP_GET)
+            ngx.say("checkers: ", code, " ", (tostring(res):gsub("%s+$", "")))
+        }
+    }
+--- response_body
+list: 200
+checkers: 200 []
+--- timeout: 10
+
+
+
+=== TEST 9: clean up
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin")
+            for _, id in ipairs({1, 2, 3, 4, 5, 6, 7}) do
                 local code, body = t.test("/apisix/admin/routes/" .. id, ngx.HTTP_DELETE)
                 assert(code < 300, body)
             end

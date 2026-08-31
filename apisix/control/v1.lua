@@ -129,17 +129,22 @@ local function add_plugin_healthcheck_info(infos, value)
     end
 
     for name, plugin_conf in pairs(plugins) do
-        local plugin_obj = plugin.get(name)
-        if plugin_obj and plugin_obj.list_healthcheck_targets then
-            local targets = plugin_obj.list_healthcheck_targets(plugin_conf, value.key)
-            for _, target in ipairs(targets or {}) do
-                core.table.insert(infos, {
-                    name = target.resource_path,
-                    plugin = name,
-                    meta = target.meta,
-                    type = get_checker_type(target.checks),
-                    nodes = get_checker_nodes({resource_key = target.resource_path}),
-                })
+        -- a disabled plugin never runs, so its checkers never exist; and its
+        -- config is kept even when check_schema() rejects it, so it must not be
+        -- handed to the plugin either
+        if not plugin.check_disable(plugin_conf) then
+            local plugin_obj = plugin.get(name)
+            if plugin_obj and plugin_obj.list_healthcheck_targets then
+                local targets = plugin_obj.list_healthcheck_targets(plugin_conf, value.key)
+                for _, target in ipairs(targets or {}) do
+                    core.table.insert(infos, {
+                        name = target.resource_path,
+                        plugin = name,
+                        meta = target.meta,
+                        type = get_checker_type(target.checks),
+                        nodes = get_checker_nodes({resource_key = target.resource_path}),
+                    })
+                end
             end
         end
     end
