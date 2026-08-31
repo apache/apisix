@@ -26,6 +26,14 @@ local lrucache = core.lrucache.new({
     ttl = 0, count = 512
 })
 
+-- The compiled expressions must be cached outside of the plugin configuration:
+-- the "ipmatch" operator compiles into an ipmatcher, whose lookup tables are keyed
+-- by integers, so a configuration holding one can no longer be JSON encoded and
+-- every log line that dumps the route silently turns up empty.
+local expr_lrucache = core.lrucache.new({
+    count = 512
+})
+
 
 local schema = {
     type = "object",
@@ -189,22 +197,34 @@ local function next_action(actions)
 end
 
 
+local function create_rule_exprs(rules)
+    local exprs = core.table.new(#rules, 0)
+
+    for i, rule in ipairs(rules) do
+        -- if no rule.match, use {} to match all request
+        local rule_expr, err = expr.new(rule.match or {})
+        if not rule_expr then
+            return nil, err
+        end
+
+        exprs[i] = rule_expr
+    end
+
+    return exprs
+end
+
+
 function _M.access(conf, ctx)
     local match_result
 
-    if not conf.rules_arr then
-        conf.rules_arr = {}
-
-        for _, rule in ipairs(conf.rules) do
-            -- if no rule.match, use {} to match all request
-            local expr, _ = expr.new(rule.match or {})
-            core.table.insert_tail(conf.rules_arr, expr)
-        end
+    local exprs, err = expr_lrucache(conf.rules, nil, create_rule_exprs, conf.rules)
+    if not exprs then
+        core.log.error("failed to create the 'match' expressions: ", err)
+        return
     end
 
     for i, rule in ipairs(conf.rules) do
-        local expr = conf.rules_arr[i]
-        match_result = expr:eval(ctx.var)
+        match_result = exprs[i]:eval(ctx.var)
 
         if match_result then
             local action = next_action(rule.actions)
