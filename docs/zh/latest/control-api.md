@@ -132,7 +132,7 @@ APISIX 中一些插件添加了自己的 control API。如果你对他们感兴�
 
 * name: 资源 ID，健康检查的报告对象。
 * type: 健康检查类型，取值为 `["http", "https", "tcp"]`。
-* nodes: 检查节点列表。
+* nodes: 检查节点列表。在健康检查器注册检查目标之前该字段为空数组（`[]`），健康检查器在上游第一次处理请求时才会创建。
 * nodes[i].ip: IP 地址。
 * nodes[i].port: 端口。
 * nodes[i].status: 状态：`["healthy", "unhealthy", "mostly_healthy", "mostly_unhealthy"]`。
@@ -209,10 +209,8 @@ APISIX 中一些插件添加了自己的 control API。如果你对他们感兴�
 
 :::note
 
-只有一个上游满足以下条件时，它的健康检查状态才会出现在结果里面：
-
-* 上游配置了健康检查。
-* 上游在任何一个 worker 进程处理过客户端请求。
+上游只要配置了健康检查，就会出现在结果里面。在上游于任意一个 worker 进程处理过客户端请求之前，
+健康检查器尚未创建，此时它的 `nodes` 为空数组。
 
 :::
 

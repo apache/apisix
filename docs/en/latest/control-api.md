@@ -134,7 +134,9 @@ Each of the returned objects contain the following fields:
 
 * name: resource id, where the health checker is reporting from.
 * type: health check type: `["http", "https", "tcp"]`.
-* nodes: target nodes of the health checker.
+* nodes: target nodes of the health checker. It is an empty array (`[]`) until the
+  health checker registers its targets, which happens the first time the upstream
+  serves a request.
 * nodes[i].ip: ip address.
 * nodes[i].port: port number.
 * nodes[i].status: health check result: `["healthy", "unhealthy", "mostly_healthy", "mostly_unhealthy"]`.
@@ -213,11 +215,9 @@ For example, `GET /v1/healthcheck/upstreams/1` returns:
 
 :::note
 
-Only when one upstream is satisfied by the conditions below,
-its status is shown in the result list:
-
-* The upstream is configured with a health checker
-* The upstream has served requests in any worker process
+An upstream is shown in the result list as soon as it is configured with a health
+checker. Its `nodes` stay empty until the upstream has served requests in any
+worker process, because the health checker is only created then.
 
 :::
 
