@@ -141,11 +141,11 @@ end
 -- the plugin only implements direct encryption with A256GCM; reject a token
 -- that asks for anything else instead of failing later with a decrypt error
 local function unsupported_header(header_obj)
-    if header_obj.alg and header_obj.alg ~= "dir" then
+    if header_obj.alg ~= nil and header_obj.alg ~= "dir" then
         return true
     end
 
-    return header_obj.enc and header_obj.enc ~= "A256GCM"
+    return header_obj.enc ~= nil and header_obj.enc ~= "A256GCM"
 end
 
 
