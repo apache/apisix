@@ -597,6 +597,16 @@ local function create_server_picker(conf, ups_tab, checkers)
 end
 
 
+-- Identity of the health checker of the i-th instance: the parent resource key
+-- plus the JSON path of the instance. The health check manager parses it back
+-- to reach construct_upstream(), so both ends must agree on this exact layout.
+local function instance_resource_path(resource_key, index)
+    -- json path is 0 indexed so we need to decrement the index
+    return resource_key .. "#plugins['" .. plugin_name .. "'].instances["
+           .. index - 1 .. "]"
+end
+
+
 local function get_instance_conf(instances, name)
     for _, ins in ipairs(instances) do
         if ins.name == name then
@@ -616,9 +626,8 @@ local function pick_target(ctx, conf, ups_tab)
     for i, instance in ipairs(conf.instances) do
         if instance.checks then
             resolve_endpoint(instance)
-            -- json path is 0 indexed so we need to decrement i
-            local resource_path = conf._meta.parent.resource_key ..
-                                  "#plugins['ai-proxy-multi'].instances[" .. i-1 .. "]"
+            local resource_path = instance_resource_path(
+                                      conf._meta.parent.resource_key, i)
             local resource_version = conf._meta.parent.resource_version
             if instance._nodes_ver then
                 resource_version = resource_version .. instance._nodes_ver
@@ -981,6 +990,28 @@ local function retry_on_error(ctx, conf, code, body)
     end
     return code
 end
+
+-- Each instance can run its own active health check, whose checker is keyed by
+-- instance_resource_path(). Nothing outside the plugin can guess that layout, so
+-- expose it for the control API, which reports the health status of every
+-- configured checker (control/v1.lua). `meta` describes the checker to whoever
+-- reports it -- what an instance is is the plugin's business, so the control API
+-- passes it through instead of knowing about it.
+function _M.list_healthcheck_targets(conf, resource_key)
+    local targets = {}
+    for i, instance in ipairs(conf.instances or {}) do
+        if instance.checks then
+            core.table.insert(targets, {
+                resource_path = instance_resource_path(resource_key, i),
+                checks = instance.checks,
+                meta = {instance = instance.name},
+            })
+        end
+    end
+
+    return targets
+end
+
 
 function _M.construct_upstream(instance)
     if not instance then
