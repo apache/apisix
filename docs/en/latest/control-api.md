@@ -145,6 +145,38 @@ Each of the returned objects contain the following fields:
 * nodes[i].counter.tcp_failure: tcp connect/read/write failures count.
 * nodes[i].counter.timeout_failure: timeout count.
 
+A plugin can run active health checks of its own, on nodes that belong to no
+upstream. [ai-proxy-multi](./plugins/ai-proxy-multi.md) does this: it probes
+every LLM instance and skips the unhealthy ones when it picks a target. Such a
+checker is reported with two extra fields:
+
+```json
+{
+  "name": "/apisix/routes/1#plugins['ai-proxy-multi'].instances[0]",
+  "plugin": "ai-proxy-multi",
+  "meta": {
+    "instance": "openai"
+  },
+  "type": "http",
+  "nodes": [
+    {
+      "ip": "52.86.68.46",
+      "port": 443,
+      "status": "healthy",
+      "counter": {
+        "http_failure": 0,
+        "success": 2,
+        "timeout_failure": 0,
+        "tcp_failure": 0
+      }
+    }
+  ]
+}
+```
+
+* plugin: name of the plugin owning the health checker. Absent for an upstream health checker.
+* meta: filled by the plugin to describe what the checker stands for. Its content is plugin specific; `ai-proxy-multi` reports the instance name.
+
 You can also use `/v1/healthcheck/$src_type/$src_id` to get the health status of specific nodes.
 
 For example, `GET /v1/healthcheck/upstreams/1` returns:
@@ -192,6 +224,38 @@ worker process, because the health checker is only created then.
 If you use browser to access the control API URL, then you will get the HTML output:
 
 ![Health Check Status Page](https://raw.githubusercontent.com/apache/apisix/master/docs/assets/images/health_check_status_page.png)
+
+### GET /v1/healthcheck/{src_type}/{src_id}/checkers
+
+Returns every health checker one resource owns, as an array of the entries
+described above. A resource can own more than one -- its upstream plus one per
+plugin instance -- which `GET /v1/healthcheck/$src_type/$src_id` cannot express,
+since it returns a single object.
+
+For example, `GET /v1/healthcheck/routes/1/checkers` returns:
+
+```json
+[
+  {
+    "name": "/apisix/routes/1",
+    "type": "http",
+    "nodes": [...]
+  },
+  {
+    "name": "/apisix/routes/1#plugins['ai-proxy-multi'].instances[0]",
+    "plugin": "ai-proxy-multi",
+    "meta": {
+      "instance": "openai"
+    },
+    "type": "http",
+    "nodes": [...]
+  }
+]
+```
+
+A resource with no health check at all is not an error here: it owns an empty
+set of checkers, and the endpoint returns `[]`. `404` is returned only when the
+resource itself does not exist.
 
 ### POST /v1/gc
 
