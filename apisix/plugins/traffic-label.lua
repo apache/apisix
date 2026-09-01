@@ -21,17 +21,10 @@ local expr          = require("resty.expr.v1")
 local roundrobin    = require("resty.roundrobin")
 local ipairs        = ipairs
 local pairs         = pairs
+local setmetatable  = setmetatable
 
 local lrucache = core.lrucache.new({
     ttl = 0, count = 512
-})
-
--- The compiled expressions must be cached outside of the plugin configuration:
--- the "ipmatch" operator compiles into an ipmatcher, whose lookup tables are keyed
--- by integers, so a configuration holding one can no longer be JSON encoded and
--- every log line that dumps the route silently turns up empty.
-local expr_lrucache = core.lrucache.new({
-    count = 512
 })
 
 
@@ -197,34 +190,26 @@ local function next_action(actions)
 end
 
 
-local function create_rule_exprs(rules)
-    local exprs = core.table.new(#rules, 0)
-
-    for i, rule in ipairs(rules) do
-        -- if no rule.match, use {} to match all request
-        local rule_expr, err = expr.new(rule.match or {})
-        if not rule_expr then
-            return nil, err
-        end
-
-        exprs[i] = rule_expr
-    end
-
-    return exprs
-end
-
-
 function _M.access(conf, ctx)
     local match_result
 
-    local exprs, err = expr_lrucache(conf.rules, nil, create_rule_exprs, conf.rules)
-    if not exprs then
-        core.log.error("failed to create the 'match' expressions: ", err)
-        return
-    end
+    for _, rule in ipairs(conf.rules) do
+        if not rule._expr then
+            -- if no rule.match, use {} to match all request
+            local rule_expr, err = expr.new(rule.match or {})
+            if not rule_expr then
+                core.log.error("failed to create the 'match' expression: ", err)
+                return
+            end
 
-    for i, rule in ipairs(conf.rules) do
-        match_result = exprs[i]:eval(ctx.var)
+            -- Hide the compiled expression in a metatable so that it stays out of
+            -- the configuration: the "ipmatch" operator compiles into an ipmatcher,
+            -- whose lookup tables are keyed by integers, and a configuration holding
+            -- one can no longer be JSON encoded.
+            setmetatable(rule, {__index = {_expr = rule_expr}})
+        end
+
+        match_result = rule._expr:eval(ctx.var)
 
         if match_result then
             local action = next_action(rule.actions)
