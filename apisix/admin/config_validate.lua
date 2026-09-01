@@ -63,7 +63,9 @@ local STREAM_RESOURCE_KEYS = {}
 for dir in pairs(constants.HTTP_ETCD_DIRECTORY) do
     local key = str_sub(dir, 2)
     ALL_RESOURCE_KEYS[key] = key .. CONF_VERSION_KEY_SUFFIX
-    HTTP_RESOURCE_KEYS[key] = key .. CONF_VERSION_KEY_SUFFIX
+    if key ~= "stream_routes" then
+        HTTP_RESOURCE_KEYS[key] = key .. CONF_VERSION_KEY_SUFFIX
+    end
 end
 for dir in pairs(constants.STREAM_ETCD_DIRECTORY) do
     local key = str_sub(dir, 2)

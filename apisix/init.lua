@@ -1350,6 +1350,16 @@ function _M.stream_init_worker()
 
     core.lrucache.init_worker()
 
+    -- admin.init.init_worker() registers an events callback, so events must
+    -- already be initialized here
+    require("apisix.events").init_worker()
+
+    -- must run before core.config.init_worker() and router.stream_init_worker():
+    -- it patches the resource schemas (e.g. allowing modifiedIndex) that
+    -- those two synchronously validate data against as part of their own
+    -- worker startup, same as in http_init_worker
+    require("apisix.admin.init").init_worker()
+
     if core.config.init_worker then
         local ok, err = core.config.init_worker()
         if not ok then
@@ -1364,11 +1374,6 @@ function _M.stream_init_worker()
     router.stream_init_worker()
     require("apisix.http.service").init_worker()
     apisix_upstream.init_worker()
-
-    require("apisix.events").init_worker()
-
-    -- for admin api of standalone mode, we need to startup background timer and patch schema etc.
-    require("apisix.admin.init").init_worker()
 
     if discovery and discovery.init_worker then
         discovery.init_worker()

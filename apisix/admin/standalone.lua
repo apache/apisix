@@ -34,7 +34,8 @@ local config_validate = require("apisix.admin.config_validate")
 local shared_dict        = ngx.shared["standalone-config"]
 local status_shared_dict = ngx.shared["standalone-status"]
 
-local ALL_RESOURCE_KEYS = config_validate.get_all_resource_keys()
+local ALL_RESOURCE_KEYS    = config_validate.get_all_resource_keys()
+local HTTP_RESOURCE_KEYS   = config_validate.get_http_resource_keys()
 local STREAM_RESOURCE_KEYS = config_validate.get_stream_resource_keys()
 local APPLIED_CHECK_KEYS = {}
 for key in pairs(ALL_RESOURCE_KEYS) do
@@ -90,7 +91,6 @@ end
 local validate_configuration = config_validate.validate_configuration
 
 
-local DEFAULT_WAIT_MS = 3000
 local MAX_WAIT_MS = 60000
 local POLL_INTERVAL = 0.05
 
@@ -98,8 +98,8 @@ local POLL_INTERVAL = 0.05
 local function parse_wait_ms(ctx)
     local args = core.request.get_uri_args(ctx)
     local wait = args and tonumber(args.wait)
-    if not wait or wait < 0 then
-        return DEFAULT_WAIT_MS
+    if not wait or wait <= 0 then
+        return 0
     end
     if wait > MAX_WAIT_MS then
         return MAX_WAIT_MS
@@ -123,11 +123,13 @@ local function all_workers_applied(target_digest)
     local check_stream = stream_enabled()
     for key in pairs(APPLIED_CHECK_KEYS) do
         for id = 0, n - 1 do
-            local http_key = "worker:" .. id .. ":http:" .. key
-            local digest = status_shared_dict:get(http_key)
-            if digest ~= target_digest then
-                core.log.debug("not yet applied: ", http_key, " has ", digest, ", want ", target_digest)
-                return false
+            if HTTP_RESOURCE_KEYS[key] then
+                local http_key = "worker:" .. id .. ":http:" .. key
+                local digest = status_shared_dict:get(http_key)
+                if digest ~= target_digest then
+                    core.log.debug("not yet applied: ", http_key, " has ", digest, ", want ", target_digest)
+                    return false
+                end
             end
             if check_stream and STREAM_RESOURCE_KEYS[key] then
                 local stream_key = "worker:" .. id .. ":stream:" .. key

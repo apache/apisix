@@ -595,7 +595,7 @@ function _M.init_worker()
         apisix_yaml_mtime = 0
 
         try_restore_from_shared_dict()
- 
+
         return true
     end
 
