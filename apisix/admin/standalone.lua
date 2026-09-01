@@ -16,6 +16,7 @@
 local type         = type
 local pairs        = pairs
 local ipairs       = ipairs
+local tonumber     = tonumber
 local str_lower    = string.lower
 local ngx          = ngx
 local ngx_time     = ngx.time
