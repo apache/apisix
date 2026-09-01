@@ -1194,3 +1194,133 @@ qr/property \\"path\\" is required/
 GET /t
 --- response_body
 passed
+
+
+
+=== TEST 31: configure response body limits
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/batch-requests',
+                ngx.HTTP_PUT,
+                [[{
+                    "max_response_body_size": 5,
+                    "max_response_body_size_total": 8
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 32: reject a subresponse body over its limit
+--- config
+    location = /six-bytes {
+        content_by_lua_block {
+            ngx.header.content_length = 6
+            ngx.print("123456")
+        }
+    }
+--- request
+POST /apisix/batch-requests
+{"pipeline":[{"path":"/six-bytes"}]}
+--- error_code: 502
+--- response_body
+{"error_msg":"response body of pipeline request 1 exceeds max_response_body_size"}
+
+
+
+=== TEST 33: reject aggregate response bodies over their limit
+--- config
+    location = /five-bytes {
+        content_by_lua_block {
+            ngx.print("12345")
+        }
+    }
+    location = /four-bytes {
+        content_by_lua_block {
+            ngx.print("1234")
+        }
+    }
+--- request
+POST /apisix/batch-requests
+{"headers":{"Connection":"keep-alive"},"pipeline":[{"path":"/five-bytes"},{"path":"/four-bytes"}]}
+--- error_code: 502
+--- response_body
+{"error_msg":"response body of pipeline request 2 exceeds max_response_body_size_total"}
+
+
+
+=== TEST 34: allow aggregate response bodies at both limits
+--- config
+    location = /four-bytes {
+        content_by_lua_block {
+            ngx.print("1234")
+        }
+    }
+--- request
+POST /apisix/batch-requests
+{"headers":{"Connection":"keep-alive"},"pipeline":[{"path":"/four-bytes"},{"path":"/four-bytes"}]}
+--- error_code: 200
+--- response_body eval
+qr/^\[.*"body":"1234".*"body":"1234".*\]$/
+
+
+
+=== TEST 35: reject an invalid response body limit
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/batch-requests',
+                ngx.HTTP_PUT,
+                [[{
+                    "max_response_body_size_total": 0
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body eval
+qr/property \\"max_response_body_size_total\\" validation failed/
+
+
+
+=== TEST 36: reset plugin metadata
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/batch-requests',
+                ngx.HTTP_PUT,
+                [[{
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed

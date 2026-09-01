@@ -45,6 +45,9 @@ local schema = {
 
 local default_max_body_size = 1024 * 1024 -- 1MiB
 local default_max_pipeline_items = 1000
+local default_max_response_body_size = 1024 * 1024 -- 1MiB
+local default_max_response_body_size_total = 10 * 1024 * 1024 -- 10MiB
+local response_body_chunk_size = 8192
 local metadata_schema = {
     type = "object",
     properties = {
@@ -59,6 +62,18 @@ local metadata_schema = {
             type = "integer",
             exclusiveMinimum = 0,
             default = default_max_pipeline_items,
+        },
+        max_response_body_size = {
+            description = "max response body size in bytes for each pipeline request",
+            type = "integer",
+            exclusiveMinimum = 0,
+            default = default_max_response_body_size,
+        },
+        max_response_body_size_total = {
+            description = "max total response body size in bytes for a pipeline",
+            type = "integer",
+            exclusiveMinimum = 0,
+            default = default_max_response_body_size_total,
         },
     },
 }
@@ -224,18 +239,79 @@ local function set_common_query(data)
 end
 
 
+local function close_http_client(httpc)
+    local ok, err = httpc:close()
+    if not ok then
+        core.log.warn("failed to close batch request connection: ", err)
+    end
+end
+
+
+local function read_response_body(httpc, resp, max_response_body_size,
+                                  response_body_size_total,
+                                  max_response_body_size_total)
+    local content_length = tonumber(resp.headers["Content-Length"])
+    if content_length then
+        if content_length > max_response_body_size then
+            close_http_client(httpc)
+            return nil, nil, "max_response_body_size"
+        end
+
+        if response_body_size_total + content_length > max_response_body_size_total then
+            close_http_client(httpc)
+            return nil, nil, "max_response_body_size_total"
+        end
+    end
+
+    local chunks = {}
+    local response_body_size = 0
+    while true do
+        local chunk, err = resp.body_reader(response_body_chunk_size)
+        if err then
+            return nil, err
+        end
+        if not chunk then
+            break
+        end
+
+        response_body_size = response_body_size + #chunk
+        if response_body_size > max_response_body_size then
+            close_http_client(httpc)
+            return nil, nil, "max_response_body_size"
+        end
+
+        if response_body_size_total + response_body_size > max_response_body_size_total then
+            close_http_client(httpc)
+            return nil, nil, "max_response_body_size_total"
+        end
+
+        core.table.insert(chunks, chunk)
+    end
+
+    return core.table.concat(chunks), nil, nil, response_body_size
+end
+
+
 local function batch_requests(ctx)
     local metadata = plugin.plugin_metadata(plugin_name)
     core.log.info("metadata: ", core.json.delay_encode(metadata))
 
     local max_body_size
     local max_pipeline_items
+    local max_response_body_size
+    local max_response_body_size_total
     if metadata then
         max_body_size = metadata.value.max_body_size
         max_pipeline_items = metadata.value.max_pipeline_items or default_max_pipeline_items
+        max_response_body_size = metadata.value.max_response_body_size or
+                                 default_max_response_body_size
+        max_response_body_size_total = metadata.value.max_response_body_size_total or
+                                       default_max_response_body_size_total
     else
         max_body_size = default_max_body_size
         max_pipeline_items = default_max_pipeline_items
+        max_response_body_size = default_max_response_body_size
+        max_response_body_size_total = default_max_response_body_size_total
     end
 
     local req_body, err = core.request.get_body(max_body_size, ctx)
@@ -286,7 +362,8 @@ local function batch_requests(ctx)
     end
 
     local aggregated_resp = {}
-    for _, resp in ipairs(responses) do
+    local response_body_size_total = 0
+    for i, resp in ipairs(responses) do
         if not resp.status then
             core.table.insert(aggregated_resp, {
                 status = 504,
@@ -300,12 +377,22 @@ local function batch_requests(ctx)
             headers = resp.headers,
         }
         if resp.has_body then
-            local err
-            sub_resp.body, err = resp:read_body()
+            local err, limit_name, response_body_size
+            sub_resp.body, err, limit_name, response_body_size =
+                read_response_body(httpc, resp, max_response_body_size,
+                                   response_body_size_total,
+                                   max_response_body_size_total)
+            if limit_name then
+                return 502, {
+                    error_msg = "response body of pipeline request " .. i ..
+                                " exceeds " .. limit_name
+                }
+            end
             if err then
                 sub_resp.read_body_err = err
                 core.log.error("read pipeline response body failed: ", err)
             else
+                response_body_size_total = response_body_size_total + response_body_size
                 resp:read_trailers()
             end
         end
