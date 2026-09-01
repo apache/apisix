@@ -27,6 +27,10 @@ local lrucache = core.lrucache.new({
     ttl = 0, count = 512
 })
 
+-- Private key for the compiled expression. A table key cannot be expressed in
+-- JSON, so a rule carrying a property of the same name cannot shadow it.
+local COMPILED_EXPR = {}
+
 
 local schema = {
     type = "object",
@@ -194,7 +198,7 @@ function _M.access(conf, ctx)
     local match_result
 
     for _, rule in ipairs(conf.rules) do
-        if not rule._expr then
+        if not rule[COMPILED_EXPR] then
             -- if no rule.match, use {} to match all request
             local rule_expr, err = expr.new(rule.match or {})
             if not rule_expr then
@@ -206,10 +210,10 @@ function _M.access(conf, ctx)
             -- the configuration: the "ipmatch" operator compiles into an ipmatcher,
             -- whose lookup tables are keyed by integers, and a configuration holding
             -- one can no longer be JSON encoded.
-            setmetatable(rule, {__index = {_expr = rule_expr}})
+            setmetatable(rule, {__index = {[COMPILED_EXPR] = rule_expr}})
         end
 
-        match_result = rule._expr:eval(ctx.var)
+        match_result = rule[COMPILED_EXPR]:eval(ctx.var)
 
         if match_result then
             local action = next_action(rule.actions)
