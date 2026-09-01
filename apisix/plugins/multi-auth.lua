@@ -72,6 +72,17 @@ function _M.rewrite(conf, ctx)
     local status_code
     local errors = {}
 
+    -- Clear reserved output headers for every configured authenticator before
+    -- one of them can end the chain successfully.
+    for _, auth_plugin in pairs(auth_plugins) do
+        for auth_plugin_name, auth_plugin_conf in pairs(auth_plugin) do
+            local auth = plugin.get(auth_plugin_name)
+            if auth.clear_auth_headers then
+                auth.clear_auth_headers(auth_plugin_conf, ctx)
+            end
+        end
+    end
+
     for k, auth_plugin in pairs(auth_plugins) do
         for auth_plugin_name, auth_plugin_conf in pairs(auth_plugin) do
             local auth = plugin.get(auth_plugin_name)
@@ -86,6 +97,9 @@ function _M.rewrite(conf, ctx)
                 core.log.debug(auth_plugin_name .. " succeed to authenticate the request")
                 goto authenticated
             else
+                if auth.clear_auth_headers then
+                    auth.clear_auth_headers(auth_plugin_conf, ctx)
+                end
                 core.table.insert(errors, auth_plugin_name ..
                         " failed to authenticate the request, code: "
                         .. auth_code .. ". error: " .. (err or ""))

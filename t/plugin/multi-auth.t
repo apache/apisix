@@ -655,3 +655,213 @@ GET /t
 code: 401
 --- no_error_log
 [error]
+
+
+
+=== TEST 23: add Wolf consumers and a multi-auth route that reports identity headers
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local consumers = {
+                [[{
+                    "username": "wolf-default",
+                    "plugins": {
+                        "wolf-rbac": {
+                            "appid": "wolf-default"
+                        }
+                    }
+                }]],
+                [[{
+                    "username": "wolf-prefixed",
+                    "plugins": {
+                        "wolf-rbac": {
+                            "appid": "wolf-prefixed",
+                            "header_prefix": "X-Wolf-"
+                        }
+                    }
+                }]],
+            }
+
+            for _, data in ipairs(consumers) do
+                local code, body = t('/apisix/admin/consumers', ngx.HTTP_PUT, data)
+                if code >= 300 then
+                    ngx.status = code
+                    ngx.say(body)
+                    return
+                end
+            end
+
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "multi-auth": {
+                            "auth_plugins": [
+                                {
+                                    "wolf-rbac": {}
+                                },
+                                {
+                                    "key-auth": {}
+                                }
+                            ]
+                        },
+                        "serverless-post-function": {
+                            "phase": "access",
+                            "functions": [
+                                "return function(conf, ctx) local core = require(\"apisix.core\"); local names = {\"X-UserId\", \"X-Username\", \"X-Nickname\", \"X-Wolf-UserId\", \"X-Wolf-Username\", \"X-Wolf-Nickname\", \"X-Consumer-Username\"}; local values = {}; for i, name in ipairs(names) do values[i] = core.request.header(ctx, name) or \"nil\"; end; core.response.exit(200, table.concat(values, \",\")); end"
+                            ]
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 24: failed Wolf auth does not leave identity headers for key-auth
+--- request
+GET /hello
+--- more_headers
+apikey: auth-one
+X-UserId: admin-001
+X-Username: admin
+X-Nickname: administrator
+X-Wolf-UserId: admin-001
+X-Wolf-Username: admin
+X-Wolf-Nickname: administrator
+--- response_body eval
+"nil,nil,nil,nil,nil,nil,foo"
+
+
+
+=== TEST 25: Wolf headers are cleared even when another authenticator succeeds first
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "multi-auth": {
+                            "auth_plugins": [
+                                {
+                                    "key-auth": {}
+                                },
+                                {
+                                    "wolf-rbac": {}
+                                }
+                            ]
+                        },
+                        "serverless-post-function": {
+                            "phase": "access",
+                            "functions": [
+                                "return function(conf, ctx) local core = require(\"apisix.core\"); local names = {\"X-UserId\", \"X-Username\", \"X-Nickname\", \"X-Wolf-UserId\", \"X-Wolf-Username\", \"X-Wolf-Nickname\", \"X-Consumer-Username\"}; local values = {}; for i, name in ipairs(names) do values[i] = core.request.header(ctx, name) or \"nil\"; end; core.response.exit(200, table.concat(values, \",\")); end"
+                            ]
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, _, body = t('/hello', ngx.HTTP_GET, nil, nil, {
+                apikey = "auth-one",
+                ["X-UserId"] = "admin-001",
+                ["X-Username"] = "admin",
+                ["X-Nickname"] = "administrator",
+                ["X-Wolf-UserId"] = "admin-001",
+                ["X-Wolf-Username"] = "admin",
+                ["X-Wolf-Nickname"] = "administrator",
+            })
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- response_body eval
+"nil,nil,nil,nil,nil,nil,foo"
+
+
+
+=== TEST 26: outputs from a failed authenticator are cleared before fallback
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local plugin = require("apisix.plugin")
+            local orig_get = plugin.get
+            plugin.get = function(name)
+                if name == "fake-auth-1" then
+                    return {
+                        clear_auth_headers = function(_, ctx)
+                            core.request.set_header(ctx, "X-Auth-User", nil)
+                        end,
+                        rewrite = function(_, ctx)
+                            core.request.set_header(ctx, "X-Auth-User", "failed-user")
+                            return 401
+                        end,
+                    }
+                end
+
+                return {
+                    rewrite = function()
+                        return nil
+                    end,
+                }
+            end
+
+            local multi_auth = require("apisix.plugins.multi-auth")
+            local conf = {
+                auth_plugins = {
+                    { ["fake-auth-1"] = {} },
+                    { ["fake-auth-2"] = {} },
+                }
+            }
+            local ctx = { var = {} }
+            local ok, err = pcall(multi_auth.rewrite, conf, ctx)
+            plugin.get = orig_get
+
+            if not ok then
+                ngx.say("error: ", err)
+                return
+            end
+            ngx.say(core.request.header(ctx, "X-Auth-User") or "nil")
+        }
+    }
+--- request
+GET /t
+--- response_body
+nil
+--- no_error_log
+[error]

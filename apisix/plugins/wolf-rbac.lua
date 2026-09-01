@@ -27,10 +27,13 @@ local rawset   = rawset
 local setmetatable = setmetatable
 local type     = type
 local string   = string
+local ipairs   = ipairs
+local pairs    = pairs
 local req_read_body = ngx.req.read_body
 local req_get_body_data = ngx.req.get_body_data
 
 local plugin_name = "wolf-rbac"
+local default_header_prefix = "X-"
 
 
 local schema = {
@@ -64,6 +67,46 @@ local _M = {
 
 
 local token_version = 'V1'
+local identity_headers
+local identity_headers_conf_version
+
+local function get_identity_headers()
+    local consumer_conf = consumer.plugin(plugin_name)
+    local conf_version = consumer_conf and consumer_conf.conf_version
+    if identity_headers and identity_headers_conf_version == conf_version then
+        return identity_headers
+    end
+
+    local prefixes = {}
+    if consumer_conf then
+        for _, cur_consumer in ipairs(consumer_conf.nodes) do
+            local prefix = cur_consumer.auth_conf.header_prefix or default_header_prefix
+            prefixes[prefix] = true
+        end
+    else
+        prefixes[default_header_prefix] = true
+    end
+
+    local headers = {}
+    for prefix in pairs(prefixes) do
+        core.table.insert(headers, prefix .. "UserId")
+        core.table.insert(headers, prefix .. "Username")
+        core.table.insert(headers, prefix .. "Nickname")
+    end
+
+    identity_headers = headers
+    identity_headers_conf_version = conf_version
+    return headers
+end
+
+function _M.clear_auth_headers(_, ctx)
+    for _, header in ipairs(get_identity_headers()) do
+        core.request.set_header(ctx, header, nil)
+        core.response.set_header(header, nil)
+    end
+end
+
+
 local function create_rbac_token(appid, wolf_token)
     return token_version .. "#" .. appid .. "#" .. wolf_token
 end
