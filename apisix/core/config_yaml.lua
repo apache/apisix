@@ -45,9 +45,14 @@ local ngx          = ngx
 local re_find      = ngx.re.find
 local process      = require("ngx.process")
 local worker_id    = ngx.worker.id
+local subsystem    = ngx.config.subsystem
 local created_obj  = {}
+
 local shared_dict
-local status_report_shared_dict_name = "status-report"
+local status_report_shared_dict_name     = "status-report"
+local standalone_status_shared_dict_name = "standalone-status"
+
+local METADATA_DIGEST = "X-Digest"
 
 local _M = {
     version = 0.2,
@@ -177,6 +182,32 @@ local function is_use_admin_api()
 end
 
 
+-- Reports the current entity's updating status on the current worker to
+-- shdict standalone-status.
+-- This status is reported to the client via the standalone API and
+-- indicates whether APISIX accepted or applied a configuration reload
+-- within the specified timeout period.
+-- Only applies to API-driven standalone
+local function mark_type_applied(self)
+    if not is_use_admin_api() then
+        return
+    end
+    local digest = apisix_yaml[METADATA_DIGEST]
+    if not digest then
+        return
+    end
+    local dict = ngx.shared[standalone_status_shared_dict_name]
+    if not dict then
+        return
+    end
+    local key = "worker:" .. worker_id() .. ":" .. subsystem .. ":" .. self.key
+    local ok, err = dict:set(key, digest)
+    if not ok then
+        log.error("failed to record applied digest for [", key, "]: ", err)
+    end
+end
+
+
 local function read_apisix_config(premature, pre_mtime)
     if premature then
         return
@@ -221,6 +252,7 @@ local function sync_data(self)
     end
 
     if not conf_version or conf_version == self.conf_version then
+        mark_type_applied(self)
         return true
     end
 
@@ -229,6 +261,7 @@ local function sync_data(self)
         self.values = new_tab(8, 0)
         self.values_hash = new_tab(0, 8)
         self.conf_version = conf_version
+        mark_type_applied(self)
         return true
     end
 
@@ -358,6 +391,7 @@ local function sync_data(self)
     end
 
     self.conf_version = conf_version
+    mark_type_applied(self)
     return true
 end
 
