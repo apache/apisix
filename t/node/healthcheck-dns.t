@@ -118,7 +118,7 @@ routes:
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
             local httpc = http.new()
             local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
-            ngx.say("First request status: ", res.status)
+            ngx.say("First request status: ", res and res.status or err)
 
             -- Wait for healthchecker to be created
             ngx.sleep(2)
@@ -126,7 +126,7 @@ routes:
             -- Second request - should trigger DNS resolution again
             local httpc = http.new()
             local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
-            ngx.say("Second request status: ", res.status)
+            ngx.say("Second request status: ", res and res.status or err)
 
             -- Wait for healthchecker recreation
             ngx.sleep(4)
