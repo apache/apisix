@@ -20,6 +20,7 @@ local plugin    = require("apisix.plugin")
 local ngx       = ngx
 local ipairs    = ipairs
 local pairs     = pairs
+local tonumber  = tonumber
 local str_find  = core.string.find
 local str_lower = string.lower
 
