@@ -32,9 +32,7 @@ add_block_preprocessor(sub {
     if (!defined $block->yaml_config) {
         $block->set_value("yaml_config", <<'EOF');
 apisix:
-    stream_proxy:
-        tcp:
-            - 1985
+    proxy_mode: http&stream
 deployment:
     role: traditional
     role_traditional:

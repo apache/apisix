@@ -18,6 +18,7 @@ local pairs        = pairs
 local ipairs       = ipairs
 local tonumber     = tonumber
 local str_lower    = string.lower
+local str_find     = string.find
 local ngx          = ngx
 local ngx_time     = ngx.time
 local ngx_now      = ngx.now
@@ -109,9 +110,15 @@ local function parse_wait_ms(ctx)
 end
 
 
+local is_stream_enabled
 local function stream_enabled()
+    if is_stream_enabled ~= nil then
+        return is_stream_enabled
+    end
     local local_conf = core.config.local_conf()
-    return local_conf and local_conf.apisix and local_conf.apisix.stream_proxy
+    local proxy_mode = local_conf and local_conf.apisix and local_conf.apisix.proxy_mode
+    is_stream_enabled = proxy_mode ~= nil and str_find(proxy_mode, "stream", 1, true) ~= nil
+    return is_stream_enabled
 end
 
 
