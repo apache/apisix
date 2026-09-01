@@ -127,7 +127,8 @@ local function all_workers_applied(target_digest)
                 local http_key = "worker:" .. id .. ":http:" .. key
                 local digest = status_shared_dict:get(http_key)
                 if digest ~= target_digest then
-                    core.log.debug("not yet applied: ", http_key, " has ", digest, ", want ", target_digest)
+                    core.log.debug("not yet applied: ", http_key, " has ", digest,
+                                    ", want ", target_digest)
                     return false
                 end
             end
@@ -135,7 +136,8 @@ local function all_workers_applied(target_digest)
                 local stream_key = "worker:" .. id .. ":stream:" .. key
                 local digest = status_shared_dict:get(stream_key)
                 if digest ~= target_digest then
-                    core.log.debug("not yet applied: ", stream_key, " has ", digest, ", want ", target_digest)
+                    core.log.debug("not yet applied: ", stream_key, " has ", digest,
+                                    ", want ", target_digest)
                     return false
                 end
             end
