@@ -22,6 +22,7 @@ local core = require("apisix.core")
 local config_util = require("apisix.core.config_util")
 local router = require("apisix.stream.router.ip_port")
 local metrics = require("apisix.stream.xrpc.metrics")
+local plugin = require("apisix.plugin")
 local apisix_upstream = require("apisix.upstream")
 local xrpc_socket = require("resty.apisix.stream.xrpc.socket")
 local ngx_now = ngx.now
@@ -195,6 +196,15 @@ function _M.get_metrics(session, protocol_name)
     if not (metric_conf and metric_conf.enable) then
         return nil
     end
+
+    -- These are published by the prometheus stream plugin, so they are only
+    -- recorded while it is enabled. The effective plugin list decides that:
+    -- the exporter itself is now built whatever config.yaml lists, so whether
+    -- `metrics` happens to be initialized no longer says anything about it.
+    if not plugin.get_stream("prometheus") then
+        return nil
+    end
+
     return metrics.load(protocol_name)
 end
 

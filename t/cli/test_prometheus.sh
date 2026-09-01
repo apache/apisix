@@ -185,3 +185,45 @@ fi
 make stop
 
 echo "passed: should use custom metric prefix"
+
+# The plugin list can arrive from etcd after APISIX is already running, and
+# config.yaml below names no prometheus at all. The Admin API has to stay off
+# for that: with it on, worker 0 overwrites /apisix/plugins from the local
+# config at boot (apisix/admin/init.lua).
+etcdctl del / --prefix
+
+echo '
+apisix:
+  enable_admin: false
+plugins:
+  - ip-restriction
+plugin_attr:
+  prometheus:
+    refresh_interval: 1
+' > conf/config.yaml
+
+make run
+
+# enabled only now, with APISIX already up
+etcdctl put /apisix/plugins '[{"name":"prometheus"}]'
+
+ok=0
+deadline=$(( $(date +%s) + 20 ))
+{ set +x; } 2>/dev/null
+while [ "$(date +%s)" -lt "$deadline" ]; do
+    if curl -s --connect-timeout 1 --max-time 2 \
+         http://127.0.0.1:9091/apisix/prometheus/metrics | grep -q "apisix_node_info{hostname="; then
+        ok=1
+        break
+    fi
+    sleep 0.5
+done
+set -x
+if [ "$ok" -ne 1 ]; then
+    echo "failed: no metrics when prometheus is enabled from etcd after startup"
+    exit 1
+fi
+
+make stop
+
+echo "passed: prometheus can be enabled from etcd after startup"

@@ -15,6 +15,12 @@
 -- limitations under the License.
 --
 
+-- Nothing rendered below may depend on which plugins `plugins` or
+-- `stream_plugins` in config.yaml happen to list. That list is only the
+-- boot-time default: `/apisix/plugins` in etcd replaces it while APISIX runs,
+-- long after this template has been rendered. A shared memory zone, or any
+-- other nginx directive, cannot be added without a reload, so a plugin enabled
+-- that way would otherwise find the memory it needs missing.
 return [=[
 # Configuration File - Nginx Server Configs
 # This is a read-only file, do not try to modify it.
@@ -65,12 +71,12 @@ env "{*name*}";
 thread_pool grpc-client-nginx-module threads=1;
 
 lua {
-    {% if enabled_stream_plugins["prometheus"] then %}
+    {% if enable_stream then %}
+    # declared here rather than in http{} so that the stream subsystem, which
+    # cannot see dicts declared inside http{}, shares the same metrics
     lua_shared_dict prometheus-metrics {* meta.lua_shared_dict["prometheus-metrics"] *};
     {% end %}
-    {% if enabled_plugins["prometheus"] or enabled_stream_plugins["prometheus"] then %}
     lua_shared_dict prometheus-cache {* meta.lua_shared_dict["prometheus-cache"] *};
-    {% end %}
     {% if standalone_with_admin_api then %}
     lua_shared_dict standalone-config {* meta.lua_shared_dict["standalone-config"] *};
     {% end %}
@@ -81,15 +87,14 @@ lua {
     lua_shared_dict upstream-healthcheck {* meta.lua_shared_dict["upstream-healthcheck"] *};
 }
 
-{% if enabled_stream_plugins["prometheus"] and not enable_http then %}
+{% if not enable_http and prometheus_server_addr then %}
+# the stream subsystem has no server of its own to export metrics from
 http {
     lua_package_path  "{*extra_lua_path*}$prefix/deps/share/lua/5.1/?.lua;$prefix/deps/share/lua/5.1/?/init.lua;]=]
                        .. [=[{*apisix_lua_home*}/?.lua;{*apisix_lua_home*}/?/init.lua;;{*lua_path*};";
     lua_package_cpath "{*extra_lua_cpath*}$prefix/deps/lib64/lua/5.1/?.so;]=]
                       .. [=[$prefix/deps/lib/lua/5.1/?.so;;]=]
                       .. [=[{*lua_cpath*};";
-
-    {% if enabled_stream_plugins["prometheus"] then %}
 
     init_by_lua_block {
         require "resty.core"
@@ -124,7 +129,6 @@ http {
             stub_status;
         }
     }
-    {% end %}
 }
 {% end %}
 
@@ -149,7 +153,7 @@ stream {
     # backs apisix_stream_active_connections and apisix_stream_bandwidth; the
     # counters live in nginx so that they keep moving during a long-lived
     # session instead of only being known once it ends
-    {% if use_apisix_base and enabled_stream_plugins["prometheus"] and stream.metrics_zone_size then %}
+    {% if use_apisix_base and stream.metrics_zone_size then %}
     apisix_stream_metrics_zone {* stream.metrics_zone_size *};
     {% end %}
 
@@ -162,9 +166,7 @@ stream {
     lua_shared_dict tars-stream {* stream.lua_shared_dict["tars-stream"] *};
     {% end %}
 
-    {% if enabled_stream_plugins["limit-conn"] then %}
     lua_shared_dict plugin-limit-conn-stream {* stream.lua_shared_dict["plugin-limit-conn-stream"] *};
-    {% end %}
 
     # for discovery shared dict
     {% if discovery_shared_dicts then %}
@@ -349,79 +351,50 @@ http {
     lua_shared_dict plugin-ai-rate-limiting-reset-header 10m;
     {% end %}
 
-    {% if enabled_plugins["limit-conn"] then %}
     lua_shared_dict plugin-limit-conn {* http.lua_shared_dict["plugin-limit-conn"] *};
     lua_shared_dict plugin-limit-conn-redis-cluster-slot-lock {* http.lua_shared_dict["plugin-limit-conn-redis-cluster-slot-lock"] *};
-    {% end %}
 
-    {% if enabled_plugins["limit-req"] then %}
     lua_shared_dict plugin-limit-req-redis-cluster-slot-lock {* http.lua_shared_dict["plugin-limit-req-redis-cluster-slot-lock"] *};
     lua_shared_dict plugin-limit-req {* http.lua_shared_dict["plugin-limit-req"] *};
-    {% end %}
 
-    {% if enabled_plugins["limit-count"] then %}
     lua_shared_dict plugin-limit-count {* http.lua_shared_dict["plugin-limit-count"] *};
     lua_shared_dict plugin-limit-count-lock {* http.lua_shared_dict["plugin-limit-count-lock"] *};
     lua_shared_dict plugin-limit-count-redis-cluster-slot-lock {* http.lua_shared_dict["plugin-limit-count-redis-cluster-slot-lock"] *};
     lua_shared_dict plugin-limit-count-reset-header {* http.lua_shared_dict["plugin-limit-count"] *};
-    {% end %}
 
-    {% if enabled_plugins["limit-conn"] or enabled_plugins["limit-req"] or enabled_plugins["limit-count"] then %}
     # tracks unhealthy redis cluster nodes for fast-fail
     lua_shared_dict redis_cluster_health 10m;
-    {% end %}
 
-    {% if enabled_plugins["graphql-limit-count"] then %}
     lua_shared_dict plugin-graphql-limit-count {* http.lua_shared_dict["plugin-graphql-limit-count"] *};
     lua_shared_dict plugin-graphql-limit-count-reset-header {* http.lua_shared_dict["plugin-graphql-limit-count-reset-header"] *};
-    {% if not enabled_plugins["limit-count"] then %}
-    lua_shared_dict plugin-limit-count-redis-cluster-slot-lock {* http.lua_shared_dict["plugin-limit-count-redis-cluster-slot-lock"] *};
-    {% end %}
-    {% end %}
 
-    {% if enabled_plugins["prometheus"] and not enabled_stream_plugins["prometheus"] then %}
+    {% if not (use_apisix_base and enable_stream) then %}
+    # on APISIX-Base with the stream subsystem on, this one lives in lua{} so
+    # that both subsystems share it
     lua_shared_dict prometheus-metrics {* http.lua_shared_dict["prometheus-metrics"] *};
     {% end %}
 
-    {% if enabled_plugins["skywalking"] then %}
     lua_shared_dict tracing_buffer {* http.lua_shared_dict.tracing_buffer *}; # plugin: skywalking
-    {% end %}
 
-    {% if enabled_plugins["api-breaker"] then %}
     lua_shared_dict plugin-api-breaker {* http.lua_shared_dict["plugin-api-breaker"] *};
-    {% end %}
 
-    {% if enabled_plugins["openid-connect"] or enabled_plugins["authz-keycloak"] then %}
     # for openid-connect and authz-keycloak plugin
     lua_shared_dict discovery {* http.lua_shared_dict["discovery"] *}; # cache for discovery metadata documents
-    {% end %}
 
-    {% if enabled_plugins["openid-connect"] then %}
     # for openid-connect plugin
     lua_shared_dict jwks {* http.lua_shared_dict["jwks"] *}; # cache for JWKs
     lua_shared_dict introspection {* http.lua_shared_dict["introspection"] *}; # cache for JWT verification results
-    {% end %}
 
-    {% if enabled_plugins["cas-auth"] then %}
     lua_shared_dict cas_sessions {* http.lua_shared_dict["cas-auth"] *};
-    {% end %}
 
-    {% if enabled_plugins["authz-keycloak"] then %}
     # for authz-keycloak
     lua_shared_dict access-tokens {* http.lua_shared_dict["access-tokens"] *}; # cache for service account access tokens
-    {% end %}
 
-    {% if enabled_plugins["ocsp-stapling"] then %}
     lua_shared_dict ocsp-stapling {* http.lua_shared_dict["ocsp-stapling"] *}; # cache for ocsp-stapling
-    {% end %}
 
-    {% if enabled_plugins["ext-plugin-pre-req"] or enabled_plugins["ext-plugin-post-req"] then %}
     lua_shared_dict ext-plugin {* http.lua_shared_dict["ext-plugin"] *}; # cache for ext-plugin
-    {% end %}
 
-    {% if enabled_plugins["mcp-bridge"] then %}
     lua_shared_dict mcp-session {* http.lua_shared_dict["mcp-session"] *}; # cache for mcp-session
-    {% end %}
 
     {% if config_center == "xds" then %}
     lua_shared_dict xds-config  10m;
@@ -435,9 +408,7 @@ http {
     {% end %}
     {% end %}
 
-    {% if enabled_plugins["error-log-logger"] then %}
-        lua_capture_error_log  10m;
-    {% end %}
+    lua_capture_error_log  10m;
 
     lua_ssl_verify_depth 5;
     ssl_session_timeout 86400;
@@ -527,7 +498,7 @@ http {
         {% end %}
     }
 
-    {% if enabled_plugins["dubbo-proxy"] then %}
+    {% if use_apisix_base then %}
     upstream apisix_dubbo_backend {
         server 0.0.0.1;
         balancer_by_lua_block {
@@ -621,7 +592,7 @@ http {
     }
     {% end %}
 
-    {% if enabled_plugins["prometheus"] and prometheus_server_addr then %}
+    {% if prometheus_server_addr then %}
     server {
         listen {* prometheus_server_addr *} reuseport;
 
@@ -723,7 +694,7 @@ http {
 
     {% if deployment_role ~= "control_plane" then %}
 
-    {% if enabled_plugins["proxy-cache"] or enabled_plugins["graphql-proxy-cache"] then %}
+    {% if proxy_cache and proxy_cache.zones then %}
     # for proxy cache
     {% for _, cache in ipairs(proxy_cache.zones) do %}
     {% if cache.disk_path and cache.cache_levels and cache.disk_size then %}
@@ -866,7 +837,7 @@ http {
             {% end %}
             # http server location configuration snippet ends
 
-            {% if enabled_plugins["dubbo-proxy"] then %}
+            {% if use_apisix_base then %}
             set $dubbo_service_name          '';
             set $dubbo_service_version       '';
             set $dubbo_method                '';
@@ -947,7 +918,7 @@ http {
             # to be appended, which only $proxy_add_x_forwarded_for does.
             proxy_set_header   X-Forwarded-For      $proxy_add_x_forwarded_for;
 
-            {% if enabled_plugins["proxy-cache"] or enabled_plugins["graphql-proxy-cache"] then %}
+            {% if proxy_cache and proxy_cache.zones then %}
             ###  the following configuration is to cache response content from upstream server
             set $upstream_cache_zone            off;
             set $upstream_cache_key             '';
@@ -968,9 +939,7 @@ http {
 
             proxy_pass      $upstream_scheme://apisix_backend$upstream_uri;
 
-            {% if enabled_plugins["proxy-mirror"] then %}
             mirror          /proxy_mirror;
-            {% end %}
 
             header_filter_by_lua_block {
                 apisix.http_header_filter_phase()
@@ -1007,9 +976,7 @@ http {
             grpc_ssl_name     $upstream_host;
             grpc_pass         $upstream_scheme://apisix_backend;
 
-            {% if enabled_plugins["proxy-mirror"] then %}
             mirror           /proxy_mirror_grpc;
-            {% end %}
 
             header_filter_by_lua_block {
                 apisix.http_header_filter_phase()
@@ -1024,7 +991,7 @@ http {
             }
         }
 
-        {% if enabled_plugins["dubbo-proxy"] then %}
+        {% if use_apisix_base then %}
         location @dubbo_pass {
             access_by_lua_block {
                 apisix.dubbo_access_phase()
@@ -1048,7 +1015,6 @@ http {
         }
         {% end %}
 
-        {% if enabled_plugins["proxy-buffering"] then %}
         location @disable_proxy_buffering {
             access_by_lua_block {
                 apisix.disable_proxy_buffering_access_phase()
@@ -1071,9 +1037,7 @@ http {
 
             proxy_pass      $upstream_scheme://apisix_backend$upstream_uri;
 
-            {% if enabled_plugins["proxy-mirror"] then %}
             mirror          /proxy_mirror;
-            {% end %}
 
             header_filter_by_lua_block {
                 apisix.http_header_filter_phase()
@@ -1089,9 +1053,7 @@ http {
 
             proxy_buffering off;
         }
-        {% end %}
 
-        {% if enabled_plugins["proxy-mirror"] then %}
         location = /proxy_mirror {
             internal;
 
@@ -1117,9 +1079,7 @@ http {
             proxy_set_header Host $upstream_host;
             proxy_pass $upstream_mirror_uri;
         }
-        {% end %}
 
-        {% if enabled_plugins["proxy-mirror"] then %}
         location = /proxy_mirror_grpc {
             internal;
 
@@ -1144,7 +1104,6 @@ http {
             rewrite ^ $upstream_mirror_grpc_path break;
             grpc_pass $upstream_mirror_host;
         }
-        {% end %}
     }
     {% end %}
 
