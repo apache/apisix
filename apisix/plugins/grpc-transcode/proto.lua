@@ -132,8 +132,11 @@ local function create_proto_obj(proto_id)
     end
 
     local content
+    -- `id_schema` accepts a string or an integer, and the two are never equal
+    -- in Lua, so compare them in the same form.
+    proto_id = tostring(proto_id)
     for _, proto in config_util.iterate_values(protos.values) do
-        if proto_id == proto.value.id then
+        if proto_id == tostring(proto.value.id) then
             content = proto.value.content
             break
         end
