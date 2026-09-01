@@ -419,52 +419,46 @@ function _M.get(self, key)
 end
 
 
+-- reads standalone-config shdict once and applies it if present
+local function try_restore_from_shared_dict()
+    if not is_use_admin_api() or shared_dict then
+        return
+    end
+
+    shared_dict = ngx_shared["standalone-config"] -- init shared dict in current worker
+    if not shared_dict then
+        log.crit(_M.ERR_NO_SHARED_DICT)
+        -- fill that value to make the worker not try to read from shared dict again
+        shared_dict = "error"
+        return
+    end
+
+    local config, err = shared_dict:get("config")
+    if not config then
+        if err then -- if the key does not exist, the return values are both nil
+            log.error("failed to read config from shared dict: ", err)
+        end
+        log.info("no config found in shared dict")
+        return
+    end
+    log.info("startup config loaded from shared dict: ", config)
+
+    config, err = json.decode(tostring(config))
+    if not config then
+        log.error("failed to decode config from shared dict: ", err)
+        return
+    end
+    _M._update_config(config)
+    log.info("config loaded from shared dict")
+end
+
+
 local function _automatic_fetch(premature, self)
     if premature then
         return
     end
 
-    -- the _automatic_fetch is only called in the timer, and according to the
-    -- documentation, ngx.shared.DICT.get can be executed there.
-    -- if the file's global variables have not yet been assigned values,
-    -- we can assume that the worker has not been initialized yet and try to
-    -- read any old data that may be present from the shared dict
-    -- try load from shared dict only on first startup, otherwise use event mechanism
-    if is_use_admin_api() and not shared_dict then
-        log.info("try to load config from shared dict")
-
-        local config, err
-        shared_dict = ngx_shared["standalone-config"] -- init shared dict in current worker
-        if not shared_dict then
-            log.error("failed to read config from shared dict: shared dict not found")
-            goto SKIP_SHARED_DICT
-        end
-        config, err = shared_dict:get("config")
-        if not config then
-            if err then -- if the key does not exist, the return values are both nil
-                log.error("failed to read config from shared dict: ", err)
-            end
-            log.info("no config found in shared dict")
-            goto SKIP_SHARED_DICT
-        end
-        log.info("startup config loaded from shared dict: ", config)
-
-        config, err = json.decode(tostring(config))
-        if not config then
-            log.error("failed to decode config from shared dict: ", err)
-            goto SKIP_SHARED_DICT
-        end
-        _M._update_config(config)
-        log.info("config loaded from shared dict")
-
-        ::SKIP_SHARED_DICT::
-        if not shared_dict then
-            log.crit(_M.ERR_NO_SHARED_DICT)
-
-            -- fill that value to make the worker not try to read from shared dict again
-            shared_dict = "error"
-        end
-    end
+    try_restore_from_shared_dict()
 
     local i = 0
     while not exiting() and self.running and i <= 32 do
@@ -599,6 +593,9 @@ function _M.init_worker()
     if is_use_admin_api() then
         apisix_yaml = {}
         apisix_yaml_mtime = 0
+
+        try_restore_from_shared_dict()
+ 
         return true
     end
 
