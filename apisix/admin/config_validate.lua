@@ -58,13 +58,17 @@ local resources = {
 
 local CONF_VERSION_KEY_SUFFIX = "_conf_version"
 local ALL_RESOURCE_KEYS = {}
+local HTTP_RESOURCE_KEYS = {}
+local STREAM_RESOURCE_KEYS = {}
 for dir in pairs(constants.HTTP_ETCD_DIRECTORY) do
     local key = str_sub(dir, 2)
     ALL_RESOURCE_KEYS[key] = key .. CONF_VERSION_KEY_SUFFIX
+    HTTP_RESOURCE_KEYS[key] = key .. CONF_VERSION_KEY_SUFFIX
 end
 for dir in pairs(constants.STREAM_ETCD_DIRECTORY) do
     local key = str_sub(dir, 2)
     ALL_RESOURCE_KEYS[key] = key .. CONF_VERSION_KEY_SUFFIX
+    STREAM_RESOURCE_KEYS[key] = key .. CONF_VERSION_KEY_SUFFIX
 end
 
 
@@ -252,6 +256,16 @@ end
 
 function _M.get_all_resource_keys()
     return ALL_RESOURCE_KEYS
+end
+
+
+function _M.get_http_resource_keys()
+    return HTTP_RESOURCE_KEYS
+end
+
+
+function _M.get_stream_resource_keys()
+    return STREAM_RESOURCE_KEYS
 end
 
 

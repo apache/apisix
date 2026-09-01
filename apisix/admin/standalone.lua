@@ -19,8 +19,10 @@ local ipairs       = ipairs
 local str_lower    = string.lower
 local ngx          = ngx
 local ngx_time     = ngx.time
+local ngx_now      = ngx.now
+local ngx_sleep    = ngx.sleep
 local get_method   = ngx.req.get_method
-local shared_dict  = ngx.shared["standalone-config"]
+local worker_count = ngx.worker.count
 local timer_every  = ngx.timer.every
 local exiting      = ngx.worker.exiting
 local yaml         = require("lyaml")
@@ -29,7 +31,17 @@ local core         = require("apisix.core")
 local config_yaml  = require("apisix.core.config_yaml")
 local config_validate = require("apisix.admin.config_validate")
 
+local shared_dict        = ngx.shared["standalone-config"]
+local status_shared_dict = ngx.shared["standalone-status"]
+
 local ALL_RESOURCE_KEYS = config_validate.get_all_resource_keys()
+local STREAM_RESOURCE_KEYS = config_validate.get_stream_resource_keys()
+local APPLIED_CHECK_KEYS = {}
+for key in pairs(ALL_RESOURCE_KEYS) do
+    if key ~= "plugins" then
+        APPLIED_CHECK_KEYS[key] = true
+    end
+end
 
 local EVENT_UPDATE = "standalone-api-configuration-update"
 local NOT_FOUND_ERR = "not found"
@@ -76,6 +88,59 @@ local function update_and_broadcast_config(apisix_yaml)
 end
 
 local validate_configuration = config_validate.validate_configuration
+
+
+local DEFAULT_WAIT_MS = 3000
+local MAX_WAIT_MS = 60000
+local POLL_INTERVAL = 0.05
+
+
+local function parse_wait_ms(ctx)
+    local args = core.request.get_uri_args(ctx)
+    local wait = args and tonumber(args.wait)
+    if not wait or wait < 0 then
+        return DEFAULT_WAIT_MS
+    end
+    if wait > MAX_WAIT_MS then
+        return MAX_WAIT_MS
+    end
+    return wait
+end
+
+
+local function stream_enabled()
+    local local_conf = core.config.local_conf()
+    return local_conf and local_conf.apisix and local_conf.apisix.stream_proxy
+end
+
+
+local function all_workers_applied(target_digest)
+    if not status_shared_dict then
+        return false
+    end
+
+    local n = worker_count()
+    local check_stream = stream_enabled()
+    for key in pairs(APPLIED_CHECK_KEYS) do
+        for id = 0, n - 1 do
+            local http_key = "worker:" .. id .. ":http:" .. key
+            local digest = status_shared_dict:get(http_key)
+            if digest ~= target_digest then
+                core.log.debug("not yet applied: ", http_key, " has ", digest, ", want ", target_digest)
+                return false
+            end
+            if check_stream and STREAM_RESOURCE_KEYS[key] then
+                local stream_key = "worker:" .. id .. ":stream:" .. key
+                local digest = status_shared_dict:get(stream_key)
+                if digest ~= target_digest then
+                    core.log.debug("not yet applied: ", stream_key, " has ", digest, ", want ", target_digest)
+                    return false
+                end
+            end
+        end
+    end
+    return true
+end
 
 local function update(ctx)
     -- check digest header existence
@@ -171,6 +236,20 @@ local function update(ctx)
 
     core.response.set_header(METADATA_LAST_MODIFIED, apisix_yaml[METADATA_LAST_MODIFIED])
     core.response.set_header(METADATA_DIGEST, apisix_yaml[METADATA_DIGEST])
+
+    local wait_ms = parse_wait_ms(ctx)
+    if wait_ms <= 0 then
+        return core.response.exit(202)
+    end
+
+    local deadline = ngx_now() + wait_ms / 1000
+    while not exiting() and ngx_now() < deadline do
+        if all_workers_applied(digest) then
+            return core.response.exit(200)
+        end
+        ngx_sleep(POLL_INTERVAL)
+    end
+
     return core.response.exit(202)
 end
 

@@ -200,7 +200,16 @@ local function mark_type_applied(self)
     if not dict then
         return
     end
-    local key = "worker:" .. worker_id() .. ":" .. subsystem .. ":" .. self.key
+    local id = worker_id()
+    if not id then
+        -- the privileged agent processes do not have a worker ID
+        -- although they also watch changes to these resources,
+        -- they do not process traffic, so clients are unaware
+        -- of them, just skip their status report
+        return
+    end
+    local key = "worker:" .. id .. ":" .. subsystem .. ":" .. self.key
+    log.debug("mark type applied: ", key, " = ", digest)
     local ok, err = dict:set(key, digest)
     if not ok then
         log.error("failed to record applied digest for [", key, "]: ", err)
