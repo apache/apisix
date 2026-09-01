@@ -149,3 +149,53 @@ apisix:
     }
 --- error_log
 failed to parse domain
+
+
+
+=== TEST 6: core.dns.client recovers the rcode from resty.dns.client's error
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local resolver = require("apisix.core.resolver")
+            local utils = require("apisix.core.utils")
+            -- creates the dns client (resolved from /etc/hosts, no network)
+            assert(utils.dns_parse("localhost"))
+            local lib = require("resty.dns.client")
+            local original_resolve = lib.resolve
+            local replies = {
+                ["nxdomain.test"] = function()
+                    return nil, "dns server error: 3 name error"
+                end,
+                ["servfail.test"] = function()
+                    return nil, "dns server error: 2 server failure"
+                end,
+                ["timeout.test"] = function()
+                    return nil, "dns lookup pool exceeded retries (1): timeout"
+                end,
+                ["cacheonly.test"] = function()
+                    return {errcode = 100, errstr = "cache only lookup failed"}
+                end,
+            }
+            lib.resolve = function(domain)  -- mock: resty.dns.client
+                return replies[domain]()
+            end
+
+            for _, domain in ipairs({"nxdomain.test", "servfail.test", "timeout.test",
+                                    "cacheonly.test"}) do
+                local ip, err, rcode = resolver.parse_domain(domain)
+                ngx.say(domain, ": ip=", ip, " rcode=", rcode, " err=", err)
+            end
+            lib.resolve = original_resolve
+        }
+    }
+--- response_body
+nxdomain.test: ip=nil rcode=3 err=failed to query the DNS server: dns server error: 3 name error
+servfail.test: ip=nil rcode=2 err=failed to query the DNS server: dns server error: 2 server failure
+timeout.test: ip=nil rcode=nil err=failed to query the DNS server: dns lookup pool exceeded retries (1): timeout
+cacheonly.test: ip=nil rcode=100 err=server returned error code: 100: cache only lookup failed
+--- error_log
+failed to parse domain: nxdomain.test
+failed to parse domain: servfail.test
+failed to parse domain: timeout.test
+failed to parse domain: cacheonly.test

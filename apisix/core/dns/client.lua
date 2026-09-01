@@ -27,6 +27,8 @@ local table = require("apisix.core.table")
 local gcd = require("apisix.core.math").gcd
 local insert_tab = table.insert
 local math_random = math.random
+local str_match = string.match
+local tonumber = tonumber
 local package_loaded = package.loaded
 local ipairs = ipairs
 local table_remove = table.remove
@@ -36,6 +38,7 @@ local setmetatable = setmetatable
 local _M = {
     RETURN_RANDOM = 1,
     RETURN_ALL = 2,
+    RCODE_NXDOMAIN = 3,
 }
 
 
@@ -98,12 +101,13 @@ function _M.resolve(self, domain, selector)
     -- this function will dereference the CNAME records
     local answers, err = client.resolve(domain)
     if not answers then
-        return nil, "failed to query the DNS server: " .. err
+        local rcode = tonumber(str_match(err, "^dns server error: (%d+) "))
+        return nil, "failed to query the DNS server: " .. err, rcode
     end
 
     if answers.errcode then
         return nil, "server returned error code: " .. answers.errcode
-                    .. ": " .. answers.errstr
+                    .. ": " .. answers.errstr, answers.errcode
     end
 
     if selector == _M.RETURN_ALL then
