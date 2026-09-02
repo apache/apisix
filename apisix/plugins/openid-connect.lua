@@ -1385,6 +1385,17 @@ function _M.rewrite(plugin_conf, ctx)
                 return 401
             end
 
+            -- fail-closed only: resty.session appends the store error, so match
+            -- the prefix. Reject without destroying the cookie.
+            if core.string.find(err, "unable to check session revocation")
+                or core.string.find(err, "unable to mark session revoked") then
+                if session then
+                    session:close()
+                end
+                core.log.error("OIDC session revocation store unavailable: ", err)
+                return 503
+            end
+
             -- Recoverable authorization-callback failures: a stale state
             -- (replayed or pruned callback), or the ID provider redirecting
             -- back with error=temporarily_unavailable, e.g. Keycloak after

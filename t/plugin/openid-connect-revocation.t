@@ -306,3 +306,77 @@ done
     }
 --- response_body
 done
+
+
+
+=== TEST 4: fail-closed revocation store errors map to 503 and do not destroy the session
+--- config
+    location /t {
+        content_by_lua_block {
+            local old_plugin = package.loaded["apisix.plugins.openid-connect"]
+            local old_openidc = package.loaded["resty.openidc"]
+
+            local authenticate_err
+            local session
+            package.loaded["resty.openidc"] = {
+                authenticate = function()
+                    return nil, authenticate_err, nil, session
+                end,
+            }
+            package.loaded["apisix.plugins.openid-connect"] = nil
+
+            local ok, err = pcall(function()
+                local plugin = require("apisix.plugins.openid-connect")
+                local conf = {
+                    client_id = "a",
+                    client_secret = "b",
+                    discovery = "http://127.0.0.1:1/.well-known/openid-configuration",
+                    redirect_uri = "http://127.0.0.1/cb",
+                    ssl_verify = false,
+                    session = { secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK" },
+                }
+                assert(plugin.check_schema(conf))
+
+                local ctx = {
+                    var = { uri = "/uri", request_uri = "/uri" },
+                }
+
+                for _, case in ipairs({
+                    {
+                        name = "check on open",
+                        err = "unable to check session revocation (connection refused)",
+                    },
+                    {
+                        name = "mark on destroy",
+                        err = "unable to mark session revoked (timeout)",
+                    },
+                }) do
+                    authenticate_err = case.err
+                    session = {
+                        close = function(self) self.closed = true end,
+                        destroy = function(self) self.destroyed = true end,
+                    }
+
+                    local code = plugin.rewrite(conf, ctx)
+                    assert(code == 503, case.name .. ": got " .. tostring(code))
+                    assert(session.closed, case.name .. ": expected session:close()")
+                    assert(not session.destroyed,
+                           case.name .. ": must not call session:destroy()")
+                end
+            end)
+
+            package.loaded["apisix.plugins.openid-connect"] = old_plugin
+            package.loaded["resty.openidc"] = old_openidc
+
+            if not ok then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+            ngx.say("done")
+        }
+    }
+--- error_log
+OIDC session revocation store unavailable
+--- response_body
+done
