@@ -153,34 +153,106 @@ passed
 
 
 
-=== TEST 2: missing code
+=== TEST 2: missing code, redirect carries a state
 --- request
 GET /hello
 --- error_code: 302
---- response_headers
-Location: /echo
+--- response_headers_like
+Location: /echo\?state=[0-9a-f]{32}
 
 
 
-=== TEST 3: invalid code
+=== TEST 3: query code without a state is rejected
 --- request
-GET /hello?code=invalid
+GET /hello?code=passed
 --- error_code: 401
+--- response_body
+{"message":"Invalid state"}
+
+
+
+=== TEST 4: query code with a state not bound to the session is rejected
+--- request
+GET /hello?code=passed&state=deadbeefdeadbeefdeadbeefdeadbeef
+--- error_code: 401
+--- response_body
+{"message":"Invalid state"}
+
+
+
+=== TEST 5: invalid code with a valid state
+--- config
+    location /t {
+        content_by_lua_block {
+            local oauth = require("lib.oauth_login")
+            local res, err = oauth.login(ngx.var.server_port, "/hello", "invalid")
+            assert(res, err)
+            assert(res.status == 401, "expected 401, got " .. res.status)
+            ngx.print(res.body)
+        }
+    }
 --- response_body
 {"message":"Invalid authorization code"}
 
 
 
-=== TEST 4: valid code
---- request
-GET /hello?code=passed
---- error_code: 200
+=== TEST 6: valid code with the state bound to the session
+--- config
+    location /t {
+        content_by_lua_block {
+            local oauth = require("lib.oauth_login")
+            local res, err = oauth.login(ngx.var.server_port, "/hello", "passed")
+            assert(res, err)
+            assert(res.status == 200, "expected 200, got " .. res.status)
+            ngx.print(res.body)
+        }
+    }
 --- response_body
 hello world
 
 
 
-=== TEST 5: X-Feishu-Code with invalid code
+=== TEST 7: a state from one session cannot be used by another session
+--- config
+    location /t {
+        content_by_lua_block {
+            local oauth = require("lib.oauth_login")
+            local httpc = require("resty.http").new()
+            local port = ngx.var.server_port
+            local uri = "http://127.0.0.1:" .. port .. "/hello"
+
+            local cookie_a, state_a, err_a = oauth.begin(port, "/hello")
+            assert(cookie_a, err_a)
+            local cookie_b, state_b, err_b = oauth.begin(port, "/hello")
+            assert(cookie_b, err_b)
+            assert(state_a ~= state_b, "states must not repeat across sessions")
+
+            -- session B presented with session A's state: this is the shape of an
+            -- injected code, and it must not authenticate
+            local res = assert(httpc:request_uri(uri, {
+                method = "GET",
+                query = {code = "passed", state = state_a},
+                headers = {["Cookie"] = cookie_b},
+            }))
+            assert(res.status == 401, "expected 401, got " .. res.status)
+
+            -- session B with its own state still works
+            local res2 = assert(httpc:request_uri(uri, {
+                method = "GET",
+                query = {code = "passed", state = state_b},
+                headers = {["Cookie"] = cookie_b},
+            }))
+            assert(res2.status == 200, "expected 200, got " .. res2.status)
+
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 8: X-Feishu-Code with invalid code
 --- request
 GET /hello
 --- more_headers
@@ -191,7 +263,7 @@ X-Feishu-Code: invalid
 
 
 
-=== TEST 6: X-Feishu-Code header
+=== TEST 9: X-Feishu-Code header
 --- request
 GET /hello
 --- more_headers
@@ -202,7 +274,7 @@ hello world
 
 
 
-=== TEST 7: check cookie
+=== TEST 10: check cookie
 --- config
     location /t {
         content_by_lua_block {
@@ -210,12 +282,8 @@ hello world
             local httpc = http.new()
 
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
-            local res, err = httpc:request_uri(uri, {
-                query = {
-                    code = "passed",
-                },
-                method = "GET",
-            })
+            local oauth = require("lib.oauth_login")
+            local res, err = oauth.login(ngx.var.server_port, "/hello", "passed")
             assert(res, "request failed: " .. (err or "unknown error"))
             assert(res.status == 200, "unexpected res status: " .. res.status)
 
@@ -249,7 +317,7 @@ passed
 
 
 
-=== TEST 8: cookie expire
+=== TEST 11: cookie expire
 --- config
     location /t {
         content_by_lua_block {
@@ -257,12 +325,8 @@ passed
             local httpc = http.new()
 
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
-            local res, err = httpc:request_uri(uri, {
-                query = {
-                    code = "passed",
-                },
-                method = "GET",
-            })
+            local oauth = require("lib.oauth_login")
+            local res, err = oauth.login(ngx.var.server_port, "/hello", "passed")
             assert(res, "request failed: " .. (err or "unknown error"))
             assert(res.status == 200, "unexpected res status: " .. res.status)
 
@@ -302,7 +366,7 @@ passed
 
 
 
-=== TEST 9: specify header and query and redirect_uri
+=== TEST 12: specify header and query and redirect_uri
 --- config
     location /t {
         content_by_lua_block {
@@ -348,15 +412,35 @@ passed
 
 
 
-=== TEST 10: specify query
---- pipelined_requests eval
-["GET /hello?code=passed", "GET /hello?custom_code=passed"]
---- error_code eval
-[302, 200]
+=== TEST 13: specify query
+--- config
+    location /t {
+        content_by_lua_block {
+            local httpc = require("resty.http").new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+
+            -- the default query name is not the configured one, so no code is seen
+            local res = assert(httpc:request_uri(uri, {
+                method = "GET",
+                query = {code = "passed"},
+            }))
+            assert(res.status == 302, "expected 302, got " .. res.status)
+
+            local oauth = require("lib.oauth_login")
+            local res2, err = oauth.login(ngx.var.server_port, "/hello",
+                                             "passed", "custom_code")
+            assert(res2, err)
+            assert(res2.status == 200, "expected 200, got " .. res2.status)
+
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
 
 
 
-=== TEST 11: specify header
+=== TEST 14: specify header
 --- pipelined_requests eval
 ["GET /hello", "GET /hello"]
 --- more_headers eval
@@ -369,7 +453,7 @@ passed
 
 
 
-=== TEST 12: secret_fallbacks allows session created with old secret after key rotation
+=== TEST 15: secret_fallbacks allows session created with old secret after key rotation
 --- config
     location /t {
         content_by_lua_block {
@@ -404,10 +488,8 @@ passed
 
             -- step 2: authenticate with secret-v1 and capture session cookie
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
-            local res, err = httpc:request_uri(uri, {
-                method = "GET",
-                query = {code = "passed"},
-            })
+            local oauth = require("lib.oauth_login")
+            local res, err = oauth.login(ngx.var.server_port, "/hello", "passed")
             assert(res, err)
             assert(res.status == 200, "expected 200, got " .. res.status)
             local old_cookie = res.headers["Set-Cookie"]
@@ -491,7 +573,7 @@ passed
 
 
 
-=== TEST 13: forged X-Userinfo header does not bypass authentication
+=== TEST 16: forged X-Userinfo header does not bypass authentication
 --- config
     location /t {
         content_by_lua_block {
@@ -538,10 +620,8 @@ passed
                 "forged X-Userinfo without cookie should be rejected, got " .. res1.status)
 
             -- obtain a legitimate session cookie
-            local res2, err2 = httpc:request_uri(uri, {
-                method = "GET",
-                query = {code = "passed"},
-            })
+            local oauth = require("lib.oauth_login")
+            local res2, err2 = oauth.login(ngx.var.server_port, "/hello", "passed")
             assert(res2, err2)
             assert(res2.status == 200, "expected 200 on auth, got " .. res2.status)
             local cookie = res2.headers["Set-Cookie"]
@@ -613,7 +693,7 @@ passed
 
 
 
-=== TEST 14: secret_fallbacks values are encrypted in etcd
+=== TEST 17: secret_fallbacks values are encrypted in etcd
 --- yaml_config
 apisix:
     data_encryption:
