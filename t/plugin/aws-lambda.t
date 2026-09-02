@@ -46,6 +46,12 @@ add_block_preprocessor(sub {
                 $inside_lua_block
             }
         }
+
+        location = / {
+            content_by_lua_block {
+                ngx.say("request_uri: ", ngx.var.request_uri)
+            }
+        }
     }
 _EOC_
 
@@ -510,3 +516,97 @@ end
 passed
 query: a=%2A&a-=x&flag=&multi=m1&multi=m2&with%20space=a%2Fb%20c
 signature: ok
+
+
+
+=== TEST 10: function_uri without a path is requested as "/"
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "aws-lambda": {
+                                "function_uri": "http://localhost:8765",
+                                "authorization": {
+                                    "iam": {
+                                        "accesskey": "KEY1",
+                                        "secretkey": "KeySecret"
+                                    }
+                                }
+                            }
+                        },
+                        "uri": "/aws"
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
+
+            ngx.say(body)
+
+            local code, _, body = t("/aws", "GET")
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.print(body)
+        }
+    }
+--- response_body
+passed
+request_uri: /
+
+
+
+=== TEST 11: function error status and body are forwarded and logged
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "aws-lambda": {
+                                "function_uri": "http://localhost:8765/generic",
+                                "authorization": {
+                                    "iam": {
+                                        "accesskey": "KEY1",
+                                        "secretkey": "KeySecret"
+                                    }
+                                }
+                            }
+                        },
+                        "uri": "/aws"
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
+
+            ngx.say(body)
+
+            local code, body = t("/aws", "GET")
+            ngx.say("status: ", code)
+            ngx.print(body)
+        }
+    }
+--- inside_lua_block
+ngx.status = 403
+ngx.say([[{"message":"The security token included in the request is invalid."}]])
+--- response_body
+passed
+status: 403
+{"message":"The security token included in the request is invalid."}
+--- error_log
+aws-lambda function returned status 403, body: {"message":"The security token included in the request is invalid."}
+--- no_error_log
+[error]
