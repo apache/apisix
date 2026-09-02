@@ -21,6 +21,8 @@ local tonumber     = tonumber
 local str_lower    = string.lower
 local str_find     = string.find
 local str_sub      = string.sub
+local str_gmatch   = string.gmatch
+local table_concat = table.concat
 local ngx          = ngx
 local ngx_time     = ngx.time
 local ngx_now      = ngx.now
@@ -29,6 +31,7 @@ local get_method   = ngx.req.get_method
 local worker_count = ngx.worker.count
 local timer_every  = ngx.timer.every
 local exiting      = ngx.worker.exiting
+local subsystem    = ngx.config.subsystem
 local yaml         = require("lyaml")
 local events       = require("apisix.events")
 local core         = require("apisix.core")
@@ -39,15 +42,7 @@ local config_validate = require("apisix.admin.config_validate")
 local shared_dict        = ngx.shared["standalone-config"]
 local status_shared_dict = ngx.shared["standalone-status"]
 
-local ALL_RESOURCE_KEYS    = config_validate.get_all_resource_keys()
-local HTTP_RESOURCE_KEYS   = config_validate.get_http_resource_keys()
-local STREAM_RESOURCE_KEYS = config_validate.get_stream_resource_keys()
-local APPLIED_CHECK_KEYS = {}
-for key in pairs(ALL_RESOURCE_KEYS) do
-    if key ~= "plugins" then
-        APPLIED_CHECK_KEYS[key] = true
-    end
-end
+local ALL_RESOURCE_KEYS = config_validate.get_all_resource_keys()
 
 local EVENT_UPDATE = "standalone-api-configuration-update"
 local NOT_FOUND_ERR = "not found"
@@ -152,6 +147,40 @@ local function parse_wait_ms(ctx)
 end
 
 
+-- Some resource types (e.g. /protos) only get a config.new() instance
+-- when their owning plugin is enabled, so all_workers_applied can't wait
+-- on a key that will never be reported. Records which keys this subsystem
+-- actually has, as one comma-joined shdict value; rewritten every poll
+-- tick so it self-heals after LRU eviction or a plugin toggled by reload.
+local function mark_tracked_resources()
+    if not status_shared_dict then
+        return
+    end
+    local tracked = {}
+    for key in pairs(ALL_RESOURCE_KEYS) do
+        if config_yaml.fetch_created_obj("/" .. key) then
+            tracked[#tracked + 1] = key
+        end
+    end
+    local ok, err = status_shared_dict:set("tracked:" .. subsystem, table_concat(tracked, ","))
+    if not ok then
+        core.log.error("failed to mark tracked resources: ", err)
+    end
+end
+
+
+local function tracked_resource_set(subsystem_name)
+    local raw = status_shared_dict:get("tracked:" .. subsystem_name)
+    local set = {}
+    if raw then
+        for key in str_gmatch(raw, "[^,]+") do
+            set[key] = true
+        end
+    end
+    return set
+end
+
+
 local function all_workers_applied(target_digest)
     if not status_shared_dict then
         return false
@@ -159,9 +188,11 @@ local function all_workers_applied(target_digest)
 
     local n = worker_count()
     local check_stream = config_local.is_stream_enabled()
-    for key in pairs(APPLIED_CHECK_KEYS) do
+    local http_tracked = tracked_resource_set("http")
+    local stream_tracked = check_stream and tracked_resource_set("stream")
+    for key in pairs(ALL_RESOURCE_KEYS) do
         for id = 0, n - 1 do
-            if HTTP_RESOURCE_KEYS[key] then
+            if http_tracked[key] then
                 local http_key = "worker:" .. id .. ":http:" .. key
                 local digest = status_shared_dict:get(http_key)
                 if digest ~= target_digest then
@@ -170,7 +201,7 @@ local function all_workers_applied(target_digest)
                     return false
                 end
             end
-            if check_stream and STREAM_RESOURCE_KEYS[key] then
+            if check_stream and stream_tracked and stream_tracked[key] then
                 local stream_key = "worker:" .. id .. ":stream:" .. key
                 local digest = status_shared_dict:get(stream_key)
                 if digest ~= target_digest then
@@ -476,6 +507,8 @@ end
 
 
 function _M.init_worker()
+    mark_tracked_resources()
+
     local ok, err = try_restore_from_shared_dict()
     if not ok then
         core.log.error("failed to restore config from shared dict: ", err)
@@ -506,6 +539,8 @@ function _M.init_worker()
     local last_modified_per_worker, digest_per_worker
     timer_every(0.2, function ()
         if not exiting() then
+            mark_tracked_resources()
+
             if not shared_dict then
                 return
             end

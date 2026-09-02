@@ -77,10 +77,10 @@ end
 -- `proxy_mode: http&stream`. `proxy_mode` doesn't change once a worker is
 -- running, so the result is computed once and cached.
 --
--- @function require("core.config_local").is_stream_enabled
+-- @function require("apisix.core.config_local").is_stream_enabled
 -- @treturn boolean Whether the stream subsystem is enabled.
 -- @usage
--- local config_local = require("core.config_local")
+-- local config_local = require("apisix.core.config_local")
 -- local stream_enabled = config_local.is_stream_enabled()
 local _is_stream_enabled
 function _M.is_stream_enabled()

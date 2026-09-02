@@ -190,3 +190,32 @@ GET /r7
 --- error_code: 200
 --- response_body
 hello world
+
+
+
+=== TEST 9: ?wait doesn't hang on a resource type whose owning plugin is disabled (e.g. protos / grpc-transcode never get a config.new() instance)
+--- yaml_config
+plugins: # only one unrelated plugin, no grpc-transcode enabled
+    - real-ip
+deployment:
+    role: traditional
+    role_traditional:
+        config_provider: yaml
+    admin:
+        admin_key:
+            - name: admin
+              key: edd1c9f034335f136f87ad84b625c8f1
+              role: admin
+--- config
+    location /t9 {} # a different location, together with the yaml_config
+                     # above, forces a reload so the new plugin list
+                     # actually takes effect (yaml_config alone is a no-op
+                     # unless --- config also changes)
+--- log_level: debug
+--- request
+PUT /apisix/admin/configs?wait=3000
+{"routes":[{"id":"r9","uri":"/r9","upstream":{"nodes":{"127.0.0.1:1980":1},"type":"roundrobin"}}]}
+--- more_headers
+X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
+X-Digest: w9
+--- error_code: 200

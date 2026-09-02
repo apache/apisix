@@ -553,8 +553,9 @@ end
 function _M.init_worker()
     sync_status_to_shdict(false)
     if is_use_admin_api() then
-        apisix_yaml = {}
-        apisix_yaml_mtime = 0
+        if not apisix_yaml then
+            apisix_yaml = {}
+        end
 
         return true
     end
