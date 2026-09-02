@@ -311,6 +311,7 @@ __DATA__
 ["passed\n", "hello world\n", ""]
 
 
+
 === TEST 6: the sni of the stream route is matched case-insensitively
 --- config
     location /setup {
