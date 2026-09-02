@@ -73,7 +73,7 @@ deployment:
       -
         name: admin
         role: admin
-        # Set a secure Admin API Key. If left empty, APISIX will generate one during initialization and write it back to this file.
+        # Set a secure Admin API Key. APISIX refuses to start if it is left empty.
         key: your-admin-key
 ```
 
