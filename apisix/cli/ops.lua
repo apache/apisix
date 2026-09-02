@@ -131,6 +131,50 @@ local function validate_port_or_range(port_entry)
 end
 
 
+-- Split a stream_proxy.tcp `addr` into its address and port range. Returns nil for
+-- the forms validate_port_or_range leaves to nginx.
+local function parse_listen_addr(addr)
+    if type(addr) == "number" then
+        return "", addr, addr
+    end
+
+    local ip, port_part
+    if str_find(addr, "[", 1, true) then
+        local bracket_end = str_find(addr, "]", 1, true)
+        if not (bracket_end and str_sub(addr, bracket_end + 1, bracket_end + 1) == ":") then
+            return nil
+        end
+        ip = str_sub(addr, 1, bracket_end)
+        port_part = str_sub(addr, bracket_end + 2)
+    else
+        local colon_pos = str_find(addr, ":", 1, true)
+        if colon_pos then
+            ip = str_sub(addr, 1, colon_pos - 1)
+            port_part = str_sub(addr, colon_pos + 1)
+        else
+            ip = ""
+            port_part = addr
+        end
+    end
+
+    if ip == "0.0.0.0" then
+        ip = ""
+    end
+
+    local start_str, end_str = port_part:match("^(%d+)%-(%d+)$")
+    if start_str then
+        return ip, tonumber(start_str), tonumber(end_str)
+    end
+
+    local port = tonumber(port_part)
+    if not port then
+        return nil
+    end
+
+    return ip, port, port
+end
+
+
 local function help()
     print([[
 Usage: apisix [action] <argument>
@@ -637,23 +681,23 @@ Please modify "admin_key" in conf/config.yaml .
         end
     end
 
-    -- Split stream listens into nginx server blocks. `proxy_protocol_to_upstream`
-    -- (sending the PROXY protocol toward the upstream) is a server-level directive,
-    -- so TCP listens that enable it need a dedicated server block. The accept-side
-    -- `proxy_protocol` and `ssl` are per-listen directives and coexist in one block.
-    -- Per-listen settings fall back to the global `proxy_protocol` options; UDP never
-    -- sends the PROXY protocol upstream and always joins the plain block.
+    -- Split stream listens into nginx server blocks, one per combination of the
+    -- server-level directives a listen needs: `proxy_protocol on` (PROXY protocol to
+    -- the upstream) and the TLS mode -- plain (`listen ... [ssl]`), passthrough
+    -- (`ssl_preread on`) or mixed (`ssl_preread on` plus the two internal servers the
+    -- route picks between). The accept-side `proxy_protocol` and `ssl` are per-listen
+    -- and coexist in one block. Per-listen settings fall back to the global
+    -- `proxy_protocol` options; UDP always joins the plain block.
     if enable_stream and yaml_conf.apisix.stream_proxy then
         local stream_proxy = yaml_conf.apisix.stream_proxy
         local pp = yaml_conf.apisix.proxy_protocol or {}
         local plain = {
             tcp = {}, udp = stream_proxy.udp or {},
             proxy_protocol_to_upstream = false, tcp_enable_ssl = false,
+            tls_passthrough = false, tls_mixed = false,
         }
-        local to_upstream = {
-            tcp = {}, udp = {},
-            proxy_protocol_to_upstream = true, tcp_enable_ssl = false,
-        }
+        local servers = {plain}
+        local group_by_key = {["false|plain"] = plain}
         for _, item in ipairs(stream_proxy.tcp or {}) do
             if item.proxy_protocol == nil then
                 item.proxy_protocol = pp.enable_tcp_pp
@@ -662,18 +706,70 @@ Please modify "admin_key" in conf/config.yaml .
             if up == nil then
                 up = pp.enable_tcp_pp_to_upstream
             end
-            local group = up and to_upstream or plain
-            if item.tls then
+            up = up and true or false
+            local mode = "plain"
+            if item.tls_passthrough then
+                mode = item.tls and "mixed" or "passthrough"
+            end
+            local key = tostring(up) .. "|" .. mode
+            local group = group_by_key[key]
+            if not group then
+                group = {
+                    tcp = {}, udp = {},
+                    proxy_protocol_to_upstream = up, tcp_enable_ssl = false,
+                    tls_passthrough = mode ~= "plain", tls_mixed = mode == "mixed",
+                }
+                group_by_key[key] = group
+                table_insert(servers, group)
+            end
+            -- in mixed mode the internal server terminates, so the listen stays plain
+            if item.tls and mode == "plain" then
                 group.tcp_enable_ssl = true
             end
             table_insert(group.tcp, item)
         end
-        local servers = {}
-        if #plain.tcp > 0 or #plain.udp > 0 then
-            table_insert(servers, plain)
+        if #plain.tcp == 0 and #plain.udp == 0 then
+            table_remove(servers, 1)
         end
-        if #to_upstream.tcp > 0 then
-            table_insert(servers, to_upstream)
+        -- Two listens needing different server blocks can not share an address: nginx
+        -- refuses to start with reuseport on, and silently keeps only the first without.
+        local addr_owner = {}
+        for idx, group in ipairs(servers) do
+            for _, item in ipairs(group.tcp) do
+                local ip, first, last = parse_listen_addr(item.addr)
+                if ip then
+                    for port = first, last do
+                        local key = ip .. "|" .. port
+                        if addr_owner[key] and addr_owner[key] ~= idx then
+                            util.die("invalid stream_proxy.tcp entry: `", tostring(item.addr),
+                                     "` collides with an earlier entry on the same address ",
+                                     "that needs a different nginx server block; one address ",
+                                     "can only have one TLS mode and one ",
+                                     "proxy_protocol_to_upstream setting\n")
+                        end
+                        addr_owner[key] = idx
+                    end
+                end
+            end
+        end
+
+        -- Short names on purpose: the kernel caps a unix socket path at ~108 bytes and
+        -- it is rooted at the user-chosen apisix home.
+        for idx, group in ipairs(servers) do
+            if group.tls_mixed then
+                group.tls_terminate_sock = env.apisix_home .. "/logs/stls-t" .. idx .. ".sock"
+                group.tls_passthrough_sock = env.apisix_home .. "/logs/stls-p" .. idx .. ".sock"
+                group.tls_terminate_up = "apisix_stream_tls_terminate_" .. idx
+                group.tls_passthrough_up = "apisix_stream_tls_passthrough_" .. idx
+                for _, path in ipairs({group.tls_terminate_sock, group.tls_passthrough_sock}) do
+                    if #path > 100 then
+                        util.die("mixed TLS listens need internal unix sockets under ",
+                                 env.apisix_home, "/logs, but `", path, "` is ", #path,
+                                 " bytes, over the ~108 byte limit; install APISIX ",
+                                 "under a shorter path\n")
+                    end
+                end
+            end
         end
         stream_proxy.servers = servers
     end

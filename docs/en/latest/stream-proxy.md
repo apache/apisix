@@ -242,6 +242,90 @@ By setting the `scheme` to `tls`, APISIX will do TLS handshake with the upstream
 
 When the client is also speaking TLS over TCP, the SNI from the client will pass through to the upstream. Otherwise, a dummy SNI `apisix_backend` will be used.
 
+## TLS passthrough
+
+The two sections above both terminate the client's TLS handshake at APISIX. With `tls_passthrough`, APISIX instead forwards the encrypted stream to the upstream untouched, and still picks the upstream from the SNI, which it reads out of the prereaded `ClientHello` (`ssl_preread on`) rather than out of a handshake it performed itself:
+
+```yaml
+apisix:
+  proxy_mode: http&stream
+  stream_proxy:
+    tcp:
+      - addr: 9100
+        tls_passthrough: true
+```
+
+The upstream terminates the handshake, so on such a port:
+
+- payload-inspecting stream plugins (`mqtt-proxy`, `xrpc`, `redis`) have nothing to read, and gateway mTLS does not apply — client certificate verification moves to the upstream;
+- an upstream with `"scheme": "tls"` is rejected with a `503`, because a second handshake would send the client's `ClientHello` to the upstream as payload.
+
+Routing is otherwise unchanged, so a stream route matches by SNI exactly as it does for a terminating port:
+
+```shell
+curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
+{
+    "sni": "a.test.com",
+    "upstream": {
+        "nodes": {
+            "127.0.0.1:5991": 1
+        },
+        "type": "roundrobin"
+    }
+}'
+```
+
+### Deciding per route on a mixed port
+
+Setting both flags on one listen opens a **mixed** port, where each connection is terminated or passed through according to `tls_passthrough` on the stream route it matches (a boolean, `false` by default):
+
+```yaml
+apisix:
+  proxy_mode: http&stream
+  stream_proxy:
+    tcp:
+      - addr: 9100
+        tls: true
+        tls_passthrough: true
+```
+
+```shell
+# passed through to the upstream, which terminates the handshake
+curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
+{
+    "sni": "a.test.com",
+    "tls_passthrough": true,
+    "upstream": {
+        "nodes": {
+            "127.0.0.1:5991": 1
+        },
+        "type": "roundrobin"
+    }
+}'
+
+# terminated by APISIX, using the certificate configured for this SNI
+curl http://127.0.0.1:9180/apisix/admin/stream_routes/2 -H "X-API-KEY: $admin_key" -X PUT -d '
+{
+    "sni": "b.test.com",
+    "upstream": {
+        "nodes": {
+            "127.0.0.1:5992": 1
+        },
+        "type": "roundrobin"
+    }
+}'
+```
+
+The route flag comes from etcd, so moving a service between the two modes needs no configuration change or restart.
+
+A port itself cannot be both: `ssl_preread on` and `listen ... ssl` are configuration-time directives, and on one server the handshake consumes the `ClientHello` before the preread phase can read it. So the two behaviours live in internal servers reachable over unix sockets under `logs/`, and the preread phase of the public listen picks between them. Note that:
+
+- only mixed ports pay that extra hop; a `tls: true` or `tls_passthrough: true` port keeps its direct path;
+- the client address crosses the hop in a PROXY protocol header restored with `set_real_ip_from unix:`, so route matching, stream plugins and logs see the real peer. A local user able to connect to those sockets could forge that header, so keep `logs/` off limits to untrusted local users — as it already has to be for `stream_worker_events.sock`;
+- `apisix_stream_metrics_zone` counts nginx sessions and has no per-server switch, so a mixed port counts each client connection twice.
+
+Two `stream_proxy.tcp` entries on the same address must agree on their TLS mode and on `proxy_protocol_to_upstream`; otherwise they would need different nginx `server` blocks on one address, and APISIX rejects the configuration at startup.
+
 ## PROXY protocol
 
 APISIX can accept the [PROXY protocol](https://www.haproxy.org/download/1.8/doc/proxy-protocol.txt) on TCP stream ports and forward it to the upstream.

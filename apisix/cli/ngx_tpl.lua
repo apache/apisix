@@ -233,12 +233,25 @@ stream {
     }
 
     {% for _, server_group in ipairs(stream_proxy.servers or {}) do %}
+    {% if server_group.tls_mixed then %}
+    upstream {* server_group.tls_terminate_up *} {
+        server unix:{* server_group.tls_terminate_sock *};
+    }
+
+    upstream {* server_group.tls_passthrough_up *} {
+        server unix:{* server_group.tls_passthrough_sock *};
+    }
+    {% end %}
     server {
         {% for _, item in ipairs(server_group.tcp) do %}
-        listen {*item.addr*} {% if item.tls then %} ssl {% end %} {% if enable_reuseport then %} reuseport {% end %} {% if item.proxy_protocol then %} proxy_protocol {% end %};
+        listen {*item.addr*} {% if item.tls and not server_group.tls_mixed then %} ssl {% end %} {% if enable_reuseport then %} reuseport {% end %} {% if item.proxy_protocol then %} proxy_protocol {% end %};
         {% end %}
         {% for _, addr in ipairs(server_group.udp) do %}
         listen {*addr*} udp {% if enable_reuseport then %} reuseport {% end %};
+        {% end %}
+
+        {% if server_group.tls_passthrough then %}
+        ssl_preread on;
         {% end %}
 
         {% if server_group.tcp_enable_ssl then %}
@@ -254,12 +267,43 @@ stream {
         }
         {% end %}
 
+        {% if server_group.tls_mixed then %}
+        # carries the client address across the internal hop
+        proxy_protocol on;
+        access_log off;
+
+        set $stream_tls_target "";
+
+        preread_by_lua_block {
+            apisix.stream_tls_route_phase("{* server_group.tls_terminate_up *}",
+                                          "{* server_group.tls_passthrough_up *}")
+        }
+
+        proxy_pass $stream_tls_target;
+    }
+
+    # internal: terminates the handshake
+    server {
+        listen unix:{* server_group.tls_terminate_sock *} ssl proxy_protocol;
+        set_real_ip_from unix:;
+
+        ssl_certificate      {* ssl.ssl_cert *};
+        ssl_certificate_key  {* ssl.ssl_cert_key *};
+
+        ssl_client_hello_by_lua_block {
+            apisix.ssl_client_hello_phase()
+        }
+
+        ssl_certificate_by_lua_block {
+            apisix.ssl_phase()
+        }
+
         {% if server_group.proxy_protocol_to_upstream then %}
         proxy_protocol on;
         {% end %}
 
         preread_by_lua_block {
-            apisix.stream_preread_phase()
+            apisix.stream_preread_phase(nil, true)
         }
 
         proxy_pass apisix_backend;
@@ -274,6 +318,49 @@ stream {
             apisix.stream_log_phase()
         }
     }
+
+    # internal: forwards the stream untouched, prereading the same ClientHello again
+    server {
+        listen unix:{* server_group.tls_passthrough_sock *} proxy_protocol;
+        set_real_ip_from unix:;
+        ssl_preread on;
+
+        {% if server_group.proxy_protocol_to_upstream then %}
+        proxy_protocol on;
+        {% end %}
+
+        preread_by_lua_block {
+            apisix.stream_preread_phase(true, true)
+        }
+
+        proxy_pass apisix_backend;
+
+        log_by_lua_block {
+            apisix.stream_log_phase()
+        }
+    }
+    {% else %}
+        {% if server_group.proxy_protocol_to_upstream then %}
+        proxy_protocol on;
+        {% end %}
+
+        preread_by_lua_block {
+            apisix.stream_preread_phase({% if server_group.tls_passthrough then %}true{% end %})
+        }
+
+        proxy_pass apisix_backend;
+
+        {% if use_apisix_base and not server_group.tls_passthrough then %}
+        set $upstream_sni "apisix_backend";
+        proxy_ssl_server_name on;
+        proxy_ssl_name $upstream_sni;
+        {% end %}
+
+        log_by_lua_block {
+            apisix.stream_log_phase()
+        }
+    }
+    {% end %}
     {% end %}
 }
 {% end %}
