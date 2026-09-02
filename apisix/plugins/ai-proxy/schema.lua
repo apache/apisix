@@ -176,7 +176,10 @@ local ai_instance_schema = {
                 type = "string",
                 minLength = 1,
                 maxLength = 100,
-                description = "Name of the AI service instance.",
+                description = "Name of the AI service instance. Must be "
+                    .. "unique within `instances`: it identifies the instance "
+                    .. "in the balancer, in its health checker and in other "
+                    .. "plugins that reference it, such as ai-rate-limiting.",
             },
             provider = {
                 type = "string",
@@ -202,10 +205,111 @@ local ai_instance_schema = {
                     active = schema_def.health_checker_active,
                 },
                 required = {"active"}
-            }
+            },
+            examples = {
+                type = "array",
+                minItems = 1,
+                maxItems = 64,
+                items = { type = "string", minLength = 1 },
+                description = "Example utterances representing this instance's "
+                    .. "intent; each is embedded into its own reference vector "
+                    .. "for the semantic algorithm. Required for every instance "
+                    .. "when the balancer algorithm is semantic, including the one "
+                    .. "named by semantic_opts.fallback.",
+            },
+            threshold = {
+                type = "number",
+                minimum = -1,
+                maximum = 1,
+                description = "Per-instance minimum cosine similarity for the "
+                    .. "semantic algorithm; overrides semantic_opts.threshold.",
+            },
         },
         required = {"name", "provider", "auth", "weight"},
     },
+}
+
+local embeddings_schema = {
+    type = "object",
+    properties = {
+        provider = {
+            type = "string",
+            enum = { "openai", "azure-openai" },
+            description = "Embedding provider used by the semantic algorithm.",
+        },
+        model = {
+            type = "string",
+            minLength = 1,
+            description = "Embedding model name, e.g. text-embedding-3-small.",
+        },
+        endpoint = {
+            type = "string",
+            description = "Embedding API endpoint. Optional for openai (defaults "
+                .. "to the public API). Required for azure-openai, where it must "
+                .. "be the full URL, e.g. https://{resource}.openai.azure.com"
+                .. "/openai/deployments/{deployment}/embeddings?api-version=...",
+        },
+        auth = {
+            type = "object",
+            properties = {
+                header = { type = "object", additionalProperties = { type = "string" } },
+                query = { type = "object", additionalProperties = { type = "string" } },
+            },
+            -- header/query only. The sidecar call runs on a throwaway ctx, so the
+            -- ctx-dependent schemes (gcp, aws) cannot work here; reject them at
+            -- config time instead of failing open on every request.
+            additionalProperties = false,
+        },
+        timeout = {
+            type = "integer",
+            minimum = 1,
+            default = 3000,
+            description = "Embedding request timeout in milliseconds. The query "
+                .. "prompt is embedded synchronously on every request, so this "
+                .. "bounds the latency added to each request when the embedding "
+                .. "endpoint is slow or down (the request then fails open to the "
+                .. "fallback).",
+        },
+        ssl_verify = { type = "boolean", default = true },
+    },
+    required = { "provider", "model", "auth" },
+}
+
+-- All options specific to the semantic balancer live here, so they are grouped
+-- in one place instead of being scattered across balancer/instances/top-level.
+local semantic_opts_schema = {
+    type = "object",
+    properties = {
+        embeddings = embeddings_schema,
+        threshold = {
+            type = "number",
+            minimum = -1,
+            maximum = 1,
+            default = 0,
+            description = "Global minimum cosine similarity for the semantic "
+                .. "algorithm. When no instance clears its threshold the request "
+                .. "falls back to the `fallback` instance, or the first instance "
+                .. "if none is named. The default of 0 admits essentially any "
+                .. "prompt, so the fallback only ever runs if a threshold above 0 "
+                .. "is set.",
+        },
+        fallback = {
+            type = "string",
+            minLength = 1,
+            description = "Name of the instance to route to when no instance "
+                .. "clears its threshold or the embedding request fails. It is "
+                .. "otherwise a normal ranked instance and needs `examples` like "
+                .. "the rest. Defaults to the first instance when unset.",
+        },
+        debugging = {
+            type = "boolean",
+            default = false,
+            description = "When true, the semantic algorithm exposes per-instance "
+                .. "scores and the routing decision via X-AI-Semantic-* response "
+                .. "headers, for debugging.",
+        },
+    },
+    required = { "embeddings" },
 }
 
 local logging_schema = {
@@ -248,7 +352,7 @@ _M.ai_proxy_schema = {
             minimum = 1,
             default = 67108864,
             description = "maximum request body size in bytes the plugin reads "
-                       .. "into memory; larger requests are rejected with 413. "
+                       .. "into memory; larger request bodies are rejected. "
                        .. "Prevents unbounded memory buffering of large bodies.",
         },
         max_stream_duration_ms = {
@@ -303,7 +407,15 @@ _M.ai_proxy_multi_schema = {
             properties = {
                 algorithm = {
                     type = "string",
-                    enum = { "chash", "roundrobin" },
+                    enum = { "chash", "roundrobin", "semantic" },
+                    description = "Load-balancing algorithm. Note: 'semantic' "
+                        .. "picks an instance by prompt similarity and does not "
+                        .. "participate in health checks or fallback_strategy / "
+                        .. "retry — an upstream failure on the chosen instance is "
+                        .. "returned to the client. It only falls back (to the "
+                        .. "semantic_opts.fallback, else the first instance) when "
+                        .. "no instance clears its threshold or embedding fails. "
+                        .. "Configure it under `semantic_opts`.",
                 },
                 hash_on = {
                     type = "string",
@@ -324,6 +436,7 @@ _M.ai_proxy_multi_schema = {
             default = { algorithm = "roundrobin" }
         },
         instances = ai_instance_schema,
+        semantic_opts = semantic_opts_schema,
         logging = logging_schema,
         fallback_strategy = {
             anyOf = {
@@ -339,6 +452,27 @@ _M.ai_proxy_multi_schema = {
                 }
               }
             }
+        },
+        fallback_http_statuses = {
+            type = "array",
+            minItems = 1,
+            uniqueItems = true,
+            items = {
+                type = "integer",
+                minimum = 400,
+                maximum = 599,
+            },
+            description = "Additional upstream HTTP status codes that make the "
+                .. "request fall back to another instance, on top of the "
+                .. "http_429 / http_5xx entries of fallback_strategy. Use it "
+                .. "for statuses that mean the instance's credential is "
+                .. "unusable rather than the request being wrong, e.g. [401, "
+                .. "402] when an API key is expired or out of quota. It is "
+                .. "opt-in per status because most 4xx responses are caused by "
+                .. "the request itself and retrying them on another instance "
+                .. "would only burn quota. max_retries and "
+                .. "retry_on_failure_within_ms bound these retries the same "
+                .. "way they bound the fallback_strategy ones.",
         },
         max_retries = {
             type = "integer",
@@ -373,7 +507,7 @@ _M.ai_proxy_multi_schema = {
             minimum = 1,
             default = 67108864,
             description = "maximum request body size in bytes the plugin reads "
-                       .. "into memory; larger requests are rejected with 413. "
+                       .. "into memory; larger request bodies are rejected. "
                        .. "Prevents unbounded memory buffering of large bodies.",
         },
         max_stream_duration_ms = {
@@ -419,6 +553,8 @@ _M.ai_proxy_multi_schema = {
         "instances.auth.gcp.service_account_json",
         "instances.auth.aws.secret_access_key",
         "instances.auth.aws.session_token",
+        "semantic_opts.embeddings.auth.header",
+        "semantic_opts.embeddings.auth.query",
     },
 }
 

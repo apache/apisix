@@ -4,7 +4,7 @@ keywords:
   - Apache APISIX
   - API Gateway
   - Limit Count
-description: The limit-count plugin uses fixed or sliding window algorithms to limit the rate of requests by the number of requests within a given time interval. Requests exceeding the configured quota will be rejected.
+description: The limit-count Plugin uses fixed or sliding window algorithms to limit the rate of requests by the number of requests within a given time interval. Requests exceeding the configured quota will be rejected.
 ---
 
 <!--
@@ -35,35 +35,46 @@ import TabItem from '@theme/TabItem';
 
 ## Description
 
-The `limit-count` plugin uses fixed or sliding window algorithms to limit the rate of requests by the number of requests within a given time interval. Requests exceeding the configured quota will be rejected.
+The `limit-count` Plugin uses fixed or sliding window algorithms to limit the rate of requests by the number of requests within a given time interval. Requests exceeding the configured quota will be rejected.
 
-You may see the following rate limiting headers in the response:
+With the default response header names, single-limit mode includes the following rate limiting headers when `show_limit_quota_header` is `true`:
 
 * `X-RateLimit-Limit`: the total quota
 * `X-RateLimit-Remaining`: the remaining quota
 * `X-RateLimit-Reset`: number of seconds left for the counter to reset
 
+In `rules` mode, every rule uses a prefixed form of these headers, such as `X-Jack-RateLimit-Reset` or `X-1-RateLimit-Reset`. See `rules.header_prefix` for details.
+
+### Local vs Redis Rate Limiting
+
+The `limit-count` Plugin supports two counter-storage modes:
+
+* **Local rate limiting:** Each APISIX instance maintains its own counters. When traffic is distributed across instances, the effective aggregate quota is approximately the configured quota multiplied by the number of instances. This is the default when `policy` is omitted or set to `local`.
+* **Redis-based rate limiting:** APISIX instances share counters through Redis, so one configured quota applies across the instances. Use `redis` for a single Redis instance, `redis-cluster` for a Redis cluster, or `redis-sentinel` for Sentinel-managed Redis nodes.
+
+Redis Sentinel, sliding windows, and delayed Redis synchronization are supported in APISIX 3.18.0 and later. Multiple rules and variable-resolved limits are supported in APISIX 3.16.0 and later.
+
 ## Attributes
 
 | Name                    | Type    | Required                                  | Default       | Valid values                           | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | ----------------------- | ------- | ----------------------------------------- | ------------- | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| count                   | integer or string | False                                     |               | > 0                              | The maximum number of requests allowed within a given time interval. Required if `rules` is not configured. Supports [lua-resty-expr](https://github.com/api7/lua-resty-expr) from APISIX 3.16.0. |
-| time_window             | integer or string | False                                     |               | > 0                        | The time interval corresponding to the rate limiting `count` in seconds. Required if `rules` is not configured. Supports [lua-resty-expr](https://github.com/api7/lua-resty-expr) from APISIX 3.16.0. |
-| window_type             | string            | False                                     | fixed         | ["fixed","sliding"]              | The window algorithm used by the plugin. |
-| rules                   | array[object]     | False                                     |               |                            | A list of rate limiting rules. Each rule is an object containing `count`, `time_window`, and `key`. |
-| rules.count             | integer or string | True                                      |               | > 0                        | The maximum number of requests allowed within a given time interval. Supports [lua-resty-expr](https://github.com/api7/lua-resty-expr). |
-| rules.time_window       | integer or string | True                                      |               | > 0                        | The time interval corresponding to the rate limiting `count` in seconds. Supports [lua-resty-expr](https://github.com/api7/lua-resty-expr). |
-| rules.key               | string            | True                                      |               |                            | The key to count requests by. If the configured key does not exist, the rule will not be executed. The `key` is interpreted as a combination of variables, for example: `$http_custom_a $http_custom_b`. |
-| rules.header_prefix     | string            | False                                     |               |                            | Prefix for rate limit headers. If configured, the response will include `X-{header_prefix}-RateLimit-Limit`, `X-{header_prefix}-RateLimit-Remaining`, and `X-{header_prefix}-RateLimit-Reset` headers. If not configured, the index of the rule in the rules array is used as the prefix. |
+| count                   | integer or string | False                                     |               | > 0                              | Maximum requests allowed within `time_window`. Required together with `time_window` when `rules` is not configured; do not configure it with `rules`. A string can be a numeric value or reference an APISIX or NGINX variable using the `$` prefix. It must resolve to a positive integer no greater than `9007199254740991`; otherwise APISIX returns `500 Internal Server Error` unless `allow_degradation` is `true`. String values are supported in APISIX 3.16.0 and later. Runtime validation is supported in APISIX 3.18.0 and later. |
+| time_window             | integer or string | False                                     |               | > 0                        | Time interval for `count`, in seconds. Required together with `count` when `rules` is not configured; do not configure it with `rules`. A string can be a numeric value or reference an APISIX or NGINX variable using the `$` prefix. It must resolve to a positive integer no greater than `9007199254740991`; otherwise APISIX returns `500 Internal Server Error` unless `allow_degradation` is `true`. String values are supported in APISIX 3.16.0 and later. Runtime validation is supported in APISIX 3.18.0 and later. |
+| window_type             | string            | False                                     | fixed         | ["fixed","sliding"]              | Rate limiting window algorithm. `fixed` enforces each time window independently. `sliding` weights the previous window when calculating the current count to smooth bursts at window boundaries. `sliding` is supported in APISIX 3.18.0 and later. |
+| rules                   | array[object]     | False                                     |               |                            | Rate limiting rules applied sequentially. Do not configure `rules` with the top-level `count`, `time_window`, or `group`; top-level `key` and `key_type` do not apply in rules mode. Every rule must use a unique `key`. A rule is skipped when its key expression cannot be resolved for the request. |
+| rules.count             | integer or string | True                                      |               | > 0                        | Maximum requests allowed within the rule's `time_window`. A string can be a numeric value or reference an APISIX or NGINX variable using the `$` prefix. It must resolve to a positive integer no greater than `9007199254740991`; otherwise APISIX returns `500 Internal Server Error` unless `allow_degradation` is `true`. |
+| rules.time_window       | integer or string | True                                      |               | > 0                        | Time interval for the rule's `count`, in seconds. A string can be a numeric value or reference an APISIX or NGINX variable using the `$` prefix. It must resolve to a positive integer no greater than `9007199254740991`; otherwise APISIX returns `500 Internal Server Error` unless `allow_degradation` is `true`. |
+| rules.key               | string            | True                                      |               |                            | Variable expression used as this rule's counter key. Prefix every APISIX or NGINX variable with `$`, for example `$remote_addr` or `$remote_addr $http_x_tenant`. Top-level `key_type` does not apply. The rule is skipped when its key expression resolves no variables for the request. |
+| rules.header_prefix     | string            | False                                     |               |                            | Prefix inserted before `RateLimit-` in this rule's quota headers. For example, `foo` produces `X-foo-RateLimit-Limit`, `X-foo-RateLimit-Remaining`, and `X-foo-RateLimit-Reset`. If omitted, the one-based rule index is used, so the first rule emits `X-1-RateLimit-*`. Sent only when `show_limit_quota_header` is `true`. |
 | key_type                | string            | False                                     | var           | ["var","var_combination","constant"] | The type of key. If the `key_type` is `var`, the `key` is interpreted as a variable. If the `key_type` is `var_combination`, the `key` is interpreted as a combination of variables. If the `key_type` is `constant`, the `key` is interpreted as a constant. |
 | key                     | string            | False                                     | remote_addr   |                            | The key to count requests by. If the `key_type` is `var`, the `key` is interpreted as a variable. The variable does not need to be prefixed by a dollar sign (`$`). If the `key_type` is `var_combination`, the `key` is interpreted as a combination of variables. All variables should be prefixed by dollar signs (`$`). If the `key_type` is `constant`, the `key` is interpreted as a constant value. |
 | rejected_code           | integer           | False                                     | 503           | [200,...,599]              | The HTTP status code returned when a request is rejected for exceeding the threshold. |
 | rejected_msg            | string            | False                                     |               | non-empty                  | The response body returned when a request is rejected for exceeding the threshold. |
 | policy                  | string            | False                                     | local         | ["local","redis","redis-cluster","redis-sentinel"] | The policy for the rate limiting counter. If it is `local`, the counter is stored in local memory. If it is `redis`, the counter is stored on a Redis instance. If it is `redis-cluster`, the counter is stored in a Redis cluster. If it is `redis-sentinel`, the counter is stored on the Redis master discovered through Sentinel. |
-| allow_degradation       | boolean           | False                                     | false         |                            | If true, allow APISIX to continue handling requests without the plugin when the plugin or its dependencies become unavailable. |
-| show_limit_quota_header | boolean           | False                                     | true          |                            | If true, include `X-RateLimit-Limit` to show the total quota and `X-RateLimit-Remaining` to show the remaining quota in the response header. |
-| sync_interval           | number            | False                                     |               | -1 or >= 0.1               | The delayed synchronization interval in seconds for Redis-based policies. Set to `-1` to disable delayed synchronization explicitly. |
-| group                   | string            | False                                     |               | non-empty                  | The `group` ID for the plugin, such that routes of the same `group` can share the same rate limiting counter. |
+| allow_degradation       | boolean           | False                                     | false         |                            | If true, continue handling requests without rate limiting when the counter backend fails or a variable-resolved `count` or `time_window` is invalid. If false, these failures return `500 Internal Server Error`. |
+| show_limit_quota_header | boolean           | False                                     | true          |                            | If true, include quota headers in responses. With the default Plugin Metadata, single-limit mode uses `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset`. In `rules` mode, each rule emits the prefixed headers described by `rules.header_prefix`. |
+| sync_interval           | number            | False                                     | -1            | -1 or >= 0.1; less than a numeric top-level `time_window` | Delayed synchronization interval, in seconds, for Redis-based policies. `-1` synchronizes every request. If a dynamic top-level `time_window` or `rules.time_window` resolves to a value less than or equal to `sync_interval`, APISIX falls back to direct synchronization for that request. Delayed synchronization is supported in APISIX 3.18.0 and later. |
+| group                   | string            | False                                     |               | non-empty                  | The `group` ID for the Plugin, such that Routes of the same `group` can share the same rate limiting counter. |
 | redis_host              | string            | False                                     |               |                            | The address of the Redis node. Required when `policy` is `redis`. |
 | redis_port              | integer           | False                                     | 6379          | [1,...]                    | The port of the Redis node when `policy` is `redis`. |
 | redis_username          | string            | False                                     |               |                            | The username for Redis if Redis ACL is used. If you use the legacy authentication method `requirepass`, configure only the `redis_password`. Used when `policy` is `redis` or `redis-sentinel`. |
@@ -72,7 +83,7 @@ You may see the following rate limiting headers in the response:
 | redis_ssl_verify        | boolean           | False                                     | false         |                            | If true, verify the server SSL certificate when `policy` is `redis`. |
 | redis_database          | integer           | False                                     | 0             | >= 0                       | The database number in Redis when `policy` is `redis` or `redis-sentinel`. |
 | redis_timeout           | integer           | False                                     | 1000          | [1,...]                    | The Redis timeout value in milliseconds when `policy` is `redis` or `redis-cluster`. |
-| redis_keepalive_timeout | integer           | False                                     | 10000         | ≥ 1000                     | Keepalive timeout in milliseconds for Redis when `policy` is `redis` or `redis-cluster`. |
+| redis_keepalive_timeout | integer           | False                                     | 10000 (`redis` and `redis-cluster`); 60000 (`redis-sentinel`) | >= 1000 (`redis` and `redis-cluster`); >= 1 (`redis-sentinel`) | Keepalive timeout in milliseconds for Redis connections. |
 | redis_keepalive_pool    | integer           | False                                     | 100           | ≥ 1                        | Keepalive pool size for Redis when `policy` is `redis` or `redis-cluster`. |
 | redis_cluster_nodes     | array[string]     | False                                     |               |                            | The list of Redis cluster nodes with at least one address. Required when `policy` is `redis-cluster`. |
 | redis_cluster_name      | string            | False                                     |               |                            | The name of the Redis cluster. Required when `policy` is `redis-cluster`. |
@@ -1393,7 +1404,7 @@ Send the same request to a different APISIX instance within the same 30-second t
 
 ### Share Quota Among APISIX Nodes with Redis Sentinel
 
-The following example demonstrates rate limiting across multiple APISIX nodes using Redis with [Sentinel](https://redis.io/docs/management/sentinel/) for high availability. Sentinel monitors the Redis master and promotes a replica if the master fails. APISIX discovers the current master through the configured Sentinel nodes, so the shared quota survives a failover without configuration changes.
+The following example demonstrates rate limiting across multiple APISIX nodes using Redis with [Sentinel](https://redis.io/docs/management/sentinel/) for high availability. Sentinel monitors the Redis master and promotes a replica if the master fails. APISIX discovers the current master through the configured Sentinel nodes, so the shared quota survives a failover without configuration changes. The `redis-sentinel` policy is supported in APISIX 3.18.0 and later.
 
 On each APISIX instance, create a Route with the following configurations. Adjust the Admin API address, Sentinel nodes, master name, and credentials accordingly:
 
@@ -1444,7 +1455,7 @@ You should see an `HTTP/1.1 200 OK` response. Sending the same request again wit
 
 By default, `limit-count` uses a fixed window, where the counter resets at the start of each `time_window`. Around a window boundary this can allow up to twice the configured rate, since a client may exhaust the quota at the end of one window and again at the start of the next.
 
-Set `window_type` to `sliding` to use a sliding window, which weights the previous window's count to smooth enforcement across boundaries. `window_type` works with all policies (`local`, `redis`, `redis-cluster`, and `redis-sentinel`).
+Set `window_type` to `sliding` to use a sliding window, which weights the previous window's count to smooth enforcement across boundaries. `window_type` works with all policies (`local`, `redis`, `redis-cluster`, and `redis-sentinel`) in APISIX 3.18.0 and later.
 
 Create a Route with the following configurations:
 
@@ -1482,7 +1493,7 @@ The first 10 requests within 60 seconds return `HTTP/1.1 200 OK` and the 11th re
 
 ### Reduce Redis Round Trips with Delayed Synchronization
 
-For Redis-based policies (`redis`, `redis-cluster`, and `redis-sentinel`), APISIX synchronizes the counter with Redis on every request by default. On high-traffic routes, this adds a Redis round trip to each request.
+For Redis-based policies (`redis`, `redis-cluster`, and `redis-sentinel`), APISIX synchronizes the counter with Redis on every request by default. On high-traffic Routes, this adds a Redis round trip to each request. Delayed synchronization is supported in APISIX 3.18.0 and later.
 
 Set `sync_interval` (in seconds) to synchronize in batches instead: between intervals the counter is served from local memory and reconciled with Redis once per interval. This reduces Redis round trips and tail latency, at the cost of the global count lagging by up to one interval's local delta. Set `sync_interval` to `-1` (the default behavior) to synchronize on every request.
 
@@ -1517,7 +1528,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-`sync_interval` must be at least `0.1` and smaller than `time_window`. Delayed synchronization uses the `plugin-limit-count-lock` shared dictionary, which is provisioned by default, so no additional configuration is required.
+`sync_interval` must be at least `0.1`. In single-limit mode, it must also be smaller than a numeric top-level `time_window`. If a `rules.time_window` value or a dynamic top-level `time_window` resolves to a value less than or equal to `sync_interval`, APISIX falls back to synchronizing that request directly. Resolved windows larger than `sync_interval` continue to use delayed synchronization. Delayed synchronization uses the `plugin-limit-count-lock` shared dictionary, which is provisioned by default, so no additional configuration is required.
 
 Send requests to the Route:
 
@@ -1526,6 +1537,8 @@ curl -i "http://127.0.0.1:9080/get"
 ```
 
 Requests are counted locally and reconciled with Redis every second. Once the quota of 1000 requests within 60 seconds is reached, further requests return `HTTP/1.1 429 Too Many Requests`.
+
+Counters on different APISIX instances can temporarily diverge before synchronization. Concurrent requests can therefore exceed the configured quota during the interval. Use direct synchronization when exact cross-instance enforcement is more important than reducing Redis traffic.
 
 ### Rate Limit with Anonymous Consumer
 

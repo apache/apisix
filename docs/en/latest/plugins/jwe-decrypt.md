@@ -6,7 +6,7 @@ keywords:
   - Plugin
   - JWE Decrypt
   - jwe-decrypt
-description: The jwe-decrypt Plugin decrypts JWE authorization headers in requests directed to Routes or Services, enhancing API security.
+description: The jwe-decrypt Plugin decrypts its supported five-part compact token format and forwards the plaintext in a configured request header.
 ---
 
 <!--
@@ -37,19 +37,31 @@ import TabItem from '@theme/TabItem';
 
 ## Description
 
-The `jwe-decrypt` Plugin decrypts [JWE](https://datatracker.ietf.org/doc/html/rfc7516) authorization headers in requests sent to APISIX [Routes](../terminology/route.md) or [Services](../terminology/service.md).
+The `jwe-decrypt` Plugin reads a five-part compact token from a request header, selects a [Consumer](../terminology/consumer.md) by the token's `kid`, decrypts the ciphertext with AES-256-GCM, and writes the plaintext to a configured header before proxying the request. You can enable the Plugin on APISIX [Routes](../terminology/route.md) or [Services](../terminology/service.md).
 
-The decryption key should be configured in [Consumer](../terminology/consumer.md).
+The token uses [JWE Compact Serialization](https://datatracker.ietf.org/doc/html/rfc7516#section-3.1) with the `dir` key management algorithm and the `A256GCM` content encryption algorithm, so a token produced by a standard JWE library is accepted. Configure a 32-byte decryption secret on the Consumer.
+
+:::warning
+
+For backward compatibility, the Plugin also accepts a token whose ciphertext was encrypted without the protected header as AES-GCM additional authenticated data (AAD), which is how APISIX itself used to generate them. The header of such a token, including its `kid`, is not authenticated. Use a trusted token generator, and prefer a JWE library that follows RFC 7516 so that the header is covered by the AAD.
+
+:::
+
+:::caution
+
+The decrypted plaintext is forwarded in a request header. For sensitive plaintext, do not rely on an HTTPS Upstream alone: APISIX does not verify server certificates for standard HTTP Upstreams. Send the request over an authenticated, protected network path, such as through a proxy or service mesh that validates the upstream server's identity. Restrict access to the upstream and avoid logging the configured forwarding header.
+
+:::
 
 ## Attributes
 
 ### Consumer
 
-| Name              | Type    | Required | Default | Valid values   | Description                                                                                                                                                                                                                              |
-| ----------------- | ------- | -------- | ------- | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| key               | string  | True     |         |                | A unique key that identifies the Credential for a Consumer.                                                                                                                                                                              |
-| secret            | string  | True     |         | 32 characters  | The shared symmetric encryption/decryption key. You can also store it in an environment variable and reference it using the `env://` prefix, or in a secret manager such as HashiCorp Vault's KV secrets engine, and reference it using the `secret://` prefix. |
-| is_base64_encoded | boolean | False    | false   |                | Set to true if the secret is base64 encoded. Note that after enabling `is_base64_encoded`, the `secret` length may exceed 32 characters. You only need to make sure the decoded length is still 32 characters.                       |
+| Name              | Type    | Required | Default | Valid values   | Description                                                                                                                              |
+| ----------------- | ------- | -------- | ------- | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| key               | string  | True     |         |                | A unique key that identifies the Credential for a Consumer.                                                                              |
+| secret            | string  | True     |         | 32 bytes       | A shared symmetric key. Use a [secret reference](../terminology/secret.md), such as `$env://...` or `$secret://...`.                     |
+| is_base64_encoded | boolean | False    | false   |                | Set to true if the secret is base64url encoded. The decoded secret must still be 32 bytes.                                               |
 
 ### Route or Service
 
@@ -57,7 +69,7 @@ The decryption key should be configured in [Consumer](../terminology/consumer.md
 | -------------- | ------- | -------- | ------------- | ------------ | --------------------------------------------------------------------------------------------------------------------------------- |
 | header         | string  | True     | Authorization |              | The header to get the token from.                                                                                                 |
 | forward_header | string  | True     | Authorization |              | Name of the header that passes the plaintext to the Upstream.                                                                     |
-| strict         | boolean | False    | true          |              | If true, throw a 403 error if JWE token is missing from the request. If false, do not throw an error when JWE token is not found. |
+| strict         | boolean | False    | true          |              | If true, return a 403 error when the JWE token is missing. If false, continue when the token is not found.                        |
 
 ## Examples
 
@@ -160,13 +172,15 @@ kubectl apply -f jwe-consumer-ic.yaml
 </TabItem>
 </Tabs>
 
-To generate a JWE token for the Consumer, encrypt the payload offline with any AES-256-GCM library, using the Consumer secret as the key. The token structure is:
+To generate a JWE token for the Consumer, use any JWE library that supports direct encryption with `A256GCM`, with the Consumer secret as the key. The token structure is:
 
 ```text
 base64url(header).<empty>.base64url(iv).base64url(ciphertext).base64url(tag)
 ```
 
-where the header is `{"alg":"dir","enc":"A256GCM","kid":"<consumer-key>"}`. The IV must be unique and randomly generated for every token; never reuse an IV with the same key.
+where the header is `{"alg":"dir","enc":"A256GCM","kid":"<consumer-key>"}`; `alg` and `enc` are rejected if they are set to anything else. The IV must be unique and randomly generated for every token; never reuse an IV with the same key.
+
+As [RFC 7516](https://datatracker.ietf.org/doc/html/rfc7516#section-5.1) requires, a JWE library authenticates the encoded protected header as the AES-GCM additional authenticated data (AAD), which makes the `kid` tamper-proof. Tokens encrypted without AAD, such as the ones APISIX itself used to generate, are still accepted for backward compatibility.
 
 For example, the following token encrypts the payload `{"uid":10000,"uname":"test"}` for the Consumer key `jack-key` with the secret configured above:
 
@@ -197,8 +211,9 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     },
     "upstream": {
       "type": "roundrobin",
+      "scheme": "https",
       "nodes": {
-        "httpbin.org:80": 1
+        "httpbin.org:443": 1
       }
     }
   }'
@@ -221,9 +236,10 @@ services:
             forward_header: Authorization
     upstream:
       type: roundrobin
+      scheme: https
       nodes:
         - host: httpbin.org
-          port: 80
+          port: 443
           weight: 1
 ```
 
@@ -239,6 +255,8 @@ adc sync -f adc.yaml
 
 <Tabs groupId="k8s-api">
 <TabItem value="gateway-api" label="Gateway API">
+
+The following Gateway API configuration uses public HTTPBin only with the non-sensitive demonstration payload shown on this page. Before forwarding real decrypted data, replace it with a controlled upstream and use an authenticated, protected network path. An APISIX HTTPS Upstream does not validate the upstream server certificate by itself; use a proxy or service mesh that validates the upstream server's identity.
 
 ```yaml title="jwe-decrypt-ic.yaml"
 apiVersion: v1

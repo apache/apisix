@@ -138,6 +138,14 @@ local timeout_def = {
 }
 
 
+local method_schema = {
+    description = "HTTP method",
+    type = "string",
+    enum = {"GET", "POST", "PUT", "DELETE", "PATCH", "HEAD",
+        "OPTIONS", "CONNECT", "TRACE", "PURGE"},
+}
+
+
 local health_checker_active = {
     type = "object",
     properties = {
@@ -154,7 +162,13 @@ local health_checker_active = {
             minimum = 1,
             maximum = 65535
         },
+        http_method = {
+            type = "string",
+            enum = method_schema.enum,
+            default = "GET"
+        },
         http_path = {type = "string", default = "/"},
+        http_req_body = {type = "string", default = ""},
         https_verify_certificate = {type = "boolean", default = true},
         healthy = {
             type = "object",
@@ -430,9 +444,14 @@ local upstream_schema = {
                 client_key = private_key_schema,
                 verify = {
                     type = "boolean",
-                    description = "Turn on server certificate verification, "..
-                        "currently only kafka upstream is supported",
-                    default = false,
+                    description = "enable or disable upstream certificate verification, " ..
+                        "fall back to the nginx configuration when not set",
+                },
+                ca_certs = {
+                    type = "array",
+                    description = "CA certificates used to verify the upstream certificate",
+                    minItems = 1,
+                    items = certificate_scheme,
                 },
             },
             dependencies = {
@@ -553,12 +572,6 @@ _M.upstream_hash_vars_combinations_schema = {
 }
 
 
-local method_schema = {
-    description = "HTTP method",
-    type = "string",
-    enum = {"GET", "POST", "PUT", "DELETE", "PATCH", "HEAD",
-        "OPTIONS", "CONNECT", "TRACE", "PURGE"},
-}
 _M.method_schema = method_schema
 
 
@@ -775,6 +788,60 @@ _M.credential = {
     },
     additionalProperties = false,
 }
+
+-- A GraphQL cost decoration: the weight of one position in the upstream GraphQL
+-- schema, consumed by the graphql-limit-count plugin. Owned by a service --
+-- service_id is taken from the Admin API path, never from the request body.
+_M.graphql_cost_decoration = {
+    type = "object",
+    properties = {
+        id = id_schema,
+        service_id = id_schema,
+        field_path = {
+            type = "string",
+            pattern = [[^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)*$]],
+            description = "the decorated position in the schema graph. A single "
+                          .. "<GraphQL type> weights every field returning that "
+                          .. "type; <GraphQL type>.<field> weights that field "
+                          .. "wherever it is selected; further field segments pin "
+                          .. "the decoration to one chain of selections, as in "
+                          .. "Query.products.nodes.reviews. The root type "
+                          .. "(Query / Mutation) names the operation itself, and "
+                          .. "so weights the whole query",
+        },
+        -- cost(field) = ( sum of the children ) * mul + add
+        add_value = {
+            type = "number",
+            minimum = 0,
+            default = 1,
+            description = "the field's own cost",
+        },
+        add_arguments = {
+            type = "array",
+            items = {type = "string", minLength = 1},
+            description = "query arguments whose values are added to add_value",
+        },
+        mul_value = {
+            type = "number",
+            minimum = 0,
+            default = 1,
+            description = "multiplies the cost of everything selected under the field",
+        },
+        mul_arguments = {
+            type = "array",
+            items = {type = "string", minLength = 1},
+            description = "query arguments whose values are multiplied into mul_value",
+        },
+        name = rule_name_def,
+        desc = desc_def,
+        labels = labels_def,
+        create_time = timestamp_def,
+        update_time = timestamp_def,
+    },
+    required = {"field_path"},
+    additionalProperties = false,
+}
+
 
 _M.upstream = upstream_schema
 

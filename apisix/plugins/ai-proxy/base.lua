@@ -21,6 +21,7 @@ local core = require("apisix.core")
 local require = require
 local pcall   = pcall
 local pairs   = pairs
+local ipairs  = ipairs
 local type    = type
 local table   = table
 local math_floor = math.floor
@@ -45,6 +46,26 @@ local function count_request_tools(body)
         return #tools
     end
     return 0
+end
+
+
+-- Statuses the user opted into retrying through fallback_http_statuses.
+-- Both the error path below and ai-proxy-multi's retry decision consult this,
+-- and they have to agree: a status that is not diverted to the error path has
+-- its response streamed to the client and never reaches the retry callback.
+function _M.is_fallback_http_status(conf, status)
+    local statuses = conf.fallback_http_statuses
+    if not statuses then
+        return false
+    end
+
+    for _, s in ipairs(statuses) do
+        if s == status then
+            return true
+        end
+    end
+
+    return false
 end
 
 
@@ -187,6 +208,8 @@ function _M.before_proxy(conf, ctx, on_error)
             return 400, err
         end
 
+        request_body = core.table.deepcopy(request_body)
+
         local extra_opts = {
             name = ai_instance.name,
             endpoint = ai_instance._resolved_endpoint
@@ -242,10 +265,6 @@ function _M.before_proxy(conf, ctx, on_error)
 
         -- Step 2: Extract model from request
         local request_model = request_body.model
-
-        if request_model then
-            ctx.var.request_llm_model = request_model
-        end
         local model = ai_instance.options and ai_instance.options.model or request_model
         if model then
             ctx.var.llm_model = model
@@ -258,14 +277,64 @@ function _M.before_proxy(conf, ctx, on_error)
 
         extra_opts.target_path = target_path
         extra_opts.target_host = target_host
+        extra_opts.target_protocol = target_proto
+        -- The transport is a pure client, so everything below that depends on the
+        -- downstream request or on ctx is resolved here and handed over via
+        -- extra_opts.
+        extra_opts.header_transform = converter and converter.convert_headers
+
+        -- ai-proxy is a transparent proxy of an inbound request, so it passes what
+        -- it takes from that request as client_* options. Internal callers set
+        -- none of them and thus forward nothing of the client's -- see
+        -- ai-providers/base.lua build_request. Keep the names in sync with
+        -- log-sanitize's CLIENT_DERIVED_FIELDS so they stay out of the logs.
+        extra_opts.client_headers = core.request.headers(ctx)
+
+        -- passthrough proxies the client's method and query string verbatim.
+        if target_proto == "passthrough" then
+            extra_opts.client_method = core.request.get_method()
+            local client_args = ctx.var.args and core.string.decode_args(ctx.var.args)
+            if type(client_args) == "table" then
+                extra_opts.client_args = client_args
+            end
+        end
 
         local do_request = function()
             ctx.llm_request_start_time = ngx.now()
             ctx.var.llm_request_body = request_body
 
-            -- Step 3: Build HTTP request params
+            -- Step 2.5: protocol conversion. It runs in the provider's stead --
+            -- converters stash state on ctx for the response side to read back --
+            -- but stays inside do_request so the pcall below still bounds it: a
+            -- converter fed hostile-but-valid JSON can raise (e.g. an Anthropic
+            -- image block whose "source" is not an object).
+            local body_for_llm = request_body
+            local converted = false
+            if converter and converter.convert_request then
+                local new_body, conv_err = converter.convert_request(request_body, ctx)
+                if not new_body then
+                    return 400, {error_msg = conv_err or "invalid protocol"}
+                end
+                body_for_llm = new_body
+                converted = true
+            end
+
+            -- Step 3: shape the body for the target protocol, then decide which
+            -- bytes actually go out. When nothing has touched the body -- no
+            -- conversion above, no shaping just now, and no earlier plugin rewrite
+            -- (ai-request-rewrite marks that on ctx) -- the client's verbatim bytes
+            -- are reused, keeping a pure passthrough byte-identical.
+            local body, shaped = ai_provider:build_body(body_for_llm, extra_opts)
+            if not shaped and not converted and not ctx.ai_request_body_changed then
+                local raw = core.request.get_body()
+                if type(raw) == "string" then
+                    body = raw
+                end
+            end
+
+            -- Step 4: assemble the HTTP request
             local params, build_err, code = ai_provider:build_request(
-                ctx, conf, request_body, extra_opts)
+                conf, body, extra_opts)
             if not params then
                 local body = {error_msg = build_err}
                 if code then
@@ -339,7 +408,8 @@ function _M.before_proxy(conf, ctx, on_error)
             -- Upstream responded — mark source before any early returns
             core.response.set_response_source(ctx, "upstream")
 
-            if res.status == 429 or (res.status >= 500 and res.status < 600) then
+            if res.status == 429 or (res.status >= 500 and res.status < 600)
+               or _M.is_fallback_http_status(conf, res.status) then
                 -- Read the upstream error body before closing so the provider's
                 -- error details survive: logged on fallback (see retry_on_error)
                 -- and returned to the client when no retry happens.

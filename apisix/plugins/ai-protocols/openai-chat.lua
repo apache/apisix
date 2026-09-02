@@ -248,6 +248,15 @@ function _M.extract_request_content(body)
 end
 
 
+-- Roles carrying the system prompt. `developer` is what OpenAI renamed `system`
+-- to on o1 and later models; both land in the same prompt slot, so the two are
+-- extracted together and the `system` role selector covers both.
+local SYSTEM_ROLES = {
+    system = true,
+    developer = true,
+}
+
+
 local function is_turn_role(message, roles)
     return type(message) == "table" and message.role ~= nil and roles[message.role]
 end
@@ -289,14 +298,15 @@ function _M.extract_turn_content(body, mode, roles)
 end
 
 
--- Extract system-role text for request moderation. Unlike turn content, the
--- system prompt is checked on every request (it can be poisoned by malicious
--- ToolCall arguments), so the last-turn rule does not apply here.
+-- Extract system-role text (see SYSTEM_ROLES) for request moderation. Unlike
+-- turn content, the system prompt is checked on every request (it can be
+-- poisoned by malicious ToolCall arguments), so the last-turn rule does not
+-- apply here.
 function _M.extract_system_content(body)
     local contents = {}
     if type(body.messages) == "table" then
         for _, message in ipairs(body.messages) do
-            if type(message) == "table" and message.role == "system" then
+            if type(message) == "table" and SYSTEM_ROLES[message.role] then
                 append_message_text(contents, message)
             end
         end

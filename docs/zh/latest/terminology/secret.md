@@ -62,6 +62,8 @@ APISIX 目前支持通过以下方式存储密钥：
 
 如果某个配置项为：`key: "$ENV://ABC"`，当 APISIX Secret 中没有检索到 $ENV://ABC 对应的真实值，那么 key 的值将是 "$ENV://ABC" 而不是 `nil`。
 
+该行为适用于所有密钥引用：当引用无法解析时（密钥管理器未配置、查询失败或环境变量未设置），字段将保留引用字符串本身，同时错误日志中会记录类似 `failed to resolve secret reference: $secret://vault/1/foo/bar, field: password` 的错误。如果插件表现得像凭证不正确，请先检查错误日志。
+
 :::
 
 ## 使用环境变量管理密钥

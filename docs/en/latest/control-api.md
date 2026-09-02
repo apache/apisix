@@ -134,7 +134,9 @@ Each of the returned objects contain the following fields:
 
 * name: resource id, where the health checker is reporting from.
 * type: health check type: `["http", "https", "tcp"]`.
-* nodes: target nodes of the health checker.
+* nodes: target nodes of the health checker. It is an empty array (`[]`) until the
+  health checker registers its targets, which happens the first time the upstream
+  serves a request.
 * nodes[i].ip: ip address.
 * nodes[i].port: port number.
 * nodes[i].status: health check result: `["healthy", "unhealthy", "mostly_healthy", "mostly_unhealthy"]`.
@@ -142,6 +144,38 @@ Each of the returned objects contain the following fields:
 * nodes[i].counter.http_failure: http failures count.
 * nodes[i].counter.tcp_failure: tcp connect/read/write failures count.
 * nodes[i].counter.timeout_failure: timeout count.
+
+A plugin can run active health checks of its own, on nodes that belong to no
+upstream. [ai-proxy-multi](./plugins/ai-proxy-multi.md) does this: it probes
+every LLM instance and skips the unhealthy ones when it picks a target. Such a
+checker is reported with two extra fields:
+
+```json
+{
+  "name": "/apisix/routes/1#plugins['ai-proxy-multi'].instances[0]",
+  "plugin": "ai-proxy-multi",
+  "meta": {
+    "instance": "openai"
+  },
+  "type": "http",
+  "nodes": [
+    {
+      "ip": "52.86.68.46",
+      "port": 443,
+      "status": "healthy",
+      "counter": {
+        "http_failure": 0,
+        "success": 2,
+        "timeout_failure": 0,
+        "tcp_failure": 0
+      }
+    }
+  ]
+}
+```
+
+* plugin: name of the plugin owning the health checker. Absent for an upstream health checker.
+* meta: filled by the plugin to describe what the checker stands for. Its content is plugin specific; `ai-proxy-multi` reports the instance name.
 
 You can also use `/v1/healthcheck/$src_type/$src_id` to get the health status of specific nodes.
 
@@ -181,17 +215,47 @@ For example, `GET /v1/healthcheck/upstreams/1` returns:
 
 :::note
 
-Only when one upstream is satisfied by the conditions below,
-its status is shown in the result list:
-
-* The upstream is configured with a health checker
-* The upstream has served requests in any worker process
+An upstream is shown in the result list as soon as it is configured with a health
+checker. Its `nodes` stay empty until the upstream has served requests in any
+worker process, because the health checker is only created then.
 
 :::
 
 If you use browser to access the control API URL, then you will get the HTML output:
 
 ![Health Check Status Page](https://raw.githubusercontent.com/apache/apisix/master/docs/assets/images/health_check_status_page.png)
+
+### GET /v1/healthcheck/{src_type}/{src_id}/checkers
+
+Returns every health checker one resource owns, as an array of the entries
+described above. A resource can own more than one -- its upstream plus one per
+plugin instance -- which `GET /v1/healthcheck/$src_type/$src_id` cannot express,
+since it returns a single object.
+
+For example, `GET /v1/healthcheck/routes/1/checkers` returns:
+
+```json
+[
+  {
+    "name": "/apisix/routes/1",
+    "type": "http",
+    "nodes": [...]
+  },
+  {
+    "name": "/apisix/routes/1#plugins['ai-proxy-multi'].instances[0]",
+    "plugin": "ai-proxy-multi",
+    "meta": {
+      "instance": "openai"
+    },
+    "type": "http",
+    "nodes": [...]
+  }
+]
+```
+
+A resource with no health check at all is not an error here: it owns an empty
+set of checkers, and the endpoint returns `[]`. `404` is returned only when the
+resource itself does not exist.
 
 ### POST /v1/gc
 
@@ -231,7 +295,6 @@ Returns all configured [Routes](./terminology/route.md):
       },
       "status": 1
     },
-    "clean_handlers": {},
     "has_domain": false,
     "orig_modifiedIndex": 1631193445,
     "modifiedIndex": 1631193445,
@@ -269,7 +332,6 @@ Returns the Route with the specified `route_id`:
     },
     "status": 1
   },
-  "clean_handlers": {},
   "has_domain": false,
   "orig_modifiedIndex": 1631193445,
   "modifiedIndex": 1631193445,
@@ -287,7 +349,6 @@ Returns all the Services:
 [
   {
     "has_domain": false,
-    "clean_handlers": {},
     "modifiedIndex": 671,
     "key": "/apisix/services/200",
     "createdIndex": 671,
@@ -334,7 +395,6 @@ Returns the Service with the specified `service_id`:
 ```json
 {
   "has_domain": false,
-  "clean_handlers": {},
   "modifiedIndex": 728,
   "key": "/apisix/services/5",
   "createdIndex": 728,
@@ -392,8 +452,6 @@ Dumps all Upstreams:
       },
       "has_domain":true,
       "key":"\/apisix\/upstreams\/1",
-      "clean_handlers":{
-      },
       "createdIndex":938,
       "modifiedIndex":1225
    }
@@ -432,8 +490,6 @@ Dumps the Upstream with the specified `upstream_id`:
    },
    "has_domain":true,
    "key":"\/apisix\/upstreams\/1",
-   "clean_handlers":{
-   },
    "createdIndex":938,
    "modifiedIndex":1225
 }
