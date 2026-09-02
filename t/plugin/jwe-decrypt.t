@@ -978,6 +978,10 @@ status: 400 body: {"message":"unsupported alg or enc in JWE token"}
     }
 --- response_body
 status: 400 body: {"message":"failed to decrypt JWE token"}
+--- error_log
+invalid IV or authentication tag length in the JWE token
+--- no_error_log
+[error]
 
 
 
@@ -999,6 +1003,10 @@ status: 400 body: {"message":"failed to decrypt JWE token"}
     }
 --- response_body
 status: 400 body: {"message":"failed to decrypt JWE token"}
+--- error_log
+invalid IV or authentication tag length in the JWE token
+--- no_error_log
+[error]
 
 
 
@@ -1034,3 +1042,29 @@ status: 400 body: {"message":"failed to decrypt JWE token"}
     }
 --- response_body
 status: 200 forwarded: true
+
+
+
+=== TEST 41: token whose authentication tag is truncated is rejected
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            -- the TEST 31 token with its tag cut to its first 8 bytes, which
+            -- OpenSSL accepts as a valid GCM tag and verifies in full, leaving
+            -- 64 bits instead of 128 between an attacker and a forged token
+            local token = "eyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2R0NNIiwia2lkIjoiandlLWZhaWwta2V5In0."
+                          .. ".MTIzNDU2Nzg5MDEy.6JeRgm0.KaxbSD-kuYA"
+
+            local code, body = t('/jwe-decrypt-fail', ngx.HTTP_GET, nil, nil,
+                                 { Authorization = "Bearer " .. token })
+            ngx.say("status: ", code, " body: ", ((body or ""):gsub("%s+$", "")))
+        }
+    }
+--- response_body
+status: 400 body: {"message":"failed to decrypt JWE token"}
+--- error_log
+invalid IV or authentication tag length in the JWE token
+--- no_error_log
+[error]

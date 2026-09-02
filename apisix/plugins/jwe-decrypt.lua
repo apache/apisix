@@ -28,6 +28,11 @@ local plugin_name     = "jwe-decrypt"
 local GCM_IV_LEN      = 12
 local GCM_TAG_LEN     = 16
 
+-- one AES-256-GCM context per worker, created on first use so that it belongs
+-- to the worker that uses it: decrypt() reinitializes it with the key and the
+-- IV on every call and never yields, so there is nothing to keep apart
+local aead
+
 local schema = {
     type = "object",
     properties = {
@@ -165,8 +170,9 @@ local function jwe_decrypt_with_obj(o, consumer)
         return nil, "invalid base64url encoding in the JWE token"
     end
 
-    -- OpenSSL accepts a shorter GCM tag and only verifies as many bits as it
-    -- is given, so the tag length has to be checked before it is handed over
+    -- OpenSSL takes a GCM tag shorter than 128 bits and then verifies only the
+    -- bits it was given, which would cut the cost of forging a token, so both
+    -- of the lengths RFC 7518 fixes are checked before OpenSSL sees them
     if #iv ~= GCM_IV_LEN or #tag ~= GCM_TAG_LEN then
         return nil, "invalid IV or authentication tag length in the JWE token"
     end
@@ -175,9 +181,12 @@ local function jwe_decrypt_with_obj(o, consumer)
     -- lua-resty-string 0.16 on, and drops the argument without a word on the
     -- older OpenResty releases APISIX supports, so the AEAD runs through
     -- resty.openssl, which takes the AAD on every version
-    local aead, err = cipher.new("aes-256-gcm")
     if not aead then
-        return nil, err
+        local err
+        aead, err = cipher.new("aes-256-gcm")
+        if not aead then
+            return nil, err
+        end
     end
 
     -- RFC 7516 authenticates the encoded protected header as the AES-GCM
