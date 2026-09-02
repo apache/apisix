@@ -269,6 +269,7 @@ local function read_response_body(httpc, resp, max_response_body_size,
     while true do
         local chunk, err = resp.body_reader(response_body_chunk_size)
         if err then
+            close_http_client(httpc)
             return nil, err
         end
         if not chunk then

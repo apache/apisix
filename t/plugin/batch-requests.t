@@ -1244,12 +1244,16 @@ POST /apisix/batch-requests
 --- config
     location = /five-bytes {
         content_by_lua_block {
-            ngx.print("12345")
+            ngx.print("12")
+            ngx.flush(true)
+            ngx.print("345")
         }
     }
     location = /four-bytes {
         content_by_lua_block {
-            ngx.print("1234")
+            ngx.print("12")
+            ngx.flush(true)
+            ngx.print("34")
         }
     }
 --- request
@@ -1261,19 +1265,28 @@ POST /apisix/batch-requests
 
 
 
-=== TEST 34: allow aggregate response bodies at both limits
+=== TEST 34: allow response bodies at the per-item and aggregate limits
 --- config
-    location = /four-bytes {
+    location = /five-bytes {
         content_by_lua_block {
-            ngx.print("1234")
+            ngx.print("12")
+            ngx.flush(true)
+            ngx.print("345")
+        }
+    }
+    location = /three-bytes {
+        content_by_lua_block {
+            ngx.print("1")
+            ngx.flush(true)
+            ngx.print("23")
         }
     }
 --- request
 POST /apisix/batch-requests
-{"headers":{"Connection":"keep-alive"},"pipeline":[{"path":"/four-bytes"},{"path":"/four-bytes"}]}
+{"headers":{"Connection":"keep-alive"},"pipeline":[{"path":"/five-bytes"},{"path":"/three-bytes"}]}
 --- error_code: 200
 --- response_body eval
-qr/^\[.*"body":"1234".*"body":"1234".*\]$/
+qr/^\[.*"body":"12345".*"body":"123".*\]$/
 
 
 
@@ -1324,3 +1337,43 @@ qr/property \\"max_response_body_size_total\\" validation failed/
 GET /t
 --- response_body
 passed
+
+
+
+=== TEST 37: reject a response body over the default per-item limit
+--- config
+    location = /over-one-mib {
+        content_by_lua_block {
+            ngx.header.content_length = 1048577
+            ngx.print(("x"):rep(1048577))
+        }
+    }
+--- request
+POST /apisix/batch-requests
+{"pipeline":[{"path":"/over-one-mib"}]}
+--- error_code: 502
+--- response_body
+{"error_msg":"response body of pipeline request 1 exceeds max_response_body_size"}
+
+
+
+=== TEST 38: accept the default boundaries and reject the next aggregate byte
+--- config
+    location = /one-mib {
+        content_by_lua_block {
+            ngx.header.content_length = 1048576
+            ngx.print(("x"):rep(1048576))
+        }
+    }
+    location = /one-byte {
+        content_by_lua_block {
+            ngx.header.content_length = 1
+            ngx.print("x")
+        }
+    }
+--- request
+POST /apisix/batch-requests
+{"headers":{"Connection":"keep-alive"},"pipeline":[{"path":"/one-mib"},{"path":"/one-mib"},{"path":"/one-mib"},{"path":"/one-mib"},{"path":"/one-mib"},{"path":"/one-mib"},{"path":"/one-mib"},{"path":"/one-mib"},{"path":"/one-mib"},{"path":"/one-mib"},{"path":"/one-byte"}]}
+--- error_code: 502
+--- response_body
+{"error_msg":"response body of pipeline request 11 exceeds max_response_body_size_total"}
