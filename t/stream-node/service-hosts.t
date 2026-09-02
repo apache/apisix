@@ -44,24 +44,28 @@ add_block_preprocessor(sub {
 
             local sess, err = sock:sslhandshake(nil, ngx.var.arg_sni, false)
             if not sess then
+                sock:close()
                 ngx.say("failed to do SSL handshake: ", err)
                 return
             end
 
             local bytes, err = sock:send("mmm")
             if not bytes then
+                sock:close()
                 ngx.say("send stream request error: ", err)
                 return
             end
 
-            local data, err = sock:receive("*a")
+            -- reaching peer closure yields `nil, "closed", partial`; the bytes
+            -- read so far are the response
+            local data, err, partial = sock:receive("*a")
             sock:close()
-            if not data then
+            if not data and err ~= "closed" then
                 ngx.say("receive stream response error: ", err)
                 return
             end
 
-            ngx.print(data)
+            ngx.print(data or partial or "")
         }
     }
 _EOC_
@@ -303,5 +307,44 @@ __DATA__
     }
 --- pipelined_requests eval
 ["GET /setup", "GET /tls?sni=mixed.test.com", "GET /tls?sni=other.test.com"]
+--- response_body eval
+["passed\n", "hello world\n", ""]
+
+
+=== TEST 6: the sni of the stream route is matched case-insensitively
+--- config
+    location /setup {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin")
+
+            local ssl_cert = t.read_file("t/certs/apisix.crt")
+            local ssl_key =  t.read_file("t/certs/apisix.key")
+            local code = t.test('/apisix/admin/ssls/1', ngx.HTTP_PUT,
+                core.json.encode({cert = ssl_cert, key = ssl_key, sni = "*"}))
+            if code >= 300 then
+                ngx.say("failed to create ssl: ", code)
+                return
+            end
+
+            code = t.test('/apisix/admin/stream_routes/1', ngx.HTTP_PUT,
+                [[{
+                    "sni": "Mixed.SNI.com",
+                    "upstream": {
+                        "nodes": {"127.0.0.1:1995": 1},
+                        "type": "roundrobin"
+                    }
+                }]])
+            if code >= 300 then
+                ngx.say("failed to create stream route: ", code)
+                return
+            end
+
+            ngx.sleep(0.5)
+            ngx.say("passed")
+        }
+    }
+--- pipelined_requests eval
+["GET /setup", "GET /tls?sni=mixed.sni.com", "GET /tls?sni=other.sni.com"]
 --- response_body eval
 ["passed\n", "hello world\n", ""]

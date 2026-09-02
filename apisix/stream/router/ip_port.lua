@@ -26,7 +26,6 @@ local xrpc = require("apisix.stream.xrpc")
 local error     = error
 local tonumber  = tonumber
 local ipairs = ipairs
-local str_lower = string.lower
 
 local user_routes
 local router_ver
@@ -89,9 +88,7 @@ local function get_snis(route, service)
             return nil
         end
 
-        -- hosts are case-insensitive while apisix/ssl.lua's server_name()
-        -- always returns a lowercased SNI
-        core.table.insert(snis, str_lower(host))
+        core.table.insert(snis, host)
     end
 
     if #snis == 0 then
