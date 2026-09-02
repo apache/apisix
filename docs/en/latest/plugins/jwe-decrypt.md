@@ -178,7 +178,7 @@ To generate a JWE token for the Consumer, use any JWE library that supports dire
 base64url(header).<empty>.base64url(iv).base64url(ciphertext).base64url(tag)
 ```
 
-where the header is `{"alg":"dir","enc":"A256GCM","kid":"<consumer-key>"}`; `alg` and `enc` are rejected if they are set to anything else. `A256GCM` is defined with a 96-bit IV and a 128-bit authentication tag, and a token carrying either at another length is rejected. The IV must be unique and randomly generated for every token; never reuse an IV with the same key.
+where the header is `{"alg":"dir","enc":"A256GCM","kid":"<consumer-key>"}`; `alg` and `enc` are rejected if they are set to anything else. `A256GCM` is defined with a 96-bit IV and a 128-bit authentication tag, and a token whose IV or authentication tag has another length is rejected. The IV must be unique and randomly generated for every token; never reuse an IV with the same key.
 
 As [RFC 7516](https://datatracker.ietf.org/doc/html/rfc7516#section-5.1) requires, a JWE library authenticates the encoded protected header as the AES-GCM additional authenticated data (AAD), which makes the `kid` tamper-proof. Tokens encrypted without AAD, such as the ones APISIX itself used to generate, are still accepted for backward compatibility.
 

@@ -166,7 +166,7 @@ kubectl apply -f jwe-consumer-ic.yaml
 base64url(header).<empty>.base64url(iv).base64url(ciphertext).base64url(tag)
 ```
 
-其中 header 为 `{"alg":"dir","enc":"A256GCM","kid":"<consumer-key>"}`，`alg` 与 `enc` 若为其他值则会被拒绝。`A256GCM` 规定 IV 为 96 位、认证标签为 128 位，长度不符的令牌会被拒绝。每个令牌的 IV 必须唯一且随机生成，切勿在同一密钥下复用 IV。
+其中 header 为 `{"alg":"dir","enc":"A256GCM","kid":"<consumer-key>"}`，`alg` 与 `enc` 若为其他值则会被拒绝。`A256GCM` 规定 IV 为 96 位、认证标签为 128 位，IV 或认证标签长度不符的令牌会被拒绝。每个令牌的 IV 必须唯一且随机生成，切勿在同一密钥下复用 IV。
 
 按 [RFC 7516](https://datatracker.ietf.org/doc/html/rfc7516#section-5.1) 的要求，JWE 库会将编码后的 protected header 作为 AES-GCM 的附加认证数据（AAD）参与认证，从而使 `kid` 不可篡改。为保持向后兼容，未使用 AAD 加密的令牌（例如 APISIX 早期自行生成的令牌）仍然可以正常解密。
 
