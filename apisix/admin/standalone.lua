@@ -19,6 +19,7 @@ local ipairs       = ipairs
 local tonumber     = tonumber
 local str_lower    = string.lower
 local str_find     = string.find
+local str_sub      = string.sub
 local ngx          = ngx
 local ngx_time     = ngx.time
 local ngx_now      = ngx.now
@@ -56,13 +57,46 @@ local METADATA_DIGEST = "X-Digest"
 
 local _M = {}
 
+
+-- the "config" key in the standalone-config shared dict stores
+-- "<digest length>\n<digest><json body>" instead of plain JSON, so a worker
+-- can compare digests without decoding the (potentially large) JSON on
+-- every poll
+-- the reason for combining them into a single string and writing them to
+-- only one key is to ensure concurrent safety for updates by multiple
+-- workers
+local CONFIG_DIGEST_LENGTH_SEPARATOR = "\n"
+
+local function encode_config(digest, raw)
+    digest = digest or ""
+    return #digest .. CONFIG_DIGEST_LENGTH_SEPARATOR .. digest .. raw
+end
+
+
+local function decode_config(stored)
+    local idx = str_find(stored, CONFIG_DIGEST_LENGTH_SEPARATOR, 1, true)
+    if not idx then
+        return nil, nil, "missing digest length prefix"
+    end
+
+    local digest_len = tonumber(str_sub(stored, 1, idx - 1))
+    if not digest_len then
+        return nil, nil, "invalid digest length prefix"
+    end
+
+    local digest_start = idx + 1
+    local digest_end = digest_start + digest_len - 1
+    return str_sub(stored, digest_start, digest_end), str_sub(stored, digest_end + 1)
+end
+
+
 local function get_config()
     local stored = shared_dict:get("config")
     if not stored then
         return nil, NOT_FOUND_ERR
     end
 
-    local _, raw, err = config_yaml.decode_config(stored)
+    local _, raw, err = decode_config(stored)
     if not raw then
         return nil, "failed to decode stored config: " .. err
     end
@@ -85,7 +119,7 @@ local function update_config(apisix_yaml)
 
     if shared_dict then
         -- the worker that handles Admin API calls is responsible for writing the shared dict
-        local stored = config_yaml.encode_config(apisix_yaml[METADATA_DIGEST], raw)
+        local stored = encode_config(apisix_yaml[METADATA_DIGEST], raw)
         local ok, err = shared_dict:set("config", stored)
         if not ok then
             return nil, "failed to save config to shared dict: " .. err
@@ -148,6 +182,41 @@ local function all_workers_applied(target_digest)
     end
     return true
 end
+
+
+-- reads standalone-config shdict once and applies it if present
+local function try_restore_from_shared_dict()
+    if not shared_dict then
+        core.log.crit(config_yaml.ERR_NO_SHARED_DICT)
+        return nil, config_yaml.ERR_NO_SHARED_DICT
+    end
+
+    local stored, err = shared_dict:get("config")
+    if not stored then
+        if err then -- if the key does not exist, the return values are both nil
+            core.log.error("failed to read config from shared dict: ", err)
+        end
+        core.log.info("no config found in shared dict")
+        return true
+    end
+    core.log.info("startup config loaded from shared dict: ", stored)
+
+    local _, raw, err = decode_config(tostring(stored))
+    if not raw then
+        return nil, "failed to decode config from shared dict: " .. err
+    end
+
+    local config
+    config, err = core.json.decode(raw)
+    if not config then
+        return nil, "failed to decode config from shared dict: " .. err
+    end
+    config_yaml._update_config(config)
+    core.log.info("config loaded from shared dict")
+
+    return true
+end
+
 
 local function update(ctx)
     -- check digest header existence
@@ -406,6 +475,14 @@ end
 
 
 function _M.init_worker()
+    local ok, err = try_restore_from_shared_dict()
+    if not ok then
+        core.log.error("failed to restore config from shared dict: ", err)
+
+        -- this occurs only when invalid data is stored in shdict
+        -- if the restore fails, wait for the next timer to retry
+    end
+
     local function update_config(config)
         if not config then
             local err
@@ -442,7 +519,7 @@ function _M.init_worker()
 
             -- the digest prefix is cheap to check (no full-config decode), so
             -- most ticks can bail out here without ever calling json.decode
-            local latest_digest, raw = config_yaml.decode_config(stored)
+            local latest_digest, raw = decode_config(stored)
             if latest_digest == digest_per_worker then
                 return
             end
