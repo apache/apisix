@@ -20,11 +20,13 @@ local config_util = require("apisix.core.config_util")
 local stream_plugin_checker = require("apisix.plugin").stream_plugin_checker
 local router_new = require("apisix.utils.router").new
 local service_mod = require("apisix.http.service")
+local service_fetch = service_mod.get
 local apisix_ssl = require("apisix.ssl")
 local xrpc = require("apisix.stream.xrpc")
 local error     = error
 local tonumber  = tonumber
 local ipairs = ipairs
+local str_lower = string.lower
 
 local user_routes
 local router_ver
@@ -61,6 +63,45 @@ local function match_addrs(route, vars)
 end
 
 
+-- Returns the list of SNIs a stream route is matched by, or nil when the route
+-- puts no restriction on the SNI.
+-- The precedence mirrors the one of the HTTP router (see
+-- apisix/http/router/radixtree_host_uri.lua): the route's own `sni` wins,
+-- otherwise the `hosts` of the service it references are used. A service can
+-- carry several hosts, so one stream route is enough to serve all the hostnames
+-- of a multi-hostname service instead of being duplicated once per SNI.
+local function get_snis(route, service)
+    if route.sni then
+        return {route.sni}
+    end
+
+    if not service or not service.value.hosts then
+        return nil
+    end
+
+    local hosts = service.value.hosts
+    local snis = core.table.new(#hosts, 0)
+    for _, host in ipairs(hosts) do
+        if host == "*" then
+            -- a bare `*` matches every SNI, which is exactly what carrying no
+            -- SNI already means; reversed into the radixtree it would only
+            -- match the literal "*"
+            return nil
+        end
+
+        -- hosts are case-insensitive while apisix/ssl.lua's server_name()
+        -- always returns a lowercased SNI
+        core.table.insert(snis, str_lower(host))
+    end
+
+    if #snis == 0 then
+        return nil
+    end
+
+    return snis
+end
+
+
 local create_router
 do
     local sni_to_items = {}
@@ -78,6 +119,17 @@ do
                 goto CONTINUE
             end
 
+            local service
+            if item.value.service_id then
+                service = service_fetch(item.value.service_id)
+                if not service then
+                    core.log.error("failed to fetch service configuration by ",
+                                   "id: ", item.value.service_id)
+                    -- we keep the behavior that missing service won't affect
+                    -- the route matching
+                end
+            end
+
             local route = item.value
             if route.protocol and route.protocol.superior_id then
                 -- subordinate route won't be matched in the entry
@@ -91,38 +143,40 @@ do
             if item.value.server_addr then
                 item.value.server_addr_matcher = core_ip.create_ip_matcher({item.value.server_addr})
             end
-            if not route.sni then
+            local snis = get_snis(route, service)
+            if not snis then
                 other_routes[other_routes_idx] = item
                 other_routes_idx = other_routes_idx + 1
                 goto CONTINUE
             end
 
-            local sni_rev = route.sni:reverse()
-            local stored = sni_to_items[sni_rev]
-            if stored then
-                core.table.insert(stored, item)
-                goto CONTINUE
-            end
-
-            sni_to_items[sni_rev] = {item}
-            tls_routes[tls_routes_idx] = {
-                paths = sni_rev,
-                filter_fun = function (vars, opts, ctx)
-                    local items = sni_to_items[sni_rev]
-                    for _, route in ipairs(items) do
-                        local hit = match_addrs(route, vars)
-                        if hit then
-                            ctx.matched_route = route
-                            return true
+            for _, sni in ipairs(snis) do
+                local sni_rev = sni:reverse()
+                local stored = sni_to_items[sni_rev]
+                if stored then
+                    core.table.insert(stored, item)
+                else
+                    sni_to_items[sni_rev] = {item}
+                    tls_routes[tls_routes_idx] = {
+                        paths = sni_rev,
+                        filter_fun = function (vars, opts, ctx)
+                            local items = sni_to_items[sni_rev]
+                            for _, route in ipairs(items) do
+                                local hit = match_addrs(route, vars)
+                                if hit then
+                                    ctx.matched_route = route
+                                    return true
+                                end
+                            end
+                            return false
+                        end,
+                        handler = function (ctx, sni_rev)
+                            -- done in the filter_fun
                         end
-                    end
-                    return false
-                end,
-                handler = function (ctx, sni_rev)
-                    -- done in the filter_fun
+                    }
+                    tls_routes_idx = tls_routes_idx + 1
                 end
-            }
-            tls_routes_idx = tls_routes_idx + 1
+            end
 
             ::CONTINUE::
         end

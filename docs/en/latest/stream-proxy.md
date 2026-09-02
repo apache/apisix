@@ -221,6 +221,32 @@ curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H "X-API-KEY: $admin_ke
 
 In this case, a connection handshaked with SNI `a.test.com` will be proxied to `127.0.0.1:5991`.
 
+A stream route can only carry a single SNI. When it has no `sni` of its own but references a
+[Service](./terminology/service.md), the `hosts` of that Service are used instead, so that one
+stream route can serve several hostnames:
+
+```shell
+curl http://127.0.0.1:9180/apisix/admin/services/1 -H "X-API-KEY: $admin_key" -X PUT -d '
+{
+    "hosts": ["a.test.com", "b.test.com"],
+    "upstream": {
+        "nodes": {
+            "127.0.0.1:5991": 1
+        },
+        "type": "roundrobin"
+    }
+}'
+
+curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
+{
+    "service_id": 1
+}'
+```
+
+Here a connection handshaked with SNI `a.test.com` or `b.test.com` will be proxied to
+`127.0.0.1:5991`. A single `*` in `hosts` puts no restriction on the SNI, exactly like a stream
+route without `sni`.
+
 ## Proxy to TLS over TCP upstream
 
 APISIX also supports proxying to TLS over TCP upstream.
