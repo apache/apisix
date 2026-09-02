@@ -56,13 +56,18 @@ local METADATA_DIGEST = "X-Digest"
 local _M = {}
 
 local function get_config()
-    local config = shared_dict:get("config")
-    if not config then
+    local stored = shared_dict:get("config")
+    if not stored then
         return nil, NOT_FOUND_ERR
     end
 
-    local err
-    config, err = core.json.decode(config)
+    local _, raw, err = config_yaml.decode_config(stored)
+    if not raw then
+        return nil, "failed to decode stored config: " .. err
+    end
+
+    local config
+    config, err = core.json.decode(raw)
     if not config then
         return nil, "failed to decode json: " .. err
     end
@@ -70,7 +75,7 @@ local function get_config()
 end
 
 
-local function update_and_broadcast_config(apisix_yaml)
+local function update_config(apisix_yaml)
     local raw, err = core.json.encode(apisix_yaml)
     if not raw then
         core.log.error("failed to encode json: ", err)
@@ -79,7 +84,8 @@ local function update_and_broadcast_config(apisix_yaml)
 
     if shared_dict then
         -- the worker that handles Admin API calls is responsible for writing the shared dict
-        local ok, err = shared_dict:set("config", raw)
+        local stored = config_yaml.encode_config(apisix_yaml[METADATA_DIGEST], raw)
+        local ok, err = shared_dict:set("config", stored)
         if not ok then
             return nil, "failed to save config to shared dict: " .. err
         end
@@ -87,7 +93,7 @@ local function update_and_broadcast_config(apisix_yaml)
     else
         core.log.crit(config_yaml.ERR_NO_SHARED_DICT)
     end
-    return events:post(EVENT_UPDATE, EVENT_UPDATE)
+    return true
 end
 
 local validate_configuration = config_validate.validate_configuration
@@ -241,9 +247,16 @@ local function update(ctx)
     apisix_yaml[METADATA_LAST_MODIFIED] = ngx_time()
     apisix_yaml[METADATA_DIGEST] = digest
 
-    local ok, err = update_and_broadcast_config(apisix_yaml)
+    local ok, err = update_config(apisix_yaml)
     if not ok then
-        core.response.exit(500, err)
+        return core.response.exit(500, err)
+    end
+    local ok, err = events:post(EVENT_UPDATE, EVENT_UPDATE)
+    if not ok then
+        -- event broadcasting errors are tolerable because each worker has
+        -- an additional timer as a backup. This may introduce some extra
+        -- latency, but it won't prevent the configuration from being updated
+        core.log.error("failed to post update event: ", err)
     end
 
     core.response.set_header(METADATA_LAST_MODIFIED, apisix_yaml[METADATA_LAST_MODIFIED])
@@ -424,22 +437,37 @@ function _M.init_worker()
     -- same second are indistinguishable by it and the later one would never
     -- reach this worker. The digest changes with the content, so compare both.
     local last_modified_per_worker, digest_per_worker
-    timer_every(1, function ()
+    timer_every(0.2, function ()
         if not exiting() then
-            local config, err = get_config()
-            if not config then
-                if err ~= NOT_FOUND_ERR then
+            local stored, err = shared_dict and shared_dict:get("config")
+            if not stored then
+                if err then -- if the key does not exist, the return values are both nil
                     core.log.error("failed to get config: ", err)
                 end
-            else
-                local last_modified = config[METADATA_LAST_MODIFIED]
-                local digest = config[METADATA_DIGEST]
-                if last_modified_per_worker ~= last_modified
-                   or digest_per_worker ~= digest then
-                    update_config(config)
-                    last_modified_per_worker = last_modified
-                    digest_per_worker = digest
-                end
+                return
+            end
+
+            -- the digest prefix is cheap to check (no full-config decode), so
+            -- most ticks can bail out here without ever calling json.decode
+            local latest_digest, raw = config_yaml.decode_config(stored)
+            if latest_digest == digest_per_worker then
+                return
+            end
+
+            local config
+            config, err = core.json.decode(raw)
+            if not config then
+                core.log.error("failed to decode config: ", err)
+                return
+            end
+
+            local last_modified = config[METADATA_LAST_MODIFIED]
+            local digest = config[METADATA_DIGEST]
+            if last_modified_per_worker ~= last_modified
+               or digest_per_worker ~= digest then
+                update_config(config)
+                last_modified_per_worker = last_modified
+                digest_per_worker = digest
             end
         end
     end)
