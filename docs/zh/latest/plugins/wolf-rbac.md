@@ -38,7 +38,7 @@ description: 本文介绍了关于 Apache APISIX `wolf-rbac` 插件的基本信�
 | ------------- | ------ | ------ | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
 | server        | string | 否     | "http://127.0.0.1:12180" |  `wolf-server` 的服务地址。                                                                                                                          |
 | appid         | string | 否     | "unset"                  | 在 `wolf-console` 中已经添加的应用 id。该字段支持使用 [APISIX Secret](../terminology/secret.md) 资源，将值保存在 Secret Manager 中。                                       |
-| header_prefix | string | 否     | "X-"                     | 自定义 HTTP 头的前缀。`wolf-rbac` 在鉴权成功后，会在请求头 (用于传给后端) 及响应头 (用于传给前端) 中添加 3 个 header：`X-UserId`, `X-Username`, `X-Nickname`。|
+| header_prefix | string | 否     | "X-"                     | 鉴权成功后添加的身份 HTTP 头前缀：`X-UserId`、`X-Username` 和 `X-Nickname`。请在 Route 或 Service 上配置此属性；Route 级别的配置优先于 Consumer 级别的配置。|
 
 ## 接口
 
@@ -97,6 +97,8 @@ curl http://127.0.0.1:9180/apisix/admin/consumers  \
 
 然后你需要添加 `wolf-rbac` 插件到 Route 或 Service 中。
 
+请在转发身份 HTTP 头的 Route 或 Service 上配置 `header_prefix`。为保持兼容，仍支持 Consumer 级别的配置。
+
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1  \
 -H "X-API-KEY: $admin_key" -X PUT -d '
@@ -104,7 +106,9 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1  \
     "methods": ["GET"],
     "uri": "/*",
     "plugins": {
-        "wolf-rbac": {}
+        "wolf-rbac": {
+            "header_prefix": "X-"
+        }
     },
     "upstream": {
         "type": "roundrobin",

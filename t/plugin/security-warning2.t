@@ -580,7 +580,7 @@ Keeping tls disabled in tcp-logger configuration is a security risk
         }
     }
 --- response_body_like eval
-qr/\{"appid":"unset","header_prefix":"X-","server":"http:\/\/127\.0\.0\.1:12180"\}/
+qr/\{"appid":"unset","server":"http:\/\/127\.0\.0\.1:12180"\}/
 --- error_log
 Using wolf-rbac server with no TLS is a security risk
 

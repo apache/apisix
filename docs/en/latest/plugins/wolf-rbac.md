@@ -38,7 +38,7 @@ The `wolf-rbac` Plugin provides a [role-based access control](https://en.wikiped
 |---------------|--------|----------|--------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | server        | string | False    | "http://127.0.0.1:12180" | Service address of wolf server.                                                                                                                                                                                             |
 | appid         | string | False    | "unset"                  | App id added in wolf console. This field supports saving the value in Secret Manager using the [APISIX Secret](../terminology/secret.md) resource.            |
-| header_prefix | string | False    | "X-"                     | Prefix for a custom HTTP header. After authentication is successful, three headers will be added to the request header (for backend) and response header (for frontend) namely: `X-UserId`, `X-Username`, and `X-Nickname`. |
+| header_prefix | string | False    | "X-"                     | Prefix for the identity headers added after successful authentication: `X-UserId`, `X-Username`, and `X-Nickname`. Configure this attribute on the Route or Service. A Route-level value takes precedence over a Consumer-level value. |
 
 ## API
 
@@ -95,13 +95,18 @@ The `appid` added in the configuration should already exist in wolf.
 
 You can now add the Plugin to a Route or a Service:
 
+Configure `header_prefix` on the Route or Service that forwards the identity
+headers. Consumer-level configuration remains supported for compatibility.
+
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1  -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/*",
     "plugins": {
-        "wolf-rbac": {}
+        "wolf-rbac": {
+            "header_prefix": "X-"
+        }
     },
     "upstream": {
         "type": "roundrobin",

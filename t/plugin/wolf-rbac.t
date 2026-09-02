@@ -54,6 +54,27 @@ __DATA__
         }
     }
 --- response_body_like eval
+qr/\{"appid":"unset","server":"http:\/\/127\.0\.0\.1:12180"\}/
+
+
+
+=== TEST 1a: consumer configuration retains the historical header prefix default
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local plugin = require("apisix.plugins.wolf-rbac")
+            local conf = {}
+
+            local ok, err = plugin.check_schema(conf, core.schema.TYPE_CONSUMER)
+            if not ok then
+                ngx.say(err)
+            end
+
+            ngx.say(require("toolkit.json").encode(conf))
+        }
+    }
+--- response_body_like eval
 qr/\{"appid":"unset","header_prefix":"X-","server":"http:\/\/127\.0\.0\.1:12180"\}/
 
 
