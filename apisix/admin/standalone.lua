@@ -30,6 +30,7 @@ local exiting      = ngx.worker.exiting
 local yaml         = require("lyaml")
 local events       = require("apisix.events")
 local core         = require("apisix.core")
+local config_local = require("apisix.core.config_local")
 local config_yaml  = require("apisix.core.config_yaml")
 local config_validate = require("apisix.admin.config_validate")
 
@@ -116,25 +117,13 @@ local function parse_wait_ms(ctx)
 end
 
 
-local is_stream_enabled
-local function stream_enabled()
-    if is_stream_enabled ~= nil then
-        return is_stream_enabled
-    end
-    local local_conf = core.config.local_conf()
-    local proxy_mode = local_conf and local_conf.apisix and local_conf.apisix.proxy_mode
-    is_stream_enabled = proxy_mode ~= nil and str_find(proxy_mode, "stream", 1, true) ~= nil
-    return is_stream_enabled
-end
-
-
 local function all_workers_applied(target_digest)
     if not status_shared_dict then
         return false
     end
 
     local n = worker_count()
-    local check_stream = stream_enabled()
+    local check_stream = config_local.is_stream_enabled()
     for key in pairs(APPLIED_CHECK_KEYS) do
         for id = 0, n - 1 do
             if HTTP_RESOURCE_KEYS[key] then
