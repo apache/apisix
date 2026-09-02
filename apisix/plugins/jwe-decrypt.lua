@@ -17,12 +17,16 @@
 local core            = require("apisix.core")
 local consumer_mod    = require("apisix.consumer")
 local base64          = require("ngx.base64")
-local aes             = require("resty.aes")
+local cipher          = require("resty.openssl.cipher")
 local sub_str         = string.sub
 local type            = type
-local cipher          = aes.cipher(256, "gcm")
 
 local plugin_name     = "jwe-decrypt"
+
+-- RFC 7518 fixes A256GCM, the only content encryption the plugin implements,
+-- to a 96 bit IV and a 128 bit authentication tag
+local GCM_IV_LEN      = 12
+local GCM_TAG_LEN     = 16
 
 local schema = {
     type = "object",
@@ -161,30 +165,35 @@ local function jwe_decrypt_with_obj(o, consumer)
         return nil, "invalid base64url encoding in the JWE token"
     end
 
-    local aes_default, err = aes:new(
-        secret,
-        nil,
-        cipher,
-        {iv = iv}
-    )
-    if not aes_default then
+    -- OpenSSL accepts a shorter GCM tag and only verifies as many bits as it
+    -- is given, so the tag length has to be checked before it is handed over
+    if #iv ~= GCM_IV_LEN or #tag ~= GCM_TAG_LEN then
+        return nil, "invalid IV or authentication tag length in the JWE token"
+    end
+
+    -- resty.aes forwards additional authenticated data to OpenSSL only from
+    -- lua-resty-string 0.16 on, and drops the argument without a word on the
+    -- older OpenResty releases APISIX supports, so the AEAD runs through
+    -- resty.openssl, which takes the AAD on every version
+    local aead, err = cipher.new("aes-256-gcm")
+    if not aead then
         return nil, err
     end
 
     -- RFC 7516 authenticates the encoded protected header as the AES-GCM
     -- additional authenticated data, which is what JWE libraries produce
-    local decrypted, decrypt_err = aes_default:decrypt(ciphertext, tag, o.header)
-    if decrypted then
-        return decrypted
+    local plaintext, decrypt_err = aead:decrypt(secret, iv, ciphertext, false, o.header, tag)
+    if plaintext then
+        return plaintext
     end
 
     -- tokens built the way APISIX used to build them carry no AAD
-    local plaintext, legacy_err = aes_default:decrypt(ciphertext, tag)
-    if not plaintext then
+    local legacy_plaintext, legacy_err = aead:decrypt(secret, iv, ciphertext, false, nil, tag)
+    if not legacy_plaintext then
         return nil, decrypt_err or legacy_err
     end
 
-    return plaintext
+    return legacy_plaintext
 end
 
 

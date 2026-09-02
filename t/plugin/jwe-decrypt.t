@@ -929,3 +929,79 @@ status: 200
     }
 --- response_body
 status: 400 body: {"message":"unsupported alg or enc in JWE token"}
+
+
+
+=== TEST 38: token whose authentication tag carries trailing bytes is rejected
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            -- the TEST 31 token with 16 bytes appended to its tag: A256GCM
+            -- authenticates 128 bits, so anything past them must not be
+            -- ignored, otherwise the very same token has many encodings
+            local token = "eyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2R0NNIiwia2lkIjoiandlLWZhaWwta2V5In0."
+                          .. ".MTIzNDU2Nzg5MDEy.6JeRgm0.KaxbSD-kuYBVck03POSk73RyYWlsaW5nMTIzNDU2Nzg"
+
+            local code, body = t('/jwe-decrypt-fail', ngx.HTTP_GET, nil, nil,
+                                 { Authorization = "Bearer " .. token })
+            ngx.say("status: ", code, " body: ", ((body or ""):gsub("%s+$", "")))
+        }
+    }
+--- response_body
+status: 400 body: {"message":"failed to decrypt JWE token"}
+
+
+
+=== TEST 39: token whose IV is not 96 bits is rejected
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            -- same plaintext and secret as TEST 31, encrypted under a 128 bit
+            -- IV, which RFC 7518 does not allow for A256GCM
+            local token = "eyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2R0NNIiwia2lkIjoiandlLWZhaWwta2V5In0."
+                          .. ".MTIzNDU2Nzg5MDEyMzQ1Ng.Ptfkx6w.-zpUsv5bSd-Ml5osMyKebw"
+
+            local code, body = t('/jwe-decrypt-fail', ngx.HTTP_GET, nil, nil,
+                                 { Authorization = "Bearer " .. token })
+            ngx.say("status: ", code, " body: ", ((body or ""):gsub("%s+$", "")))
+        }
+    }
+--- response_body
+status: 400 body: {"message":"failed to decrypt JWE token"}
+
+
+
+=== TEST 40: payload larger than the cipher output buffer is decrypted
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local core = require("apisix.core")
+            local cipher = require("resty.openssl.cipher")
+            local enc = require("ngx.base64").encode_base64url
+
+            local header = enc(core.json.encode({
+                alg = "dir", enc = "A256GCM", kid = "jwe-fail-key",
+            }))
+            local iv = "123456789012"
+            -- past the 1024 byte buffer resty.openssl reuses between calls
+            local payload = string.rep("0123456789", 160)
+
+            local c = assert(cipher.new("aes-256-gcm"))
+            local ciphertext = assert(c:encrypt("12345678901234567890123456789012",
+                                                iv, payload, false, header))
+            local tag = assert(c:get_aead_tag(16))
+            local token = header .. ".." .. enc(iv) .. "."
+                          .. enc(ciphertext) .. "." .. enc(tag)
+
+            local code = t('/jwe-decrypt-fail', ngx.HTTP_GET, nil, nil,
+                           { Authorization = "Bearer " .. token })
+            ngx.say("status: ", code)
+        }
+    }
+--- response_body
+status: 200
