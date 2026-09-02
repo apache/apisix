@@ -16,6 +16,7 @@
 local type         = type
 local pairs        = pairs
 local ipairs       = ipairs
+local tostring     = tostring
 local tonumber     = tonumber
 local str_lower    = string.lower
 local str_find     = string.find
