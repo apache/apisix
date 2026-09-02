@@ -592,6 +592,33 @@ fo4XKdZ1xSrIZyms4q2BwPrW5lMpls9qqy5tiAk2esc=
             )
             if code >= 300 then
                 ngx.status = code
+                ngx.say("failed to add route")
+                return
+            end
+
+            -- the test upstream echoes the request headers back, so the
+            -- plaintext the plugin forwarded can be compared byte for byte
+            code = t('/apisix/admin/routes/12',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "jwe-decrypt": {
+                            "header": "Authorization",
+                            "forward_header": "Authorization"
+                        },
+                        "proxy-rewrite": {
+                            "uri": "/uri"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": { "127.0.0.1:1980": 1 },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/jwe-decrypt-echo"
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
             end
             ngx.say("done")
         }
@@ -975,7 +1002,7 @@ status: 400 body: {"message":"failed to decrypt JWE token"}
 
 
 
-=== TEST 40: payload larger than the cipher output buffer is decrypted
+=== TEST 40: payload larger than the cipher output buffer is forwarded whole
 --- config
     location /t {
         content_by_lua_block {
@@ -998,10 +1025,12 @@ status: 400 body: {"message":"failed to decrypt JWE token"}
             local token = header .. ".." .. enc(iv) .. "."
                           .. enc(ciphertext) .. "." .. enc(tag)
 
-            local code = t('/jwe-decrypt-fail', ngx.HTTP_GET, nil, nil,
-                           { Authorization = "Bearer " .. token })
-            ngx.say("status: ", code)
+            -- on success the helper puts the upstream body third
+            local code, _, body = t('/jwe-decrypt-echo', ngx.HTTP_GET, nil, nil,
+                                    { Authorization = "Bearer " .. token })
+            ngx.say("status: ", code, " forwarded: ",
+                    (body or ""):match("authorization: ([^\n]*)") == payload)
         }
     }
 --- response_body
-status: 200
+status: 200 forwarded: true
