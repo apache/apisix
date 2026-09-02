@@ -84,9 +84,6 @@ local function clear_identity_headers(ctx, prefix)
     core.request.set_header(ctx, prefix .. "UserId", nil)
     core.request.set_header(ctx, prefix .. "Username", nil)
     core.request.set_header(ctx, prefix .. "Nickname", nil)
-    core.response.set_header(prefix .. "UserId", nil)
-    core.response.set_header(prefix .. "Username", nil)
-    core.response.set_header(prefix .. "Nickname", nil)
 end
 
 
