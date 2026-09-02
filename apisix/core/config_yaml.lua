@@ -476,8 +476,7 @@ local function try_restore_from_shared_dict()
     end
     log.info("startup config loaded from shared dict: ", stored)
 
-    local raw
-    _, raw, err = _M.decode_config(tostring(stored))
+    local _, raw, err = _M.decode_config(tostring(stored))
     if not raw then
         log.error("failed to decode config from shared dict: ", err)
         return

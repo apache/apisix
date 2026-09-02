@@ -439,7 +439,11 @@ function _M.init_worker()
     local last_modified_per_worker, digest_per_worker
     timer_every(0.2, function ()
         if not exiting() then
-            local stored, err = shared_dict and shared_dict:get("config")
+            if not shared_dict then
+                return
+            end
+
+            local stored, err = shared_dict:get("config")
             if not stored then
                 if err then -- if the key does not exist, the return values are both nil
                     core.log.error("failed to get config: ", err)
