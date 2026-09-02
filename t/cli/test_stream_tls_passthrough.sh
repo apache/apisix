@@ -395,6 +395,14 @@ if [ "$denied" -ne 1 ]; then
 fi
 echo "passed: the internal hop reports the real client address, not the socket"
 
+# Drop what this test created before handing the etcd instance to the next one.
+# The blacklist route above matches sni test.com on port 9100, which is exactly
+# what t/cli/test_tls_over_tcp.sh then uses, so leaving it behind fails that test.
+for res in stream_routes/1 stream_routes/2 ssls/1; do
+    curl -k -s -o /dev/null http://127.0.0.1:9180/apisix/admin/$res \
+        -H "X-API-KEY: $admin_key" -X DELETE
+done
+
 make stop
 
 echo "All stream TLS passthrough tests passed."
