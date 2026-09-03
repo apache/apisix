@@ -1349,7 +1349,31 @@ POST /apisix/batch-requests
 
 
 
-=== TEST 38: reject an invalid response body limit
+=== TEST 38: report a timeout while reading a close-delimited response
+--- config
+    location = /close-delimited-timeout {
+        chunked_transfer_encoding off;
+        content_by_lua_block {
+            ngx.print("partial")
+            ngx.flush(true)
+            ngx.sleep(0.3)
+            ngx.print("body")
+        }
+    }
+--- request
+POST /apisix/batch-requests
+{"timeout":100,"pipeline":[{"path":"/close-delimited-timeout","headers":{"Connection":"close"}}]}
+--- error_code: 200
+--- response_body_like eval
+qr/"read_body_err":"timeout"/
+--- response_body_unlike eval
+qr/"body":/
+--- error_log
+read pipeline response body failed: timeout
+
+
+
+=== TEST 39: reject an invalid response body limit
 --- config
     location /t {
         content_by_lua_block {
@@ -1375,7 +1399,7 @@ qr/property \\"max_response_body_size_total\\" validation failed/
 
 
 
-=== TEST 39: reset plugin metadata
+=== TEST 40: reset plugin metadata
 --- config
     location /t {
         content_by_lua_block {
@@ -1399,7 +1423,7 @@ passed
 
 
 
-=== TEST 40: reject a response body over the default per-item limit
+=== TEST 41: reject a response body over the default per-item limit
 --- config
     location = /over-one-mib {
         content_by_lua_block {
@@ -1416,7 +1440,7 @@ POST /apisix/batch-requests
 
 
 
-=== TEST 41: accept the default boundaries and reject the next aggregate byte
+=== TEST 42: accept the default boundaries and reject the next aggregate byte
 --- config
     location = /one-mib {
         content_by_lua_block {
