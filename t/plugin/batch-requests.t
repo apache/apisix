@@ -1194,3 +1194,245 @@ qr/property \\"path\\" is required/
 GET /t
 --- response_body
 passed
+
+
+
+=== TEST 31: configure response body limits
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/batch-requests',
+                ngx.HTTP_PUT,
+                [[{
+                    "max_response_body_size": 5,
+                    "max_response_body_size_total": 8
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 32: reject a subresponse body over its limit
+--- config
+    location = /six-bytes {
+        content_by_lua_block {
+            ngx.header.content_length = 6
+            ngx.print("123456")
+        }
+    }
+--- request
+POST /apisix/batch-requests
+{"pipeline":[{"path":"/six-bytes"}]}
+--- error_code: 502
+--- response_body
+{"error_msg":"response body of pipeline request 1 exceeds max_response_body_size"}
+
+
+
+=== TEST 33: reject aggregate response bodies over their limit
+--- config
+    location = /five-bytes {
+        content_by_lua_block {
+            ngx.print("12")
+            ngx.flush(true)
+            ngx.print("345")
+        }
+    }
+    location = /four-bytes {
+        content_by_lua_block {
+            ngx.print("12")
+            ngx.flush(true)
+            ngx.print("34")
+        }
+    }
+--- request
+POST /apisix/batch-requests
+{"headers":{"Connection":"keep-alive"},"pipeline":[{"path":"/five-bytes"},{"path":"/four-bytes"}]}
+--- error_code: 502
+--- response_body
+{"error_msg":"response body of pipeline request 2 exceeds max_response_body_size_total"}
+
+
+
+=== TEST 34: allow response bodies at the per-item and aggregate limits
+--- config
+    location = /five-bytes {
+        content_by_lua_block {
+            ngx.print("12")
+            ngx.flush(true)
+            ngx.print("345")
+        }
+    }
+    location = /three-bytes {
+        content_by_lua_block {
+            ngx.print("1")
+            ngx.flush(true)
+            ngx.print("23")
+        }
+    }
+--- request
+POST /apisix/batch-requests
+{"headers":{"Connection":"keep-alive"},"pipeline":[{"path":"/five-bytes"},{"path":"/three-bytes"}]}
+--- error_code: 200
+--- response_body eval
+qr/^\[.*"body":"12345".*"body":"123".*\]$/
+
+
+
+=== TEST 35: accept a close-delimited response at the per-item limit
+--- config
+    location = /close-delimited-five-bytes {
+        chunked_transfer_encoding off;
+        content_by_lua_block {
+            ngx.print("12345")
+        }
+    }
+--- request
+POST /apisix/batch-requests
+{"pipeline":[{"path":"/close-delimited-five-bytes","headers":{"Connection":"close"}}]}
+--- error_code: 200
+--- response_body eval
+qr/^\[.*"body":"12345".*\]$/
+--- no_error_log
+read pipeline response body failed
+
+
+
+=== TEST 36: reject a close-delimited response over the per-item limit
+--- config
+    location = /close-delimited-six-bytes {
+        chunked_transfer_encoding off;
+        content_by_lua_block {
+            ngx.print("123456")
+        }
+    }
+--- request
+POST /apisix/batch-requests
+{"pipeline":[{"path":"/close-delimited-six-bytes","headers":{"Connection":"close"}}]}
+--- error_code: 502
+--- response_body
+{"error_msg":"response body of pipeline request 1 exceeds max_response_body_size"}
+
+
+
+=== TEST 37: count a close-delimited response toward the aggregate limit
+--- config
+    location = /four-bytes-with-length {
+        content_by_lua_block {
+            ngx.header.content_length = 4
+            ngx.print("1234")
+        }
+    }
+    location = /close-delimited-five-bytes {
+        chunked_transfer_encoding off;
+        content_by_lua_block {
+            ngx.print("12345")
+        }
+    }
+--- request
+POST /apisix/batch-requests
+{"headers":{"Connection":"keep-alive"},"pipeline":[{"path":"/four-bytes-with-length"},{"path":"/close-delimited-five-bytes","headers":{"Connection":"close"}}]}
+--- error_code: 502
+--- response_body
+{"error_msg":"response body of pipeline request 2 exceeds max_response_body_size_total"}
+
+
+
+=== TEST 38: reject an invalid response body limit
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/batch-requests',
+                ngx.HTTP_PUT,
+                [[{
+                    "max_response_body_size_total": 0
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body eval
+qr/property \\"max_response_body_size_total\\" validation failed/
+
+
+
+=== TEST 39: reset plugin metadata
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/batch-requests',
+                ngx.HTTP_PUT,
+                [[{
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 40: reject a response body over the default per-item limit
+--- config
+    location = /over-one-mib {
+        content_by_lua_block {
+            ngx.header.content_length = 1048577
+            ngx.print(("x"):rep(1048577))
+        }
+    }
+--- request
+POST /apisix/batch-requests
+{"pipeline":[{"path":"/over-one-mib"}]}
+--- error_code: 502
+--- response_body
+{"error_msg":"response body of pipeline request 1 exceeds max_response_body_size"}
+
+
+
+=== TEST 41: accept the default boundaries and reject the next aggregate byte
+--- config
+    location = /one-mib {
+        content_by_lua_block {
+            ngx.header.content_length = 1048576
+            ngx.print(("x"):rep(1048576))
+        }
+    }
+    location = /one-byte {
+        content_by_lua_block {
+            ngx.header.content_length = 1
+            ngx.print("x")
+        }
+    }
+--- request
+POST /apisix/batch-requests
+{"headers":{"Connection":"keep-alive"},"pipeline":[{"path":"/one-mib"},{"path":"/one-mib"},{"path":"/one-mib"},{"path":"/one-mib"},{"path":"/one-mib"},{"path":"/one-mib"},{"path":"/one-mib"},{"path":"/one-mib"},{"path":"/one-mib"},{"path":"/one-mib"},{"path":"/one-byte"}]}
+--- error_code: 502
+--- response_body
+{"error_msg":"response body of pipeline request 11 exceeds max_response_body_size_total"}
