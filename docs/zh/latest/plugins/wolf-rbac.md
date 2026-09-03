@@ -34,11 +34,12 @@ description: 本文介绍了关于 Apache APISIX `wolf-rbac` 插件的基本信�
 
 ## 属性
 
-| 名称          | 类型   | 必选项  | 默认值                    | 描述                                                                                                                                               |
-| ------------- | ------ | ------ | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| server        | string | 否     | "http://127.0.0.1:12180" |  `wolf-server` 的服务地址。                                                                                                                          |
-| appid         | string | 否     | "unset"                  | 在 `wolf-console` 中已经添加的应用 id。该字段支持使用 [APISIX Secret](../terminology/secret.md) 资源，将值保存在 Secret Manager 中。                                       |
-| header_prefix | string | 否     | "X-"                     | 鉴权成功后添加的身份 HTTP 头前缀：`X-UserId`、`X-Username` 和 `X-Nickname`。请在 Route 或 Service 上配置此属性；Route 级别的配置优先于 Consumer 级别的配置。|
+| 名称                 | 类型   | 必选项 | 默认值                    | 描述                                                                                                                                                           |
+| -------------------- | ------ | ------ | ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| server               | string | 否     | "http://127.0.0.1:12180" | `wolf-server` 的服务地址。                                                                                                                                     |
+| appid                | string | 否     | "unset"                  | 在 `wolf-console` 中已经添加的应用 id。该字段支持使用 [APISIX Secret](../terminology/secret.md) 资源，将值保存在 Secret Manager 中。                              |
+| header_prefix        | string | 否     | "X-"                     | **已弃用。** Consumer 级别的身份 HTTP 头前缀。当 Route 或 Service 未配置 `output_header_prefix` 时使用。                                                        |
+| output_header_prefix | string | 否     | 无                         | Route 或 Service 级别的身份 HTTP 头前缀。鉴权成功后添加 `{prefix}UserId`、`{prefix}Username` 和 `{prefix}Nickname`。配置后，此属性优先于 `header_prefix`。          |
 
 ## 接口
 
@@ -97,7 +98,7 @@ curl http://127.0.0.1:9180/apisix/admin/consumers  \
 
 然后你需要添加 `wolf-rbac` 插件到 Route 或 Service 中。
 
-请在转发身份 HTTP 头的 Route 或 Service 上配置 `header_prefix`。为保持兼容，仍支持 Consumer 级别的配置。
+请在转发身份 HTTP 头的 Route 或 Service 上配置 `output_header_prefix`。为保持向后兼容，仍支持已弃用的 Consumer 级别 `header_prefix` 作为回退配置。
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1  \
@@ -107,7 +108,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1  \
     "uri": "/*",
     "plugins": {
         "wolf-rbac": {
-            "header_prefix": "X-"
+            "output_header_prefix": "X-"
         }
     },
     "upstream": {
