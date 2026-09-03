@@ -1290,7 +1290,66 @@ qr/^\[.*"body":"12345".*"body":"123".*\]$/
 
 
 
-=== TEST 35: reject an invalid response body limit
+=== TEST 35: accept a close-delimited response at the per-item limit
+--- config
+    location = /close-delimited-five-bytes {
+        chunked_transfer_encoding off;
+        content_by_lua_block {
+            ngx.print("12345")
+        }
+    }
+--- request
+POST /apisix/batch-requests
+{"pipeline":[{"path":"/close-delimited-five-bytes","headers":{"Connection":"close"}}]}
+--- error_code: 200
+--- response_body eval
+qr/^\[.*"body":"12345".*\]$/
+--- no_error_log
+read pipeline response body failed
+
+
+
+=== TEST 36: reject a close-delimited response over the per-item limit
+--- config
+    location = /close-delimited-six-bytes {
+        chunked_transfer_encoding off;
+        content_by_lua_block {
+            ngx.print("123456")
+        }
+    }
+--- request
+POST /apisix/batch-requests
+{"pipeline":[{"path":"/close-delimited-six-bytes","headers":{"Connection":"close"}}]}
+--- error_code: 502
+--- response_body
+{"error_msg":"response body of pipeline request 1 exceeds max_response_body_size"}
+
+
+
+=== TEST 37: count a close-delimited response toward the aggregate limit
+--- config
+    location = /four-bytes-with-length {
+        content_by_lua_block {
+            ngx.header.content_length = 4
+            ngx.print("1234")
+        }
+    }
+    location = /close-delimited-five-bytes {
+        chunked_transfer_encoding off;
+        content_by_lua_block {
+            ngx.print("12345")
+        }
+    }
+--- request
+POST /apisix/batch-requests
+{"headers":{"Connection":"keep-alive"},"pipeline":[{"path":"/four-bytes-with-length"},{"path":"/close-delimited-five-bytes","headers":{"Connection":"close"}}]}
+--- error_code: 502
+--- response_body
+{"error_msg":"response body of pipeline request 2 exceeds max_response_body_size_total"}
+
+
+
+=== TEST 38: reject an invalid response body limit
 --- config
     location /t {
         content_by_lua_block {
@@ -1316,7 +1375,7 @@ qr/property \\"max_response_body_size_total\\" validation failed/
 
 
 
-=== TEST 36: reset plugin metadata
+=== TEST 39: reset plugin metadata
 --- config
     location /t {
         content_by_lua_block {
@@ -1340,7 +1399,7 @@ passed
 
 
 
-=== TEST 37: reject a response body over the default per-item limit
+=== TEST 40: reject a response body over the default per-item limit
 --- config
     location = /over-one-mib {
         content_by_lua_block {
@@ -1357,7 +1416,7 @@ POST /apisix/batch-requests
 
 
 
-=== TEST 38: accept the default boundaries and reject the next aggregate byte
+=== TEST 41: accept the default boundaries and reject the next aggregate byte
 --- config
     location = /one-mib {
         content_by_lua_block {

@@ -252,6 +252,8 @@ local function read_response_body(httpc, resp, max_response_body_size,
                                   response_body_size_total,
                                   max_response_body_size_total)
     local content_length = tonumber(resp.headers["Content-Length"])
+    local close_delimited = not content_length and
+                            not http.transfer_encoding_is_chunked(resp.headers)
     if content_length then
         if content_length > max_response_body_size then
             close_http_client(httpc)
@@ -268,26 +270,31 @@ local function read_response_body(httpc, resp, max_response_body_size,
     local response_body_size = 0
     while true do
         local chunk, err = resp.body_reader(response_body_chunk_size)
-        if err then
+        local valid_eof = close_delimited and err == "closed"
+        if err and not valid_eof then
             close_http_client(httpc)
             return nil, err
         end
-        if not chunk then
+
+        if chunk then
+            response_body_size = response_body_size + #chunk
+            if response_body_size > max_response_body_size then
+                close_http_client(httpc)
+                return nil, nil, "max_response_body_size"
+            end
+
+            if response_body_size_total + response_body_size >
+                max_response_body_size_total then
+                close_http_client(httpc)
+                return nil, nil, "max_response_body_size_total"
+            end
+
+            core.table.insert(chunks, chunk)
+        end
+
+        if valid_eof or not chunk then
             break
         end
-
-        response_body_size = response_body_size + #chunk
-        if response_body_size > max_response_body_size then
-            close_http_client(httpc)
-            return nil, nil, "max_response_body_size"
-        end
-
-        if response_body_size_total + response_body_size > max_response_body_size_total then
-            close_http_client(httpc)
-            return nil, nil, "max_response_body_size_total"
-        end
-
-        core.table.insert(chunks, chunk)
     end
 
     return core.table.concat(chunks), nil, nil, response_body_size
