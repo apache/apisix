@@ -16,10 +16,11 @@
 --
 local core = require("apisix.core")
 local ngx = ngx
-local ngx_re = require("ngx.re")
 local consumer = require("apisix.consumer")
 local schema_def = require("apisix.schema_def")
 local auth_utils = require("apisix.utils.auth")
+local str_find = string.find
+local str_sub = string.sub
 
 local lrucache = core.lrucache.new({
     ttl = 300, count = 512
@@ -97,17 +98,15 @@ local function extract_auth_header(authorization)
             return nil, "Failed to decode authentication header: " .. m[1]
         end
 
-        local res
-        res, err = ngx_re.split(decoded, ":")
-        if err then
-            return nil, "Split authorization err:" .. err
-        end
-        if #res < 2 then
+        -- https://www.rfc-editor.org/info/rfc7617/#section-2 Page 4
+        -- RFC 7617: split on the first colon only; the password may contain ':'
+        local sep = str_find(decoded, ":", 1, true)
+        if not sep then
             return nil, "Split authorization err: invalid decoded data: " .. decoded
         end
 
-        obj.username = ngx.re.gsub(res[1], "\\s+", "", "jo")
-        obj.password = ngx.re.gsub(res[2], "\\s+", "", "jo")
+        obj.username = ngx.re.gsub(str_sub(decoded, 1, sep - 1), "\\s+", "", "jo")
+        obj.password = ngx.re.gsub(str_sub(decoded, sep + 1), "\\s+", "", "jo")
         return obj, nil
     end
 

@@ -36,7 +36,6 @@ local setmetatable = setmetatable
 local ngx_sleep    = require("apisix.core.utils").sleep
 local ngx_timer_at = ngx.timer.at
 local ngx_time     = ngx.time
-local ngx_shared   = ngx.shared
 local sub_str      = string.sub
 local tostring     = tostring
 local pcall        = pcall
@@ -45,9 +44,13 @@ local ngx          = ngx
 local re_find      = ngx.re.find
 local process      = require("ngx.process")
 local worker_id    = ngx.worker.id
+local subsystem    = ngx.config.subsystem
 local created_obj  = {}
-local shared_dict
-local status_report_shared_dict_name = "status-report"
+
+local status_report_shared_dict_name     = "status-report"
+local standalone_status_shared_dict_name = "standalone-status"
+
+local METADATA_DIGEST = "X-Digest"
 
 local _M = {
     version = 0.2,
@@ -177,6 +180,41 @@ local function is_use_admin_api()
 end
 
 
+-- Reports the current entity's updating status on the current worker to
+-- shdict standalone-status.
+-- This status is reported to the client via the standalone API and
+-- indicates whether APISIX accepted or applied a configuration reload
+-- within the specified timeout period.
+-- Only applies to API-driven standalone
+local function mark_type_applied(self)
+    if not is_use_admin_api() then
+        return
+    end
+    local digest = apisix_yaml[METADATA_DIGEST]
+    if not digest then
+        return
+    end
+    local dict = ngx.shared[standalone_status_shared_dict_name]
+    if not dict then
+        return
+    end
+    local id = worker_id()
+    if not id then
+        -- the privileged agent processes do not have a worker ID
+        -- although they also watch changes to these resources,
+        -- they do not process traffic, so clients are unaware
+        -- of them, just skip their status report
+        return
+    end
+    local key = "worker:" .. id .. ":" .. subsystem .. ":" .. self.key
+    log.debug("mark type applied: ", key, " = ", digest)
+    local ok, err = dict:set(key, digest)
+    if not ok then
+        log.error("failed to record applied digest for [", key, "]: ", err)
+    end
+end
+
+
 local function read_apisix_config(premature, pre_mtime)
     if premature then
         return
@@ -221,6 +259,7 @@ local function sync_data(self)
     end
 
     if not conf_version or conf_version == self.conf_version then
+        mark_type_applied(self)
         return true
     end
 
@@ -229,6 +268,7 @@ local function sync_data(self)
         self.values = new_tab(8, 0)
         self.values_hash = new_tab(0, 8)
         self.conf_version = conf_version
+        mark_type_applied(self)
         return true
     end
 
@@ -359,6 +399,7 @@ local function sync_data(self)
     end
 
     self.conf_version = conf_version
+    mark_type_applied(self)
     return true
 end
 
@@ -380,49 +421,6 @@ end
 local function _automatic_fetch(premature, self)
     if premature then
         return
-    end
-
-    -- the _automatic_fetch is only called in the timer, and according to the
-    -- documentation, ngx.shared.DICT.get can be executed there.
-    -- if the file's global variables have not yet been assigned values,
-    -- we can assume that the worker has not been initialized yet and try to
-    -- read any old data that may be present from the shared dict
-    -- try load from shared dict only on first startup, otherwise use event mechanism
-    if is_use_admin_api() and not shared_dict then
-        log.info("try to load config from shared dict")
-
-        local config, err
-        shared_dict = ngx_shared["standalone-config"] -- init shared dict in current worker
-        if not shared_dict then
-            log.error("failed to read config from shared dict: shared dict not found")
-            goto SKIP_SHARED_DICT
-        end
-        config, err = shared_dict:get("config")
-        if not config then
-            if err then -- if the key does not exist, the return values are both nil
-                log.error("failed to read config from shared dict: ", err)
-            end
-            log.info("no config found in shared dict")
-            goto SKIP_SHARED_DICT
-        end
-        -- the payload can carry TLS private keys and plugin credentials
-        log.info("startup config loaded from shared dict, size: ", #config)
-
-        config, err = json.decode(tostring(config))
-        if not config then
-            log.error("failed to decode config from shared dict: ", err)
-            goto SKIP_SHARED_DICT
-        end
-        _M._update_config(config)
-        log.info("config loaded from shared dict")
-
-        ::SKIP_SHARED_DICT::
-        if not shared_dict then
-            log.crit(_M.ERR_NO_SHARED_DICT)
-
-            -- fill that value to make the worker not try to read from shared dict again
-            shared_dict = "error"
-        end
     end
 
     local i = 0
@@ -556,8 +554,10 @@ end
 function _M.init_worker()
     sync_status_to_shdict(false)
     if is_use_admin_api() then
-        apisix_yaml = {}
-        apisix_yaml_mtime = 0
+        if not apisix_yaml then
+            apisix_yaml = {}
+        end
+
         return true
     end
 

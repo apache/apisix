@@ -61,6 +61,8 @@ import TabItem from '@theme/TabItem';
 
 即使开启 `cache_key.share_across_routes`，来自不同上游模型或 provider 的响应也会分别存储在各自的缓存条目中，因此某个模型的响应绝不会被返回给另一个模型。
 
+对于 `passthrough` 协议，`ai-proxy` 会原样转发客户端的请求方法、路径和查询字符串，因此缓存键也会包含它们：相同的请求体发送到两个不同的上游路径，或携带不同的查询参数时，会分别保存为独立的缓存条目。
+
 :::
 
 ## 属性

@@ -162,6 +162,9 @@ local function check_disable(plugin_conf)
 
     return plugin_conf._meta.disable
 end
+-- exposed for callers that must not act on a plugin config which never runs,
+-- such as the control API reporting the health checkers a plugin owns
+_M.check_disable = check_disable
 
 local PLUGIN_TYPE_HTTP = 1
 local PLUGIN_TYPE_STREAM = 2
