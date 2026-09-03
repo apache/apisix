@@ -1084,6 +1084,17 @@ local function introspect(ctx, conf)
             return ngx.HTTP_UNAUTHORIZED, err, nil, nil
         end
 
+        local valid_issuers = core.table.try_read_attr(conf, "claim_validator",
+                                                        "issuer", "valid_issuers")
+        if valid_issuers and
+            (type(res.iss) ~= "string" or
+             not core.table.array_find(valid_issuers, res.iss)) then
+            local issuer_err = "issuer validation failed"
+            ngx.header["WWW-Authenticate"] = 'Bearer realm="' .. conf.realm ..
+                '", error="invalid_token", error_description="' .. issuer_err .. '"'
+            return ngx.HTTP_UNAUTHORIZED, issuer_err, nil, nil
+        end
+
         -- Token successfully validated and response from the introspection
         -- endpoint contains the userinfo.
         core.log.debug("token validate successfully by introspection")
