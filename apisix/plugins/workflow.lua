@@ -142,7 +142,8 @@ function _M.check_schema(conf)
             end
 
             if type(action[2]) ~= "table" then
-                return false, "failed to validate the '" .. action[1] .. "' action: configuration is required"
+                return false, "failed to validate the '" .. action[1] ..
+                    "' action: configuration is required"
             end
 
             -- use the action's idx as an identifier to isolate between confs
