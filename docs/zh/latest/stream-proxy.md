@@ -313,6 +313,7 @@ curl http://127.0.0.1:9180/apisix/admin/stream_routes/2 -H "X-API-KEY: $admin_ke
 
 - 只有混合端口会付出这一跳的代价；`tls: true` 或 `tls_passthrough: true` 的端口仍走直连路径；
 - 客户端地址通过 PROXY 协议头跨过这一跳，并由 `set_real_ip_from unix:` 还原，因此路由匹配、stream 插件和日志看到的都是真实对端。能够连接这些 socket 的本地用户可以伪造该头部，因此要像对待 `stream_worker_events.sock` 一样，不要让不受信任的本地用户访问 `logs/`；
+- 混合端口上不能使用 `proxy_protocol_to_upstream`，启动时会被拒绝：nginx 依据连接进入时的 socket 生成发往上游的 PROXY 协议头，而内部 server 上那是一个 unix socket，生成的是 `PROXY TCP4 <client> unix:/... <port> 0` 这种非法内容。请改用专用的 `tls` 或 `tls_passthrough` 监听，它们没有内部跳转，生成的头是正确的；
 - `apisix_stream_metrics_zone` 统计的是 nginx session 且没有 per-server 开关，因此混合端口上每条客户端连接会被统计两次。
 
 同一地址上的两个 `stream_proxy.tcp` 条目必须使用相同的 TLS 模式和相同的 `proxy_protocol_to_upstream`；否则它们需要在同一地址上使用不同的 nginx `server` 块，APISIX 会在启动时拒绝该配置。

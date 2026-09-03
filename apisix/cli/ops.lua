@@ -711,6 +711,19 @@ Please modify "admin_key" in conf/config.yaml .
             if item.tls_passthrough then
                 mode = item.tls and "mixed" or "passthrough"
             end
+            if mode == "mixed" and up then
+                -- The mixed block reaches its internal servers over a unix socket,
+                -- and nginx builds the upstream PROXY protocol header from that
+                -- socket: the destination comes out as `unix:/... 0`, which is not
+                -- a valid TCP4/TCP6 address and strict backends reject it. A
+                -- dedicated tls or tls_passthrough listen has no internal hop and
+                -- writes a correct header.
+                util.die("invalid stream_proxy.tcp entry: `", tostring(item.addr),
+                         "` can not combine proxy_protocol_to_upstream with a mixed ",
+                         "`tls` + `tls_passthrough` listen; use a dedicated listen ",
+                         "for either mode\n")
+            end
+
             local key = tostring(up) .. "|" .. mode
             local group = group_by_key[key]
             if not group then

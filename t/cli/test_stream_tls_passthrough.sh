@@ -305,6 +305,47 @@ if ! block_with_listen 9102 | grep -E "^\s*proxy_protocol on;" > /dev/null; then
 fi
 echo "passed: passthrough combines with proxy_protocol_to_upstream"
 
+# === proxy_protocol_to_upstream is refused on a mixed listen ===
+# The mixed block reaches its internal servers over a unix socket, and nginx
+# builds the upstream PROXY header from that socket, producing an invalid
+# destination like `unix:/... 0`.
+echo '
+apisix:
+  proxy_mode: "http&stream"
+  stream_proxy:
+    tcp:
+      - addr: 9103
+        tls: true
+        tls_passthrough: true
+        proxy_protocol_to_upstream: true
+' > conf/config.yaml
+
+out=$(make init 2>&1 || true)
+if ! echo "$out" | grep -q "can not combine proxy_protocol_to_upstream"; then
+    echo "failed: proxy_protocol_to_upstream on a mixed listen should be rejected"
+    exit 1
+fi
+
+# The same flag set globally must be refused too, not silently applied.
+echo '
+apisix:
+  proxy_mode: "http&stream"
+  proxy_protocol:
+    enable_tcp_pp_to_upstream: true
+  stream_proxy:
+    tcp:
+      - addr: 9103
+        tls: true
+        tls_passthrough: true
+' > conf/config.yaml
+
+out=$(make init 2>&1 || true)
+if ! echo "$out" | grep -q "can not combine proxy_protocol_to_upstream"; then
+    echo "failed: the global proxy protocol default should be refused on a mixed listen too"
+    exit 1
+fi
+echo "passed: proxy_protocol_to_upstream is refused on a mixed listen"
+
 # === Mixed mode end to end: one port, the route decides ===
 # 9101 terminates its own TLS and is reached untouched; 9102 is plaintext and is
 # reached only after the gateway terminates. Same port, same handshake target.

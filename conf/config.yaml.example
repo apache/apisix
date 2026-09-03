@@ -112,6 +112,9 @@ apisix:
   #                                  # user able to connect to them could forge it. Keep logs/ off
   #                                  # limits to untrusted local users, as it already has to be for
   #                                  # stream_worker_events.sock.
+  #                                  # proxy_protocol_to_upstream is rejected on a mixed port: the
+  #                                  # upstream PROXY header would carry the internal unix socket
+  #                                  # as its destination. Use a dedicated listen instead.
   #     - "2000-2100"              # port range (nginx native support)
   #     - addr: "3000-3100"        # port range in table form
   #     - addr: "127.0.0.1:4000-4100"  # address with port range in table form

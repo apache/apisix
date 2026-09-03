@@ -322,6 +322,7 @@ A port itself cannot be both: `ssl_preread on` and `listen ... ssl` are configur
 
 - only mixed ports pay that extra hop; a `tls: true` or `tls_passthrough: true` port keeps its direct path;
 - the client address crosses the hop in a PROXY protocol header restored with `set_real_ip_from unix:`, so route matching, stream plugins and logs see the real peer. A local user able to connect to those sockets could forge that header, so keep `logs/` off limits to untrusted local users — as it already has to be for `stream_worker_events.sock`;
+- `proxy_protocol_to_upstream` cannot be used on a mixed port and is rejected at startup: nginx builds the upstream PROXY protocol header from the socket the connection arrived on, which for the internal servers is the unix socket, producing an invalid `PROXY TCP4 <client> unix:/... <port> 0`. Use a dedicated `tls` or `tls_passthrough` listen, which has no internal hop and writes a correct header;
 - `apisix_stream_metrics_zone` counts nginx sessions and has no per-server switch, so a mixed port counts each client connection twice.
 
 Two `stream_proxy.tcp` entries on the same address must agree on their TLS mode and on `proxy_protocol_to_upstream`; otherwise they would need different nginx `server` blocks on one address, and APISIX rejects the configuration at startup.
