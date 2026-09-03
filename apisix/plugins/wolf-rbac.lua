@@ -35,7 +35,7 @@ local plugin_name = "wolf-rbac"
 local default_header_prefix = "X-"
 
 
-local function create_schema(header_prefix_default)
+local function create_schema(header_prefix_default, include_output_header_prefix)
     local header_prefix = {
         type = "string",
     }
@@ -43,30 +43,38 @@ local function create_schema(header_prefix_default)
         header_prefix.default = header_prefix_default
     end
 
+    local properties = {
+        appid = {
+            type = "string",
+            default = "unset"
+        },
+        server = {
+            type = "string",
+            default = "http://127.0.0.1:12180"
+        },
+        header_prefix = header_prefix,
+        ssl_verify = {
+            type = "boolean",
+        },
+    }
+
+    if include_output_header_prefix then
+        properties.output_header_prefix = {
+            type = "string",
+        }
+    end
+
     return {
         type = "object",
-        properties = {
-            appid = {
-                type = "string",
-                default = "unset"
-            },
-            server = {
-                type = "string",
-                default = "http://127.0.0.1:12180"
-            },
-            header_prefix = header_prefix,
-            ssl_verify = {
-                type = "boolean",
-            },
-        }
+        properties = properties,
     }
 end
 
 
--- Keep applying the historical default to Consumer configuration. The Route
--- schema deliberately leaves the field unset so rewrite() can distinguish an
--- explicit Route prefix from the backward-compatible Consumer fallback.
-local schema = create_schema()
+-- header_prefix remains accepted by the Route schema for compatibility with
+-- stored configurations, but only output_header_prefix opts a Route into
+-- controlling the identity-header namespace.
+local schema = create_schema(nil, true)
 local consumer_schema = create_schema(default_header_prefix)
 
 local _M = {
@@ -88,7 +96,7 @@ end
 
 
 function _M.clear_auth_headers(conf, ctx)
-    clear_identity_headers(ctx, conf.header_prefix or default_header_prefix)
+    clear_identity_headers(ctx, conf.output_header_prefix or default_header_prefix)
 end
 
 
@@ -313,10 +321,10 @@ function _M.rewrite(conf, ctx)
         return 401, fail_response("Invalid appid in rbac token")
     end
     core.log.info("consumer appid: ", appid)
-    local prefix = conf.header_prefix
+    local prefix = conf.output_header_prefix
                    or cur_consumer.auth_conf.header_prefix
                    or default_header_prefix
-    if not conf.header_prefix and prefix ~= default_header_prefix then
+    if not conf.output_header_prefix and prefix ~= default_header_prefix then
         -- Existing Routes may rely on a Consumer-level custom prefix. Once the
         -- Consumer is known, clear that fallback namespace before using it.
         clear_identity_headers(ctx, prefix)

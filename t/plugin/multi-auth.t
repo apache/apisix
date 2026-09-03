@@ -766,7 +766,7 @@ X-Nickname: administrator
                                 },
                                 {
                                     "wolf-rbac": {
-                                        "header_prefix": "X-Wolf-"
+                                        "output_header_prefix": "X-Wolf-"
                                     }
                                 }
                             ]
@@ -811,7 +811,7 @@ GET /t
 
 
 
-=== TEST 26: route prefix is authoritative for successful Wolf identity headers
+=== TEST 26: stored route default preserves the consumer identity-header prefix
 --- config
     location /t {
         content_by_lua_block {
@@ -824,7 +824,67 @@ GET /t
                             "auth_plugins": [
                                 {
                                     "wolf-rbac": {
-                                        "header_prefix": "X-Route-"
+                                        "header_prefix": "X-"
+                                    }
+                                },
+                                {
+                                    "key-auth": {}
+                                }
+                            ]
+                        },
+                        "serverless-post-function": {
+                            "phase": "access",
+                            "functions": [
+                                "return function(conf, ctx) local core = require(\"apisix.core\"); local names = {\"X-UserId\", \"X-Username\", \"X-Nickname\", \"X-Wolf-UserId\", \"X-Wolf-Username\", \"X-Wolf-Nickname\"}; local values = {}; for i, name in ipairs(names) do values[i] = core.request.header(ctx, name) or \"nil\"; end; core.response.exit(200, table.concat(values, \",\")); end"
+                            ]
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, _, body = t('/hello', ngx.HTTP_GET, nil, nil, {
+                ["x-rbac-token"] = "V1#wolf-prefixed#wolf-rbac-token",
+                ["X-UserId"] = "spoofed-default",
+                ["X-Wolf-UserId"] = "spoofed-consumer",
+            })
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- response_body eval
+"nil,nil,nil,100,admin,administrator"
+
+
+
+=== TEST 27: output prefix is authoritative for successful Wolf identity headers
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "multi-auth": {
+                            "auth_plugins": [
+                                {
+                                    "wolf-rbac": {
+                                        "output_header_prefix": "X-Route-"
                                     }
                                 },
                                 {
