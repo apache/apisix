@@ -20,7 +20,6 @@ local config_util = require("apisix.core.config_util")
 local stream_plugin_checker = require("apisix.plugin").stream_plugin_checker
 local router_new = require("apisix.utils.router").new
 local service_mod = require("apisix.http.service")
-local service_fetch = service_mod.get
 local apisix_ssl = require("apisix.ssl")
 local xrpc = require("apisix.stream.xrpc")
 local error     = error
@@ -62,37 +61,25 @@ local function match_addrs(route, vars)
 end
 
 
--- Returns the list of SNIs a stream route is matched by, or nil when the route
--- puts no restriction on the SNI.
--- The precedence mirrors the one of the HTTP router (see
--- apisix/http/router/radixtree_host_uri.lua): the route's own `sni` wins,
--- otherwise the `hosts` of the service it references are used. A service can
--- carry several hosts, so one stream route is enough to serve all the hostnames
--- of a multi-hostname service instead of being duplicated once per SNI.
-local function get_snis(route, service)
-    if route.sni then
-        return {route.sni}
-    end
-
-    if not service or not service.value.hosts then
-        return nil
-    end
-
-    local hosts = service.value.hosts
-    local snis = core.table.new(#hosts, 0)
-    for _, host in ipairs(hosts) do
-        if host == "*" then
-            -- a bare `*` matches every SNI, which is exactly what carrying no
-            -- SNI already means; reversed into the radixtree it would only
-            -- match the literal "*"
+-- Returns the SNIs a stream route is matched by, or nil when it puts no
+-- restriction on the SNI. `sni` and `snis` are the singular and plural form of
+-- the same thing; the schema forbids carrying both.
+local function get_snis(route)
+    local snis = route.snis
+    if not snis then
+        if not route.sni then
             return nil
         end
-
-        core.table.insert(snis, host)
+        snis = {route.sni}
     end
 
-    if #snis == 0 then
-        return nil
+    for _, sni in ipairs(snis) do
+        if sni == "*" then
+            -- a bare `*` matches every SNI, which is what carrying none already
+            -- means; reversed into the radixtree it would match only the
+            -- literal "*"
+            return nil
+        end
     end
 
     return snis
@@ -116,17 +103,6 @@ do
                 goto CONTINUE
             end
 
-            local service
-            if item.value.service_id then
-                service = service_fetch(item.value.service_id)
-                if not service then
-                    core.log.error("failed to fetch service configuration by ",
-                                   "id: ", item.value.service_id)
-                    -- we keep the behavior that missing service won't affect
-                    -- the route matching
-                end
-            end
-
             local route = item.value
             if route.protocol and route.protocol.superior_id then
                 -- subordinate route won't be matched in the entry
@@ -140,7 +116,7 @@ do
             if item.value.server_addr then
                 item.value.server_addr_matcher = core_ip.create_ip_matcher({item.value.server_addr})
             end
-            local snis = get_snis(route, service)
+            local snis = get_snis(route)
             if not snis then
                 other_routes[other_routes_idx] = item
                 other_routes_idx = other_routes_idx + 1
@@ -202,7 +178,13 @@ do
         local _, cur_svc_ver = service_mod.services()
         if router_ver ~= user_routes.conf_version
            or service_ver ~= cur_svc_ver then
-            local err = create_router(user_routes.values)
+            -- `values` is nil until the config source has delivered
+            -- /stream_routes for the first time, which in standalone mode can
+            -- happen after this subsystem is already accepting connections.
+            -- Treat that as "no stream route" instead of indexing a nil table:
+            -- the error would be thrown before router_ver is assigned, so every
+            -- later connection would take this branch and abort again.
+            local err = create_router(user_routes.values or {})
             if err then
                 return false, "failed to create router: " .. err
             end

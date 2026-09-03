@@ -77,7 +77,7 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: a stream route without sni is matched by every host of its service
+=== TEST 1: every sni of the route is matched
 --- config
     location /setup {
         content_by_lua_block {
@@ -93,21 +93,14 @@ __DATA__
                 return
             end
 
-            code = t.test('/apisix/admin/services/1', ngx.HTTP_PUT,
+            code = t.test('/apisix/admin/stream_routes/1', ngx.HTTP_PUT,
                 [[{
-                    "hosts": ["a.test.com", "b.test.com"],
+                    "snis": ["a.test.com", "b.test.com"],
                     "upstream": {
                         "nodes": {"127.0.0.1:1995": 1},
                         "type": "roundrobin"
                     }
                 }]])
-            if code >= 300 then
-                ngx.say("failed to create service: ", code)
-                return
-            end
-
-            code = t.test('/apisix/admin/stream_routes/1', ngx.HTTP_PUT,
-                [[{"service_id": 1}]])
             if code >= 300 then
                 ngx.say("failed to create stream route: ", code)
                 return
@@ -124,7 +117,7 @@ __DATA__
 
 
 
-=== TEST 2: the sni of the stream route wins over the hosts of its service
+=== TEST 2: the singular sni still works on its own
 --- config
     location /setup {
         content_by_lua_block {
@@ -140,21 +133,14 @@ __DATA__
                 return
             end
 
-            code = t.test('/apisix/admin/services/1', ngx.HTTP_PUT,
+            code = t.test('/apisix/admin/stream_routes/1', ngx.HTTP_PUT,
                 [[{
-                    "hosts": ["a.test.com"],
+                    "sni": "a.test.com",
                     "upstream": {
                         "nodes": {"127.0.0.1:1995": 1},
                         "type": "roundrobin"
                     }
                 }]])
-            if code >= 300 then
-                ngx.say("failed to create service: ", code)
-                return
-            end
-
-            code = t.test('/apisix/admin/stream_routes/1', ngx.HTTP_PUT,
-                [[{"sni": "x.test.com", "service_id": 1}]])
             if code >= 300 then
                 ngx.say("failed to create stream route: ", code)
                 return
@@ -165,13 +151,38 @@ __DATA__
         }
     }
 --- pipelined_requests eval
-["GET /setup", "GET /tls?sni=x.test.com", "GET /tls?sni=a.test.com"]
+["GET /setup", "GET /tls?sni=a.test.com", "GET /tls?sni=b.test.com"]
 --- response_body eval
 ["passed\n", "hello world\n", ""]
 
 
 
-=== TEST 3: a wildcard host of the service is matched like a wildcard sni
+=== TEST 3: sni and snis can not be carried together
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin")
+
+            local code, body = t.test('/apisix/admin/stream_routes/1', ngx.HTTP_PUT,
+                [[{
+                    "sni": "a.test.com",
+                    "snis": ["b.test.com"],
+                    "upstream": {
+                        "nodes": {"127.0.0.1:1995": 1},
+                        "type": "roundrobin"
+                    }
+                }]])
+            ngx.say(code)
+        }
+    }
+--- request
+GET /t
+--- response_body
+400
+
+
+
+=== TEST 4: a wildcard sni is a suffix match
 --- config
     location /setup {
         content_by_lua_block {
@@ -187,21 +198,14 @@ __DATA__
                 return
             end
 
-            code = t.test('/apisix/admin/services/1', ngx.HTTP_PUT,
+            code = t.test('/apisix/admin/stream_routes/1', ngx.HTTP_PUT,
                 [[{
-                    "hosts": ["*.test.com"],
+                    "snis": ["*.test.com"],
                     "upstream": {
                         "nodes": {"127.0.0.1:1995": 1},
                         "type": "roundrobin"
                     }
                 }]])
-            if code >= 300 then
-                ngx.say("failed to create service: ", code)
-                return
-            end
-
-            code = t.test('/apisix/admin/stream_routes/1', ngx.HTTP_PUT,
-                [[{"service_id": 1}]])
             if code >= 300 then
                 ngx.say("failed to create stream route: ", code)
                 return
@@ -218,7 +222,7 @@ __DATA__
 
 
 
-=== TEST 4: a bare `*` host puts no restriction on the sni
+=== TEST 5: a bare * puts no restriction on the sni
 --- config
     location /setup {
         content_by_lua_block {
@@ -234,21 +238,14 @@ __DATA__
                 return
             end
 
-            code = t.test('/apisix/admin/services/1', ngx.HTTP_PUT,
+            code = t.test('/apisix/admin/stream_routes/1', ngx.HTTP_PUT,
                 [[{
-                    "hosts": ["*"],
+                    "snis": ["*"],
                     "upstream": {
                         "nodes": {"127.0.0.1:1995": 1},
                         "type": "roundrobin"
                     }
                 }]])
-            if code >= 300 then
-                ngx.say("failed to create service: ", code)
-                return
-            end
-
-            code = t.test('/apisix/admin/stream_routes/1', ngx.HTTP_PUT,
-                [[{"remote_addr": "127.0.0.1", "service_id": 1}]])
             if code >= 300 then
                 ngx.say("failed to create stream route: ", code)
                 return
@@ -265,7 +262,7 @@ __DATA__
 
 
 
-=== TEST 5: the hosts of the service are matched case-insensitively
+=== TEST 6: the snis are matched case-insensitively
 --- config
     location /setup {
         content_by_lua_block {
@@ -281,21 +278,14 @@ __DATA__
                 return
             end
 
-            code = t.test('/apisix/admin/services/1', ngx.HTTP_PUT,
+            code = t.test('/apisix/admin/stream_routes/1', ngx.HTTP_PUT,
                 [[{
-                    "hosts": ["Mixed.TEST.com"],
+                    "snis": ["Mixed.TEST.com"],
                     "upstream": {
                         "nodes": {"127.0.0.1:1995": 1},
                         "type": "roundrobin"
                     }
                 }]])
-            if code >= 300 then
-                ngx.say("failed to create service: ", code)
-                return
-            end
-
-            code = t.test('/apisix/admin/stream_routes/1', ngx.HTTP_PUT,
-                [[{"service_id": 1}]])
             if code >= 300 then
                 ngx.say("failed to create stream route: ", code)
                 return
@@ -307,45 +297,5 @@ __DATA__
     }
 --- pipelined_requests eval
 ["GET /setup", "GET /tls?sni=mixed.test.com", "GET /tls?sni=other.test.com"]
---- response_body eval
-["passed\n", "hello world\n", ""]
-
-
-
-=== TEST 6: the sni of the stream route is matched case-insensitively
---- config
-    location /setup {
-        content_by_lua_block {
-            local core = require("apisix.core")
-            local t = require("lib.test_admin")
-
-            local ssl_cert = t.read_file("t/certs/apisix.crt")
-            local ssl_key =  t.read_file("t/certs/apisix.key")
-            local code = t.test('/apisix/admin/ssls/1', ngx.HTTP_PUT,
-                core.json.encode({cert = ssl_cert, key = ssl_key, sni = "*"}))
-            if code >= 300 then
-                ngx.say("failed to create ssl: ", code)
-                return
-            end
-
-            code = t.test('/apisix/admin/stream_routes/1', ngx.HTTP_PUT,
-                [[{
-                    "sni": "Mixed.SNI.com",
-                    "upstream": {
-                        "nodes": {"127.0.0.1:1995": 1},
-                        "type": "roundrobin"
-                    }
-                }]])
-            if code >= 300 then
-                ngx.say("failed to create stream route: ", code)
-                return
-            end
-
-            ngx.sleep(0.5)
-            ngx.say("passed")
-        }
-    }
---- pipelined_requests eval
-["GET /setup", "GET /tls?sni=mixed.sni.com", "GET /tls?sni=other.sni.com"]
 --- response_body eval
 ["passed\n", "hello world\n", ""]
