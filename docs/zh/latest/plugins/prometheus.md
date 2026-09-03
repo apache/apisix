@@ -197,7 +197,7 @@ Prometheus 中有不同类型的指标。要了解它们之间的区别，请参
 | service | HTTP 状态来源的服务 ID，当 `prefer_name` 为 `false`（默认）时，使用服务 ID，当 `prefer_name` 为 `true` 时，使用服务名称。如果匹配的路由不属于任何服务，则默认为路由上配置的主机值。 |
 | consumer | 与请求关联的消费者名称。如果请求没有与之关联的消费者，则默认为空字符串。                                             |
 | node   | 上游节点的 IP 地址。对于 AI 路由，该值为 `ai-proxy` 或 `ai-proxy-multi` 上报的 LLM 实例名称。                           |
-| request_type       | 请求类别：`traditional_http`、`ai_chat` 或 `ai_stream`。                                                                         |
+| request_type       | 请求类别：`traditional_http`、`websocket`、`ai_chat` 或 `ai_stream`。以 `101 Switching Protocols` 响应的请求为 `websocket`。 |
 | request_llm_model  | 客户端请求的模型名称。                                                                                                           |
 | llm_model          | AI 请求实际使用的目标模型。优先使用 AI 实例中配置的模型，否则使用客户端请求的模型；传统 HTTP 流量中为空字符串。 |
 | response_source    | 响应来源：`apisix` 表示由 APISIX 生成，`nginx` 表示 NGINX 代理错误，`upstream` 表示来自上游服务的响应。                              |
@@ -245,7 +245,7 @@ UDP 没有关闭、FIN 或重置信号，因此只会出现其中一部分状态
 | service | 请求对应的服务 ID，当 `prefer_name` 为 `false`（默认）时，使用服务 ID，当 `prefer_name` 为 `true` 时，使用服务名称。如果匹配的路由不属于任何服务，则默认为路由上配置的主机值。 |
 | consumer | 与请求关联的消费者名称。如果请求没有与之关联的消费者，则默认为空字符串。                                             |
 | node   | 上游节点的 IP 地址。对于 AI 路由，该值为 `ai-proxy` 或 `ai-proxy-multi` 上报的 LLM 实例名称。                           |
-| request_type       | 请求类别：`traditional_http`、`ai_chat` 或 `ai_stream`。                                                                         |
+| request_type       | 请求类别：`traditional_http`、`websocket`、`ai_chat` 或 `ai_stream`。以 `101 Switching Protocols` 响应的请求为 `websocket`。 |
 | request_llm_model  | 客户端请求的模型名称。                                                                                                           |
 | llm_model          | AI 请求实际使用的目标模型。优先使用 AI 实例中配置的模型，否则使用客户端请求的模型；传统 HTTP 流量中为空字符串。 |
 
@@ -374,7 +374,7 @@ APISIX 在开始 LLM 上游尝试时递增该 gauge，并在请求的日志阶�
 | service | 延迟对应的服务 ID，当 `prefer_name` 为 `false`（默认）时，使用服务 ID，当 `prefer_name` 为 `true` 时，使用服务名称。如果匹配的路由不属于任何服务，则默认为路由上配置的主机值。 |
 | consumer | 与延迟关联的消费者名称。如果请求没有与之关联的消费者，则默认为空字符串。                                             |
 | node   | 与延迟关联的上游节点 IP 地址。对于 AI 路由，该值为 `ai-proxy` 或 `ai-proxy-multi` 上报的 LLM 实例名称。               |
-| request_type       | 请求类别：`traditional_http`、`ai_chat` 或 `ai_stream`。                                                                         |
+| request_type       | 请求类别：`traditional_http`、`websocket`、`ai_chat` 或 `ai_stream`。以 `101 Switching Protocols` 响应的请求为 `websocket`。 |
 | request_llm_model  | 客户端请求的模型名称。                                                                                                           |
 | llm_model          | AI 请求实际使用的目标模型。优先使用 AI 实例中配置的模型，否则使用客户端请求的模型；传统 HTTP 流量中为空字符串。 |
 
