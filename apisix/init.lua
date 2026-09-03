@@ -1024,6 +1024,10 @@ function _M.http_header_filter_phase()
         set_resp_upstream_status(up_status)
     end
 
+    if ngx.status == 101 then
+        ngx_var.request_type = "websocket"
+    end
+
     common_phase("header_filter")
 
     local api_ctx = ngx.ctx.api_ctx
