@@ -291,7 +291,7 @@ local function update(ctx)
     if err then
         -- same reason as above: the body is the configuration itself
         core.log.error("invalid request body, err: ", err)
-        core.response.exit(400, {error_msg = "invalid request body: " .. err})
+        return core.response.exit(400, {error_msg = "invalid request body: " .. err})
     end
     req_body = data
 
