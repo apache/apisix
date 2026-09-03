@@ -39,6 +39,27 @@ exit_if_not_customed_nginx() {
     openresty -V 2>&1 | grep apisix-nginx-module || exit 0
 }
 
+# wait_for_pidfile <path> [timeout_secs]
+# Poll until the pid file exists and is non-empty; default timeout 10s.
+# `apisix start` returns once nginx has daemonized, which is before the master
+# has written its pid file, so reading the file right after is a race.
+wait_for_pidfile() {
+    local path="$1"
+    local timeout="${2:-10}"
+    local deadline=$(( $(date +%s) + timeout ))
+    { set +x; } 2>/dev/null
+    while [ "$(date +%s)" -lt "$deadline" ]; do
+        if [ -s "$path" ]; then
+            set -x
+            return 0
+        fi
+        sleep 0.1
+    done
+    set -x
+    echo "wait_for_pidfile: ${path} not written after ${timeout}s" >&2
+    return 1
+}
+
 # wait_for_tcp <host> <port> [timeout_secs]
 # Poll until the port accepts TCP; default timeout 10s. Bash-only (/dev/tcp, local).
 wait_for_tcp() {

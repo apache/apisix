@@ -16,10 +16,11 @@
 --
 local core = require("apisix.core")
 local ngx = ngx
-local ngx_re = require("ngx.re")
 local consumer = require("apisix.consumer")
 local schema_def = require("apisix.schema_def")
 local auth_utils = require("apisix.utils.auth")
+local str_find = string.find
+local str_sub = string.sub
 
 local lrucache = core.lrucache.new({
     ttl = 300, count = 512
@@ -43,7 +44,7 @@ local consumer_schema = {
     title = "work with consumer object",
     properties = {
         username = { type = "string" },
-        password = { type = "string" },
+        password = { type = "string", minLength = 1 },
     },
     encrypt_fields = {"password"},
     required = {"username", "password"},
@@ -97,17 +98,15 @@ local function extract_auth_header(authorization)
             return nil, "Failed to decode authentication header: " .. m[1]
         end
 
-        local res
-        res, err = ngx_re.split(decoded, ":")
-        if err then
-            return nil, "Split authorization err:" .. err
-        end
-        if #res < 2 then
+        -- https://www.rfc-editor.org/info/rfc7617/#section-2 Page 4
+        -- RFC 7617: split on the first colon only; the password may contain ':'
+        local sep = str_find(decoded, ":", 1, true)
+        if not sep then
             return nil, "Split authorization err: invalid decoded data: " .. decoded
         end
 
-        obj.username = ngx.re.gsub(res[1], "\\s+", "", "jo")
-        obj.password = ngx.re.gsub(res[2], "\\s+", "", "jo")
+        obj.username = ngx.re.gsub(str_sub(decoded, 1, sep - 1), "\\s+", "", "jo")
+        obj.password = ngx.re.gsub(str_sub(decoded, sep + 1), "\\s+", "", "jo")
         return obj, nil
     end
 
@@ -148,7 +147,20 @@ local function find_consumer(ctx)
         return nil, nil, "Invalid user authorization"
     end
 
-    if cur_consumer.auth_conf.password ~= password then
+    -- the schema rejects an empty password on write and on load, but a secret
+    -- reference ($secret:// or $env://) is resolved after validation and can
+    -- yield "": fail closed so such a consumer never authenticates
+    local expected = cur_consumer.auth_conf.password
+    if expected == "" then
+        err = "empty password configured for consumer: " .. cur_consumer.consumer_name
+        if auth_utils.is_running_under_multi_auth(ctx) then
+            return nil, nil, err
+        end
+        core.log.warn(err)
+        return nil, nil, "Invalid user authorization"
+    end
+
+    if expected ~= password then
         return nil, nil, "Invalid user authorization"
     end
 

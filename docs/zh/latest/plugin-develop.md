@@ -342,6 +342,8 @@ apisix:
             - ...
 ```
 
+每个 key 同时用作 IV，因此 key 的长度决定了使用的算法：长度为 16 的 key 使用 AES-128-CBC，长度为 32 的 key 使用 AES-256-CBC，其它长度的 key 会在 APISIX 启动时被拒绝。同一个 keyring 中可以混用这两种长度的 key，这样才能在不丢失已加密数据的前提下，把 AES-128 的 keyring 轮转为 AES-256。
+
 `keyring` 是一个数组，可以指定多个 key，APISIX 会按照 keyring 中 key 的顺序，依次尝试用 key 来解密数据（只对在 `encrypt_fields` 声明的参数）。如果解密失败，会尝试下一个 key，直到解密成功。
 
 如果 `keyring` 中的 key 都无法解密数据，则使用原始数据。

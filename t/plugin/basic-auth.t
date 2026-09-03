@@ -344,7 +344,7 @@ GET /t
                 ngx.HTTP_GET,
                 nil,
                 [[
-{"title":"work with consumer object","required":["username","password"],"properties":{"username":{"type":"string"},"password":{"type":"string"}},"type":"object"}
+{"title":"work with consumer object","required":["username","password"],"properties":{"username":{"type":"string"},"password":{"type":"string","minLength":1}},"type":"object"}
                 ]]
                 )
             ngx.status = code
@@ -475,7 +475,15 @@ Authorization: Basic Zm9vOmJhcg==
 
 
 
-=== TEST 22: set basic-auth conf: password uses secret ref
+=== TEST 22: store secret into vault
+--- exec
+VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault kv put kv/apisix/foo passwd=bar
+--- response_body
+Success! Data written to: kv/apisix/foo
+
+
+
+=== TEST 23: set basic-auth conf: password uses secret ref
 --- request
 GET /t
 --- config
@@ -542,14 +550,6 @@ GET /t
     }
 --- response_body
 passed
-
-
-
-=== TEST 23: store secret into vault
---- exec
-VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault kv put kv/apisix/foo passwd=bar
---- response_body
-Success! Data written to: kv/apisix/foo
 
 
 
@@ -708,3 +708,313 @@ Authorization: bASiC Zm9vOmJhcg==
 hello world
 --- error_log
 find consumer foo
+
+
+
+=== TEST 31: reject an empty password on the consumer
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "foo",
+                    "plugins": {
+                        "basic-auth": {
+                            "username": "foo",
+                            "password": ""
+                        }
+                    }
+                }]]
+                )
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"invalid plugins configuration: failed to check the configuration of plugin basic-auth err: property \"password\" validation failed: string too short, expected at least 1, got 0"}
+
+
+
+=== TEST 32: reject an empty password on the credential
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers/foo/credentials/cred_a',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "basic-auth": {
+                            "username": "bar",
+                            "password": ""
+                        }
+                    }
+                }]]
+                )
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"invalid plugins configuration: failed to check the configuration of plugin basic-auth err: property \"password\" validation failed: string too short, expected at least 1, got 0"}
+
+
+
+=== TEST 33: store an empty secret into vault
+--- exec
+VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault kv put kv/apisix/empty passwd=
+--- response_body
+Success! Data written to: kv/apisix/empty
+
+
+
+=== TEST 34: set basic-auth conf: password uses a secret ref that resolves to an empty string
+--- request
+GET /t
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/secrets/vault/test1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "http://127.0.0.1:8200",
+                    "prefix" : "kv/apisix",
+                    "token" : "root"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                return ngx.say(body)
+            end
+
+            code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "foo",
+                    "plugins": {
+                        "basic-auth": {
+                            "username": "foo",
+                            "password": "$secret://vault/test1/empty/passwd"
+                        }
+                    }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                return ngx.say(body)
+            end
+
+            code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "basic-auth": {}
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 35: verify, empty password on the wire (foo:) is rejected
+--- request
+GET /hello
+--- more_headers
+Authorization: Basic Zm9vOg==
+--- error_code: 401
+
+
+
+=== TEST 36: verify, whitespace-only password on the wire (foo: ) is rejected
+--- request
+GET /hello
+--- more_headers
+Authorization: Basic Zm9vOiA=
+--- error_code: 401
+--- response_body
+{"message":"Invalid user authorization"}
+--- error_log
+empty password configured for consumer: foo
+
+
+
+=== TEST 37: set basic-auth conf: password uses an env ref that resolves to an empty string
+--- main_config
+env BASIC_AUTH_EMPTY_PASSWORD=;
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "foo",
+                    "plugins": {
+                        "basic-auth": {
+                            "username": "foo",
+                            "password": "$env://BASIC_AUTH_EMPTY_PASSWORD"
+                        }
+                    }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 38: verify, empty password on the wire (foo:) is rejected
+--- main_config
+env BASIC_AUTH_EMPTY_PASSWORD=;
+--- request
+GET /hello
+--- more_headers
+Authorization: Basic Zm9vOg==
+--- error_code: 401
+
+
+
+=== TEST 39: verify, whitespace-only password on the wire (foo: ) is rejected
+--- main_config
+env BASIC_AUTH_EMPTY_PASSWORD=;
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "foo",
+                    "plugins": {
+                        "basic-auth": {
+                            "username": "foo",
+                            "password": "$env://BASIC_AUTH_EMPTY_PASSWORD"
+                        }
+                    }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            code, body = t('/hello',
+                ngx.HTTP_GET,
+                nil,
+                nil,
+                {Authorization = "Basic Zm9vOiA="}
+            )
+            if code ~= 401 then
+                ngx.status = code
+                ngx.print(body)
+                return
+            end
+
+            code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "foo",
+                    "plugins": {
+                        "basic-auth": {
+                            "username": "foo",
+                            "password": "bar"
+                        }
+                    }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- error_log
+empty password configured for consumer: foo
+
+
+
+=== TEST 40: add consumer with colon in password
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "johndoe-colon",
+                    "plugins": {
+                        "basic-auth": {
+                            "username": "johndoe-colon",
+                            "password": "john:key"
+                        }
+                    }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 41: extra colon suffix after a colon-less password is rejected
+--- request
+GET /hello
+--- more_headers
+Authorization: Basic Zm9vOmJhcjpleHRyYQ==
+--- error_code: 401
+--- response_body
+{"message":"Invalid user authorization"}
+
+
+
+=== TEST 42: verify password containing colon
+--- request
+GET /hello
+--- more_headers
+Authorization: Basic am9obmRvZS1jb2xvbjpqb2huOmtleQ==
+--- response_body
+hello world
+--- error_log
+find consumer johndoe-colon

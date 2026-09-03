@@ -1,5 +1,5 @@
 {
-  "version": "3.17.0",
+  "version": "3.18.0",
   "sidebar": [
     {
       "type": "category",
@@ -25,6 +25,7 @@
       "label": "Tutorials",
       "items": [
         "tutorials/expose-api",
+        "tutorials/proxy-localai",
         "tutorials/protect-api",
         {
           "type": "category",
