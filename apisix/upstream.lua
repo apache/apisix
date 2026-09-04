@@ -328,6 +328,15 @@ end
 
 
 function _M.set_by_route(route, api_ctx)
+    -- Ahead of the traffic-split short circuit below so its inline upstream is
+    -- covered too. A second handshake would send the client's ClientHello as payload.
+    if api_ctx.tls_passthrough then
+        local passthrough_up = api_ctx.upstream_conf or api_ctx.matched_upstream
+        if passthrough_up and passthrough_up.scheme == "tls" then
+            return 503, "upstream scheme `tls` can not be used on a tls_passthrough listen"
+        end
+    end
+
     if api_ctx.upstream_conf then
         -- upstream_conf has been set by traffic-split plugin
         return

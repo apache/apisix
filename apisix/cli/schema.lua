@@ -178,6 +178,9 @@ local config_schema = {
                                             tls = {
                                                 type = "boolean",
                                             },
+                                            tls_passthrough = {
+                                                type = "boolean",
+                                            },
                                             proxy_protocol = {
                                                 type = "boolean",
                                             },

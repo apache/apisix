@@ -166,7 +166,7 @@ do
             service_ver = cur_svc_ver
         end
 
-        local sni = apisix_ssl.server_name()
+        local sni = apisix_ssl.server_name(nil, api_ctx.tls_passthrough)
         if sni and tls_router then
             local sni_rev = sni:reverse()
 
