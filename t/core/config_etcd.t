@@ -605,8 +605,13 @@ etcd watch timeout, upgrade revision to
 
 
 
-=== TEST 15: missing X-Etcd-Index header should not crash init worker
+=== TEST 15: a startup without a preloaded revision must not crash the init worker
+The watch takes its start revision from the read that preloads the
+configuration. When there is no such read there is no revision either, and the
+watch has to fall back to asking etcd for the current one rather than failing.
 --- yaml_config
+apisix:
+  disable_sync_configuration_during_start: true
 deployment:
   role: traditional
   role_traditional:
@@ -615,26 +620,6 @@ deployment:
     host:
       - "http://127.0.0.1:2379"
     prefix: /apisix
---- extra_init_by_lua
-    -- Clear loaded_configuration and inject a fake entry with missing
-    -- X-Etcd-Index header so do_run_watch exercises the fallback path.
-    local config_etcd = require("apisix.core.config_etcd")
-    for i = 1, 256 do
-        local name, val = debug.getupvalue(config_etcd.new, i)
-        if not name then
-            break
-        end
-        if name == "loaded_configuration" and type(val) == "table" then
-            for k in pairs(val) do
-                val[k] = nil
-            end
-            val["__test_fake"] = {
-                body = { nodes = {} },
-                headers = {},
-            }
-            break
-        end
-    end
 --- config
     location /t {
         content_by_lua_block {
@@ -647,9 +632,9 @@ GET /t
 --- response_body
 passed
 --- grep_error_log eval
-qr/invalid or missing X-Etcd-Index header/
+qr/main etcd watcher initialised, revision=\d+/
 --- grep_error_log_out eval
-qr/(invalid or missing X-Etcd-Index header\n){1,}/
+qr/(main etcd watcher initialised, revision=\d+\n){1,}/
 
 
 
