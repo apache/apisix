@@ -48,6 +48,7 @@ local debug        = debug
 local string       = string
 local error        = error
 local pairs        = pairs
+local next         = next
 local rand         = math.random
 local constants    = require("apisix.constants")
 local health_check = require("resty.etcd.health_check")
@@ -1216,11 +1217,15 @@ local function init_loaded_configuration()
     end
 
     -- One readdir backs every entry create_formatter() stored, so there is a
-    -- single revision to record, and it is recorded even when the range came
-    -- back empty: the snapshot is still a point in time to watch from.
-    -- get_format() fails the read when the response carries no revision, so
-    -- there is nothing to validate here.
-    loaded_configuration_rev = tonumber(res.headers["X-Etcd-Index"])
+    -- single revision to record. Nothing is consumed yet at this point, so an
+    -- empty table here means the read stored nothing -- unlike the same test
+    -- made at watch time, which is the bug being fixed. Leave that case alone:
+    -- with no preloaded data every resource type reads for itself at first
+    -- sync, which already picks up whatever was written since, and the
+    -- rev == 0 path below keeps handling it exactly as before.
+    if next(loaded_configuration) then
+        loaded_configuration_rev = tonumber(res.headers["X-Etcd-Index"])
+    end
 
     configuration_loaded_time = ngx_time()
 end
