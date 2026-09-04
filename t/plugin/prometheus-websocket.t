@@ -181,3 +181,97 @@ GET /apisix/prometheus/metrics
 qr/apisix_http_latency_count\{type="request",route="ws",[^}]*request_type="websocket"[^}]*\} 1\n/
 --- response_body_unlike eval
 qr/apisix_http_latency_count\{type="request",route="ws",[^}]*request_type="websocket"[^}]*\} 2\n/
+
+
+
+=== TEST 9: set up a websocket route whose proxy-rewrite reads $request_type before the upgrade
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/ws-cached',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "prometheus": {},
+                        "proxy-rewrite": {
+                            "uri": "/websocket_handshake",
+                            "headers": {
+                                "set": {"X-Request-Type": "$request_type"}
+                            }
+                        },
+                        "serverless-post-function": {
+                            "phase": "log",
+                            "functions": [
+                                "return function(conf, ctx) ngx.log(ngx.WARN, \"x_request_type=\", ngx.var.http_x_request_type, \" ngx.var.request_type=\", ngx.var.request_type, \" ctx.var.request_type=\", ctx.var.request_type) end"
+                            ]
+                        }
+                    },
+                    "enable_websocket": true,
+                    "upstream": {
+                        "nodes": {"127.0.0.1:1980": 1},
+                        "type": "roundrobin"
+                    },
+                    "uri": "/websocket_cached"
+                }]])
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 10: the early read does not pin the session to traditional_http in either view
+--- config
+    location /t {
+        content_by_lua_block {
+            local client = require("resty.websocket.client")
+            local wb = client:new()
+            local ok, err = wb:connect("ws://127.0.0.1:1984/websocket_cached")
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+
+            local data, typ, err = wb:recv_frame()
+            if not data then
+                ngx.say("failed to receive frame: ", err)
+                return
+            end
+
+            wb:close()
+            ngx.say("received: ", data, " (", typ, ")")
+        }
+    }
+--- response_body
+received: hello (text)
+--- error_log
+x_request_type=traditional_http ngx.var.request_type=websocket ctx.var.request_type=websocket
+
+
+
+=== TEST 11: the status of the early-read session is labelled request_type=websocket
+--- request
+GET /apisix/prometheus/metrics
+--- response_body eval
+qr/apisix_http_status\{code="101",route="ws-cached",[^}]*request_type="websocket"[^}]*\} 1\n/
+
+
+
+=== TEST 12: the latency of the early-read session is labelled request_type=websocket
+--- request
+GET /apisix/prometheus/metrics
+--- response_body eval
+qr/apisix_http_latency_count\{type="request",route="ws-cached",[^}]*request_type="websocket"[^}]*\} 1\n/
+
+
+
+=== TEST 13: the bandwidth of the early-read session is labelled request_type=websocket
+--- request
+GET /apisix/prometheus/metrics
+--- response_body eval
+qr/apisix_bandwidth\{type="ingress",route="ws-cached",[^}]*request_type="websocket"[^}]*\} \d+\n/
