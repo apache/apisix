@@ -48,7 +48,6 @@ local debug        = debug
 local string       = string
 local error        = error
 local pairs        = pairs
-local next         = next
 local rand         = math.random
 local constants    = require("apisix.constants")
 local health_check = require("resty.etcd.health_check")
@@ -70,6 +69,9 @@ if not is_http then
 end
 local created_obj  = {}
 local loaded_configuration = {}
+-- the etcd revision loaded_configuration was read at, kept separately because
+-- its entries are removed as they are consumed
+local loaded_configuration_rev
 local configuration_loaded_time
 local watch_ctx
 
@@ -144,18 +146,14 @@ local function do_run_watch(premature)
             error("failed to create etcd instance: " .. string(err))
         end
 
-        local rev = 0
-        if loaded_configuration then
-            local _, res = next(loaded_configuration)
-            if res then
-                rev = tonumber(res.headers["X-Etcd-Index"])
-                if not rev or rev <= 0 then
-                    log.warn("invalid or missing X-Etcd-Index header, ",
-                             "will fetch revision from etcd directly")
-                    rev = 0
-                end
-            end
-        end
+        -- Watch from the revision the preloaded configuration was read at, so
+        -- that everything written after that snapshot is still delivered. The
+        -- revision cannot be read back from loaded_configuration here:
+        -- core.config.new() removes each entry as it consumes it, so the table
+        -- is empty once every preloaded type has been registered -- and then
+        -- the fallback below would start the watch at the current revision and
+        -- drop every write made since the snapshot.
+        local rev = loaded_configuration_rev or 0
 
         if rev == 0 then
             while true do
@@ -1206,6 +1204,7 @@ end
 
 local function init_loaded_configuration()
     loaded_configuration = {}
+    loaded_configuration_rev = nil
     local etcd_cli, prefix, err = etcd_apisix.new_without_proxy()
     if not etcd_cli then
         return "failed to start a etcd instance: " .. err
@@ -1215,6 +1214,18 @@ local function init_loaded_configuration()
     if not res then
         return err
     end
+
+    -- One readdir backs every entry create_formatter() stored, so there is a
+    -- single revision to record, and it is recorded even when the range came
+    -- back empty: the snapshot is still a point in time to watch from.
+    local rev = tonumber(res.headers["X-Etcd-Index"])
+    if not rev or rev <= 0 then
+        log.warn("invalid or missing X-Etcd-Index header, the watch will ",
+                 "start from the current revision instead of the revision ",
+                 "this configuration was read at")
+        rev = nil
+    end
+    loaded_configuration_rev = rev
 
     configuration_loaded_time = ngx_time()
 end

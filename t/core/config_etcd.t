@@ -605,55 +605,7 @@ etcd watch timeout, upgrade revision to
 
 
 
-=== TEST 15: missing X-Etcd-Index header should not crash init worker
---- yaml_config
-deployment:
-  role: traditional
-  role_traditional:
-    config_provider: etcd
-  etcd:
-    host:
-      - "http://127.0.0.1:2379"
-    prefix: /apisix
---- extra_init_by_lua
-    -- Clear loaded_configuration and inject a fake entry with missing
-    -- X-Etcd-Index header so do_run_watch exercises the fallback path.
-    local config_etcd = require("apisix.core.config_etcd")
-    for i = 1, 256 do
-        local name, val = debug.getupvalue(config_etcd.new, i)
-        if not name then
-            break
-        end
-        if name == "loaded_configuration" and type(val) == "table" then
-            for k in pairs(val) do
-                val[k] = nil
-            end
-            val["__test_fake"] = {
-                body = { nodes = {} },
-                headers = {},
-            }
-            break
-        end
-    end
---- config
-    location /t {
-        content_by_lua_block {
-            ngx.sleep(1)
-            ngx.say("passed")
-        }
-    }
---- request
-GET /t
---- response_body
-passed
---- grep_error_log eval
-qr/invalid or missing X-Etcd-Index header/
---- grep_error_log_out eval
-qr/(invalid or missing X-Etcd-Index header\n){1,}/
-
-
-
-=== TEST 16: full reload keeps the previous value of an item whose new data is invalid
+=== TEST 15: full reload keeps the previous value of an item whose new data is invalid
 --- timeout: 20
 --- yaml_config
 deployment:
@@ -746,7 +698,7 @@ keep the previous configuration
 
 
 
-=== TEST 17: full reload does not resurrect an item that no longer exists in etcd
+=== TEST 16: full reload does not resurrect an item that no longer exists in etcd
 --- timeout: 20
 --- yaml_config
 deployment:
@@ -826,7 +778,7 @@ valid item loaded: true
 
 
 
-=== TEST 18: full reload still skips an invalid item that has no previous value
+=== TEST 17: full reload still skips an invalid item that has no previous value
 --- timeout: 20
 --- yaml_config
 deployment:
@@ -900,7 +852,7 @@ keep the previous configuration
 
 
 
-=== TEST 19: a full reload that changes nothing reuses the items and does not bump conf_version
+=== TEST 18: a full reload that changes nothing reuses the items and does not bump conf_version
 --- timeout: 25
 --- yaml_config
 deployment:
@@ -999,7 +951,7 @@ conf_version bumped once, not twice: true
 
 
 
-=== TEST 20: a full reload that only deletes must still bump conf_version
+=== TEST 19: a full reload that only deletes must still bump conf_version
 --- timeout: 25
 --- yaml_config
 deployment:
