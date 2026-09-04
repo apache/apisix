@@ -78,8 +78,12 @@ deployment:
     -- run clears up after itself too; this is here for a run that did not.
     etcd_clear()
 
-    -- only /routes exists under this prefix, so the preload table holds exactly
-    -- one entry and registering /routes empties it
+    -- Do not remove: this key is what puts /routes on the preload path. Without
+    -- it the prefix is empty, /routes has nothing to consume and reads for
+    -- itself at first sync, and that read picks the route up whatever revision
+    -- the watch started from -- the test then passes even unpatched. One key
+    -- also means one preload entry, so registering /routes empties the table,
+    -- which is the state being tested.
     etcd_put("/apisix-watch-start-revision/routes/", "init_dir")
 --- extra_init_by_lua
     -- after the snapshot was taken, before any worker starts watching
