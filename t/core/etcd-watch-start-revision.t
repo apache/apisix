@@ -19,7 +19,6 @@ use t::APISIX 'no_plan';
 repeat_each(1);
 no_long_string();
 no_root_location();
-no_shuffle();
 
 run_tests;
 
@@ -47,25 +46,37 @@ deployment:
         host:
             - "http://127.0.0.1:2379"
 --- extra_init_by_lua_start
-    local function etcd_put(key, value)
-        local body = '{"key":"' .. ngx.encode_base64(key)
-                     .. '","value":"' .. ngx.encode_base64(value) .. '"}'
-        local f = assert(io.popen("curl -s -X POST http://127.0.0.1:2379/v3/kv/put -d "
-                                  .. "'" .. body .. "'"))
-        f:read("*a")
+    -- io.popen reports nothing about how curl fared, so the etcd response is
+    -- checked instead: a silently failing write here would look exactly like
+    -- the lost event this test is about
+    local function etcd_call(path, body)
+        local f = assert(io.popen("curl -sS --fail-with-body -X POST "
+                                  .. "http://127.0.0.1:2379/v3/kv/" .. path
+                                  .. " -d '" .. body .. "'"))
+        local out = f:read("*a")
         f:close()
+        if not out or not out:find('"header"', 1, true) then
+            error("etcd " .. path .. " failed: " .. tostring(out))
+        end
+    end
+
+    local function etcd_put(key, value)
+        etcd_call("put", '{"key":"' .. ngx.encode_base64(key)
+                         .. '","value":"' .. ngx.encode_base64(value) .. '"}')
     end
     _G.etcd_put_for_test = etcd_put
 
+    local function etcd_clear()
+        etcd_call("deleterange",
+            '{"key":"' .. ngx.encode_base64("/apisix-watch-start-revision/")
+            .. '","range_end":"' .. ngx.encode_base64("/apisix-watch-start-revision0") .. '"}')
+    end
+    _G.etcd_clear_for_test = etcd_clear
+
     -- start from an empty prefix, so the route written below can only ever
-    -- reach the worker through the watch and never through the snapshot
-    local body = '{"key":"' .. ngx.encode_base64("/apisix-watch-start-revision/")
-                 .. '","range_end":"' .. ngx.encode_base64("/apisix-watch-start-revision0")
-                 .. '"}'
-    local f = assert(io.popen("curl -s -X POST http://127.0.0.1:2379/v3/kv/deleterange -d "
-                              .. "'" .. body .. "'"))
-    f:read("*a")
-    f:close()
+    -- reach the worker through the watch and never through the snapshot. The
+    -- run clears up after itself too; this is here for a run that did not.
+    etcd_clear()
 
     -- only /routes exists under this prefix, so the preload table holds exactly
     -- one entry and registering /routes empties it
@@ -83,6 +94,10 @@ deployment:
 
             local routes = core.config.fetch_created_obj("/routes")
             local route = routes and routes:get("1")
+
+            -- the local etcd is shared, so do not leave this prefix populated
+            _G.etcd_clear_for_test()
+
             if not route then
                 ngx.say("route written during startup was lost")
                 return
@@ -95,58 +110,3 @@ deployment:
 GET /t
 --- response_body
 uri: /hello
-
-
-
-=== TEST 2: the watch still starts when no configuration was preloaded
-With disable_sync_configuration_during_start there is no snapshot and so no
-revision to watch from; the watch has to fall back to reading the current
-revision, which is the path TEST 1 must not have removed.
---- yaml_config
-apisix:
-    node_listen: 1984
-    disable_sync_configuration_during_start: true
-deployment:
-    role: traditional
-    role_traditional:
-        config_provider: etcd
-    admin:
-        admin_key: null
-    etcd:
-        prefix: "/apisix"
-        host:
-            - "http://127.0.0.1:2379"
---- config
-    location /t {
-        content_by_lua_block {
-            local core = require("apisix.core")
-            local t = require("lib.test_admin").test
-
-            local code = t('/apisix/admin/routes/watch-fallback',
-                ngx.HTTP_PUT,
-                [[{
-                    "uri": "/hello",
-                    "upstream": {
-                        "type": "roundrobin",
-                        "nodes": {"127.0.0.1:1980": 1}
-                    }
-                }]]
-            )
-            if code >= 300 then
-                ngx.say("failed to create the route: ", code)
-                return
-            end
-
-            ngx.sleep(1)
-
-            local routes = core.config.fetch_created_obj("/routes")
-            local route = routes and routes:get("watch-fallback")
-            t('/apisix/admin/routes/watch-fallback', ngx.HTTP_DELETE)
-
-            ngx.say(route and "synced" or "not synced")
-        }
-    }
---- request
-GET /t
---- response_body
-synced

@@ -1218,14 +1218,9 @@ local function init_loaded_configuration()
     -- One readdir backs every entry create_formatter() stored, so there is a
     -- single revision to record, and it is recorded even when the range came
     -- back empty: the snapshot is still a point in time to watch from.
-    local rev = tonumber(res.headers["X-Etcd-Index"])
-    if not rev or rev <= 0 then
-        log.warn("invalid or missing X-Etcd-Index header, the watch will ",
-                 "start from the current revision instead of the revision ",
-                 "this configuration was read at")
-        rev = nil
-    end
-    loaded_configuration_rev = rev
+    -- get_format() fails the read when the response carries no revision, so
+    -- there is nothing to validate here.
+    loaded_configuration_rev = tonumber(res.headers["X-Etcd-Index"])
 
     configuration_loaded_time = ngx_time()
 end

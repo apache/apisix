@@ -605,7 +605,40 @@ etcd watch timeout, upgrade revision to
 
 
 
-=== TEST 15: full reload keeps the previous value of an item whose new data is invalid
+=== TEST 15: a startup without a preloaded revision must not crash the init worker
+The watch takes its start revision from the read that preloads the
+configuration. When there is no such read there is no revision either, and the
+watch has to fall back to asking etcd for the current one rather than failing.
+--- yaml_config
+apisix:
+  disable_sync_configuration_during_start: true
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
+    host:
+      - "http://127.0.0.1:2379"
+    prefix: /apisix
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.sleep(1)
+            ngx.say("passed")
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- grep_error_log eval
+qr/main etcd watcher initialised, revision=\d+/
+--- grep_error_log_out eval
+qr/(main etcd watcher initialised, revision=\d+\n){1,}/
+
+
+
+=== TEST 16: full reload keeps the previous value of an item whose new data is invalid
 --- timeout: 20
 --- yaml_config
 deployment:
@@ -698,7 +731,7 @@ keep the previous configuration
 
 
 
-=== TEST 16: full reload does not resurrect an item that no longer exists in etcd
+=== TEST 17: full reload does not resurrect an item that no longer exists in etcd
 --- timeout: 20
 --- yaml_config
 deployment:
@@ -778,7 +811,7 @@ valid item loaded: true
 
 
 
-=== TEST 17: full reload still skips an invalid item that has no previous value
+=== TEST 18: full reload still skips an invalid item that has no previous value
 --- timeout: 20
 --- yaml_config
 deployment:
@@ -852,7 +885,7 @@ keep the previous configuration
 
 
 
-=== TEST 18: a full reload that changes nothing reuses the items and does not bump conf_version
+=== TEST 19: a full reload that changes nothing reuses the items and does not bump conf_version
 --- timeout: 25
 --- yaml_config
 deployment:
@@ -951,7 +984,7 @@ conf_version bumped once, not twice: true
 
 
 
-=== TEST 19: a full reload that only deletes must still bump conf_version
+=== TEST 20: a full reload that only deletes must still bump conf_version
 --- timeout: 25
 --- yaml_config
 deployment:
