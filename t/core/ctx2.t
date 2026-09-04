@@ -447,3 +447,26 @@ find ctx.var.a6_labels_zone: Singapore
 --- response_body
 find ctx.var.a6_count: 1
 find ctx.var.a6_count: 2
+
+
+
+=== TEST 20: status is not cached across response changes
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local ctx = {}
+            core.ctx.set_vars_meta(ctx)
+
+            ngx.status = 201
+            local first = ctx.var.status
+            ngx.status = 202
+            local second = ctx.var.status
+
+            ngx.status = 200
+            core.ctx.release_vars(ctx)
+            ngx.say(first, ", ", second)
+        }
+    }
+--- response_body
+201, 202
