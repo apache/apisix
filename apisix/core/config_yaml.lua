@@ -311,8 +311,10 @@ local function sync_data(self)
         if self.item_schema then
             data_valid, err = check_schema(self.item_schema, item)
             if not data_valid then
+                -- the item is a resource and can carry TLS private keys or
+                -- plugin credentials, so only its identity is logged
                 log.error("failed to check item data of [", self.key,
-                          "] err:", err, " ,val: ", json.delay_encode(item))
+                          "] err:", err, ", key: ", conf_item.key)
             end
 
             if data_valid and self.checker then
@@ -321,7 +323,7 @@ local function sync_data(self)
                 data_valid, err = self.checker(item, conf_item.key)
                 if not data_valid then
                     log.error("failed to check item data of [", self.key,
-                              "] err:", err, " ,val: ", json.delay_encode(item))
+                              "] err:", err, ", key: ", conf_item.key)
                 end
             end
         end
@@ -348,8 +350,7 @@ local function sync_data(self)
             if type(item) ~= "table" then
                 data_valid = false
                 log.error("invalid item data of [", self.key .. "/" .. idx,
-                          "], val: ", json.delay_encode(item),
-                          ", it should be an object")
+                          "], type: ", type(item), ", it should be an object")
             end
 
             local id = item.id or item.username or ("arr_" .. idx)
@@ -361,7 +362,7 @@ local function sync_data(self)
                 data_valid, err = check_schema(self.item_schema, item)
                 if not data_valid then
                     log.error("failed to check item data of [", self.key,
-                              "] err:", err, " ,val: ", json.delay_encode(item))
+                              "] err:", err, ", key: ", conf_item.key)
                 end
             end
 
@@ -369,7 +370,7 @@ local function sync_data(self)
                 data_valid, err = self.checker(item, conf_item.key)
                 if not data_valid then
                     log.error("failed to check item data of [", self.key,
-                              "] err:", err, " ,val: ", json.delay_encode(item))
+                              "] err:", err, ", key: ", conf_item.key)
                 end
             end
 

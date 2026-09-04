@@ -73,6 +73,27 @@ for dir in pairs(constants.STREAM_ETCD_DIRECTORY) do
     STREAM_RESOURCE_KEYS[key] = key .. CONF_VERSION_KEY_SUFFIX
 end
 
+-- The body is client-supplied, so its shape has to be checked before anything
+-- iterates it: `#items` and `ipairs` raise on a scalar, and a section that is
+-- not an array is silently dropped by standalone.update() while its version is
+-- advanced, which clears the resources that were there.
+local config_schema
+do
+    local properties = {}
+    -- only the resource sections: the *_conf_version fields keep their own
+    -- checks below and in standalone.update(), whose messages callers rely on
+    for key in pairs(ALL_RESOURCE_KEYS) do
+        properties[key] = {
+            type = "array",
+            items = {type = "object"},
+        }
+    end
+    config_schema = {
+        type = "object",
+        properties = properties,
+    }
+end
+
 
 local function check_duplicate(item, key, id_set)
     local identifier, identifier_type
@@ -130,6 +151,15 @@ end
 function _M.validate_configuration(req_body, collect_all_errors)
     local is_valid = true
     local validation_results = {}
+
+    local shape_ok, shape_err = core.schema.check(config_schema, req_body)
+    if not shape_ok then
+        local err_msg = "invalid request body: " .. shape_err
+        if not collect_all_errors then
+            return false, err_msg
+        end
+        return false, {{resource_type = "", error = err_msg}}
+    end
 
     for key, conf_version_key in pairs(ALL_RESOURCE_KEYS) do
         local items = req_body[key]
@@ -217,7 +247,9 @@ function _M.validate()
     local data
     if core.string.has_prefix(content_type, "application/yaml") then
         local ok, result = pcall(yaml.load, req_body, { all = false })
-        if not ok or type(result) ~= "table" then
+        -- a null document (`~`) loads as lyaml's sentinel table, which would
+        -- otherwise pass as an empty object and clear every resource
+        if not ok or type(result) ~= "table" or result == yaml.null then
             err = "invalid yaml request body"
         else
             data = result
@@ -227,16 +259,20 @@ function _M.validate()
     end
 
     if err then
-        core.log.warn("invalid request body: ", req_body, " err: ", err)
+        -- the body is a full declarative configuration and can carry plugin
+        -- credentials and TLS private keys; log the parser error only
+        core.log.warn("invalid request body, err: ", err)
         return core.response.exit(400, {error_msg = "invalid request body: " .. err})
     end
 
     local ok, valid, validation_results = pcall(_M.validate_configuration, data, true)
     if not ok then
         core.log.warn("unexpected error during validation: ", tostring(valid))
+        -- the raw Lua error carries the source path and whatever the failing
+        -- code put in it; keep it in the log, not in the response
         return core.response.exit(400, {
             error_msg = "Configuration validation failed",
-            errors = {{error = tostring(valid)}}
+            errors = {{error = "unexpected validation error"}}
         })
     end
     if not valid then

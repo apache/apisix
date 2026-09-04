@@ -288,8 +288,10 @@ local function init(env)
        and #allow_admin == 1 and allow_admin[1] == "127.0.0.0/24" then
         checked_admin_key = true
     end
-    -- check if admin_key is required
-    if yaml_conf.deployment.admin.admin_key_required == false then
+    -- check if admin_key is required; deployment.admin is guarded above and below
+    -- because `admin:` written as YAML null makes merge_conf drop it
+    if yaml_conf.deployment.admin
+       and yaml_conf.deployment.admin.admin_key_required == false then
         checked_admin_key = true
         print("Warning! Admin key is bypassed! "
                 .. "If you are deploying APISIX in a production environment, "
