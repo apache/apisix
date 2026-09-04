@@ -45,9 +45,14 @@ local schema = {
                     },
                     actions = {
                         type = "array",
+                        minItems = 1,
                         items = {
                             type = "array",
-                            minItems = 1
+                            minItems = 2,
+                            items = {
+                                { type = "string" },
+                                { type = "object" },
+                            }
                         }
                     }
                 },
@@ -139,11 +144,6 @@ function _M.check_schema(conf)
 
             if not support_action[action[1]] then
                 return false, "unsupported action: " .. action[1]
-            end
-
-            if type(action[2]) ~= "table" then
-                return false, "failed to validate the '" .. action[1] ..
-                    "' action: configuration is required"
             end
 
             -- use the action's idx as an identifier to isolate between confs

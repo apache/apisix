@@ -316,3 +316,202 @@ passed
 --- error_code: 400
 --- response_body
 {"error_msg":"failed to check the configuration of plugin workflow err: property \"rules\" is required"}
+
+
+
+=== TEST 9: reject missing action conf
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+            local data = {
+                uri = "/*",
+                plugins = {
+                    workflow = {
+                        rules = {
+                            {
+                                case = {
+                                    {"uri", "==", "/hello"}
+                                },
+                                actions = {
+                                    {
+                                        "return"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                upstream = {
+                    nodes = {
+                        ["127.0.0.1:1980"] = 1
+                    },
+                    type = "roundrobin"
+                }
+            }
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 json.encode(data)
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+
+            ngx.print(body)
+        }
+    }
+--- error_code: 400
+--- response_body
+{"error_msg":"failed to check the configuration of plugin workflow err: property \"rules\" validation failed: failed to validate item 1: property \"actions\" validation failed: failed to validate item 1: expect array to have at least 2 items"}
+
+
+
+=== TEST 10: reject empty actions
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+            local data = {
+                uri = "/*",
+                plugins = {
+                    workflow = {
+                        rules = {
+                            {
+                                case = {
+                                    {"uri", "==", "/hello"}
+                                },
+                                actions = {
+                                }
+                            }
+                        }
+                    }
+                },
+                upstream = {
+                    nodes = {
+                        ["127.0.0.1:1980"] = 1
+                    },
+                    type = "roundrobin"
+                }
+            }
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 json.encode(data)
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+
+            ngx.print(body)
+        }
+    }
+--- error_code: 400
+--- response_body
+{"error_msg":"failed to check the configuration of plugin workflow err: property \"rules\" validation failed: failed to validate item 1: property \"actions\" validation failed: expect array to have at least 1 items"}
+
+
+
+=== TEST 11: reject non-string action name
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+            local data = {
+                uri = "/*",
+                plugins = {
+                    workflow = {
+                        rules = {
+                            {
+                                case = {
+                                    {"uri", "==", "/hello"}
+                                },
+                                actions = {
+                                    {
+                                        true,
+                                        {
+                                            code = 403
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                upstream = {
+                    nodes = {
+                        ["127.0.0.1:1980"] = 1
+                    },
+                    type = "roundrobin"
+                }
+            }
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 json.encode(data)
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+
+            ngx.print(body)
+        }
+    }
+--- error_code: 400
+--- response_body
+{"error_msg":"failed to check the configuration of plugin workflow err: property \"rules\" validation failed: failed to validate item 1: property \"actions\" validation failed: failed to validate item 1: failed to validate item 1: wrong type: expected string, got boolean"}
+
+
+
+=== TEST 12: reject invalid case expression
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+            local data = {
+                uri = "/*",
+                plugins = {
+                    workflow = {
+                        rules = {
+                            {
+                                case = {
+                                    {"uri", "=", "/hello"}
+                                },
+                                actions = {
+                                    {
+                                        "return",
+                                        {
+                                            code = 403
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                upstream = {
+                    nodes = {
+                        ["127.0.0.1:1980"] = 1
+                    },
+                    type = "roundrobin"
+                }
+            }
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 json.encode(data)
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+
+            ngx.print(body)
+        }
+    }
+--- error_code: 400
+--- response_body
+{"error_msg":"failed to check the configuration of plugin workflow err: failed to validate the 'case' expression: invalid operator '='"}
