@@ -45,9 +45,14 @@ local schema = {
                     },
                     actions = {
                         type = "array",
+                        minItems = 1,
                         items = {
                             type = "array",
-                            minItems = 1
+                            minItems = 2,
+                            items = {
+                                { type = "string" },
+                                { type = "object" },
+                            }
                         }
                     }
                 },
@@ -122,7 +127,7 @@ function _M.check_schema(conf)
     for idx, rule in ipairs(conf.rules) do
          if rule.case then
             local expr, err = expr.new(rule.case)
-            if not ok then
+            if not expr then
                 return false, "failed to validate the 'case' expression: " .. err
             end
             local mt = getmetatable(rule)
