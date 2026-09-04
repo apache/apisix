@@ -27,7 +27,11 @@ local _M = {}
 
 
 local function sort_by_key_host(a, b)
-    return a.host < b.host
+    if a.host ~= b.host then
+        return a.host < b.host
+    end
+
+    return (a.port or 0) < (b.port or 0)
 end
 
 
@@ -88,22 +92,53 @@ end
 _M.compare_upstream_node = compare_upstream_node
 
 
-local function parse_domain_for_nodes(nodes)
+local function last_resolved_addr(up_conf, domain)
+    if not up_conf then
+        return nil
+    end
+
+    local nodes = up_conf.nodes
+    if type(nodes) ~= "table" then
+        return nil
+    end
+
+    if up_conf.original_nodes and #nodes > 0 then
+        nodes = up_conf.original_nodes
+    end
+
+    for _, node in ipairs(nodes) do
+        if node.domain == domain then
+            return node.host
+        end
+    end
+
+    return nil
+end
+
+
+local function parse_domain_for_nodes(nodes, up_conf)
     local span = tracer.start(ngx.ctx, "resolve_dns", tracer.kind.internal)
     local new_nodes = core.table.new(#nodes, 0)
     for _, node in ipairs(nodes) do
         local host = node.host
         if not ipmatcher.parse_ipv4(host) and
                 not ipmatcher.parse_ipv6(host) then
-            local ip, err = core.resolver.parse_domain(host)
+            local ip, err, rcode = core.resolver.parse_domain(host)
+            if not ip and rcode ~= core.dns_client.RCODE_NXDOMAIN then
+                local last_ip = last_resolved_addr(up_conf, host)
+                if last_ip then
+                    core.log.error("dns resolver domain: ", host, " error: ", err,
+                                   ", keep the last resolved address: ", last_ip)
+                    ip = last_ip
+                end
+            end
+
             if ip then
                 local new_node = core.table.clone(node)
                 new_node.host = ip
                 new_node.domain = host
                 core.table.insert(new_nodes, new_node)
-            end
-
-            if err then
+            else
                 core.log.error("dns resolver domain: ", host, " error: ", err)
             end
         else
@@ -118,7 +153,7 @@ _M.parse_domain_for_nodes = parse_domain_for_nodes
 
 function _M.parse_domain_in_up(up)
     local nodes = up.value.dns_nodes
-    local new_nodes, err = parse_domain_for_nodes(nodes)
+    local new_nodes, err = parse_domain_for_nodes(nodes, up.value)
     if not new_nodes then
         return nil, err
     end
