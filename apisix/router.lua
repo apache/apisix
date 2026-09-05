@@ -43,6 +43,16 @@ local function filter(route)
         end
     end
 
+    -- the same filter runs for stream routes, whose SNIs are matched against
+    -- apisix/ssl.lua's server_name(), which always returns them lowercased
+    if route.value.sni then
+        route.value.sni = str_lower(route.value.sni)
+    elseif route.value.snis then
+        for i, v in ipairs(route.value.snis) do
+            route.value.snis[i] = str_lower(v)
+        end
+    end
+
     apisix_upstream.filter_upstream(route.value.upstream, route)
 end
 

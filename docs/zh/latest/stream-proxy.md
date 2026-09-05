@@ -212,6 +212,27 @@ curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H "X-API-KEY: $admin_ke
 
 在这里，握手时发送 SNI `a.test.com` 的连接会被代理到 `127.0.0.1:5991`。
 
+如果一条路由需要匹配多个名字，使用 `sni` 的复数形式 `snis`：
+
+```shell
+curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
+{
+    "snis": ["a.test.com", "b.test.com"],
+    "upstream": {
+        "nodes": {
+            "127.0.0.1:5991": 1
+        },
+        "type": "roundrobin"
+    }
+}'
+```
+
+握手时发送 SNI `a.test.com` 或 `b.test.com` 的连接都会被代理到 `127.0.0.1:5991`。通配符按后缀匹配，
+因此 `*.test.com` 同样匹配 `a.b.test.com`；单独的 `*` 则不对 SNI 做任何限制，等同于既不带 `sni`
+也不带 `snis` 的路由。
+
+一条路由只能携带 `sni` 或 `snis` 其中之一。
+
 ## 代理到基于 TCP 的 TLS 上游
 
 APISIX 还支持代理到基于 TCP 的 TLS 上游。

@@ -61,6 +61,31 @@ local function match_addrs(route, vars)
 end
 
 
+-- Returns the SNIs a stream route is matched by, or nil when it puts no
+-- restriction on the SNI. `sni` and `snis` are the singular and plural form of
+-- the same thing; the schema forbids carrying both.
+local function get_snis(route)
+    local snis = route.snis
+    if not snis then
+        if not route.sni then
+            return nil
+        end
+        snis = {route.sni}
+    end
+
+    for _, sni in ipairs(snis) do
+        if sni == "*" then
+            -- a bare `*` matches every SNI, which is what carrying none already
+            -- means; reversed into the radixtree it would match only the
+            -- literal "*"
+            return nil
+        end
+    end
+
+    return snis
+end
+
+
 local create_router
 do
     local sni_to_items = {}
@@ -91,38 +116,40 @@ do
             if item.value.server_addr then
                 item.value.server_addr_matcher = core_ip.create_ip_matcher({item.value.server_addr})
             end
-            if not route.sni then
+            local snis = get_snis(route)
+            if not snis then
                 other_routes[other_routes_idx] = item
                 other_routes_idx = other_routes_idx + 1
                 goto CONTINUE
             end
 
-            local sni_rev = route.sni:reverse()
-            local stored = sni_to_items[sni_rev]
-            if stored then
-                core.table.insert(stored, item)
-                goto CONTINUE
-            end
-
-            sni_to_items[sni_rev] = {item}
-            tls_routes[tls_routes_idx] = {
-                paths = sni_rev,
-                filter_fun = function (vars, opts, ctx)
-                    local items = sni_to_items[sni_rev]
-                    for _, route in ipairs(items) do
-                        local hit = match_addrs(route, vars)
-                        if hit then
-                            ctx.matched_route = route
-                            return true
+            for _, sni in ipairs(snis) do
+                local sni_rev = sni:reverse()
+                local stored = sni_to_items[sni_rev]
+                if stored then
+                    core.table.insert(stored, item)
+                else
+                    sni_to_items[sni_rev] = {item}
+                    tls_routes[tls_routes_idx] = {
+                        paths = sni_rev,
+                        filter_fun = function (vars, opts, ctx)
+                            local items = sni_to_items[sni_rev]
+                            for _, route in ipairs(items) do
+                                local hit = match_addrs(route, vars)
+                                if hit then
+                                    ctx.matched_route = route
+                                    return true
+                                end
+                            end
+                            return false
+                        end,
+                        handler = function (ctx, sni_rev)
+                            -- done in the filter_fun
                         end
-                    end
-                    return false
-                end,
-                handler = function (ctx, sni_rev)
-                    -- done in the filter_fun
+                    }
+                    tls_routes_idx = tls_routes_idx + 1
                 end
-            }
-            tls_routes_idx = tls_routes_idx + 1
+            end
 
             ::CONTINUE::
         end

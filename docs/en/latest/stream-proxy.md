@@ -221,6 +221,28 @@ curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H "X-API-KEY: $admin_ke
 
 In this case, a connection handshaked with SNI `a.test.com` will be proxied to `127.0.0.1:5991`.
 
+To serve several names from one route, use `snis`, the plural form of `sni`:
+
+```shell
+curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
+{
+    "snis": ["a.test.com", "b.test.com"],
+    "upstream": {
+        "nodes": {
+            "127.0.0.1:5991": 1
+        },
+        "type": "roundrobin"
+    }
+}'
+```
+
+Here a connection handshaked with SNI `a.test.com` or `b.test.com` will be proxied to
+`127.0.0.1:5991`. Wildcards are matched as a suffix, so `*.test.com` also matches
+`a.b.test.com`, and a single `*` puts no restriction on the SNI at all, exactly like a stream
+route carrying neither `sni` nor `snis`.
+
+A route can carry `sni` or `snis`, not both.
+
 ## Proxy to TLS over TCP upstream
 
 APISIX also supports proxying to TLS over TCP upstream.
