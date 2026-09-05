@@ -294,7 +294,19 @@ local schema = {
                             description = "keepalive timeout in milliseconds",
                         },
                     }
-                }
+                },
+                revocation = {
+                    type = "string",
+                    enum = {"redis"},
+                    description = "Redis-backed revocation for cookie sessions.",
+                },
+                revocation_fail_mode = {
+                    type = "string",
+                    enum = {"open", "closed"},
+                    description =
+                        "When the revocation store is unreachable, open treats the "
+                        .. "session as not revoked and closed rejects open/destroy.",
+                },
             },
             required = {"secret"},
             ["if"] = {
@@ -304,6 +316,19 @@ local schema = {
             },
             ["then"] = {
                 required = {"redis"},
+            },
+            allOf = {
+                {
+                    ["if"] = {
+                        required = {"revocation"},
+                    },
+                    ["then"] = {
+                        required = {"redis"},
+                        properties = {
+                            storage = { const = "cookie" },
+                        },
+                    },
+                },
             },
             additionalProperties = false,
         },
@@ -1358,6 +1383,17 @@ function _M.rewrite(plugin_conf, ctx)
                     return nil
                 end
                 return 401
+            end
+
+            -- fail-closed only: resty.session appends the store error, so match
+            -- the prefix. Reject without destroying the cookie.
+            if core.string.find(err, "unable to check session revocation")
+                or core.string.find(err, "unable to mark session revoked") then
+                if session then
+                    session:close()
+                end
+                core.log.error("OIDC session revocation store unavailable: ", err)
+                return 503
             end
 
             -- Recoverable authorization-callback failures: a stale state
