@@ -655,3 +655,275 @@ GET /t
 code: 401
 --- no_error_log
 [error]
+
+
+
+=== TEST 23: add Wolf consumers and a multi-auth route that reports identity headers
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local consumers = {
+                [[{
+                    "username": "wolf-default",
+                    "plugins": {
+                        "wolf-rbac": {
+                            "appid": "wolf-default"
+                        }
+                    }
+                }]],
+                [[{
+                    "username": "wolf-prefixed",
+                    "plugins": {
+                        "wolf-rbac": {
+                            "appid": "wolf-prefixed",
+                            "server": "http://127.0.0.1:1982",
+                            "header_prefix": "X-Wolf-"
+                        }
+                    }
+                }]],
+            }
+
+            for _, data in ipairs(consumers) do
+                local code, body = t('/apisix/admin/consumers', ngx.HTTP_PUT, data)
+                if code >= 300 then
+                    ngx.status = code
+                    ngx.say(body)
+                    return
+                end
+            end
+
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "multi-auth": {
+                            "auth_plugins": [
+                                {
+                                    "wolf-rbac": {}
+                                },
+                                {
+                                    "key-auth": {}
+                                }
+                            ]
+                        },
+                        "serverless-post-function": {
+                            "phase": "access",
+                            "functions": [
+                                "return function(conf, ctx) local core = require(\"apisix.core\"); local names = {\"X-UserId\", \"X-Username\", \"X-Nickname\", \"X-Wolf-UserId\", \"X-Wolf-Username\", \"X-Wolf-Nickname\", \"X-Consumer-Username\"}; local values = {}; for i, name in ipairs(names) do values[i] = core.request.header(ctx, name) or \"nil\"; end; core.response.exit(200, table.concat(values, \",\")); end"
+                            ]
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 24: failed Wolf auth does not leave identity headers for key-auth
+--- request
+GET /hello
+--- more_headers
+apikey: auth-one
+X-UserId: admin-001
+X-Username: admin
+X-Nickname: administrator
+--- response_body eval
+"nil,nil,nil,nil,nil,nil,foo"
+
+
+
+=== TEST 25: Wolf headers are cleared even when another authenticator succeeds first
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "multi-auth": {
+                            "auth_plugins": [
+                                {
+                                    "key-auth": {}
+                                },
+                                {
+                                    "wolf-rbac": {
+                                        "output_header_prefix": "X-Wolf-"
+                                    }
+                                }
+                            ]
+                        },
+                        "serverless-post-function": {
+                            "phase": "access",
+                            "functions": [
+                                "return function(conf, ctx) local core = require(\"apisix.core\"); local names = {\"X-UserId\", \"X-Username\", \"X-Nickname\", \"X-Wolf-UserId\", \"X-Wolf-Username\", \"X-Wolf-Nickname\", \"X-Consumer-Username\"}; local values = {}; for i, name in ipairs(names) do values[i] = core.request.header(ctx, name) or \"nil\"; end; core.response.exit(200, table.concat(values, \",\")); end"
+                            ]
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, _, body = t('/hello', ngx.HTTP_GET, nil, nil, {
+                apikey = "auth-one",
+                ["X-Wolf-UserId"] = "admin-001",
+                ["X-Wolf-Username"] = "admin",
+                ["X-Wolf-Nickname"] = "administrator",
+            })
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- response_body eval
+"nil,nil,nil,nil,nil,nil,foo"
+
+
+
+=== TEST 26: stored route default preserves the consumer identity-header prefix
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "multi-auth": {
+                            "auth_plugins": [
+                                {
+                                    "wolf-rbac": {
+                                        "header_prefix": "X-"
+                                    }
+                                },
+                                {
+                                    "key-auth": {}
+                                }
+                            ]
+                        },
+                        "serverless-post-function": {
+                            "phase": "access",
+                            "functions": [
+                                "return function(conf, ctx) local core = require(\"apisix.core\"); local names = {\"X-UserId\", \"X-Username\", \"X-Nickname\", \"X-Wolf-UserId\", \"X-Wolf-Username\", \"X-Wolf-Nickname\"}; local values = {}; for i, name in ipairs(names) do values[i] = core.request.header(ctx, name) or \"nil\"; end; core.response.exit(200, table.concat(values, \",\")); end"
+                            ]
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, _, body = t('/hello', ngx.HTTP_GET, nil, nil, {
+                ["x-rbac-token"] = "V1#wolf-prefixed#wolf-rbac-token",
+                ["X-UserId"] = "spoofed-default",
+                ["X-Wolf-UserId"] = "spoofed-consumer",
+            })
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- response_body eval
+"nil,nil,nil,100,admin,administrator"
+
+
+
+=== TEST 27: output prefix is authoritative for successful Wolf identity headers
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "multi-auth": {
+                            "auth_plugins": [
+                                {
+                                    "wolf-rbac": {
+                                        "output_header_prefix": "X-Route-"
+                                    }
+                                },
+                                {
+                                    "key-auth": {}
+                                }
+                            ]
+                        },
+                        "serverless-post-function": {
+                            "phase": "access",
+                            "functions": [
+                                "return function(conf, ctx) local core = require(\"apisix.core\"); local names = {\"X-Route-UserId\", \"X-Route-Username\", \"X-Route-Nickname\", \"X-Wolf-UserId\", \"X-Wolf-Username\", \"X-Wolf-Nickname\"}; local values = {}; for i, name in ipairs(names) do values[i] = core.request.header(ctx, name) or \"nil\"; end; core.response.exit(200, table.concat(values, \",\")); end"
+                            ]
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, _, body = t('/hello', ngx.HTTP_GET, nil, nil, {
+                ["x-rbac-token"] = "V1#wolf-prefixed#wolf-rbac-token",
+                ["X-Route-UserId"] = "spoofed",
+            })
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- response_body eval
+"100,admin,administrator,nil,nil,nil"

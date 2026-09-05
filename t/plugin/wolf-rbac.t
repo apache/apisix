@@ -51,10 +51,19 @@ __DATA__
             end
 
             ngx.say(require("toolkit.json").encode(conf))
+
+            local consumer_conf = {}
+            ok, err = plugin.check_schema(consumer_conf,
+                                          require("apisix.core").schema.TYPE_CONSUMER)
+            if not ok then
+                ngx.say(err)
+            end
+
+            ngx.say(require("toolkit.json").encode(consumer_conf))
         }
     }
 --- response_body_like eval
-qr/\{"appid":"unset","header_prefix":"X-","server":"http:\/\/127\.0\.0\.1:12180"\}/
+qr/\{"appid":"unset","server":"http:\/\/127\.0\.0\.1:12180"\}\n\{"appid":"unset","header_prefix":"X-","server":"http:\/\/127\.0\.0\.1:12180"\}/
 
 
 

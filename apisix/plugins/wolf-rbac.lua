@@ -18,6 +18,7 @@
 local core     = require("apisix.core")
 local consumer = require("apisix.consumer")
 local json     = require("apisix.core.json")
+local auth_utils = require("apisix.utils.auth")
 local sleep    = core.sleep
 local ngx_re = require("ngx.re")
 local http     = require("resty.http")
@@ -31,11 +32,18 @@ local req_read_body = ngx.req.read_body
 local req_get_body_data = ngx.req.get_body_data
 
 local plugin_name = "wolf-rbac"
+local default_header_prefix = "X-"
 
 
-local schema = {
-    type = "object",
-    properties = {
+local function create_schema(header_prefix_default, include_output_header_prefix)
+    local header_prefix = {
+        type = "string",
+    }
+    if header_prefix_default then
+        header_prefix.default = header_prefix_default
+    end
+
+    local properties = {
         appid = {
             type = "string",
             default = "unset"
@@ -44,15 +52,30 @@ local schema = {
             type = "string",
             default = "http://127.0.0.1:12180"
         },
-        header_prefix = {
-            type = "string",
-            default = "X-"
-        },
+        header_prefix = header_prefix,
         ssl_verify = {
             type = "boolean",
         },
     }
-}
+
+    if include_output_header_prefix then
+        properties.output_header_prefix = {
+            type = "string",
+        }
+    end
+
+    return {
+        type = "object",
+        properties = properties,
+    }
+end
+
+
+-- header_prefix remains accepted by the Route schema for compatibility with
+-- stored configurations, but only output_header_prefix opts a Route into
+-- controlling the identity-header namespace.
+local schema = create_schema(nil, true)
+local consumer_schema = create_schema(default_header_prefix)
 
 local _M = {
     version = 0.1,
@@ -60,10 +83,23 @@ local _M = {
     type = 'auth',
     name = plugin_name,
     schema = schema,
+    consumer_schema = consumer_schema,
 }
 
 
 local token_version = 'V1'
+local function clear_identity_headers(ctx, prefix)
+    core.request.set_header(ctx, prefix .. "UserId", nil)
+    core.request.set_header(ctx, prefix .. "Username", nil)
+    core.request.set_header(ctx, prefix .. "Nickname", nil)
+end
+
+
+function _M.clear_auth_headers(conf, ctx)
+    clear_identity_headers(ctx, conf.output_header_prefix or default_header_prefix)
+end
+
+
 local function create_rbac_token(appid, wolf_token)
     return token_version .. "#" .. appid .. "#" .. wolf_token
 end
@@ -142,8 +178,13 @@ local function http_get(uri, myheaders, timeout, ssl_verify)
 end
 
 
-function _M.check_schema(conf)
-    local ok, err = core.schema.check(schema, conf)
+function _M.check_schema(conf, schema_type)
+    local target_schema = schema
+    if schema_type == core.schema.TYPE_CONSUMER then
+        target_schema = consumer_schema
+    end
+
+    local ok, err = core.schema.check(target_schema, conf)
     if not ok then
         return false, err
     end
@@ -239,6 +280,10 @@ end
 
 
 function _M.rewrite(conf, ctx)
+    if not auth_utils.is_running_under_multi_auth(ctx) then
+        _M.clear_auth_headers(conf, ctx)
+    end
+
     local url = ctx.var.uri
     local action = ctx.var.request_method
     local client_ip = core.request.get_remote_client_ip(ctx)
@@ -276,6 +321,14 @@ function _M.rewrite(conf, ctx)
         return 401, fail_response("Invalid appid in rbac token")
     end
     core.log.info("consumer appid: ", appid)
+    local prefix = conf.output_header_prefix
+                   or cur_consumer.auth_conf.header_prefix
+                   or default_header_prefix
+    if not conf.output_header_prefix and prefix ~= default_header_prefix then
+        -- Existing Routes may rely on a Consumer-level custom prefix. Once the
+        -- Consumer is known, clear that fallback namespace before using it.
+        clear_identity_headers(ctx, prefix)
+    end
     local server = cur_consumer.auth_conf.server
     local ssl_verify = cur_consumer.auth_conf.ssl_verify
 
@@ -287,23 +340,11 @@ function _M.rewrite(conf, ctx)
 
     local username = nil
     local nickname = nil
-    local prefix = cur_consumer.auth_conf.header_prefix or ''
-    -- drop client-supplied identity headers before trusting the auth response
-    core.request.set_header(ctx, prefix .. "UserId", nil)
-    core.request.set_header(ctx, prefix .. "Username", nil)
-    core.request.set_header(ctx, prefix .. "Nickname", nil)
     if type(res.userInfo) == 'table' then
         local userInfo = res.userInfo
         ctx.userInfo = userInfo
-        local userId = userInfo.id
         username = userInfo.username
         nickname = userInfo.nickname or userInfo.username
-        core.response.set_header(prefix .. "UserId", userId)
-        core.response.set_header(prefix .. "Username", username)
-        core.response.set_header(prefix .. "Nickname", ngx.escape_uri(nickname))
-        core.request.set_header(ctx, prefix .. "UserId", userId)
-        core.request.set_header(ctx, prefix .. "Username", username)
-        core.request.set_header(ctx, prefix .. "Nickname", ngx.escape_uri(nickname))
     end
 
     if res.status ~= 200 then
@@ -311,6 +352,15 @@ function _M.rewrite(conf, ctx)
             ", action: ", action, ", url: ", url,
             ") failed, res status: ", res.status, ", err: ", res.err)
         return res.status, fail_response(res.err, { username = username, nickname = nickname })
+    end
+    if type(res.userInfo) == 'table' then
+        local userId = res.userInfo.id
+        core.response.set_header(prefix .. "UserId", userId)
+        core.response.set_header(prefix .. "Username", username)
+        core.response.set_header(prefix .. "Nickname", ngx.escape_uri(nickname))
+        core.request.set_header(ctx, prefix .. "UserId", userId)
+        core.request.set_header(ctx, prefix .. "Username", username)
+        core.request.set_header(ctx, prefix .. "Nickname", ngx.escape_uri(nickname))
     end
     consumer.attach_consumer(ctx, cur_consumer, consumer_conf)
     core.log.info("wolf-rbac check permission passed")
