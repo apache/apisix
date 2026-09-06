@@ -26,6 +26,10 @@ git checkout conf/config.yaml
 echo "
 deployment:
     admin:
+        admin_key:
+            - name: admin
+              key: edd1c9f034335f136f87ad84b625c8f1
+              role: admin
         admin_listen:
             port: 9180
         https_admin: true
@@ -61,6 +65,10 @@ apisix:
   enable_admin: true
 deployment:
   admin:
+    admin_key:
+      - name: admin
+        key: edd1c9f034335f136f87ad84b625c8f1
+        role: admin
     admin_listen:
       ip: 127.0.0.2
       port: 9181
@@ -248,7 +256,7 @@ fi
 
 echo "pass: allow empty admin_key, when admin_key_required=false"
 
-# admin api, allow any IP but use default key
+# an explicitly configured but empty admin key is rejected
 
 echo '
 deployment:
@@ -262,13 +270,18 @@ deployment:
 
 make init > output.log 2>&1 | true
 
-grep -E "WARNING: using empty Admin API." output.log > /dev/null
-if [ ! $? -eq 0 ]; then
-    echo "failed: need to show `WARNING: using fixed Admin API token has security risk`"
+if ! grep -E "ERROR: empty Admin API token." output.log > /dev/null; then
+    echo "failed: should show 'ERROR: empty Admin API token.'"
     exit 1
 fi
 
-echo "pass: show WARNING message if the user uses empty key"
+# the config file must not be rewritten when the admin key is empty
+if ! grep -E "key: ''" conf/config.yaml > /dev/null; then
+    echo "failed: conf/config.yaml was rewritten"
+    exit 1
+fi
+
+echo "pass: reject empty admin_key without rewriting conf/config.yaml"
 
 # admin_listen set
 echo '

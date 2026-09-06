@@ -449,7 +449,7 @@ HTTP/1.1 200 OK
 
 `X-API-KEY` of the Admin API refers to `deployment.admin.admin_key[0].key` in your `conf/config.yaml` file. It is the access token for the Admin API.
 
-In the default configuration, this field is empty. APISIX generates a random Admin API key during initialization and writes it back to `conf/config.yaml`. You can also set the key explicitly by changing the parameter in your `conf/config.yaml` file:
+In the default configuration, this field is empty and APISIX refuses to start. Set the key explicitly in your `conf/config.yaml` file:
 
 ```yaml
 deployment:

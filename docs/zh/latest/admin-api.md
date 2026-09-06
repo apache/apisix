@@ -56,7 +56,7 @@ deployment:
     admin:
         admin_key:
         - name: admin
-            key: your-admin-key  # 设置安全的 Admin API Key；如果留空，APISIX 会在初始化时自动生成并写回此文件
+            key: your-admin-key  # 设置安全的 Admin API Key；如果留空，APISIX 会拒绝启动
             role: admin
         allow_admin:                    # http://nginx.org/en/docs/http/ngx_http_access_module.html#allow
             - 127.0.0.0/24

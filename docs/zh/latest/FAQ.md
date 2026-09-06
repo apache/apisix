@@ -452,7 +452,7 @@ curl http://127.0.0.1:9080/ip -i
 
 Admin API 的 `X-API-KEY` 指的是 `./conf/config.yaml` 文件中的 `deployment.admin.admin_key[0].key`。它是 Admin API 的访问 token。
 
-在默认配置中，该字段为空。APISIX 会在初始化时自动生成一个随机的 Admin API Key，并将其写回 `./conf/config.yaml`。你也可以通过修改 `./conf/config.yaml` 中的参数来显式设置该 Key，如下示例：
+在默认配置中，该字段为空，此时 APISIX 会拒绝启动。你需要在 `./conf/config.yaml` 中显式设置该 Key，如下示例：
 
 ```yaml
 deployment:
