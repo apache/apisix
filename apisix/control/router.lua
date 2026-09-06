@@ -199,9 +199,18 @@ end
 
 end -- do
 
-local function reload_plugins()
+local function reload_plugins(data, event, source, wid)
+    if wid == ngx.worker.id() then
+        -- already reloaded synchronously in post_reload_plugins()
+        return
+    end
+
     core.log.info("start to hot reload plugins")
-    plugin_mod.load()
+    local ok, err = plugin_mod.load()
+    if not ok then
+        core.log.error("failed to hot reload plugins: ", err,
+                       ", this worker keeps the old plugin set")
+    end
 end
 
 

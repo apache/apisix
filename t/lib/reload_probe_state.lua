@@ -1,0 +1,36 @@
+--
+-- Licensed to the Apache Software Foundation (ASF) under one or more
+-- contributor license agreements.  See the NOTICE file distributed with
+-- this work for additional information regarding copyright ownership.
+-- The ASF licenses this file to You under the Apache License, Version 2.0
+-- (the "License"); you may not use this file except in compliance with
+-- the License.  You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+--
+
+-- Records the lifecycle hooks the reload-probe test plugins have seen. It lives
+-- outside the apisix.plugins package so that the plugin loader never drops it
+-- from package.loaded, hence the counters survive a reload.
+local _M = {
+    init = 0,
+    destroy = 0,
+    -- destroy() calls on an instance whose init() never ran
+    destroy_without_init = 0,
+    -- "<name>:<hook>" entries in the order the hooks ran
+    events = {},
+}
+
+
+function _M.record(name, hook)
+    _M.events[#_M.events + 1] = name .. ":" .. hook
+end
+
+
+return _M
