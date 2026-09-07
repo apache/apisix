@@ -74,6 +74,8 @@ import TabItem from '@theme/TabItem';
 | ssl_verify | boolean | 否 | `true` | | 如果为 `true`，启用 SSL 证书验证。 |
 | fail_mode | string | 否 | `"skip"` | `skip`、`warn`、`error` | 当请求不是该插件可识别的 AI 请求时的处理行为（例如 Consumer 级别绑定时的普通 HTTP 流量，或未经过 `ai-proxy` 的请求）。`skip`：放行请求且不做检查；`warn`：放行并记录 warning 日志；`error`：拒绝请求。 |
 
+流式响应审核不依赖上游返回 token 用量统计。在 `final_packet` 模式下，即使上游未返回 `usage`，流结束时也会将已累积的响应正文用于审核。
+
 ## 示例
 
 以下示例使用 OpenAI 作为上游服务提供商。在开始之前，请创建一个 [OpenAI 账号](https://openai.com) 并获取 [API 密钥](https://openai.com/blog/openai-api)。如果你使用其他 LLM 提供商，请参考相应提供商的文档获取 API 密钥。

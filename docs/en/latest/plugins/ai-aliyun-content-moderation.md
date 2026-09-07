@@ -74,6 +74,8 @@ The `ai-aliyun-content-moderation` Plugin should be used with either [`ai-proxy`
 | ssl_verify | boolean | False | `true` | | If `true`, enable SSL certificate verification. |
 | fail_mode | string | False | `"skip"` | `skip`, `warn`, `error` | Behavior when the request is not a recognized AI request that this plugin can inspect (for example, plain HTTP traffic on a Consumer-bound plugin, or a request that did not pass through `ai-proxy`). `skip`: let the request pass through unchecked; `warn`: pass through and log a warning; `error`: reject the request. |
 
+Streaming response moderation does not require upstream token usage statistics. In `final_packet` mode, the accumulated response text is available for moderation when the stream completes, even if the upstream omits `usage`.
+
 ## Examples
 
 The following examples use OpenAI as the Upstream service provider. Before proceeding, create an [OpenAI account](https://openai.com) and obtain an [API key](https://openai.com/blog/openai-api). If you are working with other LLM providers, please refer to the provider's documentation to obtain an API key.

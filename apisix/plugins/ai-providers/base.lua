@@ -633,6 +633,7 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
                 flush_thread = nil
             end
             if output_sent and not ctx.var.llm_request_done then
+                ctx.var.llm_response_text = table.concat(contents, "")
                 ctx.var.llm_request_done = true
                 plugin.lua_response_filter(ctx, res.headers, "", nil, true)
             end
@@ -722,6 +723,7 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
             end
 
             if parsed.type == "done" or parsed.type == "usage_and_done" then
+                ctx.var.llm_response_text = table.concat(contents, "")
                 ctx.var.llm_request_done = true
                 protocol_completed = true
             end
