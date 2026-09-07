@@ -127,7 +127,38 @@ local function encrypt_conf(id, conf)
 end
 
 
-return resource.new({
+local base_delete = resource.delete
+local base_put    = resource.put
+
+
+-- Creating a service under an id that was deleted earlier must not inherit the
+-- cost model of its namesake: the delete path reclaims decorations only after the
+-- service delete commits, so an rmdir that failed there leaves them behind, and
+-- delete-then-recreate is exactly what declarative pipelines do. Reclaiming on
+-- create makes that leftover inert for good.
+--
+-- Whether this is a create has to be decided before the write, but the reclaim
+-- itself must happen after it: base_put still validates, so reclaiming first
+-- would let a PUT that ends in 400 destroy the decorations on its way out.
+local function service_absent(id)
+    local res, err = core.etcd.get("/services/" .. id, false)
+    if not res then
+        return nil, {error_msg = err}
+    end
+
+    return res.status == 404
+end
+
+
+local function reclaim_stale_decorations(id)
+    local res, err = core.etcd.rmdir("/services/" .. id .. "/graphql_cost_decorations/")
+    if not res then
+        core.log.error("failed to reclaim the stale graphql cost decorations of ",
+                       "service [", id, "]: ", err)
+    end
+end
+
+local _M = resource.new({
     name = "services",
     kind = "service",
     schema = core.schema.service,
@@ -135,3 +166,57 @@ return resource.new({
     encrypt_conf = encrypt_conf,
     delete_checker = delete_checker,
 })
+
+
+function _M:put(id, conf, sub_path, args)
+    local was_absent
+    if id then
+        local err
+        was_absent, err = service_absent(id)
+        if was_absent == nil then
+            return 503, err
+        end
+    end
+
+    local code, body = base_put(self, id, conf, sub_path, args)
+
+    -- etcd answers 201 when the key was created, 200 when it was replaced
+    if was_absent and code and code < 300 then
+        reclaim_stale_decorations(id)
+    end
+
+    return code, body
+end
+
+
+function _M:delete(id, conf, sub_path, uri_args)
+    local code, body = base_delete(self, id, conf, sub_path, uri_args)
+
+    -- Reclaim the graphql cost decorations owned by the service: they live under
+    -- their own etcd prefix, so etcd will not cascade for us.
+    --
+    -- Deliberately after the service is gone, and deliberately not fatal. The two
+    -- prefixes cannot be deleted in one transaction, so one of the two orders has
+    -- to lose:
+    --   * reclaim first  -- a delete rejected afterwards (delete_checker races a
+    --     route that starts referencing the service) leaves a *live* service with
+    --     no cost model, silently charging 1 per query;
+    --   * reclaim after  -- a failure here leaves decorations behind for a service
+    --     that no longer exists. Nothing can route to it, so they are inert; they
+    --     only resurface if the same service id is recreated, in which case
+    --     inheriting the model is as often right as wrong.
+    -- Losing configuration under a service that keeps serving traffic is the worse
+    -- of the two, so the orphan is the accepted one.
+    if code and code < 300 and id then
+        local res, err = core.etcd.rmdir("/services/" .. id .. "/graphql_cost_decorations/")
+        if not res then
+            core.log.error("failed to delete the graphql cost decorations of service [",
+                           id, "]: ", err)
+        end
+    end
+
+    return code, body
+end
+
+
+return _M

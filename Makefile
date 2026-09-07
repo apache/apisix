@@ -309,6 +309,9 @@ install: runtime
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/ext-plugin
 	$(ENV_INSTALL) apisix/plugins/ext-plugin/*.lua $(ENV_INST_LUADIR)/apisix/plugins/ext-plugin/
 
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/graphql-limit-count
+	$(ENV_INSTALL) apisix/plugins/graphql-limit-count/*.lua $(ENV_INST_LUADIR)/apisix/plugins/graphql-limit-count/
+
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/grpc-transcode
 	$(ENV_INSTALL) apisix/plugins/grpc-transcode/*.lua $(ENV_INST_LUADIR)/apisix/plugins/grpc-transcode/
 
