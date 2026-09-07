@@ -106,6 +106,7 @@ local _M = {
         ["prometheus-metrics"] = "128m",
         ["prometheus-cache"] = "10m",
         ["standalone-config"] = "10m",
+        ["standalone-status"] = "1m",
         ["status-report"] = "1m",
         ["upstream-healthcheck"] = "10m",
       }
