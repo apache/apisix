@@ -299,3 +299,57 @@ GET /t
 ["GET /setup", "GET /tls?sni=mixed.test.com", "GET /tls?sni=other.test.com"]
 --- response_body eval
 ["passed\n", "hello world\n", ""]
+
+
+
+=== TEST 7: the snis are matched on a TLS passthrough listen
+--- stream_server_config
+    listen 2005;
+    ssl_preread on;
+
+    preread_by_lua_block {
+        ngx.sleep(0.1)
+        apisix.stream_preread_phase(true)
+    }
+
+    proxy_pass apisix_backend;
+--- extra_stream_config
+    server {
+        listen 1997 ssl;
+        ssl_certificate     cert/apisix.crt;
+        ssl_certificate_key cert/apisix.key;
+        content_by_lua_block {
+            ngx.say("hello from the backend")
+        }
+    }
+--- config
+    location /setup {
+        content_by_lua_block {
+            local t = require("lib.test_admin")
+
+            -- no ssl object: the listen holds no certificate, so a completed
+            -- handshake can only have been terminated by the backend itself
+            local code = t.test('/apisix/admin/stream_routes/1', ngx.HTTP_PUT,
+                [[{
+                    "snis": ["a.test.com", "b.test.com"],
+                    "upstream": {
+                        "nodes": {"127.0.0.1:1997": 1},
+                        "type": "roundrobin"
+                    }
+                }]])
+            if code >= 300 then
+                ngx.say("failed to create stream route: ", code)
+                return
+            end
+
+            ngx.sleep(0.5)
+            ngx.say("passed")
+        }
+    }
+--- pipelined_requests eval
+["GET /setup", "GET /tls?sni=a.test.com", "GET /tls?sni=b.test.com", "GET /tls?sni=c.test.com"]
+--- response_body_like eval
+[qr/^passed$/, qr/^hello from the backend$/, qr/^hello from the backend$/,
+ qr/failed to do SSL handshake/]
+--- no_error_log
+[alert]
