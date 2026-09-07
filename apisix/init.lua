@@ -1389,16 +1389,67 @@ function _M.stream_init_worker()
 end
 
 
-function _M.stream_preread_phase()
+-- Preread phase of a mixed TLS listen: pick which internal server gets the
+-- connection. Plugins and the log phase run there, not here.
+function _M.stream_tls_route_phase(terminate_upstream, passthrough_upstream)
     local ngx_ctx = ngx.ctx
     local api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
     ngx_ctx.api_ctx = api_ctx
+    -- nothing was terminated here, so the SNI can only come from the ClientHello
+    api_ctx.tls_passthrough = true
 
-    if not verify_tls_client(api_ctx) then
+    core.ctx.set_vars_meta(api_ctx)
+
+    local ok, err = router.router_stream.match(api_ctx)
+    if not ok then
+        core.log.error(err)
+    end
+
+    -- an unmatched connection goes to the terminating server, which reports the miss
+    local matched_route = api_ctx.matched_route
+    local target = terminate_upstream
+    if matched_route and matched_route.value.tls_passthrough then
+        target = passthrough_upstream
+    end
+    ngx_var.stream_tls_target = target
+
+    core.log.info("stream tls route: sni: ", api_ctx.var.ssl_preread_server_name,
+                  ", target: ", target)
+
+    core.ctx.release_vars(api_ctx)
+    core.tablepool.release("api_ctx", api_ctx)
+    ngx_ctx.api_ctx = nil
+end
+
+
+-- `tls_passthrough` is set by the template on listens running `ssl_preread on`:
+-- no local handshake, so no client certificate to verify and the SNI is prereaded.
+function _M.stream_preread_phase(tls_passthrough, behind_mixed_hop)
+    local ngx_ctx = ngx.ctx
+    local api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
+    ngx_ctx.api_ctx = api_ctx
+    api_ctx.tls_passthrough = tls_passthrough
+
+    if not tls_passthrough and not verify_tls_client(api_ctx) then
         return ngx_exit(1)
     end
 
     core.ctx.set_vars_meta(api_ctx)
+
+    -- On the internal servers of a mixed listen the connection arrives over a unix
+    -- socket, so $server_addr/$server_port describe that socket rather than the port
+    -- the client reached. The real one is in the PROXY protocol header, and routes
+    -- match on it.
+    if behind_mixed_hop then
+        local addr = ngx_var.proxy_protocol_server_addr
+        if addr and addr ~= "" then
+            api_ctx.var.server_addr = addr
+        end
+        local port = ngx_var.proxy_protocol_server_port
+        if port and port ~= "" then
+            api_ctx.var.server_port = port
+        end
+    end
 
     local ok, err = router.router_stream.match(api_ctx)
     if not ok then
