@@ -95,6 +95,26 @@ apisix:
   #       proxy_protocol_to_upstream: true  # Send the PROXY protocol to the upstream on this
   #                                         # port only. Both override the global
   #                                         # proxy_protocol.enable_tcp_pp* defaults.
+  #     - addr: 9500
+  #       tls_passthrough: true      # Forward the TLS stream untouched, picking the upstream from
+  #                                  # the SNI in the prereaded ClientHello. The backend terminates
+  #                                  # the handshake, so payload-inspecting stream plugins
+  #                                  # (mqtt-proxy, xrpc, redis) and client certificate verification
+  #                                  # do not apply. Every connection on this port is passed
+  #                                  # through, whatever the stream_route says.
+  #     - addr: 9501
+  #       tls: true                  # Both flags open a mixed port: the listen only prereads, and
+  #       tls_passthrough: true      # each connection follows `tls_passthrough` on the stream_route
+  #                                  # it matches (default false). Costs one internal hop, so prefer
+  #                                  # a dedicated tls_passthrough port when the whole port passes
+  #                                  # through. That hop runs over unix sockets under logs/, and
+  #                                  # announces the client in a PROXY protocol header, so a local
+  #                                  # user able to connect to them could forge it. Keep logs/ off
+  #                                  # limits to untrusted local users, as it already has to be for
+  #                                  # stream_worker_events.sock.
+  #                                  # proxy_protocol_to_upstream is rejected on a mixed port: the
+  #                                  # upstream PROXY header would carry the internal unix socket
+  #                                  # as its destination. Use a dedicated listen instead.
   #     - "2000-2100"              # port range (nginx native support)
   #     - addr: "3000-3100"        # port range in table form
   #     - addr: "127.0.0.1:4000-4100"  # address with port range in table form
