@@ -21,6 +21,7 @@ local core = require("apisix.core")
 local require = require
 local pcall   = pcall
 local pairs   = pairs
+local ipairs  = ipairs
 local type    = type
 local table   = table
 local math_floor = math.floor
@@ -45,6 +46,26 @@ local function count_request_tools(body)
         return #tools
     end
     return 0
+end
+
+
+-- Statuses the user opted into retrying through fallback_http_statuses.
+-- Both the error path below and ai-proxy-multi's retry decision consult this,
+-- and they have to agree: a status that is not diverted to the error path has
+-- its response streamed to the client and never reaches the retry callback.
+function _M.is_fallback_http_status(conf, status)
+    local statuses = conf.fallback_http_statuses
+    if not statuses then
+        return false
+    end
+
+    for _, s in ipairs(statuses) do
+        if s == status then
+            return true
+        end
+    end
+
+    return false
 end
 
 
@@ -187,6 +208,8 @@ function _M.before_proxy(conf, ctx, on_error)
             return 400, err
         end
 
+        request_body = core.table.deepcopy(request_body)
+
         local extra_opts = {
             name = ai_instance.name,
             endpoint = ai_instance._resolved_endpoint
@@ -242,10 +265,6 @@ function _M.before_proxy(conf, ctx, on_error)
 
         -- Step 2: Extract model from request
         local request_model = request_body.model
-
-        if request_model then
-            ctx.var.request_llm_model = request_model
-        end
         local model = ai_instance.options and ai_instance.options.model or request_model
         if model then
             ctx.var.llm_model = model
@@ -389,7 +408,8 @@ function _M.before_proxy(conf, ctx, on_error)
             -- Upstream responded — mark source before any early returns
             core.response.set_response_source(ctx, "upstream")
 
-            if res.status == 429 or (res.status >= 500 and res.status < 600) then
+            if res.status == 429 or (res.status >= 500 and res.status < 600)
+               or _M.is_fallback_http_status(conf, res.status) then
                 -- Read the upstream error body before closing so the provider's
                 -- error details survive: logged on fallback (see retry_on_error)
                 -- and returned to the client when no retry happens.

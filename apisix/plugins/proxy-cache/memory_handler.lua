@@ -37,10 +37,36 @@ local pairs = pairs
 local time = ngx.now
 local max = math.max
 
--- Bumped from 1 to 2 for the Vary variant layout.
-local CACHE_VERSION = 2
+-- Bumped from 1 to 2 for the Vary variant layout, and to 3 for the
+-- length-prefixed storage keys: an entry written under the old layout must
+-- never be served under the new one, whatever the cache key looks like.
+local CACHE_VERSION = 3
 local VARY_INDEX_SUFFIX = "::__vary"
 local MAX_VARIANTS = 64
+
+
+-- Every shdict key for one cache key is derived from it: the entry itself,
+-- the Vary index, and one entry per variant. The cache key is client
+-- controlled (`cache_key` defaults to `$host` and `$request_uri`), so
+-- deriving them by appending a suffix lets a crafted request produce a cache
+-- key byte-identical to another request's variant key -- the attacker's
+-- response is then stored where the victim's variant is looked up, and vice
+-- versa. Prefixing the cache key with its length keeps the derivation
+-- injective: two different cache keys always differ in either the length
+-- field or the cache key itself, whatever is appended afterwards.
+local function entry_key(base_key)
+    return #base_key .. ":" .. base_key
+end
+
+
+local function variant_key(base_key, signature)
+    return entry_key(base_key) .. "::" .. signature
+end
+
+
+local function index_key(base_key)
+    return entry_key(base_key) .. VARY_INDEX_SUFFIX
+end
 
 
 -- Parse the upstream Vary header into a canonical list.
@@ -110,21 +136,21 @@ end
 
 
 -- Purge every variant entry referenced by the index, then the index itself,
--- and finally the legacy base-key entry (which may exist if the URL ever
--- cached a no-Vary response in the past). The index is read stale-tolerant:
+-- and finally the entry stored directly under the cache key (which may exist
+-- if the URL ever cached a no-Vary response in the past). The index is read
+-- stale-tolerant:
 -- it can outlive or be outlived by its variants (variant TTLs diverge when
 -- cache_control derives them per response), and an expired index must still
 -- be usable to enumerate the variant keys it references.
 local function purge_all_variants(memory, base_key)
-    local index_key = base_key .. VARY_INDEX_SUFFIX
-    local index = memory:get_stale(index_key)
+    local index = memory:get_stale(index_key(base_key))
     if index and type(index) == "table" and type(index.variants) == "table" then
         for _, sig in ipairs(index.variants) do
-            memory:purge(base_key .. "::" .. sig)
+            memory:purge(variant_key(base_key, sig))
         end
     end
-    memory:purge(index_key)
-    memory:purge(base_key)
+    memory:purge(index_key(base_key))
+    memory:purge(entry_key(base_key))
 end
 
 
@@ -135,10 +161,9 @@ end
 -- race; the loser's variant becomes invisible to PURGE but stays reachable
 -- by lookup until its own TTL expires.
 local function update_vary_index(memory, base_key, vary_headers, signature, ttl)
-    local index_key = base_key .. VARY_INDEX_SUFFIX
     -- Stale-tolerant: an expired index must still be visible here so its
     -- variants are either merged into or purged, never silently orphaned.
-    local current = memory:get_stale(index_key)
+    local current = memory:get_stale(index_key(base_key))
 
     local variants
     if current and type(current) == "table"
@@ -162,20 +187,20 @@ local function update_vary_index(memory, base_key, vary_headers, signature, ttl)
             -- writes start failing with "no memory".
             while #variants >= MAX_VARIANTS do
                 local evicted = table_remove(variants, 1)
-                memory:purge(base_key .. "::" .. evicted)
+                memory:purge(variant_key(base_key, evicted))
             end
             variants[#variants + 1] = signature
         end
     else
         if current and type(current) == "table" and type(current.variants) == "table" then
             for _, sig in ipairs(current.variants) do
-                memory:purge(base_key .. "::" .. sig)
+                memory:purge(variant_key(base_key, sig))
             end
         end
         variants = {signature}
     end
 
-    local ok, err = memory:set(index_key, {
+    local ok, err = memory:set(index_key(base_key), {
         vary     = vary_headers,
         variants = variants,
         version  = CACHE_VERSION,
@@ -192,17 +217,17 @@ end
 -- decode failures (malformed bytes, version mismatch, missing fields) all
 -- fall through to the base key, which then misses and refetches.
 local function lookup_storage_key(memory, base_key, ctx)
-    local index = memory:get(base_key .. VARY_INDEX_SUFFIX)
+    local index = memory:get(index_key(base_key))
     if not index or type(index) ~= "table" then
-        return base_key
+        return entry_key(base_key)
     end
     if index.version ~= CACHE_VERSION or type(index.vary) ~= "table" then
-        return base_key
+        return entry_key(base_key)
     end
     if #index.vary == 0 then
-        return base_key
+        return entry_key(base_key)
     end
-    return base_key .. "::" .. compute_signature(index.vary, ctx)
+    return variant_key(base_key, compute_signature(index.vary, ctx))
 end
 
 
@@ -417,8 +442,8 @@ function _M.access(conf, ctx)
         -- expired entry (err == "expired") is not a miss: shdict still
         -- holds the stale slot, so PURGE should clear it and return 200,
         -- matching the pre-Vary behavior.
-        local _, base_err  = ctx.cache.memory:get(base_key)
-        local _, index_err = ctx.cache.memory:get(base_key .. VARY_INDEX_SUFFIX)
+        local _, base_err  = ctx.cache.memory:get(entry_key(base_key))
+        local _, index_err = ctx.cache.memory:get(index_key(base_key))
         if base_err == "not found" and index_err == "not found" then
             return 404
         end
@@ -555,20 +580,20 @@ function _M.body_filter(conf, ctx)
 
     if #vary_headers > 0 then
         local signature = compute_signature(vary_headers, ctx)
-        storage_key = base_key .. "::" .. signature
+        storage_key = variant_key(base_key, signature)
         update_vary_index(cache.memory, base_key, vary_headers, signature, cache.ttl)
         -- Drop any pre-Vary entry stored directly at the base key so future
         -- lookups never bypass the variant logic.
-        cache.memory:purge(base_key)
+        cache.memory:purge(entry_key(base_key))
     else
         -- This response has no Vary, but the URL may have cached a Vary
         -- response earlier; flush the prior index and its variants to
         -- prevent stale cross-variant matches.
-        local prior = cache.memory:get(base_key .. VARY_INDEX_SUFFIX)
+        local prior = cache.memory:get(index_key(base_key))
         if prior then
             purge_all_variants(cache.memory, base_key)
         end
-        storage_key = base_key
+        storage_key = entry_key(base_key)
     end
 
     local ok, err = cache.memory:set(storage_key, entry, cache.ttl)

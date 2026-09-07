@@ -16,6 +16,7 @@
 --
 local core = require("apisix.core")
 local resource = require("apisix.admin.resource")
+local apisix_upstream = require("apisix.upstream")
 local stream_route_checker = require("apisix.stream.router.ip_port").stream_route_checker
 local tostring = tostring
 local ipairs = ipairs
@@ -151,12 +152,18 @@ local function delete_checker(id)
 end
 
 
+local function encrypt_conf(id, conf)
+    apisix_upstream.encrypt_conf(conf.upstream)
+end
+
+
 return resource.new({
     name = "stream_routes",
     kind = "stream route",
     schema = core.schema.stream_route,
     checker = check_conf,
     delete_checker = delete_checker,
+    encrypt_conf = encrypt_conf,
     unsupported_methods = { "patch" },
     list_filter_fields = {
         service_id = true,

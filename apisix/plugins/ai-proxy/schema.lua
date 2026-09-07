@@ -176,7 +176,10 @@ local ai_instance_schema = {
                 type = "string",
                 minLength = 1,
                 maxLength = 100,
-                description = "Name of the AI service instance.",
+                description = "Name of the AI service instance. Must be "
+                    .. "unique within `instances`: it identifies the instance "
+                    .. "in the balancer, in its health checker and in other "
+                    .. "plugins that reference it, such as ai-rate-limiting.",
             },
             provider = {
                 type = "string",
@@ -449,6 +452,27 @@ _M.ai_proxy_multi_schema = {
                 }
               }
             }
+        },
+        fallback_http_statuses = {
+            type = "array",
+            minItems = 1,
+            uniqueItems = true,
+            items = {
+                type = "integer",
+                minimum = 400,
+                maximum = 599,
+            },
+            description = "Additional upstream HTTP status codes that make the "
+                .. "request fall back to another instance, on top of the "
+                .. "http_429 / http_5xx entries of fallback_strategy. Use it "
+                .. "for statuses that mean the instance's credential is "
+                .. "unusable rather than the request being wrong, e.g. [401, "
+                .. "402] when an API key is expired or out of quota. It is "
+                .. "opt-in per status because most 4xx responses are caused by "
+                .. "the request itself and retrying them on another instance "
+                .. "would only burn quota. max_retries and "
+                .. "retry_on_failure_within_ms bound these retries the same "
+                .. "way they bound the fallback_strategy ones.",
         },
         max_retries = {
             type = "integer",

@@ -303,6 +303,38 @@ fi
 
 echo "passed: env value quoting (#11467)"
 
+# a 32 byte data encryption key selects AES-256 and must pass config validation
+cat > conf/config.yaml <<'EOF'
+apisix:
+    data_encryption:
+        keyring:
+            - qeddd145sfvddff3qeddd145sfvddff3
+            - qeddd145sfvddff3
+EOF
+
+out=$(make init 2>&1 || true)
+if echo "$out" | grep "failed to validate config"; then
+    echo "failed: a 32 byte data encryption keyring should be accepted"
+    exit 1
+fi
+
+# a key that is neither 16 nor 32 bytes would be dropped at runtime and silently
+# leave the data unencrypted, so it has to be rejected on startup
+cat > conf/config.yaml <<'EOF'
+apisix:
+    data_encryption:
+        keyring:
+            - qeddd145sfvddff3qedd
+EOF
+
+out=$(make init 2>&1 || true)
+if ! echo "$out" | grep "failed to validate config"; then
+    echo "failed: a data encryption keyring of an unsupported length should be rejected"
+    exit 1
+fi
+
+echo "passed: data encryption keyring length validation"
+
 # support environment variables
 echo '
 nginx_config:

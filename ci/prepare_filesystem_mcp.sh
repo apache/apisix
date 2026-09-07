@@ -28,7 +28,7 @@ URL="https://github.com/modelcontextprotocol/servers/archive/refs/tags/${VERSION
 WORKDIR="$(mktemp -d)"
 DEST_DIR="${REPO_ROOT}/t/plugin/mcp/servers"
 
-curl -L "${URL}" | tar -xz -C "${WORKDIR}"
+curl -fsSL --retry 3 --retry-delay 5 "${URL}" | tar -xz -C "${WORKDIR}"
 
 rm -rf "${DEST_DIR}"
 mkdir -p "$(dirname "${DEST_DIR}")"

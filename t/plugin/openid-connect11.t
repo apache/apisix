@@ -80,7 +80,7 @@ passed
 
 
 
-=== TEST 2: a callback whose state was overwritten by a second tab redirects back
+=== TEST 2: a callback with a state the session never issued redirects back
 --- config
     location /t {
         content_by_lua_block {
@@ -95,27 +95,21 @@ passed
                 return c and c:match("^([^;]+)")
             end
 
-            -- first tab: start a login flow and keep the session cookie
+            -- start a login flow and keep the session cookie
             local res_a = http.new():request_uri(base .. "/oidc11/page?tab=A")
-            local state_a = res_a.headers["Location"]:match("state=([^&]+)")
             local jar = cookie_of(res_a)
 
-            -- second tab in the same browser: overwrites the state in the session
-            local res_b = http.new():request_uri(base .. "/oidc11/page?tab=B", {
-                headers = {Cookie = jar}
-            })
-            jar = cookie_of(res_b)
-
-            -- the first tab's callback now carries a stale state
+            -- a state that was pruned, already consumed, or simply forged:
+            -- the session still knows the original URL to go back to
             local res_c = http.new():request_uri(
-                base .. "/oidc11/callback?code=dummy&state=" .. state_a, {
+                base .. "/oidc11/callback?code=dummy&state=deadbeef", {
                     headers = {Cookie = jar}
                 })
             ngx.say(res_c.status, " ", tostring(res_c.headers["Location"]))
         }
     }
 --- response_body
-302 /oidc11/page?tab=B
+302 /oidc11/page?tab=A
 --- error_log
 does not match state restored from session
 
@@ -137,16 +131,11 @@ does not match state restored from session
             end
 
             local res_a = http.new():request_uri(base .. "/oidc11/page?tab=A")
-            local state_a = res_a.headers["Location"]:match("state=([^&]+)")
             local jar = cookie_of(res_a)
 
-            local res_b = http.new():request_uri(base .. "/oidc11/page?tab=B", {
-                headers = {Cookie = jar}
-            })
-            jar = cookie_of(res_b)
-
+            -- same stale state as TEST 2, but the redirect is GET-only
             local res_c = http.new():request_uri(
-                base .. "/oidc11/callback?code=dummy&state=" .. state_a, {
+                base .. "/oidc11/callback?code=dummy&state=deadbeef", {
                     method = "POST",
                     body = "",
                     headers = {Cookie = jar}
@@ -172,3 +161,60 @@ does not match state restored from session
     }
 --- response_body
 500
+
+
+
+=== TEST 5: a second tab no longer invalidates the first tab's callback
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local base = "http://127.0.0.1:" .. ngx.var.server_port
+
+            local function cookie_of(res)
+                local c = res.headers["Set-Cookie"]
+                if type(c) == "table" then
+                    c = table.concat(c, "; ")
+                end
+                return c and c:match("^([^;]+)")
+            end
+
+            -- first tab: start a login flow and keep the session cookie
+            local res_a = http.new():request_uri(base .. "/oidc11/page?tab=A")
+            local state_a = res_a.headers["Location"]:match("state=([^&]+)")
+            local jar = cookie_of(res_a)
+
+            -- second tab in the same browser: starts its own flow
+            local res_b = http.new():request_uri(base .. "/oidc11/page?tab=B", {
+                headers = {Cookie = jar}
+            })
+            -- keep the first tab's cookie if the second flow reused the
+            -- session instead of issuing a new one; carrying a session into
+            -- the callback is the whole point of the test, and dropping it
+            -- would silently turn this into the no-session case of TEST 4
+            jar = cookie_of(res_b) or jar
+
+            -- lua-resty-openidc 1.9.0 keeps one authorization state per
+            -- concurrent flow, so the first tab's state is still accepted and
+            -- the callback gets as far as the token endpoint, where the dummy
+            -- code fails. Before 1.9.0 this was a state mismatch instead.
+            local res_c = http.new():request_uri(
+                base .. "/oidc11/callback?code=dummy&state=" .. state_a, {
+                    headers = {Cookie = jar}
+                })
+
+            ngx.say(res_a.status == 302 and state_a ~= nil)
+            ngx.say(res_b.status == 302)
+            ngx.say(jar ~= nil)
+            ngx.say(res_c.status, " ", tostring(res_c.headers["Location"]))
+        }
+    }
+--- response_body
+true
+true
+true
+500 nil
+--- error_log
+OIDC authentication failed: response indicates failure
+--- no_error_log
+does not match state restored from session

@@ -356,6 +356,8 @@ apisix:
             - ...
 ```
 
+Each key doubles as the IV, so its length selects the cipher: a key of 16 characters uses AES-128-CBC and a key of 32 characters uses AES-256-CBC. Keys of any other length are rejected when APISIX starts. Keys of both lengths can be mixed in one keyring, which is what makes it possible to rotate an AES-128 keyring to AES-256 without losing access to the already encrypted data.
+
 APISIX will try to decrypt the data with keys in the order of the keys in the keyring (only for parameters declared in `encrypt_fields`). If the decryption fails, the next key will be tried until the decryption succeeds.
 
 If none of the keys in `keyring` can decrypt the data, the original data is used.

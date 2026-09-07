@@ -70,7 +70,26 @@ local function auth_if_needed(red, opts)
     return nil, err
 end
 
-local function flush_single(host, port, opts)
+local function release(red, host, port, opts)
+    local keepalive_pool = opts.keepalive_pool
+    if keepalive_pool == nil then
+        keepalive_pool = 0
+    end
+    if keepalive_pool == 0 then
+        local ok_close, close_err = red:close()
+        if not ok_close then
+            log_warn("failed to close redis connection ", host, ":", port, ": ", close_err)
+        end
+    else
+        local keepalive_timeout = opts.keepalive_timeout or 10000
+        local ok_keepalive, keepalive_err = red:set_keepalive(keepalive_timeout, keepalive_pool)
+        if not ok_keepalive then
+            log_warn("failed to set keepalive for redis ", host, ":", port, ": ", keepalive_err)
+        end
+    end
+end
+
+local function connect(host, port, opts)
     local red = redis:new()
     local connect_timeout = opts.connect_timeout or 1000
     local send_timeout = opts.send_timeout or connect_timeout
@@ -85,11 +104,26 @@ local function flush_single(host, port, opts)
 
     local ok_auth, auth_err = auth_if_needed(red, opts)
     if not ok_auth then
-        local ok_close, close_err = red:close()
-        if not ok_close then
-            log_warn("failed to close redis connection ", host, ":", port, ": ", close_err)
-        end
+        release(red, host, port, {})
         return nil, auth_err
+    end
+
+    if opts.database then
+        local ok_select, select_err = red:select(opts.database)
+        if not ok_select then
+            log_warn("failed to select redis db ", opts.database, ": ", select_err)
+            release(red, host, port, {})
+            return nil, select_err
+        end
+    end
+
+    return red
+end
+
+local function flush_single(host, port, opts)
+    local red, err = connect(host, port, opts)
+    if not red then
+        return nil, err
     end
 
     local _, flush_err = red:flushall()
@@ -97,23 +131,7 @@ local function flush_single(host, port, opts)
         log_warn("failed to flush redis ", host, ":", port, ": ", flush_err)
     end
 
-    local keepalive_pool = opts.keepalive_pool
-    if keepalive_pool == nil then
-        keepalive_pool = 0
-    end
-    if keepalive_pool == 0 then
-        local ok_close, close_err = red:close()
-        if not ok_close then
-            log_warn("failed to close redis connection ", host, ":", port, ": ", close_err)
-        end
-    else
-        local keepalive_timeout = opts.keepalive_timeout or 10000
-        keepalive_pool = keepalive_pool or 100
-        local ok_keepalive, keepalive_err = red:set_keepalive(keepalive_timeout, keepalive_pool)
-        if not ok_keepalive then
-            log_warn("failed to set keepalive for redis ", host, ":", port, ": ", keepalive_err)
-        end
-    end
+    release(red, host, port, opts)
 
     return true
 end
@@ -158,6 +176,75 @@ function _M.flush_port(host, port, opts)
     end
 
     return flush_single(host, port, opts)
+end
+
+-- Rate limit counters are committed from a log phase timer, so a request fired
+-- right after the previous one can still be judged against a budget that looks
+-- unspent. Snapshot the counters with sum_counters() before a request and wait
+-- for the total to grow with wait_counters_above() afterwards, rather than
+-- sleeping a fixed amount: a wait long enough to cover a busy machine would roll
+-- over the short time windows some of these tests configure.
+function _M.sum_counters(pattern, opts)
+    opts = opts or {}
+    local host = opts.host or DEFAULT_HOST
+    local port = opts.port or 6379
+
+    local red, err = connect(host, port, opts)
+    if not red then
+        return nil, err
+    end
+
+    local keys, keys_err = red:keys(pattern)
+    if not keys then
+        release(red, host, port, opts)
+        return nil, keys_err
+    end
+
+    local total = 0
+    for _, key in ipairs(keys) do
+        -- a key that expired between keys() and get() reads back as ngx.null,
+        -- which is not an error; keep the two apart so a failed read cannot be
+        -- mistaken for a counter of zero
+        local value, get_err = red:get(key)
+        if not value then
+            release(red, host, port, opts)
+            return nil, get_err
+        end
+        total = total + (tonumber(value) or 0)
+    end
+
+    release(red, host, port, opts)
+
+    return total
+end
+
+-- Bounded poll for an asynchronous counter write. The old bound, 100 iterations
+-- of a 10ms sleep, gave up after roughly one second, which a loaded CI runner
+-- exceeds often enough to make callers flaky. Bound the wait by wall clock
+-- rather than by iteration count: every pass also does a full sum_counters()
+-- round trip, so counting iterations understates the ceiling exactly when redis
+-- is the slow part. The loop still returns as soon as the counter moves, so a
+-- healthy run costs what it did before.
+local WAIT_COUNTERS_TIMEOUT = 5
+
+function _M.wait_counters_above(pattern, previous, opts)
+    local last_err
+    ngx.update_time()
+    local deadline = ngx.now() + WAIT_COUNTERS_TIMEOUT
+
+    repeat
+        local total, err = _M.sum_counters(pattern, opts)
+        if total and total > previous then
+            return true
+        end
+        last_err = err
+        ngx.sleep(0.01)
+        ngx.update_time()
+    until ngx.now() >= deadline
+
+    return nil, "counters matching " .. pattern .. " stayed at " .. previous ..
+                " for " .. WAIT_COUNTERS_TIMEOUT .. "s" ..
+                (last_err and (", last error: " .. last_err) or "")
 end
 
 _M.default_ports = DEFAULT_PORTS
