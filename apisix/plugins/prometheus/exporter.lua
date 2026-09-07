@@ -14,6 +14,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local require         = require
 local base_prometheus = require("prometheus")
 local tonumber        = tonumber
 local core      = require("apisix.core")
@@ -241,7 +242,209 @@ local function init_stream_metrics()
         "Total number of connections handled per stream route in APISIX",
         {"route"})
 
+    -- Keyed by listen_addr rather than by route: a session can end before any
+    -- stream route is matched, and the byte counters come from nginx, which
+    -- only knows the listening address.
+    metrics.stream_active_connections = prometheus:gauge(
+        "stream_active_connections",
+        "Number of stream sessions currently being proxied per listening address",
+        {"listen_addr"})
+
+    metrics.stream_status = prometheus:counter("stream_status",
+        "Stream sessions per termination status in APISIX",
+        {"code", "listen_addr", "node"})
+
+    metrics.stream_bandwidth = prometheus:counter("stream_bandwidth",
+        "Total bandwidth in bytes proxied by the stream subsystem in APISIX",
+        {"listen_addr", "type", "side"})
+
     xrpc.init_metrics(prometheus)
+end
+
+
+-- src/stream/ngx_stream.h; 403 is reachable through ngx_stream_access_module
+-- and the stream ip-restriction plugin
+local STREAM_NGINX_CODES = {
+    [200] = true, [400] = true, [403] = true,
+    [500] = true, [502] = true, [503] = true,
+}
+
+-- $stream_session_reason carries the fine grained termination reason; the
+-- metric aggregates it onto the status codes nginx itself uses for stream
+-- sessions, so no synthetic code ever shows up in apisix_stream_status.
+local STREAM_REASON_TO_CODE = {
+    closed = "200",
+    -- a worker going away is a gateway side action, not a failed session
+    shutdown = "200",
+    client_rst = "400",
+    client_read_error = "400",
+    client_error = "400",
+    upstream_rst = "502",
+    upstream_read_error = "502",
+    upstream_error = "502",
+    connect_timeout = "502",
+    connect_failed = "502",
+    recv_timeout = "502",
+    send_timeout = "502",
+    upstream_timeout = "502",
+}
+
+
+-- Active session counts and byte counters are maintained by nginx in a shared
+-- memory zone (apisix_stream_metrics_zone) so that they keep moving during a
+-- long-lived session instead of only landing when it ends. The zone holds
+-- process wide totals, so it is read while the exposition is built rather than
+-- on a timer of its own -- which means once per refresh_interval, in the
+-- privileged agent that fills the metrics cache.
+local STREAM_BANDWIDTH_DIRECTIONS = {
+    {"downstream_ingress", "ingress", "downstream"},
+    {"downstream_egress", "egress", "downstream"},
+    {"upstream_egress", "egress", "upstream"},
+    {"upstream_ingress", "ingress", "upstream"},
+}
+
+-- How much of each zone total has already been added to the counter. This
+-- lives in the metric dict rather than in worker memory so that every worker
+-- reads the same value, and so that it is dropped together with the counters
+-- it describes whenever that dict is flushed.
+local STREAM_PUBLISHED_PREFIX = "stream_bytes_published:"
+
+-- Advancing a baseline is a read-modify-write and shdict has no
+-- compare-and-set, so only one reader converts totals to deltas at a time.
+-- Whoever loses the race leaves the baselines alone and the delta it skipped
+-- is picked up by the next read. The expiry keeps a worker that dies mid
+-- publish from wedging the metric.
+local STREAM_PUBLISH_LOCK = "stream_bytes_publishing"
+local STREAM_PUBLISH_LOCK_TTL = 10
+
+local stream_metrics_lib
+local stream_metrics_lib_checked = false
+local stream_zone_unavailable = false
+
+
+-- Only the runtime check is latched. Whether the zone itself is readable is
+-- decided per read: it comes and goes with the configuration, and caching a
+-- miss would leave the worker silently blind once it came back.
+local function stream_metrics_zone()
+    if stream_metrics_lib_checked then
+        return stream_metrics_lib
+    end
+    stream_metrics_lib_checked = true
+
+    local ok, lib = pcall(require, "resty.apisix.stream.metrics")
+    if not ok then
+        core.log.warn("stream bandwidth and active connection metrics need a ",
+                      "runtime providing resty.apisix.stream.metrics")
+        return nil
+    end
+
+    stream_metrics_lib = lib
+    return lib
+end
+
+
+local function publish_stream_bytes(dict, listen_addr, direction, total)
+    local field = direction[1]
+
+    if type(total) ~= "number" then
+        core.log.error("stream metrics zone reported no ", field, " for ",
+                       listen_addr)
+        return
+    end
+
+    local key = STREAM_PUBLISHED_PREFIX .. listen_addr .. ":" .. field
+
+    local published = dict:get(key)
+    if not published then
+        -- The zone counts from when nginx started while the counter outlives a
+        -- reload, so the first sight of a slot only takes a baseline;
+        -- replaying the whole total into a counter that survived would double
+        -- it. The cost is that traffic before the first read is not counted.
+        local ok, err = dict:set(key, total)
+        if not ok then
+            core.log.error("failed to baseline stream bandwidth for ", key, ": ", err)
+        end
+        return
+    end
+
+    if total == published then
+        return
+    end
+
+    -- Advance the baseline before counting: a write that failed while the
+    -- delta was counted would re-count the same range on every later read.
+    local ok, err = dict:set(key, total)
+    if not ok then
+        core.log.error("failed to advance the stream bandwidth baseline for ",
+                       key, ": ", err)
+        return
+    end
+
+    -- a total below what was published means the zone was recreated, which
+    -- rebaselines rather than emitting a negative delta
+    if total > published then
+        metrics.stream_bandwidth:inc(total - published,
+            gen_arr(listen_addr, direction[2], direction[3]))
+    end
+end
+
+
+local function collect_stream_zone_metrics()
+    if not metrics.stream_active_connections then
+        return
+    end
+
+    local lib = stream_metrics_zone()
+    if not lib then
+        return
+    end
+
+    local dict = prometheus.dict
+
+    -- Taken before the zone is sampled, not after: two readers that sampled at
+    -- different instants would otherwise serialize in the opposite order, and
+    -- the older sample would pull the baseline back over a range the fresher
+    -- one had already counted. shdict has no compare-and-set, so this is an
+    -- expiring key rather than a real mutex.
+    local publishing, add_err = dict:add(STREAM_PUBLISH_LOCK, true,
+                                         STREAM_PUBLISH_LOCK_TTL)
+    if not publishing and add_err ~= "exists" then
+        core.log.error("failed to take the stream bandwidth lock: ", add_err)
+    end
+
+    local entries, err = lib.dump()
+    if not entries then
+        if publishing then
+            dict:delete(STREAM_PUBLISH_LOCK)
+        end
+
+        -- report the transition, not every read: without the zone in the
+        -- configuration this is a steady state, not an incident
+        if not stream_zone_unavailable then
+            stream_zone_unavailable = true
+            core.log.warn("stream bandwidth and active connection metrics are off: ", err)
+        end
+        return
+    end
+    stream_zone_unavailable = false
+
+    for _, entry in ipairs(entries) do
+        local listen_addr = entry.listen_addr
+
+        -- the gauge carries no baseline and every reader writes the same
+        -- value, so it is published whether or not this one took the lock
+        metrics.stream_active_connections:set(entry.active, gen_arr(listen_addr))
+
+        if publishing then
+            for _, direction in ipairs(STREAM_BANDWIDTH_DIRECTIONS) do
+                publish_stream_bytes(dict, listen_addr, direction, entry[direction[1]])
+            end
+        end
+    end
+
+    if publishing then
+        dict:delete(STREAM_PUBLISH_LOCK)
+    end
 end
 
 
@@ -675,6 +878,62 @@ function _M.http_log(conf, ctx)
 end
 
 
+-- Keeps the label inside the set of codes nginx itself uses for stream
+-- sessions. A rejecting plugin can return anything -- limit-conn's
+-- rejected_code is operator supplied -- and letting that through would put an
+-- unbounded, user controlled value on the metric.
+local function stream_reject_code(code)
+    -- a rejection is never a success, whatever the plugin was configured to
+    -- return; 200 has to keep meaning "the peer closed"
+    if type(code) ~= "number" or code < 400 then
+        return "500"
+    end
+
+    if STREAM_NGINX_CODES[code] then
+        return tostring(code)
+    end
+
+    if code < 500 then
+        return "400"
+    end
+
+    return "500"
+end
+
+
+local function stream_status_code(ctx)
+    -- stream plugins reject by closing the session (plugin.lua run_plugin
+    -- calls ngx_exit(1)), so the code they returned never reaches $status
+    if ctx.stream_rejected_code then
+        return stream_reject_code(ctx.stream_rejected_code)
+    end
+
+    local status = ctx.var.status
+
+    -- nginx reports every post-connect failure as 200, so only a 200 needs
+    -- the reason to tell a normal close from a timeout or a reset
+    if status ~= "200" then
+        return status or "200"
+    end
+
+    return STREAM_REASON_TO_CODE[ctx.var.stream_session_reason] or "200"
+end
+
+
+-- The metrics zone keys its slots by the configured listening address, so the
+-- status metric has to use the same one. $server_addr is the address the
+-- connection was accepted on, which differs on a wildcard listen; it is only
+-- a fallback for a runtime without the apisix-nginx-module variable.
+local function stream_listen_addr(ctx)
+    local listen_addr = ctx.var.stream_listen_addr
+    if listen_addr then
+        return listen_addr
+    end
+
+    return ctx.var.server_addr .. ":" .. ctx.var.server_port
+end
+
+
 function _M.stream_log(conf, ctx)
     local route_id = ""
     local matched_route = ctx.matched_route and ctx.matched_route.value
@@ -686,6 +945,15 @@ function _M.stream_log(conf, ctx)
     end
 
     metrics.stream_connection_total:inc(1, gen_arr(route_id))
+
+    -- empty when the session ended before a node was picked
+    local node = ""
+    if ctx.balancer_ip and ctx.balancer_port then
+        node = ctx.balancer_ip .. ":" .. ctx.balancer_port
+    end
+
+    metrics.stream_status:inc(1, gen_arr(stream_status_code(ctx),
+        stream_listen_addr(ctx), node))
 end
 
 
@@ -831,6 +1099,10 @@ end
 local function collect(yieldable)
     -- collect ngx.shared.DICT status
     shared_dict_status()
+
+    -- the stream zone is process wide, reading it here keeps the exposition
+    -- exact at the moment of the scrape
+    collect_stream_zone_metrics()
 
     -- across all services
     nginx_status()

@@ -1630,18 +1630,48 @@ passed
 
 
 === TEST 37: redis policy shares counter and rejects the 4th request
---- pipelined_requests eval
-[
-    "POST /ai\n" . "{ \"messages\": [ { \"role\": \"system\", \"content\": \"You are a mathematician\" }, { \"role\": \"user\", \"content\": \"What is 1+1?\"} ] }",
-    "POST /ai\n" . "{ \"messages\": [ { \"role\": \"system\", \"content\": \"You are a mathematician\" }, { \"role\": \"user\", \"content\": \"What is 1+1?\"} ] }",
-    "POST /ai\n" . "{ \"messages\": [ { \"role\": \"system\", \"content\": \"You are a mathematician\" }, { \"role\": \"user\", \"content\": \"What is 1+1?\"} ] }",
-    "POST /ai\n" . "{ \"messages\": [ { \"role\": \"system\", \"content\": \"You are a mathematician\" }, { \"role\": \"user\", \"content\": \"What is 1+1?\"} ] }",
-]
---- more_headers
-Authorization: Bearer token
-X-AI-Fixture: openai/chat-model-echo.json
---- error_code eval
-[200, 200, 200, 503]
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local test_redis = require("lib.test_redis")
+            local COUNTERS = "plugin-ai-rate-limiting:*"
+            local OPTS = {database = 1}
+
+            local httpc = http.new()
+            local codes = {}
+            for i = 1, 4 do
+                local before, before_err = test_redis.sum_counters(COUNTERS, OPTS)
+                assert(before, before_err)
+                local res = assert(httpc:request_uri(
+                    "http://127.0.0.1:" .. ngx.var.server_port .. "/ai",
+                    {
+                        method = "POST",
+                        body = [[{
+                            "messages": [
+                                { "role": "system", "content": "You are a mathematician" },
+                                { "role": "user", "content": "What is 1+1?" }
+                            ]
+                        }]],
+                        headers = {
+                            ["Content-Type"] = "application/json",
+                            ["Authorization"] = "Bearer token",
+                            ["X-AI-Fixture"] = "openai/chat-model-echo.json",
+                        }
+                    }
+                ))
+                codes[i] = res.status
+                -- only a request that reached the LLM has usage to commit
+                if res.status == 200 and i < 4 then
+                    assert(test_redis.wait_counters_above(COUNTERS, before, OPTS))
+                end
+            end
+            ngx.say(table.concat(codes, ", "))
+        }
+    }
+--- timeout: 10
+--- response_body
+200, 200, 200, 503
 
 
 

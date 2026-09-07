@@ -162,6 +162,9 @@ local function check_disable(plugin_conf)
 
     return plugin_conf._meta.disable
 end
+-- exposed for callers that must not act on a plugin config which never runs,
+-- such as the control API reporting the health checkers a plugin owns
+_M.check_disable = check_disable
 
 local PLUGIN_TYPE_HTTP = 1
 local PLUGIN_TYPE_STREAM = 2
@@ -1409,6 +1412,11 @@ function _M.run_plugin(phase, plugins, api_ctx)
                         if code >= 400 then
                             core.log.warn(plugins[i].name, " exits with status code ", code)
                         end
+
+                        -- a stream session is rejected by closing it, so the
+                        -- code never reaches $status; keep it for the log
+                        -- phase, which still runs after ngx_exit
+                        api_ctx.stream_rejected_code = code
 
                         ngx_exit(1)
                     end

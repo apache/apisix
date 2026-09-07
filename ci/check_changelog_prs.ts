@@ -64,6 +64,11 @@ const IGNORE_PRS = [
     // docs/chore/test/ci type filter but which do not belong in a user changelog.
     13386, 13407, 13449, 13485,
     13139, 13156, 13157, 13158, 13222, 13234,
+    // 3.18.0
+    // test-only, CI-only and build-only changes whose subject prefix ("fix:",
+    // "fix(ci)", "fix(dev-image)", "build:") dodges the docs/chore/test/ci type
+    // filter but which do not belong in a user changelog.
+    13526, 13554, 13679, 13709, 13815, 13824,
 ];
 
 

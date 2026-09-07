@@ -51,6 +51,7 @@ Route 端：
 | use_tls  | boolean | 否    | false  | 如果设置为 `true` 则表示启用 TLS。                                             |
 | tls_verify| boolean  | 否     | false        | 是否校验 LDAP 服务器的证书。如果设置为 `true`，你必须设置 `config.yaml` 里面的 `ssl_trusted_certificate`，并且确保 `ldap_uri` 里的 host 和服务器证书中的 host 匹配。 |
 | uid      | string  | 否    | cn    | UID 属性。                                                         |
+| hide_credentials | boolean | 否 | false | 如果设置为 `true`，则不会将 `Authorization` 请求头传递给上游服务。该请求头中携带的目录密码通常在本 API 之外也可复用。|
 | realm | string | 否 | ldap |在身份验证失败时，应包含在 `WWW-Authenticate` 标头中的域。|
 
 ## 启用插件

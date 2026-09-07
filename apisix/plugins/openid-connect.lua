@@ -19,6 +19,7 @@ local core              = require("apisix.core")
 local secret            = require("apisix.secret")
 local ngx_re            = require("ngx.re")
 local openidc           = require("resty.openidc")
+local jwt               = require("resty.jwt")
 local jsonschema        = require('jsonschema')
 local pkey              = require("resty.openssl.pkey")
 local dump_jwk          = require("resty.openssl.auxiliary.jwk").dump_jwk
@@ -40,6 +41,15 @@ local plugin_name       = "openid-connect"
 -- identical in lua-resty-openidc 1.8.0 and 1.9.0
 local STATE_MISMATCH_ERR =
     "state from argument does not match state restored from session"
+
+-- prefix of the resty.openidc error returned when the redirect_uri is
+-- requested without an authorization response, e.g. an OAuth2 error
+-- redirect (RFC 6749 section 4.1.2.1) instead of a code
+local UNHANDLED_REDIRECT_URI_ERR = "unhandled request to the redirect_uri"
+
+-- max consecutive restarts of the authentication flow from failed
+-- authorization callbacks
+local MAX_AUTH_FLOW_RESTARTS = 3
 
 
 -- Session config is passed as-is to resty.session.start(); the only
@@ -1017,17 +1027,24 @@ local function introspect(ctx, conf)
         if not valid_issuers then
             local discovery, discovery_err = openidc.get_discovery_doc(conf)
             if discovery_err then
-                core.log.warn("OIDC access discovery url failed : ", discovery_err)
-            else
-                core.log.info("valid_issuers not provided explicitly," ..
-                              " using issuer from discovery doc: ",
-                              discovery.issuer)
-                valid_issuers = {discovery.issuer}
+                -- The discovery document is the only source of the trusted
+                -- issuer when valid_issuers is not configured. Continuing
+                -- would verify the signature with no issuer constraint at
+                -- all, so a token minted by another issuer holding the same
+                -- key would be accepted; fail closed instead.
+                core.log.error("OIDC access discovery url failed : ", discovery_err)
+                ngx.header["WWW-Authenticate"] = 'Bearer realm="' .. conf.realm ..
+                    '", error="invalid_token", error_description="issuer validation unavailable"'
+                -- the discovery error is logged above; the caller logs whatever
+                -- is returned here again, and it can carry the discovery URL
+                return ngx.HTTP_UNAUTHORIZED, "issuer validation unavailable", nil, nil
             end
+            core.log.info("valid_issuers not provided explicitly," ..
+                          " using issuer from discovery doc: ",
+                          discovery.issuer)
+            valid_issuers = {discovery.issuer}
         end
-        if valid_issuers then
-            opts.valid_issuers = valid_issuers
-        end
+        opts.valid_issuers = valid_issuers
         local res, err = openidc.bearer_jwt_verify(conf, opts)
         if err then
             -- Error while validating or token invalid.
@@ -1102,6 +1119,33 @@ local function required_scopes_present(required_scopes, http_scopes)
         end
     end
     return true
+end
+
+
+-- Resolve the scopes granted to a session established through the
+-- authorization code flow. lua-resty-openidc does not surface the `scope`
+-- field of the token endpoint response, so read the claim from the access
+-- token, which providers that support scope-based authorization issue as a
+-- JWT, and fall back to the ID token claims. Returns nil when the granted
+-- scopes cannot be determined, which the caller must not treat as "granted".
+local function session_scopes(response)
+    local scope
+    if type(response.access_token) == "string" then
+        local jwt_obj = jwt:load_jwt(response.access_token)
+        if jwt_obj and jwt_obj.valid and type(jwt_obj.payload) == "table" then
+            scope = jwt_obj.payload.scope
+        end
+    end
+
+    if not scope and type(response.id_token) == "table" then
+        scope = response.id_token.scope
+    end
+
+    if type(scope) ~= "string" then
+        return nil
+    end
+
+    return split_scopes_by_space(scope)
 end
 
 local function validate_claims_in_oidcauth_response(resp, conf)
@@ -1211,15 +1255,20 @@ function _M.rewrite(plugin_conf, ctx)
             local audience_claim = core.table.try_read_attr(conf, "claim_validator",
                                                              "audience", "claim") or "aud"
             local audience_value = response[audience_claim]
-            if core.table.try_read_attr(conf, "claim_validator", "audience", "required")
-                and not audience_value then
+            local match_with_client_id = core.table.try_read_attr(conf, "claim_validator",
+                                                                  "audience",
+                                                                  "match_with_client_id")
+            -- match_with_client_id cannot be satisfied by a token without the
+            -- audience claim, so it implies `required`: otherwise a token that
+            -- simply omits `aud` would skip the check the operator asked for.
+            if (core.table.try_read_attr(conf, "claim_validator", "audience", "required")
+                or match_with_client_id) and not audience_value then
                 core.log.error("OIDC introspection failed: required audience (",
                                 audience_claim, ") not present")
                 local error_response = { error = "required audience claim not present" }
                 return 403, core.json.encode(error_response)
             end
-            if core.table.try_read_attr(conf, "claim_validator", "audience", "match_with_client_id")
-                and audience_value ~= nil then
+            if match_with_client_id then
                 local error_response = { error = "mismatched audience" }
                 local matched = false
                 if type(audience_value) == "table" then
@@ -1283,6 +1332,13 @@ function _M.rewrite(plugin_conf, ctx)
             conf.session_contents.enc_id_token = true
         end
 
+        -- The granted scopes are read from the access token, so it has to be
+        -- part of the session when required_scopes is enforced.
+        if conf.required_scopes and conf.session_contents then
+            conf.session_contents = core.table.clone(conf.session_contents)
+            conf.session_contents.access_token = true
+        end
+
         -- Authenticate the request. This will validate the access token if it
         -- is stored in a sessions cookie, and also renew the token if required.
         -- If no token can be extracted, the response will redirect to the ID
@@ -1294,34 +1350,88 @@ function _M.rewrite(plugin_conf, ctx)
                                                           build_session_opts(conf.session))
 
         if err then
-            if session then
-                session:close()
-            end
             if err == "unauthorized request" then
+                if session then
+                    session:close()
+                end
                 if conf.unauth_action == "pass" then
                     return nil
                 end
                 return 401
             end
 
-            -- Stale authorization callback: the session holds no authorization
-            -- state for the state in the callback, e.g. an already completed
-            -- callback was replayed, or the state was pruned after too many
-            -- concurrent flows. (Concurrent logins in several tabs are handled
-            -- by resty.openidc itself since 1.9.0, which keeps one
-            -- authorization state per in-flight flow.) The client is a browser
-            -- mid-navigation, so instead of a dead-end 500, send it back to the
-            -- original URL that resty.openidc returns alongside the error: a
-            -- fresh flow starts from there and completes without any user
-            -- interaction while the ID provider still holds an SSO session.
-            if err == STATE_MISMATCH_ERR and target_url
-               and ngx.req.get_method() == "GET" then
-                core.log.warn("OIDC state mismatch (replayed or pruned ",
-                              "callback), restarting the authentication flow")
-                core.response.set_header("Location", target_url)
-                return 302
+            -- Recoverable authorization-callback failures: a stale state
+            -- (replayed or pruned callback), or the ID provider redirecting
+            -- back with error=temporarily_unavailable, e.g. Keycloak after
+            -- its login session expired. The client is a browser
+            -- mid-navigation, so restart the authentication flow by sending
+            -- it back to the original URL instead of dead-ending with a 500.
+            -- Other OAuth2 error codes (access_denied, login_required, ...)
+            -- reflect a deliberate outcome and are not retried.
+            local restart_reason
+            local restart_url = target_url
+            if err == STATE_MISMATCH_ERR then
+                -- state already matched by resty.openidc; no in-flight flow
+                -- for it, so its session-level original_url is all we have
+                restart_reason = "state mismatch (replayed or pruned callback)"
+            elseif session and core.string.has_prefix(err, UNHANDLED_REDIRECT_URI_ERR) then
+                local uri_args = ngx.req.get_uri_args()
+                -- resty.openidc bails on this path before validating state, so
+                -- match it here as it would: rejects a forged callback, and
+                -- recovers the original_url of the flow it belongs to (each
+                -- in-flight flow keeps its own since 1.9.0)
+                local authorization_state
+                if uri_args.error == "temporarily_unavailable" and uri_args.state then
+                    local states = session:get("authorization_states")
+                    authorization_state = states and states[uri_args.state]
+                    if not authorization_state
+                       and uri_args.state == session:get("state") then
+                        authorization_state = {
+                            original_url = session:get("original_url")
+                        }
+                    end
+                end
+                if authorization_state then
+                    restart_reason = "authorization callback reported a " ..
+                        "temporarily unavailable identity provider" ..
+                        (type(uri_args.error_description) == "string" and
+                            (" (" .. uri_args.error_description .. ")") or "")
+                    restart_url = authorization_state.original_url or target_url
+                end
             end
 
+            if restart_reason and restart_url and session
+               and ngx.req.get_method() == "GET" then
+                -- bound the redirect loop in case the failure is not
+                -- transient; the counter is reset once a request
+                -- authenticates
+                local restarts = session:get("auth_flow_restarts") or 0
+                if restarts < MAX_AUTH_FLOW_RESTARTS then
+                    session:set("auth_flow_restarts", restarts + 1)
+                    local ok, save_err = session:save()
+                    if not ok then
+                        session:close()
+                        core.log.error("OIDC authentication failed: ", err,
+                                       " (could not persist the restart ",
+                                       "counter: ", save_err, ")")
+                        return 500
+                    end
+                    session:close()
+                    core.log.warn("OIDC ", restart_reason,
+                                  ", restarting the authentication flow")
+                    core.response.set_header("Location", restart_url)
+                    return 302
+                end
+                session:close()
+                core.log.error("OIDC authentication failed: ", err,
+                               " (giving up after ", restarts,
+                               " restarts of the authentication flow)")
+                return 500
+            end
+
+            if session then
+                session:close()
+            end
             core.log.error("OIDC authentication failed: ", err)
             return 500
         end
@@ -1333,6 +1443,30 @@ function _M.rewrite(plugin_conf, ctx)
                 ngx.header["WWW-Authenticate"] = 'Bearer realm="' .. conf.realm ..
                         '", error="invalid_token", error_description="' .. err .. '"'
                 return ngx.HTTP_UNAUTHORIZED
+            end
+
+            -- The session flow is authorized by the same required_scopes as the
+            -- token flow above. A session whose granted scopes cannot be read
+            -- is denied rather than allowed unchecked: the operator asked for
+            -- scope-based authorization, so silently skipping it would let any
+            -- authenticated user through.
+            if conf.required_scopes then
+                local http_scopes = session_scopes(response)
+                if not http_scopes then
+                    core.log.error("OIDC authentication failed: the scopes granted to ",
+                                   "the session are unknown, so required scopes ",
+                                   concat(conf.required_scopes, ", "), " cannot be checked")
+                    session:close()
+                    return 403, core.json.encode({ error = "required scopes not present" })
+                end
+                if not required_scopes_present(conf.required_scopes, http_scopes) then
+                    core.log.error("OIDC authentication failed: required scopes not present")
+                    session:close()
+                    return 403, core.json.encode({
+                        error = "required scopes " .. concat(conf.required_scopes, ", ") ..
+                                " not present"
+                    })
+                end
             end
             -- If the openidc module has returned a response, it may contain,
             -- respectively, the access token, the ID token, the refresh token,
@@ -1364,6 +1498,15 @@ function _M.rewrite(plugin_conf, ctx)
             local enc_id_token = session:get("enc_id_token")
             if enc_id_token and conf.set_raw_id_token_header then
                 core.request.set_header(ctx, "X-Raw-ID-Token", enc_id_token)
+            end
+
+            -- a successful authentication resets the restart budget
+            if session:get("auth_flow_restarts") then
+                session:set("auth_flow_restarts", nil)
+                local ok, save_err = session:save()
+                if not ok then
+                    core.log.error("failed to save session: ", save_err)
+                end
             end
         end
     end

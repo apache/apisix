@@ -507,7 +507,7 @@ X-RateLimit-Remaining: 16
 
 
 
-=== TEST 22: fragment cycle does not cause infinite recursion
+=== TEST 22: fragment cycle is rejected
 --- request
 POST /hello
 {
@@ -515,9 +515,11 @@ POST /hello
 }
 --- more_headers
 Content-Type: application/json
---- error_code: 200
---- response_headers_like
-X-RateLimit-Remaining: \d+
+--- error_code: 400
+--- error_log
+invalid graphql request: fragment spreads form a cycle
+--- response_body eval
+qr/fragment spreads must not form cycles/
 
 
 
@@ -633,3 +635,115 @@ Content-Type: application/json
 --- error_code: 200
 --- response_headers
 X-RateLimit-Remaining: 15
+
+
+
+=== TEST 27: set route: nested fragment expansion test
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "graphql-limit-count": {
+                            "count": 100,
+                            "time_window": 60,
+                            "rejected_code": 503,
+                            "key": "remote_addr",
+                            "show_limit_quota_header": true
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 28: deeply reused fragments are measured once and keep their depth
+--- config
+    location /t {
+        content_by_lua_block {
+            -- f0 nests three field levels (depth 3); every fN spreads the
+            -- previous fragment twice, so a naive expansion is O(2^N) while
+            -- the result stays depth 3. A completed request with the exact
+            -- quota proves the traversal is both linear and depth-correct.
+            local http = require "resty.http"
+            local n = 34
+            local parts = {"fragment f0 on Query { a { b { c } } }"}
+            for i = 1, n do
+                parts[#parts + 1] = string.format(
+                    "fragment f%d on Query { ...f%d ...f%d }", i, i - 1, i - 1)
+            end
+            parts[#parts + 1] = string.format("query { ...f%d }", n)
+            local body = table.concat(parts, " ")
+            local httpc = http.new()
+            local res, err = httpc:request_uri(
+                "http://127.0.0.1:" .. ngx.var.server_port .. "/hello", {
+                    method = "POST",
+                    body = body,
+                    headers = { ["Content-Type"] = "application/graphql" },
+                })
+            if not res then
+                ngx.say(err)
+                return
+            end
+            ngx.say(res.status)
+            ngx.say(res.headers["X-RateLimit-Remaining"])
+        }
+    }
+--- request
+GET /t
+--- timeout: 10
+--- response_body
+200
+97
+
+
+
+=== TEST 29: mutually recursive fragments are rejected
+--- request
+POST /hello
+{
+  "query": "query { ...A } fragment A on Query { x { ...B } } fragment B on Query { y { ...A } }"
+}
+--- more_headers
+Content-Type: application/json
+--- error_code: 400
+--- error_log
+invalid graphql request: fragment spreads form a cycle
+--- response_body eval
+qr/fragment spreads must not form cycles/
+
+
+
+=== TEST 30: mutual recursion reached at a different depth and order is rejected
+--- request
+POST /hello
+{
+  "query": "query { ...B } fragment A on Query { ...B } fragment B on Query { m { n { ...A } } }"
+}
+--- more_headers
+Content-Type: application/json
+--- error_code: 400
+--- error_log
+invalid graphql request: fragment spreads form a cycle
+--- response_body eval
+qr/fragment spreads must not form cycles/
