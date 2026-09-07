@@ -1060,6 +1060,13 @@ _M.stream_route = {
             minItems = 1,
             uniqueItems = true,
         },
+        tls_passthrough = {
+            description = "forward the TLS stream to the upstream untouched instead of "
+                          .. "terminating it here; only consulted on a mixed listen, one "
+                          .. "with both tls and tls_passthrough set",
+            type = "boolean",
+            default = false,
+        },
         upstream = upstream_schema,
         upstream_id = id_schema,
         service_id = id_schema,
