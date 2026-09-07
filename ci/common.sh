@@ -108,7 +108,6 @@ install_nodejs () {
     export PNPM_HOME="/pnpm"
     export PATH="$PNPM_HOME:$PATH"
     corepack enable pnpm
-    pnpm setup
 }
 
 install_brotli () {
