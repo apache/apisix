@@ -46,6 +46,8 @@ description: 本文介绍了关于 Apache APISIX `redirect` 插件的基本信�
 
 * `http_to_https`、`uri` 和 `regex_uri` 只能配置其中一个属性。
 * `http_to_https`、和 `append_query_string` 只能配置其中一个属性。
+* 当开启 `http_to_https` 时，请求是否已经是 HTTPS 由 `X-Forwarded-Proto` 请求头决定（该头存在时），否则使用客户端与 APISIX 之间连接的协议。该值按大小写不敏感的方式比较，因为 URI scheme 在 [RFC 3986](https://datatracker.ietf.org/doc/html/rfc3986#section-3.1) 中被定义为大小写不敏感。
+* 只有当请求来自 `apisix.trusted_addresses` 中列出的地址时，客户端传入的 `X-Forwarded-Proto` 才会被保留。否则 APISIX 会用自己观测到的协议覆盖它，因此一个以 HTTPS 到达 TLS 终止代理、再以 HTTP 转发到 APISIX 的请求，在这里会被视为 HTTP。信任边界详见 [real-ip](real-ip.md)。
 * 当开启 `http_to_https` 时，重定向 URL 中的端口将按如下顺序选取一个值（按优先级从高到低排列）
   * 从配置文件（`conf/config.yaml`）中读取 `plugin_attr.redirect.https_port`。
   * 如果 `apisix.ssl` 处于开启状态，读取 `apisix.ssl.listen` 并从中随机选一个 `port`。

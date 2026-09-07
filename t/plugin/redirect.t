@@ -1088,3 +1088,74 @@ GET /t
 --- error_code: 400
 --- response_body eval
 qr/error_msg":"failed to check the configuration of plugin redirect err: only one of `http_to_https` and `append_query_string` can be configured."/
+
+
+
+=== TEST 49: set up a route with an upstream, so a request that is not redirected still succeeds
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "host": "foo.com",
+                    "plugins": {
+                        "redirect": {
+                            "http_to_https": true
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 50: uppercase X-Forwarded-Proto is still HTTPS, do not redirect
+--- request
+GET /hello
+--- more_headers
+Host: foo.com
+X-Forwarded-Proto: HTTPS
+--- response_body
+hello world
+
+
+
+=== TEST 51: mixed-case X-Forwarded-Proto is still HTTPS, do not redirect
+--- request
+GET /hello
+--- more_headers
+Host: foo.com
+X-Forwarded-Proto: HtTpS
+--- response_body
+hello world
+
+
+
+=== TEST 52: uppercase X-Forwarded-Proto that is not HTTPS still redirects
+--- request
+GET /hello
+--- more_headers
+Host: foo.com
+X-Forwarded-Proto: HTTP
+--- error_code: 301
+--- response_headers
+Location: https://foo.com:9443/hello

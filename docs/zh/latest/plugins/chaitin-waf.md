@@ -65,6 +65,9 @@ description: chaitin-waf 插件与长亭雷池 WAF 集成，以检测和阻止�
 | config.keepalive_size    | integer       | 否       | 256     |                          | 可同时维持的与 WAF 检测服务的空闲连接数上限。 |
 | config.keepalive_timeout | integer       | 否       | 60000   |                          | 与 WAF 服务的空闲连接超时时间，单位为毫秒。 |
 | config.real_client_ip    | boolean       | 否       | true    |                          | 若为 true，则插件将 APISIX 解析得到的客户端 IP（与 APISIX 其他地方使用的相同，由连接信息以及 `apisix.trusted_addresses` 共同决定）发送给 WAF 服务。若为 false，则插件发送与 APISIX 直接建立连接的对端 IP。 |
+| config.log_resp          | boolean       | 否       | false   |                          | 若为 true，则插件同时将响应上报给 WAF 服务。参见 [响应上报](#响应上报)。 |
+| config.resp_body_size    | integer       | 否       | 4       | >= 0                     | 上报的响应体大小，单位为 KB。设置为 `0` 表示仅上报状态行与响应头。仅当 `config.log_resp` 为 true 时生效。 |
+| config.extra_ignored_content_types | string | 否     |         |                          | 以逗号分隔的响应 `Content-Type` 列表，在内置忽略列表之外额外跳过这些类型。仅当 `config.log_resp` 为 true 时生效。 |
 
 ## 插件元数据
 
@@ -82,6 +85,19 @@ description: chaitin-waf 插件与长亭雷池 WAF 集成，以检测和阻止�
 | config.keepalive_size    | integer       | 否       | 256     |              | 可同时维持的与 WAF 检测服务的空闲连接数上限。 |
 | config.keepalive_timeout | integer       | 否       | 60000   |              | 与 WAF 服务的空闲连接超时时间，单位为毫秒。 |
 | config.real_client_ip    | boolean       | 否       | true    |              | 若为 true，则插件将 APISIX 解析得到的客户端 IP（与 APISIX 其他地方使用的相同，由连接信息以及 `apisix.trusted_addresses` 共同决定）发送给 WAF 服务。若为 false，则插件发送与 APISIX 直接建立连接的对端 IP。 |
+| config.log_resp          | boolean       | 否       | false   |              | 若为 true，则插件同时将响应上报给 WAF 服务。参见 [响应上报](#响应上报)。 |
+| config.resp_body_size    | integer       | 否       | 4       | >= 0         | 上报的响应体大小，单位为 KB。设置为 `0` 表示仅上报状态行与响应头。仅当 `config.log_resp` 为 true 时生效。 |
+| config.extra_ignored_content_types | string | 否     |         |              | 以逗号分隔的响应 `Content-Type` 列表，在内置忽略列表之外额外跳过这些类型。仅当 `config.log_resp` 为 true 时生效。 |
+
+## 响应上报
+
+插件默认只将请求上报给 WAF 服务。将 `config.log_resp` 设置为 true 后，插件会同时上报响应：状态行、响应头，以及最多 `config.resp_body_size` KB 的响应体。
+
+上报在 log 阶段通过 `ngx.timer` 发出，此时响应已经返回给客户端，因此不会阻塞响应、也不会增加响应延迟。检测结果在雷池 WAF 控制台查看，APISIX 不会依据该上报结果拦截或修改响应。
+
+以下情况不会上报响应：请求本身已被拦截，或响应 `Content-Type` 属于被忽略的类型。音频、视频、字体、图片等二进制媒体类型默认被忽略，可通过 `config.extra_ignored_content_types` 追加，例如 `text/csv,application/pdf`。
+
+请注意，缓冲响应体会为每个进行中的请求占用内存，在返回大响应的路由上调高 `config.resp_body_size` 需谨慎。
 
 ## 示例
 

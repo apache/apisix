@@ -2416,6 +2416,8 @@ kubectl apply -f ai-proxy-multi-ic.yaml
 
 为了验证，行为应与[主动健康检查](../tutorials/health-check.md)中的验证一致。
 
+这些健康检查产生的状态可以通过[控制接口](../control-api.md)获取：`GET /v1/healthcheck` 会为每个实例返回一个 entry，`GET /v1/healthcheck/routes/{id}/checkers` 则返回该路由拥有的全部检查器。每个 entry 通过 `meta.instance` 携带实例名。
+
 ### 发送请求日志到日志记录器
 
 以下示例演示了如何记录请求和响应信息（包括 LLM 模型、令牌和负载），并将其推送到日志记录器。在继续之前，您应该先设置一个日志记录器，例如 Kafka。有关更多信息，请参阅 [`kafka-logger`](./kafka-logger.md)。

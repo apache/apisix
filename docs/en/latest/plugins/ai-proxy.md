@@ -166,6 +166,8 @@ The setting covers `ai-proxy`, `ai-proxy-multi`, and `ai-request-rewrite`, which
 
 When the LLM upstream returns a `429` or `5xx` status, `ai-proxy` reads the upstream error body and returns it to the client together with the upstream status code and `Content-Type`, so provider-side error details (such as rate-limit information or validation errors) are not discarded.
 
+A streaming response is different once part of it has been delivered. The downstream response is committed as `200` with the first SSE event, so a later failure to read from the upstream (a connection reset or a read timeout) can no longer change the status. In that case `ai-proxy` stops reading, closes the upstream connection, and ends the downstream stream where it is, without a protocol-specific terminator such as `[DONE]`, `message_stop`, or `response.completed`; well-behaved clients should treat a missing terminator as an incomplete response. A read error that happens before any event reaches the client still returns `504` for a timeout and `500` otherwise.
+
 ## Examples
 
 The examples below demonstrate how you can configure `ai-proxy` for different scenarios.

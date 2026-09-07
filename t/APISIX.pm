@@ -207,6 +207,7 @@ $grpc_location .= <<_EOC_;
             grpc_set_header   Content-Type application/grpc;
             grpc_set_header   TE trailers;
             grpc_socket_keepalive on;
+            grpc_ssl_name     \$upstream_host;
             grpc_pass         \$upstream_scheme://apisix_backend;
             mirror              /proxy_mirror_grpc;
 
@@ -327,6 +328,7 @@ lua {
     lua_shared_dict prometheus-metrics 15m;
     lua_shared_dict prometheus-cache 10m;
     lua_shared_dict standalone-config 10m;
+    lua_shared_dict standalone-status 1m;
     lua_shared_dict status-report 1m;
     lua_shared_dict nacos 10m;
     lua_shared_dict consul 10m;
