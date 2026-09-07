@@ -328,6 +328,7 @@ lua {
     lua_shared_dict prometheus-metrics 15m;
     lua_shared_dict prometheus-cache 10m;
     lua_shared_dict standalone-config 10m;
+    lua_shared_dict standalone-status 1m;
     lua_shared_dict status-report 1m;
     lua_shared_dict nacos 10m;
     lua_shared_dict consul 10m;
@@ -352,6 +353,9 @@ _EOC_
         if ($block->stream_sni) {
             $sni = '"' . $block->stream_sni . '"';
         }
+
+        # a bare `--- stream_tls_verify` section has an empty, false value
+        my $tls_verify = defined $block->stream_tls_verify ? "true" : "false";
         chomp $stream_tls_request;
 
         my $repeat = "1";
@@ -371,7 +375,7 @@ _EOC_
                             return
                         end
 
-                        sess, err = sock:sslhandshake(sess, $sni, false)
+                        sess, err = sock:sslhandshake(sess, $sni, $tls_verify)
                         if not sess then
                             ngx.say("failed to do SSL handshake: ", err)
                             return
@@ -590,6 +594,10 @@ $stream_config
     }
 }
 _EOC_
+        # the stream block lives in the main config here, so drop the block values
+        # or Test::Nginx renders a second, conflicting one
+        $block->set_value("stream_config");
+        $block->set_value("stream_server_config");
     }
 
     $block->set_value("main_config", $main_config);

@@ -2630,6 +2630,8 @@ kubectl apply -f ai-proxy-multi-ic.yaml
 
 For verification, the behaviours should be consistent with the verification in [active health checks](../tutorials/health-check.md).
 
+The status these checks produce is reported by the [Control API](../control-api.md): `GET /v1/healthcheck` lists one entry per instance, and `GET /v1/healthcheck/routes/{id}/checkers` returns every checker the Route owns. Each entry carries the instance name in `meta.instance`.
+
 ### Include LLM Information in Access Log
 
 The following example demonstrates how you can log LLM request related information in the gateway's access log to improve analytics and audit. The following variables are available:

@@ -25,6 +25,7 @@
       "label": "Tutorials",
       "items": [
         "tutorials/expose-api",
+        "tutorials/proxy-localai",
         "tutorials/protect-api",
         {
           "type": "category",

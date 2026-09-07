@@ -151,7 +151,13 @@ do
         local _, cur_svc_ver = service_mod.services()
         if router_ver ~= user_routes.conf_version
            or service_ver ~= cur_svc_ver then
-            local err = create_router(user_routes.values)
+            -- `values` is nil until the config source has delivered
+            -- /stream_routes for the first time, which in standalone mode can
+            -- happen after this subsystem is already accepting connections.
+            -- Treat that as "no stream route" instead of indexing a nil table:
+            -- the error would be thrown before router_ver is assigned, so every
+            -- later connection would take this branch and abort again.
+            local err = create_router(user_routes.values or {})
             if err then
                 return false, "failed to create router: " .. err
             end
@@ -160,7 +166,7 @@ do
             service_ver = cur_svc_ver
         end
 
-        local sni = apisix_ssl.server_name()
+        local sni = apisix_ssl.server_name(nil, api_ctx.tls_passthrough)
         if sni and tls_router then
             local sni_rev = sni:reverse()
 

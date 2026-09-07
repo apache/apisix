@@ -108,7 +108,15 @@ install_nodejs () {
     export PNPM_HOME="/pnpm"
     export PATH="$PNPM_HOME:$PATH"
     corepack enable pnpm
-    pnpm setup
+    # Pin the pnpm used outside t/, which has its own packageManager pin.
+    # pnpm 12 turned two long-standing warnings into hard errors that both
+    # break CI: running "pnpm setup" under sudo, and "pnpm dlx" installing a
+    # package whose dependency has an unapproved build script -- the latter
+    # hits t/plugin/grpc-web.t, which runs the client through "pnpx tsx"
+    # (esbuild). 11.25.0 is the last version CI was green on.
+    # Expiry: drop this pin once grpc-web.t no longer needs pnpm to run
+    # esbuild's build script unprompted.
+    corepack prepare pnpm@11.25.0 --activate
 }
 
 install_brotli () {
