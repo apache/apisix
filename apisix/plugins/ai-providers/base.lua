@@ -633,7 +633,9 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
                 flush_thread = nil
             end
             if output_sent and not ctx.var.llm_request_done then
-                ctx.var.llm_response_text = table.concat(contents, "")
+                if #sse_rem == 0 then
+                    ctx.var.llm_response_text = table.concat(contents, "")
+                end
                 ctx.var.llm_request_done = true
                 plugin.lua_response_filter(ctx, res.headers, "", nil, true)
             end

@@ -38,9 +38,9 @@ _EOC_
                 local core = require("apisix.core")
                 ngx.req.read_body()
                 local args = ngx.req.get_post_args()
-                local params = core.json.decode(args.ServiceParameters)
-                ngx.shared.test:incr(args.Service .. "_calls", 1, 0)
-                ngx.shared.test:set(args.Service .. "_content", params.content)
+                local params = assert(core.json.decode(args.ServiceParameters))
+                assert(ngx.shared.test:incr(args.Service .. "_calls", 1, 0))
+                assert(ngx.shared.test:set(args.Service .. "_content", params.content))
                 local fixture = args.Service == "response_security_check"
                     and "aliyun/moderation-risk.json" or "aliyun/moderation-safe.json"
                 ngx.header.content_type = "application/json"
@@ -51,6 +51,7 @@ _EOC_
 _EOC_
     if ($block->fixture) {
         my $fixture = $block->fixture;
+        my $flush_events = $block->buffered ? "nil" : '"true"';
         $block->set_value("config", <<_EOC_);
     location /t {
         content_by_lua_block {
@@ -63,7 +64,7 @@ _EOC_
                     ["Content-Type"] = "application/json",
                     ["apikey"] = "stream-usage-key",
                     ["X-AI-Fixture"] = "$fixture",
-                    ["X-AI-Fixture-Flush-Events"] = "true",
+                    ["X-AI-Fixture-Flush-Events"] = $flush_events,
                 },
                 body = [[{"messages":[{"role":"user","content":"hello"}],"stream":true}]],
             }))
@@ -73,7 +74,8 @@ _EOC_
                         " / ", ngx.shared.test:get(service .. "_content"))
             end
             local text = {}
-            for _, event in ipairs(require("apisix.plugins.ai-transport.sse").decode(res.body)) do
+            local events = require("apisix.plugins.ai-transport.sse").decode_buf(res.body)
+            for _, event in ipairs(events) do
                 if event.data ~= "[DONE]" then
                     local data = assert(core.json.decode(event.data))
                     local content = core.table.try_read_attr(data, "choices", 1,
@@ -170,3 +172,17 @@ query_security_check: 1 / hello
 response_security_check: 1 / kill you
 text: kill you
 done events: 1
+
+
+
+=== TEST 5: do not finalize a stream with an incomplete trailing SSE event
+--- fixture: openai/moderation-incomplete-event.sse
+--- buffered: 1
+--- response_body
+status: 200
+query_security_check: 1 / hello
+response_security_check: nil / nil
+text: kill you
+done events: 0
+--- error_log
+dropping incomplete stream frame at EOF
