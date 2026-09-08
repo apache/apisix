@@ -500,33 +500,9 @@ function _M.lua_body_filter(conf, ctx, headers, body)
     local proto = protocols.get(ctx.ai_client_protocol)
 
     if conf.stream_check_mode == "final_packet" then
-        local events = sse.decode(body or "")
-        local contains_done_event = false
-        for _, event in ipairs(events) do
-            contains_done_event = contains_done_event or proto.is_done_event(event)
-            if event.data ~= "[DONE]" then
-                local data = core.json.decode(event.data)
-                if type(data) == "table" then
-                    if proto.is_error_event and proto.is_error_event(event, data) then
-                        ctx.aliyun_cm_stream_failed = true
-                    end
-                    if event.type == "message_delta" and type(data.delta) == "table" then
-                        -- Anthropic SDKs overwrite stop fields on every message_delta.
-                        ctx.aliyun_cm_message_delta = data.delta
-                    end
-                end
-            end
-        end
-        local eof = ctx.var.llm_request_done and (not body or body == "")
-                    and not ctx.aliyun_cm_done_sent
-        ctx.aliyun_cm_done_sent = ctx.aliyun_cm_done_sent or contains_done_event
         local content = ctx.var.llm_response_text
-        if not content or content == "" or ctx.ai_stream_aborted
-           or ctx.aliyun_cm_stream_failed then
-            return
-        end
-        if not ctx.ai_stream_has_usage and (ctx.ai_aliyun_response_moderated
-           or not contains_done_event and not eof) then
+        if not content or content == "" or ctx.ai_stream_aborted or ctx.ai_stream_failed
+           or ctx.aliyun_cm_done_sent then
             return
         end
         if not ctx.ai_aliyun_response_moderated then
@@ -536,45 +512,54 @@ function _M.lua_body_filter(conf, ctx, headers, body)
             release_cm_httpc(ctx, conf)
             ctx.ai_aliyun_response_moderated = true
         end
-        local risk_level = ctx.var.llm_content_risk_level
-        if not risk_level then
+        if not ctx.var.llm_content_risk_level then
             return
         end
-        local result
-        if not ctx.ai_stream_has_usage and proto.build_moderation_event then
-            result = sse.encode(proto.build_moderation_event({
-                text = ctx.aliyun_cm_deny_message,
-                risk_level = risk_level,
-                model = ctx.var.request_llm_model,
-                delta = ctx.aliyun_cm_message_delta or {},
-            }))
-        end
-        local raw_events = {}
+        local events = sse.decode(body or "")
         for _, event in ipairs(events) do
-            if proto.is_data_event(event)
-               and (ctx.ai_stream_has_usage or not proto.build_moderation_event) then
+            if proto.is_data_event(event) then
                 local data, err = core.json.decode(event.data)
-                if data then
-                    data.risk_level = risk_level
-                    data.deny_message = ctx.aliyun_cm_deny_message
-                    event.data = core.json.encode(data)
-                else
+                if not data then
                     core.log.warn("failed to decode SSE data: ", err)
+                    goto CONTINUE
+                end
+                data.risk_level = ctx.var.llm_content_risk_level
+                data.deny_message = ctx.aliyun_cm_deny_message
+                event.data = core.json.encode(data)
+                if not ctx.ai_stream_has_usage and event.type == "message_delta"
+                   and type(data.delta) == "table" then
+                    -- Anthropic SDKs overwrite stop fields on every message_delta.
+                    ctx.aliyun_cm_message_delta = data.delta
                 end
             end
-            if result and proto.is_done_event(event) then
-                table.insert(raw_events, result)
-                result = nil
+            ::CONTINUE::
+        end
+
+        local raw_events = {}
+        local done_index
+        for _, event in ipairs(events) do
+            if proto.is_done_event(event) then
+                done_index = #raw_events + 1
             end
             table.insert(raw_events, sse.encode(event))
         end
-        if not contains_done_event and eof and proto.build_moderation_event then
-            if result then
-                table.insert(raw_events, result)
-            end
-            table.insert(raw_events, proto.build_done_event() .. "\n\n")
-            ctx.aliyun_cm_done_sent = true
+        -- Converters dispatch several events after the source has completed.
+        -- Only a client terminator or the empty EOF flush can finish its output.
+        local eof = ctx.var.llm_request_done and (not body or body == "")
+        if not ctx.ai_stream_has_usage and proto.build_moderation_event
+           and (done_index or eof) then
+            table.insert(raw_events, done_index or #raw_events + 1,
+                sse.encode(proto.build_moderation_event({
+                    text = ctx.aliyun_cm_deny_message,
+                    risk_level = ctx.var.llm_content_risk_level,
+                    model = ctx.var.request_llm_model,
+                    delta = ctx.aliyun_cm_message_delta or {},
+                })))
         end
+        if not done_index and eof and proto.build_moderation_event then
+            table.insert(raw_events, proto.build_done_event() .. "\n\n")
+        end
+        ctx.aliyun_cm_done_sent = done_index ~= nil or eof
         return nil, table.concat(raw_events)
     end
 

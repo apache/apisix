@@ -81,7 +81,8 @@ _EOC_
                     local data = assert(core.json.decode(event.data))
                     local content = core.table.try_read_attr(data, "choices", 1,
                                                               "delta", "content")
-                    if type(content) == "string" and not data.risk_level then
+                    if type(content) == "string" and not (data.risk_level and data.usage
+                       and data.usage.total_tokens == 0) then
                         text[#text + 1] = content
                     end
                 end

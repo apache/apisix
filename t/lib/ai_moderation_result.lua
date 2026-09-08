@@ -131,7 +131,7 @@ function _M.check(case)
     end
     local events, remainder = sse.decode_buf(res.body)
     assert(remainder == "", "partial downstream event")
-    local risk_count, done_count, start_count = 0, 0, 0
+    local risk_count, done_count, start_count, injected_count = 0, 0, 0, 0
     local original = {}
     local finish_reason
     for i, event in ipairs(events) do
@@ -147,7 +147,12 @@ function _M.check(case)
             goto CONTINUE
         end
         local data = assert(core.json.decode(event.data))
-        if case.protocol == "chat" and (case.tokens or not data.risk_level) then
+        local injected = case.protocol == "chat" and data.risk_level and data.usage
+                         and data.usage.total_tokens == 0
+        if injected then
+            injected_count = injected_count + 1
+        end
+        if case.protocol == "chat" and not injected then
             for _, choice in ipairs(data.choices or {}) do
                 if choice.finish_reason ~= core.json.null then
                     finish_reason = choice.finish_reason or finish_reason
@@ -167,7 +172,7 @@ function _M.check(case)
             assert(data.risk_level == (case.safe and "none" or "high"), "wrong risk")
             assert(data.deny_message == (case.safe and "" or "response rejected"),
                    "missing top-level denial message")
-            if case.protocol == "chat" and not case.tokens then
+            if case.protocol == "chat" and injected then
                 assert(i == #events - 1, "moderation result must precede DONE")
                 assert(type(data.id) == "string" and type(data.created) == "number",
                        "invalid result metadata")
@@ -194,7 +199,12 @@ function _M.check(case)
                            and data.delta.stop_sequence == case.stop_sequence,
                            "original Anthropic stop information was changed")
                 end
-                assert(data.usage.output_tokens == (case.tokens and 8 or 0), "wrong usage")
+                if data.usage then
+                    assert(data.usage.output_tokens == (case.tokens and 8 or 0), "wrong usage")
+                    if not case.tokens then
+                        injected_count = injected_count + 1
+                    end
+                end
             elseif case.protocol == "responses" then
                 assert(event.type == "response.completed", "wrong Responses event")
                 assert(data.response.id == "resp_moderation", "changed response identity")
@@ -213,10 +223,11 @@ function _M.check(case)
     end
     if case.failure or case.eof or (case.error and not case.scanned) then
         assert(risk_count == 0, "unexpected moderation result")
-    elseif case.tokens then
-        assert(risk_count > 0, "missing in-place moderation result")
     else
-        assert(risk_count == 1, "wrong injected result count")
+        assert(risk_count > 0, "missing moderation result")
+    end
+    if not case.error and not case.failure and case.protocol ~= "responses" then
+        assert(injected_count == (case.tokens and 0 or 1), "wrong injected result count")
     end
     assert(done_count == ((case.eof or case.error) and 0 or 1), "wrong terminator count")
     if case.protocol ~= "chat" then

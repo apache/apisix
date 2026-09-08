@@ -461,6 +461,7 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
     -- core.response.set_header), so the flag is stale, not protective
     ctx.ai_stream_aborted = nil
     ctx.ai_stream_has_usage = nil
+    ctx.ai_stream_failed = nil
     -- same for the completion flag. An attempt can set it and still produce no
     -- downstream output -- a converter fed a [DONE]-only stream emits nothing --
     -- which returns 502 and lets ai-proxy-multi fall back inside this same
@@ -688,6 +689,10 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
         for _, event in ipairs(events) do
             -- Target protocol parses the provider's SSE format
             local parsed = target_proto.parse_sse_event(event, ctx, sse_state)
+            if target_proto.is_error_event
+               and target_proto.is_error_event(event, parsed and parsed.data) then
+                ctx.ai_stream_failed = true
+            end
             if parsed and parsed.has_tool_call then
                 ctx.var.llm_has_tool_calls = "true"
             end

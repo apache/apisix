@@ -438,7 +438,7 @@ end
 
 
 function _M.is_error_event(event, data)
-    return type(data.error) == "table"
+    return type(data) == "table" and type(data.error) == "table"
 end
 
 
