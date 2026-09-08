@@ -500,26 +500,27 @@ function _M.lua_body_filter(conf, ctx, headers, body)
     local proto = protocols.get(ctx.ai_client_protocol)
 
     if conf.stream_check_mode == "final_packet" then
-        local pending = ctx.aliyun_cm_sse_pending or ""
-        local complete, remainder = sse.split_buf(pending .. (body or ""))
+        -- Supported protocols can still arrive as partial HTTP chunks.
+        local chunk = (ctx.aliyun_cm_sse_pending or "") .. (body or "")
+        local events, remainder = sse.decode_buf(chunk)
         if #remainder > sse.max_remainder then
             ctx.aliyun_cm_sse_pending = nil
-            return nil, complete .. remainder
+            return nil, chunk
         end
-        ctx.aliyun_cm_sse_pending = remainder
-        local events = sse.decode(complete)
+        ctx.aliyun_cm_sse_pending = remainder ~= "" and remainder or nil
+        local complete = chunk:sub(1, #chunk - #remainder)
         local metadata = ctx.aliyun_cm_stream_metadata or {}
         ctx.aliyun_cm_stream_metadata = metadata
-        local contains_done_event = false
+        local done_index
         local carrier
-        for _, event in ipairs(events) do
-            if proto and proto.is_done_event(event) then
-                contains_done_event = true
+        for i, event in ipairs(events) do
+            if proto.is_done_event(event) then
+                done_index = done_index or i
             end
             if event.data ~= "[DONE]" then
                 local data = core.json.decode(event.data)
                 if type(data) == "table" then
-                    if proto and proto.is_error_event and proto.is_error_event(event, data) then
+                    if proto.is_error_event and proto.is_error_event(event, data) then
                         ctx.aliyun_cm_stream_failed = true
                     end
                     if type(data.id) == "string" then
@@ -534,8 +535,7 @@ function _M.lua_body_filter(conf, ctx, headers, body)
                     if event.type == "message_delta" and type(data.delta) == "table" then
                         metadata.delta = data.delta
                     end
-                    if proto and proto.is_moderation_event
-                       and proto.is_moderation_event(event) then
+                    if proto.is_moderation_event and proto.is_moderation_event(event) then
                         carrier = { event = event, data = data }
                     end
                 end
@@ -545,14 +545,14 @@ function _M.lua_body_filter(conf, ctx, headers, body)
         -- A converter can dispatch several client events after llm_request_done
         -- is set. Wait for the client's terminator, or the explicit EOF flush.
         local eof = ctx.var.llm_request_done and (not body or body == "")
-        if not contains_done_event and not eof then
+        if not done_index and not eof then
             return nil, complete
         end
         ctx.aliyun_cm_sse_pending = nil
         if ctx.ai_stream_aborted or ctx.aliyun_cm_stream_failed
            or remainder ~= "" or not ctx.var.llm_response_text
            or ctx.ai_aliyun_response_moderated then
-            return nil, complete .. remainder
+            return nil, chunk
         end
 
         ctx.var.llm_content_risk_level = nil
@@ -569,7 +569,7 @@ function _M.lua_body_filter(conf, ctx, headers, body)
             carrier.data.risk_level = risk_level
             carrier.data.deny_message = message or ""
             carrier.event.data = core.json.encode(carrier.data)
-        elseif proto and proto.build_moderation_event then
+        elseif proto.build_moderation_event then
             result_event = proto.build_moderation_event({
                 text = message,
                 risk_level = risk_level,
@@ -578,16 +578,14 @@ function _M.lua_body_filter(conf, ctx, headers, body)
             })
         end
 
+        if result_event then
+            table.insert(events, done_index or #events + 1, result_event)
+        end
         local raw_events = {}
         for _, event in ipairs(events) do
-            if result_event and proto.is_done_event(event) then
-                table.insert(raw_events, sse.encode(result_event))
-                result_event = nil
-            end
             table.insert(raw_events, sse.encode(event))
         end
-        if result_event then
-            table.insert(raw_events, sse.encode(result_event))
+        if result_event and not done_index then
             table.insert(raw_events, proto.build_done_event() .. "\n\n")
         end
         return nil, table.concat(raw_events)
