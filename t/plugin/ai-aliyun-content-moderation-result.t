@@ -59,7 +59,7 @@ _EOC_
                 local content = assert(require("lib.fixture_loader").load(fixture))
                 ngx.header.content_type = "text/event-stream"
                 if ngx.req.get_headers()["X-Split-Done"] then
-                    ngx.print(content:sub(1, -6))
+                    ngx.print(": keep-alive\r\n\r\n\n" .. content:sub(1, -6))
                     ngx.flush(true)
                     ngx.sleep(0.01)
                     ngx.print(content:sub(-5))
@@ -125,7 +125,7 @@ passed
 
 
 
-=== TEST 5: Chat real token accounting survives the zero usage result
+=== TEST 5: Chat existing usage carries risk and denial without a new chunk
 --- case: {fixture="chat-usage", protocol="chat", tokens=18}
 --- response_body
 passed
@@ -155,14 +155,14 @@ passed
 
 
 
-=== TEST 9: Anthropic standalone stop gets metadata without new content blocks
+=== TEST 9: Anthropic without usage gets a result without new content blocks
 --- case: {fixture="anthropic-deny", protocol="anthropic"}
 --- response_body
 passed
 
 
 
-=== TEST 10: Anthropic split usage remains in billing context
+=== TEST 10: Anthropic split usage is decorated in place
 --- case: {fixture="anthropic-usage", protocol="anthropic", tokens=18}
 --- response_body
 passed
@@ -211,8 +211,8 @@ passed
 
 
 
-=== TEST 17: anthropic-error is preserved without a final moderation result
---- case: {fixture="anthropic-error", protocol="anthropic", error=true, tokens=18}
+=== TEST 17: Anthropic error after a scanned usage event is preserved without a terminator
+--- case: {fixture="anthropic-error", protocol="anthropic", error=true, tokens=18, scanned=true}
 --- response_body
 passed
 
@@ -295,7 +295,7 @@ passed
 
 
 
-=== TEST 29: Anthropic result preserves stop sequence after the original event was sent
+=== TEST 29: Anthropic separate delta retains stop sequence
 --- case: {fixture="anthropic-stop-sequence", protocol="anthropic", tokens=18, stop_sequence="END"}
 --- response_body
 passed
@@ -304,5 +304,19 @@ passed
 
 === TEST 30: Anthropic result preserves stop sequence in the original event
 --- case: {fixture="anthropic-stop-sequence", protocol="anthropic", tokens=18, stop_sequence="END", buffered=true}
+--- response_body
+passed
+
+
+
+=== TEST 31: Chat coalesced usage retains the original chunks and billing
+--- case: {fixture="chat-usage", protocol="chat", tokens=18, buffered=true}
+--- response_body
+passed
+
+
+
+=== TEST 32: Chat without usage injects a result in the Anthropic client protocol
+--- case: {fixture="chat-deny", protocol="anthropic", converted=true}
 --- response_body
 passed

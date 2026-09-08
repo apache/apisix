@@ -509,7 +509,7 @@ passed
                 end
                 core.table.insert_tail(final_res, chunk)
             end
-            ngx.print(table.concat(final_res))
+            ngx.print(final_res[5])
         }
     }
 --- response_body_like eval

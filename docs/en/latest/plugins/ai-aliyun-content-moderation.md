@@ -74,19 +74,17 @@ The `ai-aliyun-content-moderation` Plugin should be used with either [`ai-proxy`
 | ssl_verify | boolean | False | `true` | | If `true`, enable SSL certificate verification. |
 | fail_mode | string | False | `"skip"` | `skip`, `warn`, `error` | Behavior when the request is not a recognized AI request that this plugin can inspect (for example, plain HTTP traffic on a Consumer-bound plugin, or a request that did not pass through `ai-proxy`). `skip`: let the request pass through unchecked; `warn`: pass through and log a warning; `error`: reject the request. |
 
-Streaming response moderation does not require upstream token usage statistics. In `final_packet` mode, the accumulated response text is available for moderation when the stream completes, even if the upstream omits `usage`.
+In `final_packet` mode, `risk_level` and `deny_message` are added together to existing data events after the assembled response text is available. Rejected responses use the actual denial message; allowed responses use an empty string. Existing response content and token usage are preserved. The result is informational and cannot retract content already sent to the client.
 
-In `final_packet` mode, response moderation runs after the complete response text is available. Original streaming content is preserved; the result is informational and cannot retract content already sent to the client. Every result JSON has sibling `risk_level` and `deny_message` fields. `deny_message` contains the actual denial text for a rejected response and an empty string for an allowed response.
+When the upstream omits `usage`, moderation runs at the end of the stream:
 
-- **OpenAI Chat Completions:** one additional `chat.completion.chunk` is inserted immediately before `[DONE]`. The result has its own generated `id`, the request's model, and the current creation time. It includes `risk_level`, `deny_message`, and zero-valued `usage`. Its `choices[0].delta.content` contains the configured denial message (or the moderation service's advice/default message) for a rejected response, and an empty string for an allowed response. The result uses `finish_reason: null` to preserve the upstream finish reason. Clients must consume through `[DONE]` to receive it; stopping at a choice's finish reason can miss the result.
-- **Anthropic Messages:** the final `message_delta` carries `risk_level` and `deny_message`. If that event has already been sent, an additional `message_delta` with zero-valued `usage` is inserted before `message_stop`. Content blocks and `message_start` are not replayed.
-- **OpenAI Responses:** `risk_level` and `deny_message` are added to the existing `response.completed` event. Its `response.output` and real `usage` are preserved. EOF without `response.completed` does not produce a synthetic completed response.
+- **OpenAI Chat Completions:** an additional `chat.completion.chunk` with `risk_level`, `deny_message`, and zero-valued `usage` is inserted before `[DONE]`. Its `choices[0].delta.content` contains the denial message (empty for allowed responses), and `finish_reason: null` preserves the upstream finish reason.
+- **Anthropic Messages:** an additional `message_delta` carries `risk_level`, `deny_message`, zero-valued `usage`, and the original stop information before `message_stop`. Content blocks and `message_start` are not replayed.
+- **OpenAI Responses:** the existing `response.completed` event carries `risk_level` and `deny_message`; its output and usage are preserved. EOF without `response.completed` does not produce a synthetic completed response.
 
-A new result event's zero usage describes that event, not the upstream request. SDKs that retain the latest usage can therefore report zero after a Chat result chunk or an additional Anthropic `message_delta`, even when the upstream previously sent real usage. Gateway token accounting continues to use the original upstream usage. If response moderation fails without returning a risk level, no successful moderation result is fabricated. Upstream error events are passed through. Failed or truncated streams do not receive a final result or a synthesized terminator.
+Clients must consume through the stream terminator to receive an injected result. Usage-bearing streams receive in-place fields without an additional result event, so their reported usage is unchanged. New result events report zero usage; gateway accounting continues to use upstream usage. If moderation fails without returning a risk level, no result is fabricated. Error events are preserved, and aborted streams do not receive a synthesized terminator.
 
-Clean EOF without an upstream finish reason does not acquire a synthetic `stop` reason.
-
-Read moderation extensions from the SSE events. For example, the OpenAI Python SDK exposes Responses extensions through `responses.create(stream=True)`, while its higher-level `responses.stream()` wrapper rebuilds `response.completed` and can discard unknown top-level fields.
+Read moderation extensions from the SSE events. For example, the OpenAI Python SDK exposes Responses extensions through `responses.create(stream=True)`, while its higher-level `responses.stream()` wrapper can discard unknown top-level fields.
 
 ## Examples
 

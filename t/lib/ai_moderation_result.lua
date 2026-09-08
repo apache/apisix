@@ -110,14 +110,19 @@ function _M.check(case)
         body = core.json.encode(body),
     }))
     assert(res.status == 200, res.body)
+    if case.split_done then
+        assert(res.body:sub(1, 17) == ": keep-alive\r\n\r\n\n",
+               "complete-frame dispatch changed comments or blank lines")
+    end
     local expected_text = case.text or "kill you"
     for _, service in ipairs({"query_security_check", "response_security_check"}) do
-        local expected_calls = case.error and service == "response_security_check" and 0 or 1
+        local expected_calls = case.error and not case.scanned
+                               and service == "response_security_check" and 0 or 1
         assert((ngx.shared.test:get(service .. "_calls") or 0) == expected_calls,
                service .. ": wrong scan count")
     end
     assert(ngx.shared.test:get("response_security_check_content") ==
-           (not case.error and expected_text or nil),
+           ((not case.error or case.scanned) and expected_text or nil),
            "response scan did not receive all content")
 
     if case.error then
@@ -142,7 +147,7 @@ function _M.check(case)
             goto CONTINUE
         end
         local data = assert(core.json.decode(event.data))
-        if case.protocol == "chat" and not data.risk_level then
+        if case.protocol == "chat" and (case.tokens or not data.risk_level) then
             for _, choice in ipairs(data.choices or {}) do
                 if choice.finish_reason ~= core.json.null then
                     finish_reason = choice.finish_reason or finish_reason
@@ -162,7 +167,7 @@ function _M.check(case)
             assert(data.risk_level == (case.safe and "none" or "high"), "wrong risk")
             assert(data.deny_message == (case.safe and "" or "response rejected"),
                    "missing top-level denial message")
-            if case.protocol == "chat" then
+            if case.protocol == "chat" and not case.tokens then
                 assert(i == #events - 1, "moderation result must precede DONE")
                 assert(type(data.id) == "string" and type(data.created) == "number",
                        "invalid result metadata")
@@ -174,17 +179,22 @@ function _M.check(case)
                 assert(data.usage.prompt_tokens == 0 and data.usage.completion_tokens == 0
                        and data.usage.total_tokens == 0, "result usage must be zero")
             elseif case.protocol == "anthropic" then
-                assert(event.type == "message_delta", "wrong Anthropic event")
+                assert(event.type == "message_delta" or event.type == "content_block_delta",
+                       "wrong Anthropic event")
+                if event.type ~= "message_delta" then
+                    goto CONTINUE
+                end
+                if case.missing_stop then
+                    assert(data.delta == core.json.null, "original delta was replaced")
+                    goto CONTINUE
+                end
                 assert(type(data.delta) == "table", "invalid Anthropic result delta")
                 if case.stop_sequence then
                     assert(data.delta.stop_reason == "stop_sequence"
                            and data.delta.stop_sequence == case.stop_sequence,
                            "original Anthropic stop information was changed")
                 end
-                if case.missing_stop then
-                    assert(data.delta.stop_reason == nil, "fabricated stop reason")
-                end
-                assert(data.usage.output_tokens == (case.buffered and 8 or 0), "wrong usage")
+                assert(data.usage.output_tokens == (case.tokens and 8 or 0), "wrong usage")
             elseif case.protocol == "responses" then
                 assert(event.type == "response.completed", "wrong Responses event")
                 assert(data.response.id == "resp_moderation", "changed response identity")
@@ -201,8 +211,13 @@ function _M.check(case)
     if case.finish_reason then
         assert(finish_reason == case.finish_reason, "original finish reason was changed")
     end
-    assert(risk_count == ((case.failure or case.eof or case.error) and 0 or 1),
-           "wrong moderation result count")
+    if case.failure or case.eof or (case.error and not case.scanned) then
+        assert(risk_count == 0, "unexpected moderation result")
+    elseif case.tokens then
+        assert(risk_count > 0, "missing in-place moderation result")
+    else
+        assert(risk_count == 1, "wrong injected result count")
+    end
     assert(done_count == ((case.eof or case.error) and 0 or 1), "wrong terminator count")
     if case.protocol ~= "chat" then
         assert(start_count == 1, "message/response start was replayed")

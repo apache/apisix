@@ -424,11 +424,6 @@ function _M.empty_usage()
 end
 
 
-function _M.is_moderation_event(event)
-    return event.type == "message_delta"
-end
-
-
 --- Message metadata can be appended after content blocks have closed.
 function _M.build_moderation_event(opts)
     return {

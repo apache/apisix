@@ -74,19 +74,17 @@ import TabItem from '@theme/TabItem';
 | ssl_verify | boolean | 否 | `true` | | 如果为 `true`，启用 SSL 证书验证。 |
 | fail_mode | string | 否 | `"skip"` | `skip`、`warn`、`error` | 当请求不是该插件可识别的 AI 请求时的处理行为（例如 Consumer 级别绑定时的普通 HTTP 流量，或未经过 `ai-proxy` 的请求）。`skip`：放行请求且不做检查；`warn`：放行并记录 warning 日志；`error`：拒绝请求。 |
 
-流式响应审核不依赖上游返回 token 用量统计。在 `final_packet` 模式下，即使上游未返回 `usage`，流结束时也会将已累积的响应正文用于审核。
+`final_packet` 模式在已汇总的响应正文可用后，在现有数据事件中同时追加 `risk_level` 和 `deny_message`。拒绝时使用最终实际拒绝文案，通过时为空字符串，保留事件原有正文和 token 用量。结果仅用于告知客户端，无法撤回已经发送的内容。
 
-`final_packet` 模式在完整响应正文可用后执行响应审核。原始流式正文保持不变；审核结果仅用于告知客户端，无法撤回已经发送的内容。所有结果 JSON 都包含同层的 `risk_level` 和 `deny_message` 字段。拒绝时 `deny_message` 为最终实际拒绝文案，通过时为空字符串。
+上游未提供 `usage` 时，在流结束时执行审核：
 
-- **OpenAI Chat Completions：**在 `[DONE]` 前插入一个额外的 `chat.completion.chunk`，结果包使用独立生成的 `id`、请求中的模型和当前创建时间，包含 `risk_level`、`deny_message` 和全零的 `usage`。响应被拒绝时，`choices[0].delta.content` 为配置的拒绝文案（或审核服务建议、默认文案）；响应通过时该字段为空字符串。结果包的 `finish_reason` 为 `null`，保留上游原始结束原因。客户端需读取至 `[DONE]` 才能获取结果；在 choice 给出结束原因时提前停止读取可能遗漏审核结果。
-- **Anthropic Messages：**在最后的 `message_delta` 中附加 `risk_level` 和 `deny_message`。如果该事件已经发送，则在 `message_stop` 前补一个携带全零 `usage` 的 `message_delta`，不重放内容块或 `message_start`。
-- **OpenAI Responses：**在已有的 `response.completed` 事件中附加 `risk_level` 和 `deny_message`，保留其 `response.output` 和真实 `usage`。如果流在没有 `response.completed` 的情况下结束，不合成完成响应。
+- **OpenAI Chat Completions：**在 `[DONE]` 前插入一个携带 `risk_level`、`deny_message` 和全零 `usage` 的 `chat.completion.chunk`。`choices[0].delta.content` 为拒绝文案（通过时为空字符串），`finish_reason: null` 保留上游原始结束原因。
+- **Anthropic Messages：**在 `message_stop` 前补一个携带 `risk_level`、`deny_message`、全零 `usage` 和原始结束信息的 `message_delta`，不重放内容块或 `message_start`。
+- **OpenAI Responses：**在现有 `response.completed` 事件中附加 `risk_level` 和 `deny_message`，保留原始输出和用量。EOF 时若没有 `response.completed`，不合成完成响应。
 
-新结果事件的零用量仅描述该事件，不代表上游请求用量。使用最后一次用量值的 SDK 在收到 Chat 结果包或额外的 Anthropic `message_delta` 后，即使先前收到过真实用量，也可能报告零用量。网关 token 计费仍使用上游原始用量。响应审核失败且没有返回风险等级时，不伪造审核成功结果；上游错误事件保持透传，失败或截断的流不附加最终结果或合成终止符。
+客户端需读取至流终止符才能获取注入结果。有用量的流只在原事件追加字段，不额外补结果包，因此客户端收到的用量不变。新结果事件使用零用量；网关计费仍使用上游用量。审核失败且没有返回风险等级时不伪造结果；上游错误事件保留，中断的流不合成终止符。
 
-正常 EOF 时若上游从未给出结束原因，不会合成 `stop` 原因。
-
-请从 SSE 事件读取审核扩展字段。例如，OpenAI Python SDK 的 `responses.create(stream=True)` 会保留 Responses 扩展字段，但更高层的 `responses.stream()` 封装会重建 `response.completed`，可能丢弃未知的顶层字段。
+请从 SSE 事件读取审核扩展字段。例如，OpenAI Python SDK 的 `responses.create(stream=True)` 会保留 Responses 扩展字段，但更高层的 `responses.stream()` 封装可能丢弃未知的顶层字段。
 
 ## 示例
 

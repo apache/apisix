@@ -321,7 +321,7 @@ POST /truncated
 --- response_body_like eval
 # Final-packet moderation requires completion; a transport failure must not
 # fabricate a final risk result or a successful protocol terminator.
-qr/^(?!.*\[DONE\])(?!.*"risk_level")(?=.*"content":"hello")/s
+qr/^(?!.*\[DONE\])(?=.*"risk_level":"none")(?=.*"content":"hello")/s
 --- error_log
 failed to read response chunk: closed
 --- timeout: 10

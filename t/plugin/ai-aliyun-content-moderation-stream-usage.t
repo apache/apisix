@@ -74,7 +74,8 @@ _EOC_
                         " / ", ngx.shared.test:get(service .. "_content"))
             end
             local text = {}
-            local events = require("apisix.plugins.ai-transport.sse").decode_buf(res.body)
+            local events, remainder = require("apisix.plugins.ai-transport.sse").decode_buf(res.body)
+            assert(remainder == "", "incomplete frame reached the client")
             for _, event in ipairs(events) do
                 if event.data ~= "[DONE]" then
                     local data = assert(core.json.decode(event.data))
