@@ -164,15 +164,9 @@ function _M.check(case)
                    "missing top-level denial message")
             if case.protocol == "chat" then
                 assert(i == #events - 1, "moderation result must precede DONE")
-                if case.missing_metadata then
-                    assert(type(data.id) == "string" and type(data.created) == "number",
-                           "invalid fallback metadata")
-                    assert(data.model == "test-model", "invalid fallback model")
-                else
-                    assert(data.id == "chatcmpl-moderation", "changed completion identity")
-                    assert(data.model == "test-model" and data.created == 1700000000,
-                           "changed completion metadata")
-                end
+                assert(type(data.id) == "string" and type(data.created) == "number",
+                       "invalid result metadata")
+                assert(data.model == "test-model", "invalid result model")
                 assert(data.choices[1].finish_reason == core.json.null,
                        "moderation result must not replace the finish reason")
                 assert(data.choices[1].delta.content == (case.safe and "" or "response rejected"),
@@ -181,6 +175,15 @@ function _M.check(case)
                        and data.usage.total_tokens == 0, "result usage must be zero")
             elseif case.protocol == "anthropic" then
                 assert(event.type == "message_delta", "wrong Anthropic event")
+                assert(type(data.delta) == "table", "invalid Anthropic result delta")
+                if case.stop_sequence then
+                    assert(data.delta.stop_reason == "stop_sequence"
+                           and data.delta.stop_sequence == case.stop_sequence,
+                           "original Anthropic stop information was changed")
+                end
+                if case.missing_stop then
+                    assert(data.delta.stop_reason == nil, "fabricated stop reason")
+                end
                 assert(data.usage.output_tokens == (case.buffered and 8 or 0), "wrong usage")
             elseif case.protocol == "responses" then
                 assert(event.type == "response.completed", "wrong Responses event")

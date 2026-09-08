@@ -435,7 +435,7 @@ function _M.build_moderation_event(opts)
         type = "message_delta",
         data = core.json.encode({
             type = "message_delta",
-            delta = opts.metadata.delta or { stop_reason = "end_turn" },
+            delta = opts.delta,
             usage = _M.empty_usage(),
             risk_level = opts.risk_level,
             deny_message = opts.text or "",

@@ -239,70 +239,70 @@ passed
 
 
 
-=== TEST 21: chat-length keeps moderation metadata independent of the original stream
+=== TEST 21: Chat result preserves the upstream length finish reason
 --- case: {fixture="chat-length", protocol="chat", tokens=18, finish_reason="length"}
 --- response_body
 passed
 
 
 
-=== TEST 22: chat-tool_calls keeps moderation metadata independent of the original stream
+=== TEST 22: Chat result preserves the upstream tool_calls finish reason
 --- case: {fixture="chat-tool_calls", protocol="chat", tokens=18, finish_reason="tool_calls"}
 --- response_body
 passed
 
 
 
-=== TEST 23: chat-null-after-valid keeps moderation metadata independent of the original stream
---- case: {fixture="chat-null-after-valid", protocol="chat", tokens=18}
+=== TEST 23: Anthropic result does not invent missing stop information
+--- case: {fixture="anthropic-null-delta", protocol="anthropic", tokens=18, missing_stop=true}
 --- response_body
 passed
 
 
 
-=== TEST 24: chat-null-metadata keeps moderation metadata independent of the original stream
---- case: {fixture="chat-null-metadata", protocol="chat", tokens=18, missing_metadata=true}
---- response_body
-passed
-
-
-
-=== TEST 25: anthropic-null-delta keeps moderation metadata independent of the original stream
---- case: {fixture="anthropic-null-delta", protocol="anthropic", tokens=18}
---- response_body
-passed
-
-
-
-=== TEST 26: chat-clean-eof keeps moderation metadata independent of the original stream
+=== TEST 24: Chat clean EOF does not invent a finish reason
 --- case: {fixture="chat-clean-eof", protocol="chat", tokens=18}
 --- response_body
 passed
 
 
 
-=== TEST 27: multiple choices retain their independent finish reasons
+=== TEST 25: multiple choices retain their independent finish reasons
 --- case: {fixture="chat-multiple-reasons", protocol="chat", tokens=18, finish_reason="tool_calls"}
 --- response_body
 passed
 
 
 
-=== TEST 28: anthropic safe result has an empty top-level denial message
+=== TEST 26: anthropic safe result has an empty top-level denial message
 --- case: {fixture="anthropic-safe", protocol="anthropic", text="safe output", safe=true, tokens=18}
 --- response_body
 passed
 
 
 
-=== TEST 29: anthropic safe result has an empty top-level denial message in an existing event
+=== TEST 27: anthropic safe result has an empty top-level denial message in an existing event
 --- case: {fixture="anthropic-safe", protocol="anthropic", text="safe output", safe=true, tokens=18, buffered=true}
 --- response_body
 passed
 
 
 
-=== TEST 30: responses safe result has an empty top-level denial message
+=== TEST 28: responses safe result has an empty top-level denial message
 --- case: {fixture="responses-safe", protocol="responses", text="safe output", safe=true, tokens=18}
+--- response_body
+passed
+
+
+
+=== TEST 29: Anthropic result preserves stop sequence after the original event was sent
+--- case: {fixture="anthropic-stop-sequence", protocol="anthropic", tokens=18, stop_sequence="END"}
+--- response_body
+passed
+
+
+
+=== TEST 30: Anthropic result preserves stop sequence in the original event
+--- case: {fixture="anthropic-stop-sequence", protocol="anthropic", tokens=18, stop_sequence="END", buffered=true}
 --- response_body
 passed

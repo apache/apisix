@@ -509,8 +509,6 @@ function _M.lua_body_filter(conf, ctx, headers, body)
         end
         ctx.aliyun_cm_sse_pending = remainder ~= "" and remainder or nil
         local complete = chunk:sub(1, #chunk - #remainder)
-        local metadata = ctx.aliyun_cm_stream_metadata or {}
-        ctx.aliyun_cm_stream_metadata = metadata
         local done_index
         local carrier
         for i, event in ipairs(events) do
@@ -523,17 +521,9 @@ function _M.lua_body_filter(conf, ctx, headers, body)
                     if proto.is_error_event and proto.is_error_event(event, data) then
                         ctx.aliyun_cm_stream_failed = true
                     end
-                    if type(data.id) == "string" then
-                        metadata.id = data.id
-                    end
-                    if type(data.model) == "string" then
-                        metadata.model = data.model
-                    end
-                    if type(data.created) == "number" then
-                        metadata.created = data.created
-                    end
                     if event.type == "message_delta" and type(data.delta) == "table" then
-                        metadata.delta = data.delta
+                        -- Anthropic SDKs overwrite stop fields on every message_delta.
+                        ctx.aliyun_cm_message_delta = data.delta
                     end
                     if proto.is_moderation_event and proto.is_moderation_event(event) then
                         carrier = { event = event, data = data }
@@ -574,7 +564,7 @@ function _M.lua_body_filter(conf, ctx, headers, body)
                 text = message,
                 risk_level = risk_level,
                 model = ctx.var.request_llm_model,
-                metadata = metadata,
+                delta = ctx.aliyun_cm_message_delta or {},
             })
         end
 
