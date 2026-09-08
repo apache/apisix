@@ -76,6 +76,16 @@ The `ai-aliyun-content-moderation` Plugin should be used with either [`ai-proxy`
 
 Streaming response moderation does not require upstream token usage statistics. In `final_packet` mode, the accumulated response text is available for moderation when the stream completes, even if the upstream omits `usage`.
 
+In `final_packet` mode, response moderation runs after the complete response text is available. Original streaming content is preserved; the result is informational and cannot retract content already sent to the client.
+
+- **OpenAI Chat Completions:** one additional `chat.completion.chunk` is inserted immediately before `[DONE]`. It retains the stream's `id`, `model`, and `created`, and includes `risk_level` and zero-valued `usage`. Its `choices[0].delta.content` contains the configured denial message (or the moderation service's advice/default message) for a rejected response, and an empty string for an allowed response.
+- **Anthropic Messages:** the final `message_delta` carries `risk_level` and, when rejected, `deny_message`. If that event has already been sent, an additional `message_delta` with zero-valued `usage` is inserted before `message_stop`. Content blocks and `message_start` are not replayed.
+- **OpenAI Responses:** `risk_level` and, when rejected, `deny_message` are added to the existing `response.completed` event. Its `response.output` and real `usage` are preserved. EOF without `response.completed` does not produce a synthetic completed response.
+
+A new result event's zero usage describes that event, not the upstream request. SDKs that retain the latest usage can therefore report zero after a Chat result chunk or an additional Anthropic `message_delta`, even when the upstream previously sent real usage. Gateway token accounting continues to use the original upstream usage. If response moderation fails without returning a risk level, no successful moderation result is fabricated. Truncated streams do not receive a final result or a synthesized terminator.
+
+Read moderation extensions from the SSE events. For example, the OpenAI Python SDK exposes Responses extensions through `responses.create(stream=True)`, while its higher-level `responses.stream()` wrapper rebuilds `response.completed` and can discard unknown top-level fields.
+
 ## Examples
 
 The following examples use OpenAI as the Upstream service provider. Before proceeding, create an [OpenAI account](https://openai.com) and obtain an [API key](https://openai.com/blog/openai-api). If you are working with other LLM providers, please refer to the provider's documentation to obtain an API key.

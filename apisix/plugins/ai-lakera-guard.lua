@@ -268,13 +268,13 @@ function _M.lua_body_filter(conf, ctx, headers, body)
         if not text then
             if conf.fail_open then
                 core.log.warn("ai-lakera-guard: streamed response ended without ",
-                              "an assembled completion (no upstream usage event?); ",
+                              "an assembled completion; ",
                               "fail_open=true, releasing unscanned")
                 ctx.lakera_response_decided = "clean"
                 return nil, concat(buffer)
             end
             core.log.error("ai-lakera-guard: streamed response ended without ",
-                           "an assembled completion (no upstream usage event?); ",
+                           "an assembled completion; ",
                            "fail_open=false, blocking response")
             ctx.lakera_response_decided = "blocked"
             return ngx.OK, deny_message(ctx, conf, conf.response_failure_message)

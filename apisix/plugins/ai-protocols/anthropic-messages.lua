@@ -424,6 +424,26 @@ function _M.empty_usage()
 end
 
 
+function _M.is_moderation_event(event)
+    return event.type == "message_delta"
+end
+
+
+--- Message metadata can be appended after content blocks have closed.
+function _M.build_moderation_event(opts)
+    return {
+        type = "message_delta",
+        data = core.json.encode({
+            type = "message_delta",
+            delta = opts.metadata.delta or { stop_reason = "end_turn" },
+            usage = _M.empty_usage(),
+            risk_level = opts.risk_level,
+            deny_message = opts.text,
+        }),
+    }
+end
+
+
 --- Check if an SSE event is a data event (contains parseable content).
 function _M.is_data_event(event)
     return event.type == "content_block_delta" or event.type == "message_delta"

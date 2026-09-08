@@ -372,21 +372,26 @@ function _M.get_request_content(body)
 end
 
 
+local function build_stream_message(opts)
+    return {
+        id = uuid.generate_v4(),
+        object = "chat.completion.chunk",
+        model = opts.model,
+        choices = {{
+            index = 0,
+            delta = { content = opts.text },
+            finish_reason = "stop"
+        }},
+        usage = opts.usage,
+    }
+end
+
+
 --- Build a deny response in OpenAI Chat format.
 -- opts: {text, model, usage, stream}
 function _M.build_deny_response(opts)
     if opts.stream then
-        local data = {
-            id = uuid.generate_v4(),
-            object = "chat.completion.chunk",
-            model = opts.model,
-            choices = {{
-                index = 0,
-                delta = { content = opts.text },
-                finish_reason = "stop"
-            }},
-            usage = opts.usage,
-        }
+        local data = build_stream_message(opts)
         return "data: " .. core.json.encode(data) .. "\n\n" .. "data: [DONE]"
     else
         return core.json.encode({
@@ -407,6 +412,22 @@ end
 --- Build an empty usage object with zero values.
 function _M.empty_usage()
     return { prompt_tokens = 0, completion_tokens = 0, total_tokens = 0 }
+end
+
+
+--- Build a final moderation chunk without ending or replacing the original stream.
+function _M.build_moderation_event(opts)
+    local data = build_stream_message({
+        model = opts.model,
+        text = opts.text or "",
+        usage = _M.empty_usage(),
+    })
+    local metadata = opts.metadata
+    data.id = metadata.id or data.id
+    data.model = metadata.model or data.model
+    data.created = metadata.created or ngx.time()
+    data.risk_level = opts.risk_level
+    return { type = "message", data = core.json.encode(data) }
 end
 
 

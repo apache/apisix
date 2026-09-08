@@ -455,6 +455,9 @@ function _M.is_data_event(event)
 end
 
 
+_M.is_moderation_event = _M.is_data_event
+
+
 --- Check if an SSE event is the terminal/done event.
 function _M.is_done_event(event)
     return event.type == "response.completed"

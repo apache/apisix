@@ -284,12 +284,13 @@ local function deny_message(ctx, message)
     local usage = ctx.llm_raw_usage
         or (proto.empty_usage and proto.empty_usage())
         or { prompt_tokens = 0, completion_tokens = 0, total_tokens = 0 }
+    message = message or "Your request violate our content policy."
     return proto.build_deny_response({
-        text = message or "Your request violate our content policy.",
+        text = message,
         model = model,
         usage = usage,
         stream = stream,
-    })
+    }), message
 end
 
 
@@ -500,45 +501,87 @@ function _M.lua_body_filter(conf, ctx, headers, body)
     local proto = protocols.get(ctx.ai_client_protocol)
 
     if conf.stream_check_mode == "final_packet" then
-        if not ctx.var.llm_response_text then
-            return
+        local pending = ctx.aliyun_cm_sse_pending or ""
+        local complete, remainder = sse.split_buf(pending .. (body or ""))
+        if #remainder > sse.max_remainder then
+            ctx.aliyun_cm_sse_pending = nil
+            return nil, complete .. remainder
         end
-        if not ctx.ai_aliyun_response_moderated then
-            response_content_moderation(ctx, conf, ctx.var.llm_response_text)
-            release_cm_httpc(ctx, conf)
-            ctx.ai_aliyun_response_moderated = true
-        end
-        local events = sse.decode(body)
-        for _, event in ipairs(events) do
-            if proto and proto.is_data_event(event) then
-                local data, err = core.json.decode(event.data)
-                if not data then
-                    core.log.warn("failed to decode SSE data: ", err)
-                    goto CONTINUE
-                end
-                data.risk_level = ctx.var.llm_content_risk_level
-                event.data = core.json.encode(data)
-            end
-            ::CONTINUE::
-        end
-
-        local raw_events = {}
+        ctx.aliyun_cm_sse_pending = remainder
+        local events = sse.decode(complete)
+        local metadata = ctx.aliyun_cm_stream_metadata or {}
+        ctx.aliyun_cm_stream_metadata = metadata
         local contains_done_event = false
+        local carrier
         for _, event in ipairs(events) do
             if proto and proto.is_done_event(event) then
                 contains_done_event = true
             end
+            if event.data ~= "[DONE]" then
+                local data = core.json.decode(event.data)
+                if type(data) == "table" then
+                    metadata.id = data.id or metadata.id
+                    metadata.model = data.model or metadata.model
+                    metadata.created = data.created or metadata.created
+                    if event.type == "message_delta" then
+                        metadata.delta = data.delta
+                    end
+                    if proto and proto.is_moderation_event
+                       and proto.is_moderation_event(event) then
+                        carrier = { event = event, data = data }
+                    end
+                end
+            end
+        end
+
+        -- A converter can dispatch several client events after llm_request_done
+        -- is set. Wait for the client's terminator, or the explicit EOF flush.
+        local eof = ctx.var.llm_request_done and (not body or body == "")
+        if not contains_done_event and not eof then
+            return nil, complete
+        end
+        ctx.aliyun_cm_sse_pending = nil
+        if ctx.ai_stream_aborted or remainder ~= "" or not ctx.var.llm_response_text
+           or ctx.ai_aliyun_response_moderated then
+            return nil, complete .. remainder
+        end
+
+        ctx.var.llm_content_risk_level = nil
+        local _, _, message = response_content_moderation(ctx, conf, ctx.var.llm_response_text)
+        release_cm_httpc(ctx, conf)
+        ctx.ai_aliyun_response_moderated = true
+        local risk_level = ctx.var.llm_content_risk_level
+        if not risk_level then
+            return nil, complete
+        end
+
+        local result_event
+        if carrier then
+            carrier.data.risk_level = risk_level
+            carrier.data.deny_message = message
+            carrier.event.data = core.json.encode(carrier.data)
+        elseif proto and proto.build_moderation_event then
+            result_event = proto.build_moderation_event({
+                text = message,
+                risk_level = risk_level,
+                model = ctx.var.request_llm_model,
+                metadata = metadata,
+            })
+        end
+
+        local raw_events = {}
+        for _, event in ipairs(events) do
+            if result_event and proto.is_done_event(event) then
+                table.insert(raw_events, sse.encode(result_event))
+                result_event = nil
+            end
             table.insert(raw_events, sse.encode(event))
         end
-        -- llm_request_done only means "no more content is coming", which is also
-        -- set when a stream is cut short (upstream read error, stream limit).
-        -- ctx.ai_stream_aborted marks those cases: synthesizing a terminator there
-        -- would tell the client a truncated response completed successfully.
-        if not contains_done_event and proto and ctx.var.llm_request_done
-           and not ctx.ai_stream_aborted then
+        if result_event then
+            table.insert(raw_events, sse.encode(result_event))
             table.insert(raw_events, proto.build_done_event())
         end
-        return nil, table.concat(raw_events, "\n")
+        return nil, table.concat(raw_events)
     end
 
     if conf.stream_check_mode == "realtime" then

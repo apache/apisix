@@ -76,6 +76,16 @@ import TabItem from '@theme/TabItem';
 
 流式响应审核不依赖上游返回 token 用量统计。在 `final_packet` 模式下，即使上游未返回 `usage`，流结束时也会将已累积的响应正文用于审核。
 
+`final_packet` 模式在完整响应正文可用后执行响应审核。原始流式正文保持不变；审核结果仅用于告知客户端，无法撤回已经发送的内容。
+
+- **OpenAI Chat Completions：**在 `[DONE]` 前插入一个额外的 `chat.completion.chunk`，沿用本次流的 `id`、`model` 和 `created`，包含 `risk_level` 和全零的 `usage`。响应被拒绝时，`choices[0].delta.content` 为配置的拒绝文案（或审核服务建议、默认文案）；响应通过时该字段为空字符串。
+- **Anthropic Messages：**在最后的 `message_delta` 中附加 `risk_level`，拒绝时还包含 `deny_message`。如果该事件已经发送，则在 `message_stop` 前补一个携带全零 `usage` 的 `message_delta`，不重放内容块或 `message_start`。
+- **OpenAI Responses：**在已有的 `response.completed` 事件中附加 `risk_level`，拒绝时还包含 `deny_message`，保留其 `response.output` 和真实 `usage`。如果流在没有 `response.completed` 的情况下结束，不合成完成响应。
+
+新结果事件的零用量仅描述该事件，不代表上游请求用量。使用最后一次用量值的 SDK 在收到 Chat 结果包或额外的 Anthropic `message_delta` 后，即使先前收到过真实用量，也可能报告零用量。网关 token 计费仍使用上游原始用量。响应审核失败且没有返回风险等级时，不伪造审核成功结果；截断流不附加最终结果或合成终止符。
+
+请从 SSE 事件读取审核扩展字段。例如，OpenAI Python SDK 的 `responses.create(stream=True)` 会保留 Responses 扩展字段，但更高层的 `responses.stream()` 封装会重建 `response.completed`，可能丢弃未知的顶层字段。
+
 ## 示例
 
 以下示例使用 OpenAI 作为上游服务提供商。在开始之前，请创建一个 [OpenAI 账号](https://openai.com) 并获取 [API 密钥](https://openai.com/blog/openai-api)。如果你使用其他 LLM 提供商，请参考相应提供商的文档获取 API 密钥。
