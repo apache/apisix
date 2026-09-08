@@ -152,7 +152,7 @@ function _M.check(case)
         if injected then
             injected_count = injected_count + 1
         end
-        if case.protocol == "chat" and not injected then
+        if case.protocol == "chat" then
             for _, choice in ipairs(data.choices or {}) do
                 if choice.finish_reason ~= core.json.null then
                     finish_reason = choice.finish_reason or finish_reason
@@ -177,10 +177,9 @@ function _M.check(case)
                 assert(type(data.id) == "string" and type(data.created) == "number",
                        "invalid result metadata")
                 assert(data.model == "test-model", "invalid result model")
-                assert(data.choices[1].finish_reason == core.json.null,
-                       "moderation result must not replace the finish reason")
-                assert(data.choices[1].delta.content == (case.safe and "" or "response rejected"),
-                       "wrong denial text")
+                assert(type(data.choices) == "table" and #data.choices == 0
+                       and event.data:find('"choices":[]', 1, true),
+                       "moderation usage chunk must have empty choices")
                 assert(data.usage.prompt_tokens == 0 and data.usage.completion_tokens == 0
                        and data.usage.total_tokens == 0, "result usage must be zero")
             elseif case.protocol == "anthropic" then

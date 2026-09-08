@@ -22,6 +22,7 @@
 local core = require("apisix.core")
 local uuid = require("resty.jit-uuid")
 local table = table
+local setmetatable = setmetatable
 local type = type
 local ipairs = ipairs
 local ngx_time = ngx.time
@@ -373,26 +374,21 @@ function _M.get_request_content(body)
 end
 
 
-local function build_stream_message(opts)
-    return {
-        id = uuid.generate_v4(),
-        object = "chat.completion.chunk",
-        model = opts.model,
-        choices = {{
-            index = 0,
-            delta = { content = opts.text },
-            finish_reason = "stop"
-        }},
-        usage = opts.usage,
-    }
-end
-
-
 --- Build a deny response in OpenAI Chat format.
 -- opts: {text, model, usage, stream}
 function _M.build_deny_response(opts)
     if opts.stream then
-        local data = build_stream_message(opts)
+        local data = {
+            id = uuid.generate_v4(),
+            object = "chat.completion.chunk",
+            model = opts.model,
+            choices = {{
+                index = 0,
+                delta = { content = opts.text },
+                finish_reason = "stop"
+            }},
+            usage = opts.usage,
+        }
         return "data: " .. core.json.encode(data) .. "\n\n" .. "data: [DONE]"
     else
         return core.json.encode({
@@ -418,15 +414,16 @@ end
 
 --- Build a final moderation chunk without ending or replacing the original stream.
 function _M.build_moderation_event(opts)
-    local data = build_stream_message({
+    local data = {
+        id = uuid.generate_v4(),
+        object = "chat.completion.chunk",
+        created = ngx_time(),
         model = opts.model,
-        text = opts.text or "",
+        choices = setmetatable({}, core.json.array_mt),
         usage = _M.empty_usage(),
-    })
-    data.created = ngx_time()
-    data.risk_level = opts.risk_level
-    data.deny_message = opts.text or ""
-    data.choices[1].finish_reason = core.json.null
+        risk_level = opts.risk_level,
+        deny_message = opts.deny_message or "",
+    }
     return { type = "message", data = core.json.encode(data) }
 end
 

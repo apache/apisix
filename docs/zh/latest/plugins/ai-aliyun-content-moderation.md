@@ -78,7 +78,7 @@ import TabItem from '@theme/TabItem';
 
 上游未提供 `usage` 时，在流结束时执行审核：
 
-- **OpenAI Chat Completions：**在 `[DONE]` 前插入一个携带 `risk_level`、`deny_message` 和全零 `usage` 的 `chat.completion.chunk`。`choices[0].delta.content` 为拒绝文案（通过时为空字符串），`finish_reason: null` 保留上游原始结束原因。
+- **OpenAI Chat Completions：**在 `[DONE]` 前插入一个携带 `risk_level`、`deny_message` 和全零 `usage` 的 `chat.completion.chunk`。这是 `choices: []` 的空用量包，拒绝文案仅通过顶层 `deny_message` 字段返回，不追加正文，也不改变上游结束原因。
 - **Anthropic Messages：**在 `message_stop` 前补一个携带 `risk_level`、`deny_message`、全零 `usage` 和原始结束信息的 `message_delta`，不重放内容块或 `message_start`。
 - **OpenAI Responses：**在现有 `response.completed` 事件中附加 `risk_level` 和 `deny_message`，保留原始输出和用量。EOF 时若没有 `response.completed`，不合成完成响应。
 

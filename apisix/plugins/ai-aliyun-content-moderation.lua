@@ -550,7 +550,7 @@ function _M.lua_body_filter(conf, ctx, headers, body)
            and (done_index or eof) then
             table.insert(raw_events, done_index or #raw_events + 1,
                 sse.encode(proto.build_moderation_event({
-                    text = ctx.aliyun_cm_deny_message,
+                    deny_message = ctx.aliyun_cm_deny_message,
                     risk_level = ctx.var.llm_content_risk_level,
                     model = ctx.var.request_llm_model,
                     delta = ctx.aliyun_cm_message_delta or {},

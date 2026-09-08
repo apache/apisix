@@ -433,7 +433,7 @@ function _M.build_moderation_event(opts)
             delta = opts.delta,
             usage = _M.empty_usage(),
             risk_level = opts.risk_level,
-            deny_message = opts.text or "",
+            deny_message = opts.deny_message or "",
         }),
     }
 end

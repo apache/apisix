@@ -78,7 +78,7 @@ In `final_packet` mode, `risk_level` and `deny_message` are added together to ex
 
 When the upstream omits `usage`, moderation runs at the end of the stream:
 
-- **OpenAI Chat Completions:** an additional `chat.completion.chunk` with `risk_level`, `deny_message`, and zero-valued `usage` is inserted before `[DONE]`. Its `choices[0].delta.content` contains the denial message (empty for allowed responses), and `finish_reason: null` preserves the upstream finish reason.
+- **OpenAI Chat Completions:** an additional `chat.completion.chunk` with `risk_level`, `deny_message`, and zero-valued `usage` is inserted before `[DONE]`. This is an empty usage chunk with `choices: []`: the denial message appears only in the top-level `deny_message` field, without appending text or changing the upstream finish reason.
 - **Anthropic Messages:** an additional `message_delta` carries `risk_level`, `deny_message`, zero-valued `usage`, and the original stop information before `message_stop`. Content blocks and `message_start` are not replayed.
 - **OpenAI Responses:** the existing `response.completed` event carries `risk_level` and `deny_message`; its output and usage are preserved. EOF without `response.completed` does not produce a synthetic completed response.
 
