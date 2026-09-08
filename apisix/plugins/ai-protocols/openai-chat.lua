@@ -24,6 +24,7 @@ local uuid = require("resty.jit-uuid")
 local table = table
 local type = type
 local ipairs = ipairs
+local ngx_time = ngx.time
 
 local _M = {}
 
@@ -425,7 +426,7 @@ function _M.build_moderation_event(opts)
     local metadata = opts.metadata
     data.id = metadata.id or data.id
     data.model = metadata.model or data.model
-    data.created = metadata.created or ngx.time()
+    data.created = metadata.created or ngx_time()
     data.risk_level = opts.risk_level
     return { type = "message", data = core.json.encode(data) }
 end
@@ -434,6 +435,11 @@ end
 --- Check if an SSE event is a data event (contains parseable content).
 function _M.is_data_event(event)
     return event.type == "message" and event.data ~= "[DONE]"
+end
+
+
+function _M.is_error_event(event, data)
+    return type(data.error) == "table"
 end
 
 

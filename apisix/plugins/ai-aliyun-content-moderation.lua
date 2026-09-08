@@ -520,6 +520,9 @@ function _M.lua_body_filter(conf, ctx, headers, body)
             if event.data ~= "[DONE]" then
                 local data = core.json.decode(event.data)
                 if type(data) == "table" then
+                    if proto and proto.is_error_event and proto.is_error_event(event, data) then
+                        ctx.aliyun_cm_stream_failed = true
+                    end
                     metadata.id = data.id or metadata.id
                     metadata.model = data.model or metadata.model
                     metadata.created = data.created or metadata.created
@@ -541,7 +544,8 @@ function _M.lua_body_filter(conf, ctx, headers, body)
             return nil, complete
         end
         ctx.aliyun_cm_sse_pending = nil
-        if ctx.ai_stream_aborted or remainder ~= "" or not ctx.var.llm_response_text
+        if ctx.ai_stream_aborted or ctx.aliyun_cm_stream_failed
+           or remainder ~= "" or not ctx.var.llm_response_text
            or ctx.ai_aliyun_response_moderated then
             return nil, complete .. remainder
         end

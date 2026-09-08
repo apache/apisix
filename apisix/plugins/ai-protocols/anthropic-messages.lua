@@ -450,6 +450,11 @@ function _M.is_data_event(event)
 end
 
 
+function _M.is_error_event(event)
+    return event.type == "error"
+end
+
+
 --- Check if an SSE event is the terminal/done event.
 function _M.is_done_event(event)
     return event.type == "message_stop"

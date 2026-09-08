@@ -82,7 +82,7 @@ import TabItem from '@theme/TabItem';
 - **Anthropic Messages：**在最后的 `message_delta` 中附加 `risk_level`，拒绝时还包含 `deny_message`。如果该事件已经发送，则在 `message_stop` 前补一个携带全零 `usage` 的 `message_delta`，不重放内容块或 `message_start`。
 - **OpenAI Responses：**在已有的 `response.completed` 事件中附加 `risk_level`，拒绝时还包含 `deny_message`，保留其 `response.output` 和真实 `usage`。如果流在没有 `response.completed` 的情况下结束，不合成完成响应。
 
-新结果事件的零用量仅描述该事件，不代表上游请求用量。使用最后一次用量值的 SDK 在收到 Chat 结果包或额外的 Anthropic `message_delta` 后，即使先前收到过真实用量，也可能报告零用量。网关 token 计费仍使用上游原始用量。响应审核失败且没有返回风险等级时，不伪造审核成功结果；截断流不附加最终结果或合成终止符。
+新结果事件的零用量仅描述该事件，不代表上游请求用量。使用最后一次用量值的 SDK 在收到 Chat 结果包或额外的 Anthropic `message_delta` 后，即使先前收到过真实用量，也可能报告零用量。网关 token 计费仍使用上游原始用量。响应审核失败且没有返回风险等级时，不伪造审核成功结果；上游错误事件保持透传，失败或截断的流不附加最终结果或合成终止符。
 
 请从 SSE 事件读取审核扩展字段。例如，OpenAI Python SDK 的 `responses.create(stream=True)` 会保留 Responses 扩展字段，但更高层的 `responses.stream()` 封装会重建 `response.completed`，可能丢弃未知的顶层字段。
 

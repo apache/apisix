@@ -98,11 +98,18 @@ function _M.check(case)
     assert(res.status == 200, res.body)
     local expected_text = case.text or "kill you"
     for _, service in ipairs({"query_security_check", "response_security_check"}) do
-        assert(ngx.shared.test:get(service .. "_calls") == 1, service .. ": expected one check")
+        local expected_calls = case.error and service == "response_security_check" and 0 or 1
+        assert((ngx.shared.test:get(service .. "_calls") or 0) == expected_calls,
+               service .. ": wrong scan count")
     end
-    assert(ngx.shared.test:get("response_security_check_content") == expected_text,
+    assert(ngx.shared.test:get("response_security_check_content") ==
+           (not case.error and expected_text or nil),
            "response scan did not receive all content")
 
+    if case.error then
+        assert(res.body:find(case.error_text or "stream failed", 1, true),
+               "upstream error was lost")
+    end
     local events, remainder = sse.decode_buf(res.body)
     assert(remainder == "", "partial downstream event")
     local risk_count, done_count, start_count = 0, 0, 0
@@ -162,8 +169,9 @@ function _M.check(case)
         ::CONTINUE::
     end
     assert(table.concat(original) == expected_text, "original response text was changed")
-    assert(risk_count == ((case.failure or case.eof) and 0 or 1), "wrong moderation result count")
-    assert(done_count == (case.eof and 0 or 1), "wrong terminator count")
+    assert(risk_count == ((case.failure or case.eof or case.error) and 0 or 1),
+           "wrong moderation result count")
+    assert(done_count == ((case.eof or case.error) and 0 or 1), "wrong terminator count")
     if case.protocol ~= "chat" then
         assert(start_count == 1, "message/response start was replayed")
     end

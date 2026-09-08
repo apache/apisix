@@ -204,3 +204,38 @@ passed
 --- case: {fixture="chat-usage", protocol="anthropic", converted=true, tokens=18}
 --- response_body
 passed
+
+
+
+=== TEST 16: chat-error is preserved without a final moderation result
+--- case: {fixture="chat-error", protocol="chat", error=true}
+--- response_body
+passed
+
+
+
+=== TEST 17: anthropic-error is preserved without a final moderation result
+--- case: {fixture="anthropic-error", protocol="anthropic", error=true, tokens=18}
+--- response_body
+passed
+
+
+
+=== TEST 18: responses-error is preserved without a final moderation result
+--- case: {fixture="responses-error", protocol="responses", error=true}
+--- response_body
+passed
+
+
+
+=== TEST 19: responses-failed is preserved without a final moderation result
+--- case: {fixture="responses-failed", protocol="responses", error=true}
+--- response_body
+passed
+
+
+
+=== TEST 20: responses-incomplete is preserved without a final moderation result
+--- case: {fixture="responses-incomplete", protocol="responses", error=true, error_text="max_output_tokens"}
+--- response_body
+passed
