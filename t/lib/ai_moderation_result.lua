@@ -55,10 +55,7 @@ function _M.setup()
                 ["serverless-post-function"] = {
                     phase = "log",
                     functions = {"return function(conf, ctx) "
-                        .. "ngx.shared.test:set('tokens', "
-                        .. "tonumber(ctx.var.llm_total_tokens) or 0); "
-                        .. "ngx.shared.test:set('raw_usage', require('apisix.core').json.encode("
-                        .. "ctx.llm_raw_usage or {})) end"},
+                        .. "require('lib.ai_moderation_result').record_usage(ctx) end"},
                 },
             },
         }
@@ -69,7 +66,23 @@ function _M.setup()
 end
 
 
+function _M.record_usage(ctx)
+    local request_id = ctx.var.http_x_result_request_id
+    assert(ngx.shared.test:set("accounting:" .. request_id, core.json.encode({
+        tokens = tonumber(ctx.var.llm_total_tokens) or 0,
+        raw_usage = ctx.llm_raw_usage or {},
+    })))
+end
+
+
 function _M.check(case)
+    local request_id = require("resty.jit-uuid").generate_v4()
+    local accounting_key = "accounting:" .. request_id
+    ngx.shared.test:delete(accounting_key)
+    for _, service in ipairs({"query_security_check", "response_security_check"}) do
+        ngx.shared.test:delete(service .. "_calls")
+        ngx.shared.test:delete(service .. "_content")
+    end
     local path = "/chat"
     local body = {model = "test-model", stream = true,
                   messages = {{role = "user", content = "hello"}}}
@@ -89,6 +102,7 @@ function _M.check(case)
         headers = {
             ["Content-Type"] = "application/json",
             apikey = "moderation-result",
+            ["X-Result-Request-ID"] = request_id,
             ["X-AI-Fixture"] = "aliyun/result-" .. case.fixture .. ".sse",
             ["X-Buffered"] = case.buffered and "true" or nil,
             ["X-Split-Done"] = case.split_done and "true" or nil,
@@ -114,6 +128,7 @@ function _M.check(case)
     assert(remainder == "", "partial downstream event")
     local risk_count, done_count, start_count = 0, 0, 0
     local original = {}
+    local finish_reason
     for i, event in ipairs(events) do
         if event.data == "[DONE]" or event.type == "message_stop"
            or event.type == "response.completed" then
@@ -129,6 +144,9 @@ function _M.check(case)
         local data = assert(core.json.decode(event.data))
         if case.protocol == "chat" and not data.risk_level then
             for _, choice in ipairs(data.choices or {}) do
+                if choice.finish_reason ~= core.json.null then
+                    finish_reason = choice.finish_reason or finish_reason
+                end
                 if type(choice.delta.content) == "string" then
                     original[#original + 1] = choice.delta.content
                 end
@@ -142,22 +160,30 @@ function _M.check(case)
         if data.risk_level then
             risk_count = risk_count + 1
             assert(data.risk_level == (case.safe and "none" or "high"), "wrong risk")
+            assert(data.deny_message == (case.safe and "" or "response rejected"),
+                   "missing top-level denial message")
             if case.protocol == "chat" then
                 assert(i == #events - 1, "moderation result must precede DONE")
-                assert(data.id == "chatcmpl-moderation", "changed completion identity")
-                assert(data.model == "test-model" and data.created == 1700000000,
-                       "changed completion metadata")
+                if case.missing_metadata then
+                    assert(type(data.id) == "string" and type(data.created) == "number",
+                           "invalid fallback metadata")
+                    assert(data.model == "test-model", "invalid fallback model")
+                else
+                    assert(data.id == "chatcmpl-moderation", "changed completion identity")
+                    assert(data.model == "test-model" and data.created == 1700000000,
+                           "changed completion metadata")
+                end
+                assert(data.choices[1].finish_reason == core.json.null,
+                       "moderation result must not replace the finish reason")
                 assert(data.choices[1].delta.content == (case.safe and "" or "response rejected"),
                        "wrong denial text")
                 assert(data.usage.prompt_tokens == 0 and data.usage.completion_tokens == 0
                        and data.usage.total_tokens == 0, "result usage must be zero")
             elseif case.protocol == "anthropic" then
                 assert(event.type == "message_delta", "wrong Anthropic event")
-                assert(data.deny_message == "response rejected", "missing denial text")
                 assert(data.usage.output_tokens == (case.buffered and 8 or 0), "wrong usage")
             elseif case.protocol == "responses" then
                 assert(event.type == "response.completed", "wrong Responses event")
-                assert(data.deny_message == "response rejected", "missing denial text")
                 assert(data.response.id == "resp_moderation", "changed response identity")
                 assert(data.response.output[1].content[1].text == expected_text,
                        "completed output was replaced")
@@ -169,15 +195,30 @@ function _M.check(case)
         ::CONTINUE::
     end
     assert(table.concat(original) == expected_text, "original response text was changed")
+    if case.finish_reason then
+        assert(finish_reason == case.finish_reason, "original finish reason was changed")
+    end
     assert(risk_count == ((case.failure or case.eof or case.error) and 0 or 1),
            "wrong moderation result count")
     assert(done_count == ((case.eof or case.error) and 0 or 1), "wrong terminator count")
     if case.protocol ~= "chat" then
         assert(start_count == 1, "message/response start was replayed")
     end
-    assert(ngx.shared.test:get("tokens") == (case.tokens or 0), "token accounting changed")
+    local deadline = ngx.now() + 1
+    local accounting
+    repeat
+        accounting = ngx.shared.test:get(accounting_key)
+        if accounting then
+            break
+        end
+        ngx.sleep(0.01)
+    until ngx.now() >= deadline
+    assert(accounting, "log phase did not publish this request's accounting")
+    accounting = assert(core.json.decode(accounting))
+    ngx.shared.test:delete(accounting_key)
+    assert(accounting.tokens == (case.tokens or 0), "token accounting changed")
     if case.tokens then
-        local raw = assert(core.json.decode(ngx.shared.test:get("raw_usage")))
+        local raw = accounting.raw_usage
         assert((raw.prompt_tokens or raw.input_tokens) == 10, "raw input usage changed")
         assert((raw.completion_tokens or raw.output_tokens) == 8, "raw output usage changed")
     end

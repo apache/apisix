@@ -76,13 +76,15 @@ import TabItem from '@theme/TabItem';
 
 流式响应审核不依赖上游返回 token 用量统计。在 `final_packet` 模式下，即使上游未返回 `usage`，流结束时也会将已累积的响应正文用于审核。
 
-`final_packet` 模式在完整响应正文可用后执行响应审核。原始流式正文保持不变；审核结果仅用于告知客户端，无法撤回已经发送的内容。
+`final_packet` 模式在完整响应正文可用后执行响应审核。原始流式正文保持不变；审核结果仅用于告知客户端，无法撤回已经发送的内容。所有结果 JSON 都包含同层的 `risk_level` 和 `deny_message` 字段。拒绝时 `deny_message` 为最终实际拒绝文案，通过时为空字符串。
 
-- **OpenAI Chat Completions：**在 `[DONE]` 前插入一个额外的 `chat.completion.chunk`，沿用本次流的 `id`、`model` 和 `created`，包含 `risk_level` 和全零的 `usage`。响应被拒绝时，`choices[0].delta.content` 为配置的拒绝文案（或审核服务建议、默认文案）；响应通过时该字段为空字符串。
-- **Anthropic Messages：**在最后的 `message_delta` 中附加 `risk_level`，拒绝时还包含 `deny_message`。如果该事件已经发送，则在 `message_stop` 前补一个携带全零 `usage` 的 `message_delta`，不重放内容块或 `message_start`。
-- **OpenAI Responses：**在已有的 `response.completed` 事件中附加 `risk_level`，拒绝时还包含 `deny_message`，保留其 `response.output` 和真实 `usage`。如果流在没有 `response.completed` 的情况下结束，不合成完成响应。
+- **OpenAI Chat Completions：**在 `[DONE]` 前插入一个额外的 `chat.completion.chunk`，存在有效值时沿用本次流的 `id`、`model` 和 `created`，包含 `risk_level`、`deny_message` 和全零的 `usage`。响应被拒绝时，`choices[0].delta.content` 为配置的拒绝文案（或审核服务建议、默认文案）；响应通过时该字段为空字符串。结果包的 `finish_reason` 为 `null`，保留上游原始结束原因。客户端需读取至 `[DONE]` 才能获取结果；在 choice 给出结束原因时提前停止读取可能遗漏审核结果。
+- **Anthropic Messages：**在最后的 `message_delta` 中附加 `risk_level` 和 `deny_message`。如果该事件已经发送，则在 `message_stop` 前补一个携带全零 `usage` 的 `message_delta`，不重放内容块或 `message_start`。
+- **OpenAI Responses：**在已有的 `response.completed` 事件中附加 `risk_level` 和 `deny_message`，保留其 `response.output` 和真实 `usage`。如果流在没有 `response.completed` 的情况下结束，不合成完成响应。
 
 新结果事件的零用量仅描述该事件，不代表上游请求用量。使用最后一次用量值的 SDK 在收到 Chat 结果包或额外的 Anthropic `message_delta` 后，即使先前收到过真实用量，也可能报告零用量。网关 token 计费仍使用上游原始用量。响应审核失败且没有返回风险等级时，不伪造审核成功结果；上游错误事件保持透传，失败或截断的流不附加最终结果或合成终止符。
+
+构造结果时忽略缺失或为 null 的元数据，使用之前收到的有效值或生成的默认值。原始上游事件不做修复，无效的原始元数据仍可能影响 SDK 解析。正常 EOF 时若上游从未给出结束原因，不会合成 `stop` 原因。
 
 请从 SSE 事件读取审核扩展字段。例如，OpenAI Python SDK 的 `responses.create(stream=True)` 会保留 Responses 扩展字段，但更高层的 `responses.stream()` 封装会重建 `response.completed`，可能丢弃未知的顶层字段。
 

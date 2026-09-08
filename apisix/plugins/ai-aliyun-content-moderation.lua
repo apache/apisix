@@ -172,7 +172,6 @@ local function calculate_sign(params, secret)
     table.sort(params_arr)
     local canonical_str = table.concat(params_arr, "&")
     local str_to_sign = "POST&%2F&" .. ngx.escape_uri(canonical_str)
-    core.log.debug("string to calculate signature: ", str_to_sign)
     return ngx.encode_base64(ngx.hmac_sha1(secret, str_to_sign))
 end
 
@@ -523,10 +522,16 @@ function _M.lua_body_filter(conf, ctx, headers, body)
                     if proto and proto.is_error_event and proto.is_error_event(event, data) then
                         ctx.aliyun_cm_stream_failed = true
                     end
-                    metadata.id = data.id or metadata.id
-                    metadata.model = data.model or metadata.model
-                    metadata.created = data.created or metadata.created
-                    if event.type == "message_delta" then
+                    if type(data.id) == "string" then
+                        metadata.id = data.id
+                    end
+                    if type(data.model) == "string" then
+                        metadata.model = data.model
+                    end
+                    if type(data.created) == "number" then
+                        metadata.created = data.created
+                    end
+                    if event.type == "message_delta" and type(data.delta) == "table" then
                         metadata.delta = data.delta
                     end
                     if proto and proto.is_moderation_event
@@ -562,7 +567,7 @@ function _M.lua_body_filter(conf, ctx, headers, body)
         local result_event
         if carrier then
             carrier.data.risk_level = risk_level
-            carrier.data.deny_message = message
+            carrier.data.deny_message = message or ""
             carrier.event.data = core.json.encode(carrier.data)
         elseif proto and proto.build_moderation_event then
             result_event = proto.build_moderation_event({
@@ -583,7 +588,7 @@ function _M.lua_body_filter(conf, ctx, headers, body)
         end
         if result_event then
             table.insert(raw_events, sse.encode(result_event))
-            table.insert(raw_events, proto.build_done_event())
+            table.insert(raw_events, proto.build_done_event() .. "\n\n")
         end
         return nil, table.concat(raw_events)
     end

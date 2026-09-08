@@ -47,10 +47,7 @@ _EOC_
                     ngx.say("scan failed")
                     return
                 end
-                local fixture = params.content == "kill you"
-                    and "aliyun/moderation-risk.json" or "aliyun/moderation-safe.json"
-                ngx.header.content_type = "application/json"
-                ngx.print(assert(require("lib.fixture_loader").load(fixture)))
+                require("lib.server").aliyun_moderation()
             }
         }
     }
@@ -237,5 +234,75 @@ passed
 
 === TEST 20: responses-incomplete is preserved without a final moderation result
 --- case: {fixture="responses-incomplete", protocol="responses", error=true, error_text="max_output_tokens"}
+--- response_body
+passed
+
+
+
+=== TEST 21: chat-length keeps moderation metadata independent of the original stream
+--- case: {fixture="chat-length", protocol="chat", tokens=18, finish_reason="length"}
+--- response_body
+passed
+
+
+
+=== TEST 22: chat-tool_calls keeps moderation metadata independent of the original stream
+--- case: {fixture="chat-tool_calls", protocol="chat", tokens=18, finish_reason="tool_calls"}
+--- response_body
+passed
+
+
+
+=== TEST 23: chat-null-after-valid keeps moderation metadata independent of the original stream
+--- case: {fixture="chat-null-after-valid", protocol="chat", tokens=18}
+--- response_body
+passed
+
+
+
+=== TEST 24: chat-null-metadata keeps moderation metadata independent of the original stream
+--- case: {fixture="chat-null-metadata", protocol="chat", tokens=18, missing_metadata=true}
+--- response_body
+passed
+
+
+
+=== TEST 25: anthropic-null-delta keeps moderation metadata independent of the original stream
+--- case: {fixture="anthropic-null-delta", protocol="anthropic", tokens=18}
+--- response_body
+passed
+
+
+
+=== TEST 26: chat-clean-eof keeps moderation metadata independent of the original stream
+--- case: {fixture="chat-clean-eof", protocol="chat", tokens=18}
+--- response_body
+passed
+
+
+
+=== TEST 27: multiple choices retain their independent finish reasons
+--- case: {fixture="chat-multiple-reasons", protocol="chat", tokens=18, finish_reason="tool_calls"}
+--- response_body
+passed
+
+
+
+=== TEST 28: anthropic safe result has an empty top-level denial message
+--- case: {fixture="anthropic-safe", protocol="anthropic", text="safe output", safe=true, tokens=18}
+--- response_body
+passed
+
+
+
+=== TEST 29: anthropic safe result has an empty top-level denial message in an existing event
+--- case: {fixture="anthropic-safe", protocol="anthropic", text="safe output", safe=true, tokens=18, buffered=true}
+--- response_body
+passed
+
+
+
+=== TEST 30: responses safe result has an empty top-level denial message
+--- case: {fixture="responses-safe", protocol="responses", text="safe output", safe=true, tokens=18}
 --- response_body
 passed

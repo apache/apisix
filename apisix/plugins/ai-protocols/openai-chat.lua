@@ -428,6 +428,8 @@ function _M.build_moderation_event(opts)
     data.model = metadata.model or data.model
     data.created = metadata.created or ngx_time()
     data.risk_level = opts.risk_level
+    data.deny_message = opts.text or ""
+    data.choices[1].finish_reason = core.json.null
     return { type = "message", data = core.json.encode(data) }
 end
 

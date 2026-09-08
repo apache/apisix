@@ -438,7 +438,7 @@ function _M.build_moderation_event(opts)
             delta = opts.metadata.delta or { stop_reason = "end_turn" },
             usage = _M.empty_usage(),
             risk_level = opts.risk_level,
-            deny_message = opts.text,
+            deny_message = opts.text or "",
         }),
     }
 end
