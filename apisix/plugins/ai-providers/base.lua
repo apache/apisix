@@ -460,6 +460,8 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
     -- attempt emitted no output (with headers sent, the retry dies earlier in
     -- core.response.set_header), so the flag is stale, not protective
     ctx.ai_stream_aborted = nil
+    ctx.ai_stream_has_usage = nil
+    ctx.ai_stream_failed = nil
     -- same for the completion flag. An attempt can set it and still produce no
     -- downstream output -- a converter fed a [DONE]-only stream emits nothing --
     -- which returns 502 and lets ai-proxy-multi fall back inside this same
@@ -607,6 +609,7 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
         if not chunk then
             local sse_rem = table.concat(sse_parts)
             if #sse_rem > 0 then
+                ctx.ai_stream_aborted = "incomplete_frame"
                 core.log.warn("dropping incomplete stream frame at EOF, size: ",
                               #sse_rem)
             end
@@ -633,6 +636,9 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
                 flush_thread = nil
             end
             if output_sent and not ctx.var.llm_request_done then
+                if #sse_rem == 0 then
+                    ctx.var.llm_response_text = table.concat(contents, "")
+                end
                 ctx.var.llm_request_done = true
                 plugin.lua_response_filter(ctx, res.headers, "", nil, true)
             end
@@ -665,6 +671,7 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
         -- One-pass split + decode: finds all complete SSE events and the
         -- trailing remainder in a single forward scan (no PCRE, no double scan).
         local events, remainder = framing.decode_buf(candidate)
+        local complete = candidate:sub(1, #candidate - #remainder)
         local max_remainder = framing.max_remainder or 1024 * 1024
         if #remainder > max_remainder then
             core.log.warn("stream remainder exceeded ", max_remainder, " bytes, resetting")
@@ -682,6 +689,10 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
         for _, event in ipairs(events) do
             -- Target protocol parses the provider's SSE format
             local parsed = target_proto.parse_sse_event(event, ctx, sse_state)
+            if target_proto.is_error_event
+               and target_proto.is_error_event(event, parsed and parsed.data) then
+                ctx.ai_stream_failed = true
+            end
             if parsed and parsed.has_tool_call then
                 ctx.var.llm_has_tool_calls = "true"
             end
@@ -707,6 +718,7 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
             end
 
             if parsed.usage then
+                ctx.ai_stream_has_usage = true
                 core.log.info("got token usage from ai service: ",
                                     core.json.delay_encode(parsed.raw_usage or parsed.usage))
                 merge_usage(ctx, parsed)
@@ -722,6 +734,7 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
             end
 
             if parsed.type == "done" or parsed.type == "usage_and_done" then
+                ctx.var.llm_response_text = table.concat(contents, "")
                 ctx.var.llm_request_done = true
                 protocol_completed = true
             end
@@ -754,9 +767,12 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
                     return
                 end
             end
-        else
+        elseif ctx.ai_stream_framing ~= "sse" or complete ~= "" then
+            -- Native SSE filters need complete frames just like converters do.
+            -- Keep the original bytes, including comments and blank lines.
+            local downstream = ctx.ai_stream_framing == "sse" and complete or chunk
             local ok, flush_err = plugin.lua_response_filter(
-                ctx, res.headers, chunk, no_flush, true)
+                ctx, res.headers, downstream, no_flush, true)
             if not ok then
                 abort_on_disconnect(flush_err)
                 return
