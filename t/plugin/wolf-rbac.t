@@ -51,10 +51,18 @@ __DATA__
             end
 
             ngx.say(require("toolkit.json").encode(conf))
+
+            local consumer_conf = {appid = "wolf-rbac-app"}
+            ok, err = plugin.check_schema(consumer_conf,
+                require("apisix.core").schema.TYPE_CONSUMER)
+            if not ok then
+                ngx.say(err)
+            end
+            ngx.say(require("toolkit.json").encode(consumer_conf))
         }
     }
 --- response_body_like eval
-qr/\{"appid":"unset","header_prefix":"X-","server":"http:\/\/127\.0\.0\.1:12180"\}/
+qr/\{"header_prefix":"X-","server":"http:\/\/127\.0\.0\.1:12180"\}\n\{"appid":"wolf-rbac-app"\}/
 
 
 
@@ -63,7 +71,8 @@ qr/\{"appid":"unset","header_prefix":"X-","server":"http:\/\/127\.0\.0\.1:12180"
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.wolf-rbac")
-            local ok, err = plugin.check_schema({appid = 123})
+            local ok, err = plugin.check_schema({appid = 123},
+                require("apisix.core").schema.TYPE_CONSUMER)
             if not ok then
                 ngx.say(err)
             end
@@ -77,6 +86,23 @@ done
 
 
 
+=== TEST 2b: appid is required in Consumer configuration
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.wolf-rbac")
+            local ok, err = plugin.check_schema({},
+                require("apisix.core").schema.TYPE_CONSUMER)
+            if not ok then
+                ngx.say(err)
+            end
+        }
+    }
+--- response_body_like eval
+qr/property "appid" is required/
+
+
+
 === TEST 3: setup public API route
 --- config
     location /t {
@@ -86,7 +112,10 @@ done
                     url = "/apisix/admin/routes/wolf-login",
                     data = [[{
                         "plugins": {
-                            "public-api": {}
+                            "public-api": {},
+                            "wolf-rbac": {
+                                "server": "http://127.0.0.1:1982"
+                            }
                         },
                         "uri": "/apisix/plugin/wolf-rbac/login"
                     }]]
@@ -95,7 +124,10 @@ done
                     url = "/apisix/admin/routes/wolf-userinfo",
                     data = [[{
                         "plugins": {
-                            "public-api": {}
+                            "public-api": {},
+                            "wolf-rbac": {
+                                "server": "http://127.0.0.1:1982"
+                            }
                         },
                         "uri": "/apisix/plugin/wolf-rbac/user_info"
                     }]]
@@ -104,7 +136,10 @@ done
                     url = "/apisix/admin/routes/wolf-change-pwd",
                     data = [[{
                         "plugins": {
-                            "public-api": {}
+                            "public-api": {},
+                            "wolf-rbac": {
+                                "server": "http://127.0.0.1:1982"
+                            }
                         },
                         "uri": "/apisix/plugin/wolf-rbac/change_pwd"
                     }]]
@@ -135,8 +170,7 @@ done
                     "username": "wolf_rbac_unit_test",
                     "plugins": {
                         "wolf-rbac": {
-                            "appid": "wolf-rbac-app",
-                            "server": "http://127.0.0.1:1982"
+                            "appid": "wolf-rbac-app"
                         }
                     }
                 }]]
@@ -162,7 +196,9 @@ passed
                 ngx.HTTP_PUT,
                 [[{
                     "plugins": {
-                        "wolf-rbac": {}
+                        "wolf-rbac": {
+                            "server": "http://127.0.0.1:1982"
+                        }
                     },
                     "upstream": {
                         "nodes": {
@@ -577,8 +613,7 @@ ERR_TOKEN_INVALID
                     "username": "wolf_rbac_unit_test",
                     "plugins": {
                         "wolf-rbac": {
-                            "appid": "$secret://vault/test1/wolf_rbac_unit_test/appid",
-                            "server": "http://127.0.0.1:1982"
+                            "appid": "$secret://vault/test1/wolf_rbac_unit_test/appid"
                         }
                     }
                 }]]
@@ -648,8 +683,7 @@ Success! Data written to: kv/apisix/wolf_rbac_unit_test
                     "username": "wolf_rbac_unit_test",
                     "plugins": {
                         "wolf-rbac": {
-                            "appid": "$secret://vault/test1/wolf_rbac_unit_test/appid",
-                            "server": "http://127.0.0.1:1982"
+                            "appid": "$secret://vault/test1/wolf_rbac_unit_test/appid"
                         }
                     }
                 }]]
@@ -697,8 +731,7 @@ passed
                     "username": "wolf_rbac_with_other_plugins",
                     "plugins": {
                         "wolf-rbac": {
-                            "appid": "wolf-rbac-app",
-                            "server": "http://127.0.0.1:1982"
+                            "appid": "wolf-rbac-app"
                         },
                         "echo": {
                             "body": "consumer merge echo plugins\n"
@@ -755,13 +788,13 @@ consumer merge echo plugins
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/consumers',
+            local code, body = t('/apisix/admin/routes/wolf-login',
                 ngx.HTTP_PUT,
                 [[{
-                    "username": "wolf_rbac_ssl_verify_false",
+                    "uri": "/apisix/plugin/wolf-rbac/login",
                     "plugins": {
+                        "public-api": {},
                         "wolf-rbac": {
-                            "appid": "wolf-rbac-app",
                             "server": "http://127.0.0.1:1982",
                             "ssl_verify": false
                         }
@@ -809,13 +842,13 @@ ssl_verify: false
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/consumers',
+            local code, body = t('/apisix/admin/routes/wolf-login',
                 ngx.HTTP_PUT,
                 [[{
-                    "username": "wolf_rbac_ssl_verify_true",
+                    "uri": "/apisix/plugin/wolf-rbac/login",
                     "plugins": {
+                        "public-api": {},
                         "wolf-rbac": {
-                            "appid": "wolf-rbac-app",
                             "server": "http://127.0.0.1:1982",
                             "ssl_verify": true
                         }
@@ -904,8 +937,7 @@ wolf_rbac_access_check clientIP: 192.0.2.10
                     "username": "wolf_rbac_no_echo",
                     "plugins": {
                         "wolf-rbac": {
-                            "appid": "wolf-rbac-app-noecho",
-                            "server": "http://127.0.0.1:1982"
+                            "appid": "wolf-rbac-app-noecho"
                         }
                     }
                 }]]
@@ -920,7 +952,9 @@ wolf_rbac_access_check clientIP: 192.0.2.10
                 ngx.HTTP_PUT,
                 [[{
                     "plugins": {
-                        "wolf-rbac": {},
+                        "wolf-rbac": {
+                            "server": "http://127.0.0.1:1982"
+                        },
                         "serverless-post-function": {
                             "phase": "access",
                             "functions": [

@@ -18,6 +18,7 @@
 local core     = require("apisix.core")
 local consumer = require("apisix.consumer")
 local json     = require("apisix.core.json")
+local auth_utils = require("apisix.utils.auth")
 local sleep    = core.sleep
 local ngx_re = require("ngx.re")
 local http     = require("resty.http")
@@ -36,10 +37,6 @@ local plugin_name = "wolf-rbac"
 local schema = {
     type = "object",
     properties = {
-        appid = {
-            type = "string",
-            default = "unset"
-        },
         server = {
             type = "string",
             default = "http://127.0.0.1:12180"
@@ -54,16 +51,47 @@ local schema = {
     }
 }
 
+local consumer_schema = {
+    type = "object",
+    properties = {
+        appid = {
+            type = "string",
+        },
+    },
+    required = {"appid"},
+}
+
 local _M = {
     version = 0.1,
     priority = 2555,
     type = 'auth',
     name = plugin_name,
     schema = schema,
+    consumer_schema = consumer_schema,
 }
 
 
 local token_version = 'V1'
+local public_api_uris = {
+    ["/apisix/plugin/wolf-rbac/login"] = true,
+    ["/apisix/plugin/wolf-rbac/change_pwd"] = true,
+    ["/apisix/plugin/wolf-rbac/user_info"] = true,
+}
+
+
+local function clear_identity_headers(conf, ctx)
+    local prefix = conf.header_prefix
+    core.request.set_header(ctx, prefix .. "UserId", nil)
+    core.request.set_header(ctx, prefix .. "Username", nil)
+    core.request.set_header(ctx, prefix .. "Nickname", nil)
+end
+
+
+function _M.clear_auth_headers(conf, ctx)
+    clear_identity_headers(conf, ctx)
+end
+
+
 local function create_rbac_token(appid, wolf_token)
     return token_version .. "#" .. appid .. "#" .. wolf_token
 end
@@ -142,7 +170,11 @@ local function http_get(uri, myheaders, timeout, ssl_verify)
 end
 
 
-function _M.check_schema(conf)
+function _M.check_schema(conf, schema_type)
+    if schema_type == core.schema.TYPE_CONSUMER then
+        return core.schema.check(consumer_schema, conf)
+    end
+
     local ok, err = core.schema.check(schema, conf)
     if not ok then
         return false, err
@@ -155,6 +187,29 @@ function _M.check_schema(conf)
     core.utils.check_tls_bool({"ssl_verify"}, conf, plugin_name)
 
     return true
+end
+
+
+local function get_route_plugin_conf(ctx)
+    for i = 1, #ctx.plugins, 2 do
+        if ctx.plugins[i].name == plugin_name then
+            return ctx.plugins[i + 1]
+        end
+    end
+
+    return core.response.exit(500, fail_response("Missing wolf-rbac configuration"))
+end
+
+
+local function is_wolf_public_api(ctx)
+    for i = 1, #ctx.plugins, 2 do
+        if ctx.plugins[i].name == "public-api" then
+            local conf = ctx.plugins[i + 1]
+            return public_api_uris[conf.uri or ctx.var.uri] == true
+        end
+    end
+
+    return false
 end
 
 
@@ -239,6 +294,14 @@ end
 
 
 function _M.rewrite(conf, ctx)
+    if not auth_utils.is_running_under_multi_auth(ctx) then
+        clear_identity_headers(conf, ctx)
+    end
+
+    if is_wolf_public_api(ctx) then
+        return
+    end
+
     local url = ctx.var.uri
     local action = ctx.var.request_method
     local client_ip = core.request.get_remote_client_ip(ctx)
@@ -276,34 +339,19 @@ function _M.rewrite(conf, ctx)
         return 401, fail_response("Invalid appid in rbac token")
     end
     core.log.info("consumer appid: ", appid)
-    local server = cur_consumer.auth_conf.server
-    local ssl_verify = cur_consumer.auth_conf.ssl_verify
-
-    local res = check_url_permission(server, appid, action, url,
-                    client_ip, wolf_token, ssl_verify)
+    local res = check_url_permission(conf.server, appid, action, url,
+                    client_ip, wolf_token, conf.ssl_verify)
     core.log.info(" check_url_permission(appid: ", appid,
                   ", action: ", action, ", url: ", url,
                   ") res status: ", res.status, ", err: ", res.err)
 
     local username = nil
     local nickname = nil
-    local prefix = cur_consumer.auth_conf.header_prefix or ''
-    -- drop client-supplied identity headers before trusting the auth response
-    core.request.set_header(ctx, prefix .. "UserId", nil)
-    core.request.set_header(ctx, prefix .. "Username", nil)
-    core.request.set_header(ctx, prefix .. "Nickname", nil)
     if type(res.userInfo) == 'table' then
         local userInfo = res.userInfo
         ctx.userInfo = userInfo
-        local userId = userInfo.id
         username = userInfo.username
         nickname = userInfo.nickname or userInfo.username
-        core.response.set_header(prefix .. "UserId", userId)
-        core.response.set_header(prefix .. "Username", username)
-        core.response.set_header(prefix .. "Nickname", ngx.escape_uri(nickname))
-        core.request.set_header(ctx, prefix .. "UserId", userId)
-        core.request.set_header(ctx, prefix .. "Username", username)
-        core.request.set_header(ctx, prefix .. "Nickname", ngx.escape_uri(nickname))
     end
 
     if res.status ~= 200 then
@@ -312,12 +360,21 @@ function _M.rewrite(conf, ctx)
             ") failed, res status: ", res.status, ", err: ", res.err)
         return res.status, fail_response(res.err, { username = username, nickname = nickname })
     end
+    if type(res.userInfo) == 'table' then
+        local prefix = conf.header_prefix
+        local userId = res.userInfo.id
+        core.response.set_header(prefix .. "UserId", userId)
+        core.response.set_header(prefix .. "Username", username)
+        core.response.set_header(prefix .. "Nickname", ngx.escape_uri(nickname))
+        core.request.set_header(ctx, prefix .. "UserId", userId)
+        core.request.set_header(ctx, prefix .. "Username", username)
+        core.request.set_header(ctx, prefix .. "Nickname", ngx.escape_uri(nickname))
+    end
     consumer.attach_consumer(ctx, cur_consumer, consumer_conf)
     core.log.info("wolf-rbac check permission passed")
 end
 
-local function get_args()
-    local ctx = ngx.ctx.api_ctx
+local function get_args(ctx)
     local args, err
     req_read_body()
     if string.find(ctx.var.http_content_type or "","application/json",
@@ -396,8 +453,8 @@ local function request_to_wolf_server(method, uri, headers, body, ssl_verify)
     return body
 end
 
-local function wolf_rbac_login()
-    local args = get_args()
+local function wolf_rbac_login(ctx)
+    local args = get_args(ctx)
     if not args then
         return core.response.exit(400, fail_response("invalid request"))
     end
@@ -406,12 +463,13 @@ local function wolf_rbac_login()
     end
 
     local appid = args.appid
-    local consumer = get_consumer(appid)
+    get_consumer(appid)
     core.log.info("consumer appid: ", appid)
 
-    local uri = consumer.auth_conf.server .. '/wolf/rbac/login.rest'
+    local conf = get_route_plugin_conf(ctx)
+    local uri = conf.server .. '/wolf/rbac/login.rest'
     local headers = new_headers()
-    local body = request_to_wolf_server('POST', uri, headers, args, consumer.auth_conf.ssl_verify)
+    local body = request_to_wolf_server('POST', uri, headers, args, conf.ssl_verify)
 
     local userInfo = body.data.userInfo
     local wolf_token = body.data.token
@@ -442,35 +500,34 @@ local function get_wolf_token(ctx)
     return tokenInfo
 end
 
-local function wolf_rbac_change_pwd()
-    local args = get_args()
-
-    local ctx = ngx.ctx.api_ctx
+local function wolf_rbac_change_pwd(ctx)
+    local args = get_args(ctx)
     local tokenInfo = get_wolf_token(ctx)
     local appid = tokenInfo.appid
     local wolf_token = tokenInfo.wolf_token
-    local consumer = get_consumer(appid)
+    get_consumer(appid)
     core.log.info("consumer appid: ", appid)
 
-    local uri = consumer.auth_conf.server .. '/wolf/rbac/change_pwd'
+    local conf = get_route_plugin_conf(ctx)
+    local uri = conf.server .. '/wolf/rbac/change_pwd'
     local headers = new_headers()
     headers['x-rbac-token'] = wolf_token
-    request_to_wolf_server('POST', uri, headers, args, consumer.auth_conf.ssl_verify)
+    request_to_wolf_server('POST', uri, headers, args, conf.ssl_verify)
     core.response.exit(200, success_response('success to change password', { }))
 end
 
-local function wolf_rbac_user_info()
-    local ctx = ngx.ctx.api_ctx
+local function wolf_rbac_user_info(ctx)
     local tokenInfo = get_wolf_token(ctx)
     local appid = tokenInfo.appid
     local wolf_token = tokenInfo.wolf_token
-    local consumer = get_consumer(appid)
+    get_consumer(appid)
     core.log.info("consumer appid: ", appid)
 
-    local uri = consumer.auth_conf.server .. '/wolf/rbac/user_info'
+    local conf = get_route_plugin_conf(ctx)
+    local uri = conf.server .. '/wolf/rbac/user_info'
     local headers = new_headers()
     headers['x-rbac-token'] = wolf_token
-    local body = request_to_wolf_server('GET', uri, headers, {}, consumer.auth_conf.ssl_verify)
+    local body = request_to_wolf_server('GET', uri, headers, {}, conf.ssl_verify)
     local userInfo = body.data.userInfo
     core.response.exit(200, success_response(nil, {user_info = userInfo}))
 end
