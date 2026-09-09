@@ -829,3 +829,57 @@ X-Wolf-Username: admin
 X-Wolf-Nickname: administrator
 --- response_body eval
 "100,admin,administrator,wolf-client"
+
+
+
+=== TEST 28: empty Wolf configuration uses the default header prefix
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "multi-auth": {
+                            "auth_plugins": [
+                                {"key-auth": {}},
+                                {"wolf-rbac": {}}
+                            ]
+                        },
+                        "serverless-post-function": {
+                            "phase": "access",
+                            "functions": [
+                                "return function(conf, ctx) local core = require(\"apisix.core\"); local names = {\"X-UserId\", \"X-Username\", \"X-Nickname\", \"X-Consumer-Username\"}; local values = {}; for i, name in ipairs(names) do values[i] = core.request.header(ctx, name) or \"nil\"; end; core.response.exit(200, table.concat(values, \",\")); end"
+                            ]
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            code, _, body = t('/hello', ngx.HTTP_GET, nil, nil, {
+                apikey = "auth-one",
+                ["X-UserId"] = "forged",
+                ["X-Username"] = "forged",
+                ["X-Nickname"] = "forged",
+            })
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- response_body eval
+"nil,nil,nil,foo"

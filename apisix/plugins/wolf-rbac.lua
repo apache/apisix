@@ -32,6 +32,8 @@ local req_read_body = ngx.req.read_body
 local req_get_body_data = ngx.req.get_body_data
 
 local plugin_name = "wolf-rbac"
+local default_server = "http://127.0.0.1:12180"
+local default_header_prefix = "X-"
 
 
 local schema = {
@@ -39,11 +41,11 @@ local schema = {
     properties = {
         server = {
             type = "string",
-            default = "http://127.0.0.1:12180"
+            default = default_server
         },
         header_prefix = {
             type = "string",
-            default = "X-"
+            default = default_header_prefix
         },
         ssl_verify = {
             type = "boolean",
@@ -80,7 +82,7 @@ local public_api_uris = {
 
 
 local function clear_identity_headers(conf, ctx)
-    local prefix = conf.header_prefix
+    local prefix = conf.header_prefix or default_header_prefix
     core.request.set_header(ctx, prefix .. "UserId", nil)
     core.request.set_header(ctx, prefix .. "Username", nil)
     core.request.set_header(ctx, prefix .. "Nickname", nil)
@@ -339,7 +341,7 @@ function _M.rewrite(conf, ctx)
         return 401, fail_response("Invalid appid in rbac token")
     end
     core.log.info("consumer appid: ", appid)
-    local res = check_url_permission(conf.server, appid, action, url,
+    local res = check_url_permission(conf.server or default_server, appid, action, url,
                     client_ip, wolf_token, conf.ssl_verify)
     core.log.info(" check_url_permission(appid: ", appid,
                   ", action: ", action, ", url: ", url,
@@ -361,7 +363,7 @@ function _M.rewrite(conf, ctx)
         return res.status, fail_response(res.err, { username = username, nickname = nickname })
     end
     if type(res.userInfo) == 'table' then
-        local prefix = conf.header_prefix
+        local prefix = conf.header_prefix or default_header_prefix
         local userId = res.userInfo.id
         core.response.set_header(prefix .. "UserId", userId)
         core.response.set_header(prefix .. "Username", username)
@@ -467,7 +469,7 @@ local function wolf_rbac_login(ctx)
     core.log.info("consumer appid: ", appid)
 
     local conf = get_route_plugin_conf(ctx)
-    local uri = conf.server .. '/wolf/rbac/login.rest'
+    local uri = (conf.server or default_server) .. '/wolf/rbac/login.rest'
     local headers = new_headers()
     local body = request_to_wolf_server('POST', uri, headers, args, conf.ssl_verify)
 
@@ -509,7 +511,7 @@ local function wolf_rbac_change_pwd(ctx)
     core.log.info("consumer appid: ", appid)
 
     local conf = get_route_plugin_conf(ctx)
-    local uri = conf.server .. '/wolf/rbac/change_pwd'
+    local uri = (conf.server or default_server) .. '/wolf/rbac/change_pwd'
     local headers = new_headers()
     headers['x-rbac-token'] = wolf_token
     request_to_wolf_server('POST', uri, headers, args, conf.ssl_verify)
@@ -524,7 +526,7 @@ local function wolf_rbac_user_info(ctx)
     core.log.info("consumer appid: ", appid)
 
     local conf = get_route_plugin_conf(ctx)
-    local uri = conf.server .. '/wolf/rbac/user_info'
+    local uri = (conf.server or default_server) .. '/wolf/rbac/user_info'
     local headers = new_headers()
     headers['x-rbac-token'] = wolf_token
     local body = request_to_wolf_server('GET', uri, headers, {}, conf.ssl_verify)
