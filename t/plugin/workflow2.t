@@ -515,3 +515,114 @@ passed
 --- error_code: 400
 --- response_body
 {"error_msg":"failed to check the configuration of plugin workflow err: failed to validate the 'case' expression: invalid operator '='"}
+
+
+
+=== TEST 13: reject more than one action
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+            local data = {
+                uri = "/*",
+                plugins = {
+                    workflow = {
+                        rules = {
+                            {
+                                case = {
+                                    {"uri", "==", "/hello"}
+                                },
+                                actions = {
+                                    {
+                                        "return",
+                                        {
+                                            code = 403
+                                        }
+                                    },
+                                    {
+                                        "return",
+                                        {
+                                            code = 404
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                upstream = {
+                    nodes = {
+                        ["127.0.0.1:1980"] = 1
+                    },
+                    type = "roundrobin"
+                }
+            }
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 json.encode(data)
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+
+            ngx.print(body)
+        }
+    }
+--- error_code: 400
+--- response_body
+{"error_msg":"failed to check the configuration of plugin workflow err: property \"rules\" validation failed: failed to validate item 1: property \"actions\" validation failed: expect array to have at most 1 items"}
+
+
+
+=== TEST 14: reject action with more than two items
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+            local data = {
+                uri = "/*",
+                plugins = {
+                    workflow = {
+                        rules = {
+                            {
+                                case = {
+                                    {"uri", "==", "/hello"}
+                                },
+                                actions = {
+                                    {
+                                        "return",
+                                        {
+                                            code = 403
+                                        },
+                                        "extra"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                upstream = {
+                    nodes = {
+                        ["127.0.0.1:1980"] = 1
+                    },
+                    type = "roundrobin"
+                }
+            }
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 json.encode(data)
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+
+            ngx.print(body)
+        }
+    }
+--- error_code: 400
+--- response_body
+{"error_msg":"failed to check the configuration of plugin workflow err: property \"rules\" validation failed: failed to validate item 1: property \"actions\" validation failed: failed to validate item 1: expect array to have at most 2 items"}
