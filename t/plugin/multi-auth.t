@@ -740,7 +740,7 @@ X-Wolf-Nickname: administrator
 
 
 
-=== TEST 24b: malformed Wolf token does not preserve Route identity headers
+=== TEST 25b: malformed Wolf token does not preserve Route identity headers
 --- request
 GET /hello
 --- more_headers
@@ -754,7 +754,7 @@ X-Wolf-Nickname: forged
 
 
 
-=== TEST 25: Wolf headers are cleared when key-auth succeeds first
+=== TEST 26: Wolf headers are cleared when key-auth succeeds first
 --- config
     location /t {
         content_by_lua_block {
@@ -815,7 +815,7 @@ GET /t
 
 
 
-=== TEST 26: successful Wolf authentication sets the Route header namespace
+=== TEST 27: successful Wolf authentication sets the Route header namespace
 --- request
 GET /hello
 --- more_headers
