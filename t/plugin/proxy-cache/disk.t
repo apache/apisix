@@ -753,3 +753,84 @@ passed
 GET /hello?bar=a
 --- response_body chop
 hello world!
+
+
+
+=== TEST 30: a disabled plugin with an invalid cache zone is accepted
+--- config
+       location /t {
+           content_by_lua_block {
+               local t = require("lib.test_admin").test
+               local code, body = t('/apisix/admin/routes/1',
+                    ngx.HTTP_PUT,
+                    [[{
+                        "plugins": {
+                            "proxy-cache": {
+                               "_meta": {"disable": true},
+                               "cache_zone": "invalid_disk_cache",
+                               "cache_method": ["GET"],
+                               "cache_http_status": [200]
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1986": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello*"
+                   }]]
+                   )
+
+               if code >= 300 then
+                   ngx.status = code
+               end
+               ngx.say(body)
+           }
+       }
+--- request
+GET /t
+--- response_body
+passed
+--- error_log
+failed to check the configuration of disabled plugin proxy-cache
+
+
+
+=== TEST 31: re-enabling the same plugin conf is still rejected
+--- config
+       location /t {
+           content_by_lua_block {
+               local t = require("lib.test_admin").test
+               local code, body = t('/apisix/admin/routes/1',
+                    ngx.HTTP_PUT,
+                    [[{
+                        "plugins": {
+                            "proxy-cache": {
+                               "_meta": {"disable": false},
+                               "cache_zone": "invalid_disk_cache",
+                               "cache_method": ["GET"],
+                               "cache_http_status": [200]
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1986": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello*"
+                   }]]
+                   )
+
+               if code >= 300 then
+                   ngx.status = code
+               end
+               ngx.say(body)
+           }
+       }
+--- request
+GET /t
+--- error_code: 400
+--- response_body eval
+qr/cache_zone invalid_disk_cache not found/

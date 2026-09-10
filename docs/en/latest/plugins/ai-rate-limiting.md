@@ -55,6 +55,28 @@ The `ai-rate-limiting` Plugin enforces token-based rate limiting for requests se
 | instances.time_window | integer | True | | >0 | The time interval corresponding to the rate limiting `limit` in seconds for an instance. |
 | rejected_code | integer | False | 503 | [200, 599] | The HTTP status code returned when a request exceeding the quota is rejected. |
 | rejected_msg | string | False | | | The response body returned when a request exceeding the quota is rejected. |
+| policy | string | False | local | [`local`, `redis`, `redis-cluster`, `redis-sentinel`] | The policy for the rate limiting counter. If it is `local`, the counter is stored in local memory. If it is `redis`, the counter is stored on a Redis instance. If it is `redis-cluster`, the counter is stored in a Redis cluster. If it is `redis-sentinel`, the counter is stored on the Redis master discovered through Sentinel. Use a Redis-based policy to share token counters across gateway nodes in a distributed deployment. |
+| allow_degradation | boolean | False | false | | If true, allow APISIX to continue serving requests without the Plugin when the Redis backend is unavailable. |
+| redis_host | string | False | | | The address of the Redis node. Required when `policy` is `redis`. |
+| redis_port | integer | False | 6379 | [1,...] | The port of the Redis node when `policy` is `redis`. |
+| redis_username | string | False | | | The username for Redis if Redis ACL is used. If you use the legacy authentication method `requirepass`, configure only the `redis_password`. Used when `policy` is `redis` or `redis-sentinel`. |
+| redis_password | string | False | | | The password of the Redis node when `policy` is `redis`, `redis-cluster`, or `redis-sentinel`. |
+| redis_database | integer | False | 0 | >= 0 | The database number in Redis when `policy` is `redis` or `redis-sentinel`. |
+| redis_timeout | integer | False | 1000 | [1,...] | The Redis timeout value in milliseconds when `policy` is `redis` or `redis-cluster`. |
+| redis_ssl | boolean | False | false | | If true, use SSL to connect to Redis when `policy` is `redis`. |
+| redis_ssl_verify | boolean | False | false | | If true, verify the server SSL certificate when `policy` is `redis`. |
+| redis_cluster_nodes | array[string] | False | | | The list of Redis cluster nodes with at least one address. Required when `policy` is `redis-cluster`. |
+| redis_cluster_name | string | False | | | The name of the Redis cluster. Required when `policy` is `redis-cluster`. |
+| redis_cluster_ssl | boolean | False | false | | If true, use SSL to connect to Redis when `policy` is `redis-cluster`. |
+| redis_cluster_ssl_verify | boolean | False | false | | If true, verify the server SSL certificate when `policy` is `redis-cluster`. |
+| redis_sentinels | array[object] | False | | | The list of Sentinel nodes. Required when `policy` is `redis-sentinel`. Each item must contain `host` and `port`. |
+| redis_master_name | string | False | | | The Redis master name monitored by Sentinel. Required when `policy` is `redis-sentinel`. |
+| sentinel_username | string | False | | | The username for Sentinel when `policy` is `redis-sentinel`. |
+| sentinel_password | string | False | | | The password for Sentinel when `policy` is `redis-sentinel`. |
+| redis_role | string | False | master | [`master`, `slave`] | The Redis role selected through Sentinel when `policy` is `redis-sentinel`. |
+| redis_connect_timeout | integer | False | 1000 | [1,...] | The Redis connection timeout in milliseconds when `policy` is `redis-sentinel`. |
+| redis_read_timeout | integer | False | 1000 | [1,...] | The Redis read timeout in milliseconds when `policy` is `redis-sentinel`. |
+| redis_keepalive_timeout | integer | False | 60000 | [1,...] | The Redis keepalive timeout in milliseconds when `policy` is `redis-sentinel`. |
 | rules | array[object] | False | | | An array of rate-limiting rules that are applied sequentially. If configured, this takes precedence over `limit` and `time_window`. |
 | rules.count | integer or string | True | | >0 or variable expression | The maximum number of tokens allowed within a given time interval. Can be a static integer or a variable expression like `$http_custom_limit`. |
 | rules.time_window | integer or string | True | | >0 or variable expression | The time interval corresponding to the rate limiting `count` in seconds. Can be a static integer or a variable expression. |
@@ -285,6 +307,63 @@ You should receive a response similar to the following:
 ```
 
 If the rate limiting quota of 300 prompt tokens has been consumed in a 30-second window, all additional requests will be rejected.
+
+### Share Rate Limiting Counters Across Nodes with Redis
+
+By default, the `local` policy keeps token counters in each node's shared memory, so counters are not shared across a multi-node deployment and the effective quota scales with the number of nodes. Set `policy` to `redis`, `redis-cluster`, or `redis-sentinel` to centralize counters and enforce a single quota across all nodes.
+
+The following example demonstrates how you can use the `redis` policy to share the rate limiting counter across gateway nodes.
+
+Create a Route as such and update with your LLM providers, models, API keys, endpoints, and Redis address, if applicable:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "ai-rate-limiting-route",
+    "uri": "/anything",
+    "methods": ["POST"],
+    "plugins": {
+      "ai-proxy": {
+        "provider": "openai",
+        "auth": {
+          "header": {
+            "Authorization": "Bearer '"$OPENAI_API_KEY"'"
+          }
+        },
+        "options": {
+          "model": "gpt-35-turbo-instruct",
+          "max_tokens": 512,
+          "temperature": 1.0
+        }
+      },
+      "ai-rate-limiting": {
+        "limit": 300,
+        "time_window": 30,
+        "limit_strategy": "total_tokens",
+        "policy": "redis",
+        "redis_host": "127.0.0.1",
+        "redis_port": 6379,
+        "redis_database": 1
+      }
+    }
+  }'
+```
+
+Send a POST request to the Route with a sample question in the request body from any node:
+
+```shell
+curl "http://127.0.0.1:9080/anything" -X POST \
+  -H "Content-Type: application/json" \
+  -d '{
+    "messages": [
+      { "role": "system", "content": "You are a mathematician" },
+      { "role": "user", "content": "What is 1+1?" }
+    ]
+  }'
+```
+
+The consumed tokens are counted against the shared Redis counter. Once the quota of 300 tokens is consumed in a 30-second window, additional requests are rejected on every node.
 
 ### Rate Limit One Instance Among Multiple
 

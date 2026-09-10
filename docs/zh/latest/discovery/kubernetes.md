@@ -90,7 +90,7 @@ discovery:
       first="a",second="b"
 
     # reserved lua shared memory size, 1m memory can store about 1000 pieces of endpoint
-    shared_size: 1m #default 1m
+    shared_size: 64m #default 64m
 
     # if watch_endpoint_slices setting true, watch apiserver with endpointslices instead of endpoints
     watch_endpoint_slices: false #default false
@@ -221,7 +221,7 @@ discovery:
       first="a",second="b"
 
     # reserved lua shared memory size,1m memory can store about 1000 pieces of endpoint
-    shared_size: 1m #default 1m
+    shared_size: 64m #default 64m
 
     # if watch_endpoint_slices setting true, watch apiserver with endpointslices instead of endpoints
     watch_endpoint_slices: false #default false
@@ -399,7 +399,7 @@ GET /v1/discovery/kubernetes/dump
         "port": "6443",
         "schema": "https"
       },
-      "shared_size": "1m"
+      "shared_size": "64m"
     }
   ]
 }

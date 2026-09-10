@@ -1231,3 +1231,531 @@ GET /hello
 uri: /uri
 host: test.com:6443
 x-real-ip: 127.0.0.1
+
+
+
+=== TEST 45: set route(rewrite uri args with unsafe allowed)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "proxy-rewrite": {
+                                "uri": "/plugin_proxy_rewrite_args",
+                                "use_real_request_uri_unsafe": true
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 46: rewrite uri args
+--- request
+GET /hello?q=apisix&a=iresty HTTP/1.1
+--- response_body
+uri: /plugin_proxy_rewrite_args
+a: iresty
+q: apisix
+
+
+
+=== TEST 47: set route(rewrite uri empty args with unsafe allowed)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "proxy-rewrite": {
+                                "uri": "/plugin_proxy_rewrite_args",
+                                "use_real_request_uri_unsafe": true
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 48: rewrite uri empty args
+--- request
+GET /hello HTTP/1.1
+--- response_body
+uri: /plugin_proxy_rewrite_args
+
+
+
+=== TEST 49: set route(conf.uri carries its own query, use_real_request_uri_unsafe)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "proxy-rewrite": {
+                                "uri": "/plugin_proxy_rewrite_args?x=1",
+                                "use_real_request_uri_unsafe": true
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 50: merge conf.uri query with incoming query (use '&', not double '?')
+--- request
+GET /hello?q=apisix HTTP/1.1
+--- response_body
+uri: /plugin_proxy_rewrite_args
+q: apisix
+x: 1
+
+
+
+=== TEST 51: set route(use_real_request_uri_unsafe only, no conf.uri)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "proxy-rewrite": {
+                                "use_real_request_uri_unsafe": true
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/plugin_proxy_rewrite_args"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 52: query string reaches upstream exactly once without conf.uri
+--- request
+GET /plugin_proxy_rewrite_args?q=apisix HTTP/1.1
+--- response_body
+uri: /plugin_proxy_rewrite_args
+q: apisix
+
+
+
+=== TEST 53: set route(conf.uri echoing raw request_uri, use_real_request_uri_unsafe)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "proxy-rewrite": {
+                                "uri": "/print_uri_detailed",
+                                "use_real_request_uri_unsafe": true
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 54: query with special characters passed through unchanged (unsafe)
+--- request
+GET /hello?name=a%20b&x=%E4%B8%AD HTTP/1.1
+--- response_body
+ngx.var.uri: /print_uri_detailed
+ngx.var.request_uri: /print_uri_detailed?name=a%20b&x=%E4%B8%AD
+
+
+
+=== TEST 55: query with multiple '?' passed through unchanged (unsafe)
+--- request
+GET /hello?a=1?b=2 HTTP/1.1
+--- response_body
+ngx.var.uri: /print_uri_detailed
+ngx.var.request_uri: /print_uri_detailed?a=1?b=2
+
+
+
+=== TEST 56: set route(same conf.uri with use_real_request_uri_unsafe disabled)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "proxy-rewrite": {
+                                "uri": "/print_uri_detailed",
+                                "use_real_request_uri_unsafe": false
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 57: query preserved with use_real_request_uri_unsafe disabled (both variants consistent)
+--- request
+GET /hello?name=a%20b&x=1 HTTP/1.1
+--- response_body
+ngx.var.uri: /print_uri_detailed
+ngx.var.request_uri: /print_uri_detailed?name=a%20b&x=1
+
+
+
+=== TEST 58: set route(set header with multiple values)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "proxy-rewrite": {
+                                "uri": "/plugin_proxy_rewrite_multi_header",
+                                "headers": {
+                                    "set": {
+                                        "x-multi": ["val1", "val2"]
+                                    }
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 59: set replaces the incoming header with multiple same-name headers
+--- request
+GET /hello
+--- more_headers
+x-multi: origin
+--- response_body_like eval
+qr/x-multi: val1\nx-multi: val2/
+--- response_body_unlike eval
+qr/x-multi: origin/
+
+
+
+=== TEST 60: set route(add header with multiple values)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "proxy-rewrite": {
+                                "uri": "/plugin_proxy_rewrite_multi_header",
+                                "headers": {
+                                    "add": {
+                                        "x-multi": ["val1", "val2"]
+                                    }
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 61: add appends multiple same-name headers to the incoming header
+--- request
+GET /hello
+--- more_headers
+x-multi: origin
+--- response_body_like eval
+qr/x-multi: origin\nx-multi: val1\nx-multi: val2/
+
+
+
+=== TEST 62: set route(multi-value with regex_uri capture and nginx variable)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "proxy-rewrite": {
+                                "regex_uri": ["^/test/(.*)",
+                                    "/plugin_proxy_rewrite_multi_header"],
+                                "headers": {
+                                    "set": {
+                                        "x-multi": ["cap-$1", "$http_x_src"]
+                                    }
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/test/*"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 63: each array element resolves capture and variable
+--- request
+GET /test/echo
+--- more_headers
+x-src: from-src
+--- response_body_like eval
+qr/x-multi: cap-echo\nx-multi: from-src/
+
+
+
+=== TEST 64: add route(multi-value with regex_uri capture and nginx variable)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "proxy-rewrite": {
+                                "regex_uri": ["^/test/(.*)",
+                                    "/plugin_proxy_rewrite_multi_header"],
+                                "headers": {
+                                    "add": {
+                                        "x-multi": ["cap-$1", "$http_x_src"]
+                                    }
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/test/*"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 65: add resolves capture and variable for each array element
+--- request
+GET /test/echo
+--- more_headers
+x-src: from-src
+--- response_body_like eval
+qr/x-multi: cap-echo\nx-multi: from-src/
+
+
+
+=== TEST 66: CRLF in a reflected uri is encoded, not injected into the upstream request line
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, {
+                uri = "/reflect*",
+                plugins = {
+                    ["proxy-rewrite"] = {
+                        regex_uri = {"^(/reflect.*)", "/print_request_received?orig=$1"}
+                    }
+                },
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {["127.0.0.1:1980"] = 1}
+                }
+            })
+            if code >= 300 then ngx.status = code; ngx.say(body); return end
+
+            local http = require("resty.http")
+            local httpc = http.new()
+            local res = httpc:request_uri("http://127.0.0.1:" .. ngx.var.server_port
+                .. "/reflect%0d%0aX-Injected:pwn")
+            ngx.print(res.body)
+        }
+    }
+--- request
+GET /t
+--- response_body eval
+qr{request_uri: /print_request_received\?orig=/reflect%0[Dd]%0[Aa]X-Injected}
+--- no_error_log
+[error]

@@ -18,6 +18,7 @@ local core    = require("apisix.core")
 local plugins = require("apisix.admin.plugins")
 local plugins_encrypt_conf = require("apisix.admin.plugins").encrypt_conf
 local resource = require("apisix.admin.resource")
+local apisix_consumer = require("apisix.consumer")
 
 
 local function check_conf(username, conf, need_username, schema, opts)
@@ -35,6 +36,11 @@ local function check_conf(username, conf, need_username, schema, opts)
         ok, err = plugins.check_schema(conf.plugins, core.schema.TYPE_CONSUMER)
         if not ok then
             return nil, {error_msg = "invalid plugins configuration: " .. err}
+        end
+
+        ok, err = apisix_consumer.check_duplicate_key(conf.plugins, conf.username)
+        if not ok then
+            return nil, {error_msg = err}
         end
     end
 

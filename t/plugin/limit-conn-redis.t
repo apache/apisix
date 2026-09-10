@@ -587,8 +587,8 @@ GET /test_concurrency
 --- response_body
 status:200, count:6
 status:503, count:4
---- error_log
-limit key: 10.10.10.1route
+--- error_log eval
+qr/limit key: \/apisix\/routes\/1:\d+:10\.10\.10\.1/
 
 
 
@@ -679,8 +679,8 @@ GET /test_concurrency
 --- response_body
 status:200, count:6
 status:503, count:4
---- error_log
-limit key: 10.10.10.2route
+--- error_log eval
+qr/limit key: \/apisix\/routes\/1:\d+:10\.10\.10\.2/
 
 
 

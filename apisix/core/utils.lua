@@ -224,6 +224,17 @@ function _M.uri_safe_encode(uri)
 end
 
 
+-- escape_uri_control_chars percent-encodes control characters (0x00-0x1F and 0x7F,
+-- which include CR and LF) while leaving every other byte untouched. It is used on
+-- parts of $upstream_uri that must keep their query delimiters (?, =, &) but must not
+-- be able to inject CR/LF into the upstream request line.
+function _M.escape_uri_control_chars(uri)
+    return (str_gsub(uri, "[%z\1-\31\127]", function(c)
+        return str_format("%%%02X", str_byte(c))
+    end))
+end
+
+
 function _M.validate_header_field(field)
     for i = 1, #field do
         local b = str_byte(field, i, i)

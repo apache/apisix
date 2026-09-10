@@ -242,6 +242,91 @@ By setting the `scheme` to `tls`, APISIX will do TLS handshake with the upstream
 
 When the client is also speaking TLS over TCP, the SNI from the client will pass through to the upstream. Otherwise, a dummy SNI `apisix_backend` will be used.
 
+## TLS passthrough
+
+The two sections above both terminate the client's TLS handshake at APISIX. With `tls_passthrough`, APISIX instead forwards the encrypted stream to the upstream untouched, and still picks the upstream from the SNI, which it reads out of the prereaded `ClientHello` (`ssl_preread on`) rather than out of a handshake it performed itself:
+
+```yaml
+apisix:
+  proxy_mode: http&stream
+  stream_proxy:
+    tcp:
+      - addr: 9100
+        tls_passthrough: true
+```
+
+The upstream terminates the handshake, so on such a port:
+
+- payload-inspecting stream plugins (`mqtt-proxy`, `xrpc`, `redis`) have nothing to read, and gateway mTLS does not apply — client certificate verification moves to the upstream;
+- an upstream with `"scheme": "tls"` is rejected with a `503`, because a second handshake would send the client's `ClientHello` to the upstream as payload.
+
+Routing is otherwise unchanged, so a stream route matches by SNI exactly as it does for a terminating port:
+
+```shell
+curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
+{
+    "sni": "a.test.com",
+    "upstream": {
+        "nodes": {
+            "127.0.0.1:5991": 1
+        },
+        "type": "roundrobin"
+    }
+}'
+```
+
+### Deciding per route on a mixed port
+
+Setting both flags on one listen opens a **mixed** port, where each connection is terminated or passed through according to `tls_passthrough` on the stream route it matches (a boolean, `false` by default):
+
+```yaml
+apisix:
+  proxy_mode: http&stream
+  stream_proxy:
+    tcp:
+      - addr: 9100
+        tls: true
+        tls_passthrough: true
+```
+
+```shell
+# passed through to the upstream, which terminates the handshake
+curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
+{
+    "sni": "a.test.com",
+    "tls_passthrough": true,
+    "upstream": {
+        "nodes": {
+            "127.0.0.1:5991": 1
+        },
+        "type": "roundrobin"
+    }
+}'
+
+# terminated by APISIX, using the certificate configured for this SNI
+curl http://127.0.0.1:9180/apisix/admin/stream_routes/2 -H "X-API-KEY: $admin_key" -X PUT -d '
+{
+    "sni": "b.test.com",
+    "upstream": {
+        "nodes": {
+            "127.0.0.1:5992": 1
+        },
+        "type": "roundrobin"
+    }
+}'
+```
+
+The route flag comes from etcd, so moving a service between the two modes needs no configuration change or restart.
+
+A port itself cannot be both: `ssl_preread on` and `listen ... ssl` are configuration-time directives, and on one server the handshake consumes the `ClientHello` before the preread phase can read it. So the two behaviours live in internal servers reachable over unix sockets under `logs/`, and the preread phase of the public listen picks between them. Note that:
+
+- only mixed ports pay that extra hop; a `tls: true` or `tls_passthrough: true` port keeps its direct path;
+- the client address crosses the hop in a PROXY protocol header restored with `set_real_ip_from unix:`, so route matching, stream plugins and logs see the real peer. A local user able to connect to those sockets could forge that header, so keep `logs/` off limits to untrusted local users — as it already has to be for `stream_worker_events.sock`;
+- `proxy_protocol_to_upstream` cannot be used on a mixed port and is rejected at startup: nginx builds the upstream PROXY protocol header from the socket the connection arrived on, which for the internal servers is the unix socket, producing an invalid `PROXY TCP4 <client> unix:/... <port> 0`. Use a dedicated `tls` or `tls_passthrough` listen, which has no internal hop and writes a correct header;
+- `apisix_stream_metrics_zone` counts nginx sessions and has no per-server switch, so a mixed port counts each client connection twice.
+
+Two `stream_proxy.tcp` entries on the same address must agree on their TLS mode and on `proxy_protocol_to_upstream`; otherwise they would need different nginx `server` blocks on one address, and APISIX rejects the configuration at startup.
+
 ## PROXY protocol
 
 APISIX can accept the [PROXY protocol](https://www.haproxy.org/download/1.8/doc/proxy-protocol.txt) on TCP stream ports and forward it to the upstream.
@@ -277,3 +362,44 @@ apisix:
 ```
 
 The accept side (`proxy_protocol`) is a per-listen directive, so ports with different settings can share one listener. The upstream side (`proxy_protocol_to_upstream`) is a server-level directive, so APISIX renders ports that send the PROXY protocol upstream into a separate `server` block. UDP listens never send the PROXY protocol upstream, so they always stay in the plain `server` block.
+
+:::warning
+
+Only enable `proxy_protocol_to_upstream` for upstreams that expect the PROXY protocol. An upstream that does not will read the plaintext `PROXY` line as application data and typically close the connection immediately — a TLS upstream, for example, cannot parse it as a TLS record.
+
+:::
+
+### Preserving the client address behind a load balancer
+
+`proxy_protocol_to_upstream` builds the outbound header from the address APISIX is connected to. When APISIX sits behind a load balancer that speaks the PROXY protocol, that is the load balancer's address, so accepting a header and sending one is not by itself enough to carry the client address through to the upstream.
+
+Set `nginx_config.stream.real_ip_from` to the addresses of the load balancers you trust. On a connection from a trusted address that carries an inbound PROXY protocol header, APISIX replaces the client address with the one from the header:
+
+```yaml
+apisix:
+  proxy_mode: http&stream
+  stream_proxy:
+    tcp:
+      - addr: 9100
+        proxy_protocol: true              # accept the header from the load balancer
+        proxy_protocol_to_upstream: true  # rebuild it toward the upstream
+nginx_config:
+  stream:
+    real_ip_from:
+      - 192.168.1.0/24                    # the load balancer's network
+```
+
+The header APISIX then sends upstream carries the client address, and so do the stream `$remote_addr`, the access log, and address-based matching such as the `ip-restriction` plugin. The directly connected address stays available as `$realip_remote_addr`.
+
+`real_ip_from` is empty by default and only takes effect on ports that accept the PROXY protocol, and only for peers that match it. Trust only load balancers you control: a peer you trust can claim to be any client.
+
+### Choosing a configuration
+
+Which combination you want depends on who needs to see the client address:
+
+| Configuration | `proxy_protocol` | `proxy_protocol_to_upstream` | `real_ip_from` | Result |
+|---|---|---|---|---|
+| Pass through | off | off | — | APISIX never looks at the header and proxies it to the upstream as ordinary stream bytes. The upstream sees the client, APISIX does not. Not usable on ports where APISIX has to read the stream itself, such as TLS ports or routes that match on preread data. |
+| Terminate | on | off | — | APISIX consumes the header and connects to the upstream without one. Use this for upstreams that do not speak the PROXY protocol. |
+| Terminate and rebuild | on | on | load balancer network | APISIX consumes the header and sends a new one carrying the client address. Both APISIX and the upstream see the client. |
+| Terminate and rebuild, nothing trusted | on | on | — | The upstream still gets a header, but it carries the address APISIX is connected to — the load balancer — so the client address is lost. |

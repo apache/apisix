@@ -227,6 +227,7 @@ local schema = {
 local schema_copy = core.table.deepcopy(schema)
 
 local _M = {
+    policy_to_additional_properties = policy_to_additional_properties,
     schema = schema,
     metadata_schema = metadata_schema,
 }

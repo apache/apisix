@@ -35,6 +35,9 @@ github:
     - iot
     - devops
     - kubernetes
+    - openapi
+    - openapi3
+    - openapi31
   
   enabled_merge_buttons:
     squash:  true

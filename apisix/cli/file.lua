@@ -102,25 +102,8 @@ end
 
 
 local function resolve_conf_var(conf)
-    local new_keys = {}
+    local renamed_keys
     for key, val in pairs(conf) do
-        -- avoid re-iterating the table for already iterated key
-        if new_keys[key] then
-            goto continue
-        end
-        -- substitute environment variables from conf keys
-        if type(key) == "string" then
-            local new_key, _, err = var_sub(key)
-            if err then
-                return nil, err
-            end
-            if new_key ~= key then
-                new_keys[new_key] = "dummy" -- we only care about checking the key
-                conf.key = nil
-                conf[new_key] = val
-                key = new_key
-            end
-        end
         if type(val) == "table" then
             local ok, err = resolve_conf_var(val)
             if not ok then
@@ -146,7 +129,27 @@ local function resolve_conf_var(conf)
 
             conf[key] = new_val
         end
-        ::continue::
+
+        -- substitute environment variables from conf keys. The rename is
+        -- deferred because inserting a new key while iterating with pairs()
+        -- is undefined behavior.
+        if type(key) == "string" then
+            local new_key, _, err = var_sub(key)
+            if err then
+                return nil, err
+            end
+            if new_key ~= key then
+                renamed_keys = renamed_keys or {}
+                renamed_keys[key] = new_key
+            end
+        end
+    end
+
+    if renamed_keys then
+        for key, new_key in pairs(renamed_keys) do
+            conf[new_key] = conf[key]
+            conf[key] = nil
+        end
     end
 
     return true
@@ -263,7 +266,9 @@ function _M.read_yaml_conf(apisix_home)
 
     if not is_empty_file then
         local user_conf = yaml.load(user_conf_yaml)
-        if not user_conf then
+        -- lyaml returns a scalar for a document such as `foo`, which would blow
+        -- up in resolve_conf_var's pairs() below
+        if type(user_conf) ~= "table" then
             return nil, "invalid config.yaml file"
         end
 
@@ -287,7 +292,10 @@ function _M.read_yaml_conf(apisix_home)
         default_conf.deployment.config_provider = "etcd"
         if default_conf.deployment.role == "traditional" then
             default_conf.etcd = default_conf.deployment.etcd
-            if default_conf.deployment.role_traditional.config_provider == "yaml" then
+            -- `role_traditional:` written as YAML null makes merge_conf drop the
+            -- default table, so it cannot be indexed blindly
+            local role_traditional = default_conf.deployment.role_traditional
+            if role_traditional and role_traditional.config_provider == "yaml" then
                 default_conf.deployment.config_provider = "yaml"
             end
 
@@ -342,7 +350,7 @@ function _M.read_yaml_conf(apisix_home)
             -- Therefore we need to check the absolute version instead
             local cert_path = pl_path.abspath(apisix_ssl.ssl_trusted_certificate)
             if not pl_path.exists(cert_path) then
-                util.die("certificate path", cert_path, "doesn't exist\n")
+                util.die("certificate path ", cert_path, " doesn't exist\n")
             end
             apisix_ssl.ssl_trusted_certificate = cert_path
         end

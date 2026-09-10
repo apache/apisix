@@ -728,7 +728,7 @@ The `ssls` is managed through the `/apisix/admin/ssls` API. It's used for managi
 
 The `tls.client_cert`, `tls.client_key`, and `tls.client_cert_id` in upstream are used for mTLS communication with the upstream.
 
-The `ssl_trusted_certificate` in `config.yaml` configures a trusted CA certificate. It is used for verifying some certificates signed by private authorities within APISIX, to avoid APISIX rejects the certificate. Note that it is not used to trust the certificates of APISIX upstream, because APISIX does not verify the legality of the upstream certificates. Therefore, even if the upstream uses an invalid TLS certificate, it can still be accessed without configuring a root certificate.
+The `ssl_trusted_certificate` in `config.yaml` configures a trusted CA certificate. It is used for verifying some certificates signed by private authorities within APISIX, to avoid APISIX rejects the certificate. Note that APISIX does not verify the certificate of an upstream unless that upstream sets `tls.verify` to `true`, so by default an upstream using an invalid TLS certificate can still be accessed. Once `tls.verify` is enabled, the certificate is checked against the upstream's own `tls.ca_certs` if set, and against `ssl_trusted_certificate` otherwise.
 
 ## Where can I find more answers?
 

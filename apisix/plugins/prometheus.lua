@@ -38,6 +38,7 @@ local structural_labels = {
     http_latency = {type = true},
     bandwidth = {type = true},
     llm_latency = {type = true},
+    ai_cache_hits_total = {layer = true},
 }
 
 

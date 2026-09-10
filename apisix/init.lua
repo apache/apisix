@@ -58,8 +58,10 @@ local ipairs          = ipairs
 local ngx_now         = ngx.now
 local ngx_var         = ngx.var
 local re_split        = require("ngx.re").split
+local re_gsub         = ngx.re.gsub
 local str_byte        = string.byte
 local str_sub         = string.sub
+local str_char        = string.char
 local tonumber        = tonumber
 local type            = type
 local pairs           = pairs
@@ -487,6 +489,42 @@ local function normalize_uri_like_servlet(uri)
 end
 
 
+-- Percent-decode every %XX in the path. When keep_slash is true, an encoded
+-- slash (%2F/%2f) is left as the literal text "%2F" instead of being turned
+-- into a real path separator -- Nginx decodes it into '/' in $uri, which makes
+-- it indistinguishable from a real separator and breaks path parameter
+-- matching (see issue #11810). The kept slash is always emitted upper-case so
+-- an exact route written with %2F matches regardless of the client's casing.
+local function percent_decode(path, keep_slash)
+    local decoded = re_gsub(path, [[%([0-9a-fA-F][0-9a-fA-F])]], function(m)
+        local hex = m[1]
+        if keep_slash and (hex == "2f" or hex == "2F") then
+            return "%2F"
+        end
+        return str_char(tonumber(hex, 16))
+    end, "jo")
+    return decoded
+end
+
+
+-- Build the route matching uri that keeps the encoded slash (%2F) encoded,
+-- using Nginx's already normalized $uri as an oracle instead of re-doing its
+-- normalization in Lua. If a plain full decode of the raw path reproduces
+-- current_uri ($uri) exactly, Nginx only decoded the request -- it applied no
+-- dot-segment resolution, no slash merging, no fragment stripping and it was
+-- not an absolute-form request line. Only then is it safe to keep %2F encoded,
+-- and the result provably differs from $uri solely by showing some '/' as
+-- "%2F". Anything else (path traversal, consecutive slashes, %00, exotic
+-- request lines) fails the equivalence check and returns nil so the caller
+-- keeps matching on $uri -- no bypass is possible even if the decode is wrong.
+local function build_match_uri_keep_encoded_slash(path, current_uri)
+    if percent_decode(path, false) ~= current_uri then
+        return nil
+    end
+    return percent_decode(path, true)
+end
+
+
 local function common_phase(phase_name)
     local api_ctx = ngx.ctx.api_ctx
     if not api_ctx then
@@ -526,6 +564,13 @@ local function resolve_upstream_client_cert(api_ctx)
 
     core.log.info("matched upstream client ssl object, id: ", cert_id,
                   ", type: ", upstream_ssl.type)
+
+    -- avoid the per-request deepcopy done by fetch_secrets when the ssl object
+    -- holds plain cert/key
+    if apisix_secret.has_secret_ref(upstream_ssl) then
+        upstream_ssl = apisix_secret.fetch_secrets(upstream_ssl, true) or upstream_ssl
+    end
+
     api_ctx.upstream_ssl = upstream_ssl
     return true
 end
@@ -641,88 +686,73 @@ function _M.handle_upstream(api_ctx, route, enable_websocket)
 end
 
 
-local function handle_x_forwarded_headers(api_ctx)
-    local addr_is_trusted = trusted_addresses_util.is_trusted(api_ctx.var.realip_remote_addr)
-
-    -- Only untrusted values need to be overwritten or cleared.
-    if not addr_is_trusted then
-        -- store the original x-forwarded-* headers
-        -- to allow future use by other plugins or processes
-        api_ctx.var.original_x_forwarded_proto = api_ctx.var.http_x_forwarded_proto
-        api_ctx.var.original_x_forwarded_host = api_ctx.var.http_x_forwarded_host
-        api_ctx.var.original_x_forwarded_port = api_ctx.var.http_x_forwarded_port
-        api_ctx.var.original_x_forwarded_for = api_ctx.var.http_x_forwarded_for
-
-        -- trusted ones
-        -- ref: ngx_tpl.lua#L831-L840
-        --
-        -- these values are observed directly by APISIX and cannot be forged,
-        -- making them highly credible.
-        local proto = api_ctx.var.scheme
-        local http_host = api_ctx.var.http_host or api_ctx.var.host
-        -- parse_addr handles IPv6 literals and bracketed host:port correctly.
-        local _, port_from_host = core.utils.parse_addr(http_host)
-        local host = http_host
-        local port = port_from_host or api_ctx.var.server_port
-
-        -- override the x-forwarded-* headers to the trusted ones.
-        -- make sure that the correct values ​​are obtained
-        -- in the subsequent stages using `core.request.header`.
-        core.request.set_header(api_ctx, "X-Forwarded-Proto", proto)
-        core.request.set_header(api_ctx, "X-Forwarded-Host", host)
-        core.request.set_header(api_ctx, "X-Forwarded-Port", port)
-        -- Clear RFC 7239 Forwarded header to prevent forgery.
-        core.request.set_header(api_ctx, "Forwarded", nil)
-
-        -- X-Forwarded-For: when a trust boundary is configured but this peer is
-        -- untrusted, reset it so the upstream only sees the APISIX-observed
-        -- connection IP via `$proxy_add_x_forwarded_for`, dropping the spoofable
-        -- inbound chain. When `trusted_addresses` is unset, keep the compatible
-        -- default of preserving the inbound chain (the connection IP is appended).
-        if trusted_addresses_util.is_configured() then
-            core.request.set_header(api_ctx, "X-Forwarded-For", nil)
-            api_ctx.var.http_x_forwarded_for = nil
-        end
-
-        -- update the cached value in http_x_forwarded_* to the trusted ones.
-        -- make sure that the correct values ​​are obtained
-        -- in the subsequent stages using `var.http_x_forwarded_*`.
-        api_ctx.var.http_x_forwarded_proto = proto
-        api_ctx.var.http_x_forwarded_host = host
-        api_ctx.var.http_x_forwarded_port = port
-        api_ctx.var.http_forwarded = nil
+-- X-Forwarded-Proto/Host/Port and Forwarded are already neutralized by the time
+-- this runs: `more_set_input_headers` in apisix/cli/ngx_tpl.lua does it in the
+-- rewrite phase, in C, on every request. That is unconditional because with no
+-- trust boundary configured -- the default -- it is what every request needs, and
+-- keeping it in the config keeps Lua off that path entirely.
+--
+-- What is left needs a trust decision, so it stays here, behind a check that is a
+-- constant for the worker's lifetime: with no `trusted_addresses` this returns on
+-- its first line and nothing else runs.
+--
+-- `set` captures an absent header as the empty string, so "" means the peer sent
+-- nothing and the value the config injected stays. That is a deliberate change
+-- for a trusted peer: the Lua-only implementation skipped the whole rewrite for
+-- one, so a header it did not send stayed absent and the upstream fell through to
+-- `$host` / `$server_port`. A trusted peer now gets the same observed values an
+-- untrusted one does -- the Host with its port and case, rather than the
+-- lower-cased portless `$host` -- which is the value the untrusted path has always
+-- produced. `ctx.var.http_x_forwarded_*` is updated alongside, so a plugin reading
+-- it in a later phase sees the restored value rather than the injected one.
+local function restore_if_sent(api_ctx, header_name, var_name, orig)
+    if not orig or orig == "" then
+        return
     end
+
+    core.request.set_header(api_ctx, header_name, orig)
+    api_ctx.var[var_name] = orig
 end
 
 
--- in ngx_tpl.lua#L831-L840,
--- there is such code: `proxy_set_header X-Forwarded-XXX $var_x_forwarded_xxx;`
--- that is, set the `X-Forwarded-XXX` header through `var_x_forwarded_xxx`.
---
--- therefore, it is necessary to set the trusted `http_x_forwarded_xxx` to `var_x_forwarded_xxx`.
--- So that the `X-Forwarded-XXX` header is updated to a trusted value.
---
--- currently, only following headers are updated through these variables:
--- - X-Forwarded-Proto
--- - X-Forwarded-Port
--- - X-Forwarded-Host
---
--- the `X-Forwarded-For` header is not updated through these variables.
--- because it is set by the `proxy_add_x_forwarded_for` directive.
-local function set_upstream_x_forwarded_headers(api_ctx)
-    local proto = api_ctx.var.http_x_forwarded_proto
-    if proto then
-        api_ctx.var.var_x_forwarded_proto = proto
+local function handle_trusted_x_forwarded_headers(api_ctx)
+    -- The other four originals are copied by the configuration; this one cannot be,
+    -- because naming `$http_x_forwarded_for` there would pin it in `r->variables[]`
+    -- and the clear below could not dislodge it. Copy it here instead, on every
+    -- path: the header is only destroyed further down, but a plugin reading
+    -- `ctx.var.original_x_forwarded_for` should not have to know that.
+    local inbound_xff = api_ctx.var.http_x_forwarded_for
+    if inbound_xff then
+        api_ctx.var.original_x_forwarded_for = inbound_xff
     end
 
-    local port = api_ctx.var.http_x_forwarded_port
-    if port then
-        api_ctx.var.var_x_forwarded_port = port
+    if not trusted_addresses_util.is_configured() then
+        return
     end
 
-    local host = api_ctx.var.http_x_forwarded_host
-    if host then
-        api_ctx.var.var_x_forwarded_host = host
+    if trusted_addresses_util.is_trusted(api_ctx.var.realip_remote_addr) then
+        -- a trusted peer's own values go back, from the copies the config took
+        -- before overwriting them
+        restore_if_sent(api_ctx, "X-Forwarded-Proto", "http_x_forwarded_proto",
+                        api_ctx.var.original_x_forwarded_proto)
+        restore_if_sent(api_ctx, "X-Forwarded-Host", "http_x_forwarded_host",
+                        api_ctx.var.original_x_forwarded_host)
+        restore_if_sent(api_ctx, "X-Forwarded-Port", "http_x_forwarded_port",
+                        api_ctx.var.original_x_forwarded_port)
+        restore_if_sent(api_ctx, "Forwarded", "http_forwarded",
+                        api_ctx.var.original_forwarded)
+
+        return
+    end
+
+    -- An untrusted peer, with a trust boundary to measure it against: drop the
+    -- inbound X-Forwarded-For so the upstream only sees the connection IP via
+    -- `$proxy_add_x_forwarded_for`. Without a boundary the chain is preserved,
+    -- which is the compatible default and is why this lives behind the check
+    -- above rather than in the config.
+    if inbound_xff then
+        core.request.set_header(api_ctx, "X-Forwarded-For", nil)
+        api_ctx.var.http_x_forwarded_for = nil
     end
 end
 
@@ -767,9 +797,9 @@ function _M.http_access_phase()
             end
 
             api_ctx.var.uri = new_uri
-            -- forward the original uri so the servlet upstream
-            -- can consume the param after ';'
-            api_ctx.var.upstream_uri = uri
+            -- Forward the original path so servlet upstreams can consume params
+            -- after ';'. URI-encode it before proxying to keep delimiters as path data.
+            api_ctx.var.upstream_uri = core.utils.uri_safe_encode(uri)
         end
     end
 
@@ -782,10 +812,36 @@ function _M.http_access_phase()
     -- var.request is read-only; copy to a writable variable so data-mask can redact query params
     api_ctx.var.request_line = api_ctx.var.request
 
-    handle_x_forwarded_headers(api_ctx)
+    handle_trusted_x_forwarded_headers(api_ctx)
+
+    -- When match_uri_encoded_slash is on, match the route against a uri that
+    -- keeps the encoded slash (%2F) so it is treated as part of a path
+    -- parameter. This is a router-match-only value: it is swapped in just for
+    -- dispatch and restored right after, so the rewrite/access phases, plugins
+    -- and the upstream keep seeing the normalized ctx.var.uri. Only the matched
+    -- route and its captured params (uri_param_*) retain the encoded slash.
+    local match_uri
+    if local_conf.apisix and local_conf.apisix.match_uri_encoded_slash then
+        local path = api_ctx.var.real_request_uri
+        local args_pos = core.string.find(path, "?")
+        if args_pos then
+            path = str_sub(path, 1, args_pos - 1)
+        end
+        if core.string.find(path, "%2f") or core.string.find(path, "%2F") then
+            match_uri = build_match_uri_keep_encoded_slash(path, api_ctx.var.uri)
+        end
+    end
 
     local match_span = tracer.start(ngx_ctx, "http_router_match", tracer.kind.internal)
-    router.router_http.match(api_ctx)
+    if match_uri then
+        local normalized_uri = api_ctx.var.uri
+        api_ctx.var.uri = match_uri
+        router.router_http.match(api_ctx)
+        -- restore so downstream phases never observe the encoded-slash uri
+        api_ctx.var.uri = normalized_uri
+    else
+        router.router_http.match(api_ctx)
+    end
 
     local route = api_ctx.matched_route
     if not route then
@@ -898,10 +954,6 @@ function _M.http_access_phase()
     end
     span:finish(ngx_ctx)
 
-    -- set before handle_upstream: grpc/dubbo/disable_proxy_buffering exit via
-    -- ngx.exec() and never return, so the trusted values must be applied first.
-    set_upstream_x_forwarded_headers(api_ctx)
-
     _M.handle_upstream(api_ctx, route, enable_websocket)
 end
 
@@ -971,20 +1023,31 @@ function _M.http_header_filter_phase()
         set_resp_upstream_status(up_status)
     end
 
+    local api_ctx = ngx_ctx.api_ctx
+    if ngx.status == 101 then
+        api_ctx.var.request_type = "websocket"
+    end
+
     common_phase("header_filter")
 
-    local api_ctx = ngx.ctx.api_ctx
     if not api_ctx then
         return
     end
 
-    local debug_headers = api_ctx.debug_headers
-    if debug_headers then
-        local deduplicate = core.table.new(core.table.nkeys(debug_headers), 0)
-        for k, v in pairs(debug_headers) do
-            core.table.insert(deduplicate, k)
+    if debug.enable_debug() then
+        -- report the plugin phase functions in the execution order: the ones
+        -- executed so far were traced at execution time, while the
+        -- post-header ones of the matched plugins have not run yet and are
+        -- inferred, so they may not fully match the real execution
+        plugin.trace_expected_plugins_for_debug(api_ctx)
+
+        local debug_plugins = api_ctx.debug_plugins
+        if debug_plugins then
+            core.response.set_header("Apisix-Plugins",
+                                     core.table.concat(debug_plugins, ", "))
+        else
+            core.response.set_header("Apisix-Plugins", "no plugin")
         end
-        core.response.set_header("Apisix-Plugins", core.table.concat(deduplicate, ", "))
     end
     span:finish(ngx_ctx)
 
@@ -1166,6 +1229,10 @@ function _M.http_log_phase()
         core.tablepool.release("plugins", api_ctx.plugins)
     end
 
+    if api_ctx.global_plugins then
+        core.tablepool.release("global_plugins", api_ctx.global_plugins)
+    end
+
     if api_ctx.curr_req_matched then
         core.tablepool.release("matched_route_record", api_ctx.curr_req_matched)
     end
@@ -1254,6 +1321,7 @@ function _M.stream_init(args)
     core.log.info("enter stream_init")
 
     core.resolver.init_resolver(args)
+    core.env.init()
 
     if core.config.init then
         local ok, err = core.config.init()
@@ -1285,6 +1353,16 @@ function _M.stream_init_worker()
 
     core.lrucache.init_worker()
 
+    -- admin.init.init_worker() registers an events callback, so events must
+    -- already be initialized here
+    require("apisix.events").init_worker()
+
+    -- must run before core.config.init_worker() and router.stream_init_worker():
+    -- it patches the resource schemas (e.g. allowing modifiedIndex) that
+    -- those two synchronously validate data against as part of their own
+    -- worker startup, same as in http_init_worker
+    require("apisix.admin.init").init_worker()
+
     if core.config.init_worker then
         local ok, err = core.config.init_worker()
         if not ok then
@@ -1295,14 +1373,10 @@ function _M.stream_init_worker()
 
     plugin.init_worker()
     xrpc.init_worker()
+    apisix_secret.init_worker()
     router.stream_init_worker()
     require("apisix.http.service").init_worker()
     apisix_upstream.init_worker()
-
-    require("apisix.events").init_worker()
-
-    -- for admin api of standalone mode, we need to startup background timer and patch schema etc.
-    require("apisix.admin.init").init_worker()
 
     if discovery and discovery.init_worker then
         discovery.init_worker()
@@ -1314,16 +1388,67 @@ function _M.stream_init_worker()
 end
 
 
-function _M.stream_preread_phase()
+-- Preread phase of a mixed TLS listen: pick which internal server gets the
+-- connection. Plugins and the log phase run there, not here.
+function _M.stream_tls_route_phase(terminate_upstream, passthrough_upstream)
     local ngx_ctx = ngx.ctx
     local api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
     ngx_ctx.api_ctx = api_ctx
+    -- nothing was terminated here, so the SNI can only come from the ClientHello
+    api_ctx.tls_passthrough = true
 
-    if not verify_tls_client(api_ctx) then
+    core.ctx.set_vars_meta(api_ctx)
+
+    local ok, err = router.router_stream.match(api_ctx)
+    if not ok then
+        core.log.error(err)
+    end
+
+    -- an unmatched connection goes to the terminating server, which reports the miss
+    local matched_route = api_ctx.matched_route
+    local target = terminate_upstream
+    if matched_route and matched_route.value.tls_passthrough then
+        target = passthrough_upstream
+    end
+    ngx_var.stream_tls_target = target
+
+    core.log.info("stream tls route: sni: ", api_ctx.var.ssl_preread_server_name,
+                  ", target: ", target)
+
+    core.ctx.release_vars(api_ctx)
+    core.tablepool.release("api_ctx", api_ctx)
+    ngx_ctx.api_ctx = nil
+end
+
+
+-- `tls_passthrough` is set by the template on listens running `ssl_preread on`:
+-- no local handshake, so no client certificate to verify and the SNI is prereaded.
+function _M.stream_preread_phase(tls_passthrough, behind_mixed_hop)
+    local ngx_ctx = ngx.ctx
+    local api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
+    ngx_ctx.api_ctx = api_ctx
+    api_ctx.tls_passthrough = tls_passthrough
+
+    if not tls_passthrough and not verify_tls_client(api_ctx) then
         return ngx_exit(1)
     end
 
     core.ctx.set_vars_meta(api_ctx)
+
+    -- On the internal servers of a mixed listen the connection arrives over a unix
+    -- socket, so $server_addr/$server_port describe that socket rather than the port
+    -- the client reached. The real one is in the PROXY protocol header, and routes
+    -- match on it.
+    if behind_mixed_hop then
+        local addr = ngx_var.proxy_protocol_server_addr
+        if addr and addr ~= "" then
+            api_ctx.var.server_addr = addr
+        end
+        local port = ngx_var.proxy_protocol_server_port
+        if port and port ~= "" then
+            api_ctx.var.server_port = port
+        end
+    end
 
     local ok, err = router.router_stream.match(api_ctx)
     if not ok then
@@ -1469,6 +1594,10 @@ function _M.stream_log_phase()
     end
 
     healthcheck_passive(api_ctx)
+
+    if api_ctx.server_picker and api_ctx.server_picker.after_balance then
+        api_ctx.server_picker.after_balance(api_ctx, false)
+    end
 
     core.ctx.release_vars(api_ctx)
     if api_ctx.plugins then

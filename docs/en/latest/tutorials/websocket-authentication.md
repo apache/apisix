@@ -5,7 +5,7 @@ keywords:
   - Apache APISIX
   - WebSocket
   - Authentication
-description: This article is a guide on how to configure authentication for WebSocket connections.
+description: Configure Apache APISIX to authenticate a WebSocket HTTP upgrade request and understand the browser, session, and upstream security boundaries.
 ---
 
 <!--
@@ -27,112 +27,126 @@ description: This article is a guide on how to configure authentication for WebS
 #
 -->
 
-Apache APISIX supports [WebSocket](https://en.wikipedia.org/wiki/WebSocket) traffic, but the WebSocket protocol doesn't handle authentication. This article guides you on how to configure authentication for WebSocket connections using Apache APISIX.
+A WebSocket connection begins as an HTTP upgrade request. Apache APISIX can run an authentication plugin on that handshake and reject the request before the upstream returns `101 Switching Protocols`. After the upgrade succeeds, APISIX proxies WebSocket frames; HTTP authentication plugins are not re-run for each frame.
 
-## WebSocket Protocol
+This tutorial uses [`key-auth`](../plugins/key-auth.md) to demonstrate handshake authentication for a non-browser client that can set a custom header.
 
-To establish a WebSocket connection, the client sends a WebSocket handshake request, for which the server returns a WebSocket handshake response as shown below:
+## WebSocket authentication boundaries
 
-```text title="Client request"
-GET /chat HTTP/1.1
-Host: server.example.com
-Upgrade: websocket
-Connection: Upgrade
-Sec-WebSocket-Key: x3JJHMbDL1EzLkh9GBhXDw==
-Sec-WebSocket-Protocol: chat, superchat
-Sec-WebSocket-Version: 13
-Origin: http://example.com
-```
+Design the connection lifecycle before choosing a credential:
 
-```text title="Server response"
-HTTP/1.1 101 Switching Protocols
-Upgrade: websocket
-Connection: Upgrade
-Sec-WebSocket-Accept: HSmrc0sMlYUkAGmm5OPpG2HaGWk=
-Sec-WebSocket-Protocol: chat
-```
-
-The handshake workflow is shown below:
-
-![Websocket Handshake Workflow](https://static.apiseven.com/2022/12/06/638eda2e2415f.png)
-
-## WebSocket Authentication
-
-APISIX supports several authentication methods like [basic-auth](https://apisix.apache.org/docs/apisix/plugins/basic-auth/), [key-auth](https://apisix.apache.org/docs/apisix/plugins/key-auth/), and [jwt-auth](https://apisix.apache.org/docs/apisix/plugins/jwt-auth/).
-
-While establishing connections from the client to server in the _handshake_ phase, APISIX first checks its authentication information before choosing to forward the request or deny it.
+- Standard browser WebSocket APIs cannot set an arbitrary `apikey` or `Authorization` header. Do not put a long-lived secret in the URL to work around that limitation. Use an application-specific short-lived ticket, a protected session established over HTTPS, or another browser-compatible design whose replay and authorization behavior you have defined.
+- Browser CORS policy does not automatically authorize a WebSocket connection. Validate the `Origin` at a trusted component when your application relies on an origin allowlist.
+- A successful handshake authenticates the connection at that moment. If a credential expires or is revoked, the application must define whether to close, reauthenticate, or otherwise reauthorize an existing long-lived connection.
+- The upstream service still owns per-message and resource-level authorization. It must not trust identity headers supplied directly by the client; the gateway should strip or overwrite them at the trust boundary.
 
 ## Prerequisites
 
-Before you move on, make sure you have:
+Before you begin, ensure that you have:
 
-1. A WebSocket server as the Upstream. This article uses [Postman's public echo service](https://blog.postman.com/introducing-postman-websocket-echo-service/): `wss://ws.postman-echo.com/raw`.
-2. APISIX 3.0 installed.
+1. Apache APISIX installed and the Admin API reachable from an operator environment. The `tls.verify` setting used below requires an [APISIX-Runtime build](../FAQ.md#how-do-i-build-the-apisix-runtime-environment).
+2. A WebSocket upstream. This example uses Postman's public echo service at `wss://ws.postman-echo.com/raw`; use a controlled test server if an external service is unsuitable for your environment.
+3. A WebSocket client that can set custom headers, such as `websocat`.
 
-## Configuring Authentication
+## Create a WebSocket route
 
-### Create a Route
-
-First we will create a Route to the Upstream echo service.
-
-Since the Upstream uses wss protocol, the scheme is set to `https`. We should also set `enable_websocket` to `true`.
-
-In this tutorial, we will use the [key-auth](https://apisix.apache.org/docs/apisix/plugins/key-auth/) Plugin. This would work similarly for other authentication methods:
-
-:::note
-You can fetch the `admin_key` from `config.yaml` and save it to an environment variable with the following command:
+Reuse the resolved Admin API secret from the environment that starts APISIX:
 
 ```bash
-admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+admin_key="${ADMIN_KEY:?ADMIN_KEY is not set}"
 ```
 
-:::
+If a local test configuration contains the actual key rather than an environment or secret reference, you can read that literal value with `admin_key="$(yq -r '.deployment.admin.admin_key[0].key' conf/config.yaml)"`. `yq` does not resolve `${{VARIABLE}}` templates or external secrets.
+
+Create a Route that enables WebSocket proxying and authenticates the upgrade request:
 
 ```shell
-curl --location --request PUT 'http://127.0.0.1:9180/apisix/admin/routes/1' \
---header 'X-API-KEY: $admin_key' \
---header 'Content-Type: application/json' \
---data-raw '{
-    "uri": "/*",
+curl "http://127.0.0.1:9180/apisix/admin/routes/websocket-auth" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "uri": "/raw",
     "methods": ["GET"],
     "enable_websocket": true,
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "ws.postman-echo.com:443": 1
-        },
-        "scheme": "https"
+    "plugins": {
+      "key-auth": {
+        "hide_credentials": true
+      }
     },
-    "plugins": {
-        "key-auth": {}
+    "upstream": {
+      "type": "roundrobin",
+      "scheme": "https",
+      "pass_host": "node",
+      "tls": {
+        "verify": true
+      },
+      "nodes": {
+        "ws.postman-echo.com:443": 1
+      }
     }
-}'
+  }'
 ```
 
-### Create a Consumer
+`enable_websocket` enables the protocol upgrade on the Route. The upstream
+`scheme: https` corresponds to `wss://` for the proxied WebSocket connection.
+`pass_host: node` sends the node hostname as the upstream `Host` and TLS server
+name instead of forwarding the client's `127.0.0.1` host.
 
-We will now create a [Consumer](https://apisix.apache.org/docs/apisix/terminology/consumer/) and add a key `this_is_the_key`. A user would now need to use this key configured in the Consumer object to access the API.
+On an APISIX-Runtime build, `tls.verify: true` verifies the upstream certificate
+using the CA certificates in `upstream.tls.ca_certs`, or the
+`ssl_trusted_certificate` configured in `conf/config.yaml` when the Upstream does
+not provide its own CA certificates. Keep verification enabled for authenticated
+upstream TLS, and supply the appropriate private CA when the WebSocket service
+does not use a publicly trusted certificate. See the
+[Upstream section of the Admin API](../admin-api.md#upstream) for the current TLS
+fields. A standard APISIX build without the required runtime modules cannot apply
+these verification fields; use a controlled proxy or service-mesh hop that
+verifies the upstream identity instead of sending sensitive traffic over an
+unauthenticated upstream TLS connection.
 
-```sh
-curl --location --request PUT 'http://127.0.0.1:9180/apisix/admin/consumers/jack' \
---header 'X-API-KEY: $admin_key' \
---header 'Content-Type: application/json' \
---data-raw '{
-    "username": "jack",
-    "plugins": {
-        "key-auth": {
-            "key": "this_is_the_key"
-        }
-    }
-}'
+## Create a Consumer credential
+
+Create a Consumer and a separate `key-auth` credential:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/consumers/jack" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "jack"
+  }'
 ```
 
-## Testing the Route
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/consumers/jack/credentials" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": "websocket-key",
+    "plugins": {
+      "key-auth": {
+        "key": "this_is_the_key"
+      }
+    }
+  }'
+```
 
-Now, if you try to connect `ws://127.0.0.1:9080/raw` without the `apikey` header or an incorrect key, APISIX will return a `401 Unauthorized`.
+Use a generated secret delivered through your deployment's secret-management process in production. The fixed value above is only a local example.
 
-![Connect without Key](https://static.apiseven.com/2022/12/06/638ef6db9dd4b.png)
+## Test the handshake
 
-To authenticate, you can add the header `apikey` with the value `this_is_the_key`:
+Connecting without the configured header should fail with `401 Unauthorized`:
 
-![Connect with key](https://static.apiseven.com/2022/12/06/638efac7c42b6.png)
+```shell
+websocat -v ws://127.0.0.1:9080/raw
+```
+
+Connect again with the key in the configured header:
+
+```shell
+websocat -v -H='apikey: this_is_the_key' ws://127.0.0.1:9080/raw
+```
+
+After the server returns `101 Switching Protocols`, send a text message. The echo service should return the same message. Verify that the upstream does not receive the `apikey` header, that failed handshakes are logged without the raw credential, and that your connection-termination policy works when a credential is revoked.
+
+The `key-auth` plugin also supports a query parameter and gives the header higher priority. If both sources are present, the plugin authenticates with the header; `hide_credentials` removes only that matched header, so the lower-priority query value can still reach the upstream. It also cannot prevent a query credential from first appearing in a URL. If the route must be header-only, reject credential-bearing query parameters at an earlier request-policy layer and test that behavior explicitly.

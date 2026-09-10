@@ -159,3 +159,13 @@ plugin_attr:
 GET /echo
 --- error_log
 ngx_var.zipkin_context_traceparent is empty
+
+
+
+=== TEST 6: unsampled request still builds span context for set_ngx_var
+--- request
+GET /echo
+--- more_headers
+x-b3-sampled: 0
+--- error_log eval
+qr/ngx_var.zipkin_context_traceparent:00-\w{32}-\w{16}-00/

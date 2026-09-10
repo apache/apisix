@@ -1108,3 +1108,52 @@ cannot parse any events and the gateway should return 502 instead of crashing.
 status: 502
 --- error_log
 streaming response completed without producing any output
+
+
+
+=== TEST 29: Set up route for converter fault isolation
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/v1/messages",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": {
+                                "header": {
+                                    "Authorization": "Bearer token"
+                                }
+                            },
+                            "override": {
+                                "endpoint": "http://127.0.0.1:1980/v1/chat/completions"
+                            }
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 30: A converter fault on valid JSON stays a controlled 500
+--- request
+POST /v1/messages
+{"model":"claude-3","messages":[{"role":"user","content":[{"type":"image","source":true}]}]}
+--- more_headers
+Content-Type: application/json
+--- error_code: 500
+--- error_log
+failed to send request to AI service
+attempt to index

@@ -21,6 +21,8 @@ log_level('info');
 no_root_location();
 no_shuffle();
 
+$ENV{TEST_UPSTREAM_NODE} = '127.0.0.1:1980';
+
 run_tests();
 
 __DATA__
@@ -242,3 +244,29 @@ GET /hello
 test: one
 --- error_log
 proxy request to 127.0.0.1:1980
+
+
+
+=== TEST 8: env var used as a node key is resolved, stale key is removed
+--- yaml_config eval: $::yaml_config
+--- apisix_json
+{
+  "routes": [
+    {
+      "id": 1,
+      "uri": "/hello",
+      "upstream": {
+        "nodes": {
+          "${{TEST_UPSTREAM_NODE}}": 1
+        },
+        "type": "roundrobin"
+      }
+    }
+  ]
+}
+--- request
+GET /hello
+--- response_body
+hello world
+--- no_error_log
+failed to parse domain

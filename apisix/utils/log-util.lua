@@ -199,7 +199,7 @@ local function get_full_log(ngx, conf)
             url = url,
             uri = var.request_uri,
             method = ngx.req.get_method(),
-            headers = ngx.req.get_headers(),
+            headers = ctx.data_mask_headers or ngx.req.get_headers(),
             querystring = ngx.req.get_uri_args(),
             size = var.request_length
         },
@@ -359,7 +359,7 @@ function _M.get_req_original(ctx, conf)
     local data = {
         ctx.var.request, "\r\n"
     }
-    for k, v in pairs(ngx.req.get_headers()) do
+    for k, v in pairs(ctx.data_mask_headers or ngx.req.get_headers()) do
         core.table.insert_tail(data, k, ": ", v, "\r\n")
     end
     core.table.insert(data, "\r\n")

@@ -132,6 +132,7 @@ end
 local function serve_hit(conf, ctx, cached, similarity)
     local status = "HIT"
     ctx.ai_cache_status = status
+    ctx.ai_cache_hit_layer = similarity and "semantic" or "exact"
     if conf.cache_headers ~= false then
         core.response.set_header(CACHE_STATUS_HEADER, status)
         local age = ngx.time() - (cached.created_at or ngx.time())

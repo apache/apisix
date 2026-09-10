@@ -37,6 +37,7 @@ When enabled, the Plugin terminates the ongoing request to the configured URI an
 
 | Name                   | Type    | Required | Default | Valid values | Description                                                                                                                           |
 |------------------------|---------|----------|---------|--------------|---------------------------------------------------------------------------------------------------------------------------------------|
+| max_req_body_size | integer | False | 67108864 | >= 1 | Maximum request body size in bytes buffered into memory. Requests with a larger body are rejected. |
 | function_uri           | string  | True     |         |              | Azure FunctionS endpoint which triggers the serverless function. For example, `http://test-apisix.azurewebsites.net/api/HttpTrigger`. |
 | authorization          | object  | False    |         |              | Authorization credentials to access Azure Functions.                                                                                  |
 | authorization.apikey   | string  | False    |         |              | Generated API key to authorize requests.                                                                                              |

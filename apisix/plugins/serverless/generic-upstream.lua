@@ -32,6 +32,13 @@ return function(plugin_name, version, priority, request_processor, authz_schema,
     local schema = {
         type = "object",
         properties = {
+            max_req_body_size = {
+                type = "integer",
+                minimum = 1,
+                default = 67108864,
+                description = "maximum request body size in bytes buffered into "
+                           .. "memory; larger request bodies are rejected",
+            },
             function_uri = {type = "string"},
             authorization = authz_schema,
             timeout = {type = "integer", minimum = 100, default = 3000},
@@ -62,7 +69,12 @@ return function(plugin_name, version, priority, request_processor, authz_schema,
         local uri_args = core.request.get_uri_args(ctx)
         local headers = core.request.headers(ctx) or {}
 
-        local req_body, err = core.request.get_body()
+        -- body is already de-chunked by nginx; drop the client's framing headers
+        -- so the http client reframes it with a correct Content-Length
+        headers["transfer-encoding"] = nil
+        headers["content-length"] = nil
+
+        local req_body, err = core.request.get_body(conf.max_req_body_size)
 
         if err then
             core.log.error("error while reading request body: ", err)
@@ -71,7 +83,10 @@ return function(plugin_name, version, priority, request_processor, authz_schema,
 
         -- forward the url path came through the matched uri
         local url_decoded = url.parse(conf.function_uri)
-        local path = url_decoded.path or "/"
+        local path = url_decoded.path
+        if path == "" then
+            path = "/"
+        end
 
         if ctx.curr_req_matched and ctx.curr_req_matched[":ext"] then
             local end_path = ctx.curr_req_matched[":ext"]
@@ -113,6 +128,11 @@ return function(plugin_name, version, priority, request_processor, authz_schema,
         if not res then
             core.log.error("failed to process ", plugin_name, ", err: ", err)
             return 503
+        end
+
+        if res.status >= 400 then
+            core.log.warn(plugin_name, " function returned status ", res.status,
+                          ", body: ", res.body)
         end
 
         -- According to RFC7540 https://datatracker.ietf.org/doc/html/rfc7540#section-8.1.2.2,

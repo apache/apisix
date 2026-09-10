@@ -27,6 +27,8 @@ local set_more_tries   = balancer.set_more_tries
 local get_last_failure = balancer.get_last_failure
 local set_timeouts     = balancer.set_timeouts
 local ngx_now          = ngx.now
+local ngx_md5          = ngx.md5
+local tostring         = tostring
 
 local module_name = "balancer"
 local pickers = {}
@@ -174,9 +176,9 @@ local function create_server_picker(upstream, checker)
             return server_picker
         end
 
-        core.log.info("upstream nodes: ",
-                      core.json.delay_encode(up_nodes[up_nodes._priority_index[1]]))
-        local server_picker = picker.new(up_nodes[up_nodes._priority_index[1]], upstream)
+        local priority = up_nodes._priority_index[1]
+        core.log.info("upstream nodes: ", core.json.delay_encode(up_nodes[priority]))
+        local server_picker = picker.new(up_nodes[priority], upstream, priority)
         server_picker.addr_to_domain = addr_to_domain
         return server_picker
     end
@@ -248,7 +250,13 @@ local function pick_server(route, ctx)
     local up_conf = ctx.upstream_conf
 
     local nodes_count = #up_conf.nodes
-    if nodes_count == 1 then
+    -- least_conn counts the in-flight connections of every request it routes, so it
+    -- has to see them even while the upstream has a single node: those connections
+    -- are what tells a later scale out that the node is not empty. Skipping the
+    -- balancer here would leave it blind to everything routed before the second
+    -- node showed up, which is the state a k8s deployment or a discovery service
+    -- starts from. See #12217
+    if nodes_count == 1 and up_conf.type ~= "least_conn" then
         local node = up_conf.nodes[1]
         ctx.balancer_ip = node.host
         ctx.balancer_port = node.port
@@ -268,7 +276,10 @@ local function pick_server(route, ctx)
     ctx.balancer_try_count = (ctx.balancer_try_count or 0) + 1
     if ctx.balancer_try_count > 1 then
         if ctx.server_picker and ctx.server_picker.after_balance then
-            ctx.server_picker.after_balance(ctx, true)
+            -- remembering the server as tried is what keeps the next pick off it, so
+            -- only do it when there is another one to move to. With a single node the
+            -- retry has to land on it again, the way the fast path below always did
+            ctx.server_picker.after_balance(ctx, nodes_count > 1)
         end
 
         if checker then
@@ -331,6 +342,9 @@ local function pick_server(route, ctx)
         return nil, "failed to find valid upstream server, all upstream servers tried"
     end
     ctx.balancer_server = server
+    -- from here on the request holds a server, so the log phase must be able to
+    -- release it even if we bail out below
+    ctx.server_picker = server_picker
 
     local domain = server_picker.addr_to_domain[server]
     local res, err = lrucache_addr(server, nil, parse_addr, server)
@@ -347,7 +361,6 @@ local function pick_server(route, ctx)
     if is_http and ctx.var then
         ctx.var.upstream_unresolved_host = ctx.upstream_unresolved_host
     end
-    ctx.server_picker = server_picker
     res.upstream_host = parse_server_for_upstream_host(res, ctx.upstream_scheme)
 
     return res
@@ -356,6 +369,18 @@ end
 
 -- for test
 _M.pick_server = pick_server
+
+
+-- Keyed by the `ca_certs` array itself: a config update always rebuilds that
+-- table, so a stale digest can never outlive the certificates it was made from.
+local ca_certs_digest_cache = core.lrucache.new({
+    ttl = 300, count = 256,
+})
+
+
+local function ca_certs_digest(ca_certs)
+    return ngx_md5(core.table.concat(ca_certs, "\n"))
+end
 
 
 local set_current_peer
@@ -398,12 +423,25 @@ do
                 local sni = ctx.var.upstream_host
                 pool = pool .. "#" .. sni
 
+                local tls = up_conf.tls
                 -- separate the pool by client cert so referenced SSL objects
                 -- don't share a connection
-                if up_conf.tls and up_conf.tls.client_cert then
-                    pool = pool .. "#" .. up_conf.tls.client_cert
-                elseif up_conf.tls and up_conf.tls.client_cert_id then
-                    pool = pool .. "#" .. up_conf.tls.client_cert_id
+                if tls and tls.client_cert then
+                    pool = pool .. "#" .. tls.client_cert
+                elseif tls and tls.client_cert_id then
+                    pool = pool .. "#" .. tls.client_cert_id
+                end
+
+                -- and by the verification policy, which is applied while the
+                -- connection is being established: a pooled connection keeps
+                -- whatever policy it was handshaked under, so reusing it across
+                -- policies would skip the verification the config asks for
+                if tls and (tls.verify ~= nil or tls.ca_certs) then
+                    pool = pool .. "#" .. tostring(tls.verify)
+                    if tls.ca_certs then
+                        pool = pool .. "#" .. ca_certs_digest_cache(tls.ca_certs, nil,
+                                                        ca_certs_digest, tls.ca_certs)
+                    end
                 end
             end
             pool_opt.pool = pool

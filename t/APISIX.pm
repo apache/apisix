@@ -207,6 +207,7 @@ $grpc_location .= <<_EOC_;
             grpc_set_header   Content-Type application/grpc;
             grpc_set_header   TE trailers;
             grpc_socket_keepalive on;
+            grpc_ssl_name     \$upstream_host;
             grpc_pass         \$upstream_scheme://apisix_backend;
             mirror              /proxy_mirror_grpc;
 
@@ -238,9 +239,6 @@ my $disable_proxy_buffering_location = <<_EOC_;
             proxy_pass_header  Date;
 
             proxy_set_header   X-Forwarded-For      \$proxy_add_x_forwarded_for;
-            proxy_set_header   X-Forwarded-Proto    \$var_x_forwarded_proto;
-            proxy_set_header   X-Forwarded-Host     \$var_x_forwarded_host;
-            proxy_set_header   X-Forwarded-Port     \$var_x_forwarded_port;
 
             proxy_pass         \$upstream_scheme://apisix_backend\$upstream_uri;
             mirror             /proxy_mirror;
@@ -374,6 +372,7 @@ lua {
     lua_shared_dict prometheus-metrics 15m;
     lua_shared_dict prometheus-cache 10m;
     lua_shared_dict standalone-config 10m;
+    lua_shared_dict standalone-status 1m;
     lua_shared_dict status-report 1m;
     lua_shared_dict nacos 10m;
     lua_shared_dict consul 10m;
@@ -398,6 +397,9 @@ _EOC_
         if ($block->stream_sni) {
             $sni = '"' . $block->stream_sni . '"';
         }
+
+        # a bare `--- stream_tls_verify` section has an empty, false value
+        my $tls_verify = defined $block->stream_tls_verify ? "true" : "false";
         chomp $stream_tls_request;
 
         my $repeat = "1";
@@ -417,7 +419,7 @@ _EOC_
                             return
                         end
 
-                        sess, err = sock:sslhandshake(sess, $sni, false)
+                        sess, err = sock:sslhandshake(sess, $sni, $tls_verify)
                         if not sess then
                             ngx.say("failed to do SSL handshake: ", err)
                             return
@@ -492,9 +494,15 @@ _EOC_
             ngx.say("hello world")
 _EOC_
 
+    # backs apisix_stream_active_connections and apisix_stream_bandwidth
+    my $stream_metrics_zone = $version =~ m/\/apisix-nginx-module/
+                              ? "apisix_stream_metrics_zone 1m;" : "";
+
     my $stream_config = $block->stream_config // <<_EOC_;
     $lua_deps_path
     lua_socket_log_errors off;
+
+    $stream_metrics_zone
 
     lua_shared_dict lrucache-lock-stream 10m;
     lua_shared_dict plugin-limit-conn-stream 10m;
@@ -630,6 +638,10 @@ $stream_config
     }
 }
 _EOC_
+        # the stream block lives in the main config here, so drop the block values
+        # or Test::Nginx renders a second, conflicting one
+        $block->set_value("stream_config");
+        $block->set_value("stream_server_config");
     }
 
     $block->set_value("main_config", $main_config);
@@ -669,6 +681,16 @@ _EOC_
     my $http_config = $block->http_config // '';
     $http_config .= <<_EOC_;
     $lua_deps_path
+
+    # mirrors apisix/cli/ngx_tpl.lua
+    map \$http_host \$var_x_forwarded_port {
+        default          \$server_port;
+        "~:(?<p>\\\\d+)\$" \$p;
+    }
+    map \$http_host \$var_x_forwarded_host {
+        default \$http_host;
+        ""      \$host;
+    }
 
     lua_shared_dict plugin-limit-req 10m;
     lua_shared_dict plugin-limit-count 10m;
@@ -997,16 +1019,19 @@ _EOC_
             proxy_set_header   X-Real-IP         \$remote_addr;
             proxy_pass_header  Date;
 
+            set \$original_x_forwarded_proto \$http_x_forwarded_proto;
+            set \$original_x_forwarded_host   \$http_x_forwarded_host;
+            set \$original_x_forwarded_port   \$http_x_forwarded_port;
+            set \$original_x_forwarded_for    '';
+            set \$original_forwarded          \$http_forwarded;
+            more_set_input_headers "X-Forwarded-Proto: \$scheme";
+            more_set_input_headers "X-Forwarded-Host: \$var_x_forwarded_host";
+            more_set_input_headers "X-Forwarded-Port: \$var_x_forwarded_port";
+            more_set_input_headers "Forwarded: ";
+
             ### the following x-forwarded-* headers is to send to upstream server
 
-            set \$var_x_forwarded_proto      \$scheme;
-            set \$var_x_forwarded_host       \$host;
-            set \$var_x_forwarded_port       \$server_port;
-
             proxy_set_header   X-Forwarded-For      \$proxy_add_x_forwarded_for;
-            proxy_set_header   X-Forwarded-Proto    \$var_x_forwarded_proto;
-            proxy_set_header   X-Forwarded-Host     \$var_x_forwarded_host;
-            proxy_set_header   X-Forwarded-Port     \$var_x_forwarded_port;
 
             proxy_pass         \$upstream_scheme://apisix_backend\$upstream_uri;
             mirror             /proxy_mirror;

@@ -503,3 +503,79 @@ GET /apisix/prometheus/metrics
 qr/apisix_llm_prompt_tokens\{.*request_llm_model="",llm_model=""\}/
 --- response_body_unlike eval
 qr/apisix_llm_prompt_tokens\{.*request_llm_model="distinct-model-/
+
+
+
+=== TEST 27: create a route to check llm_latency excludes error responses
+--- config
+    location /t {
+        content_by_lua_block {
+            local data = {
+                {
+                    url = "/apisix/admin/routes/5",
+                    data = [[{
+                        "plugins": {
+                            "prometheus": {},
+                            "ai-proxy-multi": {
+                                "instances": [
+                                    {
+                                        "name": "openai-gpt4",
+                                        "provider": "openai",
+                                        "weight": 1,
+                                        "auth": {
+                                            "header": {
+                                                "Authorization": "Bearer token"
+                                            }
+                                        },
+                                        "options": {
+                                            "model": "gpt-4"
+                                        },
+                                        "override": {
+                                            "endpoint": "http://127.0.0.1:1980"
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        "uri": "/chat-guard"
+                    }]],
+                },
+            }
+            local t = require("lib.test_admin").test
+            for _, data in ipairs(data) do
+                local _, body = t(data.url, ngx.HTTP_PUT, data.data)
+                ngx.say(body)
+            end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 28: a served response records one llm_latency observation
+--- request
+POST /chat-guard
+{"messages":[{"role":"user","content":"What is 1+1?"}], "model": "gpt-3"}
+--- more_headers
+X-AI-Fixture: prometheus/chat-basic.json
+--- error_code: 200
+
+
+
+=== TEST 29: a 429 error response goes through the same route
+--- request
+POST /chat-guard
+{"messages":[{"role":"user","content":"What is 1+1?"}], "model": "gpt-3"}
+--- more_headers
+X-AI-Fixture: prometheus/chat-basic.json
+X-AI-Fixture-Status: 429
+--- error_code: 429
+
+
+
+=== TEST 30: the error response is excluded, so the count stays 1 not 2
+--- request
+GET /apisix/prometheus/metrics
+--- response_body eval
+qr/apisix_llm_latency_count\{type="total",.*route_id="5",.*,node="openai-gpt4".*request_type="ai_chat",request_llm_model="gpt-3",llm_model="gpt-4"\} 1\n/

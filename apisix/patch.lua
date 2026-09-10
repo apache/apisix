@@ -364,7 +364,40 @@ local function luasocket_tcp()
 end
 
 
+-- lua-cjson options are per-instance, and cjson.new() always starts from the
+-- compile-time defaults instead of inheriting the singleton's configuration.
+-- core/json.lua only enables decode_array_with_array_mt on the `cjson.safe`
+-- singleton, so every dependency holding a private instance (lua-resty-session,
+-- lua-resty-healthcheck, lua-resty-worker-events, lua-resty-aws, ...) decodes
+-- arrays without the array metatable, and an empty array is then re-encoded as
+-- an object. Enable the option on both singletons and let every instance created
+-- afterwards inherit it. This only changes the default: a library explicitly
+-- calling decode_array_with_array_mt(false) on its own instance still wins.
+--
+-- encode_escape_forward_slash is set here as well. It looks redundant today,
+-- because in the bundled lua-cjson that setter mutates a shared escape table and
+-- therefore already applies process-wide, including to instances created before
+-- it was called. Upstream has since made it per-instance, so once a runtime
+-- upgrade picks that up, every private instance would silently go back to
+-- escaping `/`. Setting it here pins the current behaviour instead of relying on
+-- that implementation detail.
+local function patch_cjson(cjson)
+    cjson.decode_array_with_array_mt(true)
+    cjson.encode_escape_forward_slash(false)
+
+    local original_new = cjson.new
+    cjson.new = function (...)
+        local instance = original_new(...)
+        patch_cjson(instance)
+        return instance
+    end
+end
+
+
 function _M.patch()
+    patch_cjson(require("cjson"))
+    patch_cjson(require("cjson.safe"))
+
     -- make linter happy
     -- luacheck: ignore
     ngx_socket.tcp = function ()

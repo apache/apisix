@@ -218,3 +218,50 @@ mmm
 hello mtls upstream
 --- no_error_log
 [error]
+
+
+
+=== TEST 7: set stream_route with an inline upstream carrying the client cert
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin")
+            local json = require("toolkit.json")
+            local ssl_cert = t.read_file("t/certs/mtls_client.crt")
+            local ssl_key = t.read_file("t/certs/mtls_client.key")
+
+            local code, body = t.test('/apisix/admin/stream_routes/1',
+                ngx.HTTP_PUT,
+                json.encode({
+                    remote_addr = "127.0.0.1",
+                    upstream = {
+                        scheme = "tls",
+                        type = "roundrobin",
+                        nodes = { ["127.0.0.1:8765"] = 1 },
+                        tls = {
+                            client_cert = ssl_cert,
+                            client_key = ssl_key,
+                        },
+                    },
+                })
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 8: hit route, the encrypted inline client key still completes the handshake
+--- stream_request
+mmm
+--- stream_response
+hello mtls upstream
+--- no_error_log
+[error]

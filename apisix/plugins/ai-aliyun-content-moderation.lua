@@ -19,6 +19,7 @@ local ngx_ok    = ngx.OK
 local os        = os
 local pairs     = pairs
 local ipairs    = ipairs
+local next      = next
 local table     = table
 local string    = string
 local type      = type
@@ -66,8 +67,24 @@ local schema = {
             enum = {"last", "all"},
             default = "last",
             description = [[
-            which user messages to moderate: last (only the latest consecutive user
-            message block) | all (every user message). Both ignore non-user roles.
+            which user/tool messages to moderate: last (only the latest consecutive
+            block of selected-role messages) | all (every selected-role message).
+            Does not apply to the system role, which is always checked.
+            ]]
+        },
+        request_check_roles = {
+            type = "array",
+            items = {type = "string", enum = {"user", "tool", "system"}},
+            minItems = 1,
+            uniqueItems = true,
+            default = {"user"},
+            description = [[
+            which message roles to moderate on the request side. user/tool follow
+            request_check_mode; system is checked on every request because it can
+            be poisoned by malicious ToolCall arguments. Note: tool-result
+            moderation applies to OpenAI-compatible formats where the tool output
+            is a distinct "tool" role/item; for Anthropic/Bedrock (tool results
+            are nested blocks inside user messages) tool content is not extracted.
             ]]
         },
         request_check_service = {type = "string", minLength = 1, default = "llm_query_moderation"},
@@ -78,7 +95,15 @@ local schema = {
         risk_level_bar = {type = "string",
                           enum = {"none", "low", "medium", "high", "max"},
                           default = "high"},
-        deny_code = {type = "number", default = 200},
+        deny_code = {
+            type = "integer",
+            minimum = 200,
+            maximum = 599,
+            default = 200,
+            description = "HTTP status returned on a deny. Defaults to 200 so the " ..
+                          "provider-compatible refusal parses as a normal completion in " ..
+                          "client SDKs; set a 4xx to surface denies as HTTP errors instead.",
+        },
         deny_message = {type = "string"},
         timeout = {
             type = "integer",
@@ -147,7 +172,6 @@ local function calculate_sign(params, secret)
     table.sort(params_arr)
     local canonical_str = table.concat(params_arr, "&")
     local str_to_sign = "POST&%2F&" .. ngx.escape_uri(canonical_str)
-    core.log.debug("string to calculate signature: ", str_to_sign)
     return ngx.encode_base64(ngx.hmac_sha1(secret, str_to_sign))
 end
 
@@ -259,12 +283,13 @@ local function deny_message(ctx, message)
     local usage = ctx.llm_raw_usage
         or (proto.empty_usage and proto.empty_usage())
         or { prompt_tokens = 0, completion_tokens = 0, total_tokens = 0 }
+    message = message or "Your request violate our content policy."
     return proto.build_deny_response({
-        text = message or "Your request violate our content policy.",
+        text = message,
         model = model,
         usage = usage,
         stream = stream,
-    })
+    }), message
 end
 
 
@@ -390,23 +415,64 @@ function _M.access(conf, ctx)
         return
     end
 
-    -- Request moderation targets user input only (request_check_mode: "last" =
-    -- latest user turn, "all" = every user message). Protocols that can't surface
-    -- user-role content have nothing to moderate, so the request passes through.
-    local contents = proto.extract_user_content
-        and proto.extract_user_content(request_tab, conf.request_check_mode)
-        or {}
+    local function set_deny_content_type()
+        if ctx.var.request_type == "ai_stream" then
+            core.response.set_header("Content-Type", "text/event-stream")
+        else
+            core.response.set_header("Content-Type", "application/json")
+        end
+    end
+
+    local roles = {}
+    for _, r in ipairs(conf.request_check_roles) do
+        roles[r] = true
+    end
+    local turn_roles = {}
+    if roles.user then turn_roles.user = true end
+    if roles.tool then turn_roles.tool = true end
+
+    -- A configured role whose extractor this protocol doesn't implement would
+    -- otherwise pass unmoderated. Route that through fail_mode instead of
+    -- silently skipping the configured moderation.
+    if (roles.system and not proto.extract_system_content)
+            or (next(turn_roles) and not proto.extract_turn_content) then
+        local handled, code, body = binding.on_unsupported(
+            conf.fail_mode, _M.name, ctx,
+            "protocol cannot extract configured request_check_roles",
+            500, "protocol " .. (ctx.ai_client_protocol or "unknown")
+                .. " cannot moderate the configured request_check_roles")
+        if handled then
+            return code, body
+        end
+        return
+    end
+
+    -- Collect the text to moderate from all configured roles and send it in a
+    -- single request. The Aliyun service takes a flat `content` string with no
+    -- role field, so there is nothing to gain from separate per-role calls.
+    -- system is always included (every request, not subject to request_check_mode,
+    -- because it can be poisoned by malicious ToolCall arguments); user/tool
+    -- follow request_check_mode ("last" = latest turn, "all" = every message).
+    local contents = {}
+    if roles.system then
+        local system_texts = proto.extract_system_content(request_tab)
+        for i = 1, #system_texts do
+            contents[#contents + 1] = system_texts[i]
+        end
+    end
+    if next(turn_roles) then
+        local turn_texts = proto.extract_turn_content(request_tab,
+                                                      conf.request_check_mode, turn_roles)
+        for i = 1, #turn_texts do
+            contents[#contents + 1] = turn_texts[i]
+        end
+    end
     local content_to_check = table.concat(contents, " ")
 
     local code, message = request_content_moderation(ctx, conf, content_to_check)
     release_cm_httpc(ctx, conf)
     if code then
-        local stream = ctx.var.request_type == "ai_stream"
-        if stream then
-            core.response.set_header("Content-Type", "text/event-stream")
-        else
-            core.response.set_header("Content-Type", "application/json")
-        end
+        set_deny_content_type()
         return code, message
     end
 end
@@ -434,47 +500,82 @@ function _M.lua_body_filter(conf, ctx, headers, body)
     local proto = protocols.get(ctx.ai_client_protocol)
 
     if conf.stream_check_mode == "final_packet" then
-        if not ctx.var.llm_response_text then
+        local content = ctx.var.llm_response_text
+        if not content or content == "" or ctx.ai_stream_aborted or ctx.ai_stream_failed
+           or ctx.aliyun_cm_done_sent then
             return
         end
         if not ctx.ai_aliyun_response_moderated then
-            response_content_moderation(ctx, conf, ctx.var.llm_response_text)
+            ctx.var.llm_content_risk_level = nil
+            local _, _, message = response_content_moderation(ctx, conf, content)
+            ctx.aliyun_cm_deny_message = message or ""
             release_cm_httpc(ctx, conf)
             ctx.ai_aliyun_response_moderated = true
         end
-        local events = sse.decode(body)
+        if not ctx.var.llm_content_risk_level then
+            return
+        end
+        local events = sse.decode(body or "")
         for _, event in ipairs(events) do
-            if proto and proto.is_data_event(event) then
+            if proto.is_data_event(event) then
                 local data, err = core.json.decode(event.data)
                 if not data then
                     core.log.warn("failed to decode SSE data: ", err)
                     goto CONTINUE
                 end
                 data.risk_level = ctx.var.llm_content_risk_level
+                data.deny_message = ctx.aliyun_cm_deny_message
                 event.data = core.json.encode(data)
+                if not ctx.ai_stream_has_usage and event.type == "message_delta"
+                   and type(data.delta) == "table" then
+                    -- Anthropic SDKs overwrite stop fields on every message_delta.
+                    ctx.aliyun_cm_message_delta = data.delta
+                end
             end
             ::CONTINUE::
         end
 
         local raw_events = {}
-        local contains_done_event = false
+        local done_index
         for _, event in ipairs(events) do
-            if proto and proto.is_done_event(event) then
-                contains_done_event = true
+            if proto.is_done_event(event) then
+                done_index = #raw_events + 1
             end
             table.insert(raw_events, sse.encode(event))
         end
-        if not contains_done_event and proto and ctx.var.llm_request_done then
-            table.insert(raw_events, proto.build_done_event())
+        -- Converters dispatch several events after the source has completed.
+        -- Only a client terminator or the empty EOF flush can finish its output.
+        local eof = ctx.var.llm_request_done and (not body or body == "")
+        if not ctx.ai_stream_has_usage and proto.build_moderation_event
+           and (done_index or eof) then
+            table.insert(raw_events, done_index or #raw_events + 1,
+                sse.encode(proto.build_moderation_event({
+                    deny_message = ctx.aliyun_cm_deny_message,
+                    risk_level = ctx.var.llm_content_risk_level,
+                    model = ctx.var.request_llm_model,
+                    delta = ctx.aliyun_cm_message_delta or {},
+                })))
         end
-        return nil, table.concat(raw_events, "\n")
+        if not done_index and eof and proto.build_moderation_event then
+            table.insert(raw_events, proto.build_done_event() .. "\n\n")
+        end
+        ctx.aliyun_cm_done_sent = done_index ~= nil or eof
+        return nil, table.concat(raw_events)
     end
 
     if conf.stream_check_mode == "realtime" then
         ctx.content_moderation_cache = ctx.content_moderation_cache or ""
         ctx.llm_response_contents_in_chunk = ctx.llm_response_contents_in_chunk or {}
-        local content = table.concat(ctx.llm_response_contents_in_chunk, "")
-        ctx.content_moderation_cache = ctx.content_moderation_cache .. content
+        -- With a protocol converter a single upstream chunk is dispatched as several
+        -- downstream chunks, so this filter runs once per converted chunk while
+        -- llm_response_contents_in_chunk is filled once per upstream chunk. Take the
+        -- texts on the first run only, otherwise the batch holds them N times over.
+        local chunk_seq = ctx.llm_response_chunk_seq
+        if not chunk_seq or chunk_seq ~= ctx.aliyun_cm_chunk_seq then
+            ctx.aliyun_cm_chunk_seq = chunk_seq
+            local content = table.concat(ctx.llm_response_contents_in_chunk, "")
+            ctx.content_moderation_cache = ctx.content_moderation_cache .. content
+        end
         local now_time = ngx.now()
         ctx.last_moderate_time = ctx.last_moderate_time or now_time
         if #ctx.content_moderation_cache < conf.stream_check_cache_size
