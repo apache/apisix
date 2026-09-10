@@ -61,6 +61,7 @@ function _M.redis_cli(conf)
         ssl = conf.redis_ssl,
         ssl_verify = conf.redis_ssl_verify,
         pool = pool,
+        server_name = conf.redis_ssl and (conf.redis_server_name or conf.redis_host) or nil,
     }
 
     local ok, err = red:connect(conf.redis_host, conf.redis_port or 6379, sock_opts)

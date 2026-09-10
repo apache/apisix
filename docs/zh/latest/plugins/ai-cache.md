@@ -89,6 +89,7 @@ import TabItem from '@theme/TabItem';
 | redis_timeout | integer | 否 | 1000 | >= 1 | Redis 超时时间，单位为毫秒。 |
 | redis_ssl | boolean | 否 | false | | 如果为 true，则使用 SSL 连接 Redis。 |
 | redis_ssl_verify | boolean | 否 | false | | 如果为 true，则校验 Redis 服务器的 SSL 证书。 |
+| redis_server_name | string | 否 | | | 当 `redis_ssl` 为 true 时使用的 TLS SNI。默认使用 `redis_host`。 |
 | redis_keepalive_timeout | integer | 否 | 10000 | >= 1000 | Redis 连接池的保活超时时间，单位为毫秒。 |
 | redis_keepalive_pool | integer | 否 | 100 | >= 1 | Redis 保活连接池中的最大连接数。 |
 
