@@ -69,12 +69,24 @@ local function build_repr(ctx, body, messages)
     local proto = ctx.ai_client_protocol and protocols.get(ctx.ai_client_protocol)
     params.stream = (proto and proto.is_streaming(body)) == true
 
+    local client = {
+        protocol = ctx.ai_client_protocol or "",
+        messages = messages,
+        params   = params,
+    }
+    -- passthrough proxies the client's method, path and query string verbatim
+    -- (see ai-proxy/base.lua), so under it they select the upstream endpoint
+    -- and are response-determining.
+    if ctx.ai_client_protocol == "passthrough" then
+        -- live method: ctx.var.request_method is cached at route match, before
+        -- a proxy-rewrite method change that the upstream request carries.
+        client.method = core.request.get_method()
+        client.uri    = ctx.var.uri
+        client.args   = ctx.var.args
+    end
+
     return {
-        client = {
-            protocol = ctx.ai_client_protocol or "",
-            messages = messages,
-            params   = params,
-        },
+        client = client,
         effective = {
             provider    = inst.provider,
             -- effective model precedence mirrors ai-proxy/base.lua exactly:

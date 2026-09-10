@@ -233,6 +233,91 @@ curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H "X-API-KEY: $admin_ke
 
 当客户端也使用基于 TCP 的 TLS 上游时，客户端发送的 SNI 将传递给上游。否则，将使用一个假的 SNI `apisix_backend`。
 
+## TLS 透传
+
+上面两节都会在 APISIX 上终止客户端的 TLS 握手。设置 `tls_passthrough` 后，APISIX 会把加密的流原封不动地转发给上游，同时仍然根据 SNI 选择上游——该 SNI 来自预读到的 `ClientHello`（`ssl_preread on`），而不是 APISIX 自己完成的握手：
+
+```yaml
+apisix:
+  proxy_mode: http&stream
+  stream_proxy:
+    tcp:
+      - addr: 9100
+        tls_passthrough: true
+```
+
+握手由上游完成，因此在这样的端口上：
+
+- 需要检查负载的 stream 插件（`mqtt-proxy`、`xrpc`、`redis`）读不到任何内容，网关侧的 mTLS 也不再适用——客户端证书校验转移到上游；
+- `"scheme": "tls"` 的上游会被拒绝并返回 `503`，因为再握手一次会把客户端的 `ClientHello` 当作负载发给上游。
+
+路由行为没有变化，stream route 依然按 SNI 匹配，与终止 TLS 的端口一致：
+
+```shell
+curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
+{
+    "sni": "a.test.com",
+    "upstream": {
+        "nodes": {
+            "127.0.0.1:5991": 1
+        },
+        "type": "roundrobin"
+    }
+}'
+```
+
+### 在混合端口上按路由决定
+
+在同一个 listen 上同时设置两个开关会开启**混合**端口：每条连接是终止还是透传，取决于它匹配到的 stream route 上的 `tls_passthrough`（布尔值，默认为 `false`）：
+
+```yaml
+apisix:
+  proxy_mode: http&stream
+  stream_proxy:
+    tcp:
+      - addr: 9100
+        tls: true
+        tls_passthrough: true
+```
+
+```shell
+# 透传给上游，由上游完成握手
+curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
+{
+    "sni": "a.test.com",
+    "tls_passthrough": true,
+    "upstream": {
+        "nodes": {
+            "127.0.0.1:5991": 1
+        },
+        "type": "roundrobin"
+    }
+}'
+
+# 由 APISIX 终止，使用为该 SNI 配置的证书
+curl http://127.0.0.1:9180/apisix/admin/stream_routes/2 -H "X-API-KEY: $admin_key" -X PUT -d '
+{
+    "sni": "b.test.com",
+    "upstream": {
+        "nodes": {
+            "127.0.0.1:5992": 1
+        },
+        "type": "roundrobin"
+    }
+}'
+```
+
+路由上的该字段来自 etcd，因此在两种模式之间切换某个服务无需修改配置或重启。
+
+端口本身无法同时是两者：`ssl_preread on` 与 `listen ... ssl` 都是配置期指令，在同一个 server 上握手会在预读阶段读到 `ClientHello` 之前就将其消耗掉。因此这两种行为被放到通过 `logs/` 下的 unix socket 访问的内部 server 中，由公开 listen 的预读阶段在两者之间做选择。需要注意：
+
+- 只有混合端口会付出这一跳的代价；`tls: true` 或 `tls_passthrough: true` 的端口仍走直连路径；
+- 客户端地址通过 PROXY 协议头跨过这一跳，并由 `set_real_ip_from unix:` 还原，因此路由匹配、stream 插件和日志看到的都是真实对端。能够连接这些 socket 的本地用户可以伪造该头部，因此要像对待 `stream_worker_events.sock` 一样，不要让不受信任的本地用户访问 `logs/`；
+- 混合端口上不能使用 `proxy_protocol_to_upstream`，启动时会被拒绝：nginx 依据连接进入时的 socket 生成发往上游的 PROXY 协议头，而内部 server 上那是一个 unix socket，生成的是 `PROXY TCP4 <client> unix:/... <port> 0` 这种非法内容。请改用专用的 `tls` 或 `tls_passthrough` 监听，它们没有内部跳转，生成的头是正确的；
+- `apisix_stream_metrics_zone` 统计的是 nginx session 且没有 per-server 开关，因此混合端口上每条客户端连接会被统计两次。
+
+同一地址上的两个 `stream_proxy.tcp` 条目必须使用相同的 TLS 模式和相同的 `proxy_protocol_to_upstream`；否则它们需要在同一地址上使用不同的 nginx `server` 块，APISIX 会在启动时拒绝该配置。
+
 ## PROXY 协议
 
 APISIX 可以在 TCP stream 端口上接收 [PROXY 协议](https://www.haproxy.org/download/1.8/doc/proxy-protocol.txt)，并将其转发给上游。

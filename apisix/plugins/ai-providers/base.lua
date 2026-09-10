@@ -460,6 +460,14 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
     -- attempt emitted no output (with headers sent, the retry dies earlier in
     -- core.response.set_header), so the flag is stale, not protective
     ctx.ai_stream_aborted = nil
+    ctx.ai_stream_has_usage = nil
+    ctx.ai_stream_failed = nil
+    -- same for the completion flag. An attempt can set it and still produce no
+    -- downstream output -- a converter fed a [DONE]-only stream emits nothing --
+    -- which returns 502 and lets ai-proxy-multi fall back inside this same
+    -- request context. Left set, it would make the next attempt look finished
+    -- before it has parsed a completion event of its own.
+    ctx.var.llm_request_done = nil
     ngx.status = res.status
     local body_reader = res.body_reader
     local contents = {}
@@ -475,6 +483,10 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
     -- all events may be skipped and no output produced, leaving the response
     -- uncommitted and causing nginx to fall through to the balancer phase.
     local output_sent = false
+    -- Set when THIS attempt parses the protocol's completion event. The read
+    -- error path must not consult ctx.var.llm_request_done for that: it is
+    -- shared across fallback attempts and is also set on abort finalization.
+    local protocol_completed = false
 
     -- Runaway-upstream safeguards. Both are opt-in; unset means no cap.
     local max_duration_ms = conf and conf.max_stream_duration_ms
@@ -555,7 +567,12 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
 
         local chunk, err = body_reader()
         if err then
-            ctx.ai_stream_aborted = "read_error"
+            -- A read error that arrives after the protocol's completion event
+            -- means the stream itself finished and only the transport died late,
+            -- so the response is complete rather than aborted.
+            if not protocol_completed then
+                ctx.ai_stream_aborted = "read_error"
+            end
             ctx.var.apisix_upstream_response_time = math.floor(
                 (ngx_now() - ctx.llm_request_start_time) * 1000)
             core.log.warn("failed to read response chunk: ", err)
@@ -564,11 +581,35 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
                 ngx.thread.kill(flush_thread)
                 flush_thread = nil
             end
+            -- The connection broke mid-body, so it must never go back into the
+            -- keepalive pool: drop it before ai-proxy's set_keepalive() runs.
+            if res._httpc then
+                res._httpc:close()
+                res._httpc = nil
+            end
+            if output_sent then
+                -- The downstream response is already committed as 200 and part of
+                -- the stream has reached the client, so the status can no longer
+                -- be changed and ai-proxy-multi must not bill another instance for
+                -- a retry. Mirror the max_stream_duration_ms path: one last
+                -- body_filter pass with llm_request_done set, so plugins that
+                -- buffer the whole stream flush what they hold instead of
+                -- stranding it. No terminator is synthesized -- the client detects
+                -- the truncation from the missing protocol completion event (e.g.
+                -- OpenAI [DONE], Anthropic message_stop, Responses
+                -- response.completed).
+                if not protocol_completed then
+                    ctx.var.llm_request_done = true
+                    plugin.lua_response_filter(ctx, res.headers, "", nil, true)
+                end
+                return
+            end
             return transport_http.handle_error(err)
         end
         if not chunk then
             local sse_rem = table.concat(sse_parts)
             if #sse_rem > 0 then
+                ctx.ai_stream_aborted = "incomplete_frame"
                 core.log.warn("dropping incomplete stream frame at EOF, size: ",
                               #sse_rem)
             end
@@ -595,6 +636,9 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
                 flush_thread = nil
             end
             if output_sent and not ctx.var.llm_request_done then
+                if #sse_rem == 0 then
+                    ctx.var.llm_response_text = table.concat(contents, "")
+                end
                 ctx.var.llm_request_done = true
                 plugin.lua_response_filter(ctx, res.headers, "", nil, true)
             end
@@ -627,6 +671,7 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
         -- One-pass split + decode: finds all complete SSE events and the
         -- trailing remainder in a single forward scan (no PCRE, no double scan).
         local events, remainder = framing.decode_buf(candidate)
+        local complete = candidate:sub(1, #candidate - #remainder)
         local max_remainder = framing.max_remainder or 1024 * 1024
         if #remainder > max_remainder then
             core.log.warn("stream remainder exceeded ", max_remainder, " bytes, resetting")
@@ -644,6 +689,10 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
         for _, event in ipairs(events) do
             -- Target protocol parses the provider's SSE format
             local parsed = target_proto.parse_sse_event(event, ctx, sse_state)
+            if target_proto.is_error_event
+               and target_proto.is_error_event(event, parsed and parsed.data) then
+                ctx.ai_stream_failed = true
+            end
             if parsed and parsed.has_tool_call then
                 ctx.var.llm_has_tool_calls = "true"
             end
@@ -669,6 +718,7 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
             end
 
             if parsed.usage then
+                ctx.ai_stream_has_usage = true
                 core.log.info("got token usage from ai service: ",
                                     core.json.delay_encode(parsed.raw_usage or parsed.usage))
                 merge_usage(ctx, parsed)
@@ -684,7 +734,9 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
             end
 
             if parsed.type == "done" or parsed.type == "usage_and_done" then
+                ctx.var.llm_response_text = table.concat(contents, "")
                 ctx.var.llm_request_done = true
+                protocol_completed = true
             end
 
             ::CONTINUE::
@@ -715,9 +767,12 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
                     return
                 end
             end
-        else
+        elseif ctx.ai_stream_framing ~= "sse" or complete ~= "" then
+            -- Native SSE filters need complete frames just like converters do.
+            -- Keep the original bytes, including comments and blank lines.
+            local downstream = ctx.ai_stream_framing == "sse" and complete or chunk
             local ok, flush_err = plugin.lua_response_filter(
-                ctx, res.headers, chunk, no_flush, true)
+                ctx, res.headers, downstream, no_flush, true)
             if not ok then
                 abort_on_disconnect(flush_err)
                 return
