@@ -58,13 +58,14 @@ import TabItem from '@theme/TabItem';
 | stream_check_mode | string | 否 | `"final_packet"` | `realtime`、`final_packet` | 流式审核模式。`realtime`：流式传输期间批量检查。`final_packet`：在最后附加风险等级。 |
 | stream_check_cache_size | integer | 否 | `128` | >= 1 | `realtime` 模式下每次审核批次的最大字节数（按 UTF-8 编码后的字节长度计算）。 |
 | stream_check_interval | number | 否 | `3` | >= 0.1 | `realtime` 模式下批次检查之间的间隔秒数。 |
-| request_check_mode | string | 否 | `"last"` | `last`, `all` | 审核哪些 user 消息。`last`：仅审核最后一段连续的 user 消息（最新的用户轮次）；`all`：审核所有 user 消息。两种模式都只处理 `user` 角色的消息，`system`、`assistant`、`tool` 消息会被忽略。 |
+| request_check_roles | array[string] | 否 | `["user"]` | 取值为 `user`、`tool`、`system` | 请求侧审核哪些消息角色。`user` 与 `tool` 遵循 `request_check_mode`；`system` 每次请求都审核（其可能被恶意 ToolCall 参数覆盖篡改），并且同时覆盖 OpenAI 的 `developer` 角色（新模型上用于替代 `system`）。默认 `["user"]` 保持既有行为。注意：tool 结果审核适用于 OpenAI 兼容格式（tool 输出为独立的 `tool` 角色/项）；Anthropic、Bedrock 的 tool 结果以嵌套 block 形式存在于 user 消息中，其内容不会被抽取。 |
+| request_check_mode | string | 否 | `"last"` | `last`, `all` | 审核哪些 user/tool 消息。`last`：仅审核最后一段连续的所选角色消息（最新一轮）；`all`：审核所有所选角色消息。不作用于 `system`——只要通过 `request_check_roles` 启用，`system` 每次都审核。 |
 | request_check_service | string | 否 | `"llm_query_moderation"` | | 用于请求审核的阿里云服务。 |
 | request_check_length_limit | number | 否 | `2000` | >= 1 | 请求内容长度上限。如果超过该限制，内容将分块发送到阿里云。例如，如果请求内容为 250 个字符，且 `request_check_length_limit` 设置为 `100`，则内容将分 3 次请求发送到阿里云。 |
 | response_check_service | string | 否 | `"llm_response_moderation"` | | 用于响应审核的阿里云服务。 |
 | response_check_length_limit | number | 否 | `5000` | >= 1 | 响应内容长度上限。如果超过该限制，内容将分块发送到阿里云。例如，如果响应内容为 250 个字符，且 `response_check_length_limit` 设置为 `100`，则内容将分 3 次请求发送到阿里云。 |
 | risk_level_bar | string | 否 | `"high"` | `none`、`low`、`medium`、`high`、`max` | 如果评估的风险等级低于 `risk_level_bar`，请求或响应将分别被放行到上游 LLM 或客户端。 |
-| deny_code | number | 否 | `200` | | 拒绝时的 HTTP 状态码。 |
+| deny_code | integer | 否 | `200` | [200, 599] | 拒绝时的 HTTP 状态码。默认为 `200`，使兼容 provider 的拒绝响应在客户端 SDK 中被解析为正常补全；设置为 4xx 可将拒绝暴露为 HTTP 错误。 |
 | deny_message | string | 否 | | | 拒绝时的消息。 |
 | timeout | integer | 否 | `10000` | >= 1 | 超时时间（毫秒）。 |
 | keepalive | boolean | 否 | `true` | | 如果为 `true`，启用到阿里云的 HTTP 连接保活。 |
@@ -72,6 +73,18 @@ import TabItem from '@theme/TabItem';
 | keepalive_timeout | integer | 否 | `60000` | >= 1000 | 连接保活超时时间（毫秒）。 |
 | ssl_verify | boolean | 否 | `true` | | 如果为 `true`，启用 SSL 证书验证。 |
 | fail_mode | string | 否 | `"skip"` | `skip`、`warn`、`error` | 当请求不是该插件可识别的 AI 请求时的处理行为（例如 Consumer 级别绑定时的普通 HTTP 流量，或未经过 `ai-proxy` 的请求）。`skip`：放行请求且不做检查；`warn`：放行并记录 warning 日志；`error`：拒绝请求。 |
+
+`final_packet` 模式在已汇总的响应正文可用后，在现有数据事件中同时追加 `risk_level` 和 `deny_message`。拒绝时使用最终实际拒绝文案，通过时为空字符串，保留事件原有正文和 token 用量。结果仅用于告知客户端，无法撤回已经发送的内容。
+
+上游未提供 `usage` 时，在流结束时执行审核：
+
+- **OpenAI Chat Completions：**在 `[DONE]` 前插入一个携带 `risk_level`、`deny_message` 和全零 `usage` 的 `chat.completion.chunk`。这是 `choices: []` 的空用量包，拒绝文案仅通过顶层 `deny_message` 字段返回，不追加正文，也不改变上游结束原因。
+- **Anthropic Messages：**在 `message_stop` 前补一个携带 `risk_level`、`deny_message`、全零 `usage` 和原始结束信息的 `message_delta`，不重放内容块或 `message_start`。
+- **OpenAI Responses：**在现有 `response.completed` 事件中附加 `risk_level` 和 `deny_message`，保留原始输出和用量。EOF 时若没有 `response.completed`，不合成完成响应。
+
+客户端需读取至流终止符才能获取注入结果。有用量的流只在原事件追加字段，不额外补结果包，因此客户端收到的用量不变。新结果事件使用零用量；网关计费仍使用上游用量。审核失败且没有返回风险等级时不伪造结果；上游错误事件保留，中断的流不合成终止符。
+
+请从 SSE 事件读取审核扩展字段。例如，OpenAI Python SDK 的 `responses.create(stream=True)` 会保留 Responses 扩展字段，但更高层的 `responses.stream()` 封装可能丢弃未知的顶层字段。
 
 ## 示例
 

@@ -20,6 +20,8 @@ local discovery = require("apisix.discovery.init").discovery
 local upstream_util = require("apisix.utils.upstream")
 local apisix_ssl = require("apisix.ssl")
 local resource = require("apisix.resource")
+local openssl_x509 = require("resty.openssl.x509")
+local openssl_x509_store = require("resty.openssl.x509.store")
 local error = error
 local tostring = tostring
 local ipairs = ipairs
@@ -32,14 +34,95 @@ local upstreams
 local healthcheck_manager
 
 local set_upstream_tls_client_param
+local set_upstream_ssl_verify
+local set_upstream_ssl_trusted_store
 local ok, apisix_ngx_upstream = pcall(require, "resty.apisix.upstream")
 if ok then
     set_upstream_tls_client_param = apisix_ngx_upstream.set_cert_and_key
-else
+    set_upstream_ssl_verify = apisix_ngx_upstream.set_ssl_verify
+    set_upstream_ssl_trusted_store = apisix_ngx_upstream.set_ssl_trusted_store
+end
+-- guard each function independently: an older runtime may expose the module
+-- (set_cert_and_key) without the newer upstream TLS C-APIs
+if not set_upstream_tls_client_param then
     set_upstream_tls_client_param = function ()
         return nil, "need to build APISIX-Runtime to support upstream mTLS"
     end
 end
+if not set_upstream_ssl_verify then
+    set_upstream_ssl_verify = function ()
+        return nil, "need to build APISIX-Runtime to support upstream certificate verification"
+    end
+end
+if not set_upstream_ssl_trusted_store then
+    set_upstream_ssl_trusted_store = function ()
+        return nil, "need to build APISIX-Runtime to support upstream CA certificates"
+    end
+end
+
+
+-- Keyed by the `ca_certs` array itself: a config update always rebuilds that
+-- table, so a stale store can never outlive the certificates it was built from.
+local trusted_store_cache = core.lrucache.new({
+    ttl = 300, count = 256,
+})
+
+
+local function create_trusted_store(ca_certs)
+    local store, err = openssl_x509_store.new()
+    if not store then
+        return nil, err
+    end
+
+    for _, ca_cert in ipairs(ca_certs) do
+        local x509, err = openssl_x509.new(ca_cert, "PEM")
+        if not x509 then
+            return nil, err
+        end
+
+        local ok, err = store:add(x509)
+        if not ok then
+            return nil, err
+        end
+    end
+
+    return store
+end
+
+
+-- Apply upstream.tls.verify / upstream.tls.ca_certs to the current request.
+-- Both settings live in the apisix-nginx-module request context, which is wiped
+-- by the internal redirect to @grpc_pass, so grpcs has to apply them again from
+-- `grpc_access_phase` just like the client certificate does.
+local function set_upstream_ssl_opts(up_conf)
+    local tls = up_conf.tls
+    if not tls then
+        return true
+    end
+
+    if tls.verify ~= nil then
+        local ok, err = set_upstream_ssl_verify(tls.verify)
+        if not ok then
+            return nil, err
+        end
+    end
+
+    if tls.ca_certs then
+        local store, err = trusted_store_cache(tls.ca_certs, up_conf.resource_version,
+                                               create_trusted_store, tls.ca_certs)
+        if not store then
+            return nil, err
+        end
+
+        local ok, err = set_upstream_ssl_trusted_store(store)
+        if not ok then
+            return nil, err
+        end
+    end
+
+    return true
+end
+
 
 local set_stream_upstream_tls
 local set_stream_upstream_cert_and_key
@@ -113,6 +196,22 @@ local scheme_to_port = {
 _M.scheme_to_port = scheme_to_port
 
 
+-- A bare (unbracketed) IPv6 host makes the "host:port" key the balancer and the
+-- health checker build ambiguous (parse_addr reads the whole thing as an address
+-- with no port). The Admin API rejects such hosts and check_upstream_conf brackets
+-- them for configured upstreams, but service discovery returns nodes that reach
+-- here without going through either.
+--
+-- Only a node that carries its own port is bracketed. A host given without one is
+-- itself ambiguous - the map key "::1:1980" is a valid IPv6 literal as much as it
+-- is host ::1 port 1980 - so it is left to the existing malformed-config handling.
+-- Discovery endpoints always carry a port, so nothing real is missed.
+local function needs_ipv6_bracket(node)
+    return node.port and core.utils.parse_ipv6(node.host)
+                     and str_byte(node.host, 1) ~= str_byte("[")
+end
+
+
 local function fill_node_info(up_conf, scheme, is_stream)
     local nodes = up_conf.nodes
     if up_conf.nodes_ref == nodes then
@@ -135,6 +234,10 @@ local function fill_node_info(up_conf, scheme, is_stream)
         if not n.priority then
             need_filled = true
         end
+
+        if needs_ipv6_bracket(n) then
+            need_filled = true
+        end
     end
 
     if not need_filled then
@@ -148,10 +251,12 @@ local function fill_node_info(up_conf, scheme, is_stream)
     -- keep the original nodes for slow path in `compare_upstream_node()`,
     -- can't use `core.table.deepcopy()` for whole `nodes` array here,
     -- because `compare_upstream_node()` compare `metadata` of node by address.
+    -- The original (bare) host is preserved there, so bracketing below does not
+    -- make discovery re-fetches look like a node change.
     up_conf.original_nodes = core.table.new(#nodes, 0)
     for i, n in ipairs(nodes) do
         up_conf.original_nodes[i] = core.table.clone(n)
-        if not n.port or not n.priority then
+        if not n.port or not n.priority or needs_ipv6_bracket(n) then
             nodes[i] = core.table.clone(n)
 
             if not is_stream and not n.port then
@@ -161,6 +266,10 @@ local function fill_node_info(up_conf, scheme, is_stream)
             -- fix priority for non-array nodes and nodes from service discovery
             if not n.priority then
                 nodes[i].priority = 0
+            end
+
+            if needs_ipv6_bracket(n) then
+                nodes[i].host = "[" .. n.host .. "]"
             end
         end
     end
@@ -219,6 +328,15 @@ end
 
 
 function _M.set_by_route(route, api_ctx)
+    -- Ahead of the traffic-split short circuit below so its inline upstream is
+    -- covered too. A second handshake would send the client's ClientHello as payload.
+    if api_ctx.tls_passthrough then
+        local passthrough_up = api_ctx.upstream_conf or api_ctx.matched_upstream
+        if passthrough_up and passthrough_up.scheme == "tls" then
+            return 503, "upstream scheme `tls` can not be used on a tls_passthrough listen"
+        end
+    end
+
     if api_ctx.upstream_conf then
         -- upstream_conf has been set by traffic-split plugin
         return
@@ -330,6 +448,15 @@ function _M.set_by_route(route, api_ctx)
     local checker = healthcheck_manager.fetch_checker(up_conf.resource_key, resource_version)
     api_ctx.up_checker = checker
     local scheme = up_conf.scheme
+    if scheme == "https" then
+        -- grpcs applies these in `set_grpcs_upstream_param` instead, after the
+        -- internal redirect that drops the settings made here
+        local ok, err = set_upstream_ssl_opts(up_conf)
+        if not ok then
+            return 503, err
+        end
+    end
+
     local tls_has_cert = up_conf.tls and (up_conf.tls.client_cert or up_conf.tls.client_cert_id)
     if (scheme == "https" or scheme == "grpcs") and tls_has_cert then
         local client_cert, client_key
@@ -369,6 +496,13 @@ end
 
 
 function _M.set_grpcs_upstream_param(ctx)
+    if ctx.upstream_conf and ctx.upstream_conf.scheme == "grpcs" then
+        local ok, err = set_upstream_ssl_opts(ctx.upstream_conf)
+        if not ok then
+            return 503, err
+        end
+    end
+
     if ctx.upstream_grpcs_cert then
         local cert = ctx.upstream_grpcs_cert
         local key = ctx.upstream_grpcs_key
@@ -488,6 +622,15 @@ local function check_upstream_conf(in_dp, conf)
         local ok, err = apisix_ssl.validate(cert, key)
         if not ok then
             return false, err
+        end
+    end
+
+    if conf.tls and conf.tls.ca_certs then
+        for _, ca_cert in ipairs(conf.tls.ca_certs) do
+            local ok, err = apisix_ssl.validate(ca_cert)
+            if not ok then
+                return false, err
+            end
         end
     end
 

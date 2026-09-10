@@ -733,3 +733,51 @@ GET /hello
 GET /t
 --- response_body
 passed
+
+
+
+=== TEST 28: filters with a small max_resp_body_size
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "response-rewrite": {
+                            "max_resp_body_size": 5,
+                            "filters": [
+                                {
+                                    "regex": "hello",
+                                    "scope": "once",
+                                    "replace": "HELLO"
+                                }
+                            ]
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uris": ["/hello"]
+                }]]
+                )
+
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 29: response body is truncated to max_resp_body_size before filtering
+--- request
+GET /hello
+--- response_body chomp
+HELLO

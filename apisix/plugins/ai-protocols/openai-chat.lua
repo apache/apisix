@@ -22,8 +22,10 @@
 local core = require("apisix.core")
 local uuid = require("resty.jit-uuid")
 local table = table
+local setmetatable = setmetatable
 local type = type
 local ipairs = ipairs
+local ngx_time = ngx.time
 
 local _M = {}
 
@@ -248,11 +250,28 @@ function _M.extract_request_content(body)
 end
 
 
--- Extract text from user-role messages for request moderation.
--- mode "last" (default): only the last consecutive block of user messages (the
--- latest user turn); mode "all": every user message. Non-user roles are ignored
--- because the query moderation service is meant for user input.
-function _M.extract_user_content(body, mode)
+-- Roles carrying the system prompt. `developer` is what OpenAI renamed `system`
+-- to on o1 and later models; both land in the same prompt slot, so the two are
+-- extracted together and the `system` role selector covers both.
+local SYSTEM_ROLES = {
+    system = true,
+    developer = true,
+}
+
+
+local function is_turn_role(message, roles)
+    return type(message) == "table" and message.role ~= nil and roles[message.role]
+end
+
+
+-- Extract text from turn-role messages (user/tool) for request moderation.
+-- `roles` is a set such as {user = true, tool = true} selecting which roles to
+-- collect. mode "last" (default): only the last consecutive block of messages
+-- whose role is in `roles` -- the latest turn, i.e. a fresh user message or the
+-- tool results appended in the current agent round, so history is not re-checked.
+-- mode "all": every such message. The system role is handled separately by
+-- extract_system_content because it is not subject to the last-turn rule.
+function _M.extract_turn_content(body, mode, roles)
     local contents = {}
     if type(body.messages) ~= "table" then
         return contents
@@ -262,7 +281,7 @@ function _M.extract_user_content(body, mode)
     if mode ~= "all" then
         start_idx = nil
         for i = #messages, 1, -1 do
-            if type(messages[i]) == "table" and messages[i].role == "user" then
+            if is_turn_role(messages[i], roles) then
                 start_idx = i
             else
                 break
@@ -273,8 +292,25 @@ function _M.extract_user_content(body, mode)
         end
     end
     for i = start_idx, #messages do
-        if type(messages[i]) == "table" and messages[i].role == "user" then
+        if is_turn_role(messages[i], roles) then
             append_message_text(contents, messages[i])
+        end
+    end
+    return contents
+end
+
+
+-- Extract system-role text (see SYSTEM_ROLES) for request moderation. Unlike
+-- turn content, the system prompt is checked on every request (it can be
+-- poisoned by malicious ToolCall arguments), so the last-turn rule does not
+-- apply here.
+function _M.extract_system_content(body)
+    local contents = {}
+    if type(body.messages) == "table" then
+        for _, message in ipairs(body.messages) do
+            if type(message) == "table" and SYSTEM_ROLES[message.role] then
+                append_message_text(contents, message)
+            end
         end
     end
     return contents
@@ -376,9 +412,30 @@ function _M.empty_usage()
 end
 
 
+--- Build a final moderation chunk without ending or replacing the original stream.
+function _M.build_moderation_event(opts)
+    local data = {
+        id = uuid.generate_v4(),
+        object = "chat.completion.chunk",
+        created = ngx_time(),
+        model = opts.model,
+        choices = setmetatable({}, core.json.array_mt),
+        usage = _M.empty_usage(),
+        risk_level = opts.risk_level,
+        deny_message = opts.deny_message or "",
+    }
+    return { type = "message", data = core.json.encode(data) }
+end
+
+
 --- Check if an SSE event is a data event (contains parseable content).
 function _M.is_data_event(event)
     return event.type == "message" and event.data ~= "[DONE]"
+end
+
+
+function _M.is_error_event(event, data)
+    return type(data) == "table" and type(data.error) == "table"
 end
 
 

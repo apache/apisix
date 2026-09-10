@@ -622,8 +622,8 @@ GET /test_concurrency
 503
 503
 503
---- error_log
-limit key: 10.10.10.1route
+--- error_log eval
+qr/limit key: \/apisix\/routes\/1:\d+:10\.10\.10\.1/
 
 
 
@@ -713,8 +713,8 @@ GET /test_concurrency
 503
 503
 503
---- error_log
-limit key: 10.10.10.2route
+--- error_log eval
+qr/limit key: \/apisix\/routes\/1:\d+:10\.10\.10\.2/
 
 
 
@@ -987,8 +987,8 @@ GET /test_concurrency
 200
 200
 200
---- error_log_like eval
-qr/limit key: consumer_jackroute&consumer\d+/
+--- error_log eval
+qr/limit key: \/apisix\/routes\/\d+:\d+:consumer_jack/
 
 
 
@@ -1076,8 +1076,8 @@ GET /test_concurrency
 503
 503
 503
---- error_log_like eval
-qr/limit key: consumer_jackroute&consumer\d+/
+--- error_log eval
+qr/limit key: \/apisix\/routes\/\d+:\d+:consumer_jack/
 
 
 

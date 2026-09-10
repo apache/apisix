@@ -61,6 +61,8 @@ By default the cache is isolated per route, so two routes never serve each other
 
 Even with `cache_key.share_across_routes` enabled, the cache key identifies the *effective* upstream request — the request `ai-proxy` actually sends after applying the AI instance's `provider`, `options` (model, temperature, and other model parameters) and `override`. Routes that would call the model differently therefore keep separate cache entries, so one route's response is never served for another.
 
+For the `passthrough` protocol, `ai-proxy` forwards the client's request method, path and query string verbatim, so the key includes them too: the same body sent to two different upstream paths, or with different query parameters, keeps separate entries.
+
 :::
 
 ## Attributes

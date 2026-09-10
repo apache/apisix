@@ -39,6 +39,9 @@ _EOC_
 
     $block->set_value("main_config", $main_config);
 
+    # Mock AWS Comprehend: only answer (with a clean result) when the SigV4
+    # Authorization header carries the resolved access key id, proving the
+    # secret reference reached the plugin.
     my $http_config = $block->http_config // <<_EOC_;
         server {
             listen 2668;
@@ -88,10 +91,8 @@ __DATA__
 
 === TEST 1: store secret into vault
 --- exec
-VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault kv put kv/apisix/foo secret_access_key=super-secret
-VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault kv put kv/apisix/foo access_key_id=access-key-id
+VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault kv put kv/apisix/foo secret_access_key=super-secret access_key_id=access-key-id
 --- response_body
-Success! Data written to: kv/apisix/foo
 Success! Data written to: kv/apisix/foo
 
 
@@ -118,8 +119,13 @@ Success! Data written to: kv/apisix/foo
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
                  [[{
-                    "uri": "/echo",
+                    "uri": "/chat",
                     "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": { "header": { "Authorization": "Bearer token" } },
+                            "override": { "endpoint": "http://127.0.0.1:1980/v1/chat/completions" }
+                        },
                         "ai-aws-content-moderation": {
                             "comprehend": {
                                 "access_key_id": "$secret://vault/test1/foo/access_key_id",
@@ -127,12 +133,6 @@ Success! Data written to: kv/apisix/foo
                                 "region": "us-east-1",
                                 "endpoint": "http://localhost:2668"
                             }
-                        }
-                    },
-                    "upstream": {
-                        "type": "roundrobin",
-                        "nodes": {
-                            "127.0.0.1:1980": 1
                         }
                     }
                 }]]
@@ -152,13 +152,13 @@ success
 
 
 
-=== TEST 3: good request should pass
+=== TEST 3: good request should pass (secret credentials reach Comprehend)
 --- request
-POST /echo
+POST /chat
 {"model":"gpt-4o-mini","messages":[{"role":"user","content":"good_request"}]}
 --- error_code: 200
---- response_body chomp
-{"model":"gpt-4o-mini","messages":[{"role":"user","content":"good_request"}]}
+--- response_body_like eval
+qr/good_request/
 
 
 
@@ -170,8 +170,13 @@ POST /echo
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
                  [[{
-                    "uri": "/echo",
+                    "uri": "/chat",
                     "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": { "header": { "Authorization": "Bearer token" } },
+                            "override": { "endpoint": "http://127.0.0.1:1980/v1/chat/completions" }
+                        },
                         "ai-aws-content-moderation": {
                             "comprehend": {
                                 "access_key_id": "$env://ACCESS_KEY_ID",
@@ -179,12 +184,6 @@ POST /echo
                                 "region": "us-east-1",
                                 "endpoint": "http://localhost:2668"
                             }
-                        }
-                    },
-                    "upstream": {
-                        "type": "roundrobin",
-                        "nodes": {
-                            "127.0.0.1:1980": 1
                         }
                     }
                 }]]
@@ -204,10 +203,10 @@ success
 
 
 
-=== TEST 5: good request should pass
+=== TEST 5: good request should pass (env credentials reach Comprehend)
 --- request
-POST /echo
+POST /chat
 {"model":"gpt-4o-mini","messages":[{"role":"user","content":"good_request"}]}
 --- error_code: 200
---- response_body chomp
-{"model":"gpt-4o-mini","messages":[{"role":"user","content":"good_request"}]}
+--- response_body_like eval
+qr/good_request/

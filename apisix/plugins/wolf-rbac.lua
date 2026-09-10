@@ -287,13 +287,17 @@ function _M.rewrite(conf, ctx)
 
     local username = nil
     local nickname = nil
+    local prefix = cur_consumer.auth_conf.header_prefix or ''
+    -- drop client-supplied identity headers before trusting the auth response
+    core.request.set_header(ctx, prefix .. "UserId", nil)
+    core.request.set_header(ctx, prefix .. "Username", nil)
+    core.request.set_header(ctx, prefix .. "Nickname", nil)
     if type(res.userInfo) == 'table' then
         local userInfo = res.userInfo
         ctx.userInfo = userInfo
         local userId = userInfo.id
         username = userInfo.username
         nickname = userInfo.nickname or userInfo.username
-        local prefix = cur_consumer.auth_conf.header_prefix or ''
         core.response.set_header(prefix .. "UserId", userId)
         core.response.set_header(prefix .. "Username", username)
         core.response.set_header(prefix .. "Nickname", ngx.escape_uri(nickname))

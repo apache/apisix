@@ -41,6 +41,13 @@ local prompts = {
 local schema = {
     type = "object",
     properties = {
+        max_req_body_size = {
+            type = "integer",
+            minimum = 1,
+            default = 67108864,
+            description = "maximum request body size in bytes buffered into "
+                       .. "memory; larger request bodies are rejected",
+        },
         templates = {
             type = "array",
             minItems = 1,
@@ -90,8 +97,8 @@ function _M.check_schema(conf)
 end
 
 
-local function get_request_body_table()
-    local body, err = core.request.get_body()
+local function get_request_body_table(max_size)
+    local body, err = core.request.get_body(max_size)
     if not body then
         return nil, { message = "could not get body: " .. (err or "request body is empty") }
     end
@@ -115,7 +122,7 @@ local function find_template(conf, template_name)
 end
 
 function _M.rewrite(conf, ctx)
-    local body_tab, err = get_request_body_table()
+    local body_tab, err = get_request_body_table(conf.max_req_body_size)
     if not body_tab then
         return 400, err
     end

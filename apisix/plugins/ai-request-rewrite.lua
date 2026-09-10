@@ -60,6 +60,13 @@ local model_options_schema = {
 local schema = {
     type = "object",
     properties = {
+        max_req_body_size = {
+            type = "integer",
+            minimum = 1,
+            default = 67108864,
+            description = "maximum request body size in bytes buffered into "
+                       .. "memory; larger request bodies are rejected",
+        },
         prompt = {
             type = "string",
             description = "The prompt to rewrite client request."
@@ -125,10 +132,11 @@ local function request_to_llm(conf, request_table, ctx, target_path)
         model_options = conf.options,
         target_path = target_path,
     }
+    -- Nothing downstream-derived is handed over: no client headers, no verbatim
+    -- client body -- this call carries its own credentials and its own body.
     ctx.llm_request_start_time = ngx.now()
     ctx.var.llm_request_body = request_table
-    ctx.ai_request_body_changed = true
-    return ai_provider:request(ctx, conf, request_table, extra_opts)
+    return ai_provider:request(conf, request_table, extra_opts)
 end
 
 
@@ -172,7 +180,7 @@ function _M.check_schema(conf)
 end
 
 function _M.access(conf, ctx)
-    local client_request_body, err = core.request.get_body()
+    local client_request_body, err = core.request.get_body(conf.max_req_body_size)
     if err then
         core.log.warn("failed to get request body: ", err)
         return HTTP_BAD_REQUEST
@@ -222,6 +230,9 @@ function _M.access(conf, ctx)
 
     -- Replace the original request body with the rewritten content
     ngx.req.set_body_data(content)
+    -- Tell later AI plugins (ai-proxy) that the downstream body is no longer the
+    -- client's original, so they must not reuse the raw bytes as-is.
+    ctx.ai_request_body_changed = true
 end
 
 return _M

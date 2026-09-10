@@ -175,11 +175,15 @@ services:
     restart: unless-stopped
     ports:
       - "9092:9092"
+      - "9093:9093"
     depends_on:
       - zookeeper-server1
       - zookeeper-server2
     networks:
       kafka_net:
+    volumes:
+      - ./ci/pod/kafka/kafka-server/selfsigned.jks:/opt/bitnami/kafka/config/certs/kafka.keystore.jks:ro
+      - ./ci/pod/kafka/kafka-server/selfsigned.jks:/opt/bitnami/kafka/config/certs/kafka.truststore.jks:ro
 
   kafka-server2:
     image: bitnamilegacy/kafka:2.8.1
@@ -238,7 +242,7 @@ services:
   openldap:
     image: bitnamilegacy/openldap:2.5.8
     environment:
-      - LDAP_ADMIN_USERNAME=amdin
+      - LDAP_ADMIN_USERNAME=admin
       - LDAP_ADMIN_PASSWORD=adminpassword
       - LDAP_USERS=user01,user02
       - LDAP_PASSWORDS=password1,password2
@@ -251,6 +255,8 @@ services:
       - "1636:1636"
     volumes:
       - ./t/certs:/certs
+      - ./ci/pod/openldap/ad.ldif:/ldifs/ad.ldif
+      - ./ci/pod/openldap/enable-anon-bind.sh:/docker-entrypoint-initdb.d/enable-anon-bind.sh
 
 
   ## Grafana Loki

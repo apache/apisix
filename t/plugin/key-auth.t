@@ -737,3 +737,46 @@ passed
 GET /hello?auth=authtwo
 --- response_args
 auth: authtwo
+
+
+
+=== TEST 33: consumer key uses an env ref that fails to resolve
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "jack",
+                    "plugins": {
+                        "key-auth": {
+                            "key": "$env://KEYAUTH_UNRESOLVED_SECRET"
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 34: fail closed, literal ref is not accepted as a credential
+--- request
+GET /hello
+--- more_headers
+apikey: $env://KEYAUTH_UNRESOLVED_SECRET
+--- error_code: 401
+--- response_body
+{"message":"Invalid API key in request"}
+--- error_log
+invalid api key

@@ -323,6 +323,9 @@ function _M.wolf_rbac_access_check()
         ngx.say(json_encode({ok=true,
                             data={ userInfo={nickname="administrator",
                                 username="admin", id="100"} }}))
+    elseif resName == '/hello/no_userinfo' then
+        -- authorized (200) but the backend returns no userInfo
+        ngx.say(json_encode({ok=true, data={}}))
     elseif resName == '/hello/500' then
         ngx.status = 500
         ngx.say(json_encode({ok=false, reason="ERR_SERVER_ERROR"}))
@@ -384,6 +387,30 @@ function _M.websocket_handshake()
     end
 end
 _M.websocket_handshake_route = _M.websocket_handshake
+
+
+-- keep the session open until the peer goes away, so that the request stays in
+-- flight in the balancer the way a real WebSocket session does. An idle timeout is
+-- the normal state of such a session, not an error: keep waiting, and only give up
+-- once the peer closes or the connection breaks
+function _M.websocket_hold()
+    local websocket = require "resty.websocket.server"
+    local wb, err = websocket:new({timeout = 30000})
+    if not wb then
+        ngx.log(ngx.ERR, "failed to new websocket: ", err)
+        return ngx.exit(400)
+    end
+
+    while true do
+        local _, typ, err = wb:recv_frame()
+        if typ == "close" then
+            return
+        end
+        if not typ and not string.find(err or "", "timeout", 1, true) then
+            return
+        end
+    end
+end
 
 
 function _M.api_breaker()
@@ -1269,6 +1296,168 @@ function _M.mock_compressed_upstream_response()
     local s = "compressed_response"
     ngx.header['Content-Encoding'] = 'gzip'
     ngx.say(s)
+end
+
+
+-- Mock GraphQL upstream for graphql-limit-count: the same endpoint answers both
+-- the schema introspection query and normal queries, which is how the plugin
+-- derives the introspection endpoint when introspection_endpoint is not set.
+local function gql_named(kind, name)
+    return {kind = kind, name = name}
+end
+-- NON_NULL(LIST(OBJECT)) -- exercises the wrapper unwrapping in introspection.lua
+local function gql_list_of(name)
+    return {
+        kind = "NON_NULL",
+        ofType = {kind = "LIST", ofType = gql_named("OBJECT", name)},
+    }
+end
+local function gql_field(name, type_ref, args)
+    -- `args` is a GraphQL list: omit it rather than let an empty Lua table
+    -- serialize as `{}`, which is not a valid introspection argument list
+    return {name = name, type = type_ref, args = args}
+end
+local function gql_first_arg(default_value)
+    return {{name = "first", defaultValue = default_value,
+             type = gql_named("SCALAR", "Int")}}
+end
+
+local gql_string = gql_named("SCALAR", "String")
+local gql_id = gql_named("SCALAR", "ID")
+
+local gql_introspection_response = json_encode({
+    data = {
+        __schema = {
+            queryType = {name = "Query"},
+            mutationType = {name = "Mutation"},
+            types = {
+                {kind = "OBJECT", name = "Query", fields = {
+                    gql_field("products", gql_named("OBJECT", "ProductConnection"),
+                              gql_first_arg()),
+                    -- `first` has a schema default: only counted with resolve_variables
+                    gql_field("topProducts", gql_named("OBJECT", "ProductConnection"),
+                              gql_first_arg("25")),
+                }},
+                {kind = "OBJECT", name = "ProductConnection", fields = {
+                    gql_field("nodes", gql_list_of("Product")),
+                }},
+                {kind = "OBJECT", name = "Product", fields = {
+                    gql_field("id", gql_id),
+                    gql_field("name", gql_string),
+                    gql_field("reviews", gql_named("OBJECT", "ReviewConnection"),
+                              gql_first_arg()),
+                }},
+                {kind = "OBJECT", name = "ReviewConnection", fields = {
+                    gql_field("nodes", gql_list_of("Review")),
+                }},
+                {kind = "OBJECT", name = "Review", fields = {
+                    gql_field("id", gql_id),
+                    gql_field("body", gql_string),
+                    gql_field("author", gql_named("OBJECT", "User")),
+                }},
+                {kind = "OBJECT", name = "User", fields = {
+                    gql_field("name", gql_string),
+                    gql_field("orders", gql_named("OBJECT", "OrderConnection"),
+                              gql_first_arg()),
+                }},
+                {kind = "OBJECT", name = "OrderConnection", fields = {
+                    gql_field("nodes", gql_list_of("Order")),
+                }},
+                {kind = "OBJECT", name = "Order", fields = {
+                    gql_field("id", gql_id),
+                }},
+            },
+        },
+    },
+})
+
+
+function _M.graphql()
+    ngx.req.read_body()
+    local body = ngx.req.get_body_data() or ""
+
+    ngx.header["Content-Type"] = "application/json"
+    if string.find(body, "__schema", 1, true) then
+        ngx.print(gql_introspection_response)
+        return
+    end
+
+    ngx.print('{"data":{"ok":true}}')
+end
+
+
+_M.graphql_alt = _M.graphql
+_M.graphql_plain = _M.graphql
+-- two routes proxying to one upstream, to assert that two services which
+-- share an introspection endpoint do not share its cached schema
+_M.graphql_shared_a = _M.graphql
+_M.graphql_shared_b = _M.graphql
+
+
+-- An upstream that requires credentials to introspect. The plugin must send the
+-- operator's configured credentials and nothing taken from the caller: a schema
+-- cached per service cannot be fetched with per-caller identity.
+function _M.graphql_guarded()
+    ngx.req.read_body()
+    local body = ngx.req.get_body_data() or ""
+
+    if string.find(body, "__schema", 1, true) then
+        if ngx.var.http_authorization ~= "Bearer operator-token" then
+            ngx.status = 401
+            ngx.header["Content-Type"] = "application/json"
+            ngx.print('{"errors":[{"message":"introspection requires credentials"}]}')
+            return
+        end
+
+        ngx.header["Content-Type"] = "application/json"
+        ngx.print(gql_introspection_response)
+        return
+    end
+
+    ngx.header["Content-Type"] = "application/json"
+    ngx.print('{"data":{"ok":true}}')
+end
+
+
+-- An upstream whose introspection endpoint is unusable, to assert the 400 path.
+function _M.graphql_broken()
+    ngx.req.read_body()
+    ngx.header["Content-Type"] = "application/json"
+    ngx.status = 500
+    ngx.print('{"errors":[{"message":"introspection disabled"}]}')
+end
+
+
+-- proxied path always fails, so a working cost proves introspection went to the
+-- configured introspection_endpoint instead of the request path
+_M.graphql_explicit = _M.graphql_broken
+
+
+-- echo received request headers, emitting one line per occurrence so that
+-- same-name (multi-value) headers are distinguishable from a single
+-- comma-joined value. A genuine multi-value header arrives as a table from
+-- ngx.req.get_headers() and is printed as repeated "name: value" lines.
+function _M.plugin_proxy_rewrite_multi_header()
+    local headers = ngx.req.get_headers()
+
+    local keys = {}
+    for k in pairs(headers) do
+        if not builtin_hdr_ignore_list[k] then
+            table.insert(keys, k)
+        end
+    end
+    table.sort(keys)
+
+    for _, key in ipairs(keys) do
+        local v = headers[key]
+        if type(v) == "table" then
+            for _, item in ipairs(v) do
+                ngx.say(key, ": ", item)
+            end
+        else
+            ngx.say(key, ": ", v)
+        end
+    end
 end
 
 

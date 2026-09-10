@@ -38,7 +38,11 @@ function _M.dogstatsd()
             end
             return
         end
-        core.log.warn("message received: ", data)
+
+        -- a datagram may carry several newline-delimited metrics
+        for line in data:gmatch("[^\n]+") do
+            core.log.warn("message received: ", line)
+        end
     end
 end
 

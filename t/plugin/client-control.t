@@ -189,7 +189,24 @@ POST /hello
 
 
 
-=== TEST 8: setup global rule with body reader and route with client-control
+=== TEST 8: 0 means no limit, chunked request body is not rejected
+Regression for api7/apisix-nginx-module#115 (apache/apisix#13673): with
+client-control max_body_size 0, a chunked request body must not be
+rejected with 413.
+--- more_headers
+Transfer-Encoding: chunked
+--- request eval
+qq{POST /hello
+6\r
+Hello \r
+0\r
+\r
+}
+--- error_code: 200
+
+
+
+=== TEST 9: setup global rule with body reader and route with client-control
 The global rule reads the body in access phase (simulates a logger with
 include_req_body). The route has client-control raising the body size limit
 above test-nginx's hardcoded 30M so the body read succeeds.
@@ -252,7 +269,7 @@ passed
 
 
 
-=== TEST 9: client-control should override body limit before global rule reads body
+=== TEST 10: client-control should override body limit before global rule reads body
 With the global rules phase split, client-control runs in route rewrite
 (setting FFI override to 50MB) before the global rule access phase reads
 the body. The body exceeds test-nginx's hardcoded 30M but is within the
@@ -266,7 +283,7 @@ the body. The body exceeds test-nginx's hardcoded 30M but is within the
 
 
 
-=== TEST 10: remove client-control from route
+=== TEST 11: remove client-control from route
 --- upstream_server_config
     client_max_body_size 0;
 --- config
@@ -300,7 +317,7 @@ passed
 
 
 
-=== TEST 11: without client-control, body exceeds hardcoded 30M limit
+=== TEST 12: without client-control, body exceeds hardcoded 30M limit
 Without client-control the FFI override is not set, so the global rule's
 read_body() triggers the hardcoded 30M body size check. The same body
 that succeeded in TEST 9 now gets rejected with 413.
@@ -315,7 +332,7 @@ client intended to send too large body
 
 
 
-=== TEST 12: cleanup global rules
+=== TEST 13: cleanup global rules
 --- upstream_server_config
     client_max_body_size 0;
 --- config

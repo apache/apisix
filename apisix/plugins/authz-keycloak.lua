@@ -27,6 +27,13 @@ local pairs = pairs
 local schema = {
     type = "object",
     properties = {
+        max_req_body_size = {
+            type = "integer",
+            minimum = 1,
+            default = 67108864,
+            description = "maximum request body size in bytes buffered into "
+                       .. "memory; larger request bodies are rejected",
+        },
         discovery = {type = "string", minLength = 1, maxLength = 4096},
         token_endpoint = {type = "string", minLength = 1, maxLength = 4096},
         resource_registration_endpoint = {type = "string", minLength = 1, maxLength = 4096},
@@ -694,7 +701,7 @@ end
 local function generate_token_using_password_grant(conf,ctx)
     log.debug("generate_token_using_password_grant Function Called")
 
-    local body, err = core.request.get_body()
+    local body, err = core.request.get_body(conf.max_req_body_size)
     if err or not body then
         log.error("Failed to get request body: ", err)
         return 503

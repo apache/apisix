@@ -145,9 +145,28 @@ By default, `ai-proxy` forwards the incoming client request headers to the confi
 
 Because the LLM upstream is often a third-party service, be aware that any header the client sends (for example `Authorization`, `Cookie`, or internal application headers) is forwarded to that provider unless it is overridden by `auth.header`. If the client should not expose certain headers to the LLM provider, strip them before the request reaches `ai-proxy`, for example with the [`proxy-rewrite`](./proxy-rewrite.md) plugin.
 
+## Upstream HTTP Client
+
+Requests to the LLM upstream go through `ngx_http_ffi_client`, a C HTTP client that costs around half the outbound CPU time of `lua-resty-http`. Both clients behave the same on the wire.
+
+`plugin_attr.ai-proxy.http_client` in `config.yaml` names the client:
+
+```yaml
+plugin_attr:
+  ai-proxy:
+    http_client: ngx_http_ffi_client # or lua-resty-http
+```
+
+- `ngx_http_ffi_client` (default): the C client. It requires an APISIX runtime built with the module, which the runtime pinned in `.requirements` is. On a runtime without it, the request fails and the error names the missing module; the plugin never silently switches clients.
+- `lua-resty-http`: the Lua client, on every runtime.
+
+The setting covers `ai-proxy`, `ai-proxy-multi`, and `ai-request-rewrite`, which share the same transport.
+
 ## Upstream Error Responses
 
 When the LLM upstream returns a `429` or `5xx` status, `ai-proxy` reads the upstream error body and returns it to the client together with the upstream status code and `Content-Type`, so provider-side error details (such as rate-limit information or validation errors) are not discarded.
+
+A streaming response is different once part of it has been delivered. The downstream response is committed as `200` with the first SSE event, so a later failure to read from the upstream (a connection reset or a read timeout) can no longer change the status. In that case `ai-proxy` stops reading, closes the upstream connection, and ends the downstream stream where it is, without a protocol-specific terminator such as `[DONE]`, `message_stop`, or `response.completed`; well-behaved clients should treat a missing terminator as an incomplete response. A read error that happens before any event reaches the client still returns `504` for a timeout and `500` otherwise.
 
 ## Examples
 
@@ -2077,8 +2096,9 @@ In the Kafka topic, you should also see a log entry corresponding to the request
 The following example demonstrates how you can log LLM request related information in the gateway's access log to improve analytics and audit. The following variables are available:
 
 * `request_llm_model`: LLM model name specified in the request.
+* `apisix_upstream_response_time`: Time taken for APISIX to send the request to the upstream service and receive the full response, in milliseconds. Error responses from the LLM service (such as 429 or 5xx) are also recorded in milliseconds.
 * `request_type`: Type of request, where the value could be `traditional_http`, `ai_chat`, or `ai_stream`.
-* `llm_time_to_first_token`: Duration from request sending to the first token received from the LLM service, in milliseconds.
+* `llm_time_to_first_token`: Duration from request sending to the first token received from the LLM service, in milliseconds. For an error response from the LLM service, this is the duration until the error response was received. It stays `0` when the LLM service could not be reached at all.
 * `llm_model`: LLM model.
 * `llm_prompt_tokens`: Number of tokens in the prompt.
 * `llm_completion_tokens`: Number of chat completion tokens in the response.
@@ -2111,7 +2131,7 @@ Update the access log format in your configuration file to include additional LL
 ```yaml title="conf/config.yaml"
 nginx_config:
   http:
-    access_log_format: "$remote_addr - $remote_user [$time_local] $http_host \"$request_line\" $status $body_bytes_sent $request_time \"$http_referer\" \"$http_user_agent\" $upstream_addr $upstream_status $upstream_response_time \"$upstream_scheme://$upstream_host$upstream_uri\" \"$apisix_request_id\" \"$request_type\" \"$llm_time_to_first_token\" \"$llm_model\" \"$request_llm_model\"  \"$llm_prompt_tokens\" \"$llm_completion_tokens\""
+    access_log_format: "$remote_addr - $remote_user [$time_local] $http_host \"$request_line\" $status $body_bytes_sent $request_time \"$http_referer\" \"$http_user_agent\" $upstream_addr $upstream_status $apisix_upstream_response_time \"$upstream_scheme://$upstream_host$upstream_uri\" \"$apisix_request_id\" \"$request_type\" \"$llm_time_to_first_token\" \"$llm_model\" \"$request_llm_model\"  \"$llm_prompt_tokens\" \"$llm_completion_tokens\""
 ```
 
 Reload APISIX for configuration changes to take effect.

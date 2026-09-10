@@ -16,6 +16,7 @@
 --
 local core = require("apisix.core")
 local resource = require("apisix.admin.resource")
+local apisix_upstream = require("apisix.upstream")
 local stream_route_checker = require("apisix.stream.router.ip_port").stream_route_checker
 local tostring = tostring
 local ipairs = ipairs
@@ -63,6 +64,15 @@ local function check_conf(id, conf, need_id, schema, opts)
         end
     end
 
+    -- the self-reference check needs no lookup, so it stays outside the gate;
+    -- only the etcd fetch below is skipped for standalone validation
+    if conf.protocol and conf.protocol.superior_id then
+        local superior_id = conf.protocol.superior_id
+        if id and tostring(superior_id) == tostring(id) then
+            return nil, {error_msg = "stream route can not set itself as superior_id"}
+        end
+    end
+
     if conf.protocol and conf.protocol.superior_id and not opts.skip_references_check then
         local superior_id = conf.protocol.superior_id
         local key = "/stream_routes/" .. superior_id
@@ -79,7 +89,12 @@ local function check_conf(id, conf, need_id, schema, opts)
 
         local superior_route = res.body.node.value
         if type(superior_route) == "string" then
-            superior_route = core.json.decode(superior_route)
+            local decoded, decode_err = core.json.decode(superior_route)
+            if not decoded then
+                return nil, {error_msg = "failed to decode stream routes[" .. superior_id
+                                         .. "]: " .. decode_err}
+            end
+            superior_route = decoded
         end
 
         if superior_route and superior_route.protocol
@@ -103,11 +118,11 @@ local function delete_checker(id)
     local key = "/stream_routes"
     local res, err = core.etcd.get(key, {prefix = true})
     if not res then
-        return nil, {error_msg = "failed to fetch stream routes: " .. err}
+        return 503, {error_msg = "failed to fetch stream routes: " .. err}
     end
 
     if res.status ~= 200 then
-        return nil, {error_msg = "failed to fetch stream routes, response code: " .. res.status}
+        return 503, {error_msg = "failed to fetch stream routes, response code: " .. res.status}
     end
 
     local nodes = res.body.list
@@ -124,7 +139,12 @@ local function delete_checker(id)
     for _, item in ipairs(nodes) do
         local route = item.value
         if type(route) == "string" then
-            route = core.json.decode(route)
+            local decoded, decode_err = core.json.decode(route)
+            if not decoded then
+                return 503, {error_msg = "failed to decode stream route [" .. tostring(item.key)
+                                         .. "]: " .. decode_err}
+            end
+            route = decoded
         end
 
         if route and route.protocol and tostring(route.protocol.superior_id) == id then
@@ -137,12 +157,18 @@ local function delete_checker(id)
 end
 
 
+local function encrypt_conf(id, conf)
+    apisix_upstream.encrypt_conf(conf.upstream)
+end
+
+
 return resource.new({
     name = "stream_routes",
     kind = "stream route",
     schema = core.schema.stream_route,
     checker = check_conf,
     delete_checker = delete_checker,
+    encrypt_conf = encrypt_conf,
     unsupported_methods = { "patch" },
     list_filter_fields = {
         service_id = true,

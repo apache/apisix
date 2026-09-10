@@ -362,7 +362,7 @@ opentracing
 --- grep_error_log eval
 qr/message received: [ -~]+/
 --- grep_error_log_out eval
-qr/message received: <10>1 [\d\-T:.]+Z [\d.]+ apisix [\d]+ - \[token-1\@41058 tag="apisix"] \{"apisix_latency":[\d.]*,"client_ip":"127\.0\.0\.1","latency":[\d.]*,"request":\{"headers":\{"content-type":"application\/x-www-form-urlencoded","host":"127\.0\.0\.1:1984","user-agent":"lua-resty-http\/[\d.]* \(Lua\) ngx_lua\/[\d]*"\},"method":"GET","querystring":\{\},"size":[\d]+,"uri":"\/opentracing","url":"http:\/\/127\.0\.0\.1:1984\/opentracing"\},"response":\{"headers":\{"connection":"close","content-type":"text\/plain","server":"APISIX\/[0-9A-Za-z._+-]+","transfer-encoding":"chunked"\},"size":[\d]*,"status":200\},"route_id":"1","server":\{"hostname":"[ -~]*","version":"[0-9A-Za-z._+-]+"\},"service_id":"","start_time":[\d]*,"upstream":"127\.0\.0\.1:1982","upstream_latency":[\d]*\}/
+qr/message received: <10>1 [\d\-T:.]+Z [\d.]+ apisix [\d]+ - \[token-1\@41058 tag="apisix"] \{"apisix_latency":[\d.]*,"client_ip":"127\.0\.0\.1","latency":[\d.]*,"request":\{"headers":\{"content-type":"application\/x-www-form-urlencoded","host":"127\.0\.0\.1:1984","user-agent":"lua-resty-http\/[\d.]* \(Lua\) ngx_lua\/[\d]*","x-forwarded-host":"127\.0\.0\.1:1984","x-forwarded-port":"1984","x-forwarded-proto":"http"\},"method":"GET","querystring":\{\},"size":[\d]+,"uri":"\/opentracing","url":"http:\/\/127\.0\.0\.1:1984\/opentracing"\},"response":\{"headers":\{"connection":"close","content-type":"text\/plain","server":"APISIX\/[0-9A-Za-z._+-]+","transfer-encoding":"chunked"\},"size":[\d]*,"status":200\},"route_id":"1","server":\{"hostname":"[ -~]*","version":"[0-9A-Za-z._+-]+"\},"service_id":"","start_time":[\d]*,"upstream":"127\.0\.0\.1:1982","upstream_latency":[\d]*\}/
 
 
 
@@ -410,7 +410,7 @@ opentracing
 --- grep_error_log eval
 qr/message received: [ -~]+/
 --- grep_error_log_out eval
-qr/message received: <14>1 [\d\-T:.]+Z [\d.]+ apisix [\d]+ - \[tok\@41058 tag="apisix"] \{"apisix_latency":[\d.]*,"client_ip":"127\.0\.0\.1","latency":[\d.]*,"request":\{"headers":\{"content-type":"application\/x-www-form-urlencoded","host":"127\.0\.0\.1:1984","user-agent":"lua-resty-http\/[\d.]* \(Lua\) ngx_lua\/[\d]*"\},"method":"GET","querystring":\{\},"size":[\d]+,"uri":"\/opentracing","url":"http:\/\/127\.0\.0\.1:1984\/opentracing"\},"response":\{"body":"opentracing\\n","headers":\{"connection":"close","content-type":"text\/plain","server":"APISIX\/[0-9A-Za-z._+-]+","transfer-encoding":"chunked"\},"size":[\d]*,"status":200\},"route_id":"1","server":\{"hostname":"[ -~]*","version":"[0-9A-Za-z._+-]+"\},"service_id":"","start_time":[\d]*,"upstream":"127\.0\.0\.1:1982","upstream_latency":[\d]*\}/
+qr/message received: <14>1 [\d\-T:.]+Z [\d.]+ apisix [\d]+ - \[tok\@41058 tag="apisix"] \{"apisix_latency":[\d.]*,"client_ip":"127\.0\.0\.1","latency":[\d.]*,"request":\{"headers":\{"content-type":"application\/x-www-form-urlencoded","host":"127\.0\.0\.1:1984","user-agent":"lua-resty-http\/[\d.]* \(Lua\) ngx_lua\/[\d]*","x-forwarded-host":"127\.0\.0\.1:1984","x-forwarded-port":"1984","x-forwarded-proto":"http"\},"method":"GET","querystring":\{\},"size":[\d]+,"uri":"\/opentracing","url":"http:\/\/127\.0\.0\.1:1984\/opentracing"\},"response":\{"body":"opentracing\\n","headers":\{"connection":"close","content-type":"text\/plain","server":"APISIX\/[0-9A-Za-z._+-]+","transfer-encoding":"chunked"\},"size":[\d]*,"status":200\},"route_id":"1","server":\{"hostname":"[ -~]*","version":"[0-9A-Za-z._+-]+"\},"service_id":"","start_time":[\d]*,"upstream":"127\.0\.0\.1:1982","upstream_latency":[\d]*\}/
 
 
 
@@ -463,7 +463,7 @@ opentracing
 --- grep_error_log eval
 qr/message received: [ -~]+/
 --- grep_error_log_out eval
-qr/message received: <14>1 [\d\-T:.]+Z [\d.]+ apisix [\d]+ - \[tok\@41058 tag="apisix"] \{"apisix_latency":[\d.]*,"client_ip":"127\.0\.0\.1","latency":[\d.]*,"request":\{"headers":\{"content-type":"application\/x-www-form-urlencoded","host":"127\.0\.0\.1:1984","user-agent":"lua-resty-http\/[\d.]* \(Lua\) ngx_lua\/[\d]*"\},"method":"GET","querystring":\{"bar":"bar"\},"size":[\d]+,"uri":"\/opentracing\?bar=bar","url":"http:\/\/127\.0\.0\.1:1984\/opentracing\?bar=bar"\},"response":\{"body":"opentracing\\n","headers":\{"connection":"close","content-type":"text\/plain","server":"APISIX\/[0-9A-Za-z._+-]+","transfer-encoding":"chunked"\},"size":[\d]*,"status":200\},"route_id":"1","server":\{"hostname":"[ -~]*","version":"[0-9A-Za-z._+-]+"\},"service_id":"","start_time":[\d]*,"upstream":"127\.0\.0\.1:1982","upstream_latency":[\d]*\}/
+qr/message received: <14>1 [\d\-T:.]+Z [\d.]+ apisix [\d]+ - \[tok\@41058 tag="apisix"] \{"apisix_latency":[\d.]*,"client_ip":"127\.0\.0\.1","latency":[\d.]*,"request":\{"headers":\{"content-type":"application\/x-www-form-urlencoded","host":"127\.0\.0\.1:1984","user-agent":"lua-resty-http\/[\d.]* \(Lua\) ngx_lua\/[\d]*","x-forwarded-host":"127\.0\.0\.1:1984","x-forwarded-port":"1984","x-forwarded-proto":"http"\},"method":"GET","querystring":\{"bar":"bar"\},"size":[\d]+,"uri":"\/opentracing\?bar=bar","url":"http:\/\/127\.0\.0\.1:1984\/opentracing\?bar=bar"\},"response":\{"body":"opentracing\\n","headers":\{"connection":"close","content-type":"text\/plain","server":"APISIX\/[0-9A-Za-z._+-]+","transfer-encoding":"chunked"\},"size":[\d]*,"status":200\},"route_id":"1","server":\{"hostname":"[ -~]*","version":"[0-9A-Za-z._+-]+"\},"service_id":"","start_time":[\d]*,"upstream":"127\.0\.0\.1:1982","upstream_latency":[\d]*\}/
 
 
 
@@ -487,7 +487,7 @@ opentracing
 --- grep_error_log eval
 qr/message received: [ -~]+/
 --- grep_error_log_out eval
-qr/message received: <14>1 [\d\-T:.]+Z [\d.]+ apisix [\d]+ - \[tok\@41058 tag="apisix"] \{"apisix_latency":[\d.]*,"client_ip":"127\.0\.0\.1","latency":[\d.]*,"request":\{"headers":\{"content-type":"application\/x-www-form-urlencoded","host":"127\.0\.0\.1:1984","user-agent":"lua-resty-http\/[\d.]* \(Lua\) ngx_lua\/[\d]*"\},"method":"GET","querystring":\{"foo":"bar"\},"size":[\d]+,"uri":"\/opentracing\?foo=bar","url":"http:\/\/127\.0\.0\.1:1984\/opentracing\?foo=bar"\},"response":\{"headers":\{"connection":"close","content-type":"text\/plain","server":"APISIX\/[0-9A-Za-z._+-]+","transfer-encoding":"chunked"\},"size":[\d]*,"status":200\},"route_id":"1","server":\{"hostname":"[ -~]*","version":"[0-9A-Za-z._+-]+"\},"service_id":"","start_time":[\d]*,"upstream":"127\.0\.0\.1:1982","upstream_latency":[\d]*\}/
+qr/message received: <14>1 [\d\-T:.]+Z [\d.]+ apisix [\d]+ - \[tok\@41058 tag="apisix"] \{"apisix_latency":[\d.]*,"client_ip":"127\.0\.0\.1","latency":[\d.]*,"request":\{"headers":\{"content-type":"application\/x-www-form-urlencoded","host":"127\.0\.0\.1:1984","user-agent":"lua-resty-http\/[\d.]* \(Lua\) ngx_lua\/[\d]*","x-forwarded-host":"127\.0\.0\.1:1984","x-forwarded-port":"1984","x-forwarded-proto":"http"\},"method":"GET","querystring":\{"foo":"bar"\},"size":[\d]+,"uri":"\/opentracing\?foo=bar","url":"http:\/\/127\.0\.0\.1:1984\/opentracing\?foo=bar"\},"response":\{"headers":\{"connection":"close","content-type":"text\/plain","server":"APISIX\/[0-9A-Za-z._+-]+","transfer-encoding":"chunked"\},"size":[\d]*,"status":200\},"route_id":"1","server":\{"hostname":"[ -~]*","version":"[0-9A-Za-z._+-]+"\},"service_id":"","start_time":[\d]*,"upstream":"127\.0\.0\.1:1982","upstream_latency":[\d]*\}/
 
 
 
@@ -906,5 +906,77 @@ apisix:
 --- response_body
 true
 true
+--- no_error_log
+[alert]
+
+
+
+=== TEST 22: http bulk sends each batch with its own conf (regression)
+--- http_config
+    server {
+        listen 10420;
+
+        location ~ ^/loggly/bulk/(?<token>[^/]+)/tag/bulk$ {
+            content_by_lua_block {
+                ngx.req.read_body()
+                local headers = ngx.req.get_headers()
+                ngx.log(ngx.ERR, "loggly-recv token: ", ngx.var.token,
+                        " tags: ", require("toolkit.json").encode(headers["X-LOGGLY-TAG"]))
+                ngx.say("ok")
+            }
+        }
+    }
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            local code = t('/apisix/admin/plugin_metadata/loggly', ngx.HTTP_PUT, [[{
+                "host": "127.0.0.1:10420/loggly",
+                "protocol": "http"
+            }]])
+            if code >= 300 then ngx.say("metadata failed: ", code); return end
+
+            local code = t('/apisix/admin/routes/1', ngx.HTTP_PUT, [[{
+                "plugins": {
+                    "loggly": {
+                        "customer_token": "token-a",
+                        "tags": ["aaa"],
+                        "inactive_timeout": 1
+                    }
+                },
+                "upstream": {"nodes": {"127.0.0.1:1980": 1}, "type": "roundrobin"},
+                "host": "127.0.0.1",
+                "uri": "/route_a"
+            }]])
+            if code >= 300 then ngx.say("route_a failed: ", code); return end
+
+            local code = t('/apisix/admin/routes/2', ngx.HTTP_PUT, [[{
+                "plugins": {
+                    "loggly": {
+                        "customer_token": "token-b",
+                        "tags": ["bbb"],
+                        "inactive_timeout": 1
+                    }
+                },
+                "upstream": {"nodes": {"127.0.0.1:1980": 1}, "type": "roundrobin"},
+                "host": "127.0.0.1",
+                "uri": "/route_b"
+            }]])
+            if code >= 300 then ngx.say("route_b failed: ", code); return end
+
+            -- buffer one entry per config before either batch flushes, so the
+            -- old shared closure would send both with the last conf's token
+            t("/route_a", ngx.HTTP_GET)
+            t("/route_b", ngx.HTTP_GET)
+            ngx.say("done")
+        }
+    }
+--- wait: 3
+--- response_body
+done
+--- error_log
+loggly-recv token: token-a tags: "aaa"
+loggly-recv token: token-b tags: "bbb"
 --- no_error_log
 [alert]
