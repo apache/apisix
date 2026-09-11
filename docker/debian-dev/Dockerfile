@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-FROM debian:bullseye-slim AS build
+FROM debian:trixie-slim AS build
 
 ARG ENABLE_PROXY=false
 ARG CODE_PATH
@@ -49,7 +49,7 @@ RUN set -x \
     && cp -r deps ${ENV_INST_LUADIR} \
     && make install
 
-FROM debian:bullseye-slim
+FROM debian:trixie-slim
 
 ARG ENTRYPOINT_PATH=./docker-entrypoint.sh
 ARG INSTALL_BROTLI=./install-brotli.sh
