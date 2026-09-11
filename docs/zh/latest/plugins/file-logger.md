@@ -47,7 +47,7 @@ description: API 网关 Apache APISIX file-logger 插件可用于将日志数据
 
 | 名称             | 类型     | 必选项 | 描述                                             |
 | ---------------- | ------- |-----| ------------------------------------------------ |
-| path             | string  | 是   | 自定义输出文件路径。例如：`logs/file.log`。        |
+| path             | string  | 是   | 自定义输出文件路径。例如：`logs/file.log`。可以使用 `/dev/stdout` 将日志写入标准输出，使用 `/dev/stderr` 将日志写入标准错误输出。 |
 | log_format       | object  | 否   | 日志格式以 JSON 的键值对声明。值支持字符串和嵌套对象（最多五层，超出部分将被截断）。字符串中可通过在前面加上 `$` 来引用 [APISIX 变量](../apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
 | include_req_body   | boolean | 否   | 当设置为 `true` 时，日志中将包含请求体。如果请求体太大而无法在内存中保存，则由于 Nginx 的限制，无法记录请求体。|
 | include_req_body_expr | array   | 否   | 当 `include_req_body` 属性设置为 `true` 时的过滤器。只有当此处设置的表达式求值为 `true` 时，才会记录请求体。有关更多信息，请参阅 [lua-resty-expr](https://github.com/api7/lua-resty-expr) 。 |
