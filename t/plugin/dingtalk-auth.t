@@ -196,34 +196,106 @@ passed
 
 
 
-=== TEST 5: no code provided - redirect to redirect_uri
+=== TEST 5: no code provided - redirect to redirect_uri with a state
 --- request
 GET /hello
 --- error_code: 302
---- response_headers
-Location: /login
+--- response_headers_like
+Location: /login\?state=[0-9a-f]{32}
 
 
 
-=== TEST 6: invalid code - returns 401
+=== TEST 6: query code without a state is rejected
 --- request
-GET /hello?code=invalid_code
+GET /hello?code=valid_code
 --- error_code: 401
+--- response_body
+{"message":"Invalid state"}
+
+
+
+=== TEST 7: query code with a state not bound to the session is rejected
+--- request
+GET /hello?code=valid_code&state=deadbeefdeadbeefdeadbeefdeadbeef
+--- error_code: 401
+--- response_body
+{"message":"Invalid state"}
+
+
+
+=== TEST 8: invalid code with a valid state - returns 401
+--- config
+    location /t {
+        content_by_lua_block {
+            local oauth = require("lib.oauth_login")
+            local res, err = oauth.login(ngx.var.server_port, "/hello", "invalid_code")
+            assert(res, err)
+            assert(res.status == 401, "expected 401, got " .. res.status)
+            ngx.print(res.body)
+        }
+    }
 --- response_body
 {"message":"Invalid authorization code"}
 
 
 
-=== TEST 7: valid code via query param - returns 200
---- request
-GET /hello?code=valid_code
---- error_code: 200
+=== TEST 9: valid code via query param - returns 200
+--- config
+    location /t {
+        content_by_lua_block {
+            local oauth = require("lib.oauth_login")
+            local res, err = oauth.login(ngx.var.server_port, "/hello", "valid_code")
+            assert(res, err)
+            assert(res.status == 200, "expected 200, got " .. res.status)
+            ngx.print(res.body)
+        }
+    }
 --- response_body
 hello world
 
 
 
-=== TEST 8: valid code via X-DingTalk-Code header - returns 200
+=== TEST 10: a state from one session cannot be used by another session
+--- config
+    location /t {
+        content_by_lua_block {
+            local oauth = require("lib.oauth_login")
+            local httpc = require("resty.http").new()
+            local port = ngx.var.server_port
+            local uri = "http://127.0.0.1:" .. port .. "/hello"
+
+            local cookie_a, state_a, err_a = oauth.begin(port, "/hello")
+            assert(cookie_a, err_a)
+            local cookie_b, state_b, err_b = oauth.begin(port, "/hello")
+            assert(cookie_b, err_b)
+            assert(state_a ~= state_b, "states must not repeat across sessions")
+
+            -- session B presented with session A's state: this is the shape of an
+            -- injected code, and it must not authenticate
+            local res = assert(httpc:request_uri(uri, {
+                method = "GET",
+                query = {code = "valid_code", state = state_a},
+                headers = {["Cookie"] = cookie_b},
+            }))
+            assert(res.status == 401, "expected 401, got " .. res.status)
+
+            -- session B with its own state still works
+            local res2 = assert(httpc:request_uri(uri, {
+                method = "GET",
+                query = {code = "valid_code", state = state_b},
+                headers = {["Cookie"] = cookie_b},
+            }))
+            assert(res2.status == 200, "expected 200, got " .. res2.status)
+
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 11: valid code via X-DingTalk-Code header - returns 200
 --- request
 GET /hello
 --- more_headers
@@ -234,7 +306,7 @@ hello world
 
 
 
-=== TEST 9: cookie session - subsequent requests reuse session
+=== TEST 12: cookie session - subsequent requests reuse session
 --- config
     location /t {
         content_by_lua_block {
@@ -243,10 +315,8 @@ hello world
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
 
             -- first request with valid code to obtain session cookie
-            local res, err = httpc:request_uri(uri, {
-                method = "GET",
-                query = { code = "valid_code" },
-            })
+            local res, err = require("lib.oauth_login")
+                                .login(ngx.var.server_port, "/hello", "valid_code")
             assert(res, "request failed: " .. (err or "nil"))
             assert(res.status == 200, "expected 200, got: " .. res.status)
 
@@ -274,7 +344,7 @@ passed
 
 
 
-=== TEST 10: cookie expires after cookie_expires_in seconds
+=== TEST 13: cookie expires after cookie_expires_in seconds
 --- config
     location /t {
         content_by_lua_block {
@@ -282,10 +352,8 @@ passed
             local httpc = http.new()
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
 
-            local res, err = httpc:request_uri(uri, {
-                method = "GET",
-                query = { code = "valid_code" },
-            })
+            local res, err = require("lib.oauth_login")
+                                .login(ngx.var.server_port, "/hello", "valid_code")
             assert(res, "request failed: " .. (err or "nil"))
             assert(res.status == 200, "expected 200, got: " .. res.status)
 
@@ -319,7 +387,7 @@ passed
 
 
 
-=== TEST 11: configure custom code_header and code_query
+=== TEST 14: configure custom code_header and code_query
 --- config
     location /t {
         content_by_lua_block {
@@ -360,15 +428,35 @@ passed
 
 
 
-=== TEST 12: custom code_query param works
---- pipelined_requests eval
-["GET /hello?code=valid_code", "GET /hello?dt_code=valid_code"]
---- error_code eval
-[302, 200]
+=== TEST 15: custom code_query param works
+--- config
+    location /t {
+        content_by_lua_block {
+            local oauth = require("lib.oauth_login")
+            local httpc = require("resty.http").new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+
+            -- the default query name is not the configured one, so no code is seen
+            local res = assert(httpc:request_uri(uri, {
+                method = "GET",
+                query = {code = "valid_code"},
+            }))
+            assert(res.status == 302, "expected 302, got " .. res.status)
+
+            local res2, err = oauth.login(ngx.var.server_port, "/hello",
+                                          "valid_code", "dt_code")
+            assert(res2, err)
+            assert(res2.status == 200, "expected 200, got " .. res2.status)
+
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
 
 
 
-=== TEST 13: custom code_header works
+=== TEST 16: custom code_header works
 --- pipelined_requests eval
 ["GET /hello", "GET /hello"]
 --- more_headers eval
@@ -381,7 +469,7 @@ passed
 
 
 
-=== TEST 14: client-supplied X-Userinfo is not forwarded to upstream
+=== TEST 17: client-supplied X-Userinfo is not forwarded to upstream
 --- config
     location /t {
         content_by_lua_block {
@@ -415,10 +503,8 @@ passed
             assert(code <= 201, "setup route 1 failed: " .. tostring(code))
 
             local base = "http://127.0.0.1:" .. ngx.var.server_port
-            local res, err = httpc:request_uri(base .. "/hello", {
-                method = "GET",
-                query = {code = "valid_code"},
-            })
+            local res, err = require("lib.oauth_login")
+                                .login(ngx.var.server_port, "/hello", "valid_code")
             assert(res, err)
             assert(res.status == 200, "expected 200 on auth, got " .. res.status)
             local cookie = res.headers["Set-Cookie"]
