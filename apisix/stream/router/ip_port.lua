@@ -73,13 +73,8 @@ local function get_snis(route)
         snis = {route.sni}
     end
 
-    for _, sni in ipairs(snis) do
-        if sni == "*" then
-            -- a bare `*` matches every SNI, which is what carrying none already
-            -- means; reversed into the radixtree it would match only the
-            -- literal "*"
-            return nil
-        end
+    if #snis == 0 then
+        return nil
     end
 
     return snis

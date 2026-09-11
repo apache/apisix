@@ -228,8 +228,8 @@ curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H "X-API-KEY: $admin_ke
 ```
 
 握手时发送 SNI `a.test.com` 或 `b.test.com` 的连接都会被代理到 `127.0.0.1:5991`。通配符按后缀匹配，
-因此 `*.test.com` 同样匹配 `a.b.test.com`；单独的 `*` 则不对 SNI 做任何限制，等同于既不带 `sni`
-也不带 `snis` 的路由。
+因此 `*.test.com` 同样匹配 `a.b.test.com`；单独的 `*` 匹配任意 SNI，而不携带 SNI 的连接仍然交给
+按地址匹配的路由处理。
 
 一条路由只能携带 `sni` 或 `snis` 其中之一。
 

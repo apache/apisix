@@ -238,8 +238,8 @@ curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H "X-API-KEY: $admin_ke
 
 Here a connection handshaked with SNI `a.test.com` or `b.test.com` will be proxied to
 `127.0.0.1:5991`. Wildcards are matched as a suffix, so `*.test.com` also matches
-`a.b.test.com`, and a single `*` puts no restriction on the SNI at all, exactly like a stream
-route carrying neither `sni` nor `snis`.
+`a.b.test.com`, and a single `*` matches any SNI — a connection carrying none is still left to
+the routes that match on address instead.
 
 A route can carry `sni` or `snis`, not both.
 

@@ -222,7 +222,7 @@ GET /t
 
 
 
-=== TEST 5: a bare * puts no restriction on the sni
+=== TEST 5: a bare * matches any SNI, but not a connection carrying none
 --- config
     location /setup {
         content_by_lua_block {
@@ -327,8 +327,8 @@ GET /t
         content_by_lua_block {
             local t = require("lib.test_admin")
 
-            -- no ssl object: the listen holds no certificate, so a completed
-            -- handshake can only have been terminated by the backend itself
+            -- the listen carries no `ssl`, so it holds no certificate and a
+            -- completed handshake can only have been terminated by the backend
             local code = t.test('/apisix/admin/stream_routes/1', ngx.HTTP_PUT,
                 [[{
                     "snis": ["a.test.com", "b.test.com"],
@@ -351,5 +351,215 @@ GET /t
 --- response_body_like eval
 [qr/^passed$/, qr/^hello from the backend$/, qr/^hello from the backend$/,
  qr/failed to do SSL handshake/]
+--- no_error_log
+[alert]
+
+
+
+=== TEST 8: the singular sni is matched case-insensitively too
+--- config
+    location /setup {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin")
+
+            local ssl_cert = t.read_file("t/certs/apisix.crt")
+            local ssl_key =  t.read_file("t/certs/apisix.key")
+            local code = t.test('/apisix/admin/ssls/1', ngx.HTTP_PUT,
+                core.json.encode({cert = ssl_cert, key = ssl_key, sni = "*"}))
+            if code >= 300 then
+                ngx.say("failed to create ssl: ", code)
+                return
+            end
+
+            code = t.test('/apisix/admin/stream_routes/1', ngx.HTTP_PUT,
+                [[{
+                    "sni": "Mixed.SNI.com",
+                    "upstream": {
+                        "nodes": {"127.0.0.1:1995": 1},
+                        "type": "roundrobin"
+                    }
+                }]])
+            if code >= 300 then
+                ngx.say("failed to create stream route: ", code)
+                return
+            end
+
+            ngx.sleep(0.5)
+            ngx.say("passed")
+        }
+    }
+--- pipelined_requests eval
+["GET /setup", "GET /tls?sni=mixed.sni.com", "GET /tls?sni=other.sni.com"]
+--- response_body eval
+["passed\n", "hello world\n", ""]
+
+
+
+=== TEST 9: two routes sharing one sni are told apart by their address
+--- config
+    location /setup {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin")
+
+            local ssl_cert = t.read_file("t/certs/apisix.crt")
+            local ssl_key =  t.read_file("t/certs/apisix.key")
+            local code = t.test('/apisix/admin/ssls/1', ngx.HTTP_PUT,
+                core.json.encode({cert = ssl_cert, key = ssl_key, sni = "*"}))
+            if code >= 300 then
+                ngx.say("failed to create ssl: ", code)
+                return
+            end
+
+            -- both carry a.test.com, so they share one radixtree entry and are
+            -- separated by match_addrs inside its filter_fun
+            code = t.test('/apisix/admin/stream_routes/1', ngx.HTTP_PUT,
+                [[{
+                    "snis": ["a.test.com"],
+                    "server_port": 1985,
+                    "upstream": {
+                        "nodes": {"127.0.0.1:1": 1},
+                        "type": "roundrobin"
+                    }
+                }]])
+            if code >= 300 then
+                ngx.say("failed to create stream route 1: ", code)
+                return
+            end
+
+            code = t.test('/apisix/admin/stream_routes/2', ngx.HTTP_PUT,
+                [[{
+                    "snis": ["a.test.com"],
+                    "server_port": 2005,
+                    "upstream": {
+                        "nodes": {"127.0.0.1:1995": 1},
+                        "type": "roundrobin"
+                    }
+                }]])
+            if code >= 300 then
+                ngx.say("failed to create stream route 2: ", code)
+                return
+            end
+
+            ngx.sleep(0.5)
+            ngx.say("passed")
+        }
+    }
+--- pipelined_requests eval
+["GET /setup", "GET /tls?sni=a.test.com"]
+--- response_body eval
+["passed\n", "hello world\n"]
+
+
+
+=== TEST 10: shrinking the sni list stops matching the removed name
+--- config
+    location /setup {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin")
+
+            local ssl_cert = t.read_file("t/certs/apisix.crt")
+            local ssl_key =  t.read_file("t/certs/apisix.key")
+            local code = t.test('/apisix/admin/ssls/1', ngx.HTTP_PUT,
+                core.json.encode({cert = ssl_cert, key = ssl_key, sni = "*"}))
+            if code >= 300 then
+                ngx.say("failed to create ssl: ", code)
+                return
+            end
+
+            code = t.test('/apisix/admin/stream_routes/1', ngx.HTTP_PUT,
+                [[{
+                    "snis": ["a.test.com", "b.test.com"],
+                    "upstream": {
+                        "nodes": {"127.0.0.1:1995": 1},
+                        "type": "roundrobin"
+                    }
+                }]])
+            if code >= 300 then
+                ngx.say("failed to create stream route: ", code)
+                return
+            end
+
+            ngx.sleep(0.5)
+            ngx.say("passed")
+        }
+    }
+
+    location /shrink {
+        content_by_lua_block {
+            local t = require("lib.test_admin")
+
+            local code = t.test('/apisix/admin/stream_routes/1', ngx.HTTP_PUT,
+                [[{
+                    "snis": ["a.test.com"],
+                    "upstream": {
+                        "nodes": {"127.0.0.1:1995": 1},
+                        "type": "roundrobin"
+                    }
+                }]])
+            if code >= 300 then
+                ngx.say("failed to update stream route: ", code)
+                return
+            end
+
+            ngx.sleep(0.5)
+            ngx.say("shrunk")
+        }
+    }
+--- pipelined_requests eval
+["GET /setup", "GET /tls?sni=b.test.com", "GET /shrink", "GET /tls?sni=b.test.com", "GET /tls?sni=a.test.com"]
+--- response_body eval
+["passed\n", "hello world\n", "shrunk\n", "", "hello world\n"]
+
+
+
+=== TEST 11: a bare * on a passthrough listen still needs an SNI
+--- stream_server_config
+    listen 2005;
+    ssl_preread on;
+
+    preread_by_lua_block {
+        ngx.sleep(0.1)
+        apisix.stream_preread_phase(true)
+    }
+
+    proxy_pass apisix_backend;
+--- extra_stream_config
+    server {
+        listen 1997 ssl;
+        ssl_certificate     cert/apisix.crt;
+        ssl_certificate_key cert/apisix.key;
+        content_by_lua_block {
+            ngx.say("hello from the backend")
+        }
+    }
+--- config
+    location /setup {
+        content_by_lua_block {
+            local t = require("lib.test_admin")
+
+            local code = t.test('/apisix/admin/stream_routes/1', ngx.HTTP_PUT,
+                [[{
+                    "snis": ["*"],
+                    "upstream": {
+                        "nodes": {"127.0.0.1:1997": 1},
+                        "type": "roundrobin"
+                    }
+                }]])
+            if code >= 300 then
+                ngx.say("failed to create stream route: ", code)
+                return
+            end
+
+            ngx.sleep(0.5)
+            ngx.say("passed")
+        }
+    }
+--- pipelined_requests eval
+["GET /setup", "GET /tls?sni=anything.test.com", "GET /tls"]
+--- response_body_like eval
+[qr/^passed$/, qr/^hello from the backend$/, qr/failed to do SSL handshake/]
 --- no_error_log
 [alert]
