@@ -144,7 +144,7 @@ local function do_run_watch(premature)
 
         watch_ctx.cli, err = get_etcd()
         if not watch_ctx.cli then
-            error("failed to create etcd instance: " .. string(err))
+            error("failed to create etcd instance: " .. tostring(err))
         end
 
         -- Watch from the revision the preloaded configuration was read at, so
