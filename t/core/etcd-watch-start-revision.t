@@ -45,6 +45,9 @@ deployment:
         prefix: "/apisix-watch-start-revision"
         host:
             - "http://127.0.0.1:2379"
+--- extra_yaml_config
+nginx_config:
+    worker_processes: 1
 --- extra_init_by_lua_start
     -- io.popen reports nothing about how curl fared, so the etcd response is
     -- checked instead: a silently failing write here would look exactly like
@@ -89,6 +92,32 @@ deployment:
     -- after the snapshot was taken, before any worker starts watching
     _G.etcd_put_for_test("/apisix-watch-start-revision/routes/1",
         '{"uri":"/hello","upstream":{"type":"roundrobin","nodes":{"127.0.0.1:1980":1}}}')
+--- extra_init_worker_by_lua
+    -- http_init_worker has created the configuration objects and scheduled the
+    -- main watcher, but nginx timers cannot run until this phase returns. Wrap
+    -- the cached watcher client now to verify that initialising the watcher
+    -- checks etcd availability even when the snapshot supplied its revision.
+    local config_etcd = require("apisix.core.config_etcd")
+    local get_etcd
+    for i = 1, 256 do
+        local name, value = debug.getupvalue(config_etcd.new, i)
+        if not name then
+            break
+        end
+        if name == "get_etcd" then
+            get_etcd = value
+            break
+        end
+    end
+    assert(get_etcd, "get_etcd upvalue not found")
+
+    local etcd_cli = assert(get_etcd())
+    local original_get = etcd_cli.get
+    _G.watch_availability_checks = 0
+    etcd_cli.get = function(self, ...)
+        _G.watch_availability_checks = _G.watch_availability_checks + 1
+        return original_get(self, ...)
+    end
 --- config
     location /t {
         content_by_lua_block {
@@ -108,9 +137,11 @@ deployment:
             end
 
             ngx.say("uri: ", route.value.uri)
+            ngx.say("availability checks: ", _G.watch_availability_checks)
         }
     }
 --- request
 GET /t
 --- response_body
 uri: /hello
+availability checks: 1
