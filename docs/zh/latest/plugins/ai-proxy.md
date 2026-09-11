@@ -101,6 +101,12 @@ import TabItem from '@theme/TabItem';
 | keepalive_pool | integer | 否    | 30       | ≥ 1                                      | LLM 服务连接的保活池大小。 |
 | ssl_verify     | boolean | 否    | true   |                                          | 如果为 true，验证 LLM 服务的证书。 |
 | streaming_flush_interval_ms | integer | 否 | 10 | ≥ 0 | 后台刷新线程的间隔时间（毫秒）。`> 0`（默认值：`10`）时，后台定时器每隔 N 毫秒调用一次 `ngx.flush(false)`，适合上游批量发送 token 的场景。设为 `0` 时禁用后台线程，改为每个 chunk 同步调用 `ngx.flush(true)` 立即刷新。 |
+| proxy_opts | object | 否 | | | AI 提供商所在代理服务器的配置。 |
+| proxy_opts.http_proxy | string | 否 | | | HTTP 请求的代理服务器地址，例如 `http://<proxy_host>:<proxy_port>`。 |
+| proxy_opts.http_proxy_authorization | string | 否 | | | 与 `http_proxy` 一起使用的默认 `Proxy-Authorization` 头值。可以用自定义 `Proxy-Authorization` 请求头覆盖。 |
+| proxy_opts.https_proxy | string | 否 | | | HTTPS 请求的代理服务器地址，例如 `http://<proxy_host>:<proxy_port>`。 |
+| proxy_opts.https_proxy_authorization | string | 否 | | | 与 `https_proxy` 一起使用的默认 `Proxy-Authorization` 头值。由于 HTTPS 连接时已完成授权，不能用自定义 `Proxy-Authorization` 请求头覆盖。 |
+| proxy_opts.no_proxy | string | 否 | | | 不需要代理的主机列表，以逗号分隔。 |
 
 ## Provider-aware `max_tokens` mapping
 

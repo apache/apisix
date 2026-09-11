@@ -102,6 +102,12 @@ When `provider` is set to `bedrock`, the Plugin expects requests in the [Bedrock
 | keepalive_pool | integer | False    | 30       | ≥ 1                                      | Keepalive pool size for the LLM service connection. |
 | ssl_verify     | boolean | False    | true   |                                          | If true, verifies the LLM service's certificate. |
 | streaming_flush_interval_ms | integer | False | 10 | ≥ 0 | Interval in milliseconds for the background flush thread. When `> 0` (default: `10`), a background timer calls `ngx.flush(false)` every N ms, batching output for bursty upstreams. When `0`, the background thread is disabled and each chunk is flushed synchronously via `ngx.flush(true)`, guaranteeing immediate client delivery. |
+| proxy_opts | object | False | | | Configurations for the proxy server that the AI provider is behind. |
+| proxy_opts.http_proxy | string | False | | | Proxy server address for HTTP requests, such as `http://<proxy_host>:<proxy_port>`. |
+| proxy_opts.http_proxy_authorization | string | False | | | Default `Proxy-Authorization` header value to be used with `http_proxy`. Can be overridden with custom `Proxy-Authorization` request header. |
+| proxy_opts.https_proxy | string | False | | | Proxy server address for HTTPS requests, such as `http://<proxy_host>:<proxy_port>`. |
+| proxy_opts.https_proxy_authorization | string | False | | | Default `Proxy-Authorization` header value to be used with `https_proxy`. Cannot be overridden with custom `Proxy-Authorization` request header since with HTTPS, the authorization is completed when connecting. |
+| proxy_opts.no_proxy | string | False | | | Comma-separated list of hosts that should not be proxied. |
 
 ## Provider-aware `max_tokens` mapping
 
