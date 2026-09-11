@@ -871,6 +871,8 @@ kubectl apply -f hmac-auth-ic.yaml
 
 Generate a signature. You can use the below Python snippet or other stack of your choice:
 
+> **Note**: When `validate_request_body` is enabled, the plugin checks that the `Digest` header matches the request body. However, to ensure the body itself is bound to the HMAC signature (preventing an attacker from replacing both the body and the Digest header), you must also include the `Digest` header in the signed headers list. The example below demonstrates this by adding `digest` to the `headers` parameter in the `Authorization` header.
+
 ```python title="hmac-sig-digest-header-gen.py"
 import hmac
 import hashlib
