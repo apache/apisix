@@ -107,11 +107,4 @@ function _M.api()
 end
 
 
-function _M.init()
-    local local_conf = core.config.local_conf()
-    local enabled_in_stream = core.table.array_find(local_conf.stream_plugins, "prometheus")
-    exporter.http_init(enabled_in_stream)
-end
-
-
 return _M
