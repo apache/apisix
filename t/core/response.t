@@ -200,3 +200,57 @@ aaa:
 GET /t
 --- response_body
 hello world
+
+
+
+=== TEST 9: exit without a status code
+--- config
+    location = /t {
+        access_by_lua_block {
+            local core = require("apisix.core")
+            core.response.exit("done\n")
+        }
+    }
+--- request
+GET /t
+--- error_code: 200
+--- response_body
+done
+--- no_error_log
+[error]
+
+
+
+=== TEST 10: exit with several body parts
+--- config
+    location = /t {
+        access_by_lua_block {
+            local core = require("apisix.core")
+            core.response.exit(201, "a", {b = "b"}, "c\n")
+        }
+    }
+--- request
+GET /t
+--- error_code: 201
+--- response_body eval
+qq{a{"b":"b"}\nc\n}
+--- no_error_log
+[error]
+
+
+
+=== TEST 11: say with several body parts
+--- config
+    location = /t {
+        access_by_lua_block {
+            local core = require("apisix.core")
+            core.response.say("a", "b", "c\n")
+            ngx.exit(200)
+        }
+    }
+--- request
+GET /t
+--- response_body
+abc
+--- no_error_log
+[error]
