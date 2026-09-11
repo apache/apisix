@@ -75,6 +75,20 @@ local function fetch_all_nodes(upstream)
 end
 
 
+-- Include shm health in the picker cache key. checker.status_ver only bumps
+-- when this worker receives a resty.events update, so a shm flip from another
+-- worker would otherwise keep serving a picker that still contains the
+-- unhealthy node (apache/apisix#13888).
+local function health_cache_ver(upstream, checker)
+    if not checker then
+        return "x"
+    end
+    local host = upstream.checks and upstream.checks.active and upstream.checks.active.host
+    local port = upstream.checks and upstream.checks.active and upstream.checks.active.port
+    return healthcheck_manager.node_status_ver(checker, upstream.nodes, host, port)
+end
+
+
 local function create_health_status(upstream, checker)
     local nodes = upstream.nodes
     local host = upstream.checks and upstream.checks.active and upstream.checks.active.host
@@ -135,7 +149,8 @@ local function fetch_health_status(upstream, checker, key, version)
         return nil
     end
 
-    local health_status = lrucache_health_status(key, version .. "#" .. checker.status_ver,
+    local health_status = lrucache_health_status(key,
+                                                 version .. "#" .. health_cache_ver(upstream, checker),
                                                  create_health_status, upstream, checker)
     if not health_status or health_status.all_unhealthy then
         return nil
@@ -304,7 +319,7 @@ local function pick_server(route, ctx)
     end
 
     if checker and up_conf.type ~= "chash" then
-        version = version .. "#" .. checker.status_ver
+        version = version .. "#" .. health_cache_ver(up_conf, checker)
     end
 
     -- the same picker will be used in the whole request, especially during the retry
