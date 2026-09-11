@@ -44,8 +44,9 @@ With this Plugin enabled, APISIX accepts an HTTP request from the client, transc
 |----------------------|--------------------------------------------------------|----------|-----------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | max_resp_body_size | integer | False | 67108864 | >= 1 | Maximum response body size in bytes buffered into memory for transcoding. Larger responses are truncated. |
 | proto_id             | string/integer                                         | True     |                                                                             | ID of the proto resource, which contains the protocol buffer definitions.                                                                                                                                                 |
-| service              | string                                                 | True     |                                                                             | Name of the gRPC service.                                                                                                                                                                                                 |
-| method               | string                                                 | True     |                                                                             | Method name of the gRPC service.                                                                                                                                                                                          |
+| service              | string                                                 | False    |                                                                             | Name of the gRPC service. Required unless `use_http_annotations` is `true`.                                                                                                                                               |
+| method               | string                                                 | False    |                                                                             | Method name of the gRPC service. Required unless `use_http_annotations` is `true`.                                                                                                                                        |
+| use_http_annotations | boolean                                                | False    | false                                                                       | If `true`, resolve the service and method from the `google.api.http` annotations declared in the proto instead of from `service` and `method`. See [Route by google.api.http annotations](#route-by-googleapihttp-annotations). |
 | deadline             | number                                                 | False    | 0                                                                           | Deadline for the gRPC service in ms. This is the time APISIX will wait for a gRPC call to complete.                                                                                                                       |
 | pb_option            | array[string([pb_option_def](#options-for-pb_option))] | False    | `["enum_as_name","int64_as_number","auto_default_values","disable_hooks"]`  | Encoder and decoder [options](https://github.com/starwing/lua-protobuf?tab=readme-ov-file#options).                                                                                                                       |
 | show_status_in_body  | boolean                                                | False    | false                                                                       | If `true`, display the parsed `grpc-status-details-bin` in the response body.                                                                                                                                             |
@@ -211,6 +212,136 @@ You should receive the following response:
 ```text
 {"msg":"Hello"}
 ```
+
+### Route by google.api.http Annotations
+
+Configuring `service` and `method` binds a Route to one gRPC method, so a service with ten methods needs ten Routes. If your proto already declares [`google.api.http`](https://github.com/googleapis/googleapis/blob/master/google/api/http.proto) annotations, set `use_http_annotations` to `true` instead. The Plugin then reads the annotations and picks the method matching the request path and HTTP method, so a single Route serves the whole service.
+
+:::note
+
+This mode requires a `.pb` descriptor set generated with `--include_imports`, since the annotations are only preserved there. A plain text `.proto` uploaded to the `/apisix/admin/protos` endpoint cannot be used, because its `import "google/api/annotations.proto"` cannot be resolved.
+
+:::
+
+Save the following annotated definition to `item.proto`:
+
+```proto title="item.proto"
+syntax = "proto3";
+
+package item;
+
+import "google/api/annotations.proto";
+
+service ItemService {
+  rpc GetItem(GetItemRequest) returns (Item) {
+    option (google.api.http) = {
+      get: "/api/v1/items/{id}"
+    };
+  }
+
+  rpc CreateItem(CreateItemRequest) returns (Item) {
+    option (google.api.http) = {
+      post: "/api/v1/items"
+      body: "item"
+    };
+  }
+}
+
+message Item {
+  string id = 1;
+  string title = 2;
+}
+
+message GetItemRequest {
+  string id = 1;
+}
+
+message CreateItemRequest {
+  Item item = 1;
+}
+```
+
+Generate the `.pb` file, with `google/api/annotations.proto` and `google/api/http.proto` reachable from your include path:
+
+```shell
+protoc --include_imports --descriptor_set_out=item.pb item.proto
+```
+
+Configure it in APISIX:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/protos/item-proto" -H "X-API-KEY: $admin_key" -X PUT -d '
+{
+  "content" : "'"$(base64 -w0 /path/to/item.pb)"'"
+}'
+```
+
+Create a single Route covering every annotated method of the service:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes/item-route" -H "X-API-KEY: $admin_key" -X PUT -d '
+{
+  "uri": "/api/v1/*",
+  "plugins": {
+    "grpc-transcode": {
+      "proto_id": "item-proto",
+      "use_http_annotations": true
+    }
+  },
+  "upstream": {
+    "scheme": "grpc",
+    "type": "roundrobin",
+    "nodes": {
+      "127.0.0.1:50051": 1
+    }
+  }
+}'
+```
+
+Send a request that matches the annotation on `GetItem`:
+
+```shell
+curl "http://127.0.0.1:9080/api/v1/items/42"
+```
+
+The `{id}` segment is bound to the `id` field of `GetItemRequest`, so you should receive:
+
+```text
+{"id":"42","title":"widget"}
+```
+
+The same Route also serves `CreateItem`, because its annotation declares a different method and path:
+
+```shell
+curl "http://127.0.0.1:9080/api/v1/items" -X POST \
+  -H "Content-Type: application/json" \
+  -d '{"id":"43","title":"gadget"}'
+```
+
+That annotation sets `body: "item"`, so the payload maps to the `item` field, not to the whole request message.
+
+#### Scope of a Route
+
+The Route's URI pattern bounds what it exposes. `/api/v1/*` reaches every annotation beginning with `/api/v1/`, including ones added to the proto later, so keep the pattern as narrow as the set of methods you mean to publish. A method with no annotation stays unreachable.
+
+Authentication Plugins run at a higher priority than `grpc-transcode`, so `key-auth`, `jwt-auth` and similar reject an unauthenticated request before any annotation is consulted.
+
+#### Behavior and Limitations
+
+* Matching uses the request URI as it stands when the Plugin runs, so a rewrite applied earlier by a Plugin such as `proxy-rewrite` is what gets matched against the annotations.
+* Values captured from the path take precedence over query string or body values bound to the same field.
+* `body` decides whether the payload is read at all. When it is omitted the payload is ignored entirely and fields come only from the path and the query string. `body: "*"` makes the whole payload the message and the query string is not consulted. `body: "<field>"` maps the payload to that field and leaves its siblings to the query string. Only a top-level field name is supported here; a dotted path such as `body: "item.nested"` is not.
+* When several annotations could match, the one with more literal path segments is tried first, so `/api/v1/items/active` wins over `/api/v1/items/{id}`; then the one with fewer variables. Ties are broken by service and method name, not by the order methods appear in the descriptor.
+* `additional_bindings` are supported and route to the same method.
+* `**` matches zero or more segments, so `/v1/{name=**}` also matches a bare `/v1`.
+* If no annotation matches the path, the Plugin returns `404`. If the path is bound but not for the request's method, it returns `405` with an `Allow` header listing the methods that are. Methods declaring no annotation are unreachable in this mode.
+* A trailing `:verb` is matched as its own part of the path: a template without one does not accept a request carrying one, and vice versa.
+* A request body that is declared but cannot be decoded as JSON is rejected with `400`.
+* `custom` HTTP patterns are ignored, as they carry no fixed HTTP method.
+* `response_body` is not supported; the full message is always returned.
+* Streaming methods are not supported, as with the rest of the Plugin.
+* An escaped separator (`%2F`) is decoded by NGINX before the Plugin runs, so it acts as a real separator and will not match a single-segment variable.
+* `service` and `method` are ignored while this mode is enabled.
 
 ### Display Error Details in Response Body
 

@@ -217,3 +217,4 @@ The text of each license is the standard Apache 2.0 license.
 
    ewma.lua file from kubernetes/ingress-nginx: https://github.com/kubernetes/ingress-nginx Apache 2.0
    hello.go file from OpenFunction/samples: https://github.com/OpenFunction/samples Apache 2.0
+   google/api/annotations.proto and google/api/http.proto files from googleapis/googleapis: https://github.com/googleapis/googleapis Apache 2.0
