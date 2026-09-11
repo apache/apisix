@@ -270,6 +270,33 @@ fi
 
 echo "pass: show WARNING message if the user uses empty key"
 
+# auto-generate admin key with CSPRNG when the key is an empty string
+
+git checkout conf/config.yaml
+
+echo '
+deployment:
+  admin:
+    admin_key:
+      - name: admin
+        key: ""
+        role: admin
+' > conf/config.yaml
+
+make init
+make run
+
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+
+make stop
+
+if ! echo "$admin_key" | grep -E '^[a-f0-9]{32}$' > /dev/null; then
+    echo "failed: auto-generated admin key should be a 32-character hex string, got: $admin_key"
+    exit 1
+fi
+
+echo "pass: auto-generated admin key is a 32-character hex string"
+
 # admin_listen set
 echo '
 deployment:
