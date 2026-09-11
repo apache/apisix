@@ -38,7 +38,7 @@ import TabItem from '@theme/TabItem';
 
 The `ai-aws-content-moderation` Plugin integrates with [AWS Comprehend](https://aws.amazon.com/comprehend/) to check content for toxicity when proxying to LLMs, such as profanity, hate speech, insult, harassment, violence, and more, rejecting requests if the evaluated outcome exceeds the configured threshold.
 
-The Plugin is protocol-aware: it extracts the prompt content from the LLM request (for example `messages[].content`) and moderates only that decoded text, rather than the raw request body. `request_check_roles` selects which message roles are moderated, and `request_check_mode` can narrow `user`/`tool` moderation to the newest turn so conversation history is not re-scored on every request.
+The Plugin supports Chat Completions, Responses API, Embeddings, Anthropic Messages, and Bedrock Converse requests. It extracts text using the detected protocol's native content structure and moderates only that decoded text rather than the raw request body. Rejected requests use the detected protocol's response format. `request_check_roles` selects which message roles are moderated, and `request_check_mode` can narrow `user`/`tool`/`assistant` moderation to the newest turn so conversation history is not re-scored on every request.
 
 Both directions can be moderated. Set `check_response` to moderate the LLM response as well. For streaming responses, `stream_check_mode` selects between `realtime`, which moderates batches as they arrive and replaces the remainder of the stream once a batch is flagged, and `final_packet`, which moderates the assembled response and annotates the last chunk with `risk_level`. The verdict is also exposed on the request context as `$llm_content_risk_level` (`high` or `none`) for logging.
 
