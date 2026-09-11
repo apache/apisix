@@ -59,6 +59,8 @@ end
 -- @function core.resolver.parse_domain
 -- @tparam string host Domain name that need to be resolved.
 -- @treturn string The IP of the domain name after being resolved.
+-- @treturn string The error message when the resolution failed.
+-- @treturn number The DNS rcode when the server answered with an error.
 -- @usage
 -- local ip, err = core.resolver.parse_domain("apache.org") -- "198.18.10.114"
 function _M.parse_domain(host)
@@ -78,10 +80,10 @@ function _M.parse_domain(host)
         end
     end
 
-    local ip_info, err = utils.dns_parse(host)
+    local ip_info, err, rcode = utils.dns_parse(host)
     if not ip_info then
         log.error("failed to parse domain: ", host, ", error: ",err)
-        return nil, err
+        return nil, err, rcode
     end
 
     log.info("parse addr: ", json.delay_encode(ip_info))
