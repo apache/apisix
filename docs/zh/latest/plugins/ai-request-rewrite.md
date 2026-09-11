@@ -43,7 +43,7 @@ import TabItem from '@theme/TabItem';
 | 名称 | 类型 | 必选项 | 默认值 | 有效值 | 描述 |
 | --- | --- | --- | --- | --- | --- |
 | `prompt` | string | 是 | | | 发送到 LLM 服务用于重写客户端请求的提示词。 |
-| `provider` | string | 是 | | [openai, deepseek, azure-openai, aimlapi, gemini, vertex-ai, anthropic, openrouter, openai-compatible] | LLM 服务提供商。设置为 `aimlapi` 时，插件使用 OpenAI 兼容驱动并将请求代理到 `https://api.aimlapi.com/v1/chat/completions`。设置为 `openai-compatible` 时，插件将请求代理到 `override` 中配置的自定义端点。设置为 `azure-openai` 时，插件同样将请求代理到 `override` 中配置的自定义端点，并会额外移除用户请求中的 `model` 参数。 |
+| `provider` | string | 是 | | [openai, deepseek, azure-openai, aimlapi, gemini, vertex-ai, anthropic, openrouter, thegrid, openai-compatible] | LLM 服务提供商。设置为 `aimlapi` 时，插件使用 OpenAI 兼容驱动并将请求代理到 `https://api.aimlapi.com/v1/chat/completions`。设置为 `openai-compatible` 时，插件将请求代理到 `override` 中配置的自定义端点。设置为 `azure-openai` 时，插件同样将请求代理到 `override` 中配置的自定义端点，并会额外移除用户请求中的 `model` 参数。 |
 | `auth` | object | 是 | | | 身份验证配置。 |
 | `auth.header` | object | 否 | | | 身份验证请求头。键必须匹配模式 `^[a-zA-Z0-9._-]+$`。`header` 和 `query` 至少需要配置其中一个。 |
 | `auth.query` | object | 否 | | | 身份验证查询参数。键必须匹配模式 `^[a-zA-Z0-9._-]+$`。`header` 和 `query` 至少需要配置其中一个。 |
