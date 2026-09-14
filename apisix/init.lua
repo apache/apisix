@@ -1000,9 +1000,14 @@ end
 function _M.websocket_content_phase()
     ngx.ctx = fetch_ctx()
     local api_ctx = ngx.ctx.api_ctx
+    local up_conf = api_ctx.upstream_conf
+    local up_timeout = up_conf.timeout
+    local connect_timeout_ms = up_timeout and up_timeout.connect and up_timeout.connect * 1000
+    local recv_timeout_ms = up_timeout and up_timeout.read and up_timeout.read * 1000
 
     local ok, proxy, err = pcall(ws_proxy.new, {
         aggregate_fragments = true,
+        recv_timeout = recv_timeout_ms,
         on_frame = function(proxy, role, typ, payload, last, code)
             --   proxy: [table]       the proxy instance
             --    role: [string]      "client" or "upstream"
@@ -1043,7 +1048,6 @@ function _M.websocket_content_phase()
     -- proxy:connect() only sends the 101 response to the downstream client
     -- after it has successfully connected upstream, so it's safe to retry
     -- against another node here without having committed to the client yet.
-    local up_conf = api_ctx.upstream_conf
     local retries = up_conf.retries
     if not retries or retries < 0 then
         retries = #up_conf.nodes - 1
@@ -1063,6 +1067,10 @@ function _M.websocket_content_phase()
     local server = api_ctx.picked_server
     local ok, connect_err
     for attempt = 0, retries do
+        if connect_timeout_ms then
+            proxy.client:set_timeout(connect_timeout_ms)
+        end
+
         local endpoint = string.format("%s://%s:%d%s", api_ctx.matched_upstream.scheme,
                                        server.host, server.port, request_uri)
         ok, connect_err = proxy:connect(endpoint, {
