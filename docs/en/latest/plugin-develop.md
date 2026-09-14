@@ -217,12 +217,12 @@ function _M.delayed_body_filter(conf, ctx)
 end
 ```
 
-When a route's `upstream.scheme` is `ws` or `wss`, APISIX proxies WebSocket frames itself instead of letting nginx's `proxy_pass` transparently forward them, so it can also run a plugin's logic against each frame. This gives access to four more phases that only fire for such a route, in place of the usual `header_filter`/`body_filter`/`log`:
+When a route's `upstream.scheme` is `ws` or `wss`, APISIX proxies WebSocket frames itself instead of letting nginx's `proxy_pass` transparently forward them, so it can also run a plugin's logic against each frame. The normal `rewrite`/`access`/`before_proxy` phases still run beforehand and `log` still runs afterward; only `header_filter`/`body_filter` are skipped, since there's no separate response to filter. In their place, four WebSocket-specific phases fire for such a route:
 
-* `ws_handshake` - runs once, at the same point `access` would run for a plain HTTP route, before APISIX attempts to connect to the upstream.
+* `ws_handshake` - runs once, after `before_proxy`, before APISIX attempts to connect to the upstream.
 * `ws_client_frame` - runs once per frame received from the downstream client, before it is forwarded to the upstream.
 * `ws_upstream_frame` - runs once per frame received from the upstream, before it is forwarded to the downstream client.
-* `ws_close` - runs once, when the connection ends, in place of `log`.
+* `ws_close` - runs once, when the connection ends, before the normal `log` phase.
 
 `ws_client_frame` and `ws_upstream_frame` can read and rewrite the frame in flight through `core.websocket.client` and `core.websocket.upstream` respectively (`core.websocket.get_role("client")` and `core.websocket.get_role("upstream")` return the same two tables). `get_frame()` returns the current frame (`type`, `payload`, `last`, `code`); `set_frame_data(payload)` replaces the payload that actually gets forwarded:
 

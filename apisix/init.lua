@@ -1056,7 +1056,10 @@ function _M.websocket_content_phase()
     ngx.ctx = fetch_ctx()
     local api_ctx = ngx.ctx.api_ctx
     local up_conf = api_ctx.upstream_conf
-    local up_timeout = up_conf.timeout
+    -- a Route's own `timeout` overrides upstream.timeout, same as
+    -- set_balancer_opts() does for the plain proxy_pass path
+    local route = api_ctx.matched_route
+    local up_timeout = (route and route.value and route.value.timeout) or up_conf.timeout
     local connect_timeout_ms = up_timeout and up_timeout.connect and up_timeout.connect * 1000
     local recv_timeout_ms = up_timeout and up_timeout.read and up_timeout.read * 1000
     -- upstream.timeout.send is silently ignored for ws/wss
@@ -1143,6 +1146,11 @@ function _M.websocket_content_phase()
         retries = #up_conf.nodes - 1
     end
 
+    local retry_deadline
+    if retries > 0 and up_conf.retry_timeout and up_conf.retry_timeout > 0 then
+        retry_deadline = ngx_now() + up_conf.retry_timeout
+    end
+
     -- upstream_uri is only ever set by plugins like proxy-rewrite that
     -- explicitly rewrite the forwarded path; the normal proxy_pass paths get
     -- the client's original request URI for free from nginx's own passthrough
@@ -1157,6 +1165,12 @@ function _M.websocket_content_phase()
     local server = api_ctx.picked_server
     local ok, connect_err
     for attempt = 0, retries do
+        if attempt > 0 and retry_deadline and retry_deadline < ngx_now() then
+            ngx.log(ngx.ERR, "websocket proxy retry timeout, retry count: ", attempt,
+                   ", deadline: ", retry_deadline, " now: ", ngx_now())
+            return core.response.exit(502)
+        end
+
         if connect_timeout_ms then
             proxy.client:set_timeout(connect_timeout_ms)
         end

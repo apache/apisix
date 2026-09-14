@@ -190,6 +190,8 @@ local scheme_to_port = {
     https = 443,
     grpc = 80,
     grpcs = 443,
+    ws = 80,
+    wss = 443,
 }
 
 

@@ -31,11 +31,10 @@ const PROXY_BASE = 'ws://localhost:1984';
 // a loopback address nothing listens on, used as an unreachable upstream node
 const DEAD_NODE = '127.0.0.1:1';
 const DEAD_NODE_2 = '127.0.0.1:2';
-// TEST-NET-1 (RFC 5737): guaranteed unroutable, so connections to it hang
-// until a connect timeout fires instead of being refused immediately -
-// unlike DEAD_NODE, this exercises the "timeout" (504) branch, not "tcp
-// failure".
-const BLACKHOLE_NODE = '192.0.2.1:1';
+// accepts the connection but never responds, so it reliably exercises the
+// "timeout" (504) branch instead of "tcp failure" - unlike an unroutable
+// address, this doesn't depend on how a given network treats one
+const BLACKHOLE_NODE = '127.0.0.1:1986';
 const ECHO_NODE = '127.0.0.1:1980';
 
 let nextRouteId = 1;
@@ -315,8 +314,13 @@ describe('websocket-proxy (ws/wss upstream scheme)', () => {
         nodes: { [BLACKHOLE_NODE]: 100, [ECHO_NODE]: 1 },
       });
 
+      const start = Date.now();
       const reply = await sendAndReceive('/websocket_echo', 'hello');
+      const elapsed = Date.now() - start;
       expect(reply).toBe('hello');
+      // an instant refusal (tcp_failure) would resolve in a few ms; only a
+      // real connect timeout takes close to the configured 1s
+      expect(elapsed).toBeGreaterThanOrEqual(900);
     }, 10000);
 
     it('retries across more than one dead node before reaching a healthy one', async () => {

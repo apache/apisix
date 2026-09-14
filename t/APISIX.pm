@@ -787,6 +787,20 @@ _EOC_
         }
     }
 
+    # accepts a connection on any path but never writes a response, so a
+    # client waiting on it reliably times out instead of being refused or
+    # having to depend on an unroutable address actually hanging
+    server {
+        listen 1986;
+        server_tokens off;
+
+        location / {
+            content_by_lua_block {
+                ngx.sleep(30)
+            }
+        }
+    }
+
     $a6_ngx_directives
 
     server {
