@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local ngx = ngx
+local tostring = tostring
 
 local ROLE_CLIENT = "client"
 local ROLE_UPSTREAM = "upstream"
