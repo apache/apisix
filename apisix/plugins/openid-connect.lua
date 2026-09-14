@@ -51,6 +51,11 @@ local UNHANDLED_REDIRECT_URI_ERR = "unhandled request to the redirect_uri"
 -- authorization callbacks
 local MAX_AUTH_FLOW_RESTARTS = 3
 
+local VAR_TEMPLATE_DESC =
+    "supports ${var} / ${var ?? default} templates, resolved " ..
+    "per-request from the request context (e.g. a value set by " ..
+    "a higher-priority custom plugin)"
+
 
 -- Session config is passed as-is to resty.session.start(); the only
 -- translation is the legacy session.cookie.lifetime alias from the
@@ -143,9 +148,18 @@ end
 local schema = {
     type = "object",
     properties = {
-        client_id = {type = "string"},
-        client_secret = {type = "string"},
-        discovery = {type = "string"},
+        client_id = {
+            type = "string",
+            description = VAR_TEMPLATE_DESC,
+        },
+        client_secret = {
+            type = "string",
+            description = VAR_TEMPLATE_DESC,
+        },
+        discovery = {
+            type = "string",
+            description = VAR_TEMPLATE_DESC,
+        },
         scope = {
             type = "string",
             default = "openid",
@@ -1172,8 +1186,40 @@ local function validate_claims_in_oidcauth_response(resp, conf)
 end
 
 
+-- discovery/client_id/client_secret accept ${var}/${var ?? default} templates so a
+-- higher-priority custom plugin can select the IdP configuration per request
+-- without openid-connect hard-coding that routing logic itself.
+local function resolve_conf_var(ctx, field_name, value)
+    if type(value) ~= "string" then
+        return value
+    end
+
+    local resolved, err = core.utils.resolve_var(value, ctx.var)
+    if err then
+        return nil, "failed to resolve \"" .. field_name .. "\": " .. err
+    end
+
+    if resolved == nil or resolved == "" then
+        return nil, "resolved value of \"" .. field_name .. "\" is empty; ensure an " ..
+                     "upstream plugin sets the request-context variable it references"
+    end
+
+    return resolved
+end
+
+
 function _M.rewrite(plugin_conf, ctx)
     local conf = core.table.clone(plugin_conf)
+
+    for _, field_name in ipairs({"discovery", "client_id", "client_secret"}) do
+        local resolved, err = resolve_conf_var(ctx, field_name, conf[field_name])
+        if err then
+            core.log.error("openid-connect: ", err)
+            return 500
+        end
+        conf[field_name] = resolved
+    end
+
     flatten_openidc_options(conf)
 
     -- Snapshot the client-supplied X-Access-Token (it doubles as a bearer

@@ -165,6 +165,32 @@ And reference it in the Plugin configuration:
 "client_secret": "$ENV://KEYCLOAK_CLIENT_SECRET"
 ```
 
+### Selecting an IdP configuration per request
+
+`client_id`, `client_secret`, and `discovery` also support `${var}` / `${var ?? default}` runtime-variable templates, resolved from the request context on every request (the same templating [`limit-count`](./limit-count.md) uses for `count`/`time_window`). This lets a higher-priority custom Plugin inspect the request and select the right IdP configuration for it, while `openid-connect` itself stays generic — it has no built-in notion of tenants, realms, or providers, and doesn't hard-code any provider-specific routing logic.
+
+For example, to route different requests to different IdP configurations from a single Route, a custom Plugin running before `openid-connect` (higher `priority`) can inspect the request and set request-context variables accordingly:
+
+```lua
+-- inside a custom higher-priority Plugin's rewrite() phase
+local config = select_idp_config(ctx) -- your own request -> IdP-config mapping
+ctx.var.oidc_discovery = config.discovery
+ctx.var.oidc_client_id = config.client_id
+ctx.var.oidc_client_secret = config.client_secret
+```
+
+`openid-connect` then references those variables generically:
+
+```json
+{
+  "discovery": "${oidc_discovery}",
+  "client_id": "${oidc_client_id}",
+  "client_secret": "${oidc_client_secret}"
+}
+```
+
+If a referenced variable is missing for a given request (for example, the custom Plugin didn't run or didn't recognize the request), `openid-connect` returns `500` with an error identifying which field failed to resolve, rather than forwarding an empty value to the identity provider.
+
 ## Examples
 
 The examples below demonstrate how you can configure the `openid-connect` Plugin for different scenarios.
