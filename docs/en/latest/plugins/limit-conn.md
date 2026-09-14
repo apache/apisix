@@ -1567,3 +1567,153 @@ Response: 429
 Response: 200
 Response: 200
 ```
+
+### Apply Rate Limiting in Stream Proxy
+
+The `limit-conn` Plugin can also be used on a [stream Route](../stream-proxy.md) to limit the number of concurrent TCP connections.
+
+The following example demonstrates how to rate limit TCP connections by `remote_addr`, with example connection and burst thresholds.
+
+:::note
+
+When `key_type` is `var` (the default), `key` is resolved as an [NGINX stream module variable](https://nginx.org/en/docs/stream/ngx_stream_core_module.html). It is not limited to `remote_addr` or `server_addr`: any variable available in the stream context, such as `server_port`, can be used.
+
+:::
+
+Create a stream Route with `limit-conn` Plugin as such:
+
+<Tabs groupId="api">
+<TabItem value="admin-api" label="Admin API">
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/stream_routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "limit-conn-stream-route",
+    "plugins": {
+      "limit-conn": {
+        "conn": 2,
+        "burst": 1,
+        "default_conn_delay": 0.1,
+        "key_type": "var",
+        "key": "remote_addr"
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "127.0.0.1:1995": 1
+      }
+    }
+  }'
+```
+
+</TabItem>
+<TabItem value="adc" label="ADC">
+
+```yaml title="adc.yaml"
+services:
+  - name: tcp-echo-service
+    upstream:
+      name: default
+      scheme: tcp
+      nodes:
+        - host: 127.0.0.1
+          port: 1995
+          weight: 1
+    stream_routes:
+      - name: limit-conn-stream-route
+        server_port: 9100
+        plugins:
+          limit-conn:
+            conn: 2
+            burst: 1
+            default_conn_delay: 0.1
+            key_type: var
+            key: remote_addr
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+<TabItem value="ingress" label="Ingress Controller">
+
+<Tabs groupId="k8s-api">
+<TabItem value="gateway-api" label="Gateway API">
+
+:::info
+
+Attaching L4 Plugins is currently not supported with Gateway API. This example cannot be completed with Gateway API.
+
+:::
+
+</TabItem>
+<TabItem value="ingress" label="APISIX Ingress Controller">
+
+```yaml title="limit-conn-stream-ic.yaml"
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: tcp-echo-service
+spec:
+  type: ExternalName
+  externalName: tcp-echo.aic.svc
+  ports:
+    - name: tcp-echo
+      port: 1995
+      targetPort: 1995
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: limit-conn-stream-route
+spec:
+  ingressClassName: apisix
+  stream:
+    - name: limit-conn-stream-route
+      protocol: TCP
+      match:
+        ingressPort: 9100
+      backend:
+        serviceName: tcp-echo-service
+        servicePort: 1995
+      plugins:
+        - name: limit-conn
+          enable: true
+          config:
+            conn: 2
+            burst: 1
+            default_conn_delay: 0.1
+            key_type: var
+            key: remote_addr
+```
+
+Apply the configuration:
+
+```shell
+kubectl apply -f limit-conn-stream-ic.yaml
+```
+
+</TabItem>
+</Tabs>
+
+</TabItem>
+</Tabs>
+
+❶ `key_type`: set to `var` to interpret `key` as a variable.
+
+❷ `key`: calculate rate limiting count by the connection's `remote_addr`.
+
+Open three concurrent TCP connections to the stream Route:
+
+```shell
+seq 1 3 | xargs -n1 -P3 -I{} bash -c 'echo "hello" | nc -w 1 127.0.0.1 9100'
+```
+
+The connections exceeding `conn + burst` are rejected and reset by APISIX, while the rest are proxied to the upstream as expected.

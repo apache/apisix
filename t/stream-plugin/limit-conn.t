@@ -339,3 +339,51 @@ GET /test_concurrency
 --- error_log
 The value of the configured key is empty, use client IP instead
 --- stream_enable
+
+
+
+=== TEST 11: key is a var other than remote_addr/server_addr
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/stream_routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "limit-conn": {
+                            "conn": 2,
+                            "burst": 1,
+                            "default_conn_delay": 0.1,
+                            "key": "server_port"
+                        }
+                    },
+                    "upstream_id": "1"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 12: exceeding the burst when keyed by a non-address var
+--- request
+GET /test_concurrency
+--- response_body
+200
+200
+200
+503
+503
+--- error_log
+Connection reset by peer
+--- stream_enable
