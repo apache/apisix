@@ -63,6 +63,8 @@ local re_gsub         = ngx.re.gsub
 local str_byte        = string.byte
 local str_sub         = string.sub
 local str_char        = string.char
+local str_format      = string.format
+local str_find        = string.find
 local tonumber        = tonumber
 local type            = type
 local pairs           = pairs
@@ -1071,8 +1073,8 @@ function _M.websocket_content_phase()
             proxy.client:set_timeout(connect_timeout_ms)
         end
 
-        local endpoint = string.format("%s://%s:%d%s", api_ctx.matched_upstream.scheme,
-                                       server.host, server.port, request_uri)
+        local endpoint = str_format("%s://%s:%d%s", api_ctx.matched_upstream.scheme,
+                                    server.host, server.port, request_uri)
         ok, connect_err = proxy:connect(endpoint, {
             host = server.upstream_host,
             server_name = server.domain,
@@ -1092,7 +1094,7 @@ function _M.websocket_content_phase()
         -- which this content_by_lua-driven cosocket connection never enters, so
         -- report the outcome we already know from proxy:connect() ourselves.
         local prev_failure
-        if connect_err and string.find(connect_err, "timeout", 1, true) then
+        if connect_err and str_find(connect_err, "timeout", 1, true) then
             prev_failure = {state = "failed", code = 504}
         else
             prev_failure = {state = "failed", code = 599}
