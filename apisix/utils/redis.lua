@@ -46,11 +46,19 @@ local function redis_cli(conf)
         pool = pool .. "#" .. conf.redis_server_name
     end
 
+    local server_name
+    if conf.redis_ssl then
+        server_name = conf.redis_server_name or conf.redis_host
+        if core.utils.parse_ipv4(server_name) or core.utils.parse_ipv6(server_name) then
+            server_name = nil
+        end
+    end
+
     local sock_opts = {
         ssl = conf.redis_ssl,
         ssl_verify = conf.redis_ssl_verify,
         pool = pool,
-        server_name = conf.redis_ssl and (conf.redis_server_name or conf.redis_host) or nil,
+        server_name = server_name,
     }
 
     local ok, err = red:connect(conf.redis_host, conf.redis_port or 6379, sock_opts)
