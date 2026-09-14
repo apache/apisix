@@ -940,11 +940,15 @@ data plane schema: true nil
                 ngx.say("raised: ", res)
                 return
             end
-            ngx.say(tostring(res), " ", err and err.error_msg or "")
+            if not res then
+                ngx.say("rejected: ", err and err.error_msg)
+                return
+            end
+            ngx.say("accepted")
         }
     }
 --- response_body
-true 
+accepted
 
 
 
