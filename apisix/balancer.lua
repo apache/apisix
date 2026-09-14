@@ -246,7 +246,15 @@ end
 -- pick_server will be called:
 -- 1. in the access phase so that we can set headers according to the picked server
 -- 2. each time we need to retry upstream
-local function pick_server(route, ctx)
+--
+-- prev_failure, when given, is a {state, code} pair shaped like the return
+-- value of ngx.balancer's get_last_failure(): {state = "failed", code = 504}
+-- for a timeout, {state = "failed", code = <anything else>} for a TCP-level
+-- failure, or {state = "ok", code = <http status>} for a passive HTTP status
+-- report. It lets a caller outside of balancer_by_lua* (where
+-- get_last_failure() cannot be called at all) report the outcome of its own
+-- connection attempt instead.
+local function pick_server(route, ctx, prev_failure)
     local up_conf = ctx.upstream_conf
 
     local nodes_count = #up_conf.nodes
@@ -283,7 +291,12 @@ local function pick_server(route, ctx)
         end
 
         if checker then
-            local state, code = get_last_failure()
+            local state, code
+            if prev_failure then
+                state, code = prev_failure.state, prev_failure.code
+            else
+                state, code = get_last_failure()
+            end
             local host = up_conf.checks and up_conf.checks.active and up_conf.checks.active.host
             local port = up_conf.checks and up_conf.checks.active and up_conf.checks.active.port
             if state == "failed" then

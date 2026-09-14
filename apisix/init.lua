@@ -26,6 +26,7 @@ require("jit.opt").start("minstitch=2", "maxtrace=4000",
                          "maxmcode=4000", "maxirconst=1000")
 
 require("apisix.patch").patch()
+local ws_proxy        = require("resty.websocket.proxy")
 local core            = require("apisix.core")
 local plugin          = require("apisix.plugin")
 local plugin_config   = require("apisix.plugin_config")
@@ -674,6 +675,13 @@ function _M.handle_upstream(api_ctx, route, enable_websocket)
         return ngx.exec("@grpc_pass")
     end
 
+    if up_scheme == "wss" or up_scheme == "ws" then
+        common_phase("ws_handshake")
+
+        stash_ngx_ctx()
+        return ngx.exec("@websocket_pass")
+    end
+
     if api_ctx.dubbo_proxy_enabled then
         stash_ngx_ctx()
         return ngx.exec("@dubbo_pass")
@@ -985,6 +993,118 @@ function _M.grpc_access_phase()
     if api_ctx.enable_mirror == true and has_mod then
         apisix_ngx_client.enable_mirror()
     end
+end
+
+
+-- call ws_x_frame hook
+function _M.websocket_content_phase()
+    ngx.ctx = fetch_ctx()
+    local api_ctx = ngx.ctx.api_ctx
+
+    local ok, proxy, err = pcall(ws_proxy.new, {
+        aggregate_fragments = true,
+        on_frame = function(proxy, role, typ, payload, last, code)
+            --   proxy: [table]       the proxy instance
+            --    role: [string]      "client" or "upstream"
+            --     typ: [string]      "text", "binary", "ping", "pong", "close"
+            -- payload: [string|nil]  payload if any
+            --    last: [boolean]     fin flag for fragmented frames; true if aggregate_fragments is on
+            --    code: [number|nil]  code for "close" frames
+
+            local role_handler, err = core.websocket.get_role(role)
+            if not role_handler then
+                ngx.log(ngx.ERR, "invalid websocket role: ", err)
+                return
+            end
+
+            role_handler.stash_frame({
+                proxy = proxy,
+                type = typ,
+                payload = payload,
+                last = last,
+                code = code,
+            })
+
+            if role == "client" then
+                common_phase("ws_client_frame")
+            else
+                common_phase("ws_upstream_frame")
+            end
+
+            local new_frame = role_handler.get_frame()
+            return new_frame.payload, new_frame.code
+        end
+    })
+    if not ok or not proxy then
+        ngx.log(ngx.ERR, "failed to create proxy: ", err)
+        return core.response.exit(500)
+    end
+
+    -- proxy:connect() only sends the 101 response to the downstream client
+    -- after it has successfully connected upstream, so it's safe to retry
+    -- against another node here without having committed to the client yet.
+    local up_conf = api_ctx.upstream_conf
+    local retries = up_conf.retries
+    if not retries or retries < 0 then
+        retries = #up_conf.nodes - 1
+    end
+
+    local server = api_ctx.picked_server
+    local ok, connect_err
+    for attempt = 0, retries do
+        local endpoint = string.format("%s://%s:%d", api_ctx.matched_upstream.scheme,
+                                       server.host, server.port)
+        ok, connect_err = proxy:connect(endpoint, {
+            host = server.upstream_host,
+            server_name = server.domain,
+        })
+        if ok then
+            break
+        end
+
+        ngx.log(ngx.ERR, "failed to connect to websocket upstream ", endpoint,
+               ": ", connect_err)
+
+        if attempt >= retries then
+            break
+        end
+
+        -- ngx.balancer's get_last_failure() only works inside balancer_by_lua*,
+        -- which this content_by_lua-driven cosocket connection never enters, so
+        -- report the outcome we already know from proxy:connect() ourselves.
+        local prev_failure
+        if connect_err and string.find(connect_err, "timeout", 1, true) then
+            prev_failure = {state = "failed", code = 504}
+        else
+            prev_failure = {state = "failed", code = 599}
+        end
+
+        local next_server, pick_err = load_balancer.pick_server(api_ctx.matched_route,
+                                                                 api_ctx, prev_failure)
+        if not next_server then
+            ngx.log(ngx.ERR, "failed to pick next websocket upstream server: ", pick_err)
+            break
+        end
+
+        server = next_server
+        api_ctx.picked_server = server
+    end
+
+    if not ok then
+        return core.response.exit(502)
+    end
+
+    local done, err = proxy:execute()
+    if not done then
+        ngx.log(ngx.ERR, "failed proxying: ", err)
+        return core.response.exit(502)
+    end
+end
+
+
+function _M.websocket_log_phase()
+    common_phase("ws_close")
+    _M.http_log_phase()
 end
 
 
