@@ -28,8 +28,8 @@ __DATA__
 --- timeout: 30
 --- max_size: 2048000
 --- exec
-cd t && pnpm test node/websocket-enhanced.spec.mts 2>&1
+cd t && pnpm test node/websocket-proxy.spec.mts 2>&1
 --- no_error_log
 failed to execute the script with status
 --- response_body eval
-qr/PASS node\/websocket-enhanced.spec.mts/
+qr/PASS node\/websocket-proxy.spec.mts/

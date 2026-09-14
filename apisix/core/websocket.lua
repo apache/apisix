@@ -14,7 +14,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local ngx_ctx = ngx.ctx
+local ngx = ngx
 
 local ROLE_CLIENT = "client"
 local ROLE_UPSTREAM = "upstream"
@@ -28,28 +28,28 @@ local CTX_KEY_UPSTREAM = "websocket_upstream"
 
 local function wrap_stash_frame(key)
   return function(frame)
-    ngx_ctx[key] = frame
+    ngx.ctx[key] = frame
   end
 end
 
 
 local function wrap_get_frame(key)
   return function()
-    return ngx_ctx[key]
+    return ngx.ctx[key]
   end
 end
 
 
 local function wrap_set_frame_data(key)
   return function(data)
-    ngx_ctx[key].payload = data
+    ngx.ctx[key].payload = data
   end
 end
 
 
 local function wrap_set_status(key)
   return function(status)
-    ngx_ctx[key].code = status
+    ngx.ctx[key].code = status
   end
 end
 
