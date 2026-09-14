@@ -235,6 +235,8 @@ hello world
                 headers = {["Cookie"] = cookie_b},
             }))
             assert(res.status == 401, "expected 401, got " .. res.status)
+            assert(not res.headers["Set-Cookie"],
+                   "invalid state must not clear the pending session")
 
             -- session B with its own state still works
             local res2 = assert(httpc:request_uri(uri, {

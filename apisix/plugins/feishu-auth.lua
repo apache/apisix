@@ -277,7 +277,6 @@ function _M.rewrite(conf, ctx)
             local uri_args = core.request.get_uri_args(ctx) or {}
             local state = sess:get("state")
             if not state or uri_args.state ~= state then
-                sess:destroy()
                 core.log.warn("state does not match the one bound to the session")
                 return 401, {message = "Invalid state"}
             end
