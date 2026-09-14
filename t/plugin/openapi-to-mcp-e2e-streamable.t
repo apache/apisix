@@ -1,0 +1,256 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+use t::APISIX 'no_plan';
+
+repeat_each(1);
+no_long_string();
+no_shuffle();
+no_root_location();
+
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    if (!$block->request && !$block->exec) {
+        $block->set_value("request", "GET /t");
+    }
+
+    if (!$block->error_log && !$block->no_error_log) {
+        $block->set_value("no_error_log", "[error]\n[alert]");
+    }
+
+    my $http_config = $block->http_config // <<_EOC_;
+    server {
+        listen 11460;
+
+        location / {
+            content_by_lua_block {
+                require("lib.openapi_to_mcp_fixture").serve()
+            }
+        }
+    }
+_EOC_
+
+    $block->set_value("http_config", $http_config);
+});
+
+run_tests;
+
+__DATA__
+
+=== TEST 1: route with the streamable_http transport
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "streamable_http",
+                    headers = { Authorization = "test-api-key" },
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/openapi.json",
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 2: initialize is answered in-process
+--- exec
+python3 t/plugin/openapi_to_mcp_harness.py /mcp \
+    '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"probe","version":"1"}}}' "
+r = d['result']
+print(r['protocolVersion'])
+print(r['serverInfo']['name'], r['serverInfo']['version'])
+print(json.dumps(r['capabilities']['tools']))
+"
+--- response_body
+2025-03-26
+openapi2mcp 0.0.1
+{}
+
+
+
+=== TEST 3: an unknown protocol version falls back to the latest
+--- exec
+python3 t/plugin/openapi_to_mcp_harness.py /mcp \
+    '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"1999-01-01","capabilities":{},"clientInfo":{"name":"probe","version":"1"}}}' "
+print(d['result']['protocolVersion'])
+"
+--- response_body
+2025-11-25
+
+
+
+=== TEST 4: tools/list returns the generated tool
+--- exec
+python3 t/plugin/openapi_to_mcp_harness.py /mcp \
+    '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}' "
+t = d['result']['tools'][0]
+print(t['name'], '|', t['description'])
+print(sorted(t['inputSchema']['properties'].keys()))
+"
+--- response_body
+getPet | Get a pet
+['pathParameters', 'queryParameters']
+
+
+
+=== TEST 5: the generated inputSchema carries no $schema or additionalProperties
+--- exec
+python3 t/plugin/openapi_to_mcp_harness.py /mcp \
+    '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}' "
+schema = d['result']['tools'][0]['inputSchema']
+print('\$schema' in schema)
+print('additionalProperties' in schema)
+"
+--- response_body
+False
+False
+
+
+
+=== TEST 6: tools/call reaches the upstream with path, query default and conf header
+--- exec
+python3 t/plugin/openapi_to_mcp_harness.py /mcp \
+    '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"getPet","arguments":{"pathParameters":{"petId":7}}}}' "
+inner = json.loads(d['result']['content'][0]['text'])
+print(inner['status'])
+print(inner['data']['seen_path'])
+print(inner['data']['seen_method'])
+print(inner['data']['seen_auth'])
+"
+--- response_body
+200
+/pet/7?verbose=true
+GET
+test-api-key
+
+
+
+=== TEST 7: ping
+--- exec
+python3 t/plugin/openapi_to_mcp_harness.py /mcp \
+    '{"jsonrpc":"2.0","id":9,"method":"ping"}' "
+print(json.dumps(d['result']), d['id'])
+"
+--- response_body
+{} 9
+
+
+
+=== TEST 8: a notification is accepted with 202 and no body
+--- exec
+timeout 5 curl -X POST -sS -o /dev/null -w '%{http_code}' http://localhost:1984/mcp \
+    -d '{"jsonrpc":"2.0","method":"notifications/initialized"}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" 2>&1 | cat
+--- response_body chomp
+202
+
+
+
+=== TEST 9: an unknown method is a JSON-RPC method-not-found error
+--- exec
+python3 t/plugin/openapi_to_mcp_harness.py /mcp \
+    '{"jsonrpc":"2.0","id":8,"method":"resources/list","params":{}}' "
+print(d['error']['code'], d['error']['message'])
+"
+--- response_body
+-32601 Method not found
+
+
+
+=== TEST 10: an Accept header missing text/event-stream gets 406
+--- exec
+timeout 5 curl -X POST -sS -o /dev/null -w '%{http_code}' http://localhost:1984/mcp \
+    -d '{"jsonrpc":"2.0","id":1,"method":"ping"}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json" 2>&1 | cat
+--- response_body chomp
+406
+
+
+
+=== TEST 11: calling an unknown tool sets isError instead of a JSON-RPC error
+--- exec
+python3 t/plugin/openapi_to_mcp_harness.py /mcp \
+    '{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"nope","arguments":{}}}' "
+print(d['result']['isError'])
+print(d['result']['content'][0]['text'])
+"
+--- response_body
+True
+MCP error -32602: Tool nope not found
+
+
+
+=== TEST 12: a malformed JSON-RPC message is rejected with a null-id parse error
+--- exec
+timeout 5 curl -X POST -sS -o /dev/null -w '%{http_code}' http://localhost:1984/mcp \
+    -d '{"jsonrpc":"1.0","id":5,"method":"ping"}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" 2>&1 | cat
+--- response_body chomp
+400
+
+
+
+=== TEST 13: the parse error reports a null id even when the request had one
+--- exec
+python3 t/plugin/openapi_to_mcp_harness.py /mcp \
+    '{"jsonrpc":"2.0","id":6,"method":"ping","params":"notatable"}' "
+print(d['error']['code'], '|', d['error']['message'])
+print(d['id'] is None)
+"
+--- response_body
+-32700 | Parse error: Invalid JSON-RPC message
+True
+
+
+
+=== TEST 14: object and array query parameters use bracket notation
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "streamable_http",
+                    flatten_parameters = true,
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/objq.json",
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 15: the upstream sees bracketed object and array parameters
+--- exec
+python3 t/plugin/openapi_to_mcp_harness.py /mcp \
+    '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"objQuery","arguments":{"filter":{"a":"x"},"tags":["t1","t2"]}}}' "
+inner = json.loads(d['result']['content'][0]['text'])
+print(inner['data']['seen_path'])
+"
+--- response_body
+/q?filter%5Ba%5D=x&tags%5B%5D=t1&tags%5B%5D=t2

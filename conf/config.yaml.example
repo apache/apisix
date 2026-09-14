@@ -616,6 +616,7 @@ plugins:                           # plugin list (sorted by priority)
   - traffic-split                  # priority: 966
   - redirect                       # priority: 900
   - response-rewrite               # priority: 899
+  - openapi-to-mcp                 # priority: 540
   - oas-validator                  # priority: 512
   - mcp-bridge                     # priority: 510
   - degraphql                      # priority: 509

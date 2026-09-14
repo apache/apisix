@@ -507,7 +507,7 @@ http {
     lua_shared_dict ext-plugin {* http.lua_shared_dict["ext-plugin"] *}; # cache for ext-plugin
     {% end %}
 
-    {% if enabled_plugins["mcp-bridge"] then %}
+    {% if enabled_plugins["mcp-bridge"] or enabled_plugins["openapi-to-mcp"] then %}
     lua_shared_dict mcp-session {* http.lua_shared_dict["mcp-session"] *}; # cache for mcp-session
     {% end %}
 
