@@ -65,6 +65,7 @@ local str_sub         = string.sub
 local str_char        = string.char
 local str_format      = string.format
 local str_find        = string.find
+local str_lower       = string.lower
 local tonumber        = tonumber
 local type            = type
 local pairs           = pairs
@@ -307,6 +308,23 @@ local function parse_domain_in_route(route)
 end
 
 
+-- host per upstream.pass_host: pass = client's Host, rewrite = configured
+-- upstream_host, node = picked node's host[:port]. Also used directly by the
+-- websocket phase, which has no nginx variable to fall back on for "pass".
+local function compute_upstream_host(api_ctx, picked_server)
+    local pass_host = api_ctx.pass_host or "pass"
+    if pass_host == "rewrite" then
+        return api_ctx.upstream_host
+    end
+
+    if pass_host == "node" then
+        return picked_server.upstream_host
+    end
+
+    return api_ctx.var.http_host
+end
+
+
 local function set_upstream_host(api_ctx, picked_server)
     local up_conf = api_ctx.upstream_conf
     if up_conf.pass_host then
@@ -319,17 +337,52 @@ local function set_upstream_host(api_ctx, picked_server)
         return
     end
 
-    if pass_host == "rewrite" then
-        api_ctx.var.upstream_host = api_ctx.upstream_host
-        return
-    end
-
-    api_ctx.var.upstream_host = picked_server.upstream_host
+    api_ctx.var.upstream_host = compute_upstream_host(api_ctx, picked_server)
 end
 
 
 local function set_upstream_headers(api_ctx, picked_server)
     set_upstream_host(api_ctx, picked_server)
+end
+
+
+-- hop-by-hop headers, plus handshake headers connect() already sets itself
+-- (host/protocols/origin opts, or generated Sec-WebSocket-Key/-Version).
+local ws_skip_forward_headers = {
+    ["host"] = true,
+    ["connection"] = true,
+    ["upgrade"] = true,
+    ["keep-alive"] = true,
+    ["te"] = true,
+    ["trailers"] = true,
+    ["proxy-authenticate"] = true,
+    ["proxy-authorization"] = true,
+    ["content-length"] = true,
+    ["transfer-encoding"] = true,
+    ["sec-websocket-key"] = true,
+    ["sec-websocket-version"] = true,
+    ["sec-websocket-extensions"] = true,
+    ["sec-websocket-protocol"] = true,
+    ["origin"] = true,
+}
+
+
+-- forwards the client's other headers (Cookie, Authorization, ...) upstream.
+local function build_ws_forward_headers(api_ctx)
+    local headers = {}
+    for name, value in pairs(core.request.headers(api_ctx)) do
+        if not ws_skip_forward_headers[str_lower(name)] then
+            if type(value) == "table" then
+                for _, v in ipairs(value) do
+                    headers[#headers + 1] = name .. ": " .. v
+                end
+            else
+                headers[#headers + 1] = name .. ": " .. value
+            end
+        end
+    end
+
+    return headers
 end
 
 
@@ -1006,6 +1059,41 @@ function _M.websocket_content_phase()
     local up_timeout = up_conf.timeout
     local connect_timeout_ms = up_timeout and up_timeout.connect and up_timeout.connect * 1000
     local recv_timeout_ms = up_timeout and up_timeout.read and up_timeout.read * 1000
+    -- upstream.timeout.send is silently ignored for ws/wss
+
+    local ws_headers = build_ws_forward_headers(api_ctx)
+    local ws_protocols = core.request.header(api_ctx, "Sec-WebSocket-Protocol")
+    local ws_origin = core.request.header(api_ctx, "Origin")
+
+    -- resolve upstream.tls once, same as https/grpcs in apisix/upstream.lua
+    local ssl_verify, client_cert, client_priv_key
+    if api_ctx.matched_upstream.scheme == "wss" and up_conf.tls then
+        ssl_verify = up_conf.tls.verify
+
+        if up_conf.tls.client_cert or up_conf.tls.client_cert_id then
+            local cert_pem, key_pem
+            if up_conf.tls.client_cert_id then
+                cert_pem = api_ctx.upstream_ssl and api_ctx.upstream_ssl.cert
+                key_pem = api_ctx.upstream_ssl and api_ctx.upstream_ssl.key
+            else
+                cert_pem = up_conf.tls.client_cert
+                key_pem = up_conf.tls.client_key
+            end
+
+            local cert_err, key_err
+            client_cert, cert_err = apisix_ssl.fetch_cert(api_ctx.var.upstream_host, cert_pem)
+            if not client_cert then
+                ngx.log(ngx.ERR, "failed to fetch websocket upstream client cert: ", cert_err)
+                return core.response.exit(503)
+            end
+
+            client_priv_key, key_err = apisix_ssl.fetch_pkey(api_ctx.var.upstream_host, key_pem)
+            if not client_priv_key then
+                ngx.log(ngx.ERR, "failed to fetch websocket upstream client key: ", key_err)
+                return core.response.exit(503)
+            end
+        end
+    end
 
     local ok, proxy, err = pcall(ws_proxy.new, {
         aggregate_fragments = true,
@@ -1076,8 +1164,14 @@ function _M.websocket_content_phase()
         local endpoint = str_format("%s://%s:%d%s", api_ctx.matched_upstream.scheme,
                                     server.host, server.port, request_uri)
         ok, connect_err = proxy:connect(endpoint, {
-            host = server.upstream_host,
+            host = compute_upstream_host(api_ctx, server),
             server_name = server.domain,
+            headers = ws_headers,
+            protocols = ws_protocols,
+            origin = ws_origin,
+            ssl_verify = ssl_verify,
+            client_cert = client_cert,
+            client_priv_key = client_priv_key,
         })
         if ok then
             break
@@ -1086,18 +1180,22 @@ function _M.websocket_content_phase()
         ngx.log(ngx.ERR, "failed to connect to websocket upstream ", endpoint,
                ": ", connect_err)
 
-        if attempt >= retries then
-            break
-        end
-
-        -- ngx.balancer's get_last_failure() only works inside balancer_by_lua*,
-        -- which this content_by_lua-driven cosocket connection never enters, so
-        -- report the outcome we already know from proxy:connect() ourselves.
+        -- no balancer_by_lua* here, so report the outcome ourselves; a parsed
+        -- HTTP status (just not 101) is a passive HTTP status report, not tcp_failure
         local prev_failure
-        if connect_err and str_find(connect_err, "timeout", 1, true) then
+        local resp_status_code = proxy.client.resp_status_code
+        if resp_status_code then
+            prev_failure = {state = "ok", code = tonumber(resp_status_code)}
+        elseif connect_err and str_find(connect_err, "timeout", 1, true) then
             prev_failure = {state = "failed", code = 504}
         else
             prev_failure = {state = "failed", code = 599}
+        end
+
+        if attempt >= retries then
+            -- last attempt: report it, pick_server() won't be called again
+            load_balancer.report_failure(api_ctx, prev_failure)
+            break
         end
 
         local next_server, pick_err = load_balancer.pick_server(api_ctx.matched_route,

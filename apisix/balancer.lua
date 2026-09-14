@@ -243,17 +243,29 @@ local function parse_server_for_upstream_host(picked_server, upstream_scheme)
 end
 
 
+-- reports a connection outcome (get_last_failure()-shaped state/code) for the
+-- node ctx.balancer_ip/balancer_port currently point at
+local function report_failure(ctx, checker, up_conf, state, code)
+    local host = up_conf.checks and up_conf.checks.active and up_conf.checks.active.host
+    local port = up_conf.checks and up_conf.checks.active and up_conf.checks.active.port
+    if state == "failed" then
+        if code == 504 then
+            checker:report_timeout(ctx.balancer_ip, port or ctx.balancer_port, host)
+        else
+            checker:report_tcp_failure(ctx.balancer_ip, port or ctx.balancer_port, host)
+        end
+    else
+        checker:report_http_status(ctx.balancer_ip, port or ctx.balancer_port, host, code)
+    end
+end
+
+
 -- pick_server will be called:
 -- 1. in the access phase so that we can set headers according to the picked server
 -- 2. each time we need to retry upstream
 --
--- prev_failure, when given, is a {state, code} pair shaped like the return
--- value of ngx.balancer's get_last_failure(): {state = "failed", code = 504}
--- for a timeout, {state = "failed", code = <anything else>} for a TCP-level
--- failure, or {state = "ok", code = <http status>} for a passive HTTP status
--- report. It lets a caller outside of balancer_by_lua* (where
--- get_last_failure() cannot be called at all) report the outcome of its own
--- connection attempt instead.
+-- prev_failure, when given, overrides get_last_failure() for callers outside
+-- balancer_by_lua* that already know their own connection's outcome.
 local function pick_server(route, ctx, prev_failure)
     local up_conf = ctx.upstream_conf
 
@@ -297,17 +309,7 @@ local function pick_server(route, ctx, prev_failure)
             else
                 state, code = get_last_failure()
             end
-            local host = up_conf.checks and up_conf.checks.active and up_conf.checks.active.host
-            local port = up_conf.checks and up_conf.checks.active and up_conf.checks.active.port
-            if state == "failed" then
-                if code == 504 then
-                    checker:report_timeout(ctx.balancer_ip, port or ctx.balancer_port, host)
-                else
-                    checker:report_tcp_failure(ctx.balancer_ip, port or ctx.balancer_port, host)
-                end
-            else
-                checker:report_http_status(ctx.balancer_ip, port or ctx.balancer_port, host, code)
-            end
+            report_failure(ctx, checker, up_conf, state, code)
         end
     end
 
@@ -382,6 +384,17 @@ end
 
 -- for test
 _M.pick_server = pick_server
+
+
+-- reports a final failure with no next node to pick_server() for
+function _M.report_failure(ctx, prev_failure)
+    local checker = ctx.up_checker
+    if not checker then
+        return
+    end
+
+    report_failure(ctx, checker, ctx.upstream_conf, prev_failure.state, prev_failure.code)
+end
 
 
 -- Keyed by the `ca_certs` array itself: a config update always rebuilds that

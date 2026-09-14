@@ -508,7 +508,7 @@ local upstream_schema = {
             enum = {"grpc", "grpcs", "http", "https", "tcp", "tls", "udp",
                 "kafka", "ws", "wss"},
             description = "The scheme of the upstream." ..
-                " For L7 proxy, it can be one of grpc/grpcs/http/https." ..
+                " For L7 proxy, it can be one of grpc/grpcs/http/https/ws/wss." ..
                 " For L4 proxy, it can be one of tcp/tls/udp." ..
                 " For specific protocols, it can be kafka."
         },
