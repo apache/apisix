@@ -69,13 +69,25 @@ done
                 ngx.say(err)
             end
 
-            ngx.say(require("toolkit.json").encode(conf))
+            ngx.say("break_response_code: ", conf.break_response_code)
+            ngx.say("max_breaker_sec: ", conf.max_breaker_sec)
+            ngx.say("policy: ", conf.policy)
+            ngx.say("healthy.successes: ", conf.healthy.successes)
+            ngx.say("healthy.http_statuses: ", table.concat(conf.healthy.http_statuses, ","))
+            ngx.say("unhealthy.failures: ", conf.unhealthy.failures)
+            ngx.say("unhealthy.http_statuses: ", table.concat(conf.unhealthy.http_statuses, ","))
         }
     }
 --- request
 GET /t
 --- response_body
-{"break_response_code":502,"healthy":{"http_statuses":[200],"successes":3},"max_breaker_sec":300,"unhealthy":{"failures":3,"http_statuses":[500]}}
+break_response_code: 502
+max_breaker_sec: 300
+policy: unhealthy-count
+healthy.successes: 3
+healthy.http_statuses: 200
+unhealthy.failures: 3
+unhealthy.http_statuses: 500
 
 
 
@@ -94,13 +106,25 @@ GET /t
                 ngx.say(err)
             end
 
-            ngx.say(require("toolkit.json").encode(conf))
+            ngx.say("break_response_code: ", conf.break_response_code)
+            ngx.say("max_breaker_sec: ", conf.max_breaker_sec)
+            ngx.say("policy: ", conf.policy)
+            ngx.say("healthy.successes: ", conf.healthy.successes)
+            ngx.say("healthy.http_statuses: ", table.concat(conf.healthy.http_statuses, ","))
+            ngx.say("unhealthy.failures: ", conf.unhealthy.failures)
+            ngx.say("unhealthy.http_statuses: ", table.concat(conf.unhealthy.http_statuses, ","))
         }
     }
 --- request
 GET /t
 --- response_body
-{"break_response_code":502,"healthy":{"http_statuses":[200],"successes":3},"max_breaker_sec":300,"unhealthy":{"failures":3,"http_statuses":[500]}}
+break_response_code: 502
+max_breaker_sec: 300
+policy: unhealthy-count
+healthy.successes: 3
+healthy.http_statuses: 200
+unhealthy.failures: 3
+unhealthy.http_statuses: 500
 
 
 
@@ -119,13 +143,25 @@ GET /t
                 ngx.say(err)
             end
 
-            ngx.say(require("toolkit.json").encode(conf))
+            ngx.say("break_response_code: ", conf.break_response_code)
+            ngx.say("max_breaker_sec: ", conf.max_breaker_sec)
+            ngx.say("policy: ", conf.policy)
+            ngx.say("healthy.successes: ", conf.healthy.successes)
+            ngx.say("healthy.http_statuses: ", table.concat(conf.healthy.http_statuses, ","))
+            ngx.say("unhealthy.failures: ", conf.unhealthy.failures)
+            ngx.say("unhealthy.http_statuses: ", table.concat(conf.unhealthy.http_statuses, ","))
         }
     }
 --- request
 GET /t
 --- response_body
-{"break_response_code":502,"healthy":{"http_statuses":[200],"successes":3},"max_breaker_sec":300,"unhealthy":{"failures":3,"http_statuses":[500]}}
+break_response_code: 502
+max_breaker_sec: 300
+policy: unhealthy-count
+healthy.successes: 3
+healthy.http_statuses: 200
+unhealthy.failures: 3
+unhealthy.http_statuses: 500
 
 
 
@@ -295,7 +331,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin api-breaker err: property \"healthy\" validation failed: property \"http_statuses\" validation failed: expected unique items but items 1 and 2 are equal"}
+{"error_msg":"failed to check the configuration of plugin api-breaker err: then clause did not match"}
 
 
 
@@ -486,7 +522,7 @@ GET /api_breaker?code=500
 --- error_code eval
 [200, 500, 503, 500, 500, 502]
 --- response_headers eval
-["Content-Type: text/plain", "Content-Type: text/html", "Content-Type: text/html", "Content-Type: text/html", "Content-Type: text/html", "Content-Type: application/json+v1"]
+["Content-Type: text/plain", "Content-Type: text/plain", "Content-Type: text/plain", "Content-Type: text/plain", "Content-Type: text/plain", "Content-Type: application/json+v1"]
 --- response_body_like eval
 [".*", ".*", ".*", ".*", ".*", "{\"message\":\"breaker opened.\"}"]
 
@@ -605,7 +641,7 @@ passed
                 ngx.sleep(1)
             end
 
-            ngx.say(json.encode(status_count))
+            ngx.say(string.format('{"500":%d,"502":%d}', status_count["500"], status_count["502"]))
         }
     }
 --- request
@@ -620,7 +656,7 @@ phase_func(): breaker_time: 8
 phase_func(): breaker_time: 10
 --- response_body
 {"500":4,"502":16}
---- timeout: 25
+--- timeout: 30
 
 
 

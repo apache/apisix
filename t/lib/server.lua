@@ -414,7 +414,13 @@ end
 
 
 function _M.api_breaker()
-    ngx.exit(tonumber(ngx.var.arg_code))
+    local code = tonumber(ngx.var.arg_code) or 200
+    ngx.status = code
+    if code == 200 then
+        ngx.print("hello world")
+    elseif code == 500 then
+        ngx.print("fault injection!")
+    end
 end
 
 
