@@ -1,3 +1,21 @@
+--
+-- Licensed to the Apache Software Foundation (ASF) under one or more
+-- contributor license agreements.  See the NOTICE file distributed with
+-- this work for additional information regarding copyright ownership.
+-- The ASF licenses this file to You under the Apache License, Version 2.0
+-- (the "License"); you may not use this file except in compliance with
+-- the License.  You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+--
+local ngx_ctx = ngx.ctx
+
 local ROLE_CLIENT = "client"
 local ROLE_UPSTREAM = "upstream"
 local CTX_KEY_CLIENT = "websocket_client"
@@ -10,28 +28,28 @@ local CTX_KEY_UPSTREAM = "websocket_upstream"
 
 local function wrap_stash_frame(key)
   return function(frame)
-    ngx.ctx[key] = frame
+    ngx_ctx[key] = frame
   end
 end
 
 
 local function wrap_get_frame(key)
   return function()
-    return ngx.ctx[key]
+    return ngx_ctx[key]
   end
 end
 
 
 local function wrap_set_frame_data(key)
   return function(data)
-    ngx.ctx[key].payload = data
+    ngx_ctx[key].payload = data
   end
 end
 
 
 local function wrap_set_status(key)
   return function(status)
-    ngx.ctx[key].code = status
+    ngx_ctx[key].code = status
   end
 end
 

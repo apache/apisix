@@ -1008,7 +1008,7 @@ function _M.websocket_content_phase()
             --    role: [string]      "client" or "upstream"
             --     typ: [string]      "text", "binary", "ping", "pong", "close"
             -- payload: [string|nil]  payload if any
-            --    last: [boolean]     fin flag for fragmented frames; true if aggregate_fragments is on
+            --    last: [boolean]     fin flag; true when aggregate_fragments is on
             --    code: [number|nil]  code for "close" frames
 
             local role_handler, err = core.websocket.get_role(role)
