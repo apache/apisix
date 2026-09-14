@@ -87,6 +87,8 @@ An installed plugin is first initialized. The configuration of the plugin is the
 
 When a request goes through APISIX, the plugin's corresponding methods are executed in one or more of the following phases : `rewrite`, `access`, `before_proxy`, `header_filter`, `body_filter`, and `log`. These phases are largely influenced by the [OpenResty directives](https://openresty-reference.readthedocs.io/en/latest/Directives/).
 
+A route whose `upstream.scheme` is `ws` or `wss` triggers a different set of phases instead, one per WebSocket frame: `ws_handshake`, `ws_client_frame`, `ws_upstream_frame`, and `ws_close`. See the ["extra phase" section of the plugin development guide](../plugin-develop.md#extra-phase) for details.
+
 <br />
 <div style={{textAlign: 'center'}}>
 <img src="https://static.apiseven.com/uploads/2023/03/09/ZsH5C8Og_plugins-phases.png" alt="Routes Diagram" width="50%"/>
