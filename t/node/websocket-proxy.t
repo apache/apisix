@@ -25,7 +25,7 @@ run_tests();
 __DATA__
 
 === TEST 1: test
---- timeout: 30
+--- timeout: 60
 --- max_size: 2048000
 --- exec
 cd t && pnpm test node/websocket-proxy.spec.mts 2>&1

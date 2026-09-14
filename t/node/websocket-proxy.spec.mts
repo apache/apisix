@@ -14,49 +14,75 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { afterAll, afterEach, beforeAll, describe, expect, it } from '@jest/globals';
+import { describe, expect, it, jest } from '@jest/globals';
 import axios from 'axios';
+import WS from 'ws';
 
 import { request as requestAdminAPI } from '../ts/admin_api';
 import { wait } from '../ts/utils';
 
+// Every test here does at least one real websocket handshake plus etcd sync
+// round trip, which the shared 5s Jest default leaves little room for on a
+// loaded machine; the handful of tests that need more than this still set
+// their own per-test timeout on top of it.
+jest.setTimeout(15000);
+
 const PROXY_BASE = 'ws://localhost:1984';
-const ROUTE_URI = '/websocket_echo';
+// a loopback address nothing listens on, used as an unreachable upstream node
 const DEAD_NODE = '127.0.0.1:1';
+const DEAD_NODE_2 = '127.0.0.1:2';
+// TEST-NET-1 (RFC 5737): guaranteed unroutable, so connections to it hang
+// until a connect timeout fires instead of being refused immediately -
+// unlike DEAD_NODE, this exercises the "timeout" (504) branch, not "tcp
+// failure".
+const BLACKHOLE_NODE = '192.0.2.1:1';
 const ECHO_NODE = '127.0.0.1:1980';
 
 let nextRouteId = 1;
 
-// Every route this suite creates is torn down in afterEach, so a failed
-// assertion in one test never leaves state for the next one to trip over.
-const createdRouteIds: string[] = [];
-
-const createRoute = async (upstream: object, plugins?: object) => {
-  const id = `ws-enhanced-${nextRouteId++}`;
+// Routes with a URI no other test in this file reuses can just be created
+// once and left behind (the whole test-nginx instance goes away at the end
+// of the run anyway).
+const createRoute = async (
+  path: string,
+  upstream: object,
+  plugins?: object,
+) => {
+  const id = `ws-proxy-${nextRouteId++}`;
   const res = await requestAdminAPI(`/apisix/admin/routes/${id}`, 'PUT', {
-    uri: ROUTE_URI,
+    uri: path,
     upstream,
     plugins,
   });
   expect(res.status).toBe(res.status < 300 ? res.status : 200);
-  createdRouteIds.push(id);
   // give etcd -> apisix config sync a moment to land before the first request
   await wait(300);
   return id;
 };
 
-afterEach(async () => {
-  while (createdRouteIds.length > 0) {
-    const id = createdRouteIds.pop();
-    await requestAdminAPI(`/apisix/admin/routes/${id}`, 'DELETE');
-  }
-});
+// Most tests below share the /websocket_echo URI across very different
+// upstream/plugin configs. Deleting and recreating a route under the same
+// URI between tests leaves a window where the delete has been sent but
+// hasn't synced yet when the next test's create lands, and the two can race
+// - the client then gets whichever half-applied state the router held at
+// that instant. PUTting the same fixed route id instead is a plain
+// overwrite, so there's no delete in flight to race with.
+const ECHO_ROUTE_ID = 'ws-proxy-echo';
+const putEchoRoute = async (upstream: object, plugins?: object) => {
+  const res = await requestAdminAPI(`/apisix/admin/routes/${ECHO_ROUTE_ID}`, 'PUT', {
+    uri: '/websocket_echo',
+    upstream,
+    plugins,
+  });
+  expect(res.status).toBe(res.status < 300 ? res.status : 200);
+  await wait(300);
+};
 
 // Opens a websocket connection, sends one text frame, resolves with the
 // first frame received in reply (or rejects on error/close-before-reply).
-const sendAndReceive = (payload: string) =>
+const sendAndReceive = (path: string, payload: string) =>
   new Promise<string>((resolve, reject) => {
-    const ws = new WebSocket(`${PROXY_BASE}${ROUTE_URI}`);
+    const ws = new WebSocket(`${PROXY_BASE}${path}`);
     ws.addEventListener('open', () => ws.send(payload));
     ws.addEventListener('message', (ev) => {
       resolve(ev.data as string);
@@ -67,54 +93,207 @@ const sendAndReceive = (payload: string) =>
     );
   });
 
-describe('websocket-enhanced (ws/wss upstream scheme)', () => {
+// Resolves with the close event's code. onOpen fires right after connecting,
+// so it can send a frame or otherwise trigger whatever leads to the close.
+//
+// The WebSocket spec requires an abnormal closure to fire an error event
+// before its close event, not instead of it, so an expected-to-fail
+// connection (tolerateError: true) must not treat that error as a failure
+// and must instead keep waiting for the close event that follows it.
+const waitForClose = (
+  path: string,
+  onOpen?: (ws: WebSocket) => void,
+  tolerateError = false,
+) =>
+  new Promise<number>((resolve, reject) => {
+    const ws = new WebSocket(`${PROXY_BASE}${path}`);
+    ws.addEventListener('open', () => onOpen?.(ws));
+    ws.addEventListener('close', (ev) => resolve(ev.code));
+    ws.addEventListener('error', (ev) => {
+      if (!tolerateError) {
+        reject(new Error((ev as unknown as { message?: string }).message ?? 'websocket error'));
+      }
+    });
+  });
+
+describe('websocket-proxy (ws/wss upstream scheme)', () => {
   describe('frame-level plugin hooks', () => {
-    beforeAll(() =>
-      createRoute(
-        {
-          type: 'roundrobin',
-          scheme: 'ws',
-          nodes: { [ECHO_NODE]: 1 },
-        },
+    it('lets a plugin rewrite the client frame before it reaches the upstream, and the upstream frame before it reaches the client', async () => {
+      await putEchoRoute(
+        { type: 'roundrobin', scheme: 'ws', nodes: { [ECHO_NODE]: 1 } },
         {
           // example-plugin's ws_client_frame/ws_upstream_frame hooks append
           // "-client"/"-upstream" to every text frame they see, in-flight.
           'example-plugin': { i: 1 },
         },
-      ),
-    );
+      );
 
-    it('lets a plugin rewrite the client frame before it reaches the upstream, and the upstream frame before it reaches the client', async () => {
       // the echo backend bounces whatever it received back unchanged, so the
       // round trip proves both directions were actually rewritten in flight.
-      const reply = await sendAndReceive('hello');
+      const reply = await sendAndReceive('/websocket_echo', 'hello');
       expect(reply).toBe('hello-client-upstream');
     });
+
+    it('does not touch binary frames (the hooks only rewrite text frames)', async () => {
+      await putEchoRoute(
+        { type: 'roundrobin', scheme: 'ws', nodes: { [ECHO_NODE]: 1 } },
+        { 'example-plugin': { i: 1 } },
+      );
+
+      const reply = await new Promise<ArrayBuffer>((resolve, reject) => {
+        const ws = new WebSocket(`${PROXY_BASE}/websocket_echo`);
+        ws.binaryType = 'arraybuffer';
+        ws.addEventListener('open', () => ws.send(new Uint8Array([1, 2, 3, 4])));
+        ws.addEventListener('message', (ev) => {
+          resolve(ev.data as ArrayBuffer);
+          ws.close();
+        });
+        ws.addEventListener('error', (ev) =>
+          reject(new Error((ev as unknown as { message?: string }).message ?? 'websocket error')),
+        );
+      });
+      expect(new Uint8Array(reply)).toEqual(new Uint8Array([1, 2, 3, 4]));
+    });
+  });
+
+  describe('fragmented frames', () => {
+    it('reassembles a fragmented message into one frame before invoking plugin hooks', async () => {
+      await createRoute('/websocket_fragment', {
+        type: 'roundrobin',
+        scheme: 'ws',
+        nodes: { [ECHO_NODE]: 1 },
+      }, {
+        'example-plugin': { i: 1 },
+      });
+
+      // websocket_fragment sends "hello " and "world" as two continuation
+      // frames of the same message; if aggregate_fragments works, the client
+      // (and the ws_upstream_frame hook in between) see exactly one frame
+      // with the joined payload, not two separate ones.
+      const messages: string[] = [];
+      await new Promise<void>((resolve, reject) => {
+        const ws = new WebSocket(`${PROXY_BASE}/websocket_fragment`);
+        ws.addEventListener('message', (ev) => {
+          messages.push(ev.data as string);
+          ws.close();
+        });
+        ws.addEventListener('close', () => resolve());
+        ws.addEventListener('error', (ev) =>
+          reject(new Error((ev as unknown as { message?: string }).message ?? 'websocket error')),
+        );
+      });
+      expect(messages).toEqual(['hello world-upstream']);
+    });
+  });
+
+  describe('ping/pong', () => {
+    it('forwards a client ping to the upstream and the upstream pong back to the client', async () => {
+      await putEchoRoute({ type: 'roundrobin', scheme: 'ws', nodes: { [ECHO_NODE]: 1 } });
+
+      await new Promise<void>((resolve, reject) => {
+        const ws = new WS(`${PROXY_BASE}/websocket_echo`);
+        ws.on('open', () => ws.ping());
+        ws.on('pong', () => {
+          ws.terminate();
+          resolve();
+        });
+        ws.on('error', reject);
+      });
+    });
+  });
+
+  describe('close handshake', () => {
+    it('lets the client close cleanly and the upstream echoes the close code back', async () => {
+      await putEchoRoute({ type: 'roundrobin', scheme: 'ws', nodes: { [ECHO_NODE]: 1 } });
+
+      const code = await waitForClose('/websocket_echo', (ws) => ws.close(1000, 'bye'));
+      expect(code).toBe(1000);
+    });
+
+    it('forwards an upstream-initiated close to the client', async () => {
+      await createRoute('/websocket_close_upstream_initiated', {
+        type: 'roundrobin',
+        scheme: 'ws',
+        nodes: { [ECHO_NODE]: 1 },
+      });
+
+      const code = await waitForClose('/websocket_close_upstream_initiated');
+      expect(code).toBe(1000);
+    });
+  });
+
+  describe('abrupt disconnects', () => {
+    it('reports an abnormal closure (1006) to the client when the upstream vanishes mid-session', async () => {
+      await createRoute('/websocket_abrupt_close', {
+        type: 'roundrobin',
+        scheme: 'ws',
+        nodes: { [ECHO_NODE]: 1 },
+      });
+
+      const code = await waitForClose('/websocket_abrupt_close', (ws) => ws.send('hi'), true);
+      expect(code).toBe(1006);
+    });
+
+    it('cleans up the upstream side when the client vanishes without closing', async () => {
+      await putEchoRoute({ type: 'roundrobin', scheme: 'ws', nodes: { [ECHO_NODE]: 1 } });
+
+      const activeConnections = async () => {
+        const res = await axios.get('http://localhost:1984/apisix/nginx_status');
+        const match = /Active connections:\s*(\d+)/.exec(res.data as string);
+        return match ? Number(match[1]) : NaN;
+      };
+
+      const baseline = await activeConnections();
+
+      // open and forcibly kill a handful of connections without a close
+      // handshake (ws's .terminate() drops the TCP connection directly,
+      // which the standard WebSocket API has no equivalent for)
+      for (let i = 0; i < 10; i++) {
+        await new Promise<void>((resolve, reject) => {
+          const ws = new WS(`${PROXY_BASE}/websocket_echo`);
+          ws.on('open', () => {
+            ws.terminate();
+            resolve();
+          });
+          ws.on('error', reject);
+        });
+      }
+
+      // give the proxy's forwarder coroutines a moment to notice the dead
+      // sockets and tear themselves down
+      await wait(1000);
+
+      const after = await activeConnections();
+      // a leak would grow roughly linearly with the number of terminated
+      // connections (10 here); allow some slack for unrelated background
+      // activity in the shared test-nginx instance instead of an exact match
+      expect(after).toBeLessThan(baseline + 5);
+    }, 10000);
   });
 
   describe('upstream retry', () => {
     it('retries the next node when the first one refuses the connection', async () => {
-      await createRoute({
+      await putEchoRoute({
         type: 'roundrobin',
         scheme: 'ws',
         retries: 3,
         nodes: { [DEAD_NODE]: 100, [ECHO_NODE]: 1 },
       });
 
-      const reply = await sendAndReceive('hello');
+      const reply = await sendAndReceive('/websocket_echo', 'hello');
       expect(reply).toBe('hello');
     });
 
     it('returns 502 once every node has been tried and failed', async () => {
-      await createRoute({
+      await putEchoRoute({
         type: 'roundrobin',
         scheme: 'ws',
         retries: 2,
-        nodes: { [DEAD_NODE]: 1, '127.0.0.1:2': 1 },
+        nodes: { [DEAD_NODE]: 1, [DEAD_NODE_2]: 1 },
       });
 
       await expect(
-        axios.get(`http://localhost:1984${ROUTE_URI}`, {
+        axios.get('http://localhost:1984/websocket_echo', {
           headers: {
             Connection: 'Upgrade',
             Upgrade: 'websocket',
@@ -125,6 +304,145 @@ describe('websocket-enhanced (ws/wss upstream scheme)', () => {
       ).rejects.toMatchObject({
         response: { status: 502 },
       });
+    });
+
+    it('retries past a connect timeout, not just a refused connection', async () => {
+      await putEchoRoute({
+        type: 'roundrobin',
+        scheme: 'ws',
+        retries: 2,
+        timeout: { connect: 1, send: 5, read: 5 },
+        nodes: { [BLACKHOLE_NODE]: 100, [ECHO_NODE]: 1 },
+      });
+
+      const reply = await sendAndReceive('/websocket_echo', 'hello');
+      expect(reply).toBe('hello');
+    }, 10000);
+
+    it('retries across more than one dead node before reaching a healthy one', async () => {
+      await putEchoRoute({
+        type: 'roundrobin',
+        scheme: 'ws',
+        retries: 3,
+        nodes: { [DEAD_NODE]: 100, [DEAD_NODE_2]: 100, [ECHO_NODE]: 1 },
+      });
+
+      const reply = await sendAndReceive('/websocket_echo', 'hello');
+      expect(reply).toBe('hello');
+    });
+
+    it('retries the same way for a least_conn upstream, not just roundrobin', async () => {
+      await putEchoRoute({
+        type: 'least_conn',
+        scheme: 'ws',
+        retries: 3,
+        nodes: { [DEAD_NODE]: 100, [ECHO_NODE]: 1 },
+      });
+
+      const reply = await sendAndReceive('/websocket_echo', 'hello');
+      expect(reply).toBe('hello');
+    });
+  });
+
+  describe('passive health check', () => {
+    it('marks a node unhealthy after enough failed connection attempts', async () => {
+      await putEchoRoute({
+        type: 'roundrobin',
+        scheme: 'ws',
+        retries: 1,
+        nodes: { [DEAD_NODE]: 1, [ECHO_NODE]: 1 },
+        checks: {
+          active: { type: 'tcp', http_path: '/', timeout: 1, healthy: { interval: 1 } },
+          passive: { unhealthy: { tcp_failures: 1 } },
+        },
+      });
+
+      // one connect attempt is enough to report a tcp failure for DEAD_NODE
+      await sendAndReceive('/websocket_echo', 'hello');
+
+      let unhealthyFound = false;
+      for (let i = 0; i < 10 && !unhealthyFound; i++) {
+        await wait(500);
+        const res = await requestAdminAPI(`/v1/healthcheck/routes/${ECHO_ROUTE_ID}`);
+        const { nodes } = res.data as { nodes: { ip: string; port: number; status: string }[] };
+        unhealthyFound = nodes.some((n) => n.port === 1 && n.status !== 'healthy');
+      }
+
+      expect(unhealthyFound).toBe(true);
+    }, 15000);
+  });
+
+  describe('upstream URI forwarding', () => {
+    it("forwards the client's request URI, including the query string", async () => {
+      await createRoute('/websocket_echo_uri', {
+        type: 'roundrobin',
+        scheme: 'ws',
+        nodes: { [ECHO_NODE]: 1 },
+      });
+
+      const reply = await new Promise<string>((resolve, reject) => {
+        const ws = new WebSocket(`${PROXY_BASE}/websocket_echo_uri?foo=bar`);
+        ws.addEventListener('message', (ev) => {
+          resolve(ev.data as string);
+          ws.close();
+        });
+        ws.addEventListener('error', (ev) =>
+          reject(new Error((ev as unknown as { message?: string }).message ?? 'websocket error')),
+        );
+      });
+      expect(reply).toBe('/websocket_echo_uri?foo=bar');
+    });
+
+    it("forwards the proxy-rewrite plugin's rewritten URI instead of the original one", async () => {
+      await createRoute(
+        '/websocket_proxy_rewrite_uri',
+        {
+          type: 'roundrobin',
+          scheme: 'ws',
+          nodes: { [ECHO_NODE]: 1 },
+        },
+        {
+          'proxy-rewrite': { uri: '/websocket_echo_uri' },
+        },
+      );
+
+      const reply = await new Promise<string>((resolve, reject) => {
+        const ws = new WebSocket(`${PROXY_BASE}/websocket_proxy_rewrite_uri`);
+        ws.addEventListener('message', (ev) => {
+          resolve(ev.data as string);
+          ws.close();
+        });
+        ws.addEventListener('error', (ev) =>
+          reject(new Error((ev as unknown as { message?: string }).message ?? 'websocket error')),
+        );
+      });
+      expect(reply).toBe('/websocket_echo_uri');
+    });
+  });
+
+  describe('concurrent connections', () => {
+    it("keeps two simultaneous connections' frame data isolated from each other", async () => {
+      await putEchoRoute(
+        { type: 'roundrobin', scheme: 'ws', nodes: { [ECHO_NODE]: 1 } },
+        { 'example-plugin': { i: 1 } },
+      );
+
+      const open = (payload: string) =>
+        new Promise<string>((resolve, reject) => {
+          const ws = new WebSocket(`${PROXY_BASE}/websocket_echo`);
+          ws.addEventListener('open', () => ws.send(payload));
+          ws.addEventListener('message', (ev) => {
+            resolve(ev.data as string);
+            ws.close();
+          });
+          ws.addEventListener('error', (ev) =>
+            reject(new Error((ev as unknown as { message?: string }).message ?? 'websocket error')),
+          );
+        });
+
+      const [replyA, replyB] = await Promise.all([open('alpha'), open('beta')]);
+      expect(replyA).toBe('alpha-client-upstream');
+      expect(replyB).toBe('beta-client-upstream');
     });
   });
 });
