@@ -136,6 +136,7 @@ location /t {
             keepalive_pool = 1,
         })
         ngx.sleep(2)
+        t('/apisix/admin/plugin_metadata/elasticsearch-logger', ngx.HTTP_DELETE)
     }
 }
 --- error_log
