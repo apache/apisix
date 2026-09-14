@@ -389,6 +389,47 @@ end
 _M.websocket_handshake_route = _M.websocket_handshake
 
 
+-- Echoes every text/binary frame it receives back to the sender unchanged,
+-- so a fronting proxy's frame-level plugin hooks can be observed by diffing
+-- what the client sent against what it gets back. Used by the
+-- websocket-enhanced (ws/wss upstream scheme) test suite.
+function _M.websocket_echo()
+    local websocket = require "resty.websocket.server"
+    local wb, err = websocket:new()
+    if not wb then
+        ngx.log(ngx.ERR, "failed to new websocket: ", err)
+        return ngx.exit(400)
+    end
+
+    while true do
+        local data, typ, err = wb:recv_frame()
+        if not data then
+            if err and err:find("timeout", 1, true) then
+                goto continue
+            end
+            ngx.log(ngx.ERR, "failed to receive frame: ", err)
+            return
+        end
+
+        if typ == "close" then
+            wb:send_close(1000, "")
+            return
+        elseif typ == "ping" then
+            wb:send_pong(data)
+        elseif typ == "text" or typ == "binary" then
+            local send = typ == "text" and wb.send_text or wb.send_binary
+            local bytes, send_err = send(wb, data)
+            if not bytes then
+                ngx.log(ngx.ERR, "failed to echo frame: ", send_err)
+                return
+            end
+        end
+
+        ::continue::
+    end
+end
+
+
 -- keep the session open until the peer goes away, so that the request stays in
 -- flight in the balancer the way a real WebSocket session does. An idle timeout is
 -- the normal state of such a session, not an error: keep waiting, and only give up

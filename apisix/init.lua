@@ -1049,11 +1049,22 @@ function _M.websocket_content_phase()
         retries = #up_conf.nodes - 1
     end
 
+    -- upstream_uri is only ever set by plugins like proxy-rewrite that
+    -- explicitly rewrite the forwarded path; the normal proxy_pass paths get
+    -- the client's original request URI for free from nginx's own passthrough
+    -- behavior, but we build the request line ourselves here, so we have to
+    -- fall back to the client's URI (plus query string) the same way
+    -- proxy-mirror.lua does.
+    local request_uri = api_ctx.var.upstream_uri
+    if not request_uri or request_uri == "" then
+        request_uri = api_ctx.var.uri .. (api_ctx.var.is_args or "") .. (api_ctx.var.args or "")
+    end
+
     local server = api_ctx.picked_server
     local ok, connect_err
     for attempt = 0, retries do
-        local endpoint = string.format("%s://%s:%d", api_ctx.matched_upstream.scheme,
-                                       server.host, server.port)
+        local endpoint = string.format("%s://%s:%d%s", api_ctx.matched_upstream.scheme,
+                                       server.host, server.port, request_uri)
         ok, connect_err = proxy:connect(endpoint, {
             host = server.upstream_host,
             server_name = server.domain,

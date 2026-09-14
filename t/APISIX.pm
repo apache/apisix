@@ -259,6 +259,18 @@ my $disable_proxy_buffering_location = <<_EOC_;
         }
 _EOC_
 
+my $websocket_location = <<_EOC_;
+        location \@websocket_pass {
+            content_by_lua_block {
+                apisix.websocket_content_phase()
+            }
+
+            log_by_lua_block {
+                apisix.websocket_log_phase()
+            }
+        }
+_EOC_
+
 my $a6_ngx_directives = "";
 if ($version =~ m/\/apisix-nginx-module/) {
     $a6_ngx_directives = <<_EOC_;
@@ -1008,6 +1020,7 @@ _EOC_
         $grpc_location
         $dubbo_location
         $disable_proxy_buffering_location
+        $websocket_location
 
         location = /proxy_mirror {
             internal;
