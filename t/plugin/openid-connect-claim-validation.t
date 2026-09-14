@@ -200,3 +200,162 @@ passed
 Bearer realm="apisix", error="invalid_token", error_description="issuer validation unavailable"$
 --- error_log
 OIDC access discovery url failed
+
+
+
+=== TEST 5: set up a route validating the introspection response issuer
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local json = require("toolkit.json")
+
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, json.encode({
+                uri = "/hello",
+                plugins = {
+                    ["openid-connect"] = {
+                        client_id = "apisix",
+                        client_secret = "secret",
+                        discovery = "http://127.0.0.1:16969/.well-known/openid-configuration",
+                        introspection_endpoint = "http://127.0.0.1:16969/introspect",
+                        introspection_endpoint_auth_method = "client_secret_post",
+                        bearer_only = true,
+                        claim_validator = {
+                            issuer = { valid_issuers = {"https://example.com/issuer"} },
+                        },
+                    },
+                },
+                upstream = {
+                    type = "roundrobin",
+                    nodes = { ["127.0.0.1:1980"] = 1 },
+                },
+            }))
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 6: an introspection response with an allowed issuer is accepted
+--- http_config
+    server {
+        listen 16969;
+        server_name localhost;
+
+        location /introspect {
+            default_type application/json;
+            return 200 '{"active":true,"iss":"https://example.com/issuer"}';
+        }
+    }
+--- request
+GET /hello HTTP/1.1
+--- more_headers
+Authorization: Bearer allowed-issuer
+--- error_code: 200
+
+
+
+=== TEST 7: an introspection response with another issuer is rejected
+--- http_config
+    server {
+        listen 16969;
+        server_name localhost;
+
+        location /introspect {
+            default_type application/json;
+            return 200 '{"active":true,"iss":"https://other.example.com/issuer"}';
+        }
+    }
+--- request
+GET /hello HTTP/1.1
+--- more_headers
+Authorization: Bearer other-issuer
+--- error_code: 401
+--- response_headers
+WWW-Authenticate: Bearer realm="apisix", error="invalid_token", error_description="issuer validation failed"
+--- error_log
+OIDC introspection failed: issuer validation failed
+
+
+
+=== TEST 8: an introspection response without an issuer is rejected
+--- http_config
+    server {
+        listen 16969;
+        server_name localhost;
+
+        location /introspect {
+            default_type application/json;
+            return 200 '{"active":true}';
+        }
+    }
+--- request
+GET /hello HTTP/1.1
+--- more_headers
+Authorization: Bearer missing-issuer
+--- error_code: 401
+--- response_headers
+WWW-Authenticate: Bearer realm="apisix", error="invalid_token", error_description="issuer validation failed"
+--- error_log
+OIDC introspection failed: issuer validation failed
+
+
+
+=== TEST 9: set up an introspection route without an issuer allowlist
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local json = require("toolkit.json")
+
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, json.encode({
+                uri = "/hello",
+                plugins = {
+                    ["openid-connect"] = {
+                        client_id = "apisix",
+                        client_secret = "secret",
+                        discovery = "http://127.0.0.1:16969/.well-known/openid-configuration",
+                        introspection_endpoint = "http://127.0.0.1:16969/introspect",
+                        introspection_endpoint_auth_method = "client_secret_post",
+                        bearer_only = true,
+                    },
+                },
+                upstream = {
+                    type = "roundrobin",
+                    nodes = { ["127.0.0.1:1980"] = 1 },
+                },
+            }))
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 10: an issuer remains optional without an explicit allowlist
+--- http_config
+    server {
+        listen 16969;
+        server_name localhost;
+
+        location /introspect {
+            default_type application/json;
+            return 200 '{"active":true}';
+        }
+    }
+--- request
+GET /hello HTTP/1.1
+--- more_headers
+Authorization: Bearer missing-issuer
+--- error_code: 200

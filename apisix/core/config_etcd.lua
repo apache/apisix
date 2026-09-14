@@ -563,7 +563,7 @@ local function load_full_data(self, dir_res, headers, prev_values, prev_values_h
         end
 
         if data_valid and self.checker then
-            data_valid, err = self.checker(item.value)
+            data_valid, err = self.checker(item.value, item.key)
             if not data_valid then
                 log.error("failed to check item data of [", self.key,
                           "] err:", err, " ,val: ", json.delay_encode(item.value))
