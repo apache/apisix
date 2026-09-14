@@ -430,3 +430,52 @@ GET /plugin_proxy_rewrite_args?aaa=bbb&ccc=ddd
 uri: /plugin_proxy_rewrite_args
 aaa: bbb
 ccc: ddd
+
+
+
+=== TEST 17: add route with http-logger to check upstream vars
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin")
+
+            local code, message = t.test('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/*",
+                    "plugins": {
+                        "ext-plugin-post-resp": {
+                        },
+                        "http-logger": {
+                            "uri": "http://127.0.0.1:1980/log",
+                            "batch_max_size": 1
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(message)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 18: upstream and upstream_latency are logged
+--- request
+GET /hello
+--- error_code: 200
+--- response_body
+hello world
+--- error_log eval
+qr/request log: .*"upstream":"127\.0\.0\.1:1980".*"upstream_latency":\d+/

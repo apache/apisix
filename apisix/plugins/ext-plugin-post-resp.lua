@@ -148,7 +148,10 @@ end
 
 function _M.before_proxy(conf, ctx)
     local http_obj = http.new()
+    local start_time = ngx.now()
     local res, err = get_response(ctx, http_obj)
+    ctx.var.upstream_addr = ctx.picked_server.host .. ":" .. ctx.picked_server.port
+    ctx.var.upstream_response_time = ngx.now() - start_time
     if not res or err then
         core.log.error("failed to request: ", err or "")
         close(http_obj)
