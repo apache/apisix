@@ -121,3 +121,105 @@ util: nil
 util: redis.example.com
 util: redis.example.com
 util: nil
+
+
+
+=== TEST 2: TLS SNI is part of the keepalive pool name
+--- config
+    location /t {
+        content_by_lua_block {
+            local last_opts
+            local orig_redis = package.loaded["resty.redis"]
+            package.loaded["resty.redis"] = {
+                new = function()
+                    return {
+                        set_timeouts = function() end,
+                        connect = function(_, host, port, opts)
+                            last_opts = opts
+                            return true
+                        end,
+                        get_reused_times = function()
+                            return 1
+                        end,
+                    }
+                end,
+            }
+
+            local function reload(name)
+                package.loaded[name] = nil
+                return require(name)
+            end
+
+            local cases = {
+                {
+                    conf = {redis_host = "127.0.0.1"},
+                    expect = "redis#127.0.0.1#6379#0",
+                },
+                {
+                    conf = {redis_host = "redis.example.com", redis_ssl = true},
+                    expect = "rediss#redis.example.com#6379#0",
+                },
+                {
+                    conf = {
+                        redis_host = "10.0.0.1",
+                        redis_ssl = true,
+                        redis_server_name = "redis.example.com",
+                    },
+                    expect = "rediss#10.0.0.1#6379#0#redis.example.com",
+                },
+                {
+                    conf = {
+                        redis_host = "10.0.0.1",
+                        redis_ssl = true,
+                        redis_server_name = "other.example.com",
+                    },
+                    expect = "rediss#10.0.0.1#6379#0#other.example.com",
+                },
+                {
+                    conf = {
+                        redis_host = "redis.example.com",
+                        redis_ssl = false,
+                        redis_server_name = "ignored.example.com",
+                    },
+                    expect = "redis#redis.example.com#6379#0",
+                },
+            }
+
+            local function run(label, connect)
+                for _, case in ipairs(cases) do
+                    last_opts = nil
+                    connect(case.conf)
+                    local got = last_opts and last_opts.pool or "nil"
+                    if got ~= case.expect then
+                        ngx.say(label, " want ", case.expect, " got ", got)
+                        return false
+                    end
+                    ngx.say(label, ": ", got)
+                end
+                return true
+            end
+
+            local redis = reload("apisix.utils.redis")
+            if not run("utils", function(conf) redis.new(conf) end) then
+                return
+            end
+
+            local util = reload("apisix.plugins.limit-count.util")
+            run("util", function(conf) util.redis_cli(conf) end)
+
+            package.loaded["resty.redis"] = orig_redis
+            package.loaded["apisix.utils.redis"] = nil
+            package.loaded["apisix.plugins.limit-count.util"] = nil
+        }
+    }
+--- response_body
+utils: redis#127.0.0.1#6379#0
+utils: rediss#redis.example.com#6379#0
+utils: rediss#10.0.0.1#6379#0#redis.example.com
+utils: rediss#10.0.0.1#6379#0#other.example.com
+utils: redis#redis.example.com#6379#0
+util: redis#127.0.0.1#6379#0
+util: rediss#redis.example.com#6379#0
+util: rediss#10.0.0.1#6379#0#redis.example.com
+util: rediss#10.0.0.1#6379#0#other.example.com
+util: redis#redis.example.com#6379#0
