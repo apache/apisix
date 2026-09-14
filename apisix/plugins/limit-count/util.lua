@@ -45,7 +45,7 @@ function _M.redis_cli(conf)
     -- so connections with different databases, credentials or TLS settings
     -- must not share the default host:port keepalive pool, otherwise a
     -- reused connection may be bound to an unexpected database or user, or
-    -- skip the expected certificate verification
+    -- skip the expected certificate verification / present the wrong SNI
     local scheme = "redis"
     if conf.redis_ssl then
         scheme = conf.redis_ssl_verify and "rediss-verify" or "rediss"
@@ -56,11 +56,15 @@ function _M.redis_cli(conf)
         -- digest instead of the plaintext credentials in the pool name
         pool = pool .. "#" .. crc32((conf.redis_username or "") .. ":" .. conf.redis_password)
     end
+    if conf.redis_ssl and conf.redis_server_name then
+        pool = pool .. "#" .. conf.redis_server_name
+    end
 
     local sock_opts = {
         ssl = conf.redis_ssl,
         ssl_verify = conf.redis_ssl_verify,
         pool = pool,
+        server_name = conf.redis_ssl and (conf.redis_server_name or conf.redis_host) or nil,
     }
 
     local ok, err = red:connect(conf.redis_host, conf.redis_port or 6379, sock_opts)

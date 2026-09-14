@@ -64,6 +64,7 @@ The `limit-req` Plugin supports two modes of rate limiting:
 | redis_password | string | False | | | The password of the Redis node when `policy` is `redis` or `redis-cluster`. |
 | redis_ssl | boolean | False | false | | If true, use SSL to connect to Redis when `policy` is `redis`. |
 | redis_ssl_verify | boolean | False | false | | If true, verify the server SSL certificate when `policy` is `redis`. |
+| redis_server_name | string | False | | | TLS SNI when `policy` is `redis` and `redis_ssl` is true. Defaults to `redis_host`. |
 | redis_database | integer | False | 0 | >= 0 | The database number in Redis when `policy` is `redis`. |
 | redis_timeout | integer | False | 1000 | [1,...] | The Redis timeout value in milliseconds when `policy` is `redis` or `redis-cluster`. |
 | redis_keepalive_timeout | integer | False | 10000 | ≥ 1000 | Keepalive timeout in milliseconds for redis when `policy` is `redis` or `redis-cluster`. |

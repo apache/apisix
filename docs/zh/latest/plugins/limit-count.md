@@ -82,6 +82,7 @@ APISIX 3.18.0 及后续版本支持 Redis Sentinel、滑动窗口和 Redis 延�
 | redis_password | string | 否 | | | 当 `policy` 为 `redis`、`redis-cluster` 或 `redis-sentinel` 时，Redis 节点的密码。 |
 | redis_ssl | boolean | 否 | false | | 如果为 true，则在 `policy` 为 `redis` 时使用 SSL 连接 Redis。 |
 | redis_ssl_verify | boolean | 否 | false | | 如果为 true，则在 `policy` 为 `redis` 时验证服务器 SSL 证书。 |
+| redis_server_name | string | 否 | | | 当 `policy` 为 `redis` 且 `redis_ssl` 为 true 时使用的 TLS SNI。默认使用 `redis_host`。 |
 | redis_database | integer | 否 | 0 | >= 0 | 当 `policy` 为 `redis` 或 `redis-sentinel` 时，Redis 中的数据库编号。 |
 | redis_timeout | integer | 否 | 1000 | [1,...] | 当 `policy` 为 `redis` 或 `redis-cluster` 时，Redis 超时值（以毫秒为单位）。 |
 | redis_keepalive_timeout | integer | 否 | `redis` 和 `redis-cluster` 为 10000；`redis-sentinel` 为 60000 | `redis` 和 `redis-cluster` >= 1000；`redis-sentinel` >= 1 | Redis 空闲连接超时时间，单位为毫秒。 |
