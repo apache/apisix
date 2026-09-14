@@ -559,11 +559,66 @@ local function get_chash_key_schema(hash_on)
 end
 
 
+-- Constraints of `warm_up_conf` that JSON schema cannot express. The first
+-- release only ramps HTTP roundrobin upstreams, so anything the ramp would be
+-- silently dropped from is rejected at the Admin API instead of being accepted
+-- and ignored.
+--
+-- This runs on the configuration entry points only, never on the data plane
+-- checker: a configuration that reaches a running gateway some other way - it is
+-- written to etcd or to a standalone config file directly, or it is embedded in a
+-- route or a service, neither of which runs this - must not take the whole
+-- upstream out of service over a field
+-- that only accelerates a ramp. `slow_start.usable()` logs and keeps proxying
+-- with the configured weights there.
+local function check_warm_up_conf(conf)
+    local warm_up_conf = conf.warm_up_conf
+    if not warm_up_conf then
+        return true
+    end
+
+    if (conf.type or "roundrobin") ~= "roundrobin" then
+        return false, "warm_up_conf is only supported by the roundrobin upstream type"
+    end
+
+    local interval = warm_up_conf.interval or 1
+    if interval > warm_up_conf.slow_start_time_seconds then
+        return false, "warm_up_conf.interval can't be greater than " ..
+                      "warm_up_conf.slow_start_time_seconds"
+    end
+
+    -- APISIX drains the highest priority tier before it uses the next one, so a
+    -- weight ramp inside one tier can't hold traffic back from a new node in a
+    -- tier above the mature ones
+    local nodes = conf.nodes
+    if nodes and core.table.isarray(nodes) then
+        local priority
+        for i, node in ipairs(nodes) do
+            local node_priority = node.priority or 0
+            if i == 1 then
+                priority = node_priority
+            elseif node_priority ~= priority then
+                return false, "warm_up_conf doesn't support an upstream with " ..
+                              "nodes of different priorities"
+            end
+        end
+    end
+
+    return true
+end
+_M.check_warm_up_conf = check_warm_up_conf
+
+
 local function check_upstream_conf(in_dp, conf)
     if not in_dp then
         local ok, err = check_schema(conf)
         if not ok then
             return false, "invalid configuration: " .. err
+        end
+
+        local ok, err = check_warm_up_conf(conf)
+        if not ok then
+            return false, err
         end
 
         if conf.nodes and not core.table.isarray(conf.nodes) then

@@ -26,12 +26,112 @@ local apisix_upstream = require("apisix.upstream")
 local resource = require("apisix.admin.resource")
 local tostring = tostring
 local ipairs = ipairs
+local type = type
 
 
-local function check_conf(id, conf, need_id)
+local function list_resources(path)
+    local res, err = core.etcd.get(path, true)
+    if not res then
+        return nil, {error_msg = "failed to fetch " .. path .. ": " .. err}
+    end
+
+    -- a prefix nothing has been written under yet is a 404, not an error
+    if res.status == 404 then
+        return {}
+    end
+
+    if res.status ~= 200 then
+        return nil, {error_msg = "failed to fetch " .. path .. ", response code: "
+                                 .. res.status}
+    end
+
+    local nodes = res.body.list
+    if not nodes and res.body.node then
+        nodes = res.body.node.nodes
+    end
+
+    local values = {}
+    for _, item in ipairs(nodes or {}) do
+        local value = item.value
+        if type(value) == "string" then
+            value = core.json.decode(value)
+        end
+
+        if type(value) == "table" then
+            core.table.insert(values, value)
+        end
+    end
+
+    return values
+end
+
+
+-- The stream subsystem never ramps node weights, so an upstream a stream route
+-- can reach may not enable slow start: the configuration would be accepted and
+-- then silently ignored on the L4 path. A route reaches one through its own
+-- `upstream_id`, or - when it names none - through the service it uses, which is
+-- the fallback `merge_service_stream_route` applies at runtime.
+local function check_stream_route_reference(id, conf, opts)
+    if not (conf.warm_up_conf and id) or opts.skip_references_check then
+        return true
+    end
+
+    local routes, err = list_resources("/stream_routes")
+    if not routes then
+        return nil, err
+    end
+
+    local via_service = {}
+    local has_service_ref = false
+    for _, route in ipairs(routes) do
+        if route.upstream_id and tostring(route.upstream_id) == tostring(id) then
+            return nil, {error_msg = "can not enable warm_up_conf on this upstream, "
+                                     .. "stream route [" .. tostring(route.id)
+                                     .. "] is using it now"}
+        end
+
+        if route.service_id and not route.upstream_id then
+            via_service[tostring(route.service_id)] = tostring(route.id)
+            has_service_ref = true
+        end
+    end
+
+    if not has_service_ref then
+        return true
+    end
+
+    local services, err = list_resources("/services")
+    if not services then
+        return nil, err
+    end
+
+    for _, service in ipairs(services) do
+        local route_id = via_service[tostring(service.id)]
+        if route_id and service.upstream_id
+           and tostring(service.upstream_id) == tostring(id) then
+
+            return nil, {error_msg = "can not enable warm_up_conf on this upstream, "
+                                     .. "stream route [" .. route_id .. "] is using it "
+                                     .. "through service [" .. tostring(service.id)
+                                     .. "] now"}
+        end
+    end
+
+    return true
+end
+
+
+local function check_conf(id, conf, need_id, schema, opts)
+    opts = opts or {}
+
     local ok, err = apisix_upstream.check_upstream_conf(conf)
     if not ok then
         return nil, {error_msg = err}
+    end
+
+    local ok, err = check_stream_route_reference(id, conf, opts)
+    if not ok then
+        return nil, err
     end
 
     return true

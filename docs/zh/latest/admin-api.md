@@ -1032,6 +1032,11 @@ APISIX 的 Upstream 除了基本的负载均衡算法选择外，还支持对上
 |keepalive_pool.size  | 否                                             | 辅助 | 动态设置 `keepalive` 指令，详细信息请参考下文。 |
 |keepalive_pool.idle_timeout  | 否                                             | 辅助 | 动态设置 `keepalive_timeout` 指令，详细信息请参考下文。 |
 |keepalive_pool.requests  | 否                                             | 辅助 | 动态设置 `keepalive_requests` 指令，详细信息请参考下文。 |
+|warm_up_conf.slow_start_time_seconds | 设置 `warm_up_conf` 时必填 | 整型 | 慢启动窗口，单位为秒。网关首次观察到的节点先承接较少的流量，并在该窗口内逐步恢复到配置的权重。最小值为 1。 |
+|warm_up_conf.min_weight_percent | 设置 `warm_up_conf` 时必填 | 整型 | 爬坡期间有效权重的下限，以配置权重的百分比表示，取值范围 1 到 100。 |
+|warm_up_conf.interval | 否 | 整型 | 两次刷新有效权重之间的间隔，单位为秒。默认为 `1`，不能大于 `slow_start_time_seconds`。 |
+|warm_up_conf.aggression | 否 | 数值 | 爬坡曲线。`1`（默认）为线性，大于 `1` 前期增长更快，小于 `1` 前期增长更慢。最小值为 `0.01`。 |
+|warm_up_conf.startup_grace_period_seconds | 否 | 整型 | 网关启动后的宽限时间，单位为秒。在此期间首次观察到的节点直接视为已完成预热，避免重启后整组节点重新爬坡。默认为 `0`。 |
 
 `type` 详细信息如下：
 
@@ -1070,6 +1075,12 @@ APISIX 的 Upstream 除了基本的负载均衡算法选择外，还支持对上
   ```
 
 - `keepalive_pool` 允许 Upstream 有自己单独的连接池。它下属的字段，比如 `requests`，可以用于配置上游连接保持的参数。
+- `warm_up_conf` 为 `roundrobin` 类型的 Upstream 开启节点慢启动。节点是否为新节点由网关根据自己观察到的节点集合判断，每次爬坡的起点记录在本地的 `upstream-slow-start` 共享字典中：
+  - 网关首次为 Upstream 构建负载均衡器时已有的节点视为已完成预热，开启 `warm_up_conf` 时 Upstream 已有的节点同样如此。
+  - 之后新增的节点从 `min_weight_percent` 开始，在 `slow_start_time_seconds` 内逐步恢复到配置的权重。被健康检查挡在负载均衡器之外的节点，从它首次可用时开始爬坡。
+  - 节点离开 Upstream 后在 `slow_start_time_seconds` 内回来，会继续原来的爬坡；更晚回来，或被健康检查排除超过该时长，会重新开始爬坡。
+  - 每个 APISIX 实例独立计时，起点为该实例观察到节点的时刻。
+  - `warm_up_conf` 仅支持节点优先级一致的 `roundrobin` 类型 Upstream，被 stream route 使用的 Upstream 以及 `traffic-split` 插件中的 Upstream 不允许配置。爬坡只在节点之间调整流量：单节点 Upstream，或所有节点都是新节点时，请求仍会全部发往这些节点。
 
 Upstream 对象 JSON 配置示例：
 
