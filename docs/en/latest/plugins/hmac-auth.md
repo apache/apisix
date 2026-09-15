@@ -416,7 +416,7 @@ You should see an `HTTP/1.1 200 OK` response similar to the following:
   "args": {},
   "headers": {
     "Accept": "*/*",
-    "Authorization": "Signature keyId=\"john-key\",algorithm=\"hmac-sha256\",headers=\"@request-target date digest\",signature=\"wWfKQvPDr0wHQ4IHdluB4IzeNZcj0bGJs2wvoCOT5rM=\"",
+    "Authorization": "Signature keyId=\"john-key\",algorithm=\"hmac-sha256\",headers=\"@request-target date\",signature=\"wWfKQvPDr0wHQ4IHdluB4IzeNZcj0bGJs2wvoCOT5rM=\"",
     "Date": "Fri, 06 Sep 2024 06:41:29 GMT",
     "Host": "127.0.0.1",
     "User-Agent": "curl/8.6.0",
