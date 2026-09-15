@@ -1584,10 +1584,10 @@ The stream `limit-conn` Plugin only accepts the following attributes. HTTP-only 
 
 | Name | Type | Required | Default | Valid values | Description |
 |------|------|----------|---------|--------------|-------------|
-| conn | integer | True | | > 0 | The maximum number of concurrent connections allowed. Connections exceeding the configured limit and below `conn + burst` will be delayed. |
+| conn | integer | True | | > 0 | The maximum number of concurrent connections allowed. Connections exceeding the configured limit and at or below `conn + burst` will be delayed. |
 | burst | integer | True | | >= 0 | The number of excessive concurrent connections allowed to be delayed. Connections exceeding `conn + burst` will be rejected immediately. |
 | default_conn_delay | number | True | | > 0 | Processing latency allowed in seconds for concurrent connections exceeding `conn` and up to `conn + burst`. |
-| only_use_default_delay | boolean | False | false | | If false, delay connections proportionally based on how much they exceed the `conn` limit. If true, use `default_conn_delay` to delay all excessive connections within the `burst` range. |
+| only_use_default_delay | boolean | False | false | | Has no effect on stream Routes. The proportional-delay behavior this setting toggles for HTTP Routes relies on measuring request latency, which the stream subsystem does not compute, so excess connections are always delayed by `default_conn_delay`. |
 | key_type | string | False | var | [`var`, `var_combination`] | The type of key. If `key_type` is `var`, `key` is interpreted as a variable. If `key_type` is `var_combination`, `key` is interpreted as a combination of variables. |
 | key | string | True | | | The key to count connections by. If the configured key resolves to an empty value, APISIX falls back to `remote_addr`. |
 
@@ -1608,6 +1608,12 @@ socat -v TCP-LISTEN:1995,fork,reuseaddr EXEC:'/bin/cat'
 ```
 
 Leave this running in its own terminal for the rest of the example.
+
+:::note
+
+This assumes APISIX is running directly on the host, where `127.0.0.1` is shared between APISIX and `socat`. If APISIX is running in a container, `127.0.0.1:1995` inside that container refers to the container itself, not the host running `socat`. Either run `socat` in the same container/network namespace as APISIX, or replace `127.0.0.1` in the upstream node with an address the container can reach, such as `host.docker.internal` (Docker Desktop) or the host's container-network gateway address.
+
+:::
 
 Create a stream Route with `limit-conn` Plugin as such:
 
@@ -1721,7 +1727,7 @@ spec:
       port: 1995
       targetPort: 1995
 ---
-apiVersion: gateway.networking.k8s.io/v1alpha2
+apiVersion: gateway.networking.k8s.io/v1
 kind: TCPRoute
 metadata:
   namespace: aic
@@ -1840,23 +1846,32 @@ kubectl apply -f limit-conn-stream-ic.yaml
 </TabItem>
 </Tabs>
 
-❶ `key_type`: set to `var` to interpret `key` as a variable.
+`key_type` is set to `var` so that `key` is interpreted as a variable, and `key` is set to `remote_addr` so the rate-limiting count is calculated by the connection's `remote_addr`.
 
-❷ `key`: calculate rate limiting count by the connection's `remote_addr`.
-
-With `conn` set to `1` and `burst` set to `0`, only one concurrent connection from the same `remote_addr` is allowed, and a second concurrent connection is rejected immediately. Open one long-lived connection in the background, then attempt a second connection while the first is still open:
+With `conn` set to `1` and `burst` set to `0`, only one concurrent connection from the same `remote_addr` is allowed, and a second concurrent connection is rejected immediately. Open one long-lived connection in the background, using `sleep` as the input source so the connection stays open regardless of terminal job control, and save its PID:
 
 ```shell
-nc 127.0.0.1 9100 &
-sleep 1
-nc -w 1 -v 127.0.0.1 9100
-kill %1 2>/dev/null
+sleep 30 | nc 127.0.0.1 9100 &
+first_pid=$!
 ```
 
-Because the first connection is still open, the second `nc` call is refused and its TCP connection is reset by APISIX, which `nc -v` reports on stderr, similar to:
+While that connection is still open, attempt a second one:
+
+```shell
+nc -w 1 -v 127.0.0.1 9100
+```
+
+The second `nc` call is refused and its TCP connection is reset by APISIX, which `nc -v` reports on stderr, similar to:
 
 ```text
 nc: connect to 127.0.0.1 port 9100 (tcp) failed: Connection reset by peer
 ```
 
-Wait for the first connection to close (or run `kill %1` yourself), then retry the second command on its own. It now connects successfully and proxies to the upstream as expected.
+Now close the first connection and retry:
+
+```shell
+kill "$first_pid"
+nc -w 1 -v 127.0.0.1 9100
+```
+
+With the first connection gone, the second call connects successfully and proxies to the upstream as expected.
