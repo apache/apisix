@@ -29,6 +29,11 @@ you need to write a shell script in the t/cli directory to test it. You can refe
 
 If you want to test the others, you need to write test code based on the framework.
 
+Run service-backed tests with the services and initialization scripts selected by
+that test's CI job. A running container does not guarantee that initialization
+has succeeded: for example, Kafka topic creation must finish with the expected
+partition count before a test sends messages.
+
 Here, we briefly describe how to do simple testing based on this framework.
 
 ## Test file
