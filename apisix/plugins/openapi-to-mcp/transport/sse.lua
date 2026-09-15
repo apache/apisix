@@ -195,7 +195,7 @@ local function handle_post(ctx, opts)
         return session_error(ct_status, ct_message)
     end
 
-    -- openapi-to-mcp's access phase already decoded and cached this body.
+    -- the check at the top of this function already decoded and cached this body
     local request = ctx._request_body_table
     if type(request) ~= "table" then
         local body, err = core.request.get_json_request_body_table()
