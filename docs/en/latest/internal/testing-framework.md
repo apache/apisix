@@ -111,6 +111,11 @@ GET /index.html
 no valid upstream node
 ```
 
+An Admin API write can finish before a worker's configuration watcher applies the
+update. If a test sends a request immediately after changing plugin metadata,
+wait for the expected values in the worker's metadata cache before sending it.
+Use a bounded wait and fail explicitly if the update does not arrive.
+
 ## Preparing the upstream
 
 To test the code, we need to provide a mock upstream.
