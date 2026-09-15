@@ -33,6 +33,7 @@ local tracer_provider_new = require("opentelemetry.trace.tracer_provider").new
 
 local span_kind = require("opentelemetry.trace.span_kind")
 local span_status = require("opentelemetry.trace.span_status")
+local otel_util = require("opentelemetry.util")
 local resource_new = require("opentelemetry.resource").new
 local attr = require("opentelemetry.attribute")
 
@@ -51,6 +52,7 @@ local string_format = string.format
 local string_lower = string.lower
 local update_time = ngx.update_time
 local tostring = tostring
+local tonumber = tonumber
 
 local lrucache = core.lrucache.new({
     type = 'plugin', count = 128, ttl = 24 * 60 * 60,
@@ -445,9 +447,38 @@ function _M.rewrite(conf, api_ctx)
     end
 
     api_ctx.otel_context_token = ctx:attach()
+    api_ctx.otel_tracer = tracer
 
     -- inject trace context into the headers of upstream HTTP request
     trace_context_propagator:inject(ctx, ngx.req)
+end
+
+
+local finish_upstream_span
+
+
+function _M.before_proxy(conf, api_ctx)
+    if not api_ctx.otel_context_token or not api_ctx.balancer_ip or not api_ctx.balancer_port then
+        return
+    end
+
+    finish_upstream_span(api_ctx)
+
+    update_time()
+    local start_time = otel_util.time_nano()
+    local attributes = {
+        attr.string("server.address", api_ctx.balancer_ip),
+        attr.int("server.port", api_ctx.balancer_port),
+    }
+    local upstream_ctx, upstream_span = api_ctx.otel_tracer:start(
+        context:current(), "apisix.upstream", {
+            kind = span_kind.client,
+            attributes = attributes,
+        }, start_time)
+
+    api_ctx.otel_upstream_span = upstream_span
+    api_ctx.otel_upstream_start_time = start_time
+    trace_context_propagator:inject(upstream_ctx, ngx.req)
 end
 
 
@@ -470,6 +501,48 @@ local function create_child_span(tracer, parent_span_ctx, spans, span)
         new_span:set_status(span.status.code, span.status.message)
     end
     new_span:finish(span.end_time)
+end
+
+
+finish_upstream_span = function(api_ctx)
+    local upstream_span = api_ctx.otel_upstream_span
+    local start_time = api_ctx.otel_upstream_start_time
+    if not upstream_span or not start_time then
+        return
+    end
+
+    local get_last_token = core.response.get_last_upstream_token
+    local response_time = tonumber(get_last_token(ngx_var.upstream_response_time))
+    local connect_time = tonumber(get_last_token(ngx_var.upstream_connect_time))
+    local upstream_time = response_time
+    if not upstream_time or (connect_time and connect_time > upstream_time) then
+        upstream_time = connect_time
+    end
+    if upstream_time and upstream_time < 0 then
+        return
+    end
+
+    local upstream_status = core.response.get_upstream_status(api_ctx)
+    if upstream_status then
+        upstream_span:set_attributes(attr.int("http.response.status_code", upstream_status))
+        if upstream_status >= 500 then
+            upstream_span:set_status(span_status.ERROR,
+                                     "upstream response status: " .. upstream_status)
+        end
+    end
+
+    local end_time
+    if upstream_time then
+        end_time = start_time + upstream_time * 1000000000
+    elseif api_ctx._apisix_proxied then
+        update_time()
+        end_time = otel_util.time_nano()
+    else
+        return
+    end
+
+    upstream_span:finish(end_time)
+    api_ctx.otel_upstream_span = nil
 end
 
 
@@ -532,6 +605,7 @@ function _M.log(conf, api_ctx)
                     resp_source .. " error: " .. status_code)
         end
 
+        finish_upstream_span(api_ctx)
         inject_core_spans(ctx, api_ctx, conf)
         span:set_attributes(attr.int("http.status_code", status_code),
                             attr.int("http.response.status_code", status_code))

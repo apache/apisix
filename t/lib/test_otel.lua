@@ -69,6 +69,26 @@ local function get_attr_map(span)
 end
 
 
+local function verify_propagated_parent(filepath, span, path, errors)
+    local file = io.open(filepath, "rb")
+    if not file then
+        table.insert(errors, path .. ": cannot open " .. filepath)
+        return
+    end
+
+    local headers = file:read("*a")
+    file:close()
+    local trace_id, span_id = headers:match(
+        "[Uu]pstream%-[Tt]raceparent:%s*00%-(%x+)%-(%x+)%-%x+")
+    if trace_id ~= span.traceId or span_id ~= span.spanId then
+        table.insert(errors, string.format(
+            "%s: propagated parent expected %s/%s, got %s/%s",
+            path, tostring(span.traceId), tostring(span.spanId),
+            tostring(trace_id), tostring(span_id)))
+    end
+end
+
+
 -- Recursively verify a span tree node against the expected structure.
 local function verify(spans_by_id, expected, actual, path, errors)
     if not actual then
@@ -93,9 +113,27 @@ local function verify(spans_by_id, expected, actual, path, errors)
         end
     end
 
+    if expected.propagated_header_file then
+        verify_propagated_parent(expected.propagated_header_file, actual, path, errors)
+    end
+
     if expected.children then
         for _, child_exp in ipairs(expected.children) do
             local child = find_child(spans_by_id, actual.spanId, child_exp.name)
+            if child and child_exp.within_parent then
+                local child_start = tonumber(child.startTimeUnixNano)
+                local child_end = tonumber(child.endTimeUnixNano)
+                local parent_start = tonumber(actual.startTimeUnixNano)
+                local parent_end = tonumber(actual.endTimeUnixNano)
+                if not child_start or not child_end or not parent_start or not parent_end
+                   or child_start < parent_start or child_end > parent_end
+                   or child_end < child_start
+                then
+                    table.insert(errors, string.format(
+                        "%s > %s: span timing is outside its parent",
+                        path, child_exp.name))
+                end
+            end
             verify(spans_by_id, child_exp, child,
                    path .. " > " .. child_exp.name, errors)
         end

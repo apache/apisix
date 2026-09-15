@@ -122,7 +122,7 @@ qr//
                         },
                         "type": "roundrobin"
                     },
-                    "uri": "/opentracing"
+                    "uri": "/otel_traceparent"
                 }]]
                 )
 
@@ -194,7 +194,8 @@ passed
         error("unknown domain: " .. domain)
     end
 --- exec
-curl -k --resolve "test.com:1994:127.0.0.1" https://test.com:1994/opentracing
+curl -k -D /tmp/apisix-otel-upstream-headers.txt \
+    --resolve "test.com:1994:127.0.0.1" https://test.com:1994/otel_traceparent
 --- wait: 5
 --- response_body
 opentracing
@@ -210,7 +211,7 @@ opentracing
             local ok, err = otel.verify_tree(
                 "ci/pod/otelcol-contrib/data-otlp.json",
                 {
-                    name = "GET /opentracing",
+                    name = "GET /otel_traceparent",
                     kind = 2,
                     attributes = {
                         ["apisix.route_id"] = "1",
@@ -227,6 +228,18 @@ opentracing
                             }
                         },
                         { name = "resolve_dns", kind = 1 },
+                        {
+                            name = "apisix.upstream",
+                            kind = 3,
+                            within_parent = true,
+                            propagated_header_file =
+                                "/tmp/apisix-otel-upstream-headers.txt",
+                            attributes = {
+                                ["server.address"] = "127.0.0.2",
+                                ["server.port"] = "1980",
+                                ["http.response.status_code"] = "200",
+                            },
+                        },
                         { name = "apisix.phase.header_filter", kind = 2 },
                         { name = "apisix.phase.body_filter", kind = 2 },
                         { name = "apisix.phase.log.plugins.opentelemetry", kind = 1 },
@@ -267,7 +280,8 @@ qr//
         error("unknown domain: " .. domain)
     end
 --- exec
-curl -sk --http2 --resolve "test.com:1994:127.0.0.1" https://test.com:1994/opentracing https://test.com:1994/opentracing
+curl -sk --http2 --resolve "test.com:1994:127.0.0.1" \
+    https://test.com:1994/otel_traceparent https://test.com:1994/otel_traceparent
 --- wait: 5
 --- response_body
 opentracing
@@ -283,14 +297,15 @@ opentracing
 
             local ok, err = otel.verify_isolated_traces(
                 "ci/pod/otelcol-contrib/data-otlp.json",
-                "GET /opentracing",
+                "GET /otel_traceparent",
                 2,
                 {
-                    "GET /opentracing",
+                    "GET /otel_traceparent",
                     "apisix.phase.access",
                     "sni_radixtree_match",
                     "http_router_match",
                     "resolve_dns",
+                    "apisix.upstream",
                     "apisix.phase.header_filter",
                     "apisix.phase.body_filter",
                     "apisix.phase.log.plugins.opentelemetry",

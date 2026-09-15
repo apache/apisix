@@ -215,6 +215,12 @@ function _M.opentracing()
 end
 
 
+function _M.otel_traceparent()
+    ngx.header["Upstream-Traceparent"] = ngx.req.get_headers()["traceparent"]
+    ngx.say("opentracing")
+end
+
+
 function _M.with_header()
     --split into multiple chunk
     ngx.say("hello")
