@@ -655,3 +655,231 @@ GET /t
 code: 401
 --- no_error_log
 [error]
+
+
+
+=== TEST 23: add a Wolf consumer and configure Wolf before key-auth
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "wolf-client",
+                    "plugins": {
+                        "wolf-rbac": {
+                            "appid": "multi-auth-wolf-app"
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "multi-auth": {
+                            "auth_plugins": [
+                                {
+                                    "wolf-rbac": {
+                                        "server": "http://127.0.0.1:1982",
+                                        "header_prefix": "X-Wolf-"
+                                    }
+                                },
+                                {
+                                    "key-auth": {}
+                                }
+                            ]
+                        },
+                        "serverless-post-function": {
+                            "phase": "access",
+                            "functions": [
+                                "return function(conf, ctx) local core = require(\"apisix.core\"); local names = {\"X-Wolf-UserId\", \"X-Wolf-Username\", \"X-Wolf-Nickname\", \"X-Consumer-Username\"}; local values = {}; for i, name in ipairs(names) do values[i] = core.request.header(ctx, name) or \"nil\"; end; core.response.exit(200, table.concat(values, \",\")); end"
+                            ]
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 24: Wolf clears its Route header namespace before fallback
+--- request
+GET /hello
+--- more_headers
+apikey: auth-one
+X-Wolf-UserId: admin-001
+X-Wolf-Username: admin
+X-Wolf-Nickname: administrator
+--- response_body eval
+"nil,nil,nil,foo"
+
+
+
+=== TEST 25b: malformed Wolf token does not preserve Route identity headers
+--- request
+GET /hello
+--- more_headers
+x-rbac-token: malformed
+apikey: auth-one
+X-Wolf-UserId: forged
+X-Wolf-Username: forged
+X-Wolf-Nickname: forged
+--- response_body eval
+"nil,nil,nil,foo"
+
+
+
+=== TEST 26: Wolf headers are cleared when key-auth succeeds first
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "multi-auth": {
+                            "auth_plugins": [
+                                {
+                                    "key-auth": {}
+                                },
+                                {
+                                    "wolf-rbac": {
+                                        "server": "http://127.0.0.1:1982",
+                                        "header_prefix": "X-Wolf-"
+                                    }
+                                }
+                            ]
+                        },
+                        "serverless-post-function": {
+                            "phase": "access",
+                            "functions": [
+                                "return function(conf, ctx) local core = require(\"apisix.core\"); local names = {\"X-Wolf-UserId\", \"X-Wolf-Username\", \"X-Wolf-Nickname\", \"X-Consumer-Username\"}; local values = {}; for i, name in ipairs(names) do values[i] = core.request.header(ctx, name) or \"nil\"; end; core.response.exit(200, table.concat(values, \",\")); end"
+                            ]
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, _, body = t('/hello', ngx.HTTP_GET, nil, nil, {
+                apikey = "auth-one",
+                ["X-Wolf-UserId"] = "admin-001",
+                ["X-Wolf-Username"] = "admin",
+                ["X-Wolf-Nickname"] = "administrator",
+            })
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- response_body eval
+"nil,nil,nil,foo"
+
+
+
+=== TEST 27: successful Wolf authentication sets the Route header namespace
+--- request
+GET /hello
+--- more_headers
+x-rbac-token: V1#multi-auth-wolf-app#wolf-rbac-token
+X-Wolf-UserId: forged
+X-Wolf-Username: forged
+X-Wolf-Nickname: forged
+--- response_headers
+X-Wolf-UserId: 100
+X-Wolf-Username: admin
+X-Wolf-Nickname: administrator
+--- response_body eval
+"100,admin,administrator,wolf-client"
+
+
+
+=== TEST 28: empty Wolf configuration uses the default header prefix
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "multi-auth": {
+                            "auth_plugins": [
+                                {"key-auth": {}},
+                                {"wolf-rbac": {}}
+                            ]
+                        },
+                        "serverless-post-function": {
+                            "phase": "access",
+                            "functions": [
+                                "return function(conf, ctx) local core = require(\"apisix.core\"); local names = {\"X-UserId\", \"X-Username\", \"X-Nickname\", \"X-Consumer-Username\"}; local values = {}; for i, name in ipairs(names) do values[i] = core.request.header(ctx, name) or \"nil\"; end; core.response.exit(200, table.concat(values, \",\")); end"
+                            ]
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            code, _, body = t('/hello', ngx.HTTP_GET, nil, nil, {
+                apikey = "auth-one",
+                ["X-UserId"] = "forged",
+                ["X-Username"] = "forged",
+                ["X-Nickname"] = "forged",
+            })
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- response_body eval
+"nil,nil,nil,foo"
