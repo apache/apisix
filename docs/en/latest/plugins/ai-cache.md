@@ -89,7 +89,7 @@ For the `passthrough` protocol, `ai-proxy` forwards the client's request method,
 | redis_timeout | integer | False | 1000 | >= 1 | Redis timeout value in milliseconds. |
 | redis_ssl | boolean | False | false | | If true, use SSL to connect to Redis. |
 | redis_ssl_verify | boolean | False | false | | If true, verify the Redis server SSL certificate. |
-| redis_server_name | string | False | | | TLS SNI when `redis_ssl` is true. Defaults to `redis_host`. |
+| redis_server_name | string | False | | | TLS SNI when `redis_ssl` is true. Defaults to `redis_host`. When `redis_ssl_verify` is true the certificate must also match this name, so set it when `redis_host` is an alias the certificate does not cover. |
 | redis_keepalive_timeout | integer | False | 10000 | >= 1000 | Keepalive timeout, in milliseconds, for the Redis connection pool. |
 | redis_keepalive_pool | integer | False | 100 | >= 1 | Maximum number of connections in the Redis keepalive pool. |
 

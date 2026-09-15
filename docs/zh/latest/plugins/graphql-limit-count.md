@@ -70,7 +70,7 @@ description: graphql-limit-count 插件使用固定窗口算法，基于 GraphQL
 | redis_password | string | 否 | | | Redis 节点密码。`policy` 为 `redis` 或 `redis-cluster` 时使用。 |
 | redis_ssl | boolean | 否 | false | | 为 true 时使用 SSL 连接 Redis。`policy` 为 `redis` 时使用。 |
 | redis_ssl_verify | boolean | 否 | false | | 为 true 时验证 Redis 服务端 SSL 证书。`policy` 为 `redis` 时使用。 |
-| redis_server_name | string | 否 | | | 当 `policy` 为 `redis` 且 `redis_ssl` 为 true 时使用的 TLS SNI。默认使用 `redis_host`。 |
+| redis_server_name | string | 否 | | | 当 `policy` 为 `redis` 且 `redis_ssl` 为 true 时使用的 TLS SNI。默认使用 `redis_host`。 当 `redis_ssl_verify` 为 true 时，证书还必须与该名称匹配，因此当 `redis_host` 是证书未覆盖的别名时请设置此项。 |
 | redis_database | integer | 否 | 0 | >= 0 | Redis 数据库编号。`policy` 为 `redis` 时使用。 |
 | redis_timeout | integer | 否 | 1000 | [1,...] | Redis 超时时间（毫秒）。`policy` 为 `redis` 或 `redis-cluster` 时使用。 |
 | redis_cluster_nodes | array[string] | 否 | | | Redis 集群节点地址列表。`policy` 为 `redis-cluster` 时必填。 |

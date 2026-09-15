@@ -374,3 +374,105 @@ passed
 [200, 500, 200, 500]
 --- no_error_log
 [alert]
+
+
+
+=== TEST 13: limit-count: a DNS redis_host not covered by the certificate fails the host check
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "plugins": {
+                        "limit-count": {
+                            "count": 2,
+                            "time_window": 60,
+                            "rejected_code": 503,
+                            "key": "remote_addr",
+                            "policy": "redis",
+                            "redis_host": "admin.apisix.dev",
+                            "redis_port": 6396,
+                            "redis_ssl": true,
+                            "redis_ssl_verify": true
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 14: the certificate is for test.com, so the verified connection is refused
+--- stream_enable
+--- request
+GET /hello
+--- error_code: 500
+--- error_log
+certificate host mismatch
+
+
+
+=== TEST 15: limit-count: redis_server_name names the certificate host for that DNS alias
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "plugins": {
+                        "limit-count": {
+                            "count": 2,
+                            "time_window": 60,
+                            "rejected_code": 503,
+                            "key": "remote_addr",
+                            "policy": "redis",
+                            "redis_host": "admin.apisix.dev",
+                            "redis_port": 6396,
+                            "redis_ssl": true,
+                            "redis_ssl_verify": true,
+                            "redis_server_name": "test.com"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 16: the override matches the certificate, the counter works
+--- stream_enable
+--- pipelined_requests eval
+["GET /hello", "GET /hello", "GET /hello"]
+--- error_code eval
+[200, 200, 503]
