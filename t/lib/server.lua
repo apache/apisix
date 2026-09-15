@@ -819,6 +819,61 @@ local function ai_fixture_dispatch()
     require("lib.fixture_loader").dispatch()
 end
 
+-- Routing-redirect endpoints, modelling a provider whose API validates the
+-- request and then answers with a 307 to the host that fulfills it (The Grid's
+-- Consumption API works this way). The redirect target is on the same origin.
+function _M.redirect_v1_chat_completions()
+    ngx.status = 307
+    ngx.header["Location"] =
+        "http://127.0.0.1:1980/r/v1/chat/completions?token=mock-routing-token"
+    ngx.say("redirecting")
+end
+
+
+-- Same, but pointing at another origin, which must never be followed because
+-- the replay would carry the provider credentials to a host named by the
+-- response rather than by the configuration.
+function _M.redirect_cross_v1_chat_completions()
+    ngx.status = 307
+    ngx.header["Location"] =
+        "http://localhost:1980/r/v1/chat/completions?token=mock-routing-token"
+    ngx.say("redirecting")
+end
+
+
+-- The redirect target. Asserts that the replay preserved the method, the body
+-- and the request headers, then serves the requested fixture.
+function _M.r_v1_chat_completions()
+    if ngx.req.get_method() ~= "POST" then
+        ngx.status = 400
+        ngx.say([[{"error":"redirect replay changed the method"}]])
+        return
+    end
+
+    ngx.req.read_body()
+    local body = ngx.req.get_body_data()
+    if not body or body == "" then
+        ngx.status = 400
+        ngx.say([[{"error":"redirect replay dropped the body"}]])
+        return
+    end
+
+    if ngx.req.get_uri_args()["token"] ~= "mock-routing-token" then
+        ngx.status = 400
+        ngx.say([[{"error":"redirect replay dropped the target query"}]])
+        return
+    end
+
+    if not ngx.req.get_headers()["authorization"] then
+        ngx.status = 400
+        ngx.say([[{"error":"redirect replay dropped the authorization header"}]])
+        return
+    end
+
+    ai_fixture_dispatch()
+end
+
+
 function _M.v1_chat_completions()
     local json = require("cjson.safe")
     local fixture = ngx.req.get_headers()["x-ai-fixture"]

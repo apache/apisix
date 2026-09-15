@@ -20,12 +20,14 @@
 
 local core = require("apisix.core")
 local http_client = require("apisix.utils.http")
+local url = require("socket.url")
 local ngx_now = ngx.now
 local pairs = pairs
 local ipairs = ipairs
 local pcall = pcall
 local type = type
 local str_lower = string.lower
+local tonumber = tonumber
 local tostring = tostring
 
 local attr_schema = {
@@ -121,6 +123,82 @@ local function encode_body(body)
 end
 
 
+-- Redirect statuses that preserve the method and the body, so the request can
+-- be replayed unchanged. 301/302/303 are deliberately absent: they permit the
+-- method to be rewritten to GET, which would silently drop the prompt.
+local REDIRECT_STATUSES = {
+    [307] = true,
+    [308] = true,
+}
+
+
+--- Follow one same-origin 307/308 redirect, reusing the open connection.
+-- Providers that route through a redirect (The Grid's Consumption API answers
+-- with a documented 307 to its routing layer) need it followed inside the
+-- gateway: returning the 3xx downstream would leave the Plugin blind to the
+-- real response, so token usage, retries and instance fallback would all see a
+-- request that never produced any tokens.
+--
+-- Only same-origin redirects are followed. A cross-origin hop would replay the
+-- provider credentials in `Authorization` against a host chosen by the
+-- response, so it is refused rather than followed.
+-- @param httpc table Connected HTTP client
+-- @param params table Request parameters that produced `res`
+-- @param res table The redirect response
+-- @return table|nil New response object
+-- @return string|nil Error message
+local function follow_redirect(httpc, params, res)
+    local location = res.headers["Location"] or res.headers["location"]
+    if not location then
+        return nil, "redirect response carried no Location header"
+    end
+
+    local parsed = url.parse(location)
+    if not parsed or not parsed.path then
+        return nil, "could not parse Location header"
+    end
+
+    -- A Location without a host is relative, and therefore same-origin already.
+    if parsed.host then
+        local scheme = parsed.scheme or params.scheme
+        local port = tonumber(parsed.port)
+                     or (scheme == "https" and 443 or 80)
+        if parsed.host ~= params.host
+           or scheme ~= params.scheme
+           or port ~= tonumber(params.port) then
+            return nil, "refusing to follow cross-origin redirect to " .. location
+        end
+    end
+
+    -- The connection is reused for the replay, so the redirect's own body has
+    -- to be drained off the wire first.
+    local _, read_err = res:read_body()
+    if read_err then
+        return nil, "failed to drain redirect body: " .. read_err
+    end
+
+    local next_params = {}
+    for k, v in pairs(params) do
+        next_params[k] = v
+    end
+    next_params.path = parsed.path
+    -- A redirect target that carries its own query string replaces the original
+    -- one, which belonged to the hop that has already been answered. Without
+    -- one, the original is kept, so providers that authenticate through
+    -- `auth.query` still reach the target authenticated.
+    if parsed.query then
+        next_params.query = parsed.query
+    end
+
+    local next_res, err = httpc:request(next_params)
+    if not next_res then
+        return nil, "redirect request: " .. (err or "unknown")
+    end
+
+    return next_res
+end
+
+
 --- Send an HTTP request to an AI service.
 -- Handles the full lifecycle: create client, connect, encode body,
 -- send request, and return the response object.
@@ -194,6 +272,22 @@ function _M.request(params, timeout)
             connect_time = connect_time,
             t0 = t0,
         }
+    end
+
+    if params.follow_redirects and REDIRECT_STATUSES[res.status] then
+        local redirected, redirect_err = follow_redirect(httpc, params, res)
+        if not redirected then
+            httpc:close()
+            return nil, redirect_err, {
+                upstream_addr = upstream_addr,
+                upstream_host = upstream_host,
+                upstream_scheme = upstream_scheme,
+                upstream_uri = params.path,
+                connect_time = connect_time,
+                t0 = t0,
+            }
+        end
+        res = redirected
     end
 
     local header_time = (ngx_now() - t0) * 1000
