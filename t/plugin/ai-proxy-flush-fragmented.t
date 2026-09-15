@@ -72,8 +72,8 @@ _EOC_
                         if not send(body:sub(1, done - 1)) then
                             return
                         end
-                        ngx.print(body:sub(done))
-                        ngx.flush(true)
+                        assert(ngx.print(body:sub(done)))
+                        assert(ngx.flush(true))
                         for _ = 1, 100 do
                             if ngx.shared.test:get("converted-completion-received") then
                                 return
@@ -307,13 +307,13 @@ routes:
                     end
                     body = body .. chunk
                     if body:find("event: message_stop", 1, true) then
-                        ngx.shared.test:set("converted-completion-received", true)
+                        assert(ngx.shared.test:set("converted-completion-received", true))
                     end
                 end
             end
             httpc:close()
             if err then
-                ngx.shared.test:set("converted-completion-received", true)
+                assert(ngx.shared.test:set("converted-completion-received", true))
                 ngx.say("failed: ", err)
                 return
             end
