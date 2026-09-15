@@ -47,11 +47,17 @@ add_block_preprocessor(sub {
                         end
                     end
                     local offset = 0
-                    if args.after_first then
-                        offset = assert(body:find("\n\n", 1, true)) + 1
-                        if not send(body:sub(1, offset)) then
+                    local complete_frames = args.buffer and 2 or args.after_first and 1 or 0
+                    for _ = 1, complete_frames do
+                        local boundary = assert(body:find("\n\n", offset + 1, true)) + 1
+                        if not send(body:sub(offset + 1, boundary)) then
                             return
                         end
+                        offset = boundary
+                    end
+                    if args.buffer then
+                        send(body:sub(offset + 1))
+                        return
                     end
                     -- Two fragments leave the next frame incomplete across a flush interval.
                     if not send(body:sub(offset + 1, offset + 10))
@@ -63,7 +69,7 @@ add_block_preprocessor(sub {
             }
         }
 _EOC_
-    $block->set_value("apisix_yaml", <<'_EOC_');
+    $block->set_value("apisix_yaml", $block->apisix_yaml // <<'_EOC_');
 routes:
   - id: native
     uri: /fragmented/v1/responses
@@ -179,4 +185,62 @@ qr/event: message_start.*Hello.* world.*event: message_stop/s
 --- no_error_log
 [error]
 nothing to flush
+client disconnected during AI streaming
+
+
+
+=== TEST 5: empty periodic flush warns once and resumes after a filter releases buffered output
+--- extra_yaml_config
+plugins:
+  - ai-proxy-multi
+  - test-ai-buffer
+--- extra_init_by_lua
+    local buffer_plugin = {
+        version = 0.1,
+        priority = 1,
+        name = "test-ai-buffer",
+        schema = {type = "object", properties = {}},
+    }
+    function buffer_plugin.check_schema(conf)
+        return require("apisix.core").schema.check(buffer_plugin.schema, conf)
+    end
+    function buffer_plugin.lua_body_filter(conf, ctx, headers, body)
+        ctx.test_ai_buffer = ctx.test_ai_buffer or {}
+        table.insert(ctx.test_ai_buffer, body)
+        if not ctx.var.llm_request_done then
+            return nil, ""
+        end
+        return nil, table.concat(ctx.test_ai_buffer)
+    end
+    package.loaded["apisix.plugins.test-ai-buffer"] = buffer_plugin
+--- apisix_yaml
+routes:
+  - id: buffered
+    uri: /buffered/v1/responses
+    plugins:
+      test-ai-buffer: {}
+      ai-proxy-multi:
+        instances:
+          - name: native
+            provider: openai-compatible
+            weight: 1
+            auth:
+              header:
+                Authorization: Bearer test-key
+            override:
+              endpoint: http://127.0.0.1:7752/stream?buffer=true
+#END
+--- request
+POST /buffered/v1/responses
+{"model":"test","input":"hi","stream":true}
+--- more_headers
+X-AI-Fixture: openai/responses-streaming.sse
+--- response_body eval
+scalar File::Slurp::read_file("t/fixtures/openai/responses-streaming.sse")
+--- grep_error_log eval
+qr/AI streaming flush skipped: nothing to flush/
+--- grep_error_log_out
+AI streaming flush skipped: nothing to flush
+--- no_error_log
+[error]
 client disconnected during AI streaming

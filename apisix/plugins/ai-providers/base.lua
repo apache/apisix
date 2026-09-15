@@ -519,16 +519,24 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
         local interval_s = flush_interval_ms / 1000
         local spawn_err
         flush_thread, spawn_err = ngx.thread.spawn(function()
+            local warned_empty_flush = false
             while true do
                 ngx.sleep(interval_s)
                 if needs_flush then
                     needs_flush = false
                     local ok, err = ngx.flush(false)
                     if not ok then
-                        flush_err = err
-                        return
+                        if err ~= "nothing to flush" then
+                            flush_err = err
+                            return
+                        end
+                        if not warned_empty_flush then
+                            core.log.warn("AI streaming flush skipped: ", err)
+                            warned_empty_flush = true
+                        end
+                    else
+                        core.log.debug("ai-proxy: flush_thread periodic flush")
                     end
-                    core.log.debug("ai-proxy: flush_thread periodic flush")
                 end
             end
         end)
