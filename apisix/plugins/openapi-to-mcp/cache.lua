@@ -35,9 +35,14 @@ local NEG_COUNT = 32
 
 local CACHE_VERSION = "1"
 
+-- invalid_stale: without it core.lrucache hands an expired entry back and
+-- re-arms its TTL whenever the version still matches, and the version here
+-- never changes, so a document updated at the same URL would never be fetched
+-- again.
 local lru = core.lrucache.new({
     ttl = SPEC_TTL,
     count = SPEC_COUNT,
+    invalid_stale = true,
     neg_ttl = NEG_TTL,
     neg_count = NEG_COUNT,
 })

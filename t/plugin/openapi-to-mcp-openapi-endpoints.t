@@ -140,3 +140,63 @@ get,put,post,delete,patch
 listPets
 true
 true
+
+
+
+=== TEST 7: path item parameters are inherited, and an operation parameter overrides by name and location
+--- config
+    location /t {
+        content_by_lua_block {
+            local endpoints = require("apisix.plugins.openapi-to-mcp.openapi.endpoints")
+            local get = {
+                operationId = "getPet",
+                parameters = {
+                    { name = "verbose", ["in"] = "query", schema = { type = "string" } },
+                    { name = "id", ["in"] = "header", schema = { type = "string" } },
+                },
+            }
+            local spec = { paths = { ["/pets/{id}"] = {
+                parameters = {
+                    { name = "id", ["in"] = "path", required = true, schema = { type = "integer" } },
+                    { name = "verbose", ["in"] = "query", schema = { type = "boolean" } },
+                },
+                get = get,
+            } } }
+            local out = endpoints.extract(spec, {})
+            for _, p in ipairs(out[1].operation.parameters) do
+                ngx.say(p["in"], " ", p.name, " ", p.schema.type)
+            end
+            -- the document itself is left alone
+            ngx.say(#get.parameters, " ", out[1].operation ~= get, " ", out[1].operation.operationId)
+        }
+    }
+--- response_body
+query verbose string
+header id string
+path id integer
+2 true getPet
+
+
+
+=== TEST 8: an operation without parameters of its own takes the path item's
+--- config
+    location /t {
+        content_by_lua_block {
+            local endpoints = require("apisix.plugins.openapi-to-mcp.openapi.endpoints")
+            local generator = require("apisix.plugins.openapi-to-mcp.tools.generator")
+            local spec = { paths = { ["/pets/{id}"] = {
+                parameters = {
+                    { name = "id", ["in"] = "path", required = true, schema = { type = "integer" } },
+                },
+                delete = { operationId = "deletePet" },
+            } } }
+            local tool = generator.generate(spec, { ["/pets/{id}"] = 1 })[1]
+            ngx.say(tool.input_schema.properties.pathParameters.properties.id.type)
+            ngx.say(tool.input_schema.required[1])
+            ngx.say(tool.execution_parameters[1]["in"], " ", tool.execution_parameters[1].name)
+        }
+    }
+--- response_body
+integer
+pathParameters
+path id

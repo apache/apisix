@@ -54,6 +54,12 @@ The Plugin supports:
 
 Tool call arguments are validated against the generated input schema before the API is called. A call to an unknown tool, or with invalid arguments, returns a result with `isError` set to `true`.
 
+When a tool is called, the Plugin builds the request from the operation:
+
+* Parameters declared on the Path Item apply to every operation under it; an operation parameter with the same name and location overrides them.
+* Query parameters are serialized according to their `style` and `explode`, as defined by the [OpenAPI Parameter Object](https://spec.openapis.org/oas/v3.0.3#style-values). With the defaults (`form`, exploded), `tags: ["a", "b"]` is sent as `tags=a&tags=b`. `spaceDelimited`, `pipeDelimited` and `deepObject` are supported.
+* A request body is sent with the media type the operation declares, unless `headers` sets `Content-Type`.
+
 For the SSE transport, sessions are kept in the `mcp-session` shared dict, so the stream and the message requests of one session may be handled by different worker processes. Sessions are local to one APISIX instance: when several instances run behind a load balancer, the requests of an SSE session must reach the same instance. The Streamable HTTP transport is stateless and has no such requirement.
 
 ## Example usage

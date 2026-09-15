@@ -40,6 +40,56 @@ local DOCUMENTS = {
         } } },
     },
 
+    -- one query parameter per OpenAPI serialization style
+    ["/styles.json"] = {
+        openapi = "3.0.0",
+        info = { title = "Styles", version = "1" },
+        paths = { ["/s"] = { get = {
+            operationId = "styles",
+            parameters = {
+                { name = "formArr", ["in"] = "query", explode = false,
+                  schema = { type = "array", items = { type = "string" } } },
+                { name = "spaceArr", ["in"] = "query", style = "spaceDelimited",
+                  schema = { type = "array", items = { type = "string" } } },
+                { name = "pipeArr", ["in"] = "query", style = "pipeDelimited",
+                  schema = { type = "array", items = { type = "string" } } },
+                { name = "deep", ["in"] = "query", style = "deepObject", explode = true,
+                  schema = { type = "object", properties = { x = { type = "string" } } } },
+                { name = "formObj", ["in"] = "query", explode = false,
+                  schema = { type = "object", properties = { k = { type = "string" } } } },
+            },
+        } } },
+    },
+
+    -- parameters declared on the Path Item, one of them overridden
+    ["/pathitem.json"] = {
+        openapi = "3.0.0",
+        info = { title = "Path item", version = "1" },
+        paths = { ["/pets/{id}"] = {
+            parameters = {
+                { name = "id", ["in"] = "path", required = true, schema = { type = "integer" } },
+                { name = "verbose", ["in"] = "query", schema = { type = "boolean" } },
+            },
+            get = {
+                operationId = "getPetById",
+                parameters = {
+                    { name = "verbose", ["in"] = "query", schema = { type = "string" } },
+                },
+            },
+        } },
+    },
+
+    -- a request body whose only media type is not JSON
+    ["/textbody.json"] = {
+        openapi = "3.0.0",
+        info = { title = "Text body", version = "1" },
+        paths = { ["/notes"] = { post = {
+            operationId = "addNote",
+            requestBody = { required = true, content = { ["text/plain"] = {
+                schema = { type = "string" } } } },
+        } } },
+    },
+
     -- query parameters that are an object and an array
     ["/objq.json"] = {
         openapi = "3.0.0",
@@ -68,6 +118,12 @@ local FILES = {
 }
 
 
+local function read_body()
+    ngx.req.read_body()
+    return ngx.req.get_body_data()
+end
+
+
 -- content handler for `location /`
 function _M.serve()
     local uri = ngx.var.uri
@@ -92,6 +148,8 @@ function _M.serve()
         seen_path = ngx.var.request_uri,
         seen_method = ngx.req.get_method(),
         seen_auth = ngx.req.get_headers()["authorization"],
+        seen_content_type = ngx.req.get_headers()["content-type"],
+        seen_body = ngx.req.get_method() ~= "GET" and read_body() or nil,
     }))
 end
 

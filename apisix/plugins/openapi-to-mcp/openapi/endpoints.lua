@@ -17,6 +17,7 @@
 local pairs      = pairs
 local ipairs     = ipairs
 local type       = type
+local tostring   = tostring
 local math_huge  = math.huge
 local table_sort = table.sort
 
@@ -35,6 +36,52 @@ for rank, method in ipairs(METHOD_ORDER) do
 end
 
 
+local function param_key(param)
+    return tostring(param["in"]) .. "\0" .. tostring(param.name)
+end
+
+
+-- Parameters declared on a Path Item apply to every operation under it; an
+-- operation parameter with the same name and location overrides the inherited
+-- one. See https://spec.openapis.org/oas/v3.0.3#path-item-object
+-- The operation's own parameters come first, in their order, followed by the
+-- inherited ones it does not override.
+local function with_path_parameters(operation, path_params)
+    if type(path_params) ~= "table" or #path_params == 0 then
+        return operation
+    end
+
+    local merged = {}
+    local declared = {}
+    if type(operation.parameters) == "table" then
+        for _, param in ipairs(operation.parameters) do
+            merged[#merged + 1] = param
+            if type(param) == "table" then
+                declared[param_key(param)] = true
+            end
+        end
+    end
+
+    local inherited = false
+    for _, param in ipairs(path_params) do
+        if type(param) == "table" and not declared[param_key(param)] then
+            merged[#merged + 1] = param
+            inherited = true
+        end
+    end
+    if not inherited then
+        return operation
+    end
+
+    local copy = {}
+    for key, value in pairs(operation) do
+        copy[key] = value
+    end
+    copy.parameters = merged
+    return copy
+end
+
+
 function _M.extract(spec, path_order)
     local out = {}
     if type(spec) ~= "table" or type(spec.paths) ~= "table" then
@@ -50,7 +97,7 @@ function _M.extract(spec, path_order)
                     out[#out + 1] = {
                         method = method,
                         path = path,
-                        operation = operation,
+                        operation = with_path_parameters(operation, path_item.parameters),
                         _path_rank = path_order[path] or math_huge,
                         _method_rank = METHOD_RANK[method],
                     }

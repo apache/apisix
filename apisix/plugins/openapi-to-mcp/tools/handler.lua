@@ -20,6 +20,7 @@ local json_pretty  = require("apisix.plugins.openapi-to-mcp.json_pretty")
 local pairs        = pairs
 local ipairs       = ipairs
 local type         = type
+local getmetatable = getmetatable
 local tostring     = tostring
 local str_lower    = string.lower
 local str_upper    = string.upper
@@ -121,49 +122,124 @@ local function build_path(template, path_params)
 end
 
 
--- Bracket notation, as the common JavaScript HTTP clients serialize it: an
--- array becomes "tags[]=a&tags[]=b" and an object "filter[a]=x", nested to any
--- depth. Dropping the brackets, or dropping objects entirely, would lose the
--- structure the schema advertised.
-local function encode_param(name, value, parts)
+local function sorted_keys(tab)
+    -- Lua tables are unordered; sort so the query string is the same on every
+    -- worker
+    local keys = {}
+    for key in pairs(tab) do
+        keys[#keys + 1] = key
+    end
+    table_sort(keys, function(a, b)
+        return tostring(a) < tostring(b)
+    end)
+    return keys
+end
+
+
+local function scalar(value)
+    if type(value) == "table" then
+        return core.json.encode(value) or ""
+    end
+    return tostring(value)
+end
+
+
+local function is_array(value)
+    return #value > 0 or getmetatable(value) == core.json.array_mt
+end
+
+
+local DELIMITERS = {
+    form = ",",
+    spaceDelimited = "%20",
+    pipeDelimited = "|",
+}
+
+
+-- Serialize one query parameter the way its Parameter Object says:
+-- https://spec.openapis.org/oas/v3.0.3#style-values
+-- `style` defaults to form, and `explode` defaults to true for form and false
+-- otherwise.
+--
+--   value              form, explode      form, no explode   space/pipeDelimited   deepObject
+--   tags = {a, b}      tags=a&tags=b      tags=a,b           tags=a%20b / a|b      -
+--   f = {x = 1}        x=1                f=x,1              -                     f[x]=1
+local function encode_query_param(name, value, param, parts)
+    local style = type(param) == "table" and param.style or "form"
+    local explode = type(param) == "table" and param.explode
+    if explode == nil then
+        explode = style == "form"
+    end
+
+    local ename = escape_uri(name)
     if type(value) ~= "table" then
-        parts[#parts + 1] = escape_uri(name) .. "=" .. escape_uri(tostring(value))
+        parts[#parts + 1] = ename .. "=" .. escape_uri(tostring(value))
         return
     end
 
-    if #value > 0 then
-        for _, item in ipairs(value) do
-            encode_param(name .. "[]", item, parts)
+    if is_array(value) then
+        if #value == 0 then
+            return
+        end
+        if explode then
+            for _, item in ipairs(value) do
+                parts[#parts + 1] = ename .. "=" .. escape_uri(scalar(item))
+            end
+            return
+        end
+        local items = {}
+        for i, item in ipairs(value) do
+            items[i] = escape_uri(scalar(item))
+        end
+        parts[#parts + 1] = ename .. "=" .. table_concat(items, DELIMITERS[style] or ",")
+        return
+    end
+
+    local keys = sorted_keys(value)
+    if #keys == 0 then
+        return
+    end
+
+    if style == "deepObject" then
+        for _, key in ipairs(keys) do
+            parts[#parts + 1] = ename .. "%5B" .. escape_uri(tostring(key)) .. "%5D="
+                                .. escape_uri(scalar(value[key]))
         end
         return
     end
 
-    -- Lua tables are unordered, so emit object members in sorted order to keep
-    -- the query string deterministic across workers.
-    local keys = {}
-    for key in pairs(value) do
-        keys[#keys + 1] = key
+    if explode then
+        for _, key in ipairs(keys) do
+            parts[#parts + 1] = escape_uri(tostring(key)) .. "=" .. escape_uri(scalar(value[key]))
+        end
+        return
     end
-    table_sort(keys)
+
+    local items = {}
     for _, key in ipairs(keys) do
-        encode_param(name .. "[" .. tostring(key) .. "]", value[key], parts)
+        items[#items + 1] = escape_uri(tostring(key))
+        items[#items + 1] = escape_uri(scalar(value[key]))
     end
+    parts[#parts + 1] = ename .. "=" .. table_concat(items, ",")
 end
 
 
-local function build_query(query)
-    local keys = {}
-    for key in pairs(query) do
-        keys[#keys + 1] = key
-    end
+local function build_query(tool, query)
+    local keys = sorted_keys(query)
     if #keys == 0 then
         return nil
     end
-    table_sort(keys)
+
+    local params = {}
+    for _, param in ipairs(tool.parameters or {}) do
+        if type(param) == "table" and param["in"] == "query" then
+            params[param.name] = param
+        end
+    end
 
     local parts = {}
     for _, key in ipairs(keys) do
-        encode_param(key, query[key], parts)
+        encode_query_param(tostring(key), query[key], params[key], parts)
     end
     if #parts == 0 then
         return nil
@@ -207,6 +283,16 @@ local function text_result(payload, is_error)
 end
 
 
+local function has_header(headers, lower_name)
+    for key in pairs(headers) do
+        if str_lower(key) == lower_name then
+            return true
+        end
+    end
+    return false
+end
+
+
 function _M.call(tool, arguments, opts)
     arguments = type(arguments) == "table" and arguments or {}
 
@@ -214,7 +300,7 @@ function _M.call(tool, arguments, opts)
     apply_query_defaults(tool, query_params)
 
     local path = build_path(tool.path_template, path_params)
-    local query = build_query(query_params)
+    local query = build_query(tool, query_params)
 
     local headers = {}
     for key, value in pairs(opts.headers or {}) do
@@ -225,9 +311,15 @@ function _M.call(tool, arguments, opts)
     end
 
     local body = arguments.requestBody
-    if body ~= nil and type(body) ~= "string" then
-        body = core.json.encode(body)
-        headers["Content-Type"] = headers["Content-Type"] or "application/json"
+    if body ~= nil then
+        if type(body) ~= "string" then
+            body = core.json.encode(body)
+        end
+        -- Label the body with the media type the operation declares, unless the
+        -- route's headers or a header parameter already set one.
+        if not has_header(headers, "content-type") then
+            headers["Content-Type"] = tool.request_body_content_type or "application/json"
+        end
     end
 
     local base_url = opts.base_url or ""

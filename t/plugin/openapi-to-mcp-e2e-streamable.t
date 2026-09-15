@@ -225,7 +225,7 @@ True
 
 
 
-=== TEST 14: object and array query parameters use bracket notation
+=== TEST 14: object and array query parameters with the default style
 --- config
     location /t {
         content_by_lua_block {
@@ -245,7 +245,7 @@ passed
 
 
 
-=== TEST 15: the upstream sees bracketed object and array parameters
+=== TEST 15: form style with explode, the OpenAPI default, repeats arrays and spreads objects
 --- exec
 python3 t/plugin/openapi_to_mcp_harness.py /mcp \
     '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"objQuery","arguments":{"filter":{"a":"x"},"tags":["t1","t2"]}}}' "
@@ -253,4 +253,144 @@ inner = json.loads(d['result']['content'][0]['text'])
 print(inner['data']['seen_path'])
 "
 --- response_body
-/q?filter%5Ba%5D=x&tags%5B%5D=t1&tags%5B%5D=t2
+/q?a=x&tags=t1&tags=t2
+
+
+
+=== TEST 16: a route over a document using every query style
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "streamable_http",
+                    flatten_parameters = true,
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/styles.json",
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 17: each query parameter is serialized by its declared style and explode
+--- exec
+python3 t/plugin/openapi_to_mcp_harness.py /mcp \
+    '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"styles","arguments":{"formArr":["a","b c"],"spaceArr":["a","b"],"pipeArr":["a","b"],"deep":{"x":"1"},"formObj":{"k":"v"}}}}' "
+inner = json.loads(d['result']['content'][0]['text'])
+print(inner['data']['seen_path'])
+"
+--- response_body
+/s?deep%5Bx%5D=1&formArr=a,b%20c&formObj=k,v&pipeArr=a|b&spaceArr=a%20b
+
+
+
+=== TEST 18: a route over a document with Path Item parameters
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "streamable_http",
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/pathitem.json",
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 19: Path Item parameters reach the tool, and the operation's override wins
+--- exec
+python3 t/plugin/openapi_to_mcp_harness.py /mcp \
+    '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}' "
+props = d['result']['tools'][0]['inputSchema']['properties']
+print(props['pathParameters']['properties']['id']['type'], props['pathParameters']['required'])
+print(props['queryParameters']['properties']['verbose']['type'])
+"
+--- response_body
+integer ['id']
+string
+
+
+
+=== TEST 20: a call fills the inherited path parameter
+--- exec
+python3 t/plugin/openapi_to_mcp_harness.py /mcp \
+    '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"getPetById","arguments":{"pathParameters":{"id":5},"queryParameters":{"verbose":"yes"}}}}' "
+inner = json.loads(d['result']['content'][0]['text'])
+print(inner['data']['seen_path'])
+"
+--- response_body
+/pets/5?verbose=yes
+
+
+
+=== TEST 21: a route over a document whose request body is text/plain
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "streamable_http",
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/textbody.json",
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 22: the request body is sent with the media type the operation declares
+--- exec
+python3 t/plugin/openapi_to_mcp_harness.py /mcp \
+    '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"addNote","arguments":{"requestBody":"hello"}}}' "
+inner = json.loads(d['result']['content'][0]['text'])
+print(inner['data']['seen_method'], inner['data']['seen_content_type'], inner['data']['seen_body'])
+"
+--- response_body
+POST text/plain hello
+
+
+
+=== TEST 23: a Content-Type configured on the route is not overridden
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "streamable_http",
+                    base_url = "http://127.0.0.1:11460",
+                    headers = { ["content-type"] = "text/markdown" },
+                    openapi_url = "http://127.0.0.1:11460/textbody.json",
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 24: the configured media type is what the API receives
+--- exec
+python3 t/plugin/openapi_to_mcp_harness.py /mcp \
+    '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"addNote","arguments":{"requestBody":"hello"}}}' "
+inner = json.loads(d['result']['content'][0]['text'])
+print(inner['data']['seen_content_type'], inner['data']['seen_body'])
+"
+--- response_body
+text/markdown hello

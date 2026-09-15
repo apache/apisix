@@ -176,3 +176,53 @@ true
 --- response_body
 integer
 limit
+
+
+
+=== TEST 6: an expired tool list is rebuilt, not served stale
+--- http_config
+    server {
+        listen 11458;
+        location /openapi.json {
+            content_by_lua_block {
+                local n = (package.loaded._mcp_refresh_hits or 0) + 1
+                package.loaded._mcp_refresh_hits = n
+                ngx.header["Content-Type"] = "application/json"
+                ngx.say('{"openapi":"3.0.0","paths":{"/p":{"get":{"operationId":"v' .. n .. '"}}}}')
+            }
+        }
+    }
+--- config
+    location /t {
+        content_by_lua_block {
+            -- Load a private copy of the cache module whose entries live for one
+            -- second instead of an hour; everything else about the cache is real.
+            local core = require("apisix.core")
+            local real_new = core.lrucache.new
+            core.lrucache.new = function(opts)
+                local short = core.table.clone(opts)
+                short.ttl = 1
+                return real_new(short)
+            end
+            local name = "apisix.plugins.openapi-to-mcp.cache"
+            local saved = package.loaded[name]
+            package.loaded[name] = nil
+            local cache = require(name)
+            package.loaded[name] = saved
+            core.lrucache.new = real_new
+
+            local conf = { openapi_url = "http://127.0.0.1:11458/openapi.json" }
+            ngx.say(cache.get_tools(conf)[1].name)
+            ngx.say(cache.get_tools(conf)[1].name)
+            ngx.sleep(1.2)
+            ngx.say(cache.get_tools(conf)[1].name)
+            ngx.say(cache.get_tools(conf)[1].name)
+            ngx.say("fetches: ", package.loaded._mcp_refresh_hits)
+        }
+    }
+--- response_body
+v1
+v1
+v2
+v2
+fetches: 2

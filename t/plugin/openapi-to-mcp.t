@@ -453,7 +453,7 @@ timeout 1 curl -X POST -N -sS http://localhost:1984/mcp \
     -H "Accept: application/json, text/event-stream" \
     2>&1 | cat
 --- response_body eval
-qr/"jsonrpc":"2.0".*pet\/9999/
+qr/(?s)(?=.*"jsonrpc":"2.0")(?=.*pet\/9999)/
 
 
 
