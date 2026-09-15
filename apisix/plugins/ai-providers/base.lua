@@ -508,10 +508,9 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
     local flush_interval_ms = conf and conf.streaming_flush_interval_ms or 0
     -- async_flush: true when the interval thread is responsible for flushing
     local async_flush = flush_interval_ms > 0
-    -- needs_flush is set to true immediately after dispatching a chunk so the
-    -- thread always flushes exactly the data that has been written.  Cleared
-    -- before ngx.flush() so any new chunks written during the flush yield are
-    -- picked up on the next interval rather than silently dropped.
+    -- Arm after dispatching a chunk; a response filter may still withhold its
+    -- output, so the flush thread must tolerate "nothing to flush". Clear the
+    -- flag before flushing so a chunk dispatched during a yield arms it again.
     local needs_flush = false
     local flush_thread
     local flush_err
