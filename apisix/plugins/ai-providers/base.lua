@@ -756,6 +756,7 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
                     return
                 end
                 output_sent = true
+                needs_flush = true
             end
 
             if ctx.var.llm_request_done and #converted_chunks == 0
@@ -778,9 +779,6 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
                 return
             end
             output_sent = true
-        end
-        -- Let the interval flush thread know there is unflushed output.
-        if async_flush then
             needs_flush = true
         end
 
