@@ -1580,6 +1580,35 @@ When `key_type` is `var` (the default), `key` is resolved as an [NGINX stream mo
 
 :::
 
+The stream `limit-conn` Plugin only accepts the following attributes. HTTP-only attributes, such as `policy`, `rejected_code`, and the Redis options, are not applicable to stream Routes:
+
+| Name | Type | Required | Default | Valid values | Description |
+|------|------|----------|---------|--------------|-------------|
+| conn | integer | True | | > 0 | The maximum number of concurrent connections allowed. Connections exceeding the configured limit and below `conn + burst` will be delayed. |
+| burst | integer | True | | >= 0 | The number of excessive concurrent connections allowed to be delayed. Connections exceeding `conn + burst` will be rejected immediately. |
+| default_conn_delay | number | True | | > 0 | Processing latency allowed in seconds for concurrent connections exceeding `conn` and up to `conn + burst`. |
+| only_use_default_delay | boolean | False | false | | If false, delay connections proportionally based on how much they exceed the `conn` limit. If true, use `default_conn_delay` to delay all excessive connections within the `burst` range. |
+| key_type | string | False | var | [`var`, `var_combination`] | The type of key. If `key_type` is `var`, `key` is interpreted as a variable. If `key_type` is `var_combination`, `key` is interpreted as a combination of variables. |
+| key | string | True | | | The key to count connections by. If the configured key resolves to an empty value, APISIX falls back to `remote_addr`. |
+
+Before creating the Route, make sure APISIX is listening for stream traffic on port `9100`. Add the following to `conf/config.yaml` and reload APISIX for the changes to take effect:
+
+```yaml title="conf/config.yaml"
+apisix:
+  proxy_mode: http&stream   # Enable both L4 & L7 proxies
+  stream_proxy:             # Configure L4 proxy
+    tcp:
+      - 9100                # Set TCP proxy listening port
+```
+
+You also need a TCP service listening on `127.0.0.1:1995` to act as the upstream. If you do not already have one, you can start a simple TCP echo service with [`socat`](http://www.dest-unreach.org/socat/):
+
+```shell
+socat -v TCP-LISTEN:1995,fork,reuseaddr EXEC:'/bin/cat'
+```
+
+Leave this running in its own terminal for the rest of the example.
+
 Create a stream Route with `limit-conn` Plugin as such:
 
 <Tabs groupId="api">
@@ -1592,8 +1621,8 @@ curl "http://127.0.0.1:9180/apisix/admin/stream_routes" -X PUT \
     "id": "limit-conn-stream-route",
     "plugins": {
       "limit-conn": {
-        "conn": 2,
-        "burst": 1,
+        "conn": 1,
+        "burst": 0,
         "default_conn_delay": 0.1,
         "key_type": "var",
         "key": "remote_addr"
@@ -1626,8 +1655,8 @@ services:
         server_port: 9100
         plugins:
           limit-conn:
-            conn: 2
-            burst: 1
+            conn: 1
+            burst: 0
             default_conn_delay: 0.1
             key_type: var
             key: remote_addr
@@ -1645,24 +1674,129 @@ adc sync -f adc.yaml
 <Tabs groupId="k8s-api">
 <TabItem value="gateway-api" label="Gateway API">
 
-:::info
+:::note
 
-Attaching L4 Plugins is currently not supported with Gateway API. This example cannot be completed with Gateway API.
+Attaching stream Plugins through Gateway API requires [APISIX Ingress Controller](https://github.com/apache/apisix-ingress-controller) 2.2.0 or later, which introduced `L4RoutePolicy` for attaching stream Plugins to `TCPRoute`, `UDPRoute`, and `TLSRoute`. If you are on an earlier controller version, use the APISIX Ingress Controller tab instead.
 
 :::
 
-</TabItem>
-<TabItem value="ingress" label="APISIX Ingress Controller">
+This example assumes a `Gateway` named `apisix` with a TCP listener on port `9100` already exists, and deploys a `tcp-echo` Service as the upstream:
 
 ```yaml title="limit-conn-stream-ic.yaml"
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: aic
+  name: tcp-echo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tcp-echo
+  template:
+    metadata:
+      labels:
+        app: tcp-echo
+    spec:
+      containers:
+        - name: tcp-echo
+          image: alpine/socat
+          args:
+            - "-v"
+            - "TCP-LISTEN:1995,fork,reuseaddr"
+            - "EXEC:/bin/cat"
+          ports:
+            - containerPort: 1995
+---
 apiVersion: v1
 kind: Service
 metadata:
   namespace: aic
   name: tcp-echo-service
 spec:
-  type: ExternalName
-  externalName: tcp-echo.aic.svc
+  selector:
+    app: tcp-echo
+  ports:
+    - name: tcp-echo
+      port: 1995
+      targetPort: 1995
+---
+apiVersion: gateway.networking.k8s.io/v1alpha2
+kind: TCPRoute
+metadata:
+  namespace: aic
+  name: limit-conn-stream-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - backendRefs:
+        - name: tcp-echo-service
+          port: 1995
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: L4RoutePolicy
+metadata:
+  namespace: aic
+  name: limit-conn-l4-policy
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: TCPRoute
+      name: limit-conn-stream-route
+  plugins:
+    - name: limit-conn
+      config:
+        conn: 1
+        burst: 0
+        default_conn_delay: 0.1
+        key_type: var
+        key: remote_addr
+```
+
+Apply the configuration:
+
+```shell
+kubectl apply -f limit-conn-stream-ic.yaml
+```
+
+</TabItem>
+<TabItem value="ingress" label="APISIX Ingress Controller">
+
+```yaml title="limit-conn-stream-ic.yaml"
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: aic
+  name: tcp-echo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tcp-echo
+  template:
+    metadata:
+      labels:
+        app: tcp-echo
+    spec:
+      containers:
+        - name: tcp-echo
+          image: alpine/socat
+          args:
+            - "-v"
+            - "TCP-LISTEN:1995,fork,reuseaddr"
+            - "EXEC:/bin/cat"
+          ports:
+            - containerPort: 1995
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: tcp-echo-service
+spec:
+  selector:
+    app: tcp-echo
   ports:
     - name: tcp-echo
       port: 1995
@@ -1687,8 +1821,8 @@ spec:
         - name: limit-conn
           enable: true
           config:
-            conn: 2
-            burst: 1
+            conn: 1
+            burst: 0
             default_conn_delay: 0.1
             key_type: var
             key: remote_addr
@@ -1710,10 +1844,19 @@ kubectl apply -f limit-conn-stream-ic.yaml
 
 ❷ `key`: calculate rate limiting count by the connection's `remote_addr`.
 
-Open three concurrent TCP connections to the stream Route:
+With `conn` set to `1` and `burst` set to `0`, only one concurrent connection from the same `remote_addr` is allowed, and a second concurrent connection is rejected immediately. Open one long-lived connection in the background, then attempt a second connection while the first is still open:
 
 ```shell
-seq 1 3 | xargs -n1 -P3 -I{} bash -c 'echo "hello" | nc -w 1 127.0.0.1 9100'
+nc 127.0.0.1 9100 &
+sleep 1
+nc -w 1 -v 127.0.0.1 9100
+kill %1 2>/dev/null
 ```
 
-The connections exceeding `conn + burst` are rejected and reset by APISIX, while the rest are proxied to the upstream as expected.
+Because the first connection is still open, the second `nc` call is refused and its TCP connection is reset by APISIX, which `nc -v` reports on stderr, similar to:
+
+```text
+nc: connect to 127.0.0.1 port 9100 (tcp) failed: Connection reset by peer
+```
+
+Wait for the first connection to close (or run `kill %1` yourself), then retry the second command on its own. It now connects successfully and proxies to the upstream as expected.

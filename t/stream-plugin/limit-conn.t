@@ -384,6 +384,11 @@ GET /test_concurrency
 200
 503
 503
---- error_log
-Connection reset by peer
+--- error_log eval
+[
+    qr/limit key: \/apisix\/stream_routes\/1:\d+:1985/,
+    qr/Connection reset by peer/,
+]
+--- no_error_log
+The value of the configured key is empty, use client IP instead
 --- stream_enable
