@@ -225,7 +225,7 @@ client disconnected during AI streaming
 
 
 
-=== TEST 5: empty periodic flush warns once and resumes after a filter releases buffered output
+=== TEST 5: empty periodic flush resumes after a filter releases buffered output
 --- extra_yaml_config
 plugins:
   - ai-proxy-multi
@@ -254,12 +254,9 @@ POST /buffered/v1/responses
 X-AI-Fixture: openai/responses-streaming.sse
 --- response_body eval
 scalar File::Slurp::read_file("t/fixtures/openai/responses-streaming.sse")
---- grep_error_log eval
-qr/AI streaming flush skipped: nothing to flush/
---- grep_error_log_out
-AI streaming flush skipped: nothing to flush
 --- no_error_log
 [error]
+nothing to flush
 client disconnected during AI streaming
 
 
@@ -331,4 +328,5 @@ GET /t
 complete response received before upstream EOF
 --- no_error_log
 [error]
+nothing to flush
 client disconnected during AI streaming
