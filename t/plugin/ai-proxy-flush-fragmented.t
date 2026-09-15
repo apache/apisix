@@ -25,6 +25,26 @@ no_root_location();
 
 add_block_preprocessor(sub {
     my ($block) = @_;
+    $block->set_value("extra_init_by_lua", <<'_EOC_');
+    local buffer_plugin = {
+        version = 0.1,
+        priority = 1,
+        name = "test-ai-buffer",
+        schema = {type = "object", properties = {}},
+    }
+    function buffer_plugin.check_schema(conf)
+        return require("apisix.core").schema.check(buffer_plugin.schema, conf)
+    end
+    function buffer_plugin.lua_body_filter(conf, ctx, headers, body)
+        ctx.test_ai_buffer = ctx.test_ai_buffer or {}
+        table.insert(ctx.test_ai_buffer, body)
+        if not ctx.var.llm_request_done then
+            return nil, ""
+        end
+        return nil, table.concat(ctx.test_ai_buffer)
+    end
+    package.loaded["apisix.plugins.test-ai-buffer"] = buffer_plugin
+_EOC_
     $block->set_value("http_config", <<'_EOC_');
         server {
             listen 7752;
@@ -45,6 +65,22 @@ add_block_preprocessor(sub {
                         if not send(": keepalive\n\n") or not send(": keepalive\n\n") then
                             return
                         end
+                    end
+                    if args.hold_eof then
+                        ngx.shared.test:delete("converted-completion-received")
+                        local done = assert(body:find("data: [DONE]", 1, true))
+                        if not send(body:sub(1, done - 1)) then
+                            return
+                        end
+                        ngx.print(body:sub(done))
+                        ngx.flush(true)
+                        for _ = 1, 100 do
+                            if ngx.shared.test:get("converted-completion-received") then
+                                return
+                            end
+                            ngx.sleep(0.01)
+                        end
+                        return
                     end
                     local offset = 0
                     local complete_frames = args.buffer and 2 or args.after_first and 1 or 0
@@ -194,25 +230,6 @@ client disconnected during AI streaming
 plugins:
   - ai-proxy-multi
   - test-ai-buffer
---- extra_init_by_lua
-    local buffer_plugin = {
-        version = 0.1,
-        priority = 1,
-        name = "test-ai-buffer",
-        schema = {type = "object", properties = {}},
-    }
-    function buffer_plugin.check_schema(conf)
-        return require("apisix.core").schema.check(buffer_plugin.schema, conf)
-    end
-    function buffer_plugin.lua_body_filter(conf, ctx, headers, body)
-        ctx.test_ai_buffer = ctx.test_ai_buffer or {}
-        table.insert(ctx.test_ai_buffer, body)
-        if not ctx.var.llm_request_done then
-            return nil, ""
-        end
-        return nil, table.concat(ctx.test_ai_buffer)
-    end
-    package.loaded["apisix.plugins.test-ai-buffer"] = buffer_plugin
 --- apisix_yaml
 routes:
   - id: buffered
@@ -241,6 +258,77 @@ scalar File::Slurp::read_file("t/fixtures/openai/responses-streaming.sse")
 qr/AI streaming flush skipped: nothing to flush/
 --- grep_error_log_out
 AI streaming flush skipped: nothing to flush
+--- no_error_log
+[error]
+client disconnected during AI streaming
+
+
+
+=== TEST 6: empty converted completion dispatch flushes buffered output before upstream EOF
+--- extra_yaml_config
+plugins:
+  - ai-proxy
+  - test-ai-buffer
+--- apisix_yaml
+routes:
+  - id: converted-buffered
+    uri: /converted-buffered/v1/messages
+    plugins:
+      test-ai-buffer: {}
+      ai-proxy:
+        provider: openai-compatible
+        auth:
+          header:
+            Authorization: Bearer test-key
+        override:
+          endpoint: http://127.0.0.1:7752/stream?hold_eof=true
+#END
+--- config
+    postpone_output 65536;
+    location /t {
+        content_by_lua_block {
+            local httpc = require("resty.http").new()
+            httpc:set_timeout(500)
+            assert(httpc:connect("127.0.0.1", ngx.var.server_port))
+            local res, err = httpc:request({
+                method = "POST",
+                path = "/converted-buffered/v1/messages",
+                headers = {
+                    ["Content-Type"] = "application/json",
+                    ["X-AI-Fixture"] = "protocol-conversion/usage-only-final-chunk.sse",
+                },
+                body = [[{"model":"test","messages":[{"role":"user","content":"hi"}],
+                         "max_tokens":32,"stream":true}]],
+            })
+            local body = ""
+            if res then
+                while true do
+                    local chunk
+                    chunk, err = res.body_reader()
+                    if not chunk then
+                        break
+                    end
+                    body = body .. chunk
+                    if body:find("event: message_stop", 1, true) then
+                        ngx.shared.test:set("converted-completion-received", true)
+                    end
+                end
+            end
+            httpc:close()
+            if err then
+                ngx.shared.test:set("converted-completion-received", true)
+                ngx.say("failed: ", err)
+                return
+            end
+            assert(body:find('"text":"Hi"', 1, true), body)
+            assert(body:find("event: message_stop", 1, true), body)
+            ngx.say("complete response received before upstream EOF")
+        }
+    }
+--- request
+GET /t
+--- response_body
+complete response received before upstream EOF
 --- no_error_log
 [error]
 client disconnected during AI streaming

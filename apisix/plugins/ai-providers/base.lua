@@ -774,6 +774,7 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
                     abort_on_disconnect(flush_err)
                     return
                 end
+                needs_flush = true
             end
         elseif ctx.ai_stream_framing ~= "sse" or complete ~= "" then
             -- Native SSE filters need complete frames just like converters do.
