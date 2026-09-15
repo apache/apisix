@@ -124,16 +124,21 @@ plugin [missing] is not enabled and will be skipped
             local etcd = require("apisix.core.etcd")
             local original_get_format = etcd.get_format
             local etcd_cli = {}
+            local mock_response = {
+                status = 200,
+                headers = {},
+                body = {header = {revision = 1}, kvs = {}},
+            }
 
             function etcd_cli.readdir()
-                return {
-                    status = 200,
-                    headers = {},
-                    body = {header = {revision = 1}, kvs = {}},
-                }
+                return mock_response
             end
 
-            etcd.get_format = function(res)
+            etcd.get_format = function(res, ...)
+                if res ~= mock_response then
+                    return original_get_format(res, ...)
+                end
+
                 res.body = {
                     node = {
                         key = "/apisix/plugins",
