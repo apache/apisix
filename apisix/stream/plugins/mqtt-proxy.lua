@@ -59,6 +59,11 @@ local function decode_variable_byte_int(data, offset)
     for i = offset, offset + 3 do
         pos = i
         local byte = str_byte(data, i, i)
+        if not byte then
+            -- ran past the end of the buffer we have, the variable byte
+            -- integer is either truncated or malformed
+            return nil, pos
+        end
         len = len + bit.band(byte, 127) * multiplier
         multiplier = multiplier * 128
         if bit.band(byte, 128) == 0 then
@@ -78,6 +83,10 @@ local function parse_msg_hdr(data)
     end
 
     local len, pos = decode_variable_byte_int(data, 2)
+    if not len then
+        return nil, nil, "invalid or incomplete remaining length"
+    end
+
     return len, pos
 end
 
@@ -101,6 +110,9 @@ local function parse_mqtt(data, parsed_pos)
         -- skip properties
         local property_len
         property_len, parsed_pos = decode_variable_byte_int(data, parsed_pos + 1)
+        if not property_len then
+            return nil, "invalid or incomplete properties length"
+        end
         parsed_pos = parsed_pos + property_len
     end
 
@@ -149,7 +161,12 @@ function _M.preread(conf, ctx)
         return 503
     end
 
-    local res = parse_mqtt(data, pos)
+    local res, parse_err = parse_mqtt(data, pos)
+    if not res then
+        core.log.error("failed to parse mqtt request: ", parse_err)
+        return 503
+    end
+
     if res.expect_len > #data then
         core.log.error("failed to parse mqtt request, expect len: ",
                         res.expect_len, " but got ", #data)
