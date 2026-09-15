@@ -196,6 +196,21 @@ replayed=302
                     end,
                 },
                 {
+                    name = "forwards revocation cache ttls",
+                    session = {
+                        secret = secret,
+                        revocation = "redis",
+                        redis = { host = "127.0.0.1" },
+                        revocation_fail_mode = "closed",
+                        revocation_cache_ttl = 5,
+                        revocation_error_cache_ttl = 1,
+                    },
+                    check = function(opts)
+                        assert(opts.revocation_cache_ttl == 5)
+                        assert(opts.revocation_error_cache_ttl == 1)
+                    end,
+                },
+                {
                     name = "omitting revocation leaves it disabled",
                     session = {
                         secret = secret,

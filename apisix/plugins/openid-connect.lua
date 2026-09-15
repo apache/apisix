@@ -307,6 +307,20 @@ local schema = {
                         "When the revocation store is unreachable, open treats the "
                         .. "session as not revoked and closed rejects open/destroy.",
                 },
+                revocation_cache_ttl = {
+                    type = "integer",
+                    minimum = 0,
+                    description =
+                        "Worker-local TTL in seconds for successful revocation "
+                        .. "lookups. 0 disables. Default is 5 in lua-resty-session.",
+                },
+                revocation_error_cache_ttl = {
+                    type = "integer",
+                    minimum = 0,
+                    description =
+                        "Worker-local TTL in seconds for revocation store errors. "
+                        .. "0 disables. Default is 5 in lua-resty-session.",
+                },
             },
             required = {"secret"},
             ["if"] = {
