@@ -170,6 +170,40 @@ function _M.verify_tree(filepath, expected_tree)
 end
 
 
+-- Return all spans with the given name, ordered by start time.
+function _M.find_spans(filepath, name)
+    local spans_by_id, err = parse_spans(filepath)
+    if not spans_by_id then
+        return nil, err
+    end
+
+    local spans = {}
+    for _, span in pairs(spans_by_id) do
+        if span.name == name then
+            table.insert(spans, span)
+        end
+    end
+    table.sort(spans, function(a, b)
+        return tonumber(a.startTimeUnixNano) < tonumber(b.startTimeUnixNano)
+    end)
+    return spans
+end
+
+
+_M.get_attr_map = get_attr_map
+
+
+-- Check that the traceparent received by the upstream points to the span.
+function _M.check_propagated_parent(filepath, span)
+    local errors = {}
+    verify_propagated_parent(filepath, span, span.name, errors)
+    if #errors > 0 then
+        return false, table.concat(errors, "\n")
+    end
+    return true
+end
+
+
 function _M.verify_isolated_traces(filepath, root_name, count, expected_names)
     local spans_by_id, err = parse_spans(filepath)
     if not spans_by_id then

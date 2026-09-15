@@ -297,6 +297,8 @@ The following example demonstrates how to configure the `opentelemetry` Plugin t
 - `opentelemetry_trace_id`: trace ID of the current span
 - `opentelemetry_span_id`: span ID of the current span
 
+These variables describe the server span of the request. The `traceparent` header sent to the Upstream carries the span ID of the `apisix.upstream` client span, a child of the server span created for each Upstream attempt, so it differs from `opentelemetry_span_id`.
+
 Configure the plugin metadata to set `set_ngx_var` as true:
 
 ```shell
