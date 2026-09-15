@@ -329,6 +329,9 @@ APISIX background timers can run while a test yields, including while it waits f
 
 ### External service state
 
+Check cleanup responses as well as setup responses. A failed cleanup request can
+leave configuration active for later test cases while the current case still passes.
+
 Reloading Nginx or resetting etcd does not clear Redis. Tests that count all keys in a database must clear the dedicated test Redis instance before creating their counters, so unexpired keys from earlier cases cannot change the result.
 
 For asynchronous delivery, poll for the message produced by the current test within a deadline rather than sleeping a fixed duration. When checking a rate-limit burst within one window, start early in the window and verify that the requests finish before it ends.
