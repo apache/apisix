@@ -130,8 +130,20 @@ local function verify(spans_by_id, expected, actual, path, errors)
                    or child_end < child_start
                 then
                     table.insert(errors, string.format(
-                        "%s > %s: span timing is outside its parent",
-                        path, child_exp.name))
+                        "%s > %s: span timing is outside its parent "
+                        .. "(parent=%s..%s, child=%s..%s, "
+                        .. "start_delta=%s, end_delta=%s, child_duration=%s)",
+                        path, child_exp.name,
+                        tostring(actual.startTimeUnixNano),
+                        tostring(actual.endTimeUnixNano),
+                        tostring(child.startTimeUnixNano),
+                        tostring(child.endTimeUnixNano),
+                        tostring(child_start and parent_start
+                                 and (child_start - parent_start)),
+                        tostring(child_end and parent_end
+                                 and (child_end - parent_end)),
+                        tostring(child_end and child_start
+                                 and (child_end - child_start))))
                 end
             end
             verify(spans_by_id, child_exp, child,

@@ -602,7 +602,14 @@ finish_upstream_span = function(api_ctx, is_retry)
             start_time = calculated_start_time
         end
         if header_time and header_end_time then
-            end_time = start_time + upstream_time * 1000000000
+            local calculated_end_time = start_time + upstream_time * 1000000000
+            -- The NGINX upstream variables have millisecond precision. For a
+            -- fast request, rounding can make the reconstructed end later than
+            -- `end_time` sampled above. Besides being impossible, that can put
+            -- this client span outside its parent server span.
+            if calculated_end_time < end_time then
+                end_time = calculated_end_time
+            end
         end
         upstream_span.start_time = start_time
     end
