@@ -1050,6 +1050,16 @@ _M.stream_route = {
             type = "string",
             pattern = host_def_pat,
         },
+        snis = {
+            description = "server name indications, matched as alternatives",
+            type = "array",
+            items = {
+                type = "string",
+                pattern = host_def_pat,
+            },
+            minItems = 1,
+            uniqueItems = true,
+        },
         tls_passthrough = {
             description = "forward the TLS stream to the upstream untouched instead of "
                           .. "terminating it here; only consulted on a mixed listen, one "
@@ -1062,6 +1072,11 @@ _M.stream_route = {
         service_id = id_schema,
         plugins = plugins_schema,
         protocol = xrpc_protocol_schema,
+    },
+    -- `snis` is the plural form of `sni`, not an addition to it. Carrying both
+    -- would leave the precedence between them to guesswork.
+    ["not"] = {
+        required = {"sni", "snis"},
     },
     additionalProperties = false,
 }
