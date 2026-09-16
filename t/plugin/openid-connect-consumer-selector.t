@@ -210,7 +210,7 @@ nil
 
 
 
-=== TEST 8b: rewrite() does not crash when reading match_var raises (e.g. an unrecognized nginx var name).
+=== TEST 8: rewrite() does not crash when reading match_var raises (e.g. an unrecognized nginx var name).
 --- config
     location /t {
         content_by_lua_block {
