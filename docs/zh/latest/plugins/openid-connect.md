@@ -164,6 +164,32 @@ export KEYCLOAK_CLIENT_SECRET=abc
 "client_secret": "$ENV://KEYCLOAK_CLIENT_SECRET"
 ```
 
+### 按请求选择 IdP 配置
+
+`client_id`、`client_secret` 和 `discovery` 同样支持 `${var}` / `${var ?? default}` 运行时变量模板，在每次请求时从请求上下文中解析（与 [`limit-count`](./limit-count.md) 用于 `count`/`time_window` 的模板机制相同）。这使得一个优先级更高的自定义插件可以检查请求并为其选择正确的 IdP 配置，而 `openid-connect` 本身保持通用——它没有内置的租户、领域（realm）或提供商概念，也不会硬编码任何特定提供商的路由逻辑。
+
+例如，要将来自同一个 Route 的不同请求路由到不同的 IdP 配置，一个运行在 `openid-connect` 之前（`priority` 更高）的自定义插件可以检查请求并相应地设置请求上下文变量：
+
+```lua
+-- 在自定义高优先级插件的 rewrite() 阶段内
+local config = select_idp_config(ctx) -- 你自己的请求到 IdP 配置的映射
+ctx.var.oidc_discovery = config.discovery
+ctx.var.oidc_client_id = config.client_id
+ctx.var.oidc_client_secret = config.client_secret
+```
+
+然后 `openid-connect` 通用地引用这些变量：
+
+```json
+{
+  "discovery": "${oidc_discovery}",
+  "client_id": "${oidc_client_id}",
+  "client_secret": "${oidc_client_secret}"
+}
+```
+
+如果某个请求缺少引用的变量（例如自定义插件未运行或未识别该请求），`openid-connect` 将返回 `500` 并给出无法解析的字段名称的错误信息，而不是向身份提供商转发空值。
+
 ## 示例
 
 以下示例展示了如何针对不同场景配置 `openid-connect` 插件。
