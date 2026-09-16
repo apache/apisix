@@ -596,3 +596,35 @@ timeout 1 curl -X POST -N -sS http://localhost:1984/mcp \
     2>&1 | cat
 --- response_body eval
 qr/event: message\ndata: .*"name":"findPetsByStatus"/
+
+
+
+=== TEST 31: an sse route without an upstream
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, [[{
+                "uri": "/mcp",
+                "plugins": { "openapi-to-mcp": {
+                    "transport": "sse",
+                    "base_url": "http://127.0.0.1:11460",
+                    "openapi_url": "http://127.0.0.1:11460/petstore.json"
+                } }
+            }]])
+            ngx.say(code < 300 and "passed" or body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 32: the stream opens and nothing is proxied
+--- exec
+timeout 1 curl -X GET -N -sS http://localhost:1984/mcp 2>&1 | cat
+--- response_body_like
+event:\s*endpoint
+data:\s*/mcp\?sessionId=.*
+--- no_error_log
+failed to fetch upstream

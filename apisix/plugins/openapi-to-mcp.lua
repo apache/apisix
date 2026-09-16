@@ -15,7 +15,6 @@
 -- limitations under the License.
 --
 local core        = require("apisix.core")
-local upstream    = require("apisix.upstream")
 local streamable_http = require("apisix.plugins.openapi-to-mcp.transport.streamable_http")
 local mcp_sse         = require("apisix.plugins.openapi-to-mcp.transport.sse")
 local ngx         = ngx
@@ -103,29 +102,6 @@ local function resolve_conf(conf, ctx)
 end
 
 
-local function set_placeholder_upstream(ctx)
-    -- before_proxy runs after set_upstream()/pick_server(), so the request still
-    -- needs a resolvable upstream even though the response is produced in-process
-    -- and this address is never dialled. Port 1 is used so that a bug which let
-    -- the request through would fail fast instead of hanging.
-    local up_conf = {
-        name = "openapi-to-mcp-inprocess",
-        type = "roundrobin",
-        nodes = { { host = "127.0.0.1", port = 1, weight = 1, priority = 0 } },
-        scheme = "http",
-    }
-
-    local matched_route = ctx.matched_route
-    up_conf.parent = matched_route
-    local upstream_key = up_conf.type .. "#route_" .. matched_route.value.id .. "_openapi_to_mcp"
-
-    ctx.var.upstream_scheme = "http"
-    ctx.var.upstream_host = "127.0.0.1"
-    ctx.var.upstream_port = 1
-    upstream.set(ctx, upstream_key, ctx.conf_version, up_conf)
-end
-
-
 function _M.access(conf, ctx)
     if conf.transport == "streamable_http" then
         local base_url, headers = resolve_conf(conf, ctx)
@@ -139,7 +115,9 @@ function _M.access(conf, ctx)
             headers = headers,
             transport = "streamable_http",
         }
-        set_placeholder_upstream(ctx)
+        -- The answer is produced in before_proxy, so the request never reaches
+        -- an upstream; handle_upstream() runs before_proxy and returns.
+        ctx.bypass_nginx_upstream = true
         return
     end
 
@@ -161,7 +139,7 @@ function _M.access(conf, ctx)
         transport = "sse",
         message_path = message_path,
     }
-    set_placeholder_upstream(ctx)
+    ctx.bypass_nginx_upstream = true
 end
 
 
