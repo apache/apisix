@@ -101,7 +101,7 @@ When `provider` is set to `bedrock`, the Plugin expects requests in the [Bedrock
 | keepalive_timeout | integer | False | 60000  | ≥ 1000                                   | Keepalive timeout in milliseconds when connecting to the LLM service. |
 | keepalive_pool | integer | False    | 30       | ≥ 1                                      | Keepalive pool size for the LLM service connection. |
 | ssl_verify     | boolean | False    | true   |                                          | If true, verifies the LLM service's certificate. |
-| streaming_flush_interval_ms | integer | False | 10 | ≥ 0 | Interval in milliseconds for the background flush thread. When `> 0` (default: `10`), a background timer calls `ngx.flush(false)` every N ms, batching output for bursty upstreams. When `0`, the background thread is disabled and each chunk is flushed synchronously via `ngx.flush(true)`, guaranteeing immediate client delivery. |
+| streaming_flush_interval_ms | integer | False | 10 | ≥ 0 | Interval in milliseconds for the background flush thread. When `> 0` (default: `10`), a background timer calls `ngx.flush(false)` every N ms, batching output for bursty upstreams. For SSE streams, only complete frames or converted events queued for the client trigger a flush; partial frames wait for the remaining upstream data. If a periodic flush returns `nothing to flush`, the stream continues. When `0`, the background thread is disabled and each chunk is flushed synchronously via `ngx.flush(true)`, guaranteeing immediate client delivery. |
 
 ## Provider-aware `max_tokens` mapping
 
@@ -165,6 +165,8 @@ The setting covers `ai-proxy`, `ai-proxy-multi`, and `ai-request-rewrite`, which
 ## Upstream Error Responses
 
 When the LLM upstream returns a `429` or `5xx` status, `ai-proxy` reads the upstream error body and returns it to the client together with the upstream status code and `Content-Type`, so provider-side error details (such as rate-limit information or validation errors) are not discarded.
+
+A streaming response is different once part of it has been delivered. The downstream response is committed as `200` with the first SSE event, so a later failure to read from the upstream (a connection reset or a read timeout) can no longer change the status. In that case `ai-proxy` stops reading, closes the upstream connection, and ends the downstream stream where it is, without a protocol-specific terminator such as `[DONE]`, `message_stop`, or `response.completed`; well-behaved clients should treat a missing terminator as an incomplete response. A read error that happens before any event reaches the client still returns `504` for a timeout and `500` otherwise.
 
 ## Examples
 

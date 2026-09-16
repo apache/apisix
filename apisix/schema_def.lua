@@ -444,9 +444,14 @@ local upstream_schema = {
                 client_key = private_key_schema,
                 verify = {
                     type = "boolean",
-                    description = "Turn on server certificate verification, "..
-                        "currently only kafka upstream is supported",
-                    default = false,
+                    description = "enable or disable upstream certificate verification, " ..
+                        "fall back to the nginx configuration when not set",
+                },
+                ca_certs = {
+                    type = "array",
+                    description = "CA certificates used to verify the upstream certificate",
+                    minItems = 1,
+                    items = certificate_scheme,
                 },
             },
             dependencies = {
@@ -1045,11 +1050,33 @@ _M.stream_route = {
             type = "string",
             pattern = host_def_pat,
         },
+        snis = {
+            description = "server name indications, matched as alternatives",
+            type = "array",
+            items = {
+                type = "string",
+                pattern = host_def_pat,
+            },
+            minItems = 1,
+            uniqueItems = true,
+        },
+        tls_passthrough = {
+            description = "forward the TLS stream to the upstream untouched instead of "
+                          .. "terminating it here; only consulted on a mixed listen, one "
+                          .. "with both tls and tls_passthrough set",
+            type = "boolean",
+            default = false,
+        },
         upstream = upstream_schema,
         upstream_id = id_schema,
         service_id = id_schema,
         plugins = plugins_schema,
         protocol = xrpc_protocol_schema,
+    },
+    -- `snis` is the plural form of `sni`, not an addition to it. Carrying both
+    -- would leave the precedence between them to guesswork.
+    ["not"] = {
+        required = {"sni", "snis"},
     },
     additionalProperties = false,
 }

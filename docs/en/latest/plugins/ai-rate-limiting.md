@@ -65,6 +65,7 @@ The `ai-rate-limiting` Plugin enforces token-based rate limiting for requests se
 | redis_timeout | integer | False | 1000 | [1,...] | The Redis timeout value in milliseconds when `policy` is `redis` or `redis-cluster`. |
 | redis_ssl | boolean | False | false | | If true, use SSL to connect to Redis when `policy` is `redis`. |
 | redis_ssl_verify | boolean | False | false | | If true, verify the server SSL certificate when `policy` is `redis`. |
+| redis_server_name | string | False | | | TLS SNI when `policy` is `redis` and `redis_ssl` is true. Defaults to `redis_host`. When `redis_ssl_verify` is true the certificate must also match this name, so set it when `redis_host` is an alias the certificate does not cover. |
 | redis_cluster_nodes | array[string] | False | | | The list of Redis cluster nodes with at least one address. Required when `policy` is `redis-cluster`. |
 | redis_cluster_name | string | False | | | The name of the Redis cluster. Required when `policy` is `redis-cluster`. |
 | redis_cluster_ssl | boolean | False | false | | If true, use SSL to connect to Redis when `policy` is `redis-cluster`. |

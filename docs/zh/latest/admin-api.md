@@ -1027,7 +1027,8 @@ APISIX 的 Upstream 除了基本的负载均衡算法选择外，还支持对上
 | tls.client_cert    | 否，不能和 `tls.client_cert_id` 一起使用               | https 证书           | 设置跟上游通信时的客户端证书，详细信息请参考下文。                                                                        | |
 | tls.client_key	 | 否，不能和 `tls.client_cert_id` 一起使用               | https 证书私钥           | 设置跟上游通信时的客户端私钥，详细信息请参考下文。                                                                                                                                                                                                                                                                                                              | |
 | tls.client_cert_id | 否，不能和 `tls.client_cert`、`tls.client_key` 一起使用 | SSL           | 设置引用的 SSL id，详见 [SSL](#ssl)。                                                                                                                                                                                                                                                                                                              | |
-| tls.verify                  |否，目前仅支持 Kafka 上游。                | Boolean                       | 开启服务器证书验证功能，目前仅支持 Kafka 上游。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |                                                                                                                                            |
+| tls.verify         | 否                                             | Boolean       | 开启或关闭上游证书校验，不设置时沿用 nginx 的配置，详细信息请参考下文。Kafka 上游同样使用该字段。                                                                                                                                                                                                                                                              | |
+| tls.ca_certs       | 否                                             | https 证书数组 | 用于校验上游证书的 CA 证书，设置后将取代 `ssl_trusted_certificate` 中加载的证书，详细信息请参考下文。                                                                                                                                                                                                                                                              | |
 |keepalive_pool.size  | 否                                             | 辅助 | 动态设置 `keepalive` 指令，详细信息请参考下文。 |
 |keepalive_pool.idle_timeout  | 否                                             | 辅助 | 动态设置 `keepalive_timeout` 指令，详细信息请参考下文。 |
 |keepalive_pool.requests  | 否                                             | 辅助 | 动态设置 `keepalive_requests` 指令，详细信息请参考下文。 |
@@ -1052,6 +1053,22 @@ APISIX 的 Upstream 除了基本的负载均衡算法选择外，还支持对上
 - `scheme` 可以设置成 `tls`，表示 `TLS over TCP`。
 - `tls.client_cert/key` 可以用来跟上游进行 mTLS 通信。他们的格式和 SSL 对象的 `cert` 和 `key` 一样。
 - `tls.client_cert_id` 可以用来指定引用的 SSL 对象。只有当 SSL 对象的 `type` 字段为 client 时才能被引用，否则请求会被 APISIX 拒绝。另外，SSL 对象中只有 `cert` 和 `key` 会被使用。
+- `tls.verify` 设置为 `true` 时校验上游返回的证书；不设置时沿用 nginx 的行为，即只有开启了 `proxy_ssl_verify` 才会校验。校验使用 `tls.ca_certs` 中的 CA 证书，未设置 `tls.ca_certs` 时使用 `config.yaml` 中的 `ssl_trusted_certificate`：
+
+  ```json
+  {
+    "scheme": "https",
+    "type": "roundrobin",
+    "nodes": {
+      "127.0.0.1:8443": 1
+    },
+    "tls": {
+      "verify": true,
+      "ca_certs": ["<content of ca.crt>"]
+    }
+  }
+  ```
+
 - `keepalive_pool` 允许 Upstream 有自己单独的连接池。它下属的字段，比如 `requests`，可以用于配置上游连接保持的参数。
 
 Upstream 对象 JSON 配置示例：

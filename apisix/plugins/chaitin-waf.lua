@@ -88,6 +88,16 @@ local plugin_schema = {
                 },
                 real_client_ip = {
                     type = "boolean"
+                },
+                log_resp = {
+                    type = "boolean"
+                },
+                resp_body_size = {
+                    type = "integer",
+                    minimum = 0
+                },
+                extra_ignored_content_types = {
+                    type = "string"
                 }
             },
         },
@@ -152,12 +162,43 @@ local metadata_schema = {
                 real_client_ip = {
                     type = "boolean",
                     default = true
+                },
+                -- report the response to the WAF detection service
+                log_resp = {
+                    type = "boolean",
+                    default = false
+                },
+                -- amount of the response body to report, in KB,
+                -- 0 disables body buffering
+                resp_body_size = {
+                    type = "integer",
+                    minimum = 0,
+                    default = 4
+                },
+                -- extra response content types (comma separated) to skip
+                -- on top of the built-in ignored list
+                extra_ignored_content_types = {
+                    type = "string"
                 }
             },
             default = {},
         },
     },
     required = { "nodes" },
+}
+
+-- every field of the config object, both in plugin_schema and metadata_schema
+local config_fields = {
+    "connect_timeout",
+    "send_timeout",
+    "read_timeout",
+    "req_body_size",
+    "keepalive_size",
+    "keepalive_timeout",
+    "real_client_ip",
+    "log_resp",
+    "resp_body_size",
+    "extra_ignored_content_types",
 }
 
 local _M = {
@@ -273,29 +314,24 @@ local function get_conf(conf, metadata)
         real_client_ip = true,
     }
 
-    if metadata.config then
-        t.connect_timeout = metadata.config.connect_timeout
-        t.send_timeout = metadata.config.send_timeout
-        t.read_timeout = metadata.config.read_timeout
-        t.req_body_size = metadata.config.req_body_size
-        t.keepalive_size = metadata.config.keepalive_size
-        t.keepalive_timeout = metadata.config.keepalive_timeout
-        if metadata.config.real_client_ip ~= nil then
-            t.real_client_ip = metadata.config.real_client_ip
+    -- only copy what the config actually sets, so that a plugin level config
+    -- overrides the metadata defaults field by field instead of wholesale
+    local function apply(config)
+        if not config then
+            return
+        end
+
+        for _, name in ipairs(config_fields) do
+            local value = config[name]
+            if value ~= nil then
+                t[name] = value
+            end
         end
     end
 
-    if conf.config then
-        t.connect_timeout = conf.config.connect_timeout
-        t.send_timeout = conf.config.send_timeout
-        t.read_timeout = conf.config.read_timeout
-        t.req_body_size = conf.config.req_body_size
-        t.keepalive_size = conf.config.keepalive_size
-        t.keepalive_timeout = conf.config.keepalive_timeout
-        if conf.config.real_client_ip ~= nil then
-            t.real_client_ip = conf.config.real_client_ip
-        end
-    end
+    -- metadata config first, then route/service level config overrides it
+    apply(metadata.config)
+    apply(conf.config)
 
     t.mode = conf.mode or metadata.mode or t.mode
 
@@ -418,6 +454,16 @@ end
 
 function _M.header_filter(conf, ctx)
     t1k.do_header_filter()
+end
+
+
+function _M.body_filter(conf, ctx)
+    t1k.do_body_filter()
+end
+
+
+function _M.log(conf, ctx)
+    t1k.do_log()
 end
 
 

@@ -758,7 +758,7 @@ failed to get ssl cert: ssl id [1] not exits
                         ["127.0.0.1:1983"] = 1,
                     },
                     tls = {
-                        verify = true
+                        verify = false
                     }
                 },
                 uri = "/hello"
@@ -809,7 +809,7 @@ hello world
                     tls = {
                         client_cert = ssl_cert,
                         client_key = ssl_key,
-                        verify = true
+                        verify = false
                     }
                 },
                 uri = "/hello"

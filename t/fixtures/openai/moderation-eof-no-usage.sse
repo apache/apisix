@@ -1,0 +1,6 @@
+data: {"choices":[{"index":0,"delta":{"role":"assistant","content":null},"finish_reason":null}]}
+
+data: {"choices":[{"index":0,"delta":{"content":"kill "},"finish_reason":null}]}
+
+data: {"choices":[{"index":0,"delta":{"content":"you"},"finish_reason":"stop"}]}
+

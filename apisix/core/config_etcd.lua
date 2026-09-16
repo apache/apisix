@@ -70,6 +70,9 @@ if not is_http then
 end
 local created_obj  = {}
 local loaded_configuration = {}
+-- the etcd revision loaded_configuration was read at, kept separately because
+-- its entries are removed as they are consumed
+local loaded_configuration_rev
 local configuration_loaded_time
 local watch_ctx
 
@@ -125,6 +128,29 @@ local function produce_res(res, err)
 end
 
 
+local function wait_for_etcd_available(etcd_cli, prefix)
+    while true do
+        local res, err = etcd_cli:get(prefix)
+        if not res then
+            log.error("etcd get: ", err)
+            ngx_sleep(3)
+        elseif not (res.body and res.body.header and res.body.header.revision) then
+            log.error("etcd response missing header.revision")
+            ngx_sleep(3)
+        else
+            local rev = tonumber(res.body.header.revision)
+            if not rev then
+                log.error("etcd response has invalid header.revision: ",
+                          tostring(res.body.header.revision))
+                ngx_sleep(3)
+            else
+                return rev
+            end
+        end
+    end
+end
+
+
 local function do_run_watch(premature)
     if premature then
         return
@@ -144,39 +170,15 @@ local function do_run_watch(premature)
             error("failed to create etcd instance: " .. string(err))
         end
 
-        local rev = 0
-        if loaded_configuration then
-            local _, res = next(loaded_configuration)
-            if res then
-                rev = tonumber(res.headers["X-Etcd-Index"])
-                if not rev or rev <= 0 then
-                    log.warn("invalid or missing X-Etcd-Index header, ",
-                             "will fetch revision from etcd directly")
-                    rev = 0
-                end
-            end
-        end
-
-        if rev == 0 then
-            while true do
-                local res, err = watch_ctx.cli:get(watch_ctx.prefix)
-                if not res then
-                    log.error("etcd get: ", err)
-                    ngx_sleep(3)
-                elseif not (res.body and res.body.header and res.body.header.revision) then
-                    log.error("etcd response missing header.revision")
-                    ngx_sleep(3)
-                else
-                    rev = tonumber(res.body.header.revision)
-                    if not rev then
-                        log.error("etcd response has invalid header.revision: ",
-                                  tostring(res.body.header.revision))
-                        ngx_sleep(3)
-                    else
-                        break
-                    end
-                end
-            end
+        -- Config objects take watch_ctx.started as permission to wait only for
+        -- events from the main watcher. Do not publish that state until etcd
+        -- has answered at least one request. The returned revision is only the
+        -- fallback when no configuration was preloaded: using a newer revision
+        -- in place of the snapshot revision would skip intervening writes.
+        local current_rev = wait_for_etcd_available(watch_ctx.cli, watch_ctx.prefix)
+        local rev = loaded_configuration_rev
+        if not rev or rev == 0 then
+            rev = current_rev
         end
 
         watch_ctx.rev = rev + 1
@@ -564,7 +566,7 @@ local function load_full_data(self, dir_res, headers, prev_values, prev_values_h
         end
 
         if data_valid and self.checker then
-            data_valid, err = self.checker(item.value)
+            data_valid, err = self.checker(item.value, item.key)
             if not data_valid then
                 log.error("failed to check item data of [", self.key,
                           "] err:", err, " ,val: ", json.delay_encode(item.value))
@@ -1206,6 +1208,7 @@ end
 
 local function init_loaded_configuration()
     loaded_configuration = {}
+    loaded_configuration_rev = nil
     local etcd_cli, prefix, err = etcd_apisix.new_without_proxy()
     if not etcd_cli then
         return "failed to start a etcd instance: " .. err
@@ -1214,6 +1217,17 @@ local function init_loaded_configuration()
     local res, err = readdir(etcd_cli, prefix, create_formatter(prefix))
     if not res then
         return err
+    end
+
+    -- One readdir backs every entry create_formatter() stored, so there is a
+    -- single revision to record. Nothing is consumed yet at this point, so an
+    -- empty table here means the read stored nothing -- unlike the same test
+    -- made at watch time, which is the bug being fixed. Leave that case alone:
+    -- with no preloaded data every resource type reads for itself at first
+    -- sync, which already picks up whatever was written since, and the
+    -- rev == 0 path below keeps handling it exactly as before.
+    if next(loaded_configuration) then
+        loaded_configuration_rev = tonumber(res.headers["X-Etcd-Index"])
     end
 
     configuration_loaded_time = ngx_time()

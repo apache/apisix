@@ -109,7 +109,8 @@ local function check_with_deny_list(user_agents, denylist)
 
     if type(user_agents) == "table" then
         for _, v in ipairs(user_agents) do
-            if lrucache_deny(v, denylist, check, v) then
+            -- check function return false when UA matches the deny_list
+            if not lrucache_deny(v, denylist, check, v) then
                 return false
             end
         end

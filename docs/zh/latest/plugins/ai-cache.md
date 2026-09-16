@@ -61,6 +61,8 @@ import TabItem from '@theme/TabItem';
 
 即使开启 `cache_key.share_across_routes`，来自不同上游模型或 provider 的响应也会分别存储在各自的缓存条目中，因此某个模型的响应绝不会被返回给另一个模型。
 
+对于 `passthrough` 协议，`ai-proxy` 会原样转发客户端的请求方法、路径和查询字符串，因此缓存键也会包含它们：相同的请求体发送到两个不同的上游路径，或携带不同的查询参数时，会分别保存为独立的缓存条目。
+
 :::
 
 ## 属性
@@ -87,6 +89,7 @@ import TabItem from '@theme/TabItem';
 | redis_timeout | integer | 否 | 1000 | >= 1 | Redis 超时时间，单位为毫秒。 |
 | redis_ssl | boolean | 否 | false | | 如果为 true，则使用 SSL 连接 Redis。 |
 | redis_ssl_verify | boolean | 否 | false | | 如果为 true，则校验 Redis 服务器的 SSL 证书。 |
+| redis_server_name | string | 否 | | | 当 `redis_ssl` 为 true 时使用的 TLS SNI。默认使用 `redis_host`。当 `redis_ssl_verify` 为 true 时，证书还必须与该名称匹配，因此当 `redis_host` 是证书未覆盖的别名时请设置此项。 |
 | redis_keepalive_timeout | integer | 否 | 10000 | >= 1000 | Redis 连接池的保活超时时间，单位为毫秒。 |
 | redis_keepalive_pool | integer | 否 | 100 | >= 1 | Redis 保活连接池中的最大连接数。 |
 

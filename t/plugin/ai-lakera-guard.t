@@ -917,22 +917,24 @@ passed
 
 
 
-=== TEST 37: a streamed response with no usage event cannot be scanned, so fail-closed blocks it
+=== TEST 37: an incomplete streamed response cannot be assembled, so fail-closed blocks it
 --- request
 POST /anything
 { "messages": [ { "role": "user", "content": "say hello" } ], "stream": true }
 --- more_headers
-X-AI-Fixture: openai/chat-streaming-no-usage.sse
+X-AI-Fixture: openai/chat-streaming-incomplete-no-usage.sse
 --- error_code: 200
 --- response_body_like eval
 qr/\A(?!.*Hello).*"content":"Response blocked by Lakera Guard".*\[DONE\]/s
 --- error_log
 streamed response ended without an assembled completion
 fail_open=false, blocking response
+--- no_error_log
+ai-lakera-guard mock: forwarded body=
 
 
 
-=== TEST 38: create a direction=output route with fail_open for the no-usage stream
+=== TEST 38: create a direction=output route with fail_open for an incomplete stream
 --- config
     location /t {
         content_by_lua_block {
@@ -970,18 +972,20 @@ passed
 
 
 
-=== TEST 39: with fail_open, an unscannable (no-usage) stream is released to the client unscanned
+=== TEST 39: with fail_open, an incomplete stream is released to the client unscanned
 --- request
 POST /anything
 { "messages": [ { "role": "user", "content": "say hello" } ], "stream": true }
 --- more_headers
-X-AI-Fixture: openai/chat-streaming-no-usage.sse
+X-AI-Fixture: openai/chat-streaming-incomplete-no-usage.sse
 --- error_code: 200
 --- response_body_like eval
-qr/\A(?!.*Response blocked by Lakera Guard).*Hello.*\[DONE\]/s
+qr/\A(?!.*Response blocked by Lakera Guard).*Hello/s
 --- error_log
 streamed response ended without an assembled completion
 fail_open=true, releasing unscanned
+--- no_error_log
+ai-lakera-guard mock: forwarded body=
 
 
 
@@ -1240,15 +1244,15 @@ passed
 
 
 
-=== TEST 50: a stream that ends at EOF with no terminal event is finalized (fail-closed block), not stranded as keep-alive heartbeats
+=== TEST 50: an incomplete stream at EOF is finalized (fail-closed block), not stranded as keep-alive heartbeats
 --- request
 POST /anything
 { "messages": [ { "role": "user", "content": "say hello" } ], "stream": true }
 --- more_headers
-X-AI-Fixture: openai/chat-streaming-many-chunks-no-usage.sse
+X-AI-Fixture: openai/chat-streaming-incomplete-no-usage.sse
 --- error_code: 200
 --- response_body_like eval
-qr/\A(?!.*chunk-00).*"content":"Response blocked by Lakera Guard"/s
+qr/\A(?!.*Hello).*"content":"Response blocked by Lakera Guard"/s
 --- error_log
 streamed response ended without an assembled completion
 fail_open=false, blocking response
@@ -1422,3 +1426,89 @@ POST /anything
 qr/\Adata:.*injection payload.*\[DONE\]/s
 --- error_log
 ai-lakera-guard: response flagged by Lakera Guard
+
+
+
+=== TEST 58: create a direction=output block route for complete streams without usage
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/anything",
+                    "plugins": {
+                      "ai-proxy": {
+                          "provider": "openai-compatible",
+                          "auth": { "header": { "Authorization": "Bearer token" } },
+                          "options": { "model": "gpt-4" },
+                          "override": { "endpoint": "http://127.0.0.1:1980/v1/chat/completions" },
+                          "ssl_verify": false
+                      },
+                      "ai-lakera-guard": {
+                          "api_key": "test-key",
+                          "lakera_endpoint": "http://127.0.0.1:6724/v2/guard",
+                          "direction": "output"
+                      }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 59: scan and release a complete no-usage stream
+--- request
+POST /anything
+{ "messages": [ { "role": "user", "content": "say hello" } ], "stream": true }
+--- more_headers
+X-AI-Fixture: openai/chat-streaming-no-usage.sse
+--- error_code: 200
+--- response_body_like eval
+qr/\A(?!.*Response blocked by Lakera Guard).*Hello.*\[DONE\]/s
+--- error_log
+"content":"Hello!"
+--- no_error_log
+streamed response ended without an assembled completion
+
+
+
+=== TEST 60: a flagged no-usage stream is scanned and blocked before its content is released
+--- request
+POST /anything
+{ "messages": [ { "role": "user", "content": "say hello" } ], "stream": true }
+--- more_headers
+X-AI-Fixture: openai/chat-streaming-injection-no-usage.sse
+--- error_code: 200
+--- response_body_like eval
+qr/\A(?!.*injection payload).*Response blocked by Lakera Guard.*\[DONE\]/s
+--- error_log
+ai-lakera-guard mock: forwarded body=
+"injection payload"
+--- no_error_log
+streamed response ended without an assembled completion
+
+
+
+=== TEST 61: clean EOF without usage is scanned and released
+--- request
+POST /anything
+{ "messages": [ { "role": "user", "content": "say hello" } ], "stream": true }
+--- more_headers
+X-AI-Fixture: openai/chat-streaming-many-chunks-no-usage.sse
+--- error_code: 200
+--- response_body_like eval
+qr/\A(?!.*Response blocked by Lakera Guard).*chunk-00/s
+--- error_log
+ai-lakera-guard mock: forwarded body=
+--- no_error_log
+streamed response ended without an assembled completion

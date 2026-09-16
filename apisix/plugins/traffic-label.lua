@@ -21,6 +21,7 @@ local expr          = require("resty.expr.v1")
 local roundrobin    = require("resty.roundrobin")
 local ipairs        = ipairs
 local pairs         = pairs
+local setmetatable  = setmetatable
 
 local lrucache = core.lrucache.new({
     ttl = 0, count = 512
@@ -192,19 +193,23 @@ end
 function _M.access(conf, ctx)
     local match_result
 
-    if not conf.rules_arr then
-        conf.rules_arr = {}
-
-        for _, rule in ipairs(conf.rules) do
+    for _, rule in ipairs(conf.rules) do
+        if not rule._expr then
             -- if no rule.match, use {} to match all request
-            local expr, _ = expr.new(rule.match or {})
-            core.table.insert_tail(conf.rules_arr, expr)
-        end
-    end
+            local rule_expr, err = expr.new(rule.match or {})
+            if not rule_expr then
+                core.log.error("failed to create the 'match' expression: ", err)
+                return
+            end
 
-    for i, rule in ipairs(conf.rules) do
-        local expr = conf.rules_arr[i]
-        match_result = expr:eval(ctx.var)
+            -- Hide the compiled expression in a metatable so that it stays out of
+            -- the configuration: the "ipmatch" operator compiles into an ipmatcher,
+            -- whose lookup tables are keyed by integers, and a configuration holding
+            -- one can no longer be JSON encoded.
+            setmetatable(rule, {__index = {_expr = rule_expr}})
+        end
+
+        match_result = rule._expr:eval(ctx.var)
 
         if match_result then
             local action = next_action(rule.actions)

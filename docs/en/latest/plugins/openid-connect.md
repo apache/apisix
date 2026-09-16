@@ -51,7 +51,7 @@ The `openid-connect` Plugin supports the integration with [OpenID Connect (OIDC)
 | bearer_only | boolean | False | false | | If true, strictly require bearer access token in requests for authentication. |
 | logout_path | string | False | /logout | | Path to activate the logout. |
 | post_logout_redirect_uri | string | False | | | URL to redirect users to after the `logout_path` receives a request to log out. |
-| redirect_uri | string | False | | | URI to redirect to after authentication with the OpenID provider. Note that the redirect URI should not be the same as the request URI, but a sub-path of the request URI. For example, if the `uri` of the Route is `/api/v1/*`, `redirect_uri` can be configured as `/api/v1/redirect`. If `redirect_uri` is not configured, APISIX will append `/.apisix/redirect` to the request URI to determine the value for `redirect_uri`. |
+| redirect_uri | string | False | | | URI to redirect to after authentication with the OpenID provider. Note that the redirect URI should not be the same as the request URI, but a sub-path of the request URI. For example, if the `uri` of the Route is `/api/v1/*`, `redirect_uri` can be configured as `/api/v1/redirect`. If `redirect_uri` is not configured, APISIX will append `/.apisix/redirect` to the request URI to determine the value for `redirect_uri`. It is recommended to set `redirect_uri` to an absolute URL (with scheme and host). This makes the value fixed instead of assembled from request headers, so a forged `Host` or `Forwarded` header cannot influence the redirect URI sent to the identity provider. |
 | timeout | integer | False | 3 | [1,...] | Request timeout time in seconds. |
 | ssl_verify | boolean | False | true | | If true, verify the OpenID provider's SSL certificates. Note: The default value was changed from `false` to `true` in APISIX 3.16.0. This is a breaking change. If you are upgrading from an earlier version, ensure your OpenID provider's SSL certificate is valid or explicitly set this to `false` to preserve previous behavior. |
 | introspection_endpoint | string | False | | | URL of the [token introspection](https://datatracker.ietf.org/doc/html/rfc7662) endpoint for the OpenID provider used to introspect access tokens. If this is unset, the introspection endpoint presented in the well-known discovery document is used [as a fallback](https://github.com/zmartzone/lua-resty-openidc/commit/cdaf824996d2b499de4c72852c91733872137c9c). |
@@ -493,6 +493,8 @@ A common misconfiguration is to configure the `redirect_uri` the same as the URI
 To properly configure the redirection URI, make sure that the `redirect_uri` matches the Route where the Plugin is configured, without being fully identical. For instance, a correct configuration would be to configure `uri` of the Route to `/api/v1/*` and the path portion of the `redirect_uri` to `/api/v1/redirect`.
 
 You should also ensure that the `redirect_uri` includes the scheme, such as `http` or `https`.
+
+It is recommended to set `redirect_uri` to an absolute URL (scheme and host). When it is left unset or set to a relative path, the host is assembled from request headers, so a forged `Host` or `Forwarded` header can point the redirect URI at an attacker-controlled host. An absolute `redirect_uri` bypasses header-based host assembly entirely.
 
 #### 2. Missing Session Secret
 
