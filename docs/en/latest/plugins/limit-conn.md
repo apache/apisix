@@ -1587,7 +1587,7 @@ The stream `limit-conn` Plugin only accepts the following attributes. HTTP-only 
 | conn | integer | True | | > 0 | The maximum number of concurrent connections allowed. Connections exceeding the configured limit and at or below `conn + burst` will be delayed. |
 | burst | integer | True | | >= 0 | The number of excessive concurrent connections allowed to be delayed. Connections exceeding `conn + burst` will be rejected immediately. |
 | default_conn_delay | number | True | | > 0 | Processing latency allowed in seconds for concurrent connections exceeding `conn` and up to `conn + burst`. |
-| only_use_default_delay | boolean | False | false | | Has no effect on stream Routes. The proportional-delay behavior this setting toggles for HTTP Routes relies on measuring request latency, which the stream subsystem does not compute, so excess connections are always delayed by `default_conn_delay`. |
+| only_use_default_delay | boolean | False | false | | Has no effect on stream Routes. The proportional-delay behavior this setting toggles for HTTP Routes relies on measuring request latency, which the stream subsystem does not compute, so excess connections are always delayed by `default_conn_delay × floor((current connections - 1) / conn)`. |
 | key_type | string | False | var | [`var`, `var_combination`] | The type of key. If `key_type` is `var`, `key` is interpreted as a variable. If `key_type` is `var_combination`, `key` is interpreted as a combination of variables. |
 | key | string | True | | | The key to count connections by. If the configured key resolves to an empty value, APISIX falls back to `remote_addr`. |
 
