@@ -227,6 +227,15 @@ opentracing
                             }
                         },
                         { name = "resolve_dns", kind = 1 },
+                        {
+                            name = "apisix.upstream",
+                            kind = 3,
+                            attributes = {
+                                ["server.address"] = "127.0.0.2",
+                                ["server.port"] = "1980",
+                                ["http.response.status_code"] = "200",
+                            }
+                        },
                         { name = "apisix.phase.header_filter", kind = 2 },
                         { name = "apisix.phase.body_filter", kind = 2 },
                         { name = "apisix.phase.log.plugins.opentelemetry", kind = 1 },
@@ -291,6 +300,7 @@ opentracing
                     "sni_radixtree_match",
                     "http_router_match",
                     "resolve_dns",
+                    "apisix.upstream",
                     "apisix.phase.header_filter",
                     "apisix.phase.body_filter",
                     "apisix.phase.log.plugins.opentelemetry",

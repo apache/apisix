@@ -35,6 +35,9 @@ description: opentelemetry 插件可用于根据 OpenTelemetry 协议规范上�
 
 `opentelemetry` 插件可用于根据 [OpenTelemetry Specification](https://opentelemetry.io/docs/reference/specification/) 协议规范上报 Traces 数据。该插件仅支持二进制编码的 OTLP over HTTP，即请求类型为 `application/x-protobuf` 的数据上报。
 
+每个请求会产生一个 `SERVER` span，以及一个名为 `apisix.upstream` 的子 `CLIENT` span，代表对上游的调用。
+`CLIENT` span 携带 `server.address`、`server.port` 和 `http.response.status_code` 属性，其 ID 通过 `traceparent` 传递给上游，因此 APM 服务拓扑图能将 APISIX 与上游连接起来。
+
 ## 配置
 
 默认情况下，服务名称、租户 ID、collector 和 batch span processor 的配置已预配置在[默认配置](https://github.com/apache/apisix/blob/master/apisix/cli/config.lua)中。
