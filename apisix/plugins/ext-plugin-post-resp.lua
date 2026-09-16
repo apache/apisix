@@ -141,6 +141,20 @@ local function send_response(ctx, res, code)
 end
 
 
+-- The body is read lazily, by send_response or by the runner's RespBody
+-- request, so only time spent waiting on the upstream socket is added to
+-- upstream_response_time. Runner and client time stays in apisix_latency.
+local function timed_body_reader(ctx, reader)
+    return function(...)
+        local start_time = ngx.now()
+        local chunk, err = reader(...)
+        ctx.var.upstream_response_time = ctx.var.upstream_response_time
+                                         + ngx.now() - start_time
+        return chunk, err
+    end
+end
+
+
 function _M.check_schema(conf)
     return core.schema.check(_M.schema, conf)
 end
@@ -157,6 +171,7 @@ function _M.before_proxy(conf, ctx)
         close(http_obj)
         return 502
     end
+    res.body_reader = timed_body_reader(ctx, res.body_reader)
     ctx.runner_ext_response = res
 
     core.log.info("response info, status: ", res.status)

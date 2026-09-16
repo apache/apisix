@@ -479,3 +479,83 @@ GET /hello
 hello world
 --- error_log eval
 qr/request log: .*"upstream":"127\.0\.0\.1:1980".*"upstream_latency":\d+/
+
+
+
+=== TEST 19: add route whose upstream sends headers first and the body later
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin")
+            local code, message = t.test('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/hello",
+                    "plugins": {
+                        "proxy-rewrite": {"uri": "/delayed_body"},
+                        "ext-plugin-post-resp": {},
+                        "http-logger": {
+                            "uri": "http://127.0.0.1:1980/log",
+                            "batch_max_size": 1
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {"127.0.0.1:1984": 1},
+                        "type": "roundrobin"
+                    }
+                }]]
+            )
+            if code >= 300 then ngx.status = code end
+            ngx.say(message)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 20: upstream_latency includes the body delay (body streamed to client)
+--- config
+    location /delayed_body {
+        content_by_lua_block {
+            ngx.print("head")
+            ngx.flush(true)
+            ngx.sleep(0.5)
+            ngx.say("tail")
+        }
+    }
+--- request
+GET /hello
+--- response_body
+headtail
+--- error_log eval
+qr/"upstream_latency":[4-9]\d\d\b/
+
+
+
+=== TEST 21: upstream_latency excludes runner time (body read for the runner)
+--- config
+    location /delayed_body {
+        content_by_lua_block {
+            ngx.print("head")
+            ngx.flush(true)
+            ngx.sleep(1)
+            ngx.say("tail")
+        }
+    }
+--- extra_stream_config
+    server {
+        listen unix:$TEST_NGINX_HTML_DIR/nginx.sock;
+
+        content_by_lua_block {
+            ngx.sleep(0.2)
+            local ext = require("lib.ext-plugin")
+            ext.go({extra_info = {{type = "respbody", result = "headtail\n"}}})
+        }
+    }
+--- request
+GET /hello
+--- response_body
+headtail
+--- error_log eval
+qr/"upstream_latency":[3-9]\d\d\b/
