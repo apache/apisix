@@ -817,8 +817,8 @@ refresh left the change alone: 0
             for _, uri in ipairs({'/apisix/admin/routes/1', '/apisix/admin/routes/2',
                                   '/apisix/admin/routes/3', '/apisix/admin/routes/4',
                                   '/apisix/admin/routes/5',
-                                  '/apisix/admin/upstreams/1', '/apisix/admin/upstreams/2',
-                                  '/apisix/admin/upstreams/3', '/apisix/admin/upstreams/5'}) do
+                                  '/apisix/admin/upstreams/1?force=true', '/apisix/admin/upstreams/2?force=true',
+                                  '/apisix/admin/upstreams/3?force=true', '/apisix/admin/upstreams/5?force=true'}) do
                 local code, body = t(uri, ngx.HTTP_DELETE)
                 if code >= 300 then
                     ngx.status = code

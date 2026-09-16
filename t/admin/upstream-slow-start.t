@@ -607,7 +607,7 @@ data plane schema: true nil
             local t = require("lib.test_admin").test
             for _, uri in ipairs({'/apisix/admin/routes/1',
                                   '/apisix/admin/services/1',
-                                  '/apisix/admin/upstreams/1'}) do
+                                  '/apisix/admin/upstreams/1?force=true'}) do
                 local code, body = t(uri, ngx.HTTP_DELETE)
                 if code >= 300 then
                     ngx.status = code
