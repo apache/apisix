@@ -128,6 +128,29 @@ local function produce_res(res, err)
 end
 
 
+local function wait_for_etcd_available(etcd_cli, prefix)
+    while true do
+        local res, err = etcd_cli:get(prefix)
+        if not res then
+            log.error("etcd get: ", err)
+            ngx_sleep(3)
+        elseif not (res.body and res.body.header and res.body.header.revision) then
+            log.error("etcd response missing header.revision")
+            ngx_sleep(3)
+        else
+            local rev = tonumber(res.body.header.revision)
+            if not rev then
+                log.error("etcd response has invalid header.revision: ",
+                          tostring(res.body.header.revision))
+                ngx_sleep(3)
+            else
+                return rev
+            end
+        end
+    end
+end
+
+
 local function do_run_watch(premature)
     if premature then
         return
@@ -147,35 +170,15 @@ local function do_run_watch(premature)
             error("failed to create etcd instance: " .. string(err))
         end
 
-        -- Watch from the revision the preloaded configuration was read at, so
-        -- that everything written after that snapshot is still delivered. The
-        -- revision cannot be read back from loaded_configuration here:
-        -- core.config.new() removes each entry as it consumes it, so the table
-        -- is empty once every preloaded type has been registered -- and then
-        -- the fallback below would start the watch at the current revision and
-        -- drop every write made since the snapshot.
-        local rev = loaded_configuration_rev or 0
-
-        if rev == 0 then
-            while true do
-                local res, err = watch_ctx.cli:get(watch_ctx.prefix)
-                if not res then
-                    log.error("etcd get: ", err)
-                    ngx_sleep(3)
-                elseif not (res.body and res.body.header and res.body.header.revision) then
-                    log.error("etcd response missing header.revision")
-                    ngx_sleep(3)
-                else
-                    rev = tonumber(res.body.header.revision)
-                    if not rev then
-                        log.error("etcd response has invalid header.revision: ",
-                                  tostring(res.body.header.revision))
-                        ngx_sleep(3)
-                    else
-                        break
-                    end
-                end
-            end
+        -- Config objects take watch_ctx.started as permission to wait only for
+        -- events from the main watcher. Do not publish that state until etcd
+        -- has answered at least one request. The returned revision is only the
+        -- fallback when no configuration was preloaded: using a newer revision
+        -- in place of the snapshot revision would skip intervening writes.
+        local current_rev = wait_for_etcd_available(watch_ctx.cli, watch_ctx.prefix)
+        local rev = loaded_configuration_rev
+        if not rev or rev == 0 then
+            rev = current_rev
         end
 
         watch_ctx.rev = rev + 1

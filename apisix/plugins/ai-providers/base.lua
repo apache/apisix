@@ -508,10 +508,9 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
     local flush_interval_ms = conf and conf.streaming_flush_interval_ms or 0
     -- async_flush: true when the interval thread is responsible for flushing
     local async_flush = flush_interval_ms > 0
-    -- needs_flush is set to true immediately after dispatching a chunk so the
-    -- thread always flushes exactly the data that has been written.  Cleared
-    -- before ngx.flush() so any new chunks written during the flush yield are
-    -- picked up on the next interval rather than silently dropped.
+    -- Arm after dispatching a chunk; a response filter may still withhold its
+    -- output, so the flush thread must tolerate "nothing to flush". Clear the
+    -- flag before flushing so a chunk dispatched during a yield arms it again.
     local needs_flush = false
     local flush_thread
     local flush_err
@@ -524,11 +523,12 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
                 if needs_flush then
                     needs_flush = false
                     local ok, err = ngx.flush(false)
-                    if not ok then
+                    if ok then
+                        core.log.debug("ai-proxy: flush_thread periodic flush")
+                    elseif err ~= "nothing to flush" then
                         flush_err = err
                         return
                     end
-                    core.log.debug("ai-proxy: flush_thread periodic flush")
                 end
             end
         end)
@@ -756,6 +756,7 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
                     return
                 end
                 output_sent = true
+                needs_flush = true
             end
 
             if ctx.var.llm_request_done and #converted_chunks == 0
@@ -766,6 +767,7 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
                     abort_on_disconnect(flush_err)
                     return
                 end
+                needs_flush = true
             end
         elseif ctx.ai_stream_framing ~= "sse" or complete ~= "" then
             -- Native SSE filters need complete frames just like converters do.
@@ -778,9 +780,6 @@ function _M.parse_streaming_response(self, ctx, res, target_proto, converter, co
                 return
             end
             output_sent = true
-        end
-        -- Let the interval flush thread know there is unflushed output.
-        if async_flush then
             needs_flush = true
         end
 
