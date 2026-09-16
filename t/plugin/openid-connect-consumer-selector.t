@@ -550,7 +550,8 @@ passed
                 return
             elseif res.status ~= 200 then
                 ngx.status = 500
-                ngx.say("Invoking the original URI didn't return the expected result.")
+                ngx.say("Invoking the original URI didn't return the expected result: "
+                        .. res.status .. " " .. res.body)
                 return
             end
 
@@ -558,6 +559,8 @@ passed
             ngx.say(res.body)
         }
     }
+--- no_error_log
+[error]
 --- response_body_like
 uri: /oidc-selector-e2e-uri-match/uri
 cookie: .*
