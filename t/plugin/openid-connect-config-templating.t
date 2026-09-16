@@ -46,7 +46,8 @@ __DATA__
                                 "realm": "University",
                                 "client_id": "${oidc_client_id ?? course_management}",
                                 "client_secret": "${oidc_client_secret ?? d1ec69e9-55d2-4109-a3ea-befa071579d5}",
-                                "redirect_uri": "http://127.0.0.1:]] .. ngx.var.server_port .. [[/authenticated",
+                                "redirect_uri": "http://127.0.0.1:]] .. ngx.var.server_port ..
+                                    [[/oidc-tpl-default/authenticated",
                                 "ssl_verify": false,
                                 "timeout": 10,
                                 "introspection_endpoint_auth_method": "client_secret_post",

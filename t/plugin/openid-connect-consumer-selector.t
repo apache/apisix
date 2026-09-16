@@ -474,6 +474,12 @@ nil
                                         "discovery": "http://127.0.0.1:8080/realms/University/.well-known/openid-configuration",
                                         "client_id": "course_management",
                                         "client_secret": "d1ec69e9-55d2-4109-a3ea-befa071579d5"
+                                    },
+                                    {
+                                        "key": "/oidc-selector-e2e-uri-match/authenticated",
+                                        "discovery": "http://127.0.0.1:8080/realms/University/.well-known/openid-configuration",
+                                        "client_id": "course_management",
+                                        "client_secret": "d1ec69e9-55d2-4109-a3ea-befa071579d5"
                                     }
                                 ]
                             },
@@ -481,7 +487,8 @@ nil
                                 "discovery": "${oidc_discovery}",
                                 "client_id": "${oidc_client_id}",
                                 "client_secret": "${oidc_client_secret}",
-                                "redirect_uri": "http://127.0.0.1:]] .. ngx.var.server_port .. [[/authenticated",
+                                "redirect_uri": "http://127.0.0.1:]] .. ngx.var.server_port ..
+                                    [[/oidc-selector-e2e-uri-match/authenticated",
                                 "ssl_verify": false,
                                 "timeout": 10,
                                 "session": {
