@@ -468,7 +468,7 @@ function _M.rewrite(conf, ctx)
 
         local field_cnt = #hdr_op.remove
         for i = 1, field_cnt do
-            core.request.set_header(ctx, hdr_op.remove[i], nil)
+            core.request.set_header(ctx, hdr_op.remove[i]:lower(), nil)
         end
 
     end
