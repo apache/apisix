@@ -274,7 +274,8 @@ end
 
 local function parse_domain_in_route(route)
     local nodes = route.value.upstream.dns_nodes
-    local new_nodes, err = upstream_util.parse_domain_for_nodes(nodes)
+    local new_nodes, err = upstream_util.parse_domain_for_nodes(nodes,
+                                                                route.value.upstream)
     if not new_nodes then
         return nil, err
     end
