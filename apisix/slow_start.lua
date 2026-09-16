@@ -439,10 +439,10 @@ local function usable(up_conf, nodes)
     end
 
     if not shdict then
-        -- the stream subsystem has no such shared dict: keep proxying with the
-        -- configured weights instead of failing the connection
-        report_once(scope, "the upstream-slow-start shared dict is not available, ",
-                    "ignoring warm_up_conf of upstream ", scope)
+        -- slow start only ramps HTTP upstreams, and the stream subsystem has no
+        -- such shared dict. Like every other upstream field that does not apply
+        -- there, `warm_up_conf` is quietly ignored and the configured weights are
+        -- used, rather than failing the connection or logging on every build
         return nil
     end
 

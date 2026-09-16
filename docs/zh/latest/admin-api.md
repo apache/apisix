@@ -1080,7 +1080,7 @@ APISIX 的 Upstream 除了基本的负载均衡算法选择外，还支持对上
   - 之后新增的节点从 `min_weight_percent` 开始，在 `slow_start_time_seconds` 内逐步恢复到配置的权重。被健康检查挡在负载均衡器之外的节点，从它首次可用时开始爬坡。
   - 节点离开 Upstream 后在 `slow_start_time_seconds` 内回来，会继续原来的爬坡；更晚回来，或被健康检查排除超过该时长，会重新开始爬坡。
   - 每个 APISIX 实例独立计时，起点为该实例观察到节点的时刻。
-  - `warm_up_conf` 仅支持节点优先级一致的 `roundrobin` 类型 Upstream，被 stream route 使用的 Upstream 以及 `traffic-split` 插件中的 Upstream 不允许配置。爬坡只在节点之间调整流量：单节点 Upstream，或所有节点都是新节点时，请求仍会全部发往这些节点。
+  - `warm_up_conf` 仅支持节点优先级一致的 `roundrobin` 类型 Upstream，`traffic-split` 插件中的 Upstream 每请求重建，不允许配置。与其他只对 HTTP 生效的 Upstream 字段一样，该字段在 stream route 使用的 Upstream 上会被忽略。爬坡只在节点之间调整流量：单节点 Upstream，或所有节点都是新节点时，请求仍会全部发往这些节点。
 
 Upstream 对象 JSON 配置示例：
 

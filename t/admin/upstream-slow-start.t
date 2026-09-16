@@ -501,132 +501,17 @@ qr/warm_up_conf is not supported by the upstream of the traffic-split plugin/
 
 
 
-=== TEST 15: reject warm_up_conf on a stream route embedded upstream
+=== TEST 15: declarative validation accepts warm_up_conf
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/stream_routes/1',
-                ngx.HTTP_PUT,
-                [[{
-                    "server_port": 1985,
-                    "upstream": {
-                        "type": "roundrobin",
-                        "nodes": [
-                            {"host": "127.0.0.1", "port": 1995, "weight": 100}
-                        ],
-                        "warm_up_conf": {
-                            "slow_start_time_seconds": 10,
-                            "min_weight_percent": 1
-                        }
-                    }
-                }]]
-            )
-
-            ngx.status = code
-            ngx.print(body)
-        }
-    }
---- error_code: 400
---- response_body eval
-qr/warm_up_conf is not supported by a stream route/
-
-
-
-=== TEST 16: reject a stream route pointing at an upstream that uses warm_up_conf
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/stream_routes/1',
-                ngx.HTTP_PUT,
-                [[{
-                    "server_port": 1985,
-                    "upstream_id": "1"
-                }]]
-            )
-
-            ngx.status = code
-            ngx.print(body)
-        }
-    }
---- error_code: 400
---- response_body eval
-qr/uses warm_up_conf, which is not supported by a stream route/
-
-
-
-=== TEST 17: reject enabling warm_up_conf on an upstream a stream route uses
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/upstreams/3',
-                ngx.HTTP_PUT,
-                [[{
-                    "type": "roundrobin",
-                    "nodes": [
-                        {"host": "127.0.0.1", "port": 1995, "weight": 100}
-                    ]
-                }]]
-            )
-            if code >= 300 then
-                ngx.status = code
-                ngx.say(body)
-                return
-            end
-
-            code, body = t('/apisix/admin/stream_routes/2',
-                ngx.HTTP_PUT,
-                [[{
-                    "server_port": 1985,
-                    "upstream_id": "3"
-                }]]
-            )
-            if code >= 300 then
-                ngx.status = code
-                ngx.say(body)
-                return
-            end
-
-            code, body = t('/apisix/admin/upstreams/3',
-                ngx.HTTP_PUT,
-                [[{
-                    "type": "roundrobin",
-                    "nodes": [
-                        {"host": "127.0.0.1", "port": 1995, "weight": 100}
-                    ],
-                    "warm_up_conf": {
-                        "slow_start_time_seconds": 10,
-                        "min_weight_percent": 1
-                    }
-                }]]
-            )
-
-            ngx.status = code
-            ngx.print(body)
-        }
-    }
---- error_code: 400
---- response_body eval
-qr/can not enable warm_up_conf on this upstream, stream route \[2\] is using it now/
-
-
-
-=== TEST 18: declarative validation accepts warm_up_conf without reference lookups
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            -- id 3 is the upstream stream route 2 still points at, so this only
-            -- passes because a declarative config is validated without the
-            -- cross-resource lookup that rejected the same change in TEST 17
             local code, body = t('/apisix/admin/configs/validate',
                 ngx.HTTP_POST,
                 [[{
                     "upstreams": [
                         {
-                            "id": "3",
+                            "id": "u1",
                             "type": "roundrobin",
                             "nodes": {"127.0.0.1:1980": 1},
                             "warm_up_conf": {
@@ -648,7 +533,7 @@ passed
 
 
 
-=== TEST 19: declarative validation still rejects an unusable warm_up_conf
+=== TEST 16: declarative validation still rejects an unusable warm_up_conf
 --- config
     location /t {
         content_by_lua_block {
@@ -681,209 +566,15 @@ qr/warm_up_conf is only supported by the roundrobin upstream type/
 
 
 
-=== TEST 20: a stream route pointing at an unreadable upstream is rejected, not fatal
---- config
-    location /t {
-        content_by_lua_block {
-            local core = require("apisix.core")
-            local t = require("lib.test_admin").test
-
-            -- a JSON null decodes to a truthy userdata sentinel, so reading a
-            -- field off it would raise instead of failing validation
-            local res, err = core.etcd.set("/upstreams/9", core.json.null)
-            if not res then
-                ngx.say("failed to seed etcd: ", err)
-                return
-            end
-
-            local code, body = t('/apisix/admin/stream_routes/3',
-                ngx.HTTP_PUT,
-                [[{
-                    "server_port": 1985,
-                    "upstream_id": "9"
-                }]]
-            )
-
-            core.etcd.delete("/upstreams/9")
-
-            ngx.status = code
-            ngx.print(body)
-        }
-    }
---- error_code: 400
---- response_body eval
-qr/failed to (decode|read) upstream \[9\]/
---- no_error_log
-[alert]
-
-
-
-=== TEST 21: reject a stream route reaching warm_up_conf through a service
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/services/2',
-                ngx.HTTP_PUT,
-                [[{
-                    "upstream": {
-                        "type": "roundrobin",
-                        "nodes": [
-                            {"host": "127.0.0.1", "port": 1980, "weight": 100}
-                        ],
-                        "warm_up_conf": {
-                            "slow_start_time_seconds": 10,
-                            "min_weight_percent": 1
-                        }
-                    }
-                }]]
-            )
-            if code >= 300 then
-                ngx.status = code
-                ngx.say(body)
-                return
-            end
-
-            code, body = t('/apisix/admin/stream_routes/4',
-                ngx.HTTP_PUT,
-                [[{
-                    "server_port": 1985,
-                    "service_id": "2"
-                }]]
-            )
-
-            ngx.status = code
-            ngx.print(body)
-        }
-    }
---- error_code: 400
---- response_body eval
-qr/service \[2\] uses an upstream with warm_up_conf, which is not supported by a stream route/
-
-
-
-=== TEST 22: reject a stream route reaching warm_up_conf through a service upstream_id
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-
-            local code, body = t('/apisix/admin/upstreams/7',
-                ngx.HTTP_PUT,
-                [[{
-                    "type": "roundrobin",
-                    "nodes": [
-                        {"host": "127.0.0.1", "port": 1980, "weight": 100}
-                    ],
-                    "warm_up_conf": {
-                        "slow_start_time_seconds": 10,
-                        "min_weight_percent": 1
-                    }
-                }]]
-            )
-            if code >= 300 then
-                ngx.status = code
-                ngx.say("upstream: ", body)
-                return
-            end
-
-            code, body = t('/apisix/admin/services/3',
-                ngx.HTTP_PUT,
-                [[{"upstream_id": "7"}]]
-            )
-            if code >= 300 then
-                ngx.status = code
-                ngx.say("service: ", body)
-                return
-            end
-
-            code, body = t('/apisix/admin/stream_routes/5',
-                ngx.HTTP_PUT,
-                [[{
-                    "server_port": 1985,
-                    "service_id": "3"
-                }]]
-            )
-
-            ngx.status = code
-            ngx.print(body)
-        }
-    }
---- error_code: 400
---- response_body eval
-qr/service \[3\] upstream \[7\] uses warm_up_conf, which is not supported by a stream route/
-
-
-
-=== TEST 23: reject enabling warm_up_conf on an upstream a stream route reaches through a service
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-
-            -- drop warm_up_conf so the stream route can be created, then try to
-            -- put it back while the route reaches the upstream through service 3
-            local code, body = t('/apisix/admin/upstreams/7',
-                ngx.HTTP_PUT,
-                [[{
-                    "type": "roundrobin",
-                    "nodes": [
-                        {"host": "127.0.0.1", "port": 1980, "weight": 100}
-                    ]
-                }]]
-            )
-            if code >= 300 then
-                ngx.status = code
-                ngx.say("upstream: ", body)
-                return
-            end
-
-            code, body = t('/apisix/admin/stream_routes/5',
-                ngx.HTTP_PUT,
-                [[{
-                    "server_port": 1985,
-                    "service_id": "3"
-                }]]
-            )
-            if code >= 300 then
-                ngx.status = code
-                ngx.say("stream route: ", body)
-                return
-            end
-
-            code, body = t('/apisix/admin/upstreams/7',
-                ngx.HTTP_PUT,
-                [[{
-                    "type": "roundrobin",
-                    "nodes": [
-                        {"host": "127.0.0.1", "port": 1980, "weight": 100}
-                    ],
-                    "warm_up_conf": {
-                        "slow_start_time_seconds": 10,
-                        "min_weight_percent": 1
-                    }
-                }]]
-            )
-
-            ngx.status = code
-            ngx.print(body)
-        }
-    }
---- error_code: 400
---- response_body eval
-qr/stream route \[5\] is using it through service \[3\] now/
-
-
-
-=== TEST 24: the data plane keeps an upstream it cannot ramp
+=== TEST 17: the data plane keeps an upstream it cannot ramp
 --- config
     location /t {
         content_by_lua_block {
             local core = require("apisix.core")
             local apisix_upstream = require("apisix.upstream")
 
-            -- the Admin API rejects this, but a config written to etcd directly or
-            -- an embedded upstream reaches the data plane without it; the
+            -- the Admin API rejects this, but a control plane or an embedded
+            -- upstream reaches the data plane without passing through it; the
             -- upstream still has to load, or every route using it returns 503
             local conf = {
                 type = "chash",
@@ -909,63 +600,14 @@ data plane schema: true nil
 
 
 
-=== TEST 25: enabling warm_up_conf works before any stream route exists
---- config
-    location /t {
-        content_by_lua_block {
-            local core = require("apisix.core")
-            local upstreams = require("apisix.admin.upstreams")
-
-            -- etcd answers a prefix nothing was ever written under with a 404,
-            -- which is the normal state of a gateway that has no stream routes
-            local orig_get = core.etcd.get
-            core.etcd.get = function(key, is_dir)
-                if key == "/stream_routes" or key == "/services" then
-                    return {status = 404, body = {}}
-                end
-                return orig_get(key, is_dir)
-            end
-
-            local ok, res, err = pcall(upstreams.checker, "9", {
-                type = "roundrobin",
-                nodes = {{host = "127.0.0.1", port = 1980, weight = 100}},
-                warm_up_conf = {
-                    slow_start_time_seconds = 10,
-                    min_weight_percent = 1,
-                },
-            }, false, core.schema.upstream, {})
-            core.etcd.get = orig_get
-
-            if not ok then
-                ngx.say("raised: ", res)
-                return
-            end
-            if not res then
-                ngx.say("rejected: ", err and err.error_msg)
-                return
-            end
-            ngx.say("accepted")
-        }
-    }
---- response_body
-accepted
-
-
-
-=== TEST 26: clean up
+=== TEST 18: clean up
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            for _, uri in ipairs({'/apisix/admin/stream_routes/2',
-                                  '/apisix/admin/stream_routes/5',
-                                  '/apisix/admin/routes/1',
+            for _, uri in ipairs({'/apisix/admin/routes/1',
                                   '/apisix/admin/services/1',
-                                  '/apisix/admin/services/2',
-                                  '/apisix/admin/services/3',
-                                  '/apisix/admin/upstreams/1',
-                                  '/apisix/admin/upstreams/3',
-                                  '/apisix/admin/upstreams/7'}) do
+                                  '/apisix/admin/upstreams/1'}) do
                 local code, body = t(uri, ngx.HTTP_DELETE)
                 if code >= 300 then
                     ngx.status = code

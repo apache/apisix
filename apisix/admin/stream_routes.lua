@@ -23,63 +23,6 @@ local ipairs = ipairs
 local type = type
 
 
--- etcd hands a resource back either already decoded or as the raw JSON text.
--- A decode failure and a JSON `null` both have to be rejected here: `null`
--- decodes to the truthy `core.json.null` userdata, which blows up on the first
--- field access instead of failing validation.
-local function decode_value(kind, id, value)
-    if type(value) == "table" then
-        return value
-    end
-
-    if type(value) ~= "string" then
-        return nil, {error_msg = "failed to read " .. kind .. " [" .. id .. "]: "
-                                 .. "unexpected value type " .. type(value)}
-    end
-
-    local decoded, decode_err = core.json.decode(value)
-    if type(decoded) ~= "table" then
-        return nil, {error_msg = "failed to decode " .. kind .. " [" .. id .. "]: "
-                                 .. (decode_err or "not an object")}
-    end
-
-    return decoded
-end
-
-
--- Slow start only ramps HTTP upstreams, so an upstream a stream route can reach
--- may not enable it. The route reaches one directly through `upstream_id`, or
--- through a service that embeds one or names one of its own.
-local function check_upstream_reference(upstream_id, via)
-    local key = "/upstreams/" .. upstream_id
-    local res, err = core.etcd.get(key)
-    if not res then
-        return nil, {error_msg = "failed to fetch upstream info by "
-                                 .. "upstream id [" .. upstream_id .. "]: " .. err}
-    end
-
-    if res.status ~= 200 then
-        return nil, {error_msg = "failed to fetch upstream info by "
-                                 .. "upstream id [" .. upstream_id .. "], "
-                                 .. "response code: " .. res.status}
-    end
-
-    local upstream, decode_err = decode_value("upstream", upstream_id,
-                                              res.body.node and res.body.node.value)
-    if not upstream then
-        return nil, decode_err
-    end
-
-    if upstream.warm_up_conf then
-        return nil, {error_msg = (via or ("upstream [" .. upstream_id .. "]"))
-                                 .. " uses warm_up_conf, which is not supported by "
-                                 .. "a stream route"}
-    end
-
-    return true
-end
-
-
 local function check_conf(id, conf, need_id, schema, opts)
     opts = opts or {}
     local ok, err = core.schema.check(schema, conf)
@@ -87,17 +30,20 @@ local function check_conf(id, conf, need_id, schema, opts)
         return nil, {error_msg = "invalid configuration: " .. err}
     end
 
-    -- slow start only ramps HTTP upstreams, so a stream route may neither carry
-    -- nor point at an upstream that asks for it
-    if conf.upstream and conf.upstream.warm_up_conf then
-        return nil, {error_msg = "warm_up_conf is not supported by a stream route"}
-    end
-
     local upstream_id = conf.upstream_id
     if upstream_id and not opts.skip_references_check then
-        local ok, err = check_upstream_reference(upstream_id)
-        if not ok then
-            return nil, err
+        local key = "/upstreams/" .. upstream_id
+        local res, err = core.etcd.get(key)
+        if not res then
+            return nil, {error_msg = "failed to fetch upstream info by "
+                                     .. "upstream id [" .. upstream_id .. "]: "
+                                     .. err}
+        end
+
+        if res.status ~= 200 then
+            return nil, {error_msg = "failed to fetch upstream info by "
+                                     .. "upstream id [" .. upstream_id .. "], "
+                                     .. "response code: " .. res.status}
         end
     end
 
@@ -115,34 +61,6 @@ local function check_conf(id, conf, need_id, schema, opts)
             return nil, {error_msg = "failed to fetch service info by "
                     .. "service id [" .. service_id .. "], "
                     .. "response code: " .. res.status}
-        end
-
-        -- a service reaches the same upstream, so it can carry warm_up_conf onto
-        -- the L4 path the same way a directly referenced upstream would. The
-        -- route only falls back to the service's upstream when it names none of
-        -- its own, which is what `merge_service_stream_route` does at runtime
-        local service, decode_err = decode_value("service", service_id,
-                                                 res.body.node and res.body.node.value)
-        if not service then
-            return nil, decode_err
-        end
-
-        if not upstream_id then
-            if service.upstream and service.upstream.warm_up_conf then
-                return nil, {error_msg = "service [" .. service_id .. "] uses an "
-                                         .. "upstream with warm_up_conf, which is not "
-                                         .. "supported by a stream route"}
-            end
-
-            if service.upstream_id then
-                local ok, err = check_upstream_reference(service.upstream_id,
-                                                         "service [" .. service_id
-                                                         .. "] upstream ["
-                                                         .. service.upstream_id .. "]")
-                if not ok then
-                    return nil, err
-                end
-            end
         end
     end
 
@@ -169,13 +87,17 @@ local function check_conf(id, conf, need_id, schema, opts)
                                      .. "], response code: " .. res.status}
         end
 
-        local superior_route, decode_err = decode_value("stream route", superior_id,
-                                                        res.body.node and res.body.node.value)
-        if not superior_route then
-            return nil, decode_err
+        local superior_route = res.body.node.value
+        if type(superior_route) == "string" then
+            local decoded, decode_err = core.json.decode(superior_route)
+            if not decoded then
+                return nil, {error_msg = "failed to decode stream routes[" .. superior_id
+                                         .. "]: " .. decode_err}
+            end
+            superior_route = decoded
         end
 
-        if superior_route.protocol
+        if superior_route and superior_route.protocol
            and superior_route.protocol.name ~= conf.protocol.name then
             return nil, {error_msg = "protocol mismatch: subordinate protocol ["
                                      .. conf.protocol.name .. "] does not match superior protocol ["

@@ -559,10 +559,12 @@ local function get_chash_key_schema(hash_on)
 end
 
 
--- Constraints of `warm_up_conf` that JSON schema cannot express. The first
--- release only ramps HTTP roundrobin upstreams, so anything the ramp would be
--- silently dropped from is rejected at the Admin API instead of being accepted
--- and ignored.
+-- Constraints of `warm_up_conf` within one upstream that JSON schema cannot
+-- express. A ramp needs a single roundrobin tier to work in, so a combination it
+-- could never act on is rejected at the Admin API rather than accepted and
+-- ignored. Where the upstream is used is a different question: like every other
+-- field that only applies to HTTP, `warm_up_conf` is simply ignored on the
+-- stream path.
 --
 -- This runs on the configuration entry points only, never on the data plane
 -- checker: a configuration that reaches a running gateway some other way - it is

@@ -1079,7 +1079,7 @@ To allow Upstream to have a separate connection pool, use `keepalive_pool`. It c
 - A node that leaves the Upstream and comes back within `slow_start_time_seconds` resumes its ramp. One that comes back later, or that a health check kept out for longer than that, ramps again from the start.
 - Every APISIX instance ramps independently, from the moment it observed the node.
 
-`warm_up_conf` is only supported by `roundrobin` Upstreams whose nodes share a single priority. It is rejected on an Upstream used by a stream route and in the Upstreams of the `traffic-split` Plugin. A ramp only shifts traffic between nodes: a single-node Upstream, or one whose nodes are all new, keeps sending every request to them.
+`warm_up_conf` is only supported by `roundrobin` Upstreams whose nodes share a single priority, and it is rejected in the Upstreams of the `traffic-split` Plugin, which are rebuilt per request. Like the other Upstream fields that only apply to HTTP, it is ignored when the Upstream is used by a stream route. A ramp only shifts traffic between nodes: a single-node Upstream, or one whose nodes are all new, keeps sending every request to them.
 
 Example Configuration:
 
