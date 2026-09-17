@@ -170,30 +170,32 @@ When `sp_acs_url` is unset, the Plugin builds the expected URL from the scheme a
 
 ### Assertion replay protection
 
-Set `replay_dict` to record the assertions each APISIX node accepts, so that presenting the same login response again is refused with `401`. Declare the shared dict in `conf/config.yaml` on every APISIX node:
+Set `replay_dict` to record the assertions each APISIX node accepts, so that presenting the same login response again is refused with `401`.
 
-```yaml
-nginx_config:
-  http:
-    custom_lua_shared_dict:
-      saml_replay: 10m
-```
-
-Then reference it from the Plugin:
+APISIX declares the shared dict `plugin-saml-auth-replay` for this purpose whenever the `saml-auth` Plugin is enabled. Reference it from the Plugin:
 
 ```json
 {
-  "replay_dict": "saml_replay",
+  "replay_dict": "plugin-saml-auth-replay",
   "replay_ttl": 600
 }
 ```
 
-The Plugin does not create the shared dict. A route naming a shared dict that is not declared answers every request with `500` and logs `no lua_shared_dict named <name>`.
+Its size defaults to `10m`, which holds about 40,000 assertions. Change it in `conf/config.yaml` on every APISIX node:
+
+```yaml
+nginx_config:
+  http:
+    lua_shared_dict:
+      plugin-saml-auth-replay: 20m
+```
+
+To give routes separate records, declare more shared dicts under `nginx_config.http.custom_lua_shared_dict` and name them in `replay_dict`. A route naming a shared dict that is not declared answers every request with `500` and logs `no lua_shared_dict named <name>`.
 
 Consider the following when enabling replay protection:
 
 - **The record is local to one node.** A `lua_shared_dict` is shared by the worker processes of one APISIX node only. When several APISIX nodes serve the same route, a response accepted by one node is not known to the others. On every node, `lua-resty-saml` still binds a response to the login request stored in the user's session, provided the IdP sends `InResponseTo`, which mainstream IdPs do.
-- **Size the shared dict for the login rate.** Each accepted assertion holds an entry until it expires. For example, 10 logins per second with 10-minute assertions keep about 6,000 entries, which needs more than `1m`. When the shared dict is full, the assertion is accepted without being recorded and an error is logged.
+- **Size the shared dict for the login rate.** Each accepted assertion holds an entry until it expires. For example, 100 logins per second with 10-minute assertions keep about 60,000 entries, which needs more than the default `10m`. When the shared dict is full, the assertion is accepted without being recorded and an error is logged.
 - **A repeated submission is refused.** A browser that submits the same login response again, for example after going back in history, receives `401`. Opening the protected URL again starts a new login.
 
 ## Disable the Plugin

@@ -170,30 +170,32 @@ IdP 将登录响应发送到 ACS 绝对 URL，并在响应的 `Destination` 和 
 
 ### 断言重放防护
 
-设置 `replay_dict` 后，每个 APISIX 节点会记录其接受的断言，再次提交同一登录响应时将以 `401` 拒绝。请在每个 APISIX 节点的 `conf/config.yaml` 中声明共享字典：
+设置 `replay_dict` 后，每个 APISIX 节点会记录其接受的断言，再次提交同一登录响应时将以 `401` 拒绝。
 
-```yaml
-nginx_config:
-  http:
-    custom_lua_shared_dict:
-      saml_replay: 10m
-```
-
-然后在插件中引用：
+启用 `saml-auth` 插件时，APISIX 会为此声明共享字典 `plugin-saml-auth-replay`。在插件中引用：
 
 ```json
 {
-  "replay_dict": "saml_replay",
+  "replay_dict": "plugin-saml-auth-replay",
   "replay_ttl": 600
 }
 ```
 
-插件不会创建共享字典。若路由引用了未声明的共享字典，该路由的所有请求都将返回 `500`，并记录日志 `no lua_shared_dict named <name>`。
+该共享字典默认大小为 `10m`，约可保存 40,000 个断言。如需调整，请在每个 APISIX 节点的 `conf/config.yaml` 中修改：
+
+```yaml
+nginx_config:
+  http:
+    lua_shared_dict:
+      plugin-saml-auth-replay: 20m
+```
+
+如需为不同路由使用独立的记录，可在 `nginx_config.http.custom_lua_shared_dict` 中声明更多共享字典，并在 `replay_dict` 中引用。若路由引用了未声明的共享字典，该路由的所有请求都将返回 `500`，并记录日志 `no lua_shared_dict named <name>`。
 
 启用重放防护时，请注意以下事项：
 
 - **记录仅在单个节点内有效。** `lua_shared_dict` 只在同一 APISIX 节点的 worker 进程之间共享。当多个 APISIX 节点服务同一路由时，一个节点接受的响应不会被其他节点知晓。只要 IdP 发送 `InResponseTo`（主流 IdP 均会发送），`lua-resty-saml` 在每个节点上仍会将响应绑定到用户会话中保存的登录请求。
-- **按登录速率设置共享字典大小。** 每个已接受的断言在过期前都会占用一个条目。例如，每秒 10 次登录、断言有效期 10 分钟时，约需保存 6,000 个条目，`1m` 不足以容纳。共享字典已满时，断言会被接受但不会被记录，并记录错误日志。
+- **按登录速率设置共享字典大小。** 每个已接受的断言在过期前都会占用一个条目。例如，每秒 100 次登录、断言有效期 10 分钟时，约需保存 60,000 个条目，默认的 `10m` 不足以容纳。共享字典已满时，断言会被接受但不会被记录，并记录错误日志。
 - **重复提交会被拒绝。** 浏览器再次提交同一登录响应（例如通过浏览历史返回）时会收到 `401`。重新打开受保护的 URL 即可发起新的登录。
 
 ## 禁用插件

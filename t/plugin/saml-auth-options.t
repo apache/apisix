@@ -506,7 +506,7 @@ http://127.0.0.1:1984/acs?
 
             local opts = core.table.deepcopy(kc.get_default_opts())
             opts.sp_issuer = "sp"
-            opts.replay_dict = "saml_replay"
+            opts.replay_dict = "plugin-saml-auth-replay"
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
@@ -536,8 +536,6 @@ passed
 
 
 === TEST 15: with replay_dict, the same response is refused the second time
---- http_config
-    lua_shared_dict saml_replay 1m;
 --- config
     location /t {
         content_by_lua_block {
