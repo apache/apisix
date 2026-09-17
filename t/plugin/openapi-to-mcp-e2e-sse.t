@@ -80,3 +80,32 @@ post status: 202
 protocolVersion: 2024-11-05
 serverInfo: openapi2mcp-sse 0.0.1
 unknown session status: 404
+
+
+
+=== TEST 3: an sse route whose header carries a request variable
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "sse",
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/openapi.json",
+                    headers = { Authorization = "Bearer ${http_x_user}" },
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 4: the value resolved when the stream opened is the one used
+--- exec
+python3 t/plugin/openapi_to_mcp_sse_frozen_vars.py /mcp 2>&1
+--- response_body
+post status: 202
+upstream saw: Bearer alice

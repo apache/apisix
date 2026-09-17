@@ -79,7 +79,13 @@ local function handle_get(ctx, opts)
         })
     end
 
-    local session_id, err = session.create()
+    -- Freeze what the stream resolved from this request; every message POST on
+    -- this session then reaches the upstream with the same base_url and the
+    -- same headers.
+    local session_id, err = session.create({
+        base_url = opts.base_url,
+        headers = opts.headers,
+    })
     if not session_id then
         core.log.error("failed to create MCP session: ", err)
         return core.response.exit(500)
@@ -172,6 +178,27 @@ local function content_type_error(content_type)
 end
 
 
+-- Answer a message with what the stream resolved, not with what this POST
+-- resolves: the message endpoint carries only the session id, so `${...}` in
+-- base_url or in a header would read empty here. A session created before this
+-- was stored keeps the old behaviour rather than failing.
+local function frozen_opts(opts, session_id)
+    local context = session.context(session_id)
+    if not context then
+        return opts
+    end
+
+    local merged = core.table.clone(opts)
+    if context.base_url ~= nil then
+        merged.base_url = context.base_url
+    end
+    if context.headers ~= nil then
+        merged.headers = context.headers
+    end
+    return merged
+end
+
+
 local function handle_post(ctx, opts)
     -- An empty or unparsable JSON body is a 400 even for a session nobody
     -- issued: it is rejected before the session is looked up.
@@ -211,7 +238,7 @@ local function handle_post(ctx, opts)
         return core.response.exit(400, jsonrpc.invalid_message())
     end
 
-    local response = server.handle(request, opts)
+    local response = server.handle(request, frozen_opts(opts, session_id))
     if response then
         local encoded, encode_err = core.json.encode(response)
         if not encoded then

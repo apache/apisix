@@ -17,8 +17,13 @@
 local core        = require("apisix.core")
 local streamable_http = require("apisix.plugins.openapi-to-mcp.transport.streamable_http")
 local mcp_sse         = require("apisix.plugins.openapi-to-mcp.transport.sse")
+local http        = require("resty.http")
 local ngx         = ngx
+local ipairs      = ipairs
 local pairs       = pairs
+local type        = type
+local str_lower   = string.lower
+local str_sub     = string.sub
 
 local schema = {
     type = "object",
@@ -59,6 +64,22 @@ local schema = {
             type = "boolean",
             default = false,
         },
+        allowed_hosts = {
+            description = "Optional allow-list of hosts the resolved base_url may " ..
+            "resolve to. Each entry is an exact hostname (e.g. `api.example.com`) " ..
+            "or a `*.example.com` wildcard that matches one or more leading labels. " ..
+            "When set, requests whose resolved base_url host is not in the list " ..
+            "are rejected with HTTP 400.",
+            type = "array",
+            minItems = 1,
+            uniqueItems = true,
+            items = {
+                type = "string",
+                minLength = 1,
+                pattern = "^(\\*\\.)?[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?" ..
+                          "(\\.[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?)*$",
+            },
+        },
     },
     required = { "openapi_url", "base_url" },
 }
@@ -75,6 +96,76 @@ local _M = {
 
 function _M.check_schema(conf)
     return core.schema.check(schema, conf)
+end
+
+
+-- Extract the lowercase host from a base URL after variable resolution.
+-- Requires an http or https scheme and a non-empty host. Bracketed IPv6
+-- literals are normalized by removing the surrounding brackets before the
+-- host is returned.
+local function parse_base_url_host(url)
+    if type(url) ~= "string" or url == "" then
+        return nil, "base_url is empty"
+    end
+    local parsed = http:parse_uri(url, false)
+    if not parsed then
+        -- lua-resty-http's parse_uri rejects anything that isn't http(s)://...
+        -- Use our own message instead of propagating its error string, which
+        -- would echo the original URL (potentially request-derived) into logs.
+        return nil, "base_url must use http or https scheme"
+    end
+    local scheme, host = parsed[1], parsed[2]
+    if scheme ~= "http" and scheme ~= "https" then
+        return nil, "base_url must use http or https scheme"
+    end
+    if type(host) ~= "string" or host == "" then
+        return nil, "base_url has no host"
+    end
+    if str_sub(host, 1, 1) == "[" and str_sub(host, -1) == "]" then
+        host = str_sub(host, 2, -2)
+    end
+    return str_lower(host)
+end
+
+
+local function host_matches_allowed(host, allowed_hosts)
+    for _, pattern in ipairs(allowed_hosts) do
+        local lower_pattern = str_lower(pattern)
+        if lower_pattern == host then
+            return true
+        end
+        if str_sub(lower_pattern, 1, 2) == "*." then
+            local suffix = str_sub(lower_pattern, 2)
+            if #host > #suffix and str_sub(host, -#suffix) == suffix then
+                return true
+            end
+        end
+    end
+    return false
+end
+
+
+-- `base_url` may be built from request variables, so the host it resolves to is
+-- only known per request. When the route declares allowed_hosts, that host is
+-- checked here, before anything is fetched or called.
+local function check_allowed_host(conf, base_url)
+    if not conf.allowed_hosts then
+        return true
+    end
+
+    local host, err = parse_base_url_host(base_url)
+    if not host then
+        -- base_url is not logged: after resolution it may carry request-derived
+        -- values (${arg_*}, ${http_*}) and with them a secret
+        core.log.error("invalid resolved base_url: ", err)
+        return false, 400, "invalid base_url"
+    end
+    if not host_matches_allowed(host, conf.allowed_hosts) then
+        core.log.error("resolved base_url host is not in allowed_hosts")
+        return false, 400, "base_url host is not in allowed_hosts"
+    end
+
+    return true
 end
 
 
@@ -103,9 +194,19 @@ end
 
 
 function _M.access(conf, ctx)
-    if conf.transport == "streamable_http" then
-        local base_url, headers = resolve_conf(conf, ctx)
+    if conf.transport ~= "sse" and conf.transport ~= "streamable_http" then
+        core.log.error("Invalid MCP transport: ", conf.transport)
+        return 500, { message = "Invalid MCP transport"}
+    end
 
+    local base_url, headers = resolve_conf(conf, ctx)
+
+    local allowed, status, message = check_allowed_host(conf, base_url)
+    if not allowed then
+        return status, { message = message }
+    end
+
+    if conf.transport == "streamable_http" then
         -- Defer the answer to before_proxy. Exiting here would skip every
         -- plugin with a lower priority that still has to run in access, such
         -- as an authorization check on the tool being called.
@@ -120,13 +221,6 @@ function _M.access(conf, ctx)
         ctx.bypass_nginx_upstream = true
         return
     end
-
-    if conf.transport ~= "sse" then
-        core.log.error("Invalid MCP transport: ", conf.transport)
-        return 500, { message = "Invalid MCP transport"}
-    end
-
-    local base_url, headers = resolve_conf(conf, ctx)
 
     -- The client is told to POST its messages to the path the route matched.
     local message_path = ctx.curr_req_matched and ctx.curr_req_matched._path

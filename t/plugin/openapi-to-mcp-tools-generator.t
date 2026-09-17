@@ -573,3 +573,96 @@ true
 true
 --- error_log
 skipping parameter without a name
+
+
+
+=== TEST 26: the output schema comes from the success response
+--- config
+    location /t {
+        content_by_lua_block {
+            local g = require("apisix.plugins.openapi-to-mcp.tools.generator")
+            local object = { type = "object", properties = { id = { type = "string" } } }
+            local spec = { paths = { ["/a"] = { get = { operationId = "a", responses = {
+                ["200"] = { content = { ["application/json"] = { schema = object } } },
+            } } } } }
+            local tools = g.generate(spec, { ["/a"] = 1 }, {})
+            ngx.say(tools[1].output_schema.type)
+            ngx.say(tools[1].output_schema.properties.id.type)
+        }
+    }
+--- response_body
+object
+string
+
+
+
+=== TEST 27: 200 wins over 201, 201 over another 2xx, and 2XX comes last
+--- config
+    location /t {
+        content_by_lua_block {
+            local g = require("apisix.plugins.openapi-to-mcp.tools.generator")
+            local function obj(name)
+                return { type = "object", properties = { [name] = { type = "string" } } }
+            end
+            local function op(responses)
+                local content = {}
+                for code, name in pairs(responses) do
+                    content[code] = { content = { ["application/json"] = { schema = obj(name) } } }
+                end
+                return { operationId = "x", responses = content }
+            end
+            local function pick(responses)
+                local spec = { paths = { ["/a"] = { get = op(responses) } } }
+                local tools = g.generate(spec, { ["/a"] = 1 }, {})
+                for key in pairs(tools[1].output_schema.properties) do
+                    return key
+                end
+            end
+            ngx.say(pick({ ["200"] = "from200", ["201"] = "from201" }))
+            ngx.say(pick({ ["201"] = "from201", ["2XX"] = "fromXX" }))
+            ngx.say(pick({ ["202"] = "from202", ["2XX"] = "fromXX" }))
+            ngx.say(pick({ ["201"] = "from201" }))
+        }
+    }
+--- response_body
+from200
+from201
+from202
+from201
+
+
+
+=== TEST 28: nothing a client could bind to yields no output schema
+--- config
+    location /t {
+        content_by_lua_block {
+            local g = require("apisix.plugins.openapi-to-mcp.tools.generator")
+            local function schema_of(response)
+                local spec = { paths = { ["/a"] = { get = {
+                    operationId = "a", responses = response } } } }
+                local tools = g.generate(spec, { ["/a"] = 1 }, {})
+                return tools[1].output_schema
+            end
+            local json = function(schema)
+                return { ["200"] = { content = { ["application/json"] = { schema = schema } } } }
+            end
+            -- an array, a bare object, an unmerged composition, a non-JSON
+            -- media type, a response with no content, and an error response
+            ngx.say(schema_of(json({ type = "array", items = { type = "string" } })) == nil)
+            ngx.say(schema_of(json({ type = "object" })) == nil)
+            ngx.say(schema_of(json({ allOf = { { type = "object",
+                    properties = { a = { type = "string" } } } } })) == nil)
+            ngx.say(schema_of({ ["200"] = { content = { ["application/xml"] = {
+                    schema = { type = "object", properties = { a = {} } } } } } }) == nil)
+            ngx.say(schema_of({ ["200"] = { description = "ok" } }) == nil)
+            ngx.say(schema_of({ ["default"] = { content = { ["application/json"] = {
+                    schema = { type = "object", properties = { a = {} } } } } } }) == nil)
+        }
+    }
+--- response_body
+true
+true
+true
+true
+true
+true

@@ -90,6 +90,73 @@ local DOCUMENTS = {
         } } },
     },
 
+    -- a required parameter and a required body property, both with a default
+    ["/defaults.json"] = {
+        openapi = "3.0.0",
+        info = { title = "Defaults", version = "1" },
+        paths = {
+            ["/items"] = {
+                get = {
+                    operationId = "listItems",
+                    parameters = {
+                        { name = "status", ["in"] = "query", required = true,
+                          schema = { type = "string", default = "available" } },
+                        { name = "limit", ["in"] = "query",
+                          schema = { type = "integer", default = 10 } },
+                    },
+                },
+                post = {
+                    operationId = "createItem",
+                    requestBody = { required = true, content = { ["application/json"] = {
+                        schema = {
+                            type = "object",
+                            required = { "mode" },
+                            properties = {
+                                mode = { type = "string", default = "fast" },
+                                n = { type = "integer", default = 3 },
+                            },
+                        } } } },
+                },
+            },
+        },
+    },
+
+    -- responses that do and do not describe a JSON object
+    ["/output.json"] = {
+        openapi = "3.0.0",
+        info = { title = "Output", version = "1" },
+        paths = {
+            ["/echo"] = { get = {
+                operationId = "echoOp",
+                responses = { ["200"] = { content = { ["application/json"] = { schema = {
+                    type = "object",
+                    required = { "seen_method" },
+                    properties = {
+                        seen_method = { type = "string" },
+                        seen_path = { type = "string" },
+                    },
+                } } } } },
+            } },
+            ["/list"] = { get = {
+                operationId = "listOp",
+                responses = { ["200"] = { content = { ["application/json"] = { schema = {
+                    type = "array", items = { type = "string" },
+                } } } } },
+            } },
+            ["/status404"] = { get = {
+                operationId = "goneOp",
+                responses = { ["200"] = { content = { ["application/json"] = { schema = {
+                    type = "object",
+                    required = { "seen_method" },
+                    properties = { seen_method = { type = "string" } },
+                } } } } },
+            } },
+        },
+    },
+
+    -- parses as JSON and is not an OpenAPI document
+    ["/notaspec.json"] = { this = "is not an openapi document" },
+
     -- query parameters that are an object and an array
     ["/objq.json"] = {
         openapi = "3.0.0",
@@ -140,6 +207,13 @@ function _M.serve()
         local f = assert(io.open(ngx.config.prefix() .. "../lib/" .. file, "r"))
         ngx.print(f:read("*a"))
         f:close()
+        return
+    end
+
+    -- an API answer that is not a success, for the output schema cases
+    if uri == "/status404" then
+        ngx.status = 404
+        ngx.say(core.json.encode({ error = "not found" }))
         return
     end
 
