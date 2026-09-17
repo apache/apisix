@@ -52,7 +52,8 @@ The Plugin supports:
 | headers            | object  | False    |         |                             | Headers added to every request sent to the API. Values support variables, for example `"Authorization": "Bearer ${http_x_api_token}"`. |
 | flatten_parameters | boolean | False    | `false` |                             | When `false`, the tool input nests parameters under `pathParameters`, `queryParameters` and `headerParameters`. When `true`, they are placed directly in the input object. |
 | max_response_body_size | integer | False | `1048576` | >= 1024 | Maximum size, in bytes, of an upstream response read into a tool result. A larger response fails the call with `RESPONSE_TOO_LARGE` instead of being buffered. A tool result over 256 KiB is returned as compact JSON rather than indented. |
-| allowed_ref_hosts | array[string] | False | | | Hosts an `http(s)` `$ref` inside the document may point at, besides the host `openapi_url` itself was fetched from. Each entry is a hostname or a `*.example.com` wildcard. |
+| max_document_size | integer | False | `4194304` | >= 1024 | Maximum size, in bytes, of the OpenAPI document, and of any document an `http(s)` `$ref` pulls in. A larger document fails the Route rather than being read into the worker. |
+| allowed_ref_hosts | array[string] | False | | | Hosts an `http(s)` `$ref` inside the document may point at, besides the origin `openapi_url` itself was fetched from. Each entry is a hostname or a `*.example.com` wildcard, optionally followed by `:port`; without a port it matches any port on that host. |
 | allowed_origins | array[string] | False | | | `Origin` header values accepted on MCP requests. When unset, the header is not checked. |
 
 Tool call arguments are validated against the generated input schema before the API is called, and then filtered to the parameters the operation declares: an argument the document does not mention is dropped rather than sent. A call to an unknown tool, or with invalid arguments, returns a result with `isError` set to `true`. Every `default` declared in the document is filled in before that validation, so a parameter or a body property that is `required` and has a `default` may be omitted by the client; an argument the client does send is never replaced by the default.
@@ -74,7 +75,7 @@ Each SSE stream holds a connection for up to 30 minutes, and a client that disap
 
 * **The OpenAPI document is an input, not a trusted configuration.** Tool names, descriptions and schemas come from it and are read by the model, so a document host that is compromised can steer the agents using the Route. Point `openapi_url` at a source you control.
 * **`base_url` should not be built from client-controlled variables.** `http://${http_x_backend}` lets the caller choose where the tool call goes; use a fixed host, or a variable the gateway itself sets.
-* **An `http(s)` `$ref` is followed only to the document's own host** by default. Add `allowed_ref_hosts` to allow more, and keep internal addresses out of that list.
+* **An `http(s)` `$ref` is followed only to the document's own scheme, host and port** by default, so a document served from `127.0.0.1` cannot reach another port on that same address. Add `allowed_ref_hosts` to allow more, and keep internal addresses out of that list.
 * **The Plugin's `headers` reach every operation in the document.** If the credential they carry is not meant for all of them, restrict which tools a consumer may call with [`consumer-restriction`](consumer-restriction.md) or an equivalent.
 
 ## Example usage

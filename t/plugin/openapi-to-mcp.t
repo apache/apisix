@@ -958,7 +958,39 @@ print(inner['status'], inner['data']['closed'], len(inner['data']['blob']))
 
 
 
-=== TEST 54: a body larger than one read chunk is reassembled
+=== TEST 54: a route over an API that announces a non-chunked transfer coding
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "streamable_http",
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/identity.json",
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 55: "Transfer-Encoding: identity" is a close-delimited body, not a framed one
+--- max_size: 2048000
+--- exec
+python3 t/plugin/openapi_to_mcp_harness.py /mcp \
+    '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"getIdentity","arguments":{}}}' "
+inner = json.loads(d['result']['content'][0]['text'])
+print(inner['status'], inner['data']['identity'], len(inner['data']['blob']))
+"
+--- response_body
+200 True 1024
+
+
+
+=== TEST 56: a body larger than one read chunk is reassembled
 --- config
     location /t {
         content_by_lua_block {
@@ -977,7 +1009,7 @@ passed
 
 
 
-=== TEST 55: the chunks add up to the whole body
+=== TEST 57: the chunks add up to the whole body
 --- max_size: 8192000
 --- exec
 python3 t/plugin/openapi_to_mcp_harness.py /mcp \
@@ -990,12 +1022,18 @@ print(inner['status'], len(inner['data']['blob']))
 
 
 
-=== TEST 56: a configured header cannot end with a newline either
+=== TEST 58: the schema rejects a header with a newline in the middle of it
 --- config
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.openapi-to-mcp")
             local cases = {
+                { ["X-Trace"] = "a\nb" },
+                { ["X-Tra\nce"] = "1" },
+                { ["X-Trace"] = "a\r\nX-Injected: 1" },
+                -- the schema anchors with $, which PCRE also matches before a
+                -- trailing newline, so these two get through it and are
+                -- dropped at request time instead -- see the case below
                 { ["X-Trace"] = "trailing\n" },
                 { ["X-Trace\n"] = "1" },
             }
@@ -1012,10 +1050,47 @@ print(inner['status'], len(inner['data']['blob']))
 --- response_body
 1: false
 2: false
+3: false
+4: true
+5: true
 
 
 
-=== TEST 57: a route header built from a variable
+=== TEST 59: a route whose header value ends with a newline
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "streamable_http",
+                    base_url = "http://127.0.0.1:11460",
+                    headers = { ["X-Trace"] = "trailing\n" },
+                    openapi_url = "http://127.0.0.1:11460/openapi.json",
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 60: it never reaches the upstream, whatever the schema let through
+--- exec
+python3 t/plugin/openapi_to_mcp_harness.py /mcp \
+    '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"getPet","arguments":{"pathParameters":{"petId":7}}}}' "
+inner = json.loads(d['result']['content'][0]['text'])
+print(inner['data'].get('seen_trace'))
+"
+--- response_body
+None
+--- error_log
+cannot appear in a request header
+
+
+
+=== TEST 61: a route header built from a variable
 --- config
     location /t {
         content_by_lua_block {
@@ -1035,7 +1110,7 @@ passed
 
 
 
-=== TEST 58: a newline arriving through that variable drops the header
+=== TEST 62: a newline arriving through that variable drops the header
 --- exec
 python3 t/plugin/openapi_to_mcp_harness.py '/mcp?trace=a%0d%0aX-Injected:%201' \
     '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"getPet","arguments":{"pathParameters":{"petId":7}}}}' "

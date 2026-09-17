@@ -45,13 +45,19 @@ local schema = {
             type = "object",
             minProperties = 0,
             patternProperties = {
-                -- no colon in the name, no CR or LF anywhere: both would let a
-                -- resolved variable add a header, or a request, of its own.
-                -- \z rather than $, which in PCRE also matches before a
-                -- trailing newline
-                ["^[^:\\s]+\\z"] = {
+                -- no colon and no whitespace in the name, no CR or LF in the
+                -- value: either would let a resolved variable add a header, or
+                -- a request, of its own. These anchor with $ rather than \z,
+                -- which is PCRE-only: this schema is served over the Admin API
+                -- and is validated by clients whose regex flavour has no \z,
+                -- where it would degrade to a literal "z". The gap $ leaves in
+                -- PCRE -- it also matches before a trailing newline -- is
+                -- closed at request time, where a header is dropped unless
+                -- fetch.header_is_sane() accepts its name and its resolved
+                -- value.
+                ["^[^:\\s]+$"] = {
                     oneOf = {
-                        { type = "string", pattern = "^[^\\r\\n]*\\z" }
+                        { type = "string", pattern = "^[^\\r\\n]*$" }
                     }
                 }
             },
@@ -66,10 +72,18 @@ local schema = {
             minimum = 1024,
             default = 1048576,
         },
+        max_document_size = {
+            description = "Maximum size in bytes of the OpenAPI document, and " ..
+            "of any document an http(s) $ref pulls in.",
+            type = "integer",
+            minimum = 1024,
+            default = 4194304,
+        },
         allowed_ref_hosts = {
             description = "Hosts an http(s) $ref inside the OpenAPI document " ..
-            "may point at, besides the host of openapi_url itself. Each entry " ..
-            "is a hostname or a `*.example.com` wildcard.",
+            "may point at, besides the origin of openapi_url itself. Each " ..
+            "entry is a hostname or a `*.example.com` wildcard, optionally " ..
+            "followed by `:port`; without a port it matches any port.",
             type = "array",
             minItems = 1,
             uniqueItems = true,

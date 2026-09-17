@@ -24,6 +24,7 @@ local http         = require("resty.http")
 local type         = type
 local tostring     = tostring
 local str_find     = string.find
+local tonumber     = tonumber
 local table_concat = table.concat
 
 local _M = {}
@@ -78,8 +79,14 @@ function _M.request(url, opts)
     -- A body with neither Content-Length nor chunked encoding ends when the
     -- connection does, and the reader reports that as "closed" alongside the
     -- last piece of it. That is the end of a complete body, not a failure.
-    local length_known = res.headers["Content-Length"] ~= nil
-                         or res.headers["Transfer-Encoding"] ~= nil
+    --
+    -- What counts as chunked is the client's own predicate: it picks the
+    -- chunked reader only for "Transfer-Encoding: chunked", so a body sent as
+    -- "identity", or with any other transfer coding, is read to the close like
+    -- one with no framing at all. A Content-Length that is there but not
+    -- reached is the one case where a close really is a truncated body.
+    local content_length = tonumber(res.headers["Content-Length"])
+    local chunked = http.transfer_encoding_is_chunked(res.headers)
     local limit = opts.max_body_size
     local reader = res.body_reader
     local chunks, read_bytes = {}, 0
@@ -97,7 +104,9 @@ function _M.request(url, opts)
         end
 
         if read_err then
-            if read_err == "closed" and not length_known then
+            if read_err == "closed" and not chunked
+               and (not content_length or read_bytes >= content_length)
+            then
                 break
             end
             httpc:close()

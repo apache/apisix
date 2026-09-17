@@ -111,6 +111,12 @@ local DOCUMENTS = {
         paths = { ["/closing"] = { get = { operationId = "getClosing" } } },
     },
 
+    ["/identity.json"] = {
+        openapi = "3.0.0",
+        info = { title = "Identity", version = "1" },
+        paths = { ["/identity"] = { get = { operationId = "getIdentity" } } },
+    },
+
     -- a request body whose only media type is not JSON
     ["/textbody.json"] = {
         openapi = "3.0.0",
@@ -210,6 +216,19 @@ local function closing_body()
 end
 
 
+-- Announces a transfer coding that is not chunked and sends no Content-Length,
+-- so the body still ends at the close. The client reads it exactly like an
+-- unframed one, which a reader keying off the header's mere presence does not.
+local function identity_body()
+    ngx.req.read_body()
+    local sock = assert(ngx.req.socket(true))
+    sock:send("HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n" ..
+              "Transfer-Encoding: identity\r\nConnection: close\r\n\r\n" ..
+              '{"identity":true,"blob":"' .. string.rep("z", 1024) .. '"}')
+    return ngx.exit(200)
+end
+
+
 -- answers with a body of the requested size, for the response size limit
 local function large_body()
     local size = tonumber(ngx.var.arg_size) or (2 * 1024 * 1024)
@@ -229,6 +248,10 @@ function _M.serve()
 
     if uri == "/closing" then
         return closing_body()
+    end
+
+    if uri == "/identity" then
+        return identity_body()
     end
 
     local doc = DOCUMENTS[uri]

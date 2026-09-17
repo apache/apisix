@@ -52,7 +52,8 @@ MCP 服务运行在 APISIX 内部，不需要额外的进程或服务。
 | headers | object | 否 | | | 发往 API 的每个请求都会携带的请求头。值支持变量，例如 `"Authorization": "Bearer ${http_x_api_token}"`。 |
 | flatten_parameters | boolean | 否 | `false` | | 为 `false` 时，工具输入中的参数分别嵌套在 `pathParameters`、`queryParameters` 和 `headerParameters` 下；为 `true` 时，参数直接放在输入对象的顶层。 |
 | max_response_body_size | integer | 否 | `1048576` | >= 1024 | 读取到工具结果中的上游响应体大小上限（字节）。超出时调用失败并返回 `RESPONSE_TOO_LARGE`，不会把响应缓冲下来。超过 256 KiB 的工具结果以紧凑 JSON 返回，不再缩进。 |
-| allowed_ref_hosts | array[string] | 否 | | | 文档内 `http(s)` 形式的 `$ref` 除 `openapi_url` 所在主机外还可以指向的主机。每项为主机名或 `*.example.com` 形式的通配符。 |
+| max_document_size | integer | 否 | `4194304` | >= 1024 | OpenAPI 文档，以及文档内 `http(s)` 形式 `$ref` 拉取的文档的大小上限（字节）。超出上限的文档不会读入 worker，该路由直接报错。 |
+| allowed_ref_hosts | array[string] | 否 | | | 文档内 `http(s)` 形式的 `$ref` 除 `openapi_url` 自身所在来源（scheme、主机与端口）外还可以指向的主机。每项为主机名或 `*.example.com` 形式的通配符，可加 `:port`；不带端口时匹配该主机的任意端口。 |
 | allowed_origins | array[string] | 否 | | | MCP 请求中允许的 `Origin` 头取值。不配置时不校验该头。 |
 
 调用 API 之前，插件会按生成的输入 Schema 校验工具参数，并按操作声明的参数过滤：文档中未声明的参数会被丢弃，不会发往 API。调用不存在的工具或参数不合法时，返回 `isError` 为 `true` 的结果。校验之前会先填入文档中声明的 `default`，因此同时带有 `required` 和 `default` 的参数或请求体属性可以由客户端省略；客户端显式传入的参数不会被默认值覆盖。
@@ -74,7 +75,7 @@ MCP 服务运行在 APISIX 内部，不需要额外的进程或服务。
 
 * **OpenAPI 文档是输入，不是可信配置。** 工具名称、描述和 Schema 都来自文档并会被模型读取，文档来源一旦被攻陷，就可以左右使用该路由的 Agent。`openapi_url` 应指向自己可控的来源。
 * **`base_url` 不应由客户端可控的变量拼成。** `http://${http_x_backend}` 会让调用方决定工具请求发往何处；请使用固定主机，或网关自身设置的变量。
-* **文档内 `http(s)` 形式的 `$ref` 默认只跟随文档自身所在的主机。** 需要跨主机时用 `allowed_ref_hosts` 显式声明，并避免把内部地址写进去。
+* **文档内 `http(s)` 形式的 `$ref` 默认只跟随文档自身的 scheme、主机与端口。** 因此从 `127.0.0.1` 提供的文档无法指向同一地址上的其他端口。需要跨来源时用 `allowed_ref_hosts` 显式声明，并避免把内部地址写进去。
 * **插件的 `headers` 会附加到文档中的每一个操作上。** 如果其中的凭据并非对所有操作都适用，请用 [`consumer-restriction`](consumer-restriction.md) 等方式限制 consumer 可调用的工具。
 
 ## 使用示例

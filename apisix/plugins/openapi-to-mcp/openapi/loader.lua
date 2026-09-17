@@ -35,7 +35,8 @@ local DEFAULT_TIMEOUT = 5000
 
 -- A document is read into memory and expanded from there, and up to
 -- MAX_EXTERNAL_DOCS of them are pulled in by $ref, so the host that serves one
--- does not get to decide how much of the worker it uses.
+-- does not get to decide how much of the worker it uses. A route whose
+-- document is legitimately larger raises the ceiling with max_document_size.
 local MAX_DOCUMENT_SIZE = 4 * 1024 * 1024
 
 -- A JSON key is quoted and may escape the solidus as "\/" -- cjson does this by
