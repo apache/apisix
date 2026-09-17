@@ -61,7 +61,8 @@ local function push_host_router(route, host_routes, only_uri_routes)
             local service = service_fetch(route.value.service_id)
             if not service then
                 core.log.error("failed to fetch service configuration by ",
-                                "id: ", route.value.service_id)
+                                "id: ", route.value.service_id,
+                                " route id: ", route.value.id)
                 -- we keep the behavior that missing service won't affect the route matching
             else
                 hosts = service.value.hosts
