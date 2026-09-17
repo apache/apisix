@@ -143,6 +143,30 @@ function _M.parse(body)
 end
 
 
+-- Whether a parsed document is an OpenAPI document at all. Any JSON or YAML
+-- parses, so without this a route pointed at the wrong URL -- an error page, an
+-- index document, a spec that failed to render -- comes up as a healthy MCP
+-- server with an empty tool list, and nothing anywhere says why. A document
+-- with no `paths` is rejected for the same reason: there is nothing to serve
+-- from it.
+--
+-- Only the route's own document is held to this. A document pulled in by an
+-- external `$ref` is usually a fragment -- components, a single schema -- and
+-- has neither key.
+function _M.validate(spec)
+    if type(spec) ~= "table" then
+        return nil, "openapi spec is not an object"
+    end
+    if type(spec.openapi) ~= "string" and type(spec.swagger) ~= "string" then
+        return nil, "not an openapi document: no openapi or swagger version"
+    end
+    if type(spec.paths) ~= "table" then
+        return nil, "not an openapi document: no paths object"
+    end
+    return true
+end
+
+
 function _M.fetch(url, timeout)
     local httpc, err = http.new()
     if not httpc then

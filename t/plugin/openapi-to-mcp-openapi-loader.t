@@ -199,3 +199,81 @@ true
 --- response_body
 true
 1,2,3
+
+
+
+=== TEST 9: validate accepts an openapi document
+--- config
+    location /t {
+        content_by_lua_block {
+            local loader = require("apisix.plugins.openapi-to-mcp.openapi.loader")
+            local spec = loader.parse('{"openapi":"3.0.0","paths":{"/a":{"get":{}}}}')
+            local ok, err = loader.validate(spec)
+            ngx.say(ok, " ", err)
+        }
+    }
+--- response_body
+true nil
+
+
+
+=== TEST 10: validate accepts a swagger 2.0 document
+--- config
+    location /t {
+        content_by_lua_block {
+            local loader = require("apisix.plugins.openapi-to-mcp.openapi.loader")
+            local spec = loader.parse('{"swagger":"2.0","paths":{"/a":{"get":{}}}}')
+            local ok, err = loader.validate(spec)
+            ngx.say(ok, " ", err)
+        }
+    }
+--- response_body
+true nil
+
+
+
+=== TEST 11: validate rejects a document that carries no version
+--- config
+    location /t {
+        content_by_lua_block {
+            local loader = require("apisix.plugins.openapi-to-mcp.openapi.loader")
+            local spec = loader.parse('{"this":"is not an openapi document"}')
+            local ok, err = loader.validate(spec)
+            ngx.say(ok, " ", err)
+        }
+    }
+--- response_body
+nil not an openapi document: no openapi or swagger version
+
+
+
+=== TEST 12: validate rejects a document that carries no paths
+--- config
+    location /t {
+        content_by_lua_block {
+            local loader = require("apisix.plugins.openapi-to-mcp.openapi.loader")
+            local spec = loader.parse('{"openapi":"3.0.0","components":{"schemas":{}}}')
+            local ok, err = loader.validate(spec)
+            ngx.say(ok, " ", err)
+        }
+    }
+--- response_body
+nil not an openapi document: no paths object
+
+
+
+=== TEST 13: an external $ref document is not held to the document check
+--- config
+    location /t {
+        content_by_lua_block {
+            -- a fragment pulled in by $ref has neither openapi nor paths, and
+            -- parse() must keep accepting it
+            local loader = require("apisix.plugins.openapi-to-mcp.openapi.loader")
+            local spec, _, err = loader.parse('{"components":{"schemas":{"A":{"type":"string"}}}}')
+            ngx.say(err == nil)
+            ngx.say(spec.components.schemas.A.type)
+        }
+    }
+--- response_body
+true
+string

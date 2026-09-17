@@ -39,18 +39,54 @@ local function store()
 end
 
 
-function _M.create()
+-- `context` is what the stream resolved when it was opened -- the base_url and
+-- the headers, after `${...}` substitution. It is stored with the session
+-- because a message POST carries none of the request state those variables were
+-- read from: the endpoint the client is handed is "<path>?sessionId=<uuid>" and
+-- nothing else. Resolving again there would silently produce empty values.
+function _M.create(context)
     local dict, err = store()
     if not dict then
         return nil, err
     end
 
+    local marker = true
+    if type(context) == "table" then
+        local encoded, encode_err = core.json.encode(context)
+        if encoded then
+            marker = encoded
+        else
+            core.log.warn("failed to store MCP session context: ", encode_err)
+        end
+    end
+
     local session_id = core.id.gen_uuid_v4()
-    local ok, set_err = dict:set(session_id .. ALIVE_SUFFIX, true, SESSION_TTL)
+    local ok, set_err = dict:set(session_id .. ALIVE_SUFFIX, marker, SESSION_TTL)
     if not ok then
         return nil, "failed to register session: " .. tostring(set_err)
     end
     return session_id
+end
+
+
+-- The values frozen by _M.create(), or nil for a session that stored none.
+function _M.context(session_id)
+    if type(session_id) ~= "string" or session_id == "" then
+        return nil
+    end
+    local dict = store()
+    if not dict then
+        return nil
+    end
+    local marker = dict:get(session_id .. ALIVE_SUFFIX)
+    if type(marker) ~= "string" then
+        return nil
+    end
+    local context = core.json.decode(marker)
+    if type(context) ~= "table" then
+        return nil
+    end
+    return context
 end
 
 
@@ -74,7 +110,13 @@ function _M.touch(session_id)
     if not dict then
         return false, err
     end
-    local ok, set_err = dict:set(session_id .. ALIVE_SUFFIX, true, SESSION_TTL)
+    -- Re-set the value that is already there: it carries the frozen context,
+    -- and writing `true` back would drop it halfway through the session.
+    local marker = dict:get(session_id .. ALIVE_SUFFIX)
+    if marker == nil then
+        marker = true
+    end
+    local ok, set_err = dict:set(session_id .. ALIVE_SUFFIX, marker, SESSION_TTL)
     if not ok then
         return false, "failed to refresh session: " .. tostring(set_err)
     end

@@ -628,3 +628,91 @@ event:\s*endpoint
 data:\s*/mcp\?sessionId=.*
 --- no_error_log
 failed to fetch upstream
+
+
+
+=== TEST 33: a route whose document has defaults on required members
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "streamable_http",
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/defaults.json",
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 34: a required query parameter that has a default may be omitted
+--- exec
+timeout 1 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"listItems","arguments":{"queryParameters":{}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/seen_path.*items\?limit=10&status=available/
+
+
+
+=== TEST 35: a required body property that has a default may be omitted
+--- exec
+timeout 1 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"createItem","arguments":{"requestBody":{}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/seen_body.*mode.*fast/
+
+
+
+=== TEST 36: an argument that is sent still wins over the default
+--- exec
+timeout 1 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"listItems","arguments":{"queryParameters":{"status":"sold"}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/seen_path.*items\?limit=10&status=sold/
+
+
+
+=== TEST 37: a route pointed at a document that is not an OpenAPI document
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "streamable_http",
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/notaspec.json",
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 38: it is reported as an error instead of an empty tool list
+--- exec
+timeout 1 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/list","jsonrpc":"2.0","id":1}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/"code":-32603.*not an openapi document: no openapi or swagger version/
+--- error_log
+not an openapi document

@@ -20,6 +20,7 @@ local protocol = require("apisix.plugins.openapi-to-mcp.protocol")
 local cache    = require("apisix.plugins.openapi-to-mcp.cache")
 local handler  = require("apisix.plugins.openapi-to-mcp.tools.handler")
 local ipairs   = ipairs
+local pairs    = pairs
 local type     = type
 local tostring = tostring
 local setmetatable = setmetatable
@@ -62,6 +63,50 @@ local function tool_error(id, message)
 end
 
 
+-- A default is copied, never shared: the schema is cached for the lifetime of
+-- the tool list, and handing the same table to every call would let one call's
+-- mutation leak into the next.
+local function clone(value)
+    if type(value) ~= "table" then
+        return value
+    end
+    local out = {}
+    for key, item in pairs(value) do
+        out[key] = clone(item)
+    end
+    return out
+end
+
+
+-- Fill in `default`s the way a client is entitled to expect, before the
+-- arguments are validated: a parameter that is `required` and carries a
+-- `default` must not be reported as missing. Only objects the caller actually
+-- sent are descended into, so an absent `queryParameters` is still a missing
+-- required property rather than one this pass invents.
+local function apply_defaults(schema, value)
+    if type(schema) ~= "table" or type(value) ~= "table" then
+        return
+    end
+
+    local properties = schema.properties
+    if type(properties) ~= "table" then
+        return
+    end
+
+    for name, property in pairs(properties) do
+        if type(property) == "table" then
+            if value[name] == nil then
+                if property.default ~= nil then
+                    value[name] = clone(property.default)
+                end
+            else
+                apply_defaults(property, value[name])
+            end
+        end
+    end
+end
+
+
 local function handle_tools_call(request, opts, tools)
     local params = request.params or {}
     local name = params.name
@@ -76,6 +121,7 @@ local function handle_tools_call(request, opts, tools)
     end
 
     local arguments = type(params.arguments) == "table" and params.arguments or {}
+    apply_defaults(tool.input_schema, arguments)
 
     local ok, err = core.schema.check(tool.input_schema, arguments)
     if not ok then

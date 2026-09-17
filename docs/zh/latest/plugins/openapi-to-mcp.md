@@ -47,18 +47,20 @@ MCP 服务运行在 APISIX 内部，不需要额外的进程或服务。
 | 名称 | 类型 | 必选项 | 默认值 | 有效值 | 描述 |
 |------|------|--------|--------|--------|------|
 | transport | string | 否 | `sse` | [`sse`, `streamable_http`] | 路由上提供的 MCP 传输方式。 |
-| openapi_url | string | 是 | | | OpenAPI 文档的 URL。文档在首次请求时获取，生成的工具缓存一小时。 |
+| openapi_url | string | 是 | | | OpenAPI 文档的 URL。文档在首次请求时获取，生成的工具缓存一小时。返回内容必须是带 `paths` 对象的 OpenAPI 或 Swagger 文档，否则每次 MCP 请求都会返回错误。 |
 | base_url | string | 是 | | | 工具调用的 API 基础地址，每个操作的路径拼接在其后。支持 [APISIX 变量](../apisix-variable.md) 和 [NGINX 变量](http://nginx.org/en/docs/varindex.html)，例如 `http://${http_x_backend}`。 |
 | headers | object | 否 | | | 发往 API 的每个请求都会携带的请求头。值支持变量，例如 `"Authorization": "Bearer ${http_x_api_token}"`。 |
 | flatten_parameters | boolean | 否 | `false` | | 为 `false` 时，工具输入中的参数分别嵌套在 `pathParameters`、`queryParameters` 和 `headerParameters` 下；为 `true` 时，参数直接放在输入对象的顶层。 |
 
-调用 API 之前，插件会按生成的输入 Schema 校验工具参数。调用不存在的工具或参数不合法时，返回 `isError` 为 `true` 的结果。
+调用 API 之前，插件会按生成的输入 Schema 校验工具参数。调用不存在的工具或参数不合法时，返回 `isError` 为 `true` 的结果。校验之前会先填入文档中声明的 `default`，因此同时带有 `required` 和 `default` 的参数或请求体属性可以由客户端省略；客户端显式传入的参数不会被默认值覆盖。
 
 调用工具时，插件根据操作定义构造请求：
 
 * 声明在 Path Item 上的参数适用于该路径下的所有操作；操作中同名且位置相同的参数会覆盖它。
-* 查询参数按其 `style` 和 `explode` 序列化，规则见 [OpenAPI Parameter Object](https://spec.openapis.org/oas/v3.0.3#style-values)。使用默认值（`form`，展开）时，`tags: ["a", "b"]` 发送为 `tags=a&tags=b`。同时支持 `spaceDelimited`、`pipeDelimited` 和 `deepObject`。
+* 查询参数按其 `style` 和 `explode` 序列化，规则见 [OpenAPI Parameter Object](https://spec.openapis.org/oas/v3.0.3#style-values)。使用默认值（`form`，展开）时，`tags: ["a", "b"]` 发送为 `tags=a&tags=b`，而不是 `tags[]=a&tags[]=b`；声明为 `explode: false` 的数组参数发送为 `tags=a,b`。同时支持 `spaceDelimited`、`pipeDelimited` 和 `deepObject`。如果 API 要求方括号形式，需要另外通过改写查询字符串的插件处理。
 * 请求体使用操作中声明的媒体类型发送，除非 `headers` 中已设置 `Content-Type`。
+
+使用 SSE 传输时，`base_url` 和 `headers` 中的变量在打开事件流的那次请求上解析，解析结果用于该会话的所有消息。`"Authorization": "Bearer ${http_x_api_token}"` 这类配置因此在 SSE 下同样可用：后续的消息请求只携带会话 ID，此时已无从解析变量。
 
 使用 SSE 传输时，会话保存在共享字典 `mcp-session` 中，因此同一会话的事件流请求和消息请求可以由不同的 worker 进程处理。会话只在单个 APISIX 实例内有效：多个实例部署在负载均衡之后时，同一 SSE 会话的请求必须到达同一实例。Streamable HTTP 传输是无状态的，没有这一限制。
 

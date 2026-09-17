@@ -47,18 +47,20 @@ The Plugin supports:
 | Name               | Type    | Required | Default | Valid values                | Description |
 |--------------------|---------|----------|---------|-----------------------------|-------------|
 | transport          | string  | False    | `sse`   | [`sse`, `streamable_http`]  | MCP transport served on the Route. |
-| openapi_url        | string  | True     |         |                             | URL of the OpenAPI document. The document is fetched on the first request and the generated tools are cached for an hour. |
+| openapi_url        | string  | True     |         |                             | URL of the OpenAPI document. The document is fetched on the first request and the generated tools are cached for an hour. The response must be an OpenAPI or Swagger document with a `paths` object; anything else is reported as an error on every MCP request. |
 | base_url           | string  | True     |         |                             | Base URL of the API the tools call. The path of each operation is appended to it. Supports [APISIX variables](../apisix-variable.md) and [NGINX variables](http://nginx.org/en/docs/varindex.html), for example `http://${http_x_backend}`. |
 | headers            | object  | False    |         |                             | Headers added to every request sent to the API. Values support variables, for example `"Authorization": "Bearer ${http_x_api_token}"`. |
 | flatten_parameters | boolean | False    | `false` |                             | When `false`, the tool input nests parameters under `pathParameters`, `queryParameters` and `headerParameters`. When `true`, they are placed directly in the input object. |
 
-Tool call arguments are validated against the generated input schema before the API is called. A call to an unknown tool, or with invalid arguments, returns a result with `isError` set to `true`.
+Tool call arguments are validated against the generated input schema before the API is called. A call to an unknown tool, or with invalid arguments, returns a result with `isError` set to `true`. Every `default` declared in the document is filled in before that validation, so a parameter or a body property that is `required` and has a `default` may be omitted by the client; an argument the client does send is never replaced by the default.
 
 When a tool is called, the Plugin builds the request from the operation:
 
 * Parameters declared on the Path Item apply to every operation under it; an operation parameter with the same name and location overrides them.
-* Query parameters are serialized according to their `style` and `explode`, as defined by the [OpenAPI Parameter Object](https://spec.openapis.org/oas/v3.0.3#style-values). With the defaults (`form`, exploded), `tags: ["a", "b"]` is sent as `tags=a&tags=b`. `spaceDelimited`, `pipeDelimited` and `deepObject` are supported.
+* Query parameters are serialized according to their `style` and `explode`, as defined by the [OpenAPI Parameter Object](https://spec.openapis.org/oas/v3.0.3#style-values). With the defaults (`form`, exploded), `tags: ["a", "b"]` is sent as `tags=a&tags=b` -- not as `tags[]=a&tags[]=b`, and an array parameter declared `explode: false` is sent as `tags=a,b`. `spaceDelimited`, `pipeDelimited` and `deepObject` are supported. An API that expects the bracket form has to be reached through a Plugin that rewrites the query string.
 * A request body is sent with the media type the operation declares, unless `headers` sets `Content-Type`.
+
+For the SSE transport, variables in `base_url` and in `headers` are resolved on the request that opens the stream, and the resolved values are used for every message of that session. This is what makes a configuration such as `"Authorization": "Bearer ${http_x_api_token}"` usable over SSE: the message requests that follow carry only the session id, so there is nothing left to resolve from at that point.
 
 For the SSE transport, sessions are kept in the `mcp-session` shared dict, so the stream and the message requests of one session may be handled by different worker processes. Sessions are local to one APISIX instance: when several instances run behind a load balancer, the requests of an SSE session must reach the same instance. The Streamable HTTP transport is stateless and has no such requirement.
 
