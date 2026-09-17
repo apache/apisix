@@ -112,7 +112,38 @@ upstream saw: Bearer alice
 
 
 
-=== TEST 5: a route whose configuration holds no variable
+=== TEST 5: the same route with the variable written without braces
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "sse",
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/openapi.json",
+                    -- resolve_var takes this form too, so the stream has to
+                    -- freeze what it resolved here as well
+                    headers = { Authorization = "Bearer $http_x_user" },
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 6: a brace-less variable is frozen just the same
+--- exec
+python3 t/plugin/openapi_to_mcp_sse_frozen_vars.py /mcp 2>&1
+--- response_body
+post status: 202
+upstream saw: Bearer alice
+
+
+
+=== TEST 7: a route whose configuration holds no variable
 --- config
     location /t {
         content_by_lua_block {
@@ -132,7 +163,7 @@ passed
 
 
 
-=== TEST 6: its session record keeps no copy of the resolved headers
+=== TEST 8: its session record keeps no copy of the resolved headers
 --- config
     location /t {
         content_by_lua_block {
