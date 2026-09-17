@@ -112,7 +112,7 @@ __DATA__
 
 
 
-=== TEST 9: a large value is returned compact instead of indented
+=== TEST 5: a large value is returned compact instead of indented
 --- config
     location /t {
         content_by_lua_block {
