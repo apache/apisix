@@ -124,3 +124,61 @@ if ! echo "$out" | grep "apisix_node_info{hostname=" > /dev/null; then
 fi
 
 echo "passed: prometheus works when only stream is enabled"
+
+# The plugin list can come from etcd instead of config.yaml, and it arrives long
+# after nginx.conf has been rendered. The Admin API has to stay off for that:
+# with it on, worker 0 overwrites /apisix/plugins from the local config at boot
+# (apisix/admin/init.lua).
+make stop
+etcdctl del / --prefix
+
+echo "
+apisix:
+    proxy_mode: http&stream
+    enable_admin: false
+    stream_proxy:
+        tcp:
+            - addr: 9100
+plugin_attr:
+    prometheus:
+        refresh_interval: 1
+" > conf/config.yaml
+
+make init
+
+if ! grep "apisix_stream_metrics_zone" conf/nginx.conf > /dev/null; then
+    echo "failed: the stream metrics zone was gated on the config file plugin list"
+    exit 1
+fi
+
+echo "passed: the stream metrics zone does not depend on the config file plugin list"
+
+etcdctl put /apisix/plugins '[{"name":"prometheus"},{"name":"prometheus","stream":true}]'
+# proxied to the gateway's own HTTP port so the session carries real bytes both
+# ways without a second upstream process to keep alive
+etcdctl put /apisix/stream_routes/1 \
+    '{"plugins":{"prometheus":{}},"upstream":{"type":"roundrobin","nodes":{"127.0.0.1:9080":1}}}'
+
+make run
+wait_for_tcp 127.0.0.1 9100
+
+# Same retry shape as the blocks above: the exporter cache populates async.
+ok=0
+deadline=$(( $(date +%s) + 20 ))
+{ set +x; } 2>/dev/null
+while [ "$(date +%s)" -lt "$deadline" ]; do
+    curl -s --connect-timeout 1 --max-time 2 http://127.0.0.1:9100/ >/dev/null 2>&1 || true
+    if curl -s --connect-timeout 1 --max-time 2 http://127.0.0.1:9091/apisix/prometheus/metrics \
+         | grep -qE 'apisix_stream_bandwidth\{listen_addr="0\.0\.0\.0:9100"[^}]*\} [1-9][0-9]*'; then
+        ok=1
+        break
+    fi
+    sleep 0.5
+done
+set -x
+if [ "$ok" -ne 1 ]; then
+    echo "failed: no L4 bandwidth metric when the plugin list comes from etcd"
+    exit 1
+fi
+
+echo "passed: the L4 zone metrics work with an etcd owned plugin list"

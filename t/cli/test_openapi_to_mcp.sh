@@ -19,7 +19,10 @@
 . ./t/cli/common.sh
 
 # openapi-to-mcp keeps its SSE sessions in the mcp-session shared dict, which
-# is also what mcp-bridge uses. Enabling either one declares it.
+# is also what mcp-bridge uses. It is declared whatever the config file plugin
+# list says: that list is only the boot-time default, /apisix/plugins in etcd
+# can enable either plugin later, and a shared dict cannot be added without a
+# reload.
 
 echo '
 plugins:
@@ -40,9 +43,9 @@ plugins:
 
 make init
 
-if grep "lua_shared_dict mcp-session" conf/nginx.conf > /dev/null; then
-    echo "failed: mcp-session should not be declared when no MCP plugin is enabled"
+if ! grep "lua_shared_dict mcp-session" conf/nginx.conf > /dev/null; then
+    echo "failed: mcp-session was gated on the config file plugin list"
     exit 1
 fi
 
-echo "passed: openapi-to-mcp declares the mcp-session shared dict"
+echo "passed: the mcp-session shared dict does not depend on the config file plugin list"

@@ -784,7 +784,10 @@ The exact Upstream address and byte counts depend on the request. The active-con
 
 `apisix_stream_active_connections` and `apisix_stream_bandwidth` are backed by
 an NGINX shared memory zone, sized by `nginx_config.stream.metrics_zone_size`
-(default `1m`). They require APISIX-Runtime; on a runtime without it the two
-metrics are simply not published.
+(default `1m`). The zone is allocated whenever the stream subsystem runs, not
+only when `stream_plugins` in `config.yaml` lists `prometheus`, so the plugin
+also works when it is enabled through `/apisix/plugins` in etcd. They require
+APISIX-Runtime; on a runtime without it the two metrics are simply not
+published.
 
 :::
