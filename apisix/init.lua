@@ -731,6 +731,17 @@ function _M.handle_upstream(api_ctx, route, enable_websocket)
     end
 
     if up_scheme == "wss" or up_scheme == "ws" then
+        -- @websocket_pass never runs proxy_pass, so it never gets the
+        -- `proxy_set_header X-Real-IP $remote_addr` / `... X-Forwarded-For
+        -- $proxy_add_x_forwarded_for` that ngx_tpl.lua's proxy_pass location
+        -- sends: set the same values here, once, so ws_handshake and later
+        -- phases see what proxy_pass routes would have seen, and
+        -- build_ws_forward_headers() (apisix/init.lua) can just forward them
+        -- like any other header instead of special-casing these two.
+        core.request.set_header(api_ctx, "X-Real-IP", api_ctx.var.remote_addr)
+        core.request.set_header(api_ctx, "X-Forwarded-For",
+                                api_ctx.var.proxy_add_x_forwarded_for)
+
         common_phase("ws_handshake")
 
         stash_ngx_ctx()

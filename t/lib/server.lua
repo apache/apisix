@@ -477,6 +477,57 @@ function _M.websocket_echo_uri()
 end
 
 
+-- Like websocket_echo, but the first thing it sends back is a text frame
+-- carrying the X-Real-IP/X-Forwarded-For it actually received as JSON, so a
+-- test can confirm what a fronting proxy set them to. Falls into the same
+-- echo loop afterwards.
+function _M.websocket_echo_headers()
+    local websocket = require "resty.websocket.server"
+    local wb, err = websocket:new()
+    if not wb then
+        ngx.log(ngx.ERR, "failed to new websocket: ", err)
+        return ngx.exit(400)
+    end
+
+    local headers = ngx.req.get_headers()
+    local bytes, send_err = wb:send_text(json_encode({
+        x_real_ip = headers["X-Real-IP"],
+        x_forwarded_for = headers["X-Forwarded-For"],
+    }))
+    if not bytes then
+        ngx.log(ngx.ERR, "failed to send headers: ", send_err)
+        return
+    end
+
+    while true do
+        local data, typ, recv_err = wb:recv_frame()
+        if not data then
+            if recv_err and recv_err:find("timeout", 1, true) then
+                goto continue
+            end
+            ngx.log(ngx.ERR, "failed to receive frame: ", recv_err)
+            return
+        end
+
+        if typ == "close" then
+            wb:send_close(1000, "")
+            return
+        elseif typ == "ping" then
+            wb:send_pong(data)
+        elseif typ == "text" or typ == "binary" then
+            local send = typ == "text" and wb.send_text or wb.send_binary
+            local ok, echo_err = send(wb, data)
+            if not ok then
+                ngx.log(ngx.ERR, "failed to echo frame: ", echo_err)
+                return
+            end
+        end
+
+        ::continue::
+    end
+end
+
+
 -- Sends one fragmented text message ("hello " + "world" as two continuation
 -- frames) right after the handshake, to verify a fronting proxy's
 -- aggregate_fragments option reassembles it into a single frame instead of

@@ -424,6 +424,33 @@ describe('websocket-proxy (ws/wss upstream scheme)', () => {
     });
   });
 
+  describe('client address headers', () => {
+    it('overrides X-Real-IP and appends this hop to X-Forwarded-For, not what the client sent', async () => {
+      await createRoute('/websocket_echo_headers', {
+        type: 'roundrobin',
+        scheme: 'ws',
+        nodes: { [ECHO_NODE]: 1 },
+      });
+
+      // connect via the literal loopback address, not PROXY_BASE's
+      // "localhost", so $remote_addr is deterministically 127.0.0.1
+      const reply = await new Promise<string>((resolve, reject) => {
+        const ws = new WS('ws://127.0.0.1:1984/websocket_echo_headers', {
+          headers: { 'X-Real-IP': '1.2.3.4', 'X-Forwarded-For': '5.6.7.8' },
+        });
+        ws.on('message', (data) => {
+          resolve(data.toString());
+          ws.close();
+        });
+        ws.on('error', reject);
+      });
+
+      const seen = JSON.parse(reply);
+      expect(seen.x_real_ip).toBe('127.0.0.1');
+      expect(seen.x_forwarded_for).toBe('5.6.7.8, 127.0.0.1');
+    });
+  });
+
   describe('concurrent connections', () => {
     it("keeps two simultaneous connections' frame data isolated from each other", async () => {
       await putEchoRoute(
