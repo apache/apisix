@@ -80,3 +80,52 @@ post status: 202
 protocolVersion: 2024-11-05
 serverInfo: openapi2mcp-sse 0.0.1
 unknown session status: 404
+
+
+
+=== TEST 3: two sse routes, one of them without authentication
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "sse",
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/openapi.json",
+                } },
+                { 2, "/mcp-other", {
+                    transport = "sse",
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/openapi.json",
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 4: a session issued by one route is not accepted by another
+--- timeout: 30
+--- exec
+python3 t/plugin/openapi_to_mcp_cross_route.py /mcp /mcp-other 2>&1
+--- response_body
+own route: 202
+other route: 404
+pushed on own stream: True
+
+
+
+=== TEST 5: clean up the extra route
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            t('/apisix/admin/routes/2', ngx.HTTP_DELETE)
+            ngx.say("cleaned")
+        }
+    }
+--- response_body
+cleaned

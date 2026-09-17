@@ -628,3 +628,162 @@ event:\s*endpoint
 data:\s*/mcp\?sessionId=.*
 --- no_error_log
 failed to fetch upstream
+
+
+
+=== TEST 33: a route over an API that answers with a large body
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "streamable_http",
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/large.json",
+                    max_response_body_size = 65536,
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 34: a response over the limit fails the call instead of buffering it
+--- max_size: 2048000
+--- exec
+python3 t/plugin/openapi_to_mcp_harness.py /mcp \
+    '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"getLarge","arguments":{}}}' "
+print(d['result']['isError'])
+inner = json.loads(d['result']['content'][0]['text'])
+print(inner['error']['code'])
+"
+--- response_body
+True
+RESPONSE_TOO_LARGE
+--- error_log
+exceeded max_response_body_size
+
+
+
+=== TEST 35: a response under the limit still comes back whole
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "streamable_http",
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/large.json",
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 36: the whole body is read below the default limit
+--- max_size: 8192000
+--- exec
+python3 t/plugin/openapi_to_mcp_harness.py /mcp \
+    '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"getLarge","arguments":{"queryParameters":{"size":1000}}}}' "
+inner = json.loads(d['result']['content'][0]['text'])
+print(inner['status'], len(inner['data']['blob']))
+"
+--- response_body
+200 1000
+
+
+
+=== TEST 37: a route that names the origins it expects
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "streamable_http",
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/openapi.json",
+                    allowed_origins = { "https://app.example.com" },
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 38: a request from an allowed origin is served
+--- request
+POST /mcp
+{"jsonrpc":"2.0","id":1,"method":"ping"}
+--- more_headers
+Content-Type: application/json
+Accept: application/json, text/event-stream
+Origin: https://app.example.com
+--- response_body eval
+qr/"result":\{\}/
+
+
+
+=== TEST 39: a request from another origin is refused
+--- request
+POST /mcp
+{"jsonrpc":"2.0","id":1,"method":"ping"}
+--- more_headers
+Content-Type: application/json
+Accept: application/json, text/event-stream
+Origin: https://evil.example.com
+--- error_code: 403
+--- response_body
+{"message":"Origin not allowed"}
+--- error_log
+rejected an MCP request with a disallowed Origin
+
+
+
+=== TEST 40: a request without an Origin header is still served
+--- request
+POST /mcp
+{"jsonrpc":"2.0","id":1,"method":"ping"}
+--- more_headers
+Content-Type: application/json
+Accept: application/json, text/event-stream
+--- response_body eval
+qr/"result":\{\}/
+
+
+
+=== TEST 41: a configured header cannot carry a newline
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openapi-to-mcp")
+            local cases = {
+                { ["X-Trace"] = "ok" },
+                { ["X-Trace"] = "bad\r\nX-Injected: 1" },
+                { ["X-Trace\r\nX-Injected"] = "1" },
+                { ["X Trace"] = "1" },
+            }
+            for i, headers in ipairs(cases) do
+                local ok = plugin.check_schema({
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/openapi.json",
+                    headers = headers,
+                })
+                ngx.say(i, ": ", tostring(ok ~= nil and ok ~= false))
+            end
+        }
+    }
+--- response_body
+1: true
+2: false
+3: false
+4: false

@@ -18,7 +18,10 @@ local core      = require("apisix.core")
 local loader    = require("apisix.plugins.openapi-to-mcp.openapi.loader")
 local ref       = require("apisix.plugins.openapi-to-mcp.openapi.ref")
 local generator = require("apisix.plugins.openapi-to-mcp.tools.generator")
+local http      = require("resty.http")
 local tostring  = tostring
+local str_lower    = string.lower
+local table_concat = table.concat
 
 local _M = {}
 
@@ -48,13 +51,22 @@ local lru = core.lrucache.new({
 })
 
 
-local function build_tools(openapi_url, flatten_parameters)
+local function document_host(openapi_url)
+    local parsed = http:parse_uri(openapi_url, false)
+    return parsed and str_lower(parsed[2] or "") or nil
+end
+
+
+local function build_tools(openapi_url, flatten_parameters, allowed_ref_hosts)
     local spec, path_order, err = loader.fetch(openapi_url)
     if not spec then
         return nil, err
     end
 
-    local resolved = ref.resolve(spec)
+    local resolved = ref.resolve(spec, {
+        base_host = document_host(openapi_url),
+        allowed_hosts = allowed_ref_hosts,
+    })
     return generator.generate(resolved, path_order, {
         flatten_parameters = flatten_parameters,
     })
@@ -66,8 +78,12 @@ end
 -- invoked, never how it is generated.
 function _M.get_tools(conf)
     local flatten_parameters = conf.flatten_parameters == true
-    local key = conf.openapi_url .. "#" .. tostring(flatten_parameters)
-    return lru(key, CACHE_VERSION, build_tools, conf.openapi_url, flatten_parameters)
+    local allowed = conf.allowed_ref_hosts
+    -- allowed_ref_hosts decides which documents may be pulled in, so two routes
+    -- with different lists must not share an entry
+    local key = conf.openapi_url .. "#" .. tostring(flatten_parameters) ..
+                "#" .. (allowed and table_concat(allowed, ",") or "")
+    return lru(key, CACHE_VERSION, build_tools, conf.openapi_url, flatten_parameters, allowed)
 end
 
 

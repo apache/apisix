@@ -19,6 +19,7 @@ local streamable_http = require("apisix.plugins.openapi-to-mcp.transport.streama
 local mcp_sse         = require("apisix.plugins.openapi-to-mcp.transport.sse")
 local ngx         = ngx
 local pairs       = pairs
+local ipairs      = ipairs
 
 local schema = {
     type = "object",
@@ -44,12 +45,41 @@ local schema = {
             type = "object",
             minProperties = 0,
             patternProperties = {
-                ["^[^:]+$"] = {
+                -- no colon in the name, no CR or LF anywhere: both would let a
+                -- resolved variable add a header, or a request, of its own
+                ["^[^:\\s]+$"] = {
                     oneOf = {
-                        { type = "string" }
+                        { type = "string", pattern = "^[^\\r\\n]*$" }
                     }
                 }
             },
+            -- patternProperties only constrains the names it matches; without
+            -- this a name the pattern rejects would simply go unchecked
+            additionalProperties = false,
+        },
+        max_response_body_size = {
+            description = "Maximum size, in bytes, of an upstream response " ..
+            "body read into a tool result. A larger response fails the call.",
+            type = "integer",
+            minimum = 1024,
+            default = 1048576,
+        },
+        allowed_ref_hosts = {
+            description = "Hosts an http(s) $ref inside the OpenAPI document " ..
+            "may point at, besides the host of openapi_url itself. Each entry " ..
+            "is a hostname or a `*.example.com` wildcard.",
+            type = "array",
+            minItems = 1,
+            uniqueItems = true,
+            items = { type = "string", minLength = 1 },
+        },
+        allowed_origins = {
+            description = "Origin header values accepted on MCP requests. " ..
+            "When unset the Origin header is not checked.",
+            type = "array",
+            minItems = 1,
+            uniqueItems = true,
+            items = { type = "string", minLength = 1 },
         },
         flatten_parameters = {
             description = "Whether to flatten query and path parameters " ..
@@ -143,10 +173,39 @@ function _M.access(conf, ctx)
 end
 
 
+-- MCP asks an HTTP transport to check Origin, because a browser page can reach
+-- a server bound to localhost otherwise (DNS rebinding). The header is only
+-- checked when the route says which origins it expects; unset means the check
+-- does not apply, which is how the reference server behaves as well.
+local function origin_rejected(conf, ctx)
+    if not conf.allowed_origins then
+        return false
+    end
+
+    local origin = core.request.header(ctx, "origin")
+    if origin == nil then
+        return false
+    end
+
+    for _, allowed in ipairs(conf.allowed_origins) do
+        if allowed == origin or allowed == "*" then
+            return false
+        end
+    end
+
+    core.log.warn("rejected an MCP request with a disallowed Origin")
+    return true
+end
+
+
 function _M.before_proxy(conf, ctx)
     local opts = ctx.mcp_inprocess_opts
     if not opts then
         return
+    end
+
+    if origin_rejected(conf, ctx) then
+        return core.response.exit(403, { message = "Origin not allowed" })
     end
 
     -- Every body the transports produce is JSON, and core.response.exit() sets

@@ -34,6 +34,11 @@ local escape_uri   = ngx.escape_uri
 local _M = {}
 
 local DEFAULT_TIMEOUT = 30000
+
+-- How much of an upstream response is read before the call is failed, and how
+-- much is read at a time.
+local DEFAULT_MAX_BODY = 1024 * 1024
+local READ_SIZE = 64 * 1024
 local NESTED_KEYS = { "pathParameters", "queryParameters", "headerParameters" }
 
 
@@ -71,7 +76,23 @@ end
 -- Whether the caller used the flat or the nested argument shape is decided by
 -- the arguments themselves, not by the plugin's flatten_parameters setting.
 -- A client that sends flat arguments to a nested tool therefore still works.
+local function container(arguments, key)
+    local value = arguments[key]
+    return type(value) == "table" and value or {}
+end
+
+
+-- Both shapes are filtered against what the operation declares. The generated
+-- input schema does not forbid extra properties, and an operation that declares
+-- no header parameter gets no headerParameters container to constrain either,
+-- so an argument the document never mentioned would otherwise reach the API --
+-- letting a caller add or replace request headers, the route's credentials
+-- among them.
 local function split_arguments(tool, arguments)
+    local path_names = path_param_names(tool.path_template)
+    local query_names = names_by_location(tool, "query")
+    local header_names = names_by_location(tool, "header")
+
     local nested = false
     for _, key in ipairs(NESTED_KEYS) do
         if arguments[key] ~= nil then
@@ -81,14 +102,14 @@ local function split_arguments(tool, arguments)
     end
 
     if nested then
-        return type(arguments.pathParameters) == "table" and arguments.pathParameters or {},
-               type(arguments.queryParameters) == "table" and arguments.queryParameters or {},
-               type(arguments.headerParameters) == "table" and arguments.headerParameters or {}
+        return pick(container(arguments, "pathParameters"), path_names),
+               pick(container(arguments, "queryParameters"), query_names),
+               pick(container(arguments, "headerParameters"), header_names)
     end
 
-    return pick(arguments, path_param_names(tool.path_template)),
-           pick(arguments, names_by_location(tool, "query")),
-           pick(arguments, names_by_location(tool, "header"))
+    return pick(arguments, path_names),
+           pick(arguments, query_names),
+           pick(arguments, header_names)
 end
 
 
@@ -302,12 +323,24 @@ function _M.call(tool, arguments, opts)
     local path = build_path(tool.path_template, path_params)
     local query = build_query(tool, query_params)
 
+    -- Header parameters are written first so that the route's own headers win:
+    -- they carry the credentials the gateway adds, and a tool call must not be
+    -- able to replace them.
     local headers = {}
+    for key, value in pairs(header_params) do
+        value = tostring(value)
+        if str_find(key, "[%s:]") or str_find(value, "[\r\n]") then
+            -- resty.http writes "<name>: <value>\r\n" as given, so a newline
+            -- here would let the caller append headers, or a whole request, to
+            -- the one being sent
+            core.log.warn("dropped a header parameter whose name or value ",
+                          "cannot appear in a request header")
+        else
+            headers[key] = value
+        end
+    end
     for key, value in pairs(opts.headers or {}) do
         headers[key] = value
-    end
-    for key, value in pairs(header_params) do
-        headers[key] = tostring(value)
     end
 
     local body = arguments.requestBody
@@ -343,13 +376,45 @@ function _M.call(tool, arguments, opts)
     end
     httpc:set_timeout(opts.timeout or DEFAULT_TIMEOUT)
 
-    local res, req_err = httpc:request_uri(url, {
+    -- query_in_path = true: parsed[4] is the path with the query string
+    local parsed, parse_err = httpc:parse_uri(url, true)
+    if not parsed then
+        return text_result({
+            status = 0,
+            statusText = "Network Error",
+            headers = {},
+            data = core.json.null,
+            error = { message = tostring(parse_err), code = "NETWORK_ERROR" },
+        })
+    end
+
+    local scheme, host, port, path_and_query = parsed[1], parsed[2], parsed[3], parsed[4]
+    local ok, conn_err = httpc:connect({
+        scheme = scheme,
+        host = host,
+        port = port,
+        ssl_server_name = host,
+    })
+    if not ok then
+        return text_result({
+            status = 0,
+            statusText = "Network Error",
+            headers = {},
+            data = core.json.null,
+            error = { message = tostring(conn_err), code = "NETWORK_ERROR" },
+        })
+    end
+
+    headers["Host"] = headers["Host"] or host
+    local res, req_err = httpc:request({
         method = str_gsub(str_lower(tool.method), "^%l", str_upper),
+        path = path_and_query,
         headers = headers,
         body = body,
     })
 
     if not res then
+        httpc:close()
         -- A transport failure is reported inside a normal text result, with
         -- isError unset: the call reached no API, so there is no API error.
         return text_result({
@@ -361,11 +426,57 @@ function _M.call(tool, arguments, opts)
         })
     end
 
+    -- The body is read in chunks and stops at the limit: a tool result travels
+    -- to a model, so a response of any size is neither useful nor something a
+    -- worker should buffer whole.
+    local limit = (opts.conf and opts.conf.max_response_body_size) or DEFAULT_MAX_BODY
+    local reader = res.body_reader
+    local chunks, read_bytes, truncated = {}, 0, false
+    while reader do
+        local chunk, read_err = reader(READ_SIZE)
+        if read_err then
+            httpc:close()
+            return text_result({
+                status = 0,
+                statusText = "Network Error",
+                headers = {},
+                data = core.json.null,
+                error = { message = tostring(read_err), code = "NETWORK_ERROR" },
+            })
+        end
+        if not chunk then
+            break
+        end
+        read_bytes = read_bytes + #chunk
+        if read_bytes > limit then
+            truncated = true
+            break
+        end
+        chunks[#chunks + 1] = chunk
+    end
+
+    if truncated then
+        httpc:close()
+        core.log.warn("upstream response exceeded max_response_body_size (", limit, " bytes)")
+        return text_result({
+            status = res.status,
+            statusText = res.reason or "",
+            headers = lower_headers(res.headers),
+            data = core.json.null,
+            error = {
+                message = "response body exceeds max_response_body_size (" .. limit .. " bytes)",
+                code = "RESPONSE_TOO_LARGE",
+            },
+        }, true)
+    end
+
+    httpc:set_keepalive()
+
     return text_result({
         status = res.status,
         statusText = res.reason or "",
         headers = lower_headers(res.headers),
-        data = decode_body(res.body),
+        data = decode_body(table_concat(chunks)),
     })
 end
 

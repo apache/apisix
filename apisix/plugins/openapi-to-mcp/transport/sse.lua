@@ -63,6 +63,16 @@ end
 -- The session id is what authorises a POST to this session's message endpoint,
 -- so it is a bearer credential and stays out of the logs. Stream lifecycle
 -- lines carry the reason, not the identifier.
+-- A session belongs to the route that issued it, and to the consumer that was
+-- authenticated on it. The message endpoint refuses anything else, so a
+-- session id seen elsewhere cannot be used to push a result into this stream.
+local function session_owner(ctx)
+    local route_id = ctx.matched_route and ctx.matched_route.value
+                     and ctx.matched_route.value.id or ""
+    return tostring(route_id) .. "\0" .. tostring(ctx.consumer_name or "")
+end
+
+
 local function handle_get(ctx, opts)
     -- Build the tool list -- which means fetching and parsing the document --
     -- before opening the stream, and answer 500 when that fails. Opening the
@@ -79,7 +89,7 @@ local function handle_get(ctx, opts)
         })
     end
 
-    local session_id, err = session.create()
+    local session_id, err = session.create(session_owner(ctx))
     if not session_id then
         core.log.error("failed to create MCP session: ", err)
         return core.response.exit(500)
@@ -186,7 +196,7 @@ local function handle_post(ctx, opts)
     if type(session_id) ~= "string" or session_id == "" then
         return session_error(400, "Missing or invalid sessionId parameter")
     end
-    if not session.exists(session_id) then
+    if not session.exists(session_id, session_owner(ctx)) then
         return session_error(404, "Session not found for sessionId")
     end
 

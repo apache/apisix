@@ -61,6 +61,19 @@ local DOCUMENTS = {
         } } },
     },
 
+    -- a tool that declares one header parameter
+    ["/headerparam.json"] = {
+        openapi = "3.0.0",
+        info = { title = "Header", version = "1" },
+        paths = { ["/traced"] = { get = {
+            operationId = "traced",
+            parameters = {
+                { name = "X-Trace", ["in"] = "header", schema = { type = "string" } },
+                { name = "Authorization", ["in"] = "header", schema = { type = "string" } },
+            },
+        } } },
+    },
+
     -- parameters declared on the Path Item, one of them overridden
     ["/pathitem.json"] = {
         openapi = "3.0.0",
@@ -77,6 +90,18 @@ local DOCUMENTS = {
                 },
             },
         } },
+    },
+
+    -- one operation over the endpoint that answers with a large body
+    ["/large.json"] = {
+        openapi = "3.0.0",
+        info = { title = "Large", version = "1" },
+        paths = { ["/large"] = { get = {
+            operationId = "getLarge",
+            parameters = {
+                { name = "size", ["in"] = "query", schema = { type = "integer" } },
+            },
+        } } },
     },
 
     -- a request body whose only media type is not JSON
@@ -124,10 +149,22 @@ local function read_body()
 end
 
 
+-- answers with a body of the requested size, for the response size limit
+local function large_body()
+    local size = tonumber(ngx.var.arg_size) or (2 * 1024 * 1024)
+    ngx.header["Content-Type"] = "application/json"
+    ngx.print('{"blob":"', string.rep("x", size), '"}')
+end
+
+
 -- content handler for `location /`
 function _M.serve()
     local uri = ngx.var.uri
     ngx.header["Content-Type"] = "application/json"
+
+    if uri == "/large" then
+        return large_body()
+    end
 
     local doc = DOCUMENTS[uri]
     if doc then
@@ -148,6 +185,9 @@ function _M.serve()
         seen_path = ngx.var.request_uri,
         seen_method = ngx.req.get_method(),
         seen_auth = ngx.req.get_headers()["authorization"],
+        seen_injected = ngx.req.get_headers()["x-injected"],
+        seen_trace = ngx.req.get_headers()["x-trace"],
+        seen_forwarded = ngx.req.get_headers()["x-forwarded-for"],
         seen_content_type = ngx.req.get_headers()["content-type"],
         seen_body = ngx.req.get_method() ~= "GET" and read_body() or nil,
     }))

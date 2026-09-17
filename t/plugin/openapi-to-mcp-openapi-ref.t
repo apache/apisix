@@ -207,7 +207,7 @@ true
             local ref = require("apisix.plugins.openapi-to-mcp.openapi.ref")
             local out = ref.resolve({
                 x = { ["$ref"] = "http://127.0.0.1:11490/target.json#/components/schemas/Pet" },
-            })
+            }, { base_host = "127.0.0.1" })
             ngx.say(out.x.type)
             -- the inner "#/components/schemas/Name" is a pointer into the
             -- fetched document, not into the spec that named it
@@ -235,7 +235,8 @@ string 8
     location /t {
         content_by_lua_block {
             local ref = require("apisix.plugins.openapi-to-mcp.openapi.ref")
-            local out = ref.resolve({ x = { ["$ref"] = "http://127.0.0.1:11490/target.json" } })
+            local out = ref.resolve({ x = { ["$ref"] = "http://127.0.0.1:11490/target.json" } },
+                                   { base_host = "127.0.0.1" })
             ngx.say(out.x.type, " ", out.x.title)
         }
     }
@@ -250,7 +251,8 @@ object whole
         content_by_lua_block {
             local ref = require("apisix.plugins.openapi-to-mcp.openapi.ref")
             -- port 1 refuses immediately, so this does not wait for a timeout
-            local out = ref.resolve({ x = { ["$ref"] = "http://127.0.0.1:1/a.json#/Pet" } })
+            local out = ref.resolve({ x = { ["$ref"] = "http://127.0.0.1:1/a.json#/Pet" } },
+                                   { base_host = "127.0.0.1" })
             ngx.say(out.x.type)
         }
     }
@@ -270,7 +272,7 @@ failed to fetch an external $ref document
             for i = 1, 5 do
                 spec["k" .. i] = { ["$ref"] = "http://127.0.0.1:1/a.json#/Pet" }
             end
-            local out = ref.resolve(spec)
+            local out = ref.resolve(spec, { base_host = "127.0.0.1" })
             ngx.say(out.k1.type, " ", out.k5.type)
         }
     }
@@ -292,7 +294,7 @@ failed to fetch an external $ref document
             for i = 1, 12 do
                 spec["k" .. i] = { ["$ref"] = "http://127.0.0.1:1/doc" .. i .. ".json#/Pet" }
             end
-            local out = ref.resolve(spec)
+            local out = ref.resolve(spec, { base_host = "127.0.0.1" })
             ngx.say(out.k1.type)
         }
     }
@@ -300,3 +302,105 @@ failed to fetch an external $ref document
 object
 --- error_log
 too many external $ref documents
+
+
+
+=== TEST 13: an http ref to another host is not followed
+--- config
+    location /t {
+        content_by_lua_block {
+            local ref = require("apisix.plugins.openapi-to-mcp.openapi.ref")
+            local out = ref.resolve({ x = { ["$ref"] = "http://127.0.0.1:11490/target.json" } },
+                                    { base_host = "example.com" })
+            ngx.say(out.x.type)
+        }
+    }
+--- response_body
+object
+--- error_log
+points at a host that is not allowed
+
+
+
+=== TEST 14: allowed_ref_hosts lets a named host through
+--- http_config
+    server {
+        listen 11490;
+        location /target.json {
+            content_by_lua_block {
+                ngx.header["Content-Type"] = "application/json"
+                ngx.print([==[{"type": "object", "title": "whole"}]==])
+            }
+        }
+    }
+--- config
+    location /t {
+        content_by_lua_block {
+            local ref = require("apisix.plugins.openapi-to-mcp.openapi.ref")
+            local out = ref.resolve({ x = { ["$ref"] = "http://127.0.0.1:11490/target.json" } },
+                                    { base_host = "example.com",
+                                      allowed_hosts = { "127.0.0.1" } })
+            ngx.say(out.x.type, " ", out.x.title)
+        }
+    }
+--- response_body
+object whole
+
+
+
+=== TEST 15: a wildcard entry matches a subdomain
+--- config
+    location /t {
+        content_by_lua_block {
+            local ref = require("apisix.plugins.openapi-to-mcp.openapi.ref")
+            local ok = { "*.example.com", "other.test" }
+            local out = ref.resolve({
+                a = { ["$ref"] = "http://specs.example.com/a.json#/Pet" },
+                b = { ["$ref"] = "http://evil.test/b.json#/Pet" },
+            }, { base_host = "docs.test", allowed_hosts = ok })
+            -- both degrade: one cannot be reached, the other is not allowed
+            ngx.say(out.a.type, " ", out.b.type)
+        }
+    }
+--- response_body
+object object
+--- error_log
+points at a host that is not allowed
+
+
+
+=== TEST 16: expansion stops at the node budget
+--- config
+    location /t {
+        content_by_lua_block {
+            local ref = require("apisix.plugins.openapi-to-mcp.openapi.ref")
+            -- every level fans out four ways, so inlining would produce 4^16
+            -- nodes without a budget
+            local spec = { components = { schemas = {} } }
+            for level = 1, 15 do
+                local next_ref = "#/components/schemas/L" .. (level + 1)
+                spec.components.schemas["L" .. level] = {
+                    type = "object",
+                    properties = {
+                        a = { ["$ref"] = next_ref },
+                        b = { ["$ref"] = next_ref },
+                        c = { ["$ref"] = next_ref },
+                        d = { ["$ref"] = next_ref },
+                    },
+                }
+            end
+            spec.components.schemas.L16 = { type = "string" }
+            spec.root = { ["$ref"] = "#/components/schemas/L1" }
+
+            local started = ngx.now()
+            local out = ref.resolve(spec)
+            ngx.update_time()
+            ngx.say(type(out.root) == "table")
+            ngx.say(ngx.now() - started < 5)
+        }
+    }
+--- response_body
+true
+true
+--- error_log
+$ref expansion exceeded

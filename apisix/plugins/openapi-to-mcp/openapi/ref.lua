@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core         = require("apisix.core")
+local http   = require("resty.http")
 local loader       = require("apisix.plugins.openapi-to-mcp.openapi.loader")
 local pairs        = pairs
 local ipairs       = ipairs
@@ -22,6 +23,7 @@ local type         = type
 local getmetatable = getmetatable
 local setmetatable = setmetatable
 local tostring     = tostring
+local str_lower  = string.lower
 local str_sub   = string.sub
 local str_gsub  = string.gsub
 local str_find  = string.find
@@ -41,6 +43,12 @@ local GENERIC_OBJECT = "object"
 local EXTERNAL_TIMEOUT = 3000
 local MAX_EXTERNAL_DOCS = 8
 local EXTERNAL_BUDGET = 10
+
+-- $ref expansion is inlining, so a document where every level fans out to
+-- several refs grows as the product of those widths -- MAX_DEPTH alone leaves
+-- room for billions of nodes. Expansion stops at this many nodes and degrades
+-- what is left to a generic object.
+local MAX_NODES = 50000
 
 
 -- Split "#/a/b~1c" into { "a", "b/c" }. Returns nil for non-internal refs.
@@ -88,10 +96,50 @@ end
 -- Fetches the document an external $ref names and returns the node it points
 -- at, together with the document it came from: an internal $ref inside a
 -- fetched document resolves against that document, not against the main spec.
+-- An external $ref is a URL the document chooses, and the gateway is the one
+-- dialling it. Only the host the document itself came from is followed by
+-- default; anything else has to be named in allowed_ref_hosts, so a document
+-- cannot point the gateway at a metadata service or an internal address.
+local function host_allowed(url, ctx)
+    local parsed = http:parse_uri(url, false)
+    if not parsed then
+        return false
+    end
+    local host = str_lower(parsed[2] or "")
+    if host == "" then
+        return false
+    end
+    if host == ctx.base_host then
+        return true
+    end
+    for _, pattern in ipairs(ctx.allowed_hosts or {}) do
+        local lower = str_lower(pattern)
+        if lower == host then
+            return true
+        end
+        if str_sub(lower, 1, 2) == "*." then
+            local suffix = str_sub(lower, 2)
+            if #host > #suffix and str_sub(host, -#suffix) == suffix then
+                return true
+            end
+        end
+    end
+    return false
+end
+
+
 local function external_target(ref, ctx)
     local hash = str_find(ref, "#", 1, true)
     local url = hash and str_sub(ref, 1, hash - 1) or ref
     local fragment = hash and str_sub(ref, hash + 1) or ""
+
+    if not host_allowed(url, ctx) then
+        -- the URL is not logged: an external $ref can carry credentials in its
+        -- userinfo or query string
+        core.log.warn("an external $ref points at a host that is not allowed, ",
+                      "using generic object")
+        return nil
+    end
 
     local doc = ctx.docs[url]
     if doc == nil then
@@ -134,6 +182,16 @@ end
 local function expand(node, root, depth, active, ctx)
     if type(node) ~= "table" then
         return node
+    end
+
+    ctx.nodes = ctx.nodes + 1
+    if ctx.nodes > MAX_NODES then
+        if not ctx.warned then
+            core.log.warn("$ref expansion exceeded ", MAX_NODES,
+                          " nodes, using generic object")
+            ctx.warned = true
+        end
+        return { type = GENERIC_OBJECT }
     end
 
     if depth > MAX_DEPTH then
@@ -195,8 +253,17 @@ local function expand(node, root, depth, active, ctx)
 end
 
 
-function _M.resolve(spec)
-    return expand(spec, spec, 0, {}, { docs = {}, fetched = 0 })
+-- opts.base_host is the host openapi_url was fetched from, opts.allowed_hosts
+-- the operator's extra allow-list for external $ref targets.
+function _M.resolve(spec, opts)
+    opts = opts or {}
+    return expand(spec, spec, 0, {}, {
+        docs = {},
+        fetched = 0,
+        nodes = 0,
+        base_host = opts.base_host,
+        allowed_hosts = opts.allowed_hosts,
+    })
 end
 
 
