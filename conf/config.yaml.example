@@ -355,6 +355,7 @@ nginx_config:                     # Config for render the template to generate n
       plugin-limit-conn: 10m
       worker-events: 10m
       lrucache-lock: 10m
+      upstream-slow-start: 10m    # Slow start state of upstream nodes (`warm_up_conf`)
       balancer-ewma: 10m
       balancer-ewma-locks: 10m
       balancer-ewma-last-touched-at: 10m

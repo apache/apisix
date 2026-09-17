@@ -168,6 +168,7 @@ local _M = {
         ["plugin-limit-conn"] = "10m",
         ["worker-events"] = "10m",
         ["lrucache-lock"] = "10m",
+        ["upstream-slow-start"] = "10m",
         ["balancer-ewma"] = "10m",
         ["balancer-ewma-locks"] = "10m",
         ["balancer-ewma-last-touched-at"] = "10m",
