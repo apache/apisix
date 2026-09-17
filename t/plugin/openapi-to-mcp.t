@@ -1573,3 +1573,74 @@ streamable_http 5: true
 streamable_http 6: true
 streamable_http 7: true
 streamable_http 8: true
+
+
+
+=== TEST 86: a route whose document describes its success responses
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "streamable_http",
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/output.json",
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 87: only the operations that describe an object carry an output schema
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/list","jsonrpc":"2.0","id":1}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | grep '^data: ' | sed 's/^data: //' \
+    | python3 -c "import json,sys; d=json.loads(sys.stdin.read().strip()); print(' '.join(sorted(t['name'] for t in d['result']['tools'] if t.get('outputSchema'))))"
+--- response_body
+echoOp goneOp
+
+
+
+=== TEST 88: the advertised schema is the one the document declares
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/list","jsonrpc":"2.0","id":1}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | grep '^data: ' | sed 's/^data: //' \
+    | python3 -c "import json,sys; d=json.loads(sys.stdin.read().strip()); t=[x for x in d['result']['tools'] if x['name']=='echoOp'][0]; s=t['outputSchema']; print(s['type']); print(' '.join(sorted(s['properties']))); print(' '.join(s['required']))"
+--- response_body
+object
+seen_method seen_path
+seen_method
+
+
+
+=== TEST 89: a matching answer is returned as structured content
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"echoOp","arguments":{}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/"structuredContent":\{.*"seen_method":"GET"/
+
+
+
+=== TEST 90: an answer that cannot satisfy the schema is an error result
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"goneOp","arguments":{}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/"isError":true/
