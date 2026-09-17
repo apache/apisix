@@ -194,7 +194,15 @@ failed to parse mqtt request: invalid or incomplete properties length
 
 
 
-=== TEST 9: sanity
+=== TEST 9: v5 properties length is valid but larger than the packet
+--- stream_request eval
+"\x10\x0c\x00\x04\x4d\x51\x54\x54\x05\x02\x00\x3c\x7f\x00"
+--- error_log
+failed to parse mqtt request: properties length exceeds packet length
+
+
+
+=== TEST 10: sanity
 --- config
     location /t {
         content_by_lua_block {

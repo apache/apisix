@@ -91,16 +91,32 @@ local function parse_msg_hdr(data)
 end
 
 
+-- reads a 2-byte big-endian length field, guarding against str_byte
+-- returning nil when parsed_pos has already run past the end of data
+local function read_len(data, parsed_pos)
+    if parsed_pos + 2 > #data then
+        return nil
+    end
+    return str_byte(data, parsed_pos + 1, parsed_pos + 1) * 256
+          + str_byte(data, parsed_pos + 2, parsed_pos + 2)
+end
+
+
 local function parse_mqtt(data, parsed_pos)
     local res = {}
 
-    local protocol_len = str_byte(data, parsed_pos + 1, parsed_pos + 1) * 256
-                         + str_byte(data, parsed_pos + 2, parsed_pos + 2)
+    local protocol_len = read_len(data, parsed_pos)
+    if not protocol_len then
+        return nil, "invalid or incomplete protocol name length"
+    end
     parsed_pos = parsed_pos + 2
     res.protocol = str_sub(data, parsed_pos + 1, parsed_pos + protocol_len)
     parsed_pos = parsed_pos + protocol_len
 
     res.protocol_ver = str_byte(data, parsed_pos + 1, parsed_pos + 1)
+    if not res.protocol_ver then
+        return nil, "invalid or incomplete protocol version"
+    end
     parsed_pos = parsed_pos + 1
 
     -- skip control flags & keepalive
@@ -114,10 +130,15 @@ local function parse_mqtt(data, parsed_pos)
             return nil, "invalid or incomplete properties length"
         end
         parsed_pos = parsed_pos + property_len
+        if parsed_pos > #data then
+            return nil, "properties length exceeds packet length"
+        end
     end
 
-    local client_id_len = str_byte(data, parsed_pos + 1, parsed_pos + 1) * 256
-                          + str_byte(data, parsed_pos + 2, parsed_pos + 2)
+    local client_id_len = read_len(data, parsed_pos)
+    if not client_id_len then
+        return nil, "invalid or incomplete client id length"
+    end
     parsed_pos = parsed_pos + 2
 
     if parsed_pos + client_id_len > #data then
