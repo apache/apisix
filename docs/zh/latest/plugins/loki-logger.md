@@ -41,7 +41,7 @@ description: loki-logger 插件通过 Loki HTTP API /loki/api/v1/push 将请求�
 ## 属性
 
 | 名称 | 类型 | 必选项 | 默认值 | 有效值 | 描述 |
-|--|---|---|---|---|
+| --- | --- | --- | --- | --- | --- |
 | end_addrs | array[string] | 是 | | | Loki API URL，例如 `http://127.0.0.1:3100`。如果配置了多个端点，日志将被推送到列表中随机确定的端点。 |
 | end_uri | string | 否 | /loki/api/v1/push | | Loki 提取端点的 URI 路径。 |
 | tenant_id | string | 否 | fake | | Loki 租户 ID。根据 Loki 的 [多租户文档](https://grafana.com/docs/loki/latest/operations/multi-tenancy/#multi-tenancy)，在单租户下默认值设置为 `fake`。 |
