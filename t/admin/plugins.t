@@ -127,6 +127,7 @@ traffic-label
 traffic-split
 redirect
 response-rewrite
+openapi-to-mcp
 oas-validator
 mcp-bridge
 degraphql

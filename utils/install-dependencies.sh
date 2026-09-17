@@ -73,7 +73,10 @@ function install_dependencies_with_apt() {
     if [[ "${1}" == "ubuntu" ]]; then
         sudo add-apt-repository -y "deb http://openresty.org/package/${arch_path}ubuntu $(lsb_release -sc) main"
     elif [[ "${1}" == "debian" ]]; then
-        sudo add-apt-repository -y "deb http://openresty.org/package/${arch_path}debian $(lsb_release -sc) openresty"
+        # add-apt-repository on Debian 12 writes an empty list file for a plain
+        # deb line, so the repository never makes it into apt
+        echo "deb http://openresty.org/package/${arch_path}debian $(lsb_release -sc) openresty" \
+            | sudo tee /etc/apt/sources.list.d/openresty.list
     fi
     sudo apt-get update
 
