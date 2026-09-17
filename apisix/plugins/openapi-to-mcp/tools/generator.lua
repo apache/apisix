@@ -179,6 +179,68 @@ local function extract_custom_annotations(operation, op_id)
 end
 
 
+-- Which response the output schema is taken from: the success answer, most
+-- specific first. `default` is not a success response and is not considered.
+local function success_response(responses)
+    -- appended one by one: a nil in the middle of a table constructor makes
+    -- ipairs stop at it, and an operation that declares only a 201 would then
+    -- be read as declaring nothing
+    local ordered = {}
+    if responses["200"] ~= nil then
+        ordered[#ordered + 1] = responses["200"]
+    end
+    if responses["201"] ~= nil then
+        ordered[#ordered + 1] = responses["201"]
+    end
+
+    local others = {}
+    for code in pairs(responses) do
+        if type(code) == "string" and #code == 3 and str_sub(code, 1, 1) == "2"
+           and code ~= "200" and code ~= "201" and code ~= "2XX" then
+            others[#others + 1] = code
+        end
+    end
+    table_sort(others)
+    for _, code in ipairs(others) do
+        ordered[#ordered + 1] = responses[code]
+    end
+
+    if responses["2XX"] ~= nil then
+        ordered[#ordered + 1] = responses["2XX"]
+    end
+    return ordered
+end
+
+
+-- The JSON object a successful call returns, when the document describes one.
+-- Only a plain object with properties qualifies: an array, a composition the
+-- document leaves unmerged (`allOf`, `oneOf`) and a bare `type: object` carry
+-- nothing a client could bind to, and advertising them would only promise
+-- structure that is not there.
+local function build_output_schema(operation)
+    local responses = operation.responses
+    if type(responses) ~= "table" then
+        return nil
+    end
+
+    for _, response in ipairs(success_response(responses)) do
+        if type(response) == "table" and type(response.content) == "table" then
+            local json_content = response.content["application/json"]
+            if type(json_content) == "table" and type(json_content.schema) == "table" then
+                local schema = oas_schema.to_json_schema(json_content.schema)
+                if type(schema) == "table" and schema.type == "object"
+                   and type(schema.properties) == "table" and next(schema.properties) ~= nil
+                then
+                    return schema
+                end
+            end
+        end
+    end
+
+    return nil
+end
+
+
 -- A remote OpenAPI document controls param.name. Using a nil name as a table
 -- key raises "table index is nil" and takes down generation for the whole spec,
 -- so a nameless parameter is dropped instead.
@@ -414,6 +476,7 @@ function _M.generate(spec, path_order, opts)
             parameters = params,
             execution_parameters = execution_parameters,
             request_body_content_type = content_type,
+            output_schema = build_output_schema(operation),
             annotations = annotations,
         }
     end

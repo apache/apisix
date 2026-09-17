@@ -60,6 +60,10 @@ MCP 服务运行在 APISIX 内部，不需要额外的进程或服务。
 * 查询参数按其 `style` 和 `explode` 序列化，规则见 [OpenAPI Parameter Object](https://spec.openapis.org/oas/v3.0.3#style-values)。使用默认值（`form`，展开）时，`tags: ["a", "b"]` 发送为 `tags=a&tags=b`，而不是 `tags[]=a&tags[]=b`；声明为 `explode: false` 的数组参数发送为 `tags=a,b`。同时支持 `spaceDelimited`、`pipeDelimited` 和 `deepObject`。如果 API 要求方括号形式，需要另外通过改写查询字符串的插件处理。
 * 请求体使用操作中声明的媒体类型发送，除非 `headers` 中已设置 `Content-Type`。
 
+当文档把某个操作的成功响应描述为 JSON 对象时，生成的工具会以 `outputSchema` 公布该 Schema。响应按 `200`、`201`、其它明确的 `2xx`、`2XX` 的顺序选取；只有媒体类型为 `application/json` 且为带属性的对象才会被采用，因此数组、`default` 响应以及文档中未合并的组合（如 `allOf`）不会公布 Schema。
+
+调用这类工具时，API 的响应体会作为 `structuredContent` 返回，文本块中也是同一份响应体。当响应无法满足该 Schema（状态码不在 `2xx`、响应体不是 JSON 对象，或校验不通过）时，结果仍为 `{status, statusText, headers, data}` 信封，并将 `isError` 置为 `true`——MCP 允许错误结果不携带结构化内容。未公布 `outputSchema` 的工具则始终返回该信封，与状态码无关。
+
 使用 SSE 传输时，`base_url` 和 `headers` 中的变量在打开事件流的那次请求上解析，解析结果用于该会话的所有消息。`"Authorization": "Bearer ${http_x_api_token}"` 这类配置因此在 SSE 下同样可用：后续的消息请求只携带会话 ID，此时已无从解析变量。
 
 使用 SSE 传输时，会话保存在共享字典 `mcp-session` 中，因此同一会话的事件流请求和消息请求可以由不同的 worker 进程处理。会话只在单个 APISIX 实例内有效：多个实例部署在负载均衡之后时，同一 SSE 会话的请求必须到达同一实例。Streamable HTTP 传输是无状态的，没有这一限制。

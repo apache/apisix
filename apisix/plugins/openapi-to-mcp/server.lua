@@ -38,6 +38,7 @@ local function to_wire_tools(tools)
             name = tool.name,
             description = tool.description,
             inputSchema = tool.input_schema,
+            outputSchema = tool.output_schema,
             annotations = tool.annotations,
         }
     end

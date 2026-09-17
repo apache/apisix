@@ -121,6 +121,39 @@ local DOCUMENTS = {
         },
     },
 
+    -- responses that do and do not describe a JSON object
+    ["/output.json"] = {
+        openapi = "3.0.0",
+        info = { title = "Output", version = "1" },
+        paths = {
+            ["/echo"] = { get = {
+                operationId = "echoOp",
+                responses = { ["200"] = { content = { ["application/json"] = { schema = {
+                    type = "object",
+                    required = { "seen_method" },
+                    properties = {
+                        seen_method = { type = "string" },
+                        seen_path = { type = "string" },
+                    },
+                } } } } },
+            } },
+            ["/list"] = { get = {
+                operationId = "listOp",
+                responses = { ["200"] = { content = { ["application/json"] = { schema = {
+                    type = "array", items = { type = "string" },
+                } } } } },
+            } },
+            ["/status404"] = { get = {
+                operationId = "goneOp",
+                responses = { ["200"] = { content = { ["application/json"] = { schema = {
+                    type = "object",
+                    required = { "seen_method" },
+                    properties = { seen_method = { type = "string" } },
+                } } } } },
+            } },
+        },
+    },
+
     -- parses as JSON and is not an OpenAPI document
     ["/notaspec.json"] = { this = "is not an openapi document" },
 
@@ -174,6 +207,13 @@ function _M.serve()
         local f = assert(io.open(ngx.config.prefix() .. "../lib/" .. file, "r"))
         ngx.print(f:read("*a"))
         f:close()
+        return
+    end
+
+    -- an API answer that is not a success, for the output schema cases
+    if uri == "/status404" then
+        ngx.status = 404
+        ngx.say(core.json.encode({ error = "not found" }))
         return
     end
 
