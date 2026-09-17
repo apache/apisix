@@ -143,6 +143,41 @@ function _M.parse(body)
 end
 
 
+-- Whether a parsed document is an OpenAPI document at all. Any JSON or YAML
+-- parses, so without this a route pointed at the wrong URL -- an error page, an
+-- index document, a spec that failed to render -- comes up as a healthy MCP
+-- server with an empty tool list, and nothing anywhere says why. A document
+-- with no `paths` is rejected for the same reason: there is nothing to serve
+-- from it.
+--
+-- Only the route's own document is held to this. A document pulled in by an
+-- external `$ref` is usually a fragment -- components, a single schema -- and
+-- has neither key.
+function _M.validate(spec)
+    if type(spec) ~= "table" then
+        return nil, "openapi spec is not an object"
+    end
+    -- YAML leaves an unquoted version as a number: "swagger: 2.0" and
+    -- "openapi: 3.1" both parse that way, and only a two-dot version such as
+    -- "3.0.0" comes back as a string. JSON documents always quote it.
+    local version = spec.openapi or spec.swagger
+    if type(version) ~= "string" and type(version) ~= "number" then
+        return nil, "not an openapi document: no openapi or swagger version"
+    end
+    -- OpenAPI 3.1 lets a document carry webhooks or components alone, so the
+    -- absence of paths is not proof that this is not an OpenAPI document. It
+    -- does mean there is nothing to turn into tools, which the caller reports
+    -- as its own error rather than as "this is not an OpenAPI document".
+    if type(spec.paths) ~= "table" then
+        if type(spec.webhooks) == "table" or type(spec.components) == "table" then
+            return nil, "openapi document declares no paths"
+        end
+        return nil, "not an openapi document: no paths object"
+    end
+    return true
+end
+
+
 function _M.fetch(url, timeout)
     local httpc, err = http.new()
     if not httpc then

@@ -20,6 +20,7 @@ local session        = require("apisix.plugins.openapi-to-mcp.session")
 local server         = require("apisix.plugins.openapi-to-mcp.server")
 local jsonrpc        = require("apisix.plugins.openapi-to-mcp.jsonrpc")
 local ngx            = ngx
+local re_find        = ngx.re.find
 local str_find       = string.find
 local ngx_print      = ngx.print
 local ngx_flush      = ngx.flush
@@ -27,6 +28,7 @@ local ngx_exit       = ngx.exit
 local ngx_sleep      = ngx.sleep
 local ngx_now        = ngx.now
 local worker_exiting = ngx.worker.exiting
+local pairs          = pairs
 local type           = type
 local tostring       = tostring
 
@@ -63,6 +65,32 @@ end
 -- The session id is what authorises a POST to this session's message endpoint,
 -- so it is a bearer credential and stays out of the logs. Stream lifecycle
 -- lines carry the reason, not the identifier.
+-- A variable anywhere in base_url or a header value means the values depend on
+-- the request they were resolved from. The pattern is the one
+-- core.utils.resolve_var substitutes with, braces included or left out --
+-- "$http_x_token" resolves exactly like "${http_x_token}", and a backslash
+-- escapes the dollar.
+local VARIABLE_PATTERN = [[(?<!\\)\$(\{\s*[^}]+?\s*\}|[\w\.]+)]]
+
+
+local function has_variable(value)
+    return type(value) == "string" and re_find(value, VARIABLE_PATTERN, "jo") ~= nil
+end
+
+
+local function uses_variables(conf)
+    if has_variable(conf.base_url) then
+        return true
+    end
+    for _, value in pairs(conf.headers or {}) do
+        if has_variable(value) then
+            return true
+        end
+    end
+    return false
+end
+
+
 local function handle_get(ctx, opts)
     -- Build the tool list -- which means fetching and parsing the document --
     -- before opening the stream, and answer 500 when that fails. Opening the
@@ -79,7 +107,18 @@ local function handle_get(ctx, opts)
         })
     end
 
-    local session_id, err = session.create()
+    -- Freeze what the stream resolved from this request, so every message POST
+    -- on this session reaches the upstream with the same base_url and headers.
+    -- Only when the configuration holds a variable: otherwise every POST
+    -- resolves to the same values anyway, and the record would keep a copy of
+    -- whatever those headers carry -- a caller's token among them -- in the
+    -- shared dict for as long as the session lives.
+    local context
+    if uses_variables(opts.conf) then
+        context = { base_url = opts.base_url, headers = opts.headers }
+    end
+
+    local session_id, err = session.create(context)
     if not session_id then
         core.log.error("failed to create MCP session: ", err)
         return core.response.exit(500)
@@ -172,6 +211,27 @@ local function content_type_error(content_type)
 end
 
 
+-- Answer a message with what the stream resolved, not with what this POST
+-- resolves: the message endpoint carries only the session id, so `${...}` in
+-- base_url or in a header would read empty here. A session created before this
+-- was stored keeps the old behaviour rather than failing.
+local function frozen_opts(opts, session_id)
+    local context = session.context(session_id)
+    if not context then
+        return opts
+    end
+
+    local merged = core.table.clone(opts)
+    if context.base_url ~= nil then
+        merged.base_url = context.base_url
+    end
+    if context.headers ~= nil then
+        merged.headers = context.headers
+    end
+    return merged
+end
+
+
 local function handle_post(ctx, opts)
     -- An empty or unparsable JSON body is a 400 even for a session nobody
     -- issued: it is rejected before the session is looked up.
@@ -211,7 +271,7 @@ local function handle_post(ctx, opts)
         return core.response.exit(400, jsonrpc.invalid_message())
     end
 
-    local response = server.handle(request, opts)
+    local response = server.handle(request, frozen_opts(opts, session_id))
     if response then
         local encoded, encode_err = core.json.encode(response)
         if not encoded then
