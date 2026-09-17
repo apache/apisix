@@ -35,6 +35,7 @@ local span_kind = require("opentelemetry.trace.span_kind")
 local span_status = require("opentelemetry.trace.span_status")
 local resource_new = require("opentelemetry.resource").new
 local attr = require("opentelemetry.attribute")
+local otel_util = require("opentelemetry.util")
 
 local context = require("opentelemetry.context").new()
 local trace_context_propagator =
@@ -51,6 +52,11 @@ local string_format = string.format
 local string_lower = string.lower
 local update_time = ngx.update_time
 local tostring = tostring
+local tonumber = tonumber
+local str_match = string.match
+local math_min = math.min
+
+local UPSTREAM_SPAN_NAME = "apisix.upstream"
 
 local lrucache = core.lrucache.new({
     type = 'plugin', count = 128, ttl = 24 * 60 * 60,
@@ -446,8 +452,70 @@ function _M.rewrite(conf, api_ctx)
 
     api_ctx.otel_context_token = ctx:attach()
 
+    -- CLIENT span for the upstream hop; its id is what the upstream must see
+    -- as parent, so service maps can draw the gateway -> upstream edge
+    local upstream_span_ctx, upstream_span = tracer:start(ctx, UPSTREAM_SPAN_NAME, {
+        kind = span_kind.client,
+    })
+    api_ctx.otel_upstream_span = upstream_span
+
     -- inject trace context into the headers of upstream HTTP request
-    trace_context_propagator:inject(ctx, ngx.req)
+    trace_context_propagator:inject(upstream_span_ctx, ngx.req)
+end
+
+
+function _M.before_proxy(conf, api_ctx)
+    if api_ctx.otel_upstream_span then
+        api_ctx.otel_upstream_start = otel_util.time_nano()
+    end
+end
+
+
+local function last_of_list(s)
+    return s and str_match(s, "([^,%s]+)%s*$")
+end
+
+
+local function finish_upstream_span(api_ctx)
+    local span = api_ctx.otel_upstream_span
+    if not span then
+        return
+    end
+    api_ctx.otel_upstream_span = nil
+
+    local start_time = api_ctx.otel_upstream_start
+    if not start_time or not span:is_recording() then
+        return
+    end
+    span.start_time = start_time
+
+    local vars = api_ctx.var
+    if api_ctx.balancer_ip then
+        span:set_attributes(attr.string("server.address", api_ctx.balancer_ip))
+    end
+    if api_ctx.balancer_port then
+        span:set_attributes(attr.int("server.port", api_ctx.balancer_port))
+    end
+
+    local status = tonumber(last_of_list(vars.upstream_status))
+    if status then
+        span:set_attributes(attr.int("http.response.status_code", status))
+        if status >= 500 then
+            span:set_status(span_status.ERROR, "upstream error: " .. status)
+        end
+    else
+        span:set_status(span_status.ERROR, "upstream unreachable")
+    end
+
+    -- $upstream_response_time has ms granularity, clamp so the span stays
+    -- inside its parent
+    local now = otel_util.time_nano()
+    local end_time = now
+    local resp_time = tonumber(last_of_list(vars.upstream_response_time))
+    if resp_time then
+        end_time = math_min(start_time + resp_time * 1e9, now)
+    end
+    span:finish(end_time)
 end
 
 
@@ -533,6 +601,7 @@ function _M.log(conf, api_ctx)
         end
 
         inject_core_spans(ctx, api_ctx, conf)
+        finish_upstream_span(api_ctx)
         span:set_attributes(attr.int("http.status_code", status_code),
                             attr.int("http.response.status_code", status_code))
 
