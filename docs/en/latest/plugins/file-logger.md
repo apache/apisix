@@ -45,7 +45,7 @@ The `file-logger` Plugin is used to push log streams to a specific location.
 
 | Name | Type   | Required | Description   |
 | ---- | ------ | -------- | ------------- |
-| path | string | True     | Log file path. |
+| path | string | True     | Log file path. You can use `/dev/stdout` to write logs to the standard output and `/dev/stderr` to write to the standard error output. |
 | log_format | object | False    | Log format declared as key-value pairs in JSON. Values support strings and nested objects (up to five levels deep; deeper fields are truncated). Within strings, [APISIX](../apisix-variable.md) or [NGINX](http://nginx.org/en/docs/varindex.html) variables can be referenced by prefixing with `$`. |
 | include_req_body       | boolean | False    | When set to `true` includes the request body in the log. If the request body is too big to be kept in the memory, it can't be logged due to Nginx's limitations. |
 | include_req_body_expr  | array   | False    | Filter for when the `include_req_body` attribute is set to `true`. Request body is only logged when the expression set here evaluates to `true`. See [lua-resty-expr](https://github.com/api7/lua-resty-expr) for more. |
