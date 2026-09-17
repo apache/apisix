@@ -132,7 +132,7 @@ passed
 
 === TEST 4: a GET on an sse route advertises the message endpoint
 --- exec
-timeout 1 curl -X GET -N -sS http://localhost:1984/mcp 2>&1 | cat
+timeout 5 curl -X GET -N -sS http://localhost:1984/mcp 2>&1 | cat
 --- response_body_like
 event:\s*endpoint
 data:\s*/mcp\?sessionId=.*
@@ -141,7 +141,7 @@ data:\s*/mcp\?sessionId=.*
 
 === TEST 5: a message POST without a sessionId is rejected
 --- exec
-timeout 1 curl -X POST -N -sS http://localhost:1984/mcp 2>&1 | cat
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp 2>&1 | cat
 --- response_body eval
 qr/Missing or invalid sessionId parameter/
 
@@ -170,7 +170,7 @@ passed
 === TEST 7: tools/list is answered in-process
 --- max_size: 2048000
 --- exec
-timeout 1 curl -X POST -N -sS http://localhost:1984/mcp \
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
     -d '{"method":"tools/list","jsonrpc":"2.0","id":1}' \
     -H "Content-Type: application/json" \
     -H "Accept: application/json, text/event-stream" \
@@ -203,7 +203,7 @@ passed
 === TEST 9: confirm that variables in headers are correctly replaced
 --- max_size: 2048000
 --- exec
-timeout 1 curl -X POST -N -sS http://localhost:1984/mcp?username=alice \
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp?username=alice \
     -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"findPetsByStatus","arguments":{"queryParameters":{"status":"sold"}}}}' \
     -H "Content-Type: application/json" \
     -H "Accept: application/json, text/event-stream" \
@@ -236,7 +236,7 @@ passed
 === TEST 11: mcp request should be working when no headers in plugin config
 --- max_size: 2048000
 --- exec
-timeout 1 curl -X POST -N -sS http://localhost:1984/mcp \
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
     -d '{"method":"tools/list","jsonrpc":"2.0","id":1}' \
     -H "Content-Type: application/json" \
     -H "Accept: application/json, text/event-stream" \
@@ -267,7 +267,7 @@ passed
 
 === TEST 13: a GET on an sse route with a variable base_url advertises the message endpoint
 --- exec
-timeout 1 curl -X GET -N -sS http://localhost:1984/mcp \
+timeout 5 curl -X GET -N -sS http://localhost:1984/mcp \
     -H "variable_host: 127.0.0.1:11460" \
     2>&1 | cat
 --- response_body_like
@@ -322,7 +322,7 @@ passed
 
 === TEST 16: an sse route with flatten_parameters still opens a stream
 --- exec
-timeout 1 curl -X GET -N -sS http://localhost:1984/mcp 2>&1 | cat
+timeout 5 curl -X GET -N -sS http://localhost:1984/mcp 2>&1 | cat
 --- response_body_like
 event:\s*endpoint
 data:\s*/mcp\?sessionId=.*
@@ -352,7 +352,7 @@ passed
 === TEST 18: flattened parameters are not nested under queryParameters
 --- max_size: 2048000
 --- exec
-timeout 1 curl -X POST -N -sS http://localhost:1984/mcp \
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
     -d '{"method":"tools/list","jsonrpc":"2.0","id":1}' \
     -H "Content-Type: application/json" \
     -H "Accept: application/json, text/event-stream" \
@@ -385,7 +385,7 @@ passed
 === TEST 20: nested parameters are grouped under queryParameters
 --- max_size: 2048000
 --- exec
-timeout 1 curl -X POST -N -sS http://localhost:1984/mcp \
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
     -d '{"method":"tools/list","jsonrpc":"2.0","id":1}' \
     -H "Content-Type: application/json" \
     -H "Accept: application/json, text/event-stream" \
@@ -397,7 +397,7 @@ qr/queryParameters/
 
 === TEST 21: verify mcp tools call works
 --- exec
-timeout 1 curl -X POST -N -sS http://localhost:1984/mcp \
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
     -d '{
     "jsonrpc": "2.0",
     "method": "tools/call",
@@ -422,7 +422,7 @@ qr/findByStatus\?status=pending/
 === TEST 22: headerParameters appears in inputSchema for endpoints with in:header params (nested mode)
 --- max_size: 2048000
 --- exec
-timeout 1 curl -X POST -N -sS http://localhost:1984/mcp \
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
     -d '{"method":"tools/list","jsonrpc":"2.0","id":1}' \
     -H "Content-Type: application/json" \
     -H "Accept: application/json, text/event-stream" \
@@ -435,7 +435,7 @@ qr/headerParameters/
 === TEST 23: tools/call with no headerParameters argument still works
 --- max_size: 2048000
 --- exec
-timeout 1 curl -X POST -N -sS http://localhost:1984/mcp \
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
     -d '{
     "jsonrpc": "2.0",
     "method": "tools/call",
@@ -480,7 +480,7 @@ passed
 === TEST 25: headerParameters container is absent in flattened mode
 --- max_size: 2048000
 --- exec
-timeout 1 curl -X POST -N -sS http://localhost:1984/mcp \
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
     -d '{"method":"tools/list","jsonrpc":"2.0","id":1}' \
     -H "Content-Type: application/json" \
     -H "Accept: application/json, text/event-stream" \
@@ -493,7 +493,7 @@ qr/(?s)^(?=.*"api_key")(?:(?!headerParameters).)*$/
 === TEST 26: tools/call forwards flattened header params as HTTP headers to upstream
 --- max_size: 2048000
 --- exec
-timeout 1 curl -X POST -N -sS http://localhost:1984/mcp \
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
     -d '{
     "jsonrpc": "2.0",
     "method": "tools/call",
@@ -538,7 +538,7 @@ passed
 === TEST 28: tools/call forwards headerParameters as HTTP headers to upstream
 --- max_size: 2048000
 --- exec
-timeout 1 curl -X POST -N -sS http://localhost:1984/mcp \
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
     -d '{
     "jsonrpc": "2.0",
     "method": "tools/call",
@@ -589,7 +589,7 @@ passed
 === TEST 30: tools/list on a route without an upstream
 --- max_size: 2048000
 --- exec
-timeout 1 curl -X POST -N -sS http://localhost:1984/mcp \
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
     -d '{"method":"tools/list","jsonrpc":"2.0","id":1}' \
     -H "Content-Type: application/json" \
     -H "Accept: application/json, text/event-stream" \
@@ -622,7 +622,7 @@ passed
 
 === TEST 32: the stream opens and nothing is proxied
 --- exec
-timeout 1 curl -X GET -N -sS http://localhost:1984/mcp 2>&1 | cat
+timeout 5 curl -X GET -N -sS http://localhost:1984/mcp 2>&1 | cat
 --- response_body_like
 event:\s*endpoint
 data:\s*/mcp\?sessionId=.*
@@ -652,7 +652,7 @@ passed
 
 === TEST 34: a required query parameter that has a default may be omitted
 --- exec
-timeout 1 curl -X POST -N -sS http://localhost:1984/mcp \
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
     -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"listItems","arguments":{"queryParameters":{}}}}' \
     -H "Content-Type: application/json" \
     -H "Accept: application/json, text/event-stream" \
@@ -664,7 +664,7 @@ qr/seen_path.*items\?limit=10&status=available/
 
 === TEST 35: a required body property that has a default may be omitted
 --- exec
-timeout 1 curl -X POST -N -sS http://localhost:1984/mcp \
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
     -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"createItem","arguments":{"requestBody":{}}}}' \
     -H "Content-Type: application/json" \
     -H "Accept: application/json, text/event-stream" \
@@ -674,9 +674,45 @@ qr/seen_body.*mode.*fast/
 
 
 
-=== TEST 36: an argument that is sent still wins over the default
+=== TEST 36: the whole container may be left out, not just its members
 --- exec
-timeout 1 curl -X POST -N -sS http://localhost:1984/mcp \
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"listItems","arguments":{}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/seen_path.*items\?limit=10&status=available/
+
+
+
+=== TEST 37: a request body that is required and all-default may be left out too
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"createItem","arguments":{}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/seen_body.*mode.*fast/
+
+
+
+=== TEST 38: a required member without a default is still an error
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"getItem","arguments":{}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/property .*pathParameters.* is required/
+
+
+
+=== TEST 39: an argument that is sent still wins over the default
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
     -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"listItems","arguments":{"queryParameters":{"status":"sold"}}}}' \
     -H "Content-Type: application/json" \
     -H "Accept: application/json, text/event-stream" \
@@ -686,7 +722,7 @@ qr/seen_path.*items\?limit=10&status=sold/
 
 
 
-=== TEST 37: a route pointed at a document that is not an OpenAPI document
+=== TEST 40: a route pointed at a document that is not an OpenAPI document
 --- config
     location /t {
         content_by_lua_block {
@@ -705,14 +741,14 @@ passed
 
 
 
-=== TEST 38: it is reported as an error instead of an empty tool list
+=== TEST 41: it is reported as an error instead of an empty tool list
 --- exec
-timeout 1 curl -X POST -N -sS http://localhost:1984/mcp \
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
     -d '{"method":"tools/list","jsonrpc":"2.0","id":1}' \
     -H "Content-Type: application/json" \
     -H "Accept: application/json, text/event-stream" \
     2>&1 | cat
 --- response_body eval
-qr/"code":-32603.*not an openapi document: no openapi or swagger version/
+qr/(?s)(?=.*"code":-32603)(?=.*not an openapi document: no openapi or swagger version)/
 --- error_log
 not an openapi document

@@ -95,6 +95,13 @@ local DOCUMENTS = {
         openapi = "3.0.0",
         info = { title = "Defaults", version = "1" },
         paths = {
+            ["/items/{id}"] = { get = {
+                operationId = "getItem",
+                parameters = {
+                    { name = "id", ["in"] = "path", required = true,
+                      schema = { type = "string" } },
+                },
+            } },
             ["/items"] = {
                 get = {
                     operationId = "listItems",

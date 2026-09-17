@@ -109,3 +109,49 @@ python3 t/plugin/openapi_to_mcp_sse_frozen_vars.py /mcp 2>&1
 --- response_body
 post status: 202
 upstream saw: Bearer alice
+
+
+
+=== TEST 5: a route whose configuration holds no variable
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "sse",
+                    base_url = "http://127.0.0.1:11460",
+                    headers = { Authorization = "fixed-credential" },
+                    openapi_url = "http://127.0.0.1:11460/openapi.json",
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 6: its session record keeps no copy of the resolved headers
+--- config
+    location /t {
+        content_by_lua_block {
+            local session = require("apisix.plugins.openapi-to-mcp.session")
+            local dict = ngx.shared["mcp-session"]
+
+            -- what handle_get stores when nothing needs re-resolving
+            local plain = assert(session.create(nil))
+            ngx.say("plain context: ", tostring(session.context(plain)))
+
+            -- and what it stores when the configuration holds a variable
+            local frozen = assert(session.create({ headers = { Authorization = "Bearer t" } }))
+            ngx.say("frozen context: ", session.context(frozen).headers.Authorization)
+            ngx.say("in the dict: ",
+                    tostring(string.find(tostring(dict:get(plain .. ":alive")),
+                                         "Bearer", 1, true) ~= nil))
+        }
+    }
+--- response_body
+plain context: nil
+frozen context: Bearer t
+in the dict: false

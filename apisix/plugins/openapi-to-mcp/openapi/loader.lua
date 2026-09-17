@@ -164,7 +164,14 @@ function _M.validate(spec)
     if type(version) ~= "string" and type(version) ~= "number" then
         return nil, "not an openapi document: no openapi or swagger version"
     end
+    -- OpenAPI 3.1 lets a document carry webhooks or components alone, so the
+    -- absence of paths is not proof that this is not an OpenAPI document. It
+    -- does mean there is nothing to turn into tools, which the caller reports
+    -- as its own error rather than as "this is not an OpenAPI document".
     if type(spec.paths) ~= "table" then
+        if type(spec.webhooks) == "table" or type(spec.components) == "table" then
+            return nil, "openapi document declares no paths"
+        end
         return nil, "not an openapi document: no paths object"
     end
     return true

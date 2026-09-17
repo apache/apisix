@@ -27,6 +27,7 @@ local ngx_exit       = ngx.exit
 local ngx_sleep      = ngx.sleep
 local ngx_now        = ngx.now
 local worker_exiting = ngx.worker.exiting
+local pairs          = pairs
 local type           = type
 local tostring       = tostring
 
@@ -63,6 +64,21 @@ end
 -- The session id is what authorises a POST to this session's message endpoint,
 -- so it is a bearer credential and stays out of the logs. Stream lifecycle
 -- lines carry the reason, not the identifier.
+-- "${...}" anywhere in base_url or a header value means the values depend on
+-- the request they were resolved from.
+local function uses_variables(conf)
+    if type(conf.base_url) == "string" and str_find(conf.base_url, "${", 1, true) then
+        return true
+    end
+    for _, value in pairs(conf.headers or {}) do
+        if type(value) == "string" and str_find(value, "${", 1, true) then
+            return true
+        end
+    end
+    return false
+end
+
+
 local function handle_get(ctx, opts)
     -- Build the tool list -- which means fetching and parsing the document --
     -- before opening the stream, and answer 500 when that fails. Opening the
@@ -79,13 +95,18 @@ local function handle_get(ctx, opts)
         })
     end
 
-    -- Freeze what the stream resolved from this request; every message POST on
-    -- this session then reaches the upstream with the same base_url and the
-    -- same headers.
-    local session_id, err = session.create({
-        base_url = opts.base_url,
-        headers = opts.headers,
-    })
+    -- Freeze what the stream resolved from this request, so every message POST
+    -- on this session reaches the upstream with the same base_url and headers.
+    -- Only when the configuration holds a variable: otherwise every POST
+    -- resolves to the same values anyway, and the record would keep a copy of
+    -- whatever those headers carry -- a caller's token among them -- in the
+    -- shared dict for as long as the session lives.
+    local context
+    if uses_variables(opts.conf) then
+        context = { base_url = opts.base_url, headers = opts.headers }
+    end
+
+    local session_id, err = session.create(context)
     if not session_id then
         core.log.error("failed to create MCP session: ", err)
         return core.response.exit(500)
