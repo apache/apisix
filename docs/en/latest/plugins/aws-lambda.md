@@ -43,10 +43,10 @@ This Plugin supports authorization via AWS API key and AWS IAM secrets. The Plug
 | authorization        | object  | False    |         |              | Authorization credentials to access the cloud function.                                                                                    |
 | authorization.apikey | string  | False    |         |              | Generated API Key to authorize requests to the AWS Gateway endpoint.                                                                       |
 | authorization.iam    | object  | False    |         |              | Used for AWS IAM role based authorization performed via AWS v4 request signing. See [IAM authorization schema](#iam-authorization-schema). |
-| authorization.iam.accesskey  | string | True     |               | Generated access key ID from AWS IAM console.                                       |
-| authorization.iam.secretkey | string | True     |               | Generated access key secret from AWS IAM console.                                   |
-| authorization.iam.aws_region | string | False    | "us-east-1"   | AWS region where the request is being sent.                                         |
-| authorization.iam.service    | string | False    | "execute-api" | The service that is receiving the request. For Amazon API gateway APIs, it should be set to `execute-api`. For Lambda function, it should be set to `lambda`. |
+| authorization.iam.accesskey  | string | True     |               |              | Generated access key ID from AWS IAM console.                                       |
+| authorization.iam.secretkey | string | True     |               |              | Generated access key secret from AWS IAM console.                                   |
+| authorization.iam.aws_region | string | False    | "us-east-1"   |              | AWS region where the request is being sent.                                         |
+| authorization.iam.service    | string | False    | "execute-api" |              | The service that is receiving the request. For Amazon API gateway APIs, it should be set to `execute-api`. For Lambda function, it should be set to `lambda`. |
 | timeout              | integer | False    | 3000    | [100,...]    | Proxy request timeout in milliseconds.                                                                                                     |
 | ssl_verify           | boolean | False    | true    | true/false   | When set to `true` performs SSL verification.                                                                                              |
 | keepalive            | boolean | False    | true    | true/false   | When set to `true` keeps the connection alive for reuse.                                                                                   |
