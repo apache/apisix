@@ -376,8 +376,9 @@ function _M.call(tool, arguments, opts)
     end
     httpc:set_timeout(opts.timeout or DEFAULT_TIMEOUT)
 
-    -- query_in_path = true: parsed[4] is the path with the query string
-    local parsed, parse_err = httpc:parse_uri(url, true)
+    -- query_in_path = false: parsed[4] is the path, parsed[5] the query string.
+    -- They have to stay apart, because the client rejects a "?" inside a path.
+    local parsed, parse_err = httpc:parse_uri(url, false)
     if not parsed then
         return text_result({
             status = 0,
@@ -388,7 +389,8 @@ function _M.call(tool, arguments, opts)
         })
     end
 
-    local scheme, host, port, path_and_query = parsed[1], parsed[2], parsed[3], parsed[4]
+    local scheme, host, port = parsed[1], parsed[2], parsed[3]
+    local req_path, req_query = parsed[4], parsed[5]
     local ok, conn_err = httpc:connect({
         scheme = scheme,
         host = host,
@@ -408,7 +410,8 @@ function _M.call(tool, arguments, opts)
     headers["Host"] = headers["Host"] or host
     local res, req_err = httpc:request({
         method = str_gsub(str_lower(tool.method), "^%l", str_upper),
-        path = path_and_query,
+        path = req_path,
+        query = req_query,
         headers = headers,
         body = body,
     })
