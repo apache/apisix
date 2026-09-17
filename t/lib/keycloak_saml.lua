@@ -232,6 +232,46 @@ function _M.login_keycloak(uri, username, password)
     end
 end
 
+-- Login keycloak with HTTP-Redirect binding and stop before the SP callback,
+-- returning the callback URL carrying SAMLResponse and the SP session cookie
+function _M.login_keycloak_until_acs(uri, username, password, headers)
+    local httpc = http.new()
+
+    local res, err = httpc:request_uri(uri, {method = "GET", headers = headers})
+    if not res then
+        return nil, err
+    elseif res.status ~= 302 then
+        return nil, "login was not redirected to keycloak."
+    end
+    local sp_cookie = _M.concatenate_cookies(res.headers['Set-Cookie'])
+
+    res, err = httpc:request_uri(res.headers['Location'], {method = "GET"})
+    if not res then
+        return nil, err
+    elseif res.status ~= 200 then
+        return nil, res.body
+    end
+
+    local action, params = res.body:match('.*action="(.*)%?(.*)" method="post">')
+    params = params:gsub("&amp;", "&")
+
+    res, err = httpc:request_uri(action .. "?" .. params, {
+        method = "POST",
+        body = "username=" .. username .. "&password=" .. password,
+        headers = {
+            ["Content-Type"] = "application/x-www-form-urlencoded",
+            ["Cookie"] = _M.concatenate_cookies(res.headers['Set-Cookie'])
+        }
+    })
+    if not res then
+        return nil, err
+    elseif res.status ~= 302 then
+        return nil, "keycloak did not redirect to the SP callback: " .. res.status
+    end
+
+    return res.headers['Location'], nil, sp_cookie
+end
+
 -- Login keycloak and return the login original uri
 function _M.login_keycloak_for_second_sp(uri, keycloak_cookie_str)
     local httpc = http.new()

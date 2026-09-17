@@ -55,22 +55,28 @@ description: saml-auth 插件为 API 路由提供 SAML 2.0 身份验证，可与
 | sp_issuer | string | 是 | | | | 服务提供商（SP）实体 ID/颁发者 URI，必须与在 IdP 中注册的 SP 实体 ID 一致。 |
 | idp_uri | string | 是 | | | | 身份提供商 SSO 端点 URL，SAML 认证请求将发送至此 URL。 |
 | idp_cert | string | 是 | | | | PEM 格式的 IdP X.509 证书，用于验证 SAML 断言上的签名。 |
-| login_callback_uri | string | 是 | | | | SP 的断言消费者服务（ACS）URL。IdP 在认证后将 SAML 响应 POST 到此 URL，必须在 IdP 中注册。 |
-| logout_uri | string | 是 | | | | SP 的单点注销（SLO）端点，请求此 URI 将触发注销流程。 |
-| logout_callback_uri | string | 是 | | | | SP 的 SLO 回调 URL，IdP 将注销响应发送至此 URL，必须在 IdP 中注册。 |
+| login_callback_uri | string | 是 | | | | SP 断言消费者服务（ACS）的请求路径，例如 `/login/callback`。插件在请求路径等于该值时处理 IdP 的登录响应。该字段是路径，对外可见的 ACS 绝对 URL 通过 `sp_acs_url` 配置。 |
+| logout_uri | string | 是 | | | | SP 单点注销（SLO）端点的请求路径，例如 `/logout`，请求此路径将触发注销流程。 |
+| logout_callback_uri | string | 是 | | | | SP 的 SLO 回调请求路径，例如 `/logout/callback`，IdP 将注销请求和注销响应发送至此路径，必须在 IdP 中注册。 |
 | logout_redirect_uri | string | 是 | | | | 注销成功后重定向用户的 URL。 |
 | sp_cert | string | 是 | | | | PEM 格式的 SP X.509 证书，IdP 使用此证书验证 SP 签名的请求。 |
 | sp_private_key | string | 是 | 是 | | | PEM 格式的 SP 私钥，用于对 SAML 请求进行签名，该字段在存储时加密。 |
 | auth_protocol_binding_method | string | 否 | | `HTTP-Redirect` | `HTTP-Redirect`、`HTTP-POST` | 认证请求的 SAML 绑定方式。设置为 `HTTP-POST` 时，会话 Cookie 的 `SameSite` 属性将设置为 `None`，`Secure` 设置为 `true`。 |
 | secret | string | 是 | 是 | | 8–32 个字符 | 用于会话密钥派生的密钥。所有 APISIX 节点必须配置相同的值，以确保会话可在多个 worker 进程之间及重启后正常读取。该字段在存储时加密。 |
 | secret_fallbacks | array[string] | 否 | 是 | | 每项：8–32 个字符 | 密钥轮换时使用的历史密钥列表，允许使用旧密钥加密的会话继续有效，该字段在存储时加密。 |
+| idp_issuers | array[string] | 否 | | | | 登录响应中允许的颁发者列表，响应中的每个断言都必须属于其中之一。未设置时，接受 `idp_cert` 签名的任意颁发者。空数组不接受任何颁发者，所有登录都会被拒绝。参见[颁发者与受众](#颁发者与受众)。 |
+| sp_acs_url | string | 否 | | | `http://` 或 `https://` 开头的绝对 URL | 对外可见的 SP ACS 绝对 URL，例如 `https://sp.example.com/login/callback`。该值会在认证请求中发送给 IdP，登录响应的 `Destination` 和 `Recipient` 必须与之相等。未设置时，根据请求的协议、主机和 `login_callback_uri` 生成。参见[代理后的 ACS URL](#代理后的-acs-url)。 |
+| sp_audiences | array[string] | 否 | | `sp_issuer` | | SP 接受的受众列表。带有 `AudienceRestriction` 的断言必须指定其中之一。未设置时，仅接受 `sp_issuer`。 |
+| clock_skew | number | 否 | | `60` | >= 0 | 校验 `NotBefore` 和 `NotOnOrAfter` 时允许与 IdP 之间存在的时钟偏差，单位为秒。 |
+| replay_dict | string | 否 | | | 非空 | 已声明的 `lua_shared_dict` 名称，用于记录已接受的断言，使同一断言无法在同一 APISIX 节点上登录两次。未设置时，不记录已接受的断言。参见[断言重放防护](#断言重放防护)。 |
+| replay_ttl | number | 否 | | `600` | >= 1 | 对没有过期时间的断言，记录的时长，单位为秒。有过期时间的断言会记录到过期后再加 `clock_skew`，最长一天，若 `replay_ttl` 大于一天则以其为上限。仅在设置 `replay_dict` 时生效。 |
 
 ## 前提条件
 
 在启用该插件前，请先在每个 APISIX 节点上安装 `lua-resty-saml`：
 
 ```shell
-luarocks install lua-resty-saml 0.2.5
+luarocks install lua-resty-saml 0.2.6
 ```
 
 `lua-resty-saml` 会编译原生 xmlsec 绑定，因此构建环境需要提供 LuaRocks 所需的 OpenSSL、libxml2 和 libxslt 开发文件。
@@ -86,7 +92,7 @@ luarocks install lua-resty-saml 0.2.5
 5. 将 **Client ID** 设置为与插件配置中 `sp_issuer` 一致的值（例如 `https://sp.example.com`）。
 6. 在 **Client** > **Settings** 中：
    - 将 **Root URL** 设置为 `https://sp.example.com`。
-   - 将 **Valid redirect URIs** 设置为包含 `login_callback_uri`（例如 `https://sp.example.com/login/callback`）。
+   - 将 **Valid redirect URIs** 设置为包含 ACS 绝对 URL，即 `sp_acs_url`（例如 `https://sp.example.com/login/callback`）。
    - 将 **Master SAML Processing URL** 设置为 `https://sp.example.com/login/callback`。
 7. 在 **Client** > **Keys** 中，上传 SP 证书（`sp_cert`）并启用 **Sign assertions**。
 8. 导出 IdP 元数据，获取 `idp_uri`（SSO URL）和 `idp_cert`（签名证书）。
@@ -113,10 +119,13 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" \
         "sp_issuer": "https://sp.example.com",
         "idp_uri": "https://keycloak.example.com/realms/myrealm/protocol/saml",
         "idp_cert": "-----BEGIN CERTIFICATE-----\nMIIC...\n-----END CERTIFICATE-----",
-        "login_callback_uri": "https://sp.example.com/login/callback",
-        "logout_uri": "https://sp.example.com/logout",
-        "logout_callback_uri": "https://sp.example.com/logout/callback",
+        "login_callback_uri": "/login/callback",
+        "sp_acs_url": "https://sp.example.com/login/callback",
+        "logout_uri": "/logout",
+        "logout_callback_uri": "/logout/callback",
         "logout_redirect_uri": "https://sp.example.com/logout/done",
+        "idp_issuers": ["https://keycloak.example.com/realms/myrealm"],
+        "sp_audiences": ["https://sp.example.com"],
         "sp_cert": "-----BEGIN CERTIFICATE-----\nMIIC...\n-----END CERTIFICATE-----",
         "sp_private_key": "-----BEGIN RSA PRIVATE KEY-----\nMIIE...\n-----END RSA PRIVATE KEY-----",
         "auth_protocol_binding_method": "HTTP-Redirect",
@@ -131,6 +140,61 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" \
     }
   }'
 ```
+
+## 响应校验
+
+插件将以下配置传递给 `lua-resty-saml`，由其校验每个登录响应。这些配置均为可选项，未设置它们的现有配置行为保持不变。
+
+### 颁发者与受众
+
+`idp_cert` 证明响应由 IdP 的密钥签名，但同一密钥可能为多个颁发者签名，例如同一 IdP 部署中的多个 Realm。将 `idp_issuers` 设置为预期 IdP 的颁发者（实体 ID），Keycloak 的颁发者为 `https://<keycloak-host>/realms/<realm>`。响应中若包含其他颁发者的断言，将以 `401` 拒绝。未设置 `idp_issuers` 时接受任意颁发者，设置为空数组时不接受任何颁发者。
+
+IdP 会将每个断言限定给某个受众，通常为 SP 的实体 ID。插件接受 `AudienceRestriction` 中包含 `sp_issuer` 的断言。当 IdP 使用其他受众时，请设置 `sp_audiences` 并列出 SP 接受的全部受众，因为设置 `sp_audiences` 后不会再自动加入 `sp_issuer`。
+
+`clock_skew` 设置校验断言有效期时允许 APISIX 节点与 IdP 之间存在的时钟偏差秒数。请使用 NTP 同步 APISIX 节点时间，使默认值足够使用。
+
+### 代理后的 ACS URL
+
+IdP 将登录响应发送到 ACS 绝对 URL，并在响应的 `Destination` 和 `Recipient` 中写入该 URL。当它们与插件预期的 ACS URL 不同时，响应将以 `401` 拒绝。
+
+未设置 `sp_acs_url` 时，插件根据到达 APISIX 的请求的协议和主机生成预期 URL。当 APISIX 看到的协议或主机与浏览器不同时，例如负载均衡器终止 TLS 后以 HTTP 转发，或改写了 `Host` 请求头，生成的 URL 就是错误的，所有登录都会被拒绝。此时请将 `sp_acs_url` 设置为浏览器使用的 URL，即在 IdP 中注册的 ACS URL：
+
+```json
+{
+  "login_callback_uri": "/login/callback",
+  "sp_acs_url": "https://sp.example.com/login/callback"
+}
+```
+
+`login_callback_uri` 仍是 APISIX 匹配的请求路径，`sp_acs_url` 是 IdP 和浏览器使用的绝对 URL。请求到达 APISIX 时，`sp_acs_url` 的路径应对应 `login_callback_uri`。
+
+### 断言重放防护
+
+设置 `replay_dict` 后，每个 APISIX 节点会记录其接受的断言，再次提交同一登录响应时将以 `401` 拒绝。请在每个 APISIX 节点的 `conf/config.yaml` 中声明共享字典：
+
+```yaml
+nginx_config:
+  http:
+    custom_lua_shared_dict:
+      saml_replay: 10m
+```
+
+然后在插件中引用：
+
+```json
+{
+  "replay_dict": "saml_replay",
+  "replay_ttl": 600
+}
+```
+
+插件不会创建共享字典。若路由引用了未声明的共享字典，该路由的所有请求都将返回 `500`，并记录日志 `no lua_shared_dict named <name>`。
+
+启用重放防护时，请注意以下事项：
+
+- **记录仅在单个节点内有效。** `lua_shared_dict` 只在同一 APISIX 节点的 worker 进程之间共享。当多个 APISIX 节点服务同一路由时，一个节点接受的响应不会被其他节点知晓。只要 IdP 发送 `InResponseTo`（主流 IdP 均会发送），`lua-resty-saml` 在每个节点上仍会将响应绑定到用户会话中保存的登录请求。
+- **按登录速率设置共享字典大小。** 每个已接受的断言在过期前都会占用一个条目。例如，每秒 10 次登录、断言有效期 10 分钟时，约需保存 6,000 个条目，`1m` 不足以容纳。共享字典已满时，断言会被接受但不会被记录，并记录错误日志。
+- **重复提交会被拒绝。** 浏览器再次提交同一登录响应（例如通过浏览历史返回）时会收到 `401`。重新打开受保护的 URL 即可发起新的登录。
 
 ## 禁用插件
 

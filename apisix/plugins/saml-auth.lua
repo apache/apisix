@@ -57,7 +57,37 @@ local schema = {
                 maxLength = 32,
             },
             description = "List of secrets for alternative secrets used when doing key rotation"
-        }
+        },
+        idp_issuers = {
+            type = "array",
+            items = { type = "string" },
+            description = "Accepted IdP issuers, unset accepts any, empty accepts none",
+        },
+        sp_acs_url = {
+            type = "string",
+            pattern = "^https?://",
+            description = "Absolute external ACS URL, unset derives it from the request",
+        },
+        sp_audiences = {
+            type = "array",
+            items = { type = "string" },
+            description = "Accepted assertion audiences, unset means sp_issuer",
+        },
+        clock_skew = {
+            type = "number",
+            minimum = 0,
+            description = "Tolerated clock difference with the IdP in seconds, unset means 60",
+        },
+        replay_dict = {
+            type = "string",
+            minLength = 1,
+            description = "lua_shared_dict name recording accepted assertions on this node",
+        },
+        replay_ttl = {
+            type = "number",
+            minimum = 1,
+            description = "Seconds to record an assertion without expiry, unset means 600",
+        },
     },
     encrypt_fields = {"sp_private_key", "secret", "secret_fallbacks"},
     required = {
@@ -88,6 +118,17 @@ function _M.check_schema(conf, _)
     return core.schema.check(schema, conf)
 end
 
+
+-- resty.saml keeps opts by reference, so it gets a copy of the plugin conf
+local function new_saml(conf)
+    local ok, saml = pcall(resty_saml.new, core.table.deepcopy(conf))
+    if not ok then
+        return nil, saml
+    end
+    return saml
+end
+
+
 function _M.rewrite(conf, ctx)
     if not is_resty_saml_init then
         local err = resty_saml.init({
@@ -101,13 +142,14 @@ function _M.rewrite(conf, ctx)
         is_resty_saml_init = true
     end
 
-    local saml = core.lrucache.plugin_ctx(lrucache, ctx, nil, resty_saml.new, conf)
+    local saml, err = core.lrucache.plugin_ctx(lrucache, ctx, nil, new_saml, conf)
     if not saml then
-        core.log.error("saml new failed")
+        core.log.error("saml new failed: ", err)
         return 500, {message = "create saml object failed"}
     end
 
-    local data, err = saml:authenticate()
+    local data
+    data, err = saml:authenticate()
     if err then
         core.log.error("saml authenticate failed: ", err)
         return 500, {message = "saml authentication failed"}

@@ -606,3 +606,389 @@ passed
             assert(res == nil)
         }
     }
+
+
+
+=== TEST 16: schema validation - valid config with every response validation option
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.saml-auth")
+            local ok, err = plugin.check_schema({
+                sp_issuer = "https://sp.example.com",
+                idp_uri = "https://idp.example.com/sso",
+                idp_cert = "MIIC...",
+                login_callback_uri = "/acs",
+                logout_uri = "/logout",
+                logout_callback_uri = "/sls",
+                logout_redirect_uri = "/logout_ok",
+                sp_cert = "MIIC...",
+                sp_private_key = "MIIE...",
+                secret = "mysecret1",
+                idp_issuers = {"https://idp.example.com/realms/test"},
+                sp_acs_url = "https://sp.example.com/acs",
+                sp_audiences = {"https://sp.example.com", "sp"},
+                clock_skew = 0,
+                replay_dict = "saml_replay",
+                replay_ttl = 1,
+            })
+            if not ok then
+                ngx.say("failed: ", err)
+                return
+            end
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 17: schema validation - invalid response validation options
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local plugin = require("apisix.plugins.saml-auth")
+            local base = {
+                sp_issuer = "https://sp.example.com",
+                idp_uri = "https://idp.example.com/sso",
+                idp_cert = "MIIC...",
+                login_callback_uri = "/acs",
+                logout_uri = "/logout",
+                logout_callback_uri = "/sls",
+                logout_redirect_uri = "/logout_ok",
+                sp_cert = "MIIC...",
+                sp_private_key = "MIIE...",
+                secret = "mysecret1",
+            }
+            local cases = {
+                {"idp_issuers", "https://idp.example.com"},
+                {"idp_issuers", {1}},
+                {"sp_audiences", "sp"},
+                {"sp_audiences", {true}},
+                {"clock_skew", -1},
+                {"clock_skew", "60"},
+                {"replay_dict", ""},
+                {"replay_dict", 1},
+                {"replay_ttl", 0},
+                {"replay_ttl", -1},
+                {"replay_ttl", "600"},
+                {"sp_acs_url", "/acs"},
+            }
+            for _, case in ipairs(cases) do
+                local conf = core.table.deepcopy(base)
+                conf[case[1]] = case[2]
+                local ok, err = plugin.check_schema(conf)
+                ngx.say(case[1], ": ", ok and "passed" or err)
+            end
+        }
+    }
+--- response_body
+idp_issuers: property "idp_issuers" validation failed: wrong type: expected array, got string
+idp_issuers: property "idp_issuers" validation failed: failed to validate item 1: wrong type: expected string, got number
+sp_audiences: property "sp_audiences" validation failed: wrong type: expected array, got string
+sp_audiences: property "sp_audiences" validation failed: failed to validate item 1: wrong type: expected string, got boolean
+clock_skew: property "clock_skew" validation failed: expected -1 to be at least 0
+clock_skew: property "clock_skew" validation failed: wrong type: expected number, got string
+replay_dict: property "replay_dict" validation failed: string too short, expected at least 1, got 0
+replay_dict: property "replay_dict" validation failed: wrong type: expected string, got number
+replay_ttl: property "replay_ttl" validation failed: expected 0 to be at least 1
+replay_ttl: property "replay_ttl" validation failed: expected -1 to be at least 1
+replay_ttl: property "replay_ttl" validation failed: wrong type: expected number, got string
+sp_acs_url: property "sp_acs_url" validation failed: failed to match pattern "^https?://" with "/acs"
+
+
+
+=== TEST 18: schema validation - omitted options stay absent and an empty idp_issuers stays empty
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local plugin = require("apisix.plugins.saml-auth")
+            local conf = core.json.decode([[{
+                "sp_issuer": "sp",
+                "idp_uri": "https://idp.example.com/sso",
+                "idp_cert": "MIIC...",
+                "login_callback_uri": "/acs",
+                "logout_uri": "/logout",
+                "logout_callback_uri": "/sls",
+                "logout_redirect_uri": "/logout_ok",
+                "sp_cert": "MIIC...",
+                "sp_private_key": "MIIE...",
+                "secret": "mysecret1"
+            }]])
+            local ok, err = plugin.check_schema(conf)
+            ngx.say("omitted: ", ok and "passed" or err)
+            for _, name in ipairs({"idp_issuers", "sp_acs_url", "sp_audiences",
+                                   "clock_skew", "replay_dict", "replay_ttl"}) do
+                if conf[name] ~= nil then
+                    ngx.say(name, " was filled in")
+                end
+            end
+
+            conf.idp_issuers = core.json.decode("[]")
+            ok, err = plugin.check_schema(conf)
+            ngx.say("empty idp_issuers: ", ok and "passed" or err)
+            ngx.say("idp_issuers: ", core.json.encode(conf.idp_issuers))
+        }
+    }
+--- response_body
+omitted: passed
+empty idp_issuers: passed
+idp_issuers: []
+
+
+
+=== TEST 19: constructor receives every option unchanged in a copy of the plugin conf
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local old_plugin = package.loaded["apisix.plugins.saml-auth"]
+            local old_saml = package.loaded["resty.saml"]
+            package.loaded["apisix.plugins.saml-auth"] = nil
+
+            local received = {}
+            package.loaded["resty.saml"] = {
+                init = function() return nil end,
+                new = function(opts)
+                    received[#received + 1] = opts
+                    return {authenticate = function() return "user" end}
+                end,
+            }
+
+            local plugin = require("apisix.plugins.saml-auth")
+            local conf = {
+                sp_issuer = "sp",
+                idp_uri = "https://idp.example.com/sso",
+                idp_cert = "MIIC...",
+                login_callback_uri = "/acs",
+                logout_uri = "/logout",
+                logout_callback_uri = "/sls",
+                logout_redirect_uri = "/logout_ok",
+                sp_cert = "MIIC...",
+                sp_private_key = "MIIE...",
+                secret = "mysecret1",
+                idp_issuers = {"https://idp.example.com/realms/test"},
+                sp_acs_url = "https://sp.example.com/acs",
+                sp_audiences = {"sp", "https://sp.example.com"},
+                clock_skew = 30,
+                replay_dict = "saml_replay",
+                replay_ttl = 120,
+            }
+            plugin.rewrite(conf, {conf_type = "route", conf_id = "copy", conf_version = 1})
+
+            package.loaded["apisix.plugins.saml-auth"] = old_plugin
+            package.loaded["resty.saml"] = old_saml
+
+            local opts = received[1]
+            ngx.say("new called: ", #received)
+            ngx.say("same table: ", opts == conf)
+            ngx.say("same idp_issuers table: ", opts.idp_issuers == conf.idp_issuers)
+            ngx.say("same sp_audiences table: ", opts.sp_audiences == conf.sp_audiences)
+            for _, name in ipairs({"idp_issuers", "sp_acs_url", "sp_audiences",
+                                   "clock_skew", "replay_dict", "replay_ttl"}) do
+                ngx.say(name, ": ", core.json.encode(opts[name]))
+            end
+        }
+    }
+--- response_body
+new called: 1
+same table: false
+same idp_issuers table: false
+same sp_audiences table: false
+idp_issuers: ["https://idp.example.com/realms/test"]
+sp_acs_url: "https://sp.example.com/acs"
+sp_audiences: ["sp","https://sp.example.com"]
+clock_skew: 30
+replay_dict: "saml_replay"
+replay_ttl: 120
+
+
+
+=== TEST 20: constructor leaves omitted options absent and keeps an empty idp_issuers
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local old_plugin = package.loaded["apisix.plugins.saml-auth"]
+            local old_saml = package.loaded["resty.saml"]
+            package.loaded["apisix.plugins.saml-auth"] = nil
+
+            local received = {}
+            package.loaded["resty.saml"] = {
+                init = function() return nil end,
+                new = function(opts)
+                    received[#received + 1] = opts
+                    return {authenticate = function() return "user" end}
+                end,
+            }
+
+            local plugin = require("apisix.plugins.saml-auth")
+            local conf = core.json.decode([[{
+                "sp_issuer": "sp",
+                "idp_uri": "https://idp.example.com/sso",
+                "idp_cert": "MIIC...",
+                "login_callback_uri": "/acs",
+                "logout_uri": "/logout",
+                "logout_callback_uri": "/sls",
+                "logout_redirect_uri": "/logout_ok",
+                "sp_cert": "MIIC...",
+                "sp_private_key": "MIIE...",
+                "secret": "mysecret1"
+            }]])
+            assert(plugin.check_schema(conf))
+            plugin.rewrite(conf, {conf_type = "route", conf_id = "omitted", conf_version = 1})
+
+            conf.idp_issuers = core.json.decode("[]")
+            assert(plugin.check_schema(conf))
+            plugin.rewrite(conf, {conf_type = "route", conf_id = "empty", conf_version = 1})
+
+            package.loaded["apisix.plugins.saml-auth"] = old_plugin
+            package.loaded["resty.saml"] = old_saml
+
+            for _, name in ipairs({"idp_issuers", "sp_acs_url", "sp_audiences",
+                                   "clock_skew", "replay_dict", "replay_ttl"}) do
+                if received[1][name] ~= nil then
+                    ngx.say(name, " was filled in")
+                end
+            end
+            ngx.say("empty idp_issuers: ", core.json.encode(received[2].idp_issuers))
+        }
+    }
+--- response_body
+empty idp_issuers: []
+
+
+
+=== TEST 21: mutating the plugin conf does not reach the cached SAML object
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local old_plugin = package.loaded["apisix.plugins.saml-auth"]
+            local old_saml = package.loaded["resty.saml"]
+            package.loaded["apisix.plugins.saml-auth"] = nil
+
+            local created = 0
+            package.loaded["resty.saml"] = {
+                init = function() return nil end,
+                new = function(opts)
+                    created = created + 1
+                    local obj = {opts = opts}
+                    function obj.authenticate(self)
+                        return self.opts
+                    end
+                    return obj
+                end,
+            }
+
+            local plugin = require("apisix.plugins.saml-auth")
+            local conf = {
+                sp_issuer = "sp",
+                idp_uri = "https://idp.example.com/sso",
+                idp_cert = "MIIC...",
+                login_callback_uri = "/acs",
+                logout_uri = "/logout",
+                logout_callback_uri = "/sls",
+                logout_redirect_uri = "/logout_ok",
+                sp_cert = "MIIC...",
+                sp_private_key = "MIIE...",
+                secret = "mysecret1",
+                idp_issuers = {"https://idp.example.com/realms/test"},
+                sp_audiences = {"sp"},
+                clock_skew = 30,
+            }
+            local ctx = {conf_type = "route", conf_id = "mutate", conf_version = 1}
+            plugin.rewrite(conf, ctx)
+
+            conf.idp_issuers[1] = "https://other.example.com"
+            conf.sp_audiences = nil
+            conf.clock_skew = 3600
+            conf.replay_dict = "other"
+
+            plugin.rewrite(conf, ctx)
+
+            package.loaded["apisix.plugins.saml-auth"] = old_plugin
+            package.loaded["resty.saml"] = old_saml
+
+            local opts = ctx.external_user
+            ngx.say("created: ", created)
+            ngx.say("idp_issuers: ", core.json.encode(opts.idp_issuers))
+            ngx.say("sp_audiences: ", core.json.encode(opts.sp_audiences))
+            ngx.say("clock_skew: ", opts.clock_skew)
+            ngx.say("replay_dict: ", tostring(opts.replay_dict))
+        }
+    }
+--- response_body
+created: 1
+idp_issuers: ["https://idp.example.com/realms/test"]
+sp_audiences: ["sp"]
+clock_skew: 30
+replay_dict: nil
+
+
+
+=== TEST 22: rewrite returns 500 when the SAML object cannot be created
+--- config
+    location /t {
+        content_by_lua_block {
+            local old_plugin = package.loaded["apisix.plugins.saml-auth"]
+            local old_saml = package.loaded["resty.saml"]
+            package.loaded["apisix.plugins.saml-auth"] = nil
+
+            package.loaded["resty.saml"] = {
+                init = function() return nil end,
+                new = function(opts)
+                    error("no lua_shared_dict named " .. opts.replay_dict)
+                end,
+            }
+
+            local plugin = require("apisix.plugins.saml-auth")
+            local code, body = plugin.rewrite({
+                sp_issuer = "sp",
+                idp_uri = "https://idp.example.com/sso",
+                idp_cert = "MIIC...",
+                login_callback_uri = "/acs",
+                logout_uri = "/logout",
+                logout_callback_uri = "/sls",
+                logout_redirect_uri = "/logout_ok",
+                sp_cert = "MIIC...",
+                sp_private_key = "MIIE...",
+                secret = "mysecret1",
+                replay_dict = "missing_dict",
+            }, {conf_type = "route", conf_id = "new-fails", conf_version = 1})
+
+            package.loaded["apisix.plugins.saml-auth"] = old_plugin
+            package.loaded["resty.saml"] = old_saml
+
+            ngx.say(code)
+            ngx.say(body.message)
+        }
+    }
+--- response_body
+500
+create saml object failed
+--- error_log
+saml new failed:
+no lua_shared_dict named missing_dict
+
+
+
+=== TEST 23: resty.saml is first loaded in the worker, so its uuid seed is per worker
+--- extra_init_by_lua
+    ngx.log(ngx.WARN, "resty.saml loaded in init: ", package.loaded["resty.saml"] ~= nil)
+--- extra_init_worker_by_lua
+    ngx.log(ngx.WARN, "resty.saml loaded in init_worker: ", package.loaded["resty.saml"] ~= nil)
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.say("ok")
+        }
+    }
+--- response_body
+ok
+--- error_log
+resty.saml loaded in init: false
+resty.saml loaded in init_worker: true
