@@ -1644,3 +1644,141 @@ timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
     2>&1 | cat
 --- response_body eval
 qr/"isError":true/
+
+
+
+=== TEST 91: a route that restricts which host base_url may resolve to
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "streamable_http",
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/openapi.json",
+                    allowed_base_url_hosts = { "api.example.com", "127.0.0.1:1" },
+                } },
+                { 2, "/mcp-exact", {
+                    transport = "streamable_http",
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/openapi.json",
+                    allowed_base_url_hosts = { "127.0.0.1:11460" },
+                } },
+                { 3, "/mcp-wildcard", {
+                    transport = "streamable_http",
+                    base_url = "http://${http_x_backend}",
+                    openapi_url = "http://127.0.0.1:11460/openapi.json",
+                    allowed_base_url_hosts = { "*.example.com" },
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 92: a host outside the list, or on another port, is rejected
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/list","jsonrpc":"2.0","id":1}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    -o /dev/null -w "%{http_code}" 2>&1 | cat
+--- response_body chomp
+400
+--- error_log
+resolved base_url host is not in allowed_base_url_hosts
+
+
+
+=== TEST 93: a host and port in the list is served
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp-exact \
+    -d '{"method":"tools/list","jsonrpc":"2.0","id":1}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/"name":"getPet"/
+
+
+
+=== TEST 94: a wildcard entry matches the resolved host, and only a sub-domain
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp-wildcard \
+    -d '{"method":"tools/list","jsonrpc":"2.0","id":1}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    -H "X-Backend: api.example.com" \
+    -o /dev/null -w "%{http_code} " 2>&1 | cat
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp-wildcard \
+    -d '{"method":"tools/list","jsonrpc":"2.0","id":1}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    -H "X-Backend: example.com" \
+    -o /dev/null -w "%{http_code}" 2>&1 | cat
+--- response_body chomp
+200 400
+--- error_log
+resolved base_url host is not in allowed_base_url_hosts
+
+
+
+=== TEST 95: base_url that resolves to something that is not an http URL
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "streamable_http",
+                    base_url = "${http_x_backend}",
+                    openapi_url = "http://127.0.0.1:11460/openapi.json",
+                    allowed_base_url_hosts = { "api.example.com" },
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 96: is rejected without echoing the URL
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/list","jsonrpc":"2.0","id":1}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    -H "X-Backend: file:///etc/passwd" \
+    2>&1 | cat
+--- response_body eval
+qr/"message":"invalid base_url"/
+--- error_log
+resolved base_url is not an http(s) URL
+--- no_error_log
+/etc/passwd
+
+
+
+=== TEST 97: an empty allow-list is rejected
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code = t('/apisix/admin/routes/1', ngx.HTTP_PUT, [[{
+                "uri": "/mcp",
+                "plugins": { "openapi-to-mcp": {
+                    "transport": "streamable_http",
+                    "base_url": "http://127.0.0.1:11460",
+                    "openapi_url": "http://127.0.0.1:11460/openapi.json",
+                    "allowed_base_url_hosts": []
+                } }
+            }]])
+            ngx.say(code >= 300 and "rejected" or "accepted")
+        }
+    }
+--- response_body
+rejected

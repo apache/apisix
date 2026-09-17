@@ -17,6 +17,7 @@
 local core        = require("apisix.core")
 local streamable_http = require("apisix.plugins.openapi-to-mcp.transport.streamable_http")
 local mcp_sse         = require("apisix.plugins.openapi-to-mcp.transport.sse")
+local ref         = require("apisix.plugins.openapi-to-mcp.openapi.ref")
 local ngx         = ngx
 local pairs       = pairs
 local ipairs      = ipairs
@@ -101,6 +102,16 @@ local schema = {
             uniqueItems = true,
             items = { type = "string", minLength = 1 },
         },
+        allowed_base_url_hosts = {
+            description = "Hosts the resolved base_url may point at. Each " ..
+            "entry is a hostname or a `*.example.com` wildcard, optionally " ..
+            "followed by `:port`; without a port it matches any port. When " ..
+            "set, a request whose base_url resolves elsewhere is rejected.",
+            type = "array",
+            minItems = 1,
+            uniqueItems = true,
+            items = { type = "string", minLength = 1 },
+        },
         allowed_origins = {
             description = "Origin header values accepted on MCP requests, as " ..
             "scheme://host[:port]. A request with no Origin header is always " ..
@@ -167,6 +178,30 @@ local function resolve_conf(conf, ctx)
     end
 
     return base_url, headers
+end
+
+
+-- base_url may be built from request variables, so the host it resolves to is
+-- only known per request.
+local function base_url_allowed(conf, base_url)
+    if not conf.allowed_base_url_hosts then
+        return true
+    end
+
+    -- neither the URL nor the host is logged: after resolution they may carry
+    -- values taken from the request
+    local origin, host, port = ref.origin_of(base_url)
+    if not origin then
+        core.log.error("resolved base_url is not an http(s) URL")
+        return false, "invalid base_url"
+    end
+    for _, entry in ipairs(conf.allowed_base_url_hosts) do
+        if ref.host_entry_matches(entry, host, port) then
+            return true
+        end
+    end
+    core.log.error("resolved base_url host is not in allowed_base_url_hosts")
+    return false, "base_url host is not allowed"
 end
 
 
@@ -374,6 +409,11 @@ function _M.before_proxy(conf, ctx)
     if origin_rejected(conf, ctx) then
         return core.response.exit(403, { message = "Origin not allowed. Add it to " ..
                                          "allowed_origins on this route to accept it." })
+    end
+
+    local allowed, message = base_url_allowed(conf, opts.base_url)
+    if not allowed then
+        return core.response.exit(400, { message = message })
     end
 
     if opts.transport == "sse" then
