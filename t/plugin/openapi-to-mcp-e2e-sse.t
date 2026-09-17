@@ -129,3 +129,36 @@ pushed on own stream: True
     }
 --- response_body
 cleaned
+
+
+
+=== TEST 6: an sse route that names the origins it expects
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "sse",
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/openapi.json",
+                    allowed_origins = { "https://app.example.com" },
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 7: the stream is refused from another origin
+--- request
+GET /mcp
+--- more_headers
+Origin: https://evil.example.com
+--- error_code: 403
+--- response_body
+{"message":"Origin not allowed"}
+--- error_log
+rejected an MCP request with a disallowed Origin

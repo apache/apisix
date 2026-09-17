@@ -51,7 +51,7 @@ MCP 服务运行在 APISIX 内部，不需要额外的进程或服务。
 | base_url | string | 是 | | | 工具调用的 API 基础地址，每个操作的路径拼接在其后。支持 [APISIX 变量](../apisix-variable.md) 和 [NGINX 变量](http://nginx.org/en/docs/varindex.html)，例如 `http://${http_x_backend}`。 |
 | headers | object | 否 | | | 发往 API 的每个请求都会携带的请求头。值支持变量，例如 `"Authorization": "Bearer ${http_x_api_token}"`。 |
 | flatten_parameters | boolean | 否 | `false` | | 为 `false` 时，工具输入中的参数分别嵌套在 `pathParameters`、`queryParameters` 和 `headerParameters` 下；为 `true` 时，参数直接放在输入对象的顶层。 |
-| max_response_body_size | integer | 否 | `1048576` | >= 1024 | 读取到工具结果中的上游响应体大小上限（字节）。超出时调用失败并返回 `RESPONSE_TOO_LARGE`，不会把响应缓冲下来。 |
+| max_response_body_size | integer | 否 | `1048576` | >= 1024 | 读取到工具结果中的上游响应体大小上限（字节）。超出时调用失败并返回 `RESPONSE_TOO_LARGE`，不会把响应缓冲下来。超过 256 KiB 的工具结果以紧凑 JSON 返回，不再缩进。 |
 | allowed_ref_hosts | array[string] | 否 | | | 文档内 `http(s)` 形式的 `$ref` 除 `openapi_url` 所在主机外还可以指向的主机。每项为主机名或 `*.example.com` 形式的通配符。 |
 | allowed_origins | array[string] | 否 | | | MCP 请求中允许的 `Origin` 头取值。不配置时不校验该头。 |
 

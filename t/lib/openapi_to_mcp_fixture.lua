@@ -104,6 +104,13 @@ local DOCUMENTS = {
         } } },
     },
 
+    -- one operation over the endpoint that closes the connection to end the body
+    ["/closing.json"] = {
+        openapi = "3.0.0",
+        info = { title = "Closing", version = "1" },
+        paths = { ["/closing"] = { get = { operationId = "getClosing" } } },
+    },
+
     -- a request body whose only media type is not JSON
     ["/textbody.json"] = {
         openapi = "3.0.0",
@@ -149,6 +156,19 @@ local function read_body()
 end
 
 
+-- Answers without a Content-Length and without chunked encoding, ending the
+-- body by closing the connection: the shape an HTTP/1.0 upstream produces, and
+-- the one a reader that stops at the first "closed" would throw away.
+local function closing_body()
+    ngx.req.read_body()
+    local sock = assert(ngx.req.socket(true))
+    sock:send("HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n" ..
+              "Connection: close\r\n\r\n" ..
+              '{"closed":true,"blob":"' .. string.rep("y", 1024) .. '"}')
+    return ngx.exit(200)
+end
+
+
 -- answers with a body of the requested size, for the response size limit
 local function large_body()
     local size = tonumber(ngx.var.arg_size) or (2 * 1024 * 1024)
@@ -164,6 +184,10 @@ function _M.serve()
 
     if uri == "/large" then
         return large_body()
+    end
+
+    if uri == "/closing" then
+        return closing_body()
     end
 
     local doc = DOCUMENTS[uri]
@@ -187,6 +211,7 @@ function _M.serve()
         seen_auth = ngx.req.get_headers()["authorization"],
         seen_injected = ngx.req.get_headers()["x-injected"],
         seen_trace = ngx.req.get_headers()["x-trace"],
+        seen_host = ngx.var.http_host,
         seen_forwarded = ngx.req.get_headers()["x-forwarded-for"],
         seen_content_type = ngx.req.get_headers()["content-type"],
         seen_body = ngx.req.get_method() ~= "GET" and read_body() or nil,

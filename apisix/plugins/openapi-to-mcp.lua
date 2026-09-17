@@ -46,10 +46,12 @@ local schema = {
             minProperties = 0,
             patternProperties = {
                 -- no colon in the name, no CR or LF anywhere: both would let a
-                -- resolved variable add a header, or a request, of its own
-                ["^[^:\\s]+$"] = {
+                -- resolved variable add a header, or a request, of its own.
+                -- \z rather than $, which in PCRE also matches before a
+                -- trailing newline
+                ["^[^:\\s]+\\z"] = {
                     oneOf = {
-                        { type = "string", pattern = "^[^\\r\\n]*$" }
+                        { type = "string", pattern = "^[^\\r\\n]*\\z" }
                     }
                 }
             },
@@ -188,7 +190,7 @@ local function origin_rejected(conf, ctx)
     end
 
     for _, allowed in ipairs(conf.allowed_origins) do
-        if allowed == origin or allowed == "*" then
+        if allowed == origin then
             return false
         end
     end
@@ -204,15 +206,16 @@ function _M.before_proxy(conf, ctx)
         return
     end
 
+    -- Every body the transports produce is JSON, and core.response.exit() sets
+    -- no content type of its own, so without this they would all go out as
+    -- text/plain. Set once here so no rejection path can miss it, the origin
+    -- one below included; the two that stream override it with
+    -- text/event-stream on their way out.
+    core.response.set_header("Content-Type", "application/json")
+
     if origin_rejected(conf, ctx) then
         return core.response.exit(403, { message = "Origin not allowed" })
     end
-
-    -- Every body the transports produce is JSON, and core.response.exit() sets
-    -- no content type of its own, so without this they would all go out as
-    -- text/plain. Set once here so no rejection path can miss it; the two that
-    -- stream override it with text/event-stream on their way out.
-    core.response.set_header("Content-Type", "application/json")
 
     if opts.transport == "sse" then
         return mcp_sse.handle(ctx, opts)

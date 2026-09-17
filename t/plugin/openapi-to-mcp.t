@@ -787,3 +787,138 @@ qr/"result":\{\}/
 2: false
 3: false
 4: false
+
+
+
+=== TEST 42: the API receives the Host it was reached on, port included
+--- exec
+python3 t/plugin/openapi_to_mcp_harness.py /mcp \
+    '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"getPet","arguments":{"pathParameters":{"petId":7}}}}' "
+inner = json.loads(d['result']['content'][0]['text'])
+print(inner['data']['seen_host'])
+"
+--- response_body
+127.0.0.1:11460
+
+
+
+=== TEST 43: a route over an API that ends its body by closing the connection
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "streamable_http",
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/closing.json",
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 44: a connection-close-delimited body is read whole, not reported as an error
+--- max_size: 2048000
+--- exec
+python3 t/plugin/openapi_to_mcp_harness.py /mcp \
+    '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"getClosing","arguments":{}}}' "
+inner = json.loads(d['result']['content'][0]['text'])
+print(inner['status'], inner['data']['closed'], len(inner['data']['blob']))
+"
+--- response_body
+200 True 1024
+
+
+
+=== TEST 45: a body larger than one read chunk is reassembled
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "streamable_http",
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/large.json",
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 46: the chunks add up to the whole body
+--- max_size: 8192000
+--- exec
+python3 t/plugin/openapi_to_mcp_harness.py /mcp \
+    '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"getLarge","arguments":{"queryParameters":{"size":200000}}}}' "
+inner = json.loads(d['result']['content'][0]['text'])
+print(inner['status'], len(inner['data']['blob']))
+"
+--- response_body
+200 200000
+
+
+
+=== TEST 47: a configured header cannot end with a newline either
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openapi-to-mcp")
+            local cases = {
+                { ["X-Trace"] = "trailing\n" },
+                { ["X-Trace\n"] = "1" },
+            }
+            for i, headers in ipairs(cases) do
+                local ok = plugin.check_schema({
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/openapi.json",
+                    headers = headers,
+                })
+                ngx.say(i, ": ", tostring(ok ~= nil and ok ~= false))
+            end
+        }
+    }
+--- response_body
+1: false
+2: false
+
+
+
+=== TEST 48: a route header built from a variable
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "streamable_http",
+                    base_url = "http://127.0.0.1:11460",
+                    headers = { ["X-Trace"] = "${arg_trace}" },
+                    openapi_url = "http://127.0.0.1:11460/openapi.json",
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 49: a newline arriving through that variable drops the header
+--- exec
+python3 t/plugin/openapi_to_mcp_harness.py '/mcp?trace=a%0d%0aX-Injected:%201' \
+    '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"getPet","arguments":{"pathParameters":{"petId":7}}}}' "
+inner = json.loads(d['result']['content'][0]['text'])
+print(inner['data'].get('seen_trace'), inner['data'].get('seen_injected'))
+"
+--- response_body
+None None
+--- error_log
+cannot appear in a request header

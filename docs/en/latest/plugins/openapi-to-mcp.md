@@ -51,7 +51,7 @@ The Plugin supports:
 | base_url           | string  | True     |         |                             | Base URL of the API the tools call. The path of each operation is appended to it. Supports [APISIX variables](../apisix-variable.md) and [NGINX variables](http://nginx.org/en/docs/varindex.html), for example `http://${http_x_backend}`. |
 | headers            | object  | False    |         |                             | Headers added to every request sent to the API. Values support variables, for example `"Authorization": "Bearer ${http_x_api_token}"`. |
 | flatten_parameters | boolean | False    | `false` |                             | When `false`, the tool input nests parameters under `pathParameters`, `queryParameters` and `headerParameters`. When `true`, they are placed directly in the input object. |
-| max_response_body_size | integer | False | `1048576` | >= 1024 | Maximum size, in bytes, of an upstream response read into a tool result. A larger response fails the call with `RESPONSE_TOO_LARGE` instead of being buffered. |
+| max_response_body_size | integer | False | `1048576` | >= 1024 | Maximum size, in bytes, of an upstream response read into a tool result. A larger response fails the call with `RESPONSE_TOO_LARGE` instead of being buffered. A tool result over 256 KiB is returned as compact JSON rather than indented. |
 | allowed_ref_hosts | array[string] | False | | | Hosts an `http(s)` `$ref` inside the document may point at, besides the host `openapi_url` itself was fetched from. Each entry is a hostname or a `*.example.com` wildcard. |
 | allowed_origins | array[string] | False | | | `Origin` header values accepted on MCP requests. When unset, the header is not checked. |
 

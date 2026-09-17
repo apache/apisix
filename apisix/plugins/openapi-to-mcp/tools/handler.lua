@@ -15,7 +15,7 @@
 -- limitations under the License.
 --
 local core         = require("apisix.core")
-local http         = require("resty.http")
+local fetch        = require("apisix.plugins.openapi-to-mcp.fetch")
 local json_pretty  = require("apisix.plugins.openapi-to-mcp.json_pretty")
 local pairs        = pairs
 local ipairs       = ipairs
@@ -35,10 +35,8 @@ local _M = {}
 
 local DEFAULT_TIMEOUT = 30000
 
--- How much of an upstream response is read before the call is failed, and how
--- much is read at a time.
+-- How much of an upstream response is read before the call is failed.
 local DEFAULT_MAX_BODY = 1024 * 1024
-local READ_SIZE = 64 * 1024
 local NESTED_KEYS = { "pathParameters", "queryParameters", "headerParameters" }
 
 
@@ -325,22 +323,24 @@ function _M.call(tool, arguments, opts)
 
     -- Header parameters are written first so that the route's own headers win:
     -- they carry the credentials the gateway adds, and a tool call must not be
-    -- able to replace them.
+    -- able to replace them. Both sources are checked: a route header is a
+    -- template resolved against the request, so its value is not fixed either.
     local headers = {}
     for key, value in pairs(header_params) do
-        value = tostring(value)
-        if str_find(key, "[%s:]") or str_find(value, "[\r\n]") then
-            -- resty.http writes "<name>: <value>\r\n" as given, so a newline
-            -- here would let the caller append headers, or a whole request, to
-            -- the one being sent
+        if fetch.header_is_sane(key, value) then
+            headers[key] = tostring(value)
+        else
             core.log.warn("dropped a header parameter whose name or value ",
                           "cannot appear in a request header")
-        else
-            headers[key] = value
         end
     end
     for key, value in pairs(opts.headers or {}) do
-        headers[key] = value
+        if fetch.header_is_sane(key, value) then
+            headers[key] = value
+        else
+            core.log.warn("dropped a configured header whose resolved name or ",
+                          "value cannot appear in a request header")
+        end
     end
 
     local body = arguments.requestBody
@@ -364,60 +364,15 @@ function _M.call(tool, arguments, opts)
         url = url .. "?" .. query
     end
 
-    local httpc, client_err = http.new()
-    if not httpc then
-        return text_result({
-            status = 0,
-            statusText = "Network Error",
-            headers = {},
-            data = core.json.null,
-            error = { message = tostring(client_err), code = "NETWORK_ERROR" },
-        })
-    end
-    httpc:set_timeout(opts.timeout or DEFAULT_TIMEOUT)
-
-    -- query_in_path = false: parsed[4] is the path, parsed[5] the query string.
-    -- They have to stay apart, because the client rejects a "?" inside a path.
-    local parsed, parse_err = httpc:parse_uri(url, false)
-    if not parsed then
-        return text_result({
-            status = 0,
-            statusText = "Network Error",
-            headers = {},
-            data = core.json.null,
-            error = { message = tostring(parse_err), code = "NETWORK_ERROR" },
-        })
-    end
-
-    local scheme, host, port = parsed[1], parsed[2], parsed[3]
-    local req_path, req_query = parsed[4], parsed[5]
-    local ok, conn_err = httpc:connect({
-        scheme = scheme,
-        host = host,
-        port = port,
-        ssl_server_name = host,
-    })
-    if not ok then
-        return text_result({
-            status = 0,
-            statusText = "Network Error",
-            headers = {},
-            data = core.json.null,
-            error = { message = tostring(conn_err), code = "NETWORK_ERROR" },
-        })
-    end
-
-    headers["Host"] = headers["Host"] or host
-    local res, req_err = httpc:request({
+    local res, req_err = fetch.request(url, {
         method = str_gsub(str_lower(tool.method), "^%l", str_upper),
-        path = req_path,
-        query = req_query,
         headers = headers,
         body = body,
+        timeout = opts.timeout or DEFAULT_TIMEOUT,
+        max_body_size = (opts.conf and opts.conf.max_response_body_size) or DEFAULT_MAX_BODY,
     })
 
     if not res then
-        httpc:close()
         -- A transport failure is reported inside a normal text result, with
         -- isError unset: the call reached no API, so there is no API error.
         return text_result({
@@ -429,37 +384,8 @@ function _M.call(tool, arguments, opts)
         })
     end
 
-    -- The body is read in chunks and stops at the limit: a tool result travels
-    -- to a model, so a response of any size is neither useful nor something a
-    -- worker should buffer whole.
-    local limit = (opts.conf and opts.conf.max_response_body_size) or DEFAULT_MAX_BODY
-    local reader = res.body_reader
-    local chunks, read_bytes, truncated = {}, 0, false
-    while reader do
-        local chunk, read_err = reader(READ_SIZE)
-        if read_err then
-            httpc:close()
-            return text_result({
-                status = 0,
-                statusText = "Network Error",
-                headers = {},
-                data = core.json.null,
-                error = { message = tostring(read_err), code = "NETWORK_ERROR" },
-            })
-        end
-        if not chunk then
-            break
-        end
-        read_bytes = read_bytes + #chunk
-        if read_bytes > limit then
-            truncated = true
-            break
-        end
-        chunks[#chunks + 1] = chunk
-    end
-
-    if truncated then
-        httpc:close()
+    if res.truncated then
+        local limit = (opts.conf and opts.conf.max_response_body_size) or DEFAULT_MAX_BODY
         core.log.warn("upstream response exceeded max_response_body_size (", limit, " bytes)")
         return text_result({
             status = res.status,
@@ -473,13 +399,11 @@ function _M.call(tool, arguments, opts)
         }, true)
     end
 
-    httpc:set_keepalive()
-
     return text_result({
         status = res.status,
         statusText = res.reason or "",
         headers = lower_headers(res.headers),
-        data = decode_body(table_concat(chunks)),
+        data = decode_body(res.body),
     })
 end
 
