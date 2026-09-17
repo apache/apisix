@@ -576,7 +576,7 @@ skipping parameter without a name
 
 
 
-=== TEST 100: the output schema comes from the success response
+=== TEST 26: the output schema comes from the success response
 --- config
     location /t {
         content_by_lua_block {
@@ -596,7 +596,7 @@ string
 
 
 
-=== TEST 101: 200 wins over 201, 201 over another 2xx, and 2XX comes last
+=== TEST 27: 200 wins over 201, 201 over another 2xx, and 2XX comes last
 --- config
     location /t {
         content_by_lua_block {
@@ -632,7 +632,7 @@ from201
 
 
 
-=== TEST 102: nothing a client could bind to yields no output schema
+=== TEST 28: nothing a client could bind to yields no output schema
 --- config
     location /t {
         content_by_lua_block {

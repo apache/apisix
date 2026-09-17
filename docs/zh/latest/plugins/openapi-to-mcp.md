@@ -51,6 +51,7 @@ MCP 服务运行在 APISIX 内部，不需要额外的进程或服务。
 | base_url | string | 是 | | | 工具调用的 API 基础地址，每个操作的路径拼接在其后。支持 [APISIX 变量](../apisix-variable.md) 和 [NGINX 变量](http://nginx.org/en/docs/varindex.html)，例如 `http://${http_x_backend}`。 |
 | headers | object | 否 | | | 发往 API 的每个请求都会携带的请求头。值支持变量，例如 `"Authorization": "Bearer ${http_x_api_token}"`。 |
 | flatten_parameters | boolean | 否 | `false` | | 为 `false` 时，工具输入中的参数分别嵌套在 `pathParameters`、`queryParameters` 和 `headerParameters` 下；为 `true` 时，参数直接放在输入对象的顶层。 |
+| allowed_hosts | array | 否 | | | 允许 `base_url` 解析到的主机列表。每一项是精确的主机名（如 `api.example.com`），或匹配一级及以上前缀标签的 `*.example.com` 通配符。解析后的 `base_url` 主机不在列表中时，请求返回 HTTP 400。 |
 
 调用 API 之前，插件会按生成的输入 Schema 校验工具参数。调用不存在的工具或参数不合法时，返回 `isError` 为 `true` 的结果。校验之前会先填入文档中声明的 `default`，因此同时带有 `required` 和 `default` 的参数或请求体属性可以由客户端省略；客户端显式传入的参数不会被默认值覆盖。
 
@@ -59,6 +60,8 @@ MCP 服务运行在 APISIX 内部，不需要额外的进程或服务。
 * 声明在 Path Item 上的参数适用于该路径下的所有操作；操作中同名且位置相同的参数会覆盖它。
 * 查询参数按其 `style` 和 `explode` 序列化，规则见 [OpenAPI Parameter Object](https://spec.openapis.org/oas/v3.0.3#style-values)。使用默认值（`form`，展开）时，`tags: ["a", "b"]` 发送为 `tags=a&tags=b`，而不是 `tags[]=a&tags[]=b`；声明为 `explode: false` 的数组参数发送为 `tags=a,b`。同时支持 `spaceDelimited`、`pipeDelimited` 和 `deepObject`。如果 API 要求方括号形式，需要另外通过改写查询字符串的插件处理。
 * 请求体使用操作中声明的媒体类型发送，除非 `headers` 中已设置 `Content-Type`。
+
+当 `base_url` 由变量拼接时，建议配置 `allowed_hosts`：不配置时，请求解析出什么主机就会调用什么主机；配置后，会在获取文档和调用 API 之前先校验主机，并拒绝非 `http`/`https` 协议的地址。由于解析后的 `base_url` 可能包含来自请求的内容，拒绝信息中不会回显 URL 或主机名。
 
 当文档把某个操作的成功响应描述为 JSON 对象时，生成的工具会以 `outputSchema` 公布该 Schema。响应按 `200`、`201`、其它明确的 `2xx`、`2XX` 的顺序选取；只有媒体类型为 `application/json` 且为带属性的对象才会被采用，因此数组、`default` 响应以及文档中未合并的组合（如 `allOf`）不会公布 Schema。
 

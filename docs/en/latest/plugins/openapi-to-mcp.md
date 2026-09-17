@@ -51,6 +51,7 @@ The Plugin supports:
 | base_url           | string  | True     |         |                             | Base URL of the API the tools call. The path of each operation is appended to it. Supports [APISIX variables](../apisix-variable.md) and [NGINX variables](http://nginx.org/en/docs/varindex.html), for example `http://${http_x_backend}`. |
 | headers            | object  | False    |         |                             | Headers added to every request sent to the API. Values support variables, for example `"Authorization": "Bearer ${http_x_api_token}"`. |
 | flatten_parameters | boolean | False    | `false` |                             | When `false`, the tool input nests parameters under `pathParameters`, `queryParameters` and `headerParameters`. When `true`, they are placed directly in the input object. |
+| allowed_hosts      | array   | False    |         |                             | Hosts the resolved `base_url` is allowed to point at. Each entry is an exact host name, for example `api.example.com`, or a `*.example.com` wildcard matching one or more leading labels. A request whose resolved `base_url` names a host outside the list is rejected with HTTP 400. |
 
 Tool call arguments are validated against the generated input schema before the API is called. A call to an unknown tool, or with invalid arguments, returns a result with `isError` set to `true`. Every `default` declared in the document is filled in before that validation, so a parameter or a body property that is `required` and has a `default` may be omitted by the client; an argument the client does send is never replaced by the default.
 
@@ -59,6 +60,8 @@ When a tool is called, the Plugin builds the request from the operation:
 * Parameters declared on the Path Item apply to every operation under it; an operation parameter with the same name and location overrides them.
 * Query parameters are serialized according to their `style` and `explode`, as defined by the [OpenAPI Parameter Object](https://spec.openapis.org/oas/v3.0.3#style-values). With the defaults (`form`, exploded), `tags: ["a", "b"]` is sent as `tags=a&tags=b` -- not as `tags[]=a&tags[]=b`, and an array parameter declared `explode: false` is sent as `tags=a,b`. `spaceDelimited`, `pipeDelimited` and `deepObject` are supported. An API that expects the bracket form has to be reached through a Plugin that rewrites the query string.
 * A request body is sent with the media type the operation declares, unless `headers` sets `Content-Type`.
+
+`allowed_hosts` is worth setting whenever `base_url` is built from a variable: without it, whatever host the request resolves to is called. With it, the host is checked before the API is called and before the document is fetched, and a URL that does not use the `http` or `https` scheme is rejected as well. The rejection names neither the URL nor the host, since a resolved `base_url` can carry values taken from the request.
 
 When the document describes the success response of an operation as a JSON object, the generated tool advertises that schema as `outputSchema`. The response is taken from `200`, then `201`, then any other explicit `2xx`, then `2XX`; only an `application/json` schema that is an object with properties qualifies, so an array, a `default` response and a composition the document leaves unmerged advertise nothing.
 
