@@ -266,7 +266,7 @@ local function pick_server(route, ctx)
     -- Slow start is in the same position: the node set of a single node upstream
     -- is what the second node is later compared against, and only the picker build
     -- records it. The node still takes every request either way.
-    if nodes_count == 1 and up_conf.type ~= "least_conn" and not up_conf.warm_up_conf then
+    if nodes_count == 1 and up_conf.type ~= "least_conn" and not up_conf.slow_start then
         local node = up_conf.nodes[1]
         ctx.balancer_ip = node.host
         ctx.balancer_port = node.port
@@ -317,7 +317,7 @@ local function pick_server(route, ctx)
         version = version .. "#" .. checker.status_ver
     end
 
-    if up_conf.warm_up_conf then
+    if up_conf.slow_start then
         version = version .. (slow_start.version_suffix(up_conf) or "")
     end
 

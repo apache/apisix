@@ -375,11 +375,18 @@ function _M.create_endpoint_callbacks(options)
                         port_to_nodes[port_name] = nodes
                     end
 
+                    -- the Pod behind the endpoint, when there is one. A node
+                    -- keeps its identity across an address change, and an address
+                    -- that a different Pod takes over is a different node - which
+                    -- is what upstream slow start needs to tell them apart
+                    local pod_uid = ep.targetRef and ep.targetRef.uid
+
                     for _, ip in ipairs(addresses) do
                         core.table.insert(nodes, {
                             host = ip,
                             port = port.port,
-                            weight = handle.default_weight
+                            weight = handle.default_weight,
+                            metadata = pod_uid and {uid = pod_uid} or nil
                         })
                     end
 
@@ -480,10 +487,12 @@ function _M.create_endpoint_callbacks(options)
                     end
 
                     for _, address in ipairs(subset.addresses) do
+                        local pod_uid = address.targetRef and address.targetRef.uid
                         core.table.insert(nodes, {
                             host = address.ip,
                             port = port.port,
-                            weight = handle.default_weight
+                            weight = handle.default_weight,
+                            metadata = pod_uid and {uid = pod_uid} or nil
                         })
                     end
 
