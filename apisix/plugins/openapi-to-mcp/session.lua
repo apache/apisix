@@ -53,18 +53,37 @@ local function store()
 end
 
 
+
+-- The value stored under the :alive key carries two things.
+--
 -- `owner` identifies the route, and the consumer if one was authenticated, the
--- stream belongs to. A message is only accepted from the same owner: without
--- it a session id issued on one route could be used to push a result into that
+-- stream belongs to. A message is only accepted from the same owner: without it
+-- a session id issued on one route could be used to push a result into that
 -- stream from another route, with another route's configuration.
-function _M.create(owner)
+--
+-- `context` is what the stream resolved when it was opened -- the base_url and
+-- the headers, after variable substitution. It is stored with the session
+-- because a message POST carries none of the request state those variables were
+-- read from: the endpoint the client is handed is "<path>?sessionId=<uuid>" and
+-- nothing else. Resolving again there would silently produce empty values. A
+-- configuration that holds no variables freezes nothing.
+function _M.create(owner, context)
     local dict, err = store()
     if not dict then
         return nil, err
     end
 
+    local marker, encode_err = core.json.encode({
+        owner = owner or "",
+        context = type(context) == "table" and context or nil,
+    })
+    if not marker then
+        core.log.warn("failed to store MCP session context: ", encode_err)
+        marker = core.json.encode({ owner = owner or "" })
+    end
+
     local session_id = core.id.gen_uuid_v4()
-    local ok, set_err = dict:set(alive_key(session_id), owner or "", SESSION_TTL)
+    local ok, set_err = dict:set(alive_key(session_id), marker, SESSION_TTL)
     if not ok then
         return nil, "failed to register session: " .. tostring(set_err)
     end
@@ -72,19 +91,41 @@ function _M.create(owner)
 end
 
 
-function _M.exists(session_id, owner)
+-- What was stored with the session, or nil when there is nothing to read or it
+-- cannot be understood -- in which case the session counts as gone.
+local function stored_marker(session_id)
     if type(session_id) ~= "string" or session_id == "" then
-        return false
+        return nil
     end
     local dict = store()
     if not dict then
-        return false
+        return nil
     end
     local stored = dict:get(alive_key(session_id))
-    if stored == nil then
+    if type(stored) ~= "string" then
+        return nil
+    end
+    local decoded = core.json.decode(stored)
+    if type(decoded) ~= "table" then
+        return nil
+    end
+    return decoded
+end
+
+
+-- The values frozen by _M.create(), or nil for a session that stored none.
+function _M.context(session_id)
+    local marker = stored_marker(session_id)
+    return marker and marker.context or nil
+end
+
+
+function _M.exists(session_id, owner)
+    local marker = stored_marker(session_id)
+    if not marker then
         return false
     end
-    return stored == (owner or "")
+    return marker.owner == (owner or "")
 end
 
 
@@ -96,14 +137,15 @@ function _M.touch(session_id)
     if not dict then
         return false, err
     end
-    -- the value carries the owner the session was created for; rewrite it as it
-    -- is rather than replacing it with a placeholder
+    -- Re-set the value that is already there: it carries the owner and the
+    -- frozen context, and writing a placeholder back would drop both halfway
+    -- through the session.
     local key = alive_key(session_id)
-    local owner = dict:get(key)
-    if owner == nil then
+    local marker = dict:get(key)
+    if marker == nil then
         return false, "session is gone"
     end
-    local ok, set_err = dict:set(key, owner, SESSION_TTL)
+    local ok, set_err = dict:set(key, marker, SESSION_TTL)
     if not ok then
         return false, "failed to refresh session: " .. tostring(set_err)
     end

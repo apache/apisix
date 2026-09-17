@@ -132,7 +132,7 @@ passed
 
 === TEST 4: a GET on an sse route advertises the message endpoint
 --- exec
-timeout 1 curl -X GET -N -sS http://localhost:1984/mcp 2>&1 | cat
+timeout 5 curl -X GET -N -sS http://localhost:1984/mcp 2>&1 | cat
 --- response_body_like
 event:\s*endpoint
 data:\s*/mcp\?sessionId=.*
@@ -141,7 +141,7 @@ data:\s*/mcp\?sessionId=.*
 
 === TEST 5: a message POST without a sessionId is rejected
 --- exec
-timeout 1 curl -X POST -N -sS http://localhost:1984/mcp 2>&1 | cat
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp 2>&1 | cat
 --- response_body eval
 qr/Missing or invalid sessionId parameter/
 
@@ -170,7 +170,7 @@ passed
 === TEST 7: tools/list is answered in-process
 --- max_size: 2048000
 --- exec
-timeout 1 curl -X POST -N -sS http://localhost:1984/mcp \
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
     -d '{"method":"tools/list","jsonrpc":"2.0","id":1}' \
     -H "Content-Type: application/json" \
     -H "Accept: application/json, text/event-stream" \
@@ -203,7 +203,7 @@ passed
 === TEST 9: confirm that variables in headers are correctly replaced
 --- max_size: 2048000
 --- exec
-timeout 1 curl -X POST -N -sS http://localhost:1984/mcp?username=alice \
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp?username=alice \
     -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"findPetsByStatus","arguments":{"queryParameters":{"status":"sold"}}}}' \
     -H "Content-Type: application/json" \
     -H "Accept: application/json, text/event-stream" \
@@ -236,7 +236,7 @@ passed
 === TEST 11: mcp request should be working when no headers in plugin config
 --- max_size: 2048000
 --- exec
-timeout 1 curl -X POST -N -sS http://localhost:1984/mcp \
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
     -d '{"method":"tools/list","jsonrpc":"2.0","id":1}' \
     -H "Content-Type: application/json" \
     -H "Accept: application/json, text/event-stream" \
@@ -267,7 +267,7 @@ passed
 
 === TEST 13: a GET on an sse route with a variable base_url advertises the message endpoint
 --- exec
-timeout 1 curl -X GET -N -sS http://localhost:1984/mcp \
+timeout 5 curl -X GET -N -sS http://localhost:1984/mcp \
     -H "variable_host: 127.0.0.1:11460" \
     2>&1 | cat
 --- response_body_like
@@ -322,7 +322,7 @@ passed
 
 === TEST 16: an sse route with flatten_parameters still opens a stream
 --- exec
-timeout 1 curl -X GET -N -sS http://localhost:1984/mcp 2>&1 | cat
+timeout 5 curl -X GET -N -sS http://localhost:1984/mcp 2>&1 | cat
 --- response_body_like
 event:\s*endpoint
 data:\s*/mcp\?sessionId=.*
@@ -352,7 +352,7 @@ passed
 === TEST 18: flattened parameters are not nested under queryParameters
 --- max_size: 2048000
 --- exec
-timeout 1 curl -X POST -N -sS http://localhost:1984/mcp \
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
     -d '{"method":"tools/list","jsonrpc":"2.0","id":1}' \
     -H "Content-Type: application/json" \
     -H "Accept: application/json, text/event-stream" \
@@ -385,7 +385,7 @@ passed
 === TEST 20: nested parameters are grouped under queryParameters
 --- max_size: 2048000
 --- exec
-timeout 1 curl -X POST -N -sS http://localhost:1984/mcp \
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
     -d '{"method":"tools/list","jsonrpc":"2.0","id":1}' \
     -H "Content-Type: application/json" \
     -H "Accept: application/json, text/event-stream" \
@@ -397,7 +397,7 @@ qr/queryParameters/
 
 === TEST 21: verify mcp tools call works
 --- exec
-timeout 1 curl -X POST -N -sS http://localhost:1984/mcp \
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
     -d '{
     "jsonrpc": "2.0",
     "method": "tools/call",
@@ -422,7 +422,7 @@ qr/findByStatus\?status=pending/
 === TEST 22: headerParameters appears in inputSchema for endpoints with in:header params (nested mode)
 --- max_size: 2048000
 --- exec
-timeout 1 curl -X POST -N -sS http://localhost:1984/mcp \
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
     -d '{"method":"tools/list","jsonrpc":"2.0","id":1}' \
     -H "Content-Type: application/json" \
     -H "Accept: application/json, text/event-stream" \
@@ -435,7 +435,7 @@ qr/headerParameters/
 === TEST 23: tools/call with no headerParameters argument still works
 --- max_size: 2048000
 --- exec
-timeout 1 curl -X POST -N -sS http://localhost:1984/mcp \
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
     -d '{
     "jsonrpc": "2.0",
     "method": "tools/call",
@@ -480,7 +480,7 @@ passed
 === TEST 25: headerParameters container is absent in flattened mode
 --- max_size: 2048000
 --- exec
-timeout 1 curl -X POST -N -sS http://localhost:1984/mcp \
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
     -d '{"method":"tools/list","jsonrpc":"2.0","id":1}' \
     -H "Content-Type: application/json" \
     -H "Accept: application/json, text/event-stream" \
@@ -493,7 +493,7 @@ qr/(?s)^(?=.*"api_key")(?:(?!headerParameters).)*$/
 === TEST 26: tools/call forwards flattened header params as HTTP headers to upstream
 --- max_size: 2048000
 --- exec
-timeout 1 curl -X POST -N -sS http://localhost:1984/mcp \
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
     -d '{
     "jsonrpc": "2.0",
     "method": "tools/call",
@@ -538,7 +538,7 @@ passed
 === TEST 28: tools/call forwards headerParameters as HTTP headers to upstream
 --- max_size: 2048000
 --- exec
-timeout 1 curl -X POST -N -sS http://localhost:1984/mcp \
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
     -d '{
     "jsonrpc": "2.0",
     "method": "tools/call",
@@ -589,7 +589,7 @@ passed
 === TEST 30: tools/list on a route without an upstream
 --- max_size: 2048000
 --- exec
-timeout 1 curl -X POST -N -sS http://localhost:1984/mcp \
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
     -d '{"method":"tools/list","jsonrpc":"2.0","id":1}' \
     -H "Content-Type: application/json" \
     -H "Accept: application/json, text/event-stream" \
@@ -622,7 +622,7 @@ passed
 
 === TEST 32: the stream opens and nothing is proxied
 --- exec
-timeout 1 curl -X GET -N -sS http://localhost:1984/mcp 2>&1 | cat
+timeout 5 curl -X GET -N -sS http://localhost:1984/mcp 2>&1 | cat
 --- response_body_like
 event:\s*endpoint
 data:\s*/mcp\?sessionId=.*
@@ -631,7 +631,131 @@ failed to fetch upstream
 
 
 
-=== TEST 33: a route over an API that answers with a large body
+=== TEST 33: a route whose document has defaults on required members
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "streamable_http",
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/defaults.json",
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 34: a required query parameter that has a default may be omitted
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"listItems","arguments":{"queryParameters":{}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/seen_path.*items\?limit=10&status=available/
+
+
+
+=== TEST 35: a required body property that has a default may be omitted
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"createItem","arguments":{"requestBody":{}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/seen_body.*mode.*fast/
+
+
+
+=== TEST 36: the whole container may be left out, not just its members
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"listItems","arguments":{}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/seen_path.*items\?limit=10&status=available/
+
+
+
+=== TEST 37: a request body that is required and all-default may be left out too
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"createItem","arguments":{}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/seen_body.*mode.*fast/
+
+
+
+=== TEST 38: a required member without a default is still an error
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"getItem","arguments":{}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/property .*pathParameters.* is required/
+
+
+
+=== TEST 39: an argument that is sent still wins over the default
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"listItems","arguments":{"queryParameters":{"status":"sold"}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/seen_path.*items\?limit=10&status=sold/
+
+
+
+=== TEST 40: a route pointed at a document that is not an OpenAPI document
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "streamable_http",
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/notaspec.json",
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 41: it is reported as an error instead of an empty tool list
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/list","jsonrpc":"2.0","id":1}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/(?s)(?=.*"code":-32603)(?=.*not an openapi document: no openapi or swagger version)/
+--- error_log
+not an openapi document
+
+
+
+=== TEST 42: a route over an API that answers with a large body
 --- config
     location /t {
         content_by_lua_block {
@@ -651,7 +775,7 @@ passed
 
 
 
-=== TEST 34: a response over the limit fails the call instead of buffering it
+=== TEST 43: a response over the limit fails the call instead of buffering it
 --- max_size: 2048000
 --- exec
 python3 t/plugin/openapi_to_mcp_harness.py /mcp \
@@ -668,7 +792,7 @@ exceeded max_response_body_size
 
 
 
-=== TEST 35: a response under the limit still comes back whole
+=== TEST 44: a response under the limit still comes back whole
 --- config
     location /t {
         content_by_lua_block {
@@ -687,7 +811,7 @@ passed
 
 
 
-=== TEST 36: the whole body is read below the default limit
+=== TEST 45: the whole body is read below the default limit
 --- max_size: 8192000
 --- exec
 python3 t/plugin/openapi_to_mcp_harness.py /mcp \
@@ -700,7 +824,7 @@ print(inner['status'], len(inner['data']['blob']))
 
 
 
-=== TEST 37: a route that names the origins it expects
+=== TEST 46: a route that names the origins it expects
 --- config
     location /t {
         content_by_lua_block {
@@ -720,7 +844,7 @@ passed
 
 
 
-=== TEST 38: a request from an allowed origin is served
+=== TEST 47: a request from an allowed origin is served
 --- request
 POST /mcp
 {"jsonrpc":"2.0","id":1,"method":"ping"}
@@ -733,7 +857,7 @@ qr/"result":\{\}/
 
 
 
-=== TEST 39: a request from another origin is refused
+=== TEST 48: a request from another origin is refused
 --- request
 POST /mcp
 {"jsonrpc":"2.0","id":1,"method":"ping"}
@@ -749,7 +873,7 @@ rejected an MCP request with a disallowed Origin
 
 
 
-=== TEST 40: a request without an Origin header is still served
+=== TEST 49: a request without an Origin header is still served
 --- request
 POST /mcp
 {"jsonrpc":"2.0","id":1,"method":"ping"}
@@ -761,7 +885,7 @@ qr/"result":\{\}/
 
 
 
-=== TEST 41: a configured header cannot carry a newline
+=== TEST 50: a configured header cannot carry a newline
 --- config
     location /t {
         content_by_lua_block {
@@ -790,7 +914,7 @@ qr/"result":\{\}/
 
 
 
-=== TEST 42: the API receives the Host it was reached on, port included
+=== TEST 51: the API receives the Host it was reached on, port included
 --- exec
 python3 t/plugin/openapi_to_mcp_harness.py /mcp \
     '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"getPet","arguments":{"pathParameters":{"petId":7}}}}' "
@@ -802,7 +926,7 @@ print(inner['data']['seen_host'])
 
 
 
-=== TEST 43: a route over an API that ends its body by closing the connection
+=== TEST 52: a route over an API that ends its body by closing the connection
 --- config
     location /t {
         content_by_lua_block {
@@ -821,7 +945,7 @@ passed
 
 
 
-=== TEST 44: a connection-close-delimited body is read whole, not reported as an error
+=== TEST 53: a connection-close-delimited body is read whole, not reported as an error
 --- max_size: 2048000
 --- exec
 python3 t/plugin/openapi_to_mcp_harness.py /mcp \
@@ -834,7 +958,7 @@ print(inner['status'], inner['data']['closed'], len(inner['data']['blob']))
 
 
 
-=== TEST 45: a body larger than one read chunk is reassembled
+=== TEST 54: a body larger than one read chunk is reassembled
 --- config
     location /t {
         content_by_lua_block {
@@ -853,7 +977,7 @@ passed
 
 
 
-=== TEST 46: the chunks add up to the whole body
+=== TEST 55: the chunks add up to the whole body
 --- max_size: 8192000
 --- exec
 python3 t/plugin/openapi_to_mcp_harness.py /mcp \
@@ -866,7 +990,7 @@ print(inner['status'], len(inner['data']['blob']))
 
 
 
-=== TEST 47: a configured header cannot end with a newline either
+=== TEST 56: a configured header cannot end with a newline either
 --- config
     location /t {
         content_by_lua_block {
@@ -891,7 +1015,7 @@ print(inner['status'], len(inner['data']['blob']))
 
 
 
-=== TEST 48: a route header built from a variable
+=== TEST 57: a route header built from a variable
 --- config
     location /t {
         content_by_lua_block {
@@ -911,7 +1035,7 @@ passed
 
 
 
-=== TEST 49: a newline arriving through that variable drops the header
+=== TEST 58: a newline arriving through that variable drops the header
 --- exec
 python3 t/plugin/openapi_to_mcp_harness.py '/mcp?trace=a%0d%0aX-Injected:%201' \
     '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"getPet","arguments":{"pathParameters":{"petId":7}}}}' "

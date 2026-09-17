@@ -63,6 +63,11 @@ local function build_tools(openapi_url, flatten_parameters, allowed_ref_hosts)
         return nil, err
     end
 
+    local ok, invalid = loader.validate(spec)
+    if not ok then
+        return nil, invalid
+    end
+
     local resolved = ref.resolve(spec, {
         base_host = document_host(openapi_url),
         allowed_hosts = allowed_ref_hosts,

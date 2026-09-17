@@ -122,6 +122,47 @@ local DOCUMENTS = {
         } } },
     },
 
+    -- a required parameter and a required body property, both with a default
+    ["/defaults.json"] = {
+        openapi = "3.0.0",
+        info = { title = "Defaults", version = "1" },
+        paths = {
+            ["/items/{id}"] = { get = {
+                operationId = "getItem",
+                parameters = {
+                    { name = "id", ["in"] = "path", required = true,
+                      schema = { type = "string" } },
+                },
+            } },
+            ["/items"] = {
+                get = {
+                    operationId = "listItems",
+                    parameters = {
+                        { name = "status", ["in"] = "query", required = true,
+                          schema = { type = "string", default = "available" } },
+                        { name = "limit", ["in"] = "query",
+                          schema = { type = "integer", default = 10 } },
+                    },
+                },
+                post = {
+                    operationId = "createItem",
+                    requestBody = { required = true, content = { ["application/json"] = {
+                        schema = {
+                            type = "object",
+                            required = { "mode" },
+                            properties = {
+                                mode = { type = "string", default = "fast" },
+                                n = { type = "integer", default = 3 },
+                            },
+                        } } } },
+                },
+            },
+        },
+    },
+
+    -- parses as JSON and is not an OpenAPI document
+    ["/notaspec.json"] = { this = "is not an openapi document" },
+
     -- query parameters that are an object and an array
     ["/objq.json"] = {
         openapi = "3.0.0",
