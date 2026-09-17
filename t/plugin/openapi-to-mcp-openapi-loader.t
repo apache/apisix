@@ -277,3 +277,47 @@ nil not an openapi document: no paths object
 --- response_body
 true
 string
+
+
+
+=== TEST 14: a YAML document whose version is not quoted is still an openapi document
+--- config
+    location /t {
+        content_by_lua_block {
+            local loader = require("apisix.plugins.openapi-to-mcp.openapi.loader")
+            -- YAML reads an unquoted "2.0" or "3.1" as a number; only a version
+            -- with two dots, such as 3.0.0, comes back as a string
+            local cases = {
+                "swagger: 2.0\npaths:\n  /a:\n    get: {}\n",
+                "openapi: 3.1\npaths:\n  /a:\n    get: {}\n",
+                "openapi: 3.0.0\npaths:\n  /a:\n    get: {}\n",
+                'swagger: "2.0"\npaths:\n  /a:\n    get: {}\n',
+            }
+            for _, body in ipairs(cases) do
+                local spec = loader.parse(body)
+                local version = spec and (spec.openapi or spec.swagger)
+                local ok, err = loader.validate(spec)
+                ngx.say(type(version), " ", tostring(ok), " ", tostring(err))
+            end
+        }
+    }
+--- response_body
+number true nil
+number true nil
+string true nil
+string true nil
+
+
+
+=== TEST 15: a YAML document that is not an openapi document is still rejected
+--- config
+    location /t {
+        content_by_lua_block {
+            local loader = require("apisix.plugins.openapi-to-mcp.openapi.loader")
+            local spec = loader.parse("title: an index\nitems:\n  - one\n")
+            local ok, err = loader.validate(spec)
+            ngx.say(tostring(ok), " ", tostring(err))
+        }
+    }
+--- response_body
+nil not an openapi document: no openapi or swagger version

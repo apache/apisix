@@ -157,7 +157,11 @@ function _M.validate(spec)
     if type(spec) ~= "table" then
         return nil, "openapi spec is not an object"
     end
-    if type(spec.openapi) ~= "string" and type(spec.swagger) ~= "string" then
+    -- YAML leaves an unquoted version as a number: "swagger: 2.0" and
+    -- "openapi: 3.1" both parse that way, and only a two-dot version such as
+    -- "3.0.0" comes back as a string. JSON documents always quote it.
+    local version = spec.openapi or spec.swagger
+    if type(version) ~= "string" and type(version) ~= "number" then
         return nil, "not an openapi document: no openapi or swagger version"
     end
     if type(spec.paths) ~= "table" then
