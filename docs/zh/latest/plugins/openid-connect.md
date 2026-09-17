@@ -164,6 +164,12 @@ export KEYCLOAK_CLIENT_SECRET=abc
 "client_secret": "$ENV://KEYCLOAK_CLIENT_SECRET"
 ```
 
+### 按请求选择 IdP 配置
+
+`client_id`、`client_secret` 和 `discovery` 同样支持 `${var}` / `${var ?? default}` 运行时变量模板，在每次请求时从请求上下文中解析（与 [`limit-count`](./limit-count.md) 用于 `count`/`time_window` 的模板机制相同）。这使得一个优先级更高的自定义插件可以检查请求、设置 `ctx.var.*`，并为其选择正确的 IdP 配置，而 `openid-connect` 本身保持通用——它没有内置的租户、领域（realm）或提供商概念。参见 [`openid-connect-idp-selector`](./openid-connect-idp-selector.md)，它就是基于请求承载令牌的颁发者来做这件事的插件。
+
+如果某个请求缺少引用的变量（例如自定义插件未运行或未识别该请求），`openid-connect` 将返回 `500` 并给出无法解析的字段名称的错误信息，而不是向身份提供商转发空值。
+
 ## 示例
 
 以下示例展示了如何针对不同场景配置 `openid-connect` 插件。

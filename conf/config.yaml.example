@@ -559,7 +559,7 @@ plugins:                           # plugin list (sorted by priority)
   - referer-restriction            # priority: 2990
   - csrf                           # priority: 2980
   - uri-blocker                    # priority: 2900
-  - openid-connect-consumer-selector # priority: 2895
+  - openid-connect-idp-selector    # priority: 2895
   - request-validation             # priority: 2800
   - chaitin-waf                    # priority: 2700
   - multi-auth                     # priority: 2600

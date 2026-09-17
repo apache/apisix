@@ -62,7 +62,7 @@ __DATA__
                             },
                             "type": "roundrobin"
                         },
-                        "uri": "/oidc-tpl-default/*"
+                        "uri": "/*"
                 }]]
                 )
 
@@ -87,7 +87,7 @@ passed
 
             local httpc = http.new()
 
-            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/oidc-tpl-default/uri"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/uri"
             local res, err = login_keycloak(uri, "teacher@gmail.com", "123456")
             if err then
                 ngx.status = 500
@@ -110,7 +110,8 @@ passed
                 return
             elseif res.status ~= 200 then
                 ngx.status = 500
-                ngx.say("Invoking the original URI didn't return the expected result.")
+                ngx.say("Invoking the original URI didn't return the expected result: "
+                        .. res.status .. " " .. res.body)
                 return
             end
 
@@ -118,8 +119,10 @@ passed
             ngx.say(res.body)
         }
     }
+--- no_error_log
+[error]
 --- response_body_like
-uri: /oidc-tpl-default/uri
+uri: /uri
 cookie: .*
 
 

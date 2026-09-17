@@ -1194,6 +1194,9 @@ local function resolve_conf_var(ctx, field_name, value)
         return value
     end
 
+    -- err here is only a malformed ${...} template (a resolve_var syntax error),
+    -- distinct from the empty-value check below: a template that resolves fine
+    -- but whose variable is unset comes back as resolved == "", not an err.
     local resolved, err = core.utils.resolve_var(value, ctx.var)
     if err then
         return nil, "failed to resolve \"" .. field_name .. "\": " .. err
@@ -1215,7 +1218,7 @@ function _M.rewrite(plugin_conf, ctx)
         local resolved, err = resolve_conf_var(ctx, field_name, conf[field_name])
         if err then
             core.log.error("openid-connect: ", err)
-            return 500
+            return 500, { message = err }
         end
         conf[field_name] = resolved
     end
