@@ -17,6 +17,7 @@
 local core = require("apisix.core")
 local constants = require("apisix.constants")
 local resty_saml = require("resty.saml")
+local pcall = pcall
 
 local is_resty_saml_init = false
 
