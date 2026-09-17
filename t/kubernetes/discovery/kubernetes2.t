@@ -123,6 +123,24 @@ _EOC_
             }
         }
 
+        location /uids {
+            content_by_lua_block {
+              local core = require("apisix.core")
+              local d = require("apisix.discovery.kubernetes")
+
+              ngx.sleep(1)
+
+              ngx.req.read_body()
+              local query = core.json.decode(ngx.req.get_body_data())[1]
+              local uids = {}
+              for _, node in ipairs(d.nodes(query) or {}) do
+                  core.table.insert(uids, (node.metadata and node.metadata.uid) or "none")
+              end
+              core.table.sort(uids)
+              ngx.say(core.table.concat(uids, " "))
+            }
+        }
+
         location /operators {
             content_by_lua_block {
                 local http = require("resty.http")
@@ -749,4 +767,36 @@ $::scale_ns_c",
     "{ 2 2 0 2 2 0 }\n",
     "DONE\n",
     "{ 0 0 1 0 0 1 }\n",
+]
+
+
+
+=== TEST 12: an endpoint carries the uid of the Pod behind it
+--- yaml_config eval: $::yaml_config
+--- request eval
+[
+"POST /operators
+[{
+  \"op\": \"replace_subsets\",
+  \"namespace\": \"ns-a\",
+  \"name\": \"ep\",
+  \"subsets\": [{
+    \"addresses\": [
+      {\"ip\": \"10.0.0.1\", \"targetRef\": {\"kind\": \"Pod\", \"name\": \"web-1\",
+       \"namespace\": \"ns-a\", \"uid\": \"11111111-1111-1111-1111-111111111111\"}},
+      {\"ip\": \"10.0.0.2\"}
+    ],
+    \"ports\": [{\"name\": \"p1\", \"port\": 5001}]
+  }]
+}]",
+
+"GET /uids
+[\"first/ns-a/ep:p1\"]"
+]
+--- more_headers
+Content-type: application/json
+--- response_body eval
+[
+    "DONE\n",
+    "11111111-1111-1111-1111-111111111111 none\n",
 ]

@@ -14,7 +14,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
--- Slow start (`upstream.warm_up_conf`): a node that the data plane observes for
+-- Slow start (`upstream.slow_start`): a node that the data plane observes for
 -- the first time takes a reduced share of the traffic and ramps back to its
 -- configured weight over `slow_start_time_seconds`.
 --
@@ -131,10 +131,19 @@ local function scope_key(up_conf)
 end
 
 
--- The lifecycle identity of a node. A domain node is identified by the hostname
--- it was configured with, not by the address it currently resolves to, so a DNS
--- rotation does not restart its ramp.
+-- The lifecycle identity of a node. Service discovery that knows which workload
+-- answers on an address says so in `metadata.uid` - Kubernetes puts the Pod
+-- there - and that is the better identity: an address a different Pod takes over
+-- is a different node and ramps again, while a Pod that changes address keeps
+-- the progress it had. A domain node is identified by the hostname it was
+-- configured with, not by the address it currently resolves to, so a DNS
+-- rotation does not restart its ramp either.
 local function node_id(node)
+    local uid = node.metadata and node.metadata.uid
+    if uid then
+        return uid .. ":" .. tostring(node.port)
+    end
+
     return (node.domain or node.host) .. ":" .. tostring(node.port)
 end
 
@@ -175,6 +184,19 @@ local function effective_weight(original_weight, first_seen_at, conf, now)
     return weight
 end
 _M.effective_weight = effective_weight
+
+
+-- The weight a node ramps up to. A Kubernetes endpoint has no weight of its own,
+-- so the registry gives every one of them the same `default_weight`; an upstream
+-- that wants a different target for its own ramp says so in `slow_start`. Any
+-- other source carries weights that mean something, and they are left alone.
+local function target_weight(up_conf, conf, node)
+    if conf.default_weight and up_conf.discovery_type == "kubernetes" then
+        return conf.default_weight
+    end
+
+    return node.weight
+end
 
 
 local function within_startup_grace(conf, now)
@@ -294,7 +316,7 @@ local function reconcile(conf, present_nodes, nodes, scope, now)
     local known = decode_snapshot(shdict:get(snapshot_key))
 
     -- The first reconcile of a scope is a baseline: the nodes an upstream is
-    -- bootstrapped with, and the nodes it already had when `warm_up_conf` was
+    -- bootstrapped with, and the nodes it already had when `slow_start` was
     -- turned on, are mature. So are nodes observed inside the startup grace
     -- period, which absorbs the ordering differences of a cold restart.
     local baseline = (known == nil) or within_startup_grace(conf, now)
@@ -434,21 +456,21 @@ local function usable(up_conf, nodes)
     local scope = scope_key(up_conf)
     if not scope then
         core.log.error("slow start needs an upstream with a resource key, ",
-                       "ignoring warm_up_conf")
+                       "ignoring slow_start")
         return nil
     end
 
     if not shdict then
         -- slow start only ramps HTTP upstreams, and the stream subsystem has no
         -- such shared dict. Like every other upstream field that does not apply
-        -- there, `warm_up_conf` is quietly ignored and the configured weights are
+        -- there, `slow_start` is quietly ignored and the configured weights are
         -- used, rather than failing the connection or logging on every build
         return nil
     end
 
     if up_conf.type ~= "roundrobin" then
         report_once(scope, "slow start only supports roundrobin, ignoring ",
-                    "warm_up_conf of upstream ", scope)
+                    "slow_start of upstream ", scope)
         return nil
     end
 
@@ -457,7 +479,7 @@ local function usable(up_conf, nodes)
         for _, node in ipairs(nodes) do
             if node.priority ~= priority then
                 report_once(scope, "slow start does not support an upstream with ",
-                            "mixed node priorities, ignoring warm_up_conf of upstream ",
+                            "mixed node priorities, ignoring slow_start of upstream ",
                             scope)
                 return nil
             end
@@ -472,7 +494,7 @@ end
 -- nil when the upstream does not use slow start. Runs once per picker build, not
 -- per request.
 function _M.effective_weights(up_conf, nodes)
-    local conf = up_conf.warm_up_conf
+    local conf = up_conf.slow_start
     if type(conf) ~= "table" then
         return nil
     end
@@ -493,7 +515,8 @@ function _M.effective_weights(up_conf, nodes)
 
     local weights = core.table.new(#nodes, 0)
     for i, node in ipairs(nodes) do
-        weights[i] = effective_weight(node.weight, first_seen[i], conf, now)
+        weights[i] = effective_weight(target_weight(up_conf, conf, node),
+                                      first_seen[i], conf, now)
     end
 
     return weights
@@ -510,7 +533,7 @@ end
 -- but on an upstream that sees only a handful of requests per `interval` the
 -- ramping node can end up with even less traffic than its weight asks for.
 function _M.version_suffix(up_conf)
-    local conf = up_conf.warm_up_conf
+    local conf = up_conf.slow_start
     if type(conf) ~= "table" or not shdict or not up_conf.resource_key
        or up_conf.type ~= "roundrobin" then
         return nil
