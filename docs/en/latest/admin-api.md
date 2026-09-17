@@ -1024,6 +1024,11 @@ In addition to the equalization algorithm selections, Upstream also supports pas
 | keepalive_pool.size         | False                                                            | Auxiliary                     | Sets `keepalive` directive dynamically.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |                                                                                                                                            |
 | keepalive_pool.idle_timeout | False                                                            | Auxiliary                     | Sets `keepalive_timeout` directive dynamically.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |                                                                                                                                            |
 | keepalive_pool.requests     | False                                                            | Auxiliary                     | Sets `keepalive_requests` directive dynamically.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |                                                                                                                                            |
+| warm_up_conf.slow_start_time_seconds | True, when `warm_up_conf` is set | Integer | Slow start window in seconds. A node the gateway observes for the first time takes a reduced share of the traffic and ramps back to its configured weight over this window. Must be at least 1. | 300 |
+| warm_up_conf.min_weight_percent | True, when `warm_up_conf` is set | Integer | Lowest effective weight during the ramp, as a percentage of the configured weight, from 1 to 100. | 1 |
+| warm_up_conf.interval | False | Integer | Seconds between two effective weight refreshes. Defaults to `1`, and cannot be greater than `slow_start_time_seconds`. | 1 |
+| warm_up_conf.aggression | False | Number | Shape of the ramp. `1` (default) is linear, above `1` ramps up faster at the beginning, below `1` slower. At least `0.01`. | 1 |
+| warm_up_conf.startup_grace_period_seconds | False | Integer | Seconds after the gateway starts during which a node observed for the first time is treated as already warmed up, so that a restart does not ramp the whole node set again. Defaults to `0`. | 180 |
 
 An Upstream can be one of the following `types`:
 
@@ -1066,6 +1071,15 @@ To verify the certificate presented by the Upstream, set `tls.verify` to `true`.
 ```
 
 To allow Upstream to have a separate connection pool, use `keepalive_pool`. It can be configured by modifying its child fields.
+
+`warm_up_conf` enables slow start for the nodes of a `roundrobin` Upstream. Whether a node is new is decided by the gateway itself, from the node set it observes, and the start of each ramp is recorded locally in the `upstream-slow-start` shared dict:
+
+- The node set an Upstream has when the gateway first builds a load balancer for it is treated as warmed up. So is the node set it already has when `warm_up_conf` is turned on.
+- A node added afterwards ramps from `min_weight_percent` back to its configured weight over `slow_start_time_seconds`. A node held out of the load balancer by a health check starts its ramp when it first becomes available.
+- A node that leaves the Upstream and comes back within `slow_start_time_seconds` resumes its ramp. One that comes back later, or that a health check kept out for longer than that, ramps again from the start.
+- Every APISIX instance ramps independently, from the moment it observed the node.
+
+`warm_up_conf` is only supported by `roundrobin` Upstreams whose nodes share a single priority, and it is rejected in the Upstreams of the `traffic-split` Plugin, which are rebuilt per request. Like the other Upstream fields that only apply to HTTP, it is ignored when the Upstream is used by a stream route. A ramp only shifts traffic between nodes: a single-node Upstream, or one whose nodes are all new, keeps sending every request to them.
 
 Example Configuration:
 

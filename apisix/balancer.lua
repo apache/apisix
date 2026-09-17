@@ -20,6 +20,7 @@ local core              = require("apisix.core")
 local priority_balancer = require("apisix.balancer.priority")
 local apisix_upstream   = require("apisix.upstream")
 local healthcheck_manager = require("apisix.healthcheck_manager")
+local slow_start        = require("apisix.slow_start")
 local ipairs            = ipairs
 local is_http           = ngx.config.subsystem == "http"
 local enable_keepalive = balancer.enable_keepalive and is_http
@@ -50,7 +51,7 @@ local _M = {
 }
 
 
-local function transform_node(new_nodes, node)
+local function transform_node(new_nodes, node, weight)
     if not new_nodes._priority_index then
         new_nodes._priority_index = {}
     end
@@ -60,16 +61,17 @@ local function transform_node(new_nodes, node)
         core.table.insert(new_nodes._priority_index, node.priority)
     end
 
-    new_nodes[node.priority][node.host .. ":" .. node.port] = node.weight
+    new_nodes[node.priority][node.host .. ":" .. node.port] = weight or node.weight
     return new_nodes
 end
 
 
-local function fetch_all_nodes(upstream)
-    local nodes = upstream.nodes
+-- `weights` carries the slow start weight of every node, indexed like `nodes`;
+-- without it each node keeps its configured weight
+local function transform_nodes(nodes, weights)
     local new_nodes = core.table.new(0, #nodes)
-    for _, node in ipairs(nodes) do
-        new_nodes = transform_node(new_nodes, node)
+    for i, node in ipairs(nodes) do
+        new_nodes = transform_node(new_nodes, node, weights and weights[i])
     end
     return new_nodes
 end
@@ -107,26 +109,27 @@ local function create_health_status(upstream, checker)
 end
 
 
--- Build the picker node set from the healthy subset, reusing create_health_status
--- so the per-node health lookup lives in exactly one place.
-local function fetch_health_nodes(upstream, checker)
+-- The nodes that actually reach the picker, reusing create_health_status so the
+-- per-node health lookup lives in exactly one place. When every node is unhealthy
+-- the whole set is kept, which is the existing fail-open behaviour.
+local function fetch_eligible_nodes(upstream, checker)
     if not checker then
-        return fetch_all_nodes(upstream)
+        return upstream.nodes
     end
 
     local health_status = create_health_status(upstream, checker)
     if health_status.all_unhealthy then
-        return fetch_all_nodes(upstream)
+        return upstream.nodes
     end
 
-    local up_nodes = core.table.new(0, #upstream.nodes)
+    local nodes = core.table.new(#upstream.nodes, 0)
     for _, node in ipairs(upstream.nodes) do
         if health_status.status[node.host .. ":" .. node.port] then
-            up_nodes = transform_node(up_nodes, node)
+            core.table.insert(nodes, node)
         end
     end
 
-    return up_nodes
+    return nodes
 end
 
 
@@ -164,9 +167,12 @@ local function create_server_picker(upstream, checker)
 
         local up_nodes
         if upstream.type == "chash" then
-            up_nodes = fetch_all_nodes(upstream)
+            up_nodes = transform_nodes(upstream.nodes)
         else
-            up_nodes = fetch_health_nodes(upstream, checker)
+            -- slow start runs on the eligible set, so a node only starts its ramp
+            -- once it can actually be picked
+            local nodes = fetch_eligible_nodes(upstream, checker)
+            up_nodes = transform_nodes(nodes, slow_start.effective_weights(upstream, nodes))
         end
 
         if #up_nodes._priority_index > 1 then
@@ -256,7 +262,11 @@ local function pick_server(route, ctx)
     -- balancer here would leave it blind to everything routed before the second
     -- node showed up, which is the state a k8s deployment or a discovery service
     -- starts from. See #12217
-    if nodes_count == 1 and up_conf.type ~= "least_conn" then
+    --
+    -- Slow start is in the same position: the node set of a single node upstream
+    -- is what the second node is later compared against, and only the picker build
+    -- records it. The node still takes every request either way.
+    if nodes_count == 1 and up_conf.type ~= "least_conn" and not up_conf.warm_up_conf then
         local node = up_conf.nodes[1]
         ctx.balancer_ip = node.host
         ctx.balancer_port = node.port
@@ -305,6 +315,10 @@ local function pick_server(route, ctx)
 
     if checker and up_conf.type ~= "chash" then
         version = version .. "#" .. checker.status_ver
+    end
+
+    if up_conf.warm_up_conf then
+        version = version .. (slow_start.version_suffix(up_conf) or "")
     end
 
     -- the same picker will be used in the whole request, especially during the retry
