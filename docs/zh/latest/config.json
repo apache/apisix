@@ -240,7 +240,8 @@
             "plugins/dubbo-proxy",
             "plugins/mqtt-proxy",
             "plugins/http-dubbo",
-            "plugins/openapi-to-mcp"
+            "plugins/openapi-to-mcp",
+            "plugins/mcp-tools-acl"
           ]
         }
       ]

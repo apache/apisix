@@ -271,6 +271,7 @@ local _M = {
     "redirect",
     "response-rewrite",
     "openapi-to-mcp",
+    "mcp-tools-acl",
     "oas-validator",
     "mcp-bridge",
     "degraphql",
