@@ -414,6 +414,48 @@ local private_key_schema = {
 }
 
 
+local warm_up_conf_schema = {
+    description = "slow start: ramp a newly observed node up to its configured weight",
+    type = "object",
+    properties = {
+        slow_start_time_seconds = {
+            description = "seconds a new node takes to reach its full weight",
+            type = "integer",
+            minimum = 1,
+        },
+        min_weight_percent = {
+            description = "lowest effective weight, as a percentage of the original weight",
+            type = "integer",
+            minimum = 1,
+            maximum = 100,
+        },
+        interval = {
+            description = "seconds between two effective weight refreshes",
+            type = "integer",
+            minimum = 1,
+            default = 1,
+        },
+        aggression = {
+            description = "shape of the ramp: 1 is linear, above 1 ramps up faster " ..
+                          "at the beginning, below 1 slower",
+            type = "number",
+            minimum = 0.01,
+            default = 1,
+        },
+        startup_grace_period_seconds = {
+            description = "seconds after the data plane started during which a node " ..
+                          "observed for the first time is considered mature",
+            type = "integer",
+            minimum = 0,
+            default = 0,
+        },
+    },
+    required = {"slow_start_time_seconds", "min_weight_percent"},
+    additionalProperties = false,
+}
+_M.warm_up_conf = warm_up_conf_schema
+
+
 local upstream_schema = {
     type = "object",
     properties = {
@@ -427,6 +469,7 @@ local upstream_schema = {
 
         -- properties
         nodes = nodes_schema,
+        warm_up_conf = warm_up_conf_schema,
         retries = {
             type = "integer",
             minimum = 0,
@@ -1050,6 +1093,16 @@ _M.stream_route = {
             type = "string",
             pattern = host_def_pat,
         },
+        snis = {
+            description = "server name indications, matched as alternatives",
+            type = "array",
+            items = {
+                type = "string",
+                pattern = host_def_pat,
+            },
+            minItems = 1,
+            uniqueItems = true,
+        },
         tls_passthrough = {
             description = "forward the TLS stream to the upstream untouched instead of "
                           .. "terminating it here; only consulted on a mixed listen, one "
@@ -1062,6 +1115,11 @@ _M.stream_route = {
         service_id = id_schema,
         plugins = plugins_schema,
         protocol = xrpc_protocol_schema,
+    },
+    -- `snis` is the plural form of `sni`, not an addition to it. Carrying both
+    -- would leave the precedence between them to guesswork.
+    ["not"] = {
+        required = {"sni", "snis"},
     },
     additionalProperties = false,
 }

@@ -117,6 +117,16 @@ function _M.check_schema(conf)
                     end
                 end
             end
+
+            -- the upstreams this plugin builds are rebuilt per request and carry
+            -- no stable scope, so slow start has nowhere to keep the lifecycle of
+            -- their nodes
+            for _, wupstream in ipairs(rule.weighted_upstreams or {}) do
+                if wupstream.upstream and wupstream.upstream.warm_up_conf then
+                    return false, "warm_up_conf is not supported by the upstream of " ..
+                                  "the traffic-split plugin"
+                end
+            end
         end
     end
 

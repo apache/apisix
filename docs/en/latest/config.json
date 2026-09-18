@@ -255,7 +255,8 @@
             "plugins/mqtt-proxy",
             "plugins/kafka-proxy",
             "plugins/http-dubbo",
-            "plugins/mcp-bridge"
+            "plugins/mcp-bridge",
+            "plugins/openapi-to-mcp"
           ]
         }
       ]
