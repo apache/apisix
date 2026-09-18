@@ -99,3 +99,5 @@ dump.rdb
 /data/
 # telemetry dumped by the otel collector during tests
 ci/pod/otelcol-contrib/data-otlp.json
+# bytecode from importing the .py test drivers
+t/plugin/__pycache__/

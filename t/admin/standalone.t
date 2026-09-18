@@ -378,3 +378,127 @@ X-Digest: t17
 --- error_code: 202
 --- no_error_log
 report_failure(): update endpoint: http://127.0.0.1:2379 to unhealthy
+
+
+
+=== TEST 18: a pushed configuration never reaches the log
+--- request
+PUT /apisix/admin/configs
+{
+    "consumers": [
+        {
+            "username": "jack",
+            "plugins": {"key-auth": {"key": "SENTINEL-CREDENTIAL-MUST-NOT-BE-LOGGED"}}
+        }
+    ]
+}
+--- more_headers
+X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
+X-Digest: t18
+--- error_code: 202
+--- no_error_log
+SENTINEL-CREDENTIAL-MUST-NOT-BE-LOGGED
+
+
+
+=== TEST 19: an unparsable body never reaches the log
+--- request
+PUT /apisix/admin/configs
+{"consumers": [ SENTINEL-BROKEN-BODY
+--- more_headers
+X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
+X-Digest: t19
+--- error_code: 400
+--- no_error_log
+SENTINEL-BROKEN-BODY
+
+
+
+=== TEST 20: seed a config
+--- request
+PUT /apisix/admin/configs
+{"routes":[{"id":"r1","uri":"/r1","upstream":{"nodes":{"127.0.0.1:1980":1},"type":"roundrobin"}}]}
+--- more_headers
+X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
+X-Digest: t20
+--- error_code: 202
+
+
+
+=== TEST 21: a resource section that is not an array is rejected
+--- request
+PUT /apisix/admin/configs
+{"routes": {"id": "r1"}}
+--- more_headers
+X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
+X-Digest: t21
+--- error_code: 400
+
+
+
+=== TEST 22: a top-level array is rejected
+--- request
+PUT /apisix/admin/configs
+[{"routes": []}]
+--- more_headers
+X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
+X-Digest: t22
+--- error_code: 400
+
+
+
+=== TEST 23: the rejected pushes left the config and its version untouched
+--- request
+GET /apisix/admin/configs
+--- more_headers
+X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
+--- error_code: 200
+--- response_body_like: .*X-Digest.*t20.*
+
+
+
+=== TEST 24: a malformed yaml body is rejected
+--- request
+PUT /apisix/admin/configs
+routes: [
+--- more_headers
+Content-Type: application/yaml
+X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
+X-Digest: t24
+--- error_code: 400
+--- response_body_like: .*invalid yaml request body.*
+
+
+
+=== TEST 25: a yaml null document is rejected
+--- request
+PUT /apisix/admin/configs
+~
+--- more_headers
+Content-Type: application/yaml
+X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
+X-Digest: t25
+--- error_code: 400
+--- response_body_like: .*invalid yaml request body.*
+
+
+
+=== TEST 26: a malformed yaml body is rejected by the validate endpoint too
+--- request
+POST /apisix/admin/configs/validate
+routes: [
+--- more_headers
+Content-Type: application/yaml
+X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
+--- error_code: 400
+--- response_body_like: .*invalid yaml request body.*
+
+
+
+=== TEST 27: the rejected yaml pushes left the config and its version untouched
+--- request
+GET /apisix/admin/configs
+--- more_headers
+X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
+--- error_code: 200
+--- response_body_like: .*X-Digest.*t20.*

@@ -22,8 +22,10 @@
 local core = require("apisix.core")
 local uuid = require("resty.jit-uuid")
 local table = table
+local setmetatable = setmetatable
 local type = type
 local ipairs = ipairs
+local ngx_time = ngx.time
 
 local _M = {}
 
@@ -410,9 +412,30 @@ function _M.empty_usage()
 end
 
 
+--- Build a final moderation chunk without ending or replacing the original stream.
+function _M.build_moderation_event(opts)
+    local data = {
+        id = uuid.generate_v4(),
+        object = "chat.completion.chunk",
+        created = ngx_time(),
+        model = opts.model,
+        choices = setmetatable({}, core.json.array_mt),
+        usage = _M.empty_usage(),
+        risk_level = opts.risk_level,
+        deny_message = opts.deny_message or "",
+    }
+    return { type = "message", data = core.json.encode(data) }
+end
+
+
 --- Check if an SSE event is a data event (contains parseable content).
 function _M.is_data_event(event)
     return event.type == "message" and event.data ~= "[DONE]"
+end
+
+
+function _M.is_error_event(event, data)
+    return type(data) == "table" and type(data.error) == "table"
 end
 
 

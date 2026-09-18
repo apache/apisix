@@ -75,6 +75,7 @@ This Plugin shares the same schema as the [limit-count](./limit-count.md) Plugin
 | redis_password | string | False | | | Password of the Redis node. Used when `policy` is `redis` or `redis-cluster`. |
 | redis_ssl | boolean | False | false | | When true, use SSL to connect to Redis. Used when `policy` is `redis`. |
 | redis_ssl_verify | boolean | False | false | | When true, verify the Redis server SSL certificate. Used when `policy` is `redis`. |
+| redis_server_name | string | False | | | TLS SNI when `policy` is `redis` and `redis_ssl` is true. Defaults to `redis_host`. When `redis_ssl_verify` is true the certificate must also match this name, so set it when `redis_host` is an alias the certificate does not cover. |
 | redis_database | integer | False | 0 | >= 0 | The Redis database number. Used when `policy` is `redis`. |
 | redis_timeout | integer | False | 1000 | [1,...] | Redis timeout in milliseconds. Used when `policy` is `redis` or `redis-cluster`. |
 | redis_cluster_nodes | array[string] | False | | | List of Redis cluster node addresses. Required when `policy` is `redis-cluster`. |

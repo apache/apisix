@@ -370,7 +370,7 @@ Route 也称之为路由，可以通过定义一些规则来匹配客户端的�
 | filter_func      | 否                               | 匹配规则 | 用户自定义的过滤函数。可以使用它来实现特殊场景的匹配要求实现。该函数默认接受一个名为 `vars` 的输入参数，可以用它来获取 NGINX 变量。                                                                                                                                                                                                               | function(vars) return vars["arg_name"] == "json" end |
 | labels           | 否                               | 匹配规则 | 标识附加属性的键值对。                                                                                                                                                                                                                                                                            | {"version":"v2","build":"16","env":"production"}     |
 | timeout          | 否                               | 辅助     | 为 Route 设置 Upstream 连接、发送消息和接收消息的超时时间（单位为秒）。该配置将会覆盖在 Upstream 中配置的 [timeout](#upstream) 选项。                                                                                                                                                                                               | {"connect": 3, "send": 3, "read": 3}              |
-| enable_websocket | 否                               | 辅助     | 当设置为 `true` 时，启用 `websocket`(boolean), 默认值为 `false`。                                                                                                                                                                                                                                                |                                                      |
+| enable_websocket | 否                               | 辅助     | 当设置为 `true` 时，启用 `websocket`(boolean), 默认值为 `false`。这只是纯粹的协议升级，插件无法访问单独的帧；如果插件需要读取或改写帧内容，请参考 Upstream [`scheme`](#upstream) 下的说明。                                                                                                                                                                                  |                                                      |
 | status           | 否                               | 辅助     | 当设置为 `1` 时，启用该路由，默认值为 `1`。                                                                                                                                                                                                                                                                       | `1` 表示启用，`0` 表示禁用。                           |
 
 :::note 注意
@@ -679,7 +679,7 @@ Service 是某类 API 的抽象（也可以理解为一组 Route 的抽象）。
 | name             | 否                     | 辅助     | 服务名称。                                                      |                                             |
 | desc             | 否                     | 辅助     | 服务描述。                                                          |                                                  |
 | labels           | 否                     | 匹配规则 | 标识附加属性的键值对。                                                 | {"version":"v2","build":"16","env":"production"} |
-| enable_websocket | 否                     | 辅助     | `websocket`(boolean) 配置，默认值为 `false`。                       |                                                  |
+| enable_websocket | 否                     | 辅助     | `websocket`(boolean) 配置，默认值为 `false`。这只是纯粹的协议升级，插件无法访问单独的帧；如果插件需要读取或改写帧内容，请参考 Upstream [`scheme`](#upstream) 下的说明。 |                                                  |
 | hosts            | 否                     | 匹配规则 | 非空列表形态的 `host`，表示允许有多个不同 `host`，匹配其中任意一个即可。| ["foo.com", "\*.bar.com"]                        |
 
 Service 对象 JSON 配置示例：
@@ -1022,7 +1022,7 @@ APISIX 的 Upstream 除了基本的负载均衡算法选择外，还支持对上
 | desc           | 否                                             | 辅助           | 上游服务描述、使用场景等。                                                                                                                                                                                                                                                                                                                                  |                                                  |
 | pass_host      | 否                                             | 枚举           | 请求发给上游时的 `host` 设置选型。 [`pass`，`node`，`rewrite`] 之一，默认是 `pass`。`pass`: 将客户端的 host 透传给上游； `node`: 使用 `upstream` node 中配置的 `host`； `rewrite`: 使用配置项 `upstream_host` 的值。                                                                                                                                                                        |                                                  |
 | upstream_host  | 否                                             | 辅助           | 指定上游请求的 host，只在 `pass_host` 配置为 `rewrite` 时有效。                                                                                                                                                                                                                                                                                                                  |                                                  |
-| scheme         | 否                                             | 辅助           | 跟上游通信时使用的 scheme。对于 7 层代理，可选值为 [`http`, `https`, `grpc`, `grpcs`]。对于 4 层代理，可选值为 [`tcp`, `udp`, `tls`]。默认值为 `http`，详细信息请参考下文。                                                                                                                                                                                                                                                           |
+| scheme         | 否                                             | 辅助           | 跟上游通信时使用的 scheme。对于 7 层代理，可选值为 [`http`, `https`, `grpc`, `grpcs`, `ws`, `wss`]。对于 4 层代理，可选值为 [`tcp`, `udp`, `tls`]。默认值为 `http`，详细信息请参考下文。                                                                                                                                                                                                                                                     |
 | labels         | 否                                             | 匹配规则       | 标识附加属性的键值对。                                                                                                                                                                                                                                                                                                                                        | {"version":"v2","build":"16","env":"production"} |
 | tls.client_cert    | 否，不能和 `tls.client_cert_id` 一起使用               | https 证书           | 设置跟上游通信时的客户端证书，详细信息请参考下文。                                                                        | |
 | tls.client_key	 | 否，不能和 `tls.client_cert_id` 一起使用               | https 证书私钥           | 设置跟上游通信时的客户端私钥，详细信息请参考下文。                                                                                                                                                                                                                                                                                                              | |
@@ -1032,6 +1032,11 @@ APISIX 的 Upstream 除了基本的负载均衡算法选择外，还支持对上
 |keepalive_pool.size  | 否                                             | 辅助 | 动态设置 `keepalive` 指令，详细信息请参考下文。 |
 |keepalive_pool.idle_timeout  | 否                                             | 辅助 | 动态设置 `keepalive_timeout` 指令，详细信息请参考下文。 |
 |keepalive_pool.requests  | 否                                             | 辅助 | 动态设置 `keepalive_requests` 指令，详细信息请参考下文。 |
+|warm_up_conf.slow_start_time_seconds | 设置 `warm_up_conf` 时必填 | 整型 | 慢启动窗口，单位为秒。网关首次观察到的节点先承接较少的流量，并在该窗口内逐步恢复到配置的权重。最小值为 1。 |
+|warm_up_conf.min_weight_percent | 设置 `warm_up_conf` 时必填 | 整型 | 爬坡期间有效权重的下限，以配置权重的百分比表示，取值范围 1 到 100。 |
+|warm_up_conf.interval | 否 | 整型 | 两次刷新有效权重之间的间隔，单位为秒。默认为 `1`，不能大于 `slow_start_time_seconds`。 |
+|warm_up_conf.aggression | 否 | 数值 | 爬坡曲线。`1`（默认）为线性，大于 `1` 前期增长更快，小于 `1` 前期增长更慢。最小值为 `0.01`。 |
+|warm_up_conf.startup_grace_period_seconds | 否 | 整型 | 网关启动后的宽限时间，单位为秒。在此期间首次观察到的节点直接视为已完成预热，避免重启后整组节点重新爬坡。默认为 `0`。 |
 
 `type` 详细信息如下：
 
@@ -1047,6 +1052,11 @@ APISIX 的 Upstream 除了基本的负载均衡算法选择外，还支持对上
 - 设为 `header` 时，`key` 为必传参数，其值为自定义的 Header name，即 "http\_`key`"。
 - 设为 `cookie` 时，`key` 为必传参数，其值为自定义的 cookie name，即 "cookie\_`key`"。请注意 cookie name 是**区分大小写字母**的。例如：`cookie_x_foo` 与 `cookie_X_Foo` 表示不同的 `cookie`。
 - 设为 `consumer` 时，`key` 不需要设置。此时哈希算法采用的 `key` 为认证通过的 `consumer_name`。
+
+APISIX 支持两种不同的方式来代理 WebSocket 连接，二者不能混用：
+
+- Route 或 Service 级别的 [`enable_websocket`](#route)，配合 `http`/`https` 的 Upstream `scheme`。这是纯粹的协议升级：`101 Switching Protocols` 握手完成后，由 nginx 自身的 `proxy_pass` 转发原始 TCP 流，没有任何插件 phase 能看到单独的 WebSocket 帧。
+- Upstream `scheme: ws` 或 `scheme: wss`。APISIX 会自己双向解析并代理 WebSocket 帧，插件可以通过 `ws_handshake`、`ws_client_frame`、`ws_upstream_frame`、`ws_close` 这几个 phase 在帧的转发过程中读取或改写它们，具体用法参考[插件开发指南的 "extra phase" 一节](./plugin-develop.md#extra-phase)。如果 Route 或 Service 所属的 Upstream 使用了这个 scheme，`enable_websocket` 会被忽略，因为连接根本不会走到它所配置的那条 `proxy_pass` 路径。
 
 以下特性需要 APISIX 运行于 [APISIX-Runtime](./FAQ.md#如何构建-APISIX-Runtime-环境？)：
 
@@ -1070,6 +1080,12 @@ APISIX 的 Upstream 除了基本的负载均衡算法选择外，还支持对上
   ```
 
 - `keepalive_pool` 允许 Upstream 有自己单独的连接池。它下属的字段，比如 `requests`，可以用于配置上游连接保持的参数。
+- `warm_up_conf` 为 `roundrobin` 类型的 Upstream 开启节点慢启动。节点是否为新节点由网关根据自己观察到的节点集合判断，每次爬坡的起点记录在本地的 `upstream-slow-start` 共享字典中：
+  - 网关首次为 Upstream 构建负载均衡器时已有的节点视为已完成预热，开启 `warm_up_conf` 时 Upstream 已有的节点同样如此。
+  - 之后新增的节点从 `min_weight_percent` 开始，在 `slow_start_time_seconds` 内逐步恢复到配置的权重。被健康检查挡在负载均衡器之外的节点，从它首次可用时开始爬坡。
+  - 节点离开 Upstream 后在 `slow_start_time_seconds` 内回来，会继续原来的爬坡；更晚回来，或被健康检查排除超过该时长，会重新开始爬坡。
+  - 每个 APISIX 实例独立计时，起点为该实例观察到节点的时刻。
+  - `warm_up_conf` 仅支持节点优先级一致的 `roundrobin` 类型 Upstream，`traffic-split` 插件中的 Upstream 每请求重建，不允许配置。与其他只对 HTTP 生效的 Upstream 字段一样，该字段在 stream route 使用的 Upstream 上会被忽略。爬坡只在节点之间调整流量：单节点 Upstream，或所有节点都是新节点时，请求仍会全部发往这些节点。
 
 Upstream 对象 JSON 配置示例：
 

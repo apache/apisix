@@ -64,12 +64,17 @@ local function check_conf(id, conf, need_id, schema, opts)
         end
     end
 
-    if conf.protocol and conf.protocol.superior_id and not opts.skip_references_check then
+    -- the self-reference check needs no lookup, so it stays outside the gate;
+    -- only the etcd fetch below is skipped for standalone validation
+    if conf.protocol and conf.protocol.superior_id then
         local superior_id = conf.protocol.superior_id
         if id and tostring(superior_id) == tostring(id) then
             return nil, {error_msg = "stream route can not set itself as superior_id"}
         end
+    end
 
+    if conf.protocol and conf.protocol.superior_id and not opts.skip_references_check then
+        local superior_id = conf.protocol.superior_id
         local key = "/stream_routes/" .. superior_id
         local res, err = core.etcd.get(key)
         if not res then

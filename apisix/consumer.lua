@@ -104,7 +104,11 @@ local function construct_consumer_data(val, name, plugin_config)
         local consumer_name = get_consumer_name_from_credential_etcd_key(val.key)
         local the_consumer = consumers:get(consumer_name)
         if the_consumer and the_consumer.value then
-            consumer = consumers_id_lrucache(val.value.id .. name, val.modifiedIndex..
+            -- the parts are separated: without it ("ab", "c") and ("a", "bc")
+            -- build the same key, and modifiedIndex 1 + 23 the same version as
+            -- 12 + 3, which would serve a stale consumer
+            consumer = consumers_id_lrucache(val.value.id .. "#" .. name,
+                                                val.modifiedIndex .. "#" ..
                                                 the_consumer.modifiedIndex,
                 function (val, the_consumer)
                     consumer = core.table.clone(the_consumer.value)
@@ -120,7 +124,7 @@ local function construct_consumer_data(val, name, plugin_config)
                 " credential key: ", val.key, ", consumer name: ", consumer_name
         end
     else
-        consumer = consumers_id_lrucache(val.value.id .. name, val.modifiedIndex,
+        consumer = consumers_id_lrucache(val.value.id .. "#" .. name, val.modifiedIndex,
             function (val)
                 consumer = core.table.clone(val.value)
                 consumer.modifiedIndex = val.modifiedIndex
