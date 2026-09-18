@@ -259,6 +259,18 @@ my $disable_proxy_buffering_location = <<_EOC_;
         }
 _EOC_
 
+my $websocket_location = <<_EOC_;
+        location \@websocket_pass {
+            content_by_lua_block {
+                apisix.websocket_content_phase()
+            }
+
+            log_by_lua_block {
+                apisix.websocket_log_phase()
+            }
+        }
+_EOC_
+
 my $a6_ngx_directives = "";
 if ($version =~ m/\/apisix-nginx-module/) {
     $a6_ngx_directives = <<_EOC_;
@@ -777,6 +789,20 @@ _EOC_
         }
     }
 
+    # accepts a connection on any path but never writes a response, so a
+    # client waiting on it reliably times out instead of being refused or
+    # having to depend on an unroutable address actually hanging
+    server {
+        listen 1986;
+        server_tokens off;
+
+        location / {
+            content_by_lua_block {
+                ngx.sleep(30)
+            }
+        }
+    }
+
     $a6_ngx_directives
 
     server {
@@ -1010,6 +1036,7 @@ _EOC_
         $grpc_location
         $dubbo_location
         $disable_proxy_buffering_location
+        $websocket_location
 
         location = /proxy_mirror {
             internal;
