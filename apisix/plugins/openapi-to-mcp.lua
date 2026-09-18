@@ -19,6 +19,11 @@ local streamable_http = require("apisix.plugins.openapi-to-mcp.transport.streama
 local mcp_sse         = require("apisix.plugins.openapi-to-mcp.transport.sse")
 local ngx         = ngx
 local pairs       = pairs
+local ipairs      = ipairs
+local type        = type
+local str_lower   = string.lower
+local str_match   = string.match
+local str_sub     = string.sub
 
 local schema = {
     type = "object",
@@ -44,12 +49,60 @@ local schema = {
             type = "object",
             minProperties = 0,
             patternProperties = {
-                ["^[^:]+$"] = {
+                -- no colon and no whitespace in the name, no CR or LF in the
+                -- value: either would let a resolved variable add a header, or
+                -- a request, of its own. These anchor with $ rather than \z,
+                -- which is PCRE-only: this schema is served over the Admin API
+                -- and is validated by clients whose regex flavour has no \z,
+                -- where it would degrade to a literal "z". The gap $ leaves in
+                -- PCRE -- it also matches before a trailing newline -- is
+                -- closed at request time, where a header is dropped unless
+                -- fetch.header_is_sane() accepts its name and its resolved
+                -- value.
+                ["^[^:\\s]+$"] = {
                     oneOf = {
-                        { type = "string" }
+                        { type = "string", pattern = "^[^\\r\\n]*$" }
                     }
                 }
             },
+            -- patternProperties only constrains the names it matches; without
+            -- this a name the pattern rejects would simply go unchecked
+            additionalProperties = false,
+        },
+        max_response_body_size = {
+            description = "Maximum size, in bytes, of an upstream response " ..
+            "body read into a tool result. A larger response fails the call.",
+            type = "integer",
+            minimum = 1024,
+            default = 1048576,
+        },
+        max_document_size = {
+            description = "Maximum size in bytes of the OpenAPI document, and " ..
+            "of any document an http(s) $ref pulls in.",
+            type = "integer",
+            minimum = 1024,
+            default = 4194304,
+        },
+        allowed_ref_hosts = {
+            description = "Hosts an http(s) $ref inside the OpenAPI document " ..
+            "may point at, besides the origin of openapi_url itself. Each " ..
+            "entry is a hostname or a `*.example.com` wildcard, optionally " ..
+            "followed by `:port`; without a port it matches any port.",
+            type = "array",
+            minItems = 1,
+            uniqueItems = true,
+            items = { type = "string", minLength = 1 },
+        },
+        allowed_origins = {
+            description = "Origin header values accepted on MCP requests, as " ..
+            "scheme://host[:port]. A request with no Origin header is always " ..
+            "accepted. When unset, an Origin is accepted only if its host is " ..
+            "one the route declares in host/hosts, or if both it and the " ..
+            "request are on a loopback address. [\"*\"] accepts any origin.",
+            type = "array",
+            minItems = 1,
+            uniqueItems = true,
+            items = { type = "string", minLength = 1 },
         },
         flatten_parameters = {
             description = "Whether to flatten query and path parameters " ..
@@ -143,6 +196,162 @@ function _M.access(conf, ctx)
 end
 
 
+-- MCP asks an HTTP transport to check Origin, because a page in a browser can
+-- otherwise reach a server that is only listening on localhost, or one behind
+-- the user's firewall, and read the answer back.
+--
+-- A request with no Origin is left alone: it did not come from a browser, and
+-- every non-browser MCP client sends none. One that does carry an Origin is
+-- accepted only against something the operator configured, never against
+-- another header of the same request: under DNS rebinding the attacker owns
+-- the name, so Origin and Host are both theirs and agree with each other.
+--
+-- Three things count as configured, in this order:
+--   * allowed_origins on the Plugin, ["*"] there accepting any origin;
+--   * the Route's own host predicate, which the operator wrote and the
+--     attacker's name does not satisfy -- a request carrying another Host does
+--     not match such a Route at all;
+--   * a loopback address at both ends, which is the case MCP is written
+--     around: a page can only have http://localhost as its origin if it is
+--     served from the machine itself, and no rebinding produces that.
+-- A Route with none of them refuses every request that carries an Origin.
+local DEFAULT_PORT = { http = "80", https = "443" }
+
+local LOOPBACK_HOST = {
+    ["localhost"] = true,
+    ["127.0.0.1"] = true,
+    ["::1"] = true,
+}
+
+
+-- "host", "host:port", "[::1]" or "[::1]:port" into a host and a port, the
+-- scheme's default port standing in for an absent one.
+local function split_authority(authority, scheme)
+    local host, port = str_match(authority, "^%[(.+)%]:(%d+)$")
+    if not host then
+        host = str_match(authority, "^%[(.+)%]$")
+    end
+    if not host then
+        host, port = str_match(authority, "^([^:]+):(%d+)$")
+    end
+    if not host then
+        host = authority
+    end
+    return str_lower(host or ""), port or DEFAULT_PORT[scheme] or ""
+end
+
+
+-- An Origin as its host and its full "scheme://host:port", or nil for one that
+-- names no origin at all -- "null", which a sandboxed frame and a file:// page
+-- both send.
+local function parse_origin(value)
+    if type(value) ~= "string" then
+        return nil
+    end
+    local scheme, authority = str_match(value, "^(%a[%w+.-]*)://(.+)$")
+    if not scheme then
+        return nil
+    end
+    scheme = str_lower(scheme)
+    local host, port = split_authority(authority, scheme)
+    if host == "" then
+        return nil
+    end
+    return scheme .. "://" .. host .. ":" .. port, host
+end
+
+
+-- The hosts the Route itself declares, which is configuration rather than
+-- anything the request carries.
+local function route_hosts(ctx)
+    local route = ctx.matched_route and ctx.matched_route.value
+    if not route then
+        return nil
+    end
+    if route.hosts then
+        return route.hosts
+    end
+    if route.host then
+        return { route.host }
+    end
+    return nil
+end
+
+
+-- A Route host matches the way APISIX matches it: either literally or, for a
+-- "*.example.com" entry, on the suffix.
+local function host_matches(pattern, host)
+    local lower = str_lower(pattern)
+    if lower == host then
+        return true
+    end
+    if str_sub(lower, 1, 2) == "*." then
+        local suffix = str_sub(lower, 2)
+        return #host > #suffix and str_sub(host, -#suffix) == suffix
+    end
+    return false
+end
+
+
+local function origin_rejected(conf, ctx)
+    local origin = core.request.header(ctx, "origin")
+    if origin == nil then
+        return false
+    end
+    if type(origin) ~= "string" then
+        -- more than one Origin header: nothing sends that, and there is no
+        -- single origin to compare
+        core.log.warn("rejected an MCP request carrying more than one Origin")
+        return true
+    end
+
+    local normalised, origin_host = parse_origin(origin)
+    local allowed = conf.allowed_origins
+
+    if allowed then
+        for _, entry in ipairs(allowed) do
+            if entry == "*" or entry == origin
+               or (normalised ~= nil and parse_origin(entry) == normalised)
+            then
+                return false
+            end
+        end
+        core.log.warn("rejected an MCP request with a disallowed Origin")
+        return true
+    end
+
+    if origin_host ~= nil then
+        local hosts = route_hosts(ctx)
+        if hosts then
+            for _, pattern in ipairs(hosts) do
+                if host_matches(pattern, origin_host) then
+                    return false
+                end
+            end
+            core.log.warn("rejected an MCP request whose Origin is not a host ",
+                          "of this route")
+            return true
+        end
+
+        -- No configuration to check against. Loopback at both ends is the one
+        -- case that is still safe: an attacker's page cannot be served from
+        -- the machine the gateway runs on.
+        local host_header = core.request.header(ctx, "host")
+        if LOOPBACK_HOST[origin_host] and type(host_header) == "string" then
+            local request_host = split_authority(host_header,
+                                                 str_lower(ctx.var.scheme or "http"))
+            if LOOPBACK_HOST[request_host] then
+                return false
+            end
+        end
+    end
+
+    core.log.warn("rejected an MCP request carrying an Origin this route has ",
+                  "nothing to check it against; list it in allowed_origins")
+    return true
+end
+
+
 function _M.before_proxy(conf, ctx)
     local opts = ctx.mcp_inprocess_opts
     if not opts then
@@ -151,9 +360,14 @@ function _M.before_proxy(conf, ctx)
 
     -- Every body the transports produce is JSON, and core.response.exit() sets
     -- no content type of its own, so without this they would all go out as
-    -- text/plain. Set once here so no rejection path can miss it; the two that
-    -- stream override it with text/event-stream on their way out.
+    -- text/plain. Set once here so no rejection path can miss it, the origin
+    -- one below included; the two that stream override it with
+    -- text/event-stream on their way out.
     core.response.set_header("Content-Type", "application/json")
+
+    if origin_rejected(conf, ctx) then
+        return core.response.exit(403, { message = "Origin not allowed" })
+    end
 
     if opts.transport == "sse" then
         return mcp_sse.handle(ctx, opts)

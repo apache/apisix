@@ -752,3 +752,601 @@ timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
 qr/(?s)(?=.*"code":-32603)(?=.*not an openapi document: no openapi or swagger version)/
 --- error_log
 not an openapi document
+
+
+
+=== TEST 42: a route over an API that answers with a large body
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "streamable_http",
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/large.json",
+                    max_response_body_size = 65536,
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 43: a response over the limit fails the call instead of buffering it
+--- max_size: 2048000
+--- exec
+python3 t/plugin/openapi_to_mcp_harness.py /mcp \
+    '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"getLarge","arguments":{}}}' "
+print(d['result']['isError'])
+inner = json.loads(d['result']['content'][0]['text'])
+print(inner['error']['code'])
+"
+--- response_body
+True
+RESPONSE_TOO_LARGE
+--- error_log
+exceeded max_response_body_size
+
+
+
+=== TEST 44: a response under the limit still comes back whole
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "streamable_http",
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/large.json",
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 45: the whole body is read below the default limit
+--- max_size: 8192000
+--- exec
+python3 t/plugin/openapi_to_mcp_harness.py /mcp \
+    '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"getLarge","arguments":{"queryParameters":{"size":1000}}}}' "
+inner = json.loads(d['result']['content'][0]['text'])
+print(inner['status'], len(inner['data']['blob']))
+"
+--- response_body
+200 1000
+
+
+
+=== TEST 46: a route that names the origins it expects
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "streamable_http",
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/openapi.json",
+                    allowed_origins = { "https://app.example.com" },
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 47: a request from an allowed origin is served
+--- request
+POST /mcp
+{"jsonrpc":"2.0","id":1,"method":"ping"}
+--- more_headers
+Content-Type: application/json
+Accept: application/json, text/event-stream
+Origin: https://app.example.com
+--- response_body eval
+qr/"result":\{\}/
+
+
+
+=== TEST 48: a request from another origin is refused
+--- request
+POST /mcp
+{"jsonrpc":"2.0","id":1,"method":"ping"}
+--- more_headers
+Content-Type: application/json
+Accept: application/json, text/event-stream
+Origin: https://evil.example.com
+--- error_code: 403
+--- response_body
+{"message":"Origin not allowed"}
+--- error_log
+rejected an MCP request with a disallowed Origin
+
+
+
+=== TEST 49: a request without an Origin header is still served
+--- request
+POST /mcp
+{"jsonrpc":"2.0","id":1,"method":"ping"}
+--- more_headers
+Content-Type: application/json
+Accept: application/json, text/event-stream
+--- response_body eval
+qr/"result":\{\}/
+
+
+
+=== TEST 50: a configured list governs on its own, this origin included
+--- request
+POST /mcp
+{"jsonrpc":"2.0","id":1,"method":"ping"}
+--- more_headers
+Content-Type: application/json
+Accept: application/json, text/event-stream
+Origin: http://localhost
+--- error_code: 403
+--- response_body
+{"message":"Origin not allowed"}
+--- error_log
+rejected an MCP request with a disallowed Origin
+
+
+
+=== TEST 51: a route that names no origins at all
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "streamable_http",
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/openapi.json",
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 52: with nothing to check it against, an Origin is refused
+--- request
+POST /mcp
+{"jsonrpc":"2.0","id":1,"method":"ping"}
+--- more_headers
+Content-Type: application/json
+Accept: application/json, text/event-stream
+Origin: https://evil.example.com
+--- error_code: 403
+--- response_body
+{"message":"Origin not allowed"}
+--- error_log
+nothing to check it against
+
+
+
+=== TEST 53: loopback at both ends is served, which no rebinding produces
+--- request
+POST /mcp
+{"jsonrpc":"2.0","id":1,"method":"ping"}
+--- more_headers
+Content-Type: application/json
+Accept: application/json, text/event-stream
+Origin: http://localhost
+--- response_body eval
+qr/"result":\{\}/
+
+
+
+=== TEST 54: a non-browser client, which sends no Origin, is unaffected
+--- request
+POST /mcp
+{"jsonrpc":"2.0","id":1,"method":"ping"}
+--- more_headers
+Content-Type: application/json
+Accept: application/json, text/event-stream
+--- response_body eval
+qr/"result":\{\}/
+
+
+
+=== TEST 55: a rebound name is refused although Origin and Host agree
+--- exec
+timeout 5 curl -sS -o /dev/null -w "%{http_code}\n" -X POST http://localhost:1984/mcp \
+    -H "Host: attacker.example" \
+    -H "Origin: http://attacker.example" \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    -d '{"jsonrpc":"2.0","id":1,"method":"ping"}' 2>&1
+--- response_body
+403
+--- error_log
+nothing to check it against
+
+
+
+=== TEST 56: an opaque origin names no origin to check
+--- request
+POST /mcp
+{"jsonrpc":"2.0","id":1,"method":"ping"}
+--- more_headers
+Content-Type: application/json
+Accept: application/json, text/event-stream
+Origin: null
+--- error_code: 403
+--- response_body
+{"message":"Origin not allowed"}
+
+
+
+=== TEST 57: a route that declares the host it serves
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "streamable_http",
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/openapi.json",
+                }, nil, { hosts = { "mcp.example.com" } } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 58: the host predicate is what the Origin is checked against
+--- exec
+served=$(timeout 5 curl -sS -o /dev/null -w "%{http_code}" -X POST http://localhost:1984/mcp \
+    -H "Host: mcp.example.com" -H "Origin: http://mcp.example.com" \
+    -H "Content-Type: application/json" -H "Accept: application/json, text/event-stream" \
+    -d '{"jsonrpc":"2.0","id":1,"method":"ping"}' 2>&1)
+refused=$(timeout 5 curl -sS -o /dev/null -w "%{http_code}" -X POST http://localhost:1984/mcp \
+    -H "Host: mcp.example.com" -H "Origin: https://evil.example.com" \
+    -H "Content-Type: application/json" -H "Accept: application/json, text/event-stream" \
+    -d '{"jsonrpc":"2.0","id":1,"method":"ping"}' 2>&1)
+echo "declared host: $served"
+echo "another origin: $refused"
+--- response_body
+declared host: 200
+another origin: 403
+--- error_log
+is not a host of this route
+
+
+
+=== TEST 59: a route that accepts any origin on purpose
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "streamable_http",
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/openapi.json",
+                    allowed_origins = { "*" },
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 60: with ["*"] any origin is served
+--- request
+POST /mcp
+{"jsonrpc":"2.0","id":1,"method":"ping"}
+--- more_headers
+Content-Type: application/json
+Accept: application/json, text/event-stream
+Origin: https://evil.example.com
+--- response_body eval
+qr/"result":\{\}/
+
+
+
+=== TEST 61: a configured header cannot carry a newline
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openapi-to-mcp")
+            local cases = {
+                { ["X-Trace"] = "ok" },
+                { ["X-Trace"] = "bad\r\nX-Injected: 1" },
+                { ["X-Trace\r\nX-Injected"] = "1" },
+                { ["X Trace"] = "1" },
+            }
+            for i, headers in ipairs(cases) do
+                local ok = plugin.check_schema({
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/openapi.json",
+                    headers = headers,
+                })
+                ngx.say(i, ": ", tostring(ok ~= nil and ok ~= false))
+            end
+        }
+    }
+--- response_body
+1: true
+2: false
+3: false
+4: false
+
+
+
+=== TEST 62: the API receives the Host it was reached on, port included
+--- exec
+python3 t/plugin/openapi_to_mcp_harness.py /mcp \
+    '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"getPet","arguments":{"pathParameters":{"petId":7}}}}' "
+inner = json.loads(d['result']['content'][0]['text'])
+print(inner['data']['seen_host'])
+"
+--- response_body
+127.0.0.1:11460
+
+
+
+=== TEST 63: a route over an API that ends its body by closing the connection
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "streamable_http",
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/closing.json",
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 64: a connection-close-delimited body is read whole, not reported as an error
+--- max_size: 2048000
+--- exec
+python3 t/plugin/openapi_to_mcp_harness.py /mcp \
+    '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"getClosing","arguments":{}}}' "
+inner = json.loads(d['result']['content'][0]['text'])
+print(inner['status'], inner['data']['closed'], len(inner['data']['blob']))
+"
+--- response_body
+200 True 1024
+
+
+
+=== TEST 65: a route over an API that announces a non-chunked transfer coding
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "streamable_http",
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/identity.json",
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 66: "Transfer-Encoding: identity" is a close-delimited body, not a framed one
+--- max_size: 2048000
+--- exec
+python3 t/plugin/openapi_to_mcp_harness.py /mcp \
+    '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"getIdentity","arguments":{}}}' "
+inner = json.loads(d['result']['content'][0]['text'])
+print(inner['status'], inner['data']['identity'], len(inner['data']['blob']))
+"
+--- response_body
+200 True 1024
+
+
+
+=== TEST 67: a body larger than one read chunk is reassembled
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "streamable_http",
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/large.json",
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 68: the chunks add up to the whole body
+--- max_size: 8192000
+--- exec
+python3 t/plugin/openapi_to_mcp_harness.py /mcp \
+    '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"getLarge","arguments":{"queryParameters":{"size":200000}}}}' "
+inner = json.loads(d['result']['content'][0]['text'])
+print(inner['status'], len(inner['data']['blob']))
+"
+--- response_body
+200 200000
+
+
+
+=== TEST 69: the schema rejects a header with a newline in the middle of it
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openapi-to-mcp")
+            local cases = {
+                { ["X-Trace"] = "a\nb" },
+                { ["X-Tra\nce"] = "1" },
+                { ["X-Trace"] = "a\r\nX-Injected: 1" },
+                -- the schema anchors with $, which PCRE also matches before a
+                -- trailing newline, so these two get through it and are
+                -- dropped at request time instead -- see the case below
+                { ["X-Trace"] = "trailing\n" },
+                { ["X-Trace\n"] = "1" },
+            }
+            for i, headers in ipairs(cases) do
+                local ok = plugin.check_schema({
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/openapi.json",
+                    headers = headers,
+                })
+                ngx.say(i, ": ", tostring(ok ~= nil and ok ~= false))
+            end
+        }
+    }
+--- response_body
+1: false
+2: false
+3: false
+4: true
+5: true
+
+
+
+=== TEST 70: a route whose header value ends with a newline
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "streamable_http",
+                    base_url = "http://127.0.0.1:11460",
+                    headers = { ["X-Trace"] = "trailing\n" },
+                    openapi_url = "http://127.0.0.1:11460/openapi.json",
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 71: it never reaches the upstream, whatever the schema let through
+--- exec
+python3 t/plugin/openapi_to_mcp_harness.py /mcp \
+    '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"getPet","arguments":{"pathParameters":{"petId":7}}}}' "
+inner = json.loads(d['result']['content'][0]['text'])
+print(inner['data'].get('seen_trace'))
+"
+--- response_body
+None
+--- error_log
+cannot appear in a request header
+
+
+
+=== TEST 72: a route header built from a variable
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "streamable_http",
+                    base_url = "http://127.0.0.1:11460",
+                    headers = { ["X-Trace"] = "${arg_trace}" },
+                    openapi_url = "http://127.0.0.1:11460/openapi.json",
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 73: a newline arriving through that variable drops the header
+--- exec
+python3 t/plugin/openapi_to_mcp_harness.py '/mcp?trace=a%0d%0aX-Injected:%201' \
+    '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"getPet","arguments":{"pathParameters":{"petId":7}}}}' "
+inner = json.loads(d['result']['content'][0]['text'])
+print(inner['data'].get('seen_trace'), inner['data'].get('seen_injected'))
+"
+--- response_body
+None None
+--- error_log
+cannot appear in a request header
+
+
+
+=== TEST 74: a route over a document that declares framing headers as parameters
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "streamable_http",
+                    base_url = "http://127.0.0.1:11460",
+                    headers = { ["Authorization"] = "Bearer gateway-key" },
+                    openapi_url = "http://127.0.0.1:11460/framing.json",
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 75: a tool call cannot set the framing of the request the gateway sends
+--- exec
+python3 t/plugin/openapi_to_mcp_harness.py /mcp \
+    '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"framed","arguments":{"headerParameters":{"Transfer-Encoding":"chunked","Content-Length":"4","Host":"internal"},"requestBody":{"a":1}}}}' "
+inner = json.loads(d['result']['content'][0]['text'])
+print(inner['data'].get('seen_transfer_encoding'))
+print(inner['data'].get('seen_content_length'))
+print(inner['data'].get('seen_host'))
+print(inner['data'].get('seen_body'))
+"
+--- response_body
+None
+7
+127.0.0.1:11460
+{"a":1}
+--- error_log
+a tool call cannot set this header
+
+
+
+=== TEST 76: a header parameter spelled in another case cannot replace a route header
+--- exec
+python3 t/plugin/openapi_to_mcp_harness.py /mcp \
+    '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"framed","arguments":{"headerParameters":{"authorization":"Bearer attacker"},"requestBody":{"a":1}}}}' "
+inner = json.loads(d['result']['content'][0]['text'])
+print(inner['data'].get('seen_auth'))
+"
+--- response_body
+Bearer gateway-key
