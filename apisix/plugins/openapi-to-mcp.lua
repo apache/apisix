@@ -20,6 +20,9 @@ local mcp_sse         = require("apisix.plugins.openapi-to-mcp.transport.sse")
 local ngx         = ngx
 local pairs       = pairs
 local ipairs      = ipairs
+local type        = type
+local str_lower   = string.lower
+local str_match   = string.match
 
 local schema = {
     type = "object",
@@ -90,8 +93,10 @@ local schema = {
             items = { type = "string", minLength = 1 },
         },
         allowed_origins = {
-            description = "Origin header values accepted on MCP requests. " ..
-            "When unset the Origin header is not checked.",
+            description = "Origin header values accepted on MCP requests, as " ..
+            "scheme://host[:port]. A request with no Origin header is always " ..
+            "accepted. When unset, a request that carries one is accepted only " ..
+            "from the origin it was addressed to. [\"*\"] accepts any origin.",
             type = "array",
             minItems = 1,
             uniqueItems = true,
@@ -189,27 +194,106 @@ function _M.access(conf, ctx)
 end
 
 
--- MCP asks an HTTP transport to check Origin, because a browser page can reach
--- a server bound to localhost otherwise (DNS rebinding). The header is only
--- checked when the route says which origins it expects; unset means the check
--- does not apply, which is how the reference server behaves as well.
-local function origin_rejected(conf, ctx)
-    if not conf.allowed_origins then
-        return false
-    end
+-- MCP asks an HTTP transport to check Origin, because a page in a browser can
+-- otherwise reach a server that is only listening on localhost, or one behind
+-- the user's firewall, and read the answer back.
+--
+-- A request with no Origin is left alone: it did not come from a browser, and
+-- every non-browser MCP client sends none. A request that does carry one is
+-- accepted only from the origin the request was addressed to, unless the Route
+-- names the origins it expects in allowed_origins -- ["*"] there accepts any.
+--
+-- What this stops is a page on another origin calling the Route. It is not by
+-- itself a defence against DNS rebinding, where the attacker owns the name and
+-- so both Origin and Host are theirs; a Route that declares `hosts` is not
+-- reachable that way at all, because a request carrying another Host does not
+-- match it.
+local DEFAULT_PORT = { http = "80", https = "443" }
 
+
+-- "host", "host:port", "[::1]" or "[::1]:port" into a host and a port, the
+-- scheme's default port standing in for an absent one.
+local function split_authority(authority, scheme)
+    local host, port = str_match(authority, "^%[(.+)%]:(%d+)$")
+    if not host then
+        host = str_match(authority, "^%[(.+)%]$")
+    end
+    if not host then
+        host, port = str_match(authority, "^([^:]+):(%d+)$")
+    end
+    if not host then
+        host = authority
+    end
+    return str_lower(host or ""), port or DEFAULT_PORT[scheme] or ""
+end
+
+
+-- An Origin as "scheme://host:port", or nil for one that names no origin at
+-- all -- "null", which a sandboxed frame and a file:// page both send.
+local function parse_origin(value)
+    if type(value) ~= "string" then
+        return nil
+    end
+    local scheme, authority = str_match(value, "^(%a[%w+.-]*)://(.+)$")
+    if not scheme then
+        return nil
+    end
+    scheme = str_lower(scheme)
+    local host, port = split_authority(authority, scheme)
+    if host == "" then
+        return nil
+    end
+    return scheme .. "://" .. host .. ":" .. port
+end
+
+
+-- The origin this request was addressed to, in the same shape.
+local function request_origin(ctx)
+    local host_header = core.request.header(ctx, "host")
+    if type(host_header) ~= "string" or host_header == "" then
+        return nil
+    end
+    local scheme = str_lower(ctx.var.scheme or "http")
+    local host, port = split_authority(host_header, scheme)
+    if host == "" then
+        return nil
+    end
+    return scheme .. "://" .. host .. ":" .. port
+end
+
+
+local function origin_rejected(conf, ctx)
     local origin = core.request.header(ctx, "origin")
     if origin == nil then
         return false
     end
-
-    for _, allowed in ipairs(conf.allowed_origins) do
-        if allowed == origin then
-            return false
-        end
+    if type(origin) ~= "string" then
+        -- more than one Origin header: nothing sends that, and there is no
+        -- single origin to compare
+        core.log.warn("rejected an MCP request carrying more than one Origin")
+        return true
     end
 
-    core.log.warn("rejected an MCP request with a disallowed Origin")
+    local parsed = parse_origin(origin)
+    local allowed = conf.allowed_origins
+
+    if allowed then
+        for _, entry in ipairs(allowed) do
+            if entry == "*" or entry == origin
+               or (parsed ~= nil and parse_origin(entry) == parsed)
+            then
+                return false
+            end
+        end
+        core.log.warn("rejected an MCP request with a disallowed Origin")
+        return true
+    end
+
+    if parsed ~= nil and parsed == request_origin(ctx) then
+        return false
+    end
+    core.log.warn("rejected an MCP request from another origin; list it in ",
+                  "allowed_origins to accept it")
     return true
 end
 

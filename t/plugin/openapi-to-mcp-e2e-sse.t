@@ -269,3 +269,51 @@ Origin: https://evil.example.com
 {"message":"Origin not allowed"}
 --- error_log
 rejected an MCP request with a disallowed Origin
+
+
+
+=== TEST 14: an sse route that names no origins at all
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "sse",
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/openapi.json",
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 15: without allowed_origins the stream is still refused from another origin
+--- request
+GET /mcp
+--- more_headers
+Origin: https://evil.example.com
+--- error_code: 403
+--- response_body
+{"message":"Origin not allowed"}
+--- error_log
+rejected an MCP request from another origin
+
+
+
+=== TEST 16: a stream opened from this very origin is served
+--- exec
+timeout 3 curl -sSN -H "Origin: http://localhost:1984" http://localhost:1984/mcp 2>&1 | head -1
+--- response_body
+event: endpoint
+
+
+
+=== TEST 17: a non-browser client, which sends no Origin, still opens a stream
+--- exec
+timeout 3 curl -sSN http://localhost:1984/mcp 2>&1 | head -1
+--- response_body
+event: endpoint
