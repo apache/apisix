@@ -77,6 +77,7 @@ MCP 服务运行在 APISIX 内部，不需要额外的进程或服务。
 * **`base_url` 不应由客户端可控的变量拼成。** `http://${http_x_backend}` 会让调用方决定工具请求发往何处；请使用固定主机，或网关自身设置的变量。
 * **文档内 `http(s)` 形式的 `$ref` 默认只跟随文档自身的 scheme、主机与端口。** 因此从 `127.0.0.1` 提供的文档无法指向同一地址上的其他端口。需要跨来源时用 `allowed_ref_hosts` 显式声明，并避免把内部地址写进去。
 * **插件的 `headers` 会附加到文档中的每一个操作上。** 如果其中的凭据并非对所有操作都适用，请用 [`consumer-restriction`](consumer-restriction.md) 等方式限制 consumer 可调用的工具。
+* **插件的 `headers` 优先于调用方传入的同名 header**，两者大小写写法不同也一样，因此工具调用无法替换网关附加的凭据。调用方也不能设置决定请求分帧或属于连接本身的 header —— `Transfer-Encoding`、`Content-Length`、`Host`、`Connection`、`Upgrade`、`Expect` 以及其他 hop-by-hop header —— 即使文档把它们声明成了 header 参数。
 
 ## 使用示例
 

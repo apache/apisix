@@ -77,6 +77,7 @@ Each SSE stream holds a connection for up to 30 minutes, and a client that disap
 * **`base_url` should not be built from client-controlled variables.** `http://${http_x_backend}` lets the caller choose where the tool call goes; use a fixed host, or a variable the gateway itself sets.
 * **An `http(s)` `$ref` is followed only to the document's own scheme, host and port** by default, so a document served from `127.0.0.1` cannot reach another port on that same address. Add `allowed_ref_hosts` to allow more, and keep internal addresses out of that list.
 * **The Plugin's `headers` reach every operation in the document.** If the credential they carry is not meant for all of them, restrict which tools a consumer may call with [`consumer-restriction`](consumer-restriction.md) or an equivalent.
+* **The Plugin's `headers` win over a header the caller supplies**, whichever case each is spelled in, so a tool call cannot replace a credential the gateway adds. A call also cannot set the headers that frame the request or belong to the connection -- `Transfer-Encoding`, `Content-Length`, `Host`, `Connection`, `Upgrade`, `Expect` and the other hop-by-hop ones -- even where the document declares them as header parameters.
 
 ## Example usage
 

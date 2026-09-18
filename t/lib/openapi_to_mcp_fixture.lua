@@ -74,6 +74,24 @@ local DOCUMENTS = {
         } } },
     },
 
+    -- a document that declares framing headers, and one spelled in another
+    -- case than the Route's own header, as tool parameters
+    ["/framing.json"] = {
+        openapi = "3.0.0",
+        info = { title = "Framing", version = "1" },
+        paths = { ["/framed"] = { post = {
+            operationId = "framed",
+            parameters = {
+                { name = "Transfer-Encoding", ["in"] = "header", schema = { type = "string" } },
+                { name = "Content-Length", ["in"] = "header", schema = { type = "string" } },
+                { name = "Host", ["in"] = "header", schema = { type = "string" } },
+                { name = "authorization", ["in"] = "header", schema = { type = "string" } },
+            },
+            requestBody = { content = { ["application/json"] = {
+                schema = { type = "object" } } } },
+        } } },
+    },
+
     -- parameters declared on the Path Item, one of them overridden
     ["/pathitem.json"] = {
         openapi = "3.0.0",
@@ -278,6 +296,8 @@ function _M.serve()
         seen_host = ngx.var.http_host,
         seen_forwarded = ngx.req.get_headers()["x-forwarded-for"],
         seen_content_type = ngx.req.get_headers()["content-type"],
+        seen_transfer_encoding = ngx.req.get_headers()["transfer-encoding"],
+        seen_content_length = ngx.req.get_headers()["content-length"],
         seen_body = ngx.req.get_method() ~= "GET" and read_body() or nil,
     }))
 end

@@ -1121,3 +1121,55 @@ print(inner['data'].get('seen_trace'), inner['data'].get('seen_injected'))
 None None
 --- error_log
 cannot appear in a request header
+
+
+
+=== TEST 63: a route over a document that declares framing headers as parameters
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "streamable_http",
+                    base_url = "http://127.0.0.1:11460",
+                    headers = { ["Authorization"] = "Bearer gateway-key" },
+                    openapi_url = "http://127.0.0.1:11460/framing.json",
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 64: a tool call cannot set the framing of the request the gateway sends
+--- exec
+python3 t/plugin/openapi_to_mcp_harness.py /mcp \
+    '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"framed","arguments":{"headerParameters":{"Transfer-Encoding":"chunked","Content-Length":"4","Host":"internal"},"requestBody":{"a":1}}}}' "
+inner = json.loads(d['result']['content'][0]['text'])
+print(inner['data'].get('seen_transfer_encoding'))
+print(inner['data'].get('seen_content_length'))
+print(inner['data'].get('seen_host'))
+print(inner['data'].get('seen_body'))
+"
+--- response_body
+None
+7
+127.0.0.1:11460
+{"a":1}
+--- error_log
+a tool call cannot set this header
+
+
+
+=== TEST 65: a header parameter spelled in another case cannot replace a route header
+--- exec
+python3 t/plugin/openapi_to_mcp_harness.py /mcp \
+    '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"framed","arguments":{"headerParameters":{"authorization":"Bearer attacker"},"requestBody":{"a":1}}}}' "
+inner = json.loads(d['result']['content'][0]['text'])
+print(inner['data'].get('seen_auth'))
+"
+--- response_body
+Bearer gateway-key
