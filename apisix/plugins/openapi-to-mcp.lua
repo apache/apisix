@@ -23,6 +23,7 @@ local ipairs      = ipairs
 local type        = type
 local str_lower   = string.lower
 local str_match   = string.match
+local str_sub     = string.sub
 
 local schema = {
     type = "object",
@@ -95,8 +96,9 @@ local schema = {
         allowed_origins = {
             description = "Origin header values accepted on MCP requests, as " ..
             "scheme://host[:port]. A request with no Origin header is always " ..
-            "accepted. When unset, a request that carries one is accepted only " ..
-            "from the origin it was addressed to. [\"*\"] accepts any origin.",
+            "accepted. When unset, an Origin is accepted only if its host is " ..
+            "one the route declares in host/hosts, or if both it and the " ..
+            "request are on a loopback address. [\"*\"] accepts any origin.",
             type = "array",
             minItems = 1,
             uniqueItems = true,
@@ -199,16 +201,27 @@ end
 -- the user's firewall, and read the answer back.
 --
 -- A request with no Origin is left alone: it did not come from a browser, and
--- every non-browser MCP client sends none. A request that does carry one is
--- accepted only from the origin the request was addressed to, unless the Route
--- names the origins it expects in allowed_origins -- ["*"] there accepts any.
+-- every non-browser MCP client sends none. One that does carry an Origin is
+-- accepted only against something the operator configured, never against
+-- another header of the same request: under DNS rebinding the attacker owns
+-- the name, so Origin and Host are both theirs and agree with each other.
 --
--- What this stops is a page on another origin calling the Route. It is not by
--- itself a defence against DNS rebinding, where the attacker owns the name and
--- so both Origin and Host are theirs; a Route that declares `hosts` is not
--- reachable that way at all, because a request carrying another Host does not
--- match it.
+-- Three things count as configured, in this order:
+--   * allowed_origins on the Plugin, ["*"] there accepting any origin;
+--   * the Route's own host predicate, which the operator wrote and the
+--     attacker's name does not satisfy -- a request carrying another Host does
+--     not match such a Route at all;
+--   * a loopback address at both ends, which is the case MCP is written
+--     around: a page can only have http://localhost as its origin if it is
+--     served from the machine itself, and no rebinding produces that.
+-- A Route with none of them refuses every request that carries an Origin.
 local DEFAULT_PORT = { http = "80", https = "443" }
+
+local LOOPBACK_HOST = {
+    ["localhost"] = true,
+    ["127.0.0.1"] = true,
+    ["::1"] = true,
+}
 
 
 -- "host", "host:port", "[::1]" or "[::1]:port" into a host and a port, the
@@ -228,8 +241,9 @@ local function split_authority(authority, scheme)
 end
 
 
--- An Origin as "scheme://host:port", or nil for one that names no origin at
--- all -- "null", which a sandboxed frame and a file:// page both send.
+-- An Origin as its host and its full "scheme://host:port", or nil for one that
+-- names no origin at all -- "null", which a sandboxed frame and a file:// page
+-- both send.
 local function parse_origin(value)
     if type(value) ~= "string" then
         return nil
@@ -243,22 +257,39 @@ local function parse_origin(value)
     if host == "" then
         return nil
     end
-    return scheme .. "://" .. host .. ":" .. port
+    return scheme .. "://" .. host .. ":" .. port, host
 end
 
 
--- The origin this request was addressed to, in the same shape.
-local function request_origin(ctx)
-    local host_header = core.request.header(ctx, "host")
-    if type(host_header) ~= "string" or host_header == "" then
+-- The hosts the Route itself declares, which is configuration rather than
+-- anything the request carries.
+local function route_hosts(ctx)
+    local route = ctx.matched_route and ctx.matched_route.value
+    if not route then
         return nil
     end
-    local scheme = str_lower(ctx.var.scheme or "http")
-    local host, port = split_authority(host_header, scheme)
-    if host == "" then
-        return nil
+    if route.hosts then
+        return route.hosts
     end
-    return scheme .. "://" .. host .. ":" .. port
+    if route.host then
+        return { route.host }
+    end
+    return nil
+end
+
+
+-- A Route host matches the way APISIX matches it: either literally or, for a
+-- "*.example.com" entry, on the suffix.
+local function host_matches(pattern, host)
+    local lower = str_lower(pattern)
+    if lower == host then
+        return true
+    end
+    if str_sub(lower, 1, 2) == "*." then
+        local suffix = str_sub(lower, 2)
+        return #host > #suffix and str_sub(host, -#suffix) == suffix
+    end
+    return false
 end
 
 
@@ -274,13 +305,13 @@ local function origin_rejected(conf, ctx)
         return true
     end
 
-    local parsed = parse_origin(origin)
+    local normalised, origin_host = parse_origin(origin)
     local allowed = conf.allowed_origins
 
     if allowed then
         for _, entry in ipairs(allowed) do
             if entry == "*" or entry == origin
-               or (parsed ~= nil and parse_origin(entry) == parsed)
+               or (normalised ~= nil and parse_origin(entry) == normalised)
             then
                 return false
             end
@@ -289,11 +320,34 @@ local function origin_rejected(conf, ctx)
         return true
     end
 
-    if parsed ~= nil and parsed == request_origin(ctx) then
-        return false
+    if origin_host ~= nil then
+        local hosts = route_hosts(ctx)
+        if hosts then
+            for _, pattern in ipairs(hosts) do
+                if host_matches(pattern, origin_host) then
+                    return false
+                end
+            end
+            core.log.warn("rejected an MCP request whose Origin is not a host ",
+                          "of this route")
+            return true
+        end
+
+        -- No configuration to check against. Loopback at both ends is the one
+        -- case that is still safe: an attacker's page cannot be served from
+        -- the machine the gateway runs on.
+        local host_header = core.request.header(ctx, "host")
+        if LOOPBACK_HOST[origin_host] and type(host_header) == "string" then
+            local request_host = split_authority(host_header,
+                                                 str_lower(ctx.var.scheme or "http"))
+            if LOOPBACK_HOST[request_host] then
+                return false
+            end
+        end
     end
-    core.log.warn("rejected an MCP request from another origin; list it in ",
-                  "allowed_origins to accept it")
+
+    core.log.warn("rejected an MCP request carrying an Origin this route has ",
+                  "nothing to check it against; list it in allowed_origins")
     return true
 end
 

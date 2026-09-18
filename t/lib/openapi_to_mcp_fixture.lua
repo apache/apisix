@@ -305,16 +305,22 @@ end
 
 -- PUT one openapi-to-mcp route per { id, uri, conf[, plugins] } entry.
 -- Prints and returns false on the first failure, true when all are in.
+-- route[5], when given, is merged into the route body itself, for the cases
+-- that need a predicate of their own such as `hosts`
 function _M.put_routes(routes)
     for _, route in ipairs(routes) do
         local id, uri, conf, plugins = route[1], route[2], route[3], route[4] or {}
         plugins["openapi-to-mcp"] = conf
+        local body_table = {
+            uri = uri,
+            plugins = plugins,
+            upstream = { nodes = { ["127.0.0.1:1980"] = 1 }, type = "roundrobin" },
+        }
+        for key, value in pairs(route[5] or {}) do
+            body_table[key] = value
+        end
         local code, body = t("/apisix/admin/routes/" .. id, ngx.HTTP_PUT,
-            core.json.encode({
-                uri = uri,
-                plugins = plugins,
-                upstream = { nodes = { ["127.0.0.1:1980"] = 1 }, type = "roundrobin" },
-            }))
+            core.json.encode(body_table))
         if code >= 300 then
             ngx.say("route ", id, ": ", body)
             return false

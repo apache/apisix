@@ -291,7 +291,7 @@ passed
 
 
 
-=== TEST 15: without allowed_origins the stream is still refused from another origin
+=== TEST 15: with nothing to check it against, the stream is refused
 --- request
 GET /mcp
 --- more_headers
@@ -300,11 +300,11 @@ Origin: https://evil.example.com
 --- response_body
 {"message":"Origin not allowed"}
 --- error_log
-rejected an MCP request from another origin
+nothing to check it against
 
 
 
-=== TEST 16: a stream opened from this very origin is served
+=== TEST 16: loopback at both ends opens a stream
 --- exec
 timeout 3 curl -sSN -H "Origin: http://localhost:1984" http://localhost:1984/mcp 2>&1 | head -1
 --- response_body
@@ -317,3 +317,15 @@ event: endpoint
 timeout 3 curl -sSN http://localhost:1984/mcp 2>&1 | head -1
 --- response_body
 event: endpoint
+
+
+
+=== TEST 18: a rebound name is refused on the stream too
+--- exec
+timeout 5 curl -sSN -o /dev/null -w "%{http_code}\n" http://localhost:1984/mcp \
+    -H "Host: attacker.example" \
+    -H "Origin: http://attacker.example" 2>&1
+--- response_body
+403
+--- error_log
+nothing to check it against
