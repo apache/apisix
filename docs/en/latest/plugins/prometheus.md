@@ -158,7 +158,7 @@ The following labels are used to differentiate `apisix_bandwidth` metrics.
 ### Labels for `apisix_llm_latency`
 
 | Name | Description                                                                                                                   |
-| ---------- | ----------------------------------------------------------------------------------------------------------------------------- |                                                                                             |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | route_id      | ID of the Route that bandwidth corresponds to when `prefer_name` is `false` (default), and name of the Route when `prefer_name` to `true`. Default to an empty string if a request does not match any Route.                         |
 | service_id    | ID of the Service that bandwidth corresponds to when `prefer_name` is `false` (default), and name of the Service when `prefer_name` to `true`. Default to the configured value of host on the Route if the matched Route does not belong to any Service. |
 | consumer   | Name of the Consumer associated with a request. Default to an empty string if no Consumer is associated with the request.                       |
@@ -184,7 +184,7 @@ The following labels are used to differentiate `apisix_bandwidth` metrics.
 ### Labels for `apisix_llm_completion_tokens`
 
 | Name | Description                                                                                                                   |
-| ---------- | ----------------------------------------------------------------------------------------------------------------------------- |                                                                                             |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | route_id      | ID of the Route that bandwidth corresponds to when `prefer_name` is `false` (default), and name of the Route when `prefer_name` to `true`. Default to an empty string if a request does not match any Route.                         |
 | service_id    | ID of the Service that bandwidth corresponds to when `prefer_name` is `false` (default), and name of the Service when `prefer_name` to `true`. Default to the configured value of host on the Route if the matched Route does not belong to any Service. |
 | consumer   | Name of the Consumer associated with a request. Default to an empty string if no Consumer is associated with the request.                       |
@@ -195,7 +195,7 @@ The following labels are used to differentiate `apisix_bandwidth` metrics.
 ### Labels for `apisix_llm_prompt_tokens`
 
 | Name | Description                                                                                                                   |
-| ---------- | ----------------------------------------------------------------------------------------------------------------------------- |                                                                                             |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | route_id      | ID of the Route that bandwidth corresponds to when `prefer_name` is `false` (default), and name of the Route when `prefer_name` to `true`. Default to an empty string if a request does not match any Route.                         |
 | service_id    | ID of the Service that bandwidth corresponds to when `prefer_name` is `false` (default), and name of the Service when `prefer_name` to `true`. Default to the configured value of host on the Route if the matched Route does not belong to any Service. |
 | consumer   | Name of the Consumer associated with a request. Default to an empty string if no Consumer is associated with the request.                       |
