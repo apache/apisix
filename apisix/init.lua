@@ -1144,7 +1144,11 @@ function _M.websocket_content_phase()
             return new_frame.payload, new_frame.code
         end
     })
-    if not ok or not proxy then
+    if not ok then
+        ngx.log(ngx.ERR, "failed to create proxy: ", proxy)
+        return core.response.exit(500)
+    end
+    if not proxy then
         ngx.log(ngx.ERR, "failed to create proxy: ", err)
         return core.response.exit(500)
     end

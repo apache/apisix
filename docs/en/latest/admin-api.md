@@ -1044,7 +1044,7 @@ The following should be considered when setting the `hash_on` value:
 APISIX supports proxying WebSocket connections in two different ways, and they don't combine:
 
 - Route or Service level [`enable_websocket`](#route) with an `http`/`https` Upstream `scheme`. This is a plain protocol upgrade: nginx's own `proxy_pass` forwards the raw TCP stream after the `101 Switching Protocols` handshake, and no plugin phase sees the individual WebSocket frames.
-- Upstream `scheme: ws` or `scheme: wss`. APISIX parses and proxies the WebSocket frames itself in both directions, which lets a plugin inspect or rewrite frames in flight through the `ws_handshake`, `ws_client_frame`, `ws_upstream_frame`, and `ws_close` phases. See the ["extra phase" section of the plugin development guide](./plugin-develop.md#extra-phase) for how to hook into them. `enable_websocket` is ignored on a Route whose Upstream uses this scheme, since the connection never reaches the `proxy_pass` path it configures.
+- Upstream `scheme: ws` or `scheme: wss`. APISIX parses and proxies the WebSocket frames itself in both directions, which lets a plugin inspect or rewrite frames in flight through the `ws_handshake`, `ws_client_frame`, `ws_upstream_frame`, and `ws_close` phases. See the ["extra phase" section of the plugin development guide](./plugin-develop.md#extra-phase) for how to hook into them. `enable_websocket` is ignored on a Route or a Service whose Upstream uses this scheme, since the connection never reaches the `proxy_pass` path it configures.
 
 The features described below requires APISIX to be run on [APISIX-Runtime](./FAQ.md#how-do-i-build-the-apisix-runtime-environment):
 

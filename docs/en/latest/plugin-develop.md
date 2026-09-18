@@ -217,7 +217,7 @@ function _M.delayed_body_filter(conf, ctx)
 end
 ```
 
-When a route's `upstream.scheme` is `ws` or `wss`, APISIX proxies WebSocket frames itself instead of letting nginx's `proxy_pass` transparently forward them, so it can also run a plugin's logic against each frame. The normal `rewrite`/`access`/`before_proxy` phases still run beforehand and `log` still runs afterward; only `header_filter`/`body_filter` are skipped, since there's no separate response to filter. In their place, four WebSocket-specific phases fire for such a route:
+When a route's `upstream.scheme` is `ws` or `wss`, APISIX proxies WebSocket frames itself instead of letting nginx's `proxy_pass` transparently forward them, so it can also run a plugin's logic against each frame. The normal `rewrite`/`access`/`before_proxy` phases still run beforehand and `log` still runs afterward; only `header_filter`/`body_filter`/`delayed_body_filter` are skipped, since there's no separate response to filter. In their place, four WebSocket-specific phases fire for such a route:
 
 * `ws_handshake` - runs once, after `before_proxy`, before APISIX attempts to connect to the upstream.
 * `ws_client_frame` - runs once per frame received from the downstream client, before it is forwarded to the upstream.

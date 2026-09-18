@@ -1051,7 +1051,7 @@ APISIX 的 Upstream 除了基本的负载均衡算法选择外，还支持对上
 APISIX 支持两种不同的方式来代理 WebSocket 连接，二者不能混用：
 
 - Route 或 Service 级别的 [`enable_websocket`](#route)，配合 `http`/`https` 的 Upstream `scheme`。这是纯粹的协议升级：`101 Switching Protocols` 握手完成后，由 nginx 自身的 `proxy_pass` 转发原始 TCP 流，没有任何插件 phase 能看到单独的 WebSocket 帧。
-- Upstream `scheme: ws` 或 `scheme: wss`。APISIX 会自己双向解析并代理 WebSocket 帧，插件可以通过 `ws_handshake`、`ws_client_frame`、`ws_upstream_frame`、`ws_close` 这几个 phase 在帧的转发过程中读取或改写它们，具体用法参考[插件开发指南的 "extra phase" 一节](./plugin-develop.md#extra-phase)。如果 Route 所属的 Upstream 使用了这个 scheme，`enable_websocket` 会被忽略，因为连接根本不会走到它所配置的那条 `proxy_pass` 路径。
+- Upstream `scheme: ws` 或 `scheme: wss`。APISIX 会自己双向解析并代理 WebSocket 帧，插件可以通过 `ws_handshake`、`ws_client_frame`、`ws_upstream_frame`、`ws_close` 这几个 phase 在帧的转发过程中读取或改写它们，具体用法参考[插件开发指南的 "extra phase" 一节](./plugin-develop.md#extra-phase)。如果 Route 或 Service 所属的 Upstream 使用了这个 scheme，`enable_websocket` 会被忽略，因为连接根本不会走到它所配置的那条 `proxy_pass` 路径。
 
 以下特性需要 APISIX 运行于 [APISIX-Runtime](./FAQ.md#如何构建-APISIX-Runtime-环境？)：
 
