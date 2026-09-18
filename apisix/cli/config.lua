@@ -178,6 +178,7 @@ local _M = {
         ["plugin-limit-conn-redis-cluster-slot-lock"] = "1m",
         ["plugin-graphql-limit-count"] = "10m",
         ["plugin-graphql-limit-count-reset-header"] = "10m",
+        ["plugin-saml-auth-replay"] = "10m",
         ["plugin-ai-rate-limiting"] = "10m",
         ["plugin-ai-rate-limiting-reset-header"] = "10m",
         tracing_buffer = "32m",

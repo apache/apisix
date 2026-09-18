@@ -460,6 +460,10 @@ http {
     lua_shared_dict redis_cluster_health 10m;
     {% end %}
 
+    {% if enabled_plugins["saml-auth"] then %}
+    lua_shared_dict plugin-saml-auth-replay {* http.lua_shared_dict["plugin-saml-auth-replay"] *};
+    {% end %}
+
     {% if enabled_plugins["graphql-limit-count"] then %}
     lua_shared_dict plugin-graphql-limit-count {* http.lua_shared_dict["plugin-graphql-limit-count"] *};
     lua_shared_dict plugin-graphql-limit-count-reset-header {* http.lua_shared_dict["plugin-graphql-limit-count-reset-header"] *};

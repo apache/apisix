@@ -365,6 +365,7 @@ nginx_config:                     # Config for render the template to generate n
       plugin-limit-conn-redis-cluster-slot-lock: 1m
       plugin-graphql-limit-count: 10m
       plugin-graphql-limit-count-reset-header: 10m
+      plugin-saml-auth-replay: 10m    # Assertions accepted by saml-auth when `replay_dict` names this dict
       tracing_buffer: 10m
       plugin-api-breaker: 10m
       etcd-cluster-health-check: 10m
