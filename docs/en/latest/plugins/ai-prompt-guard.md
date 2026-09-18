@@ -40,6 +40,16 @@ The `ai-prompt-guard` Plugin safeguards your LLM endpoints by inspecting and val
 
 When both `allow_patterns` and `deny_patterns` are configured, the Plugin first ensures that at least one `allow_patterns` is matched. If none match, the request is rejected. If an allowed pattern is matched, it then checks for any occurrences of denied patterns.
 
+The Plugin checks Chat Completions, Responses API, Embeddings, Anthropic Messages, and Bedrock Converse requests using each protocol's native content structure. For Responses, it checks user content in `input` and, when `match_all_roles` is `true`, system content in `instructions`. For Embeddings, it checks `input` when it is a string; an array of input strings is not inspected.
+
+APISIX checks URI-specific formats before body-only formats:
+
+- Bedrock Converse requires a URI ending in `/converse` and a `messages` array.
+- Anthropic Messages requires a URI ending in `/v1/messages`.
+- Responses API requires a URI ending in `/v1/responses` and an `input` field.
+- Chat Completions uses a `messages` array.
+- Embeddings uses `input` after the earlier rules do not match.
+
 ## Plugin Attributes
 
 | Name | Type | Required | Default | Valid values | Description |
