@@ -69,6 +69,26 @@ local function get_attr_map(span)
 end
 
 
+local function verify_propagated_parent(filepath, span, path, errors)
+    local file = io.open(filepath, "rb")
+    if not file then
+        table.insert(errors, path .. ": cannot open " .. filepath)
+        return
+    end
+
+    local headers = file:read("*a")
+    file:close()
+    local trace_id, span_id = headers:match(
+        "[Uu]pstream%-[Tt]raceparent:%s*00%-(%x+)%-(%x+)%-%x+")
+    if trace_id ~= span.traceId or span_id ~= span.spanId then
+        table.insert(errors, string.format(
+            "%s: propagated parent expected %s/%s, got %s/%s",
+            path, tostring(span.traceId), tostring(span.spanId),
+            tostring(trace_id), tostring(span_id)))
+    end
+end
+
+
 -- Recursively verify a span tree node against the expected structure.
 local function verify(spans_by_id, expected, actual, path, errors)
     if not actual then
@@ -93,9 +113,39 @@ local function verify(spans_by_id, expected, actual, path, errors)
         end
     end
 
+    if expected.propagated_header_file then
+        verify_propagated_parent(expected.propagated_header_file, actual, path, errors)
+    end
+
     if expected.children then
         for _, child_exp in ipairs(expected.children) do
             local child = find_child(spans_by_id, actual.spanId, child_exp.name)
+            if child and child_exp.within_parent then
+                local child_start = tonumber(child.startTimeUnixNano)
+                local child_end = tonumber(child.endTimeUnixNano)
+                local parent_start = tonumber(actual.startTimeUnixNano)
+                local parent_end = tonumber(actual.endTimeUnixNano)
+                if not child_start or not child_end or not parent_start or not parent_end
+                   or child_start < parent_start or child_end > parent_end
+                   or child_end < child_start
+                then
+                    table.insert(errors, string.format(
+                        "%s > %s: span timing is outside its parent "
+                        .. "(parent=%s..%s, child=%s..%s, "
+                        .. "start_delta=%s, end_delta=%s, child_duration=%s)",
+                        path, child_exp.name,
+                        tostring(actual.startTimeUnixNano),
+                        tostring(actual.endTimeUnixNano),
+                        tostring(child.startTimeUnixNano),
+                        tostring(child.endTimeUnixNano),
+                        tostring(child_start and parent_start
+                                 and (child_start - parent_start)),
+                        tostring(child_end and parent_end
+                                 and (child_end - parent_end)),
+                        tostring(child_end and child_start
+                                 and (child_end - child_start))))
+                end
+            end
             verify(spans_by_id, child_exp, child,
                    path .. " > " .. child_exp.name, errors)
         end
@@ -125,6 +175,40 @@ function _M.verify_tree(filepath, expected_tree)
     local errors = {}
     verify(spans_by_id, expected_tree, root, expected_tree.name, errors)
 
+    if #errors > 0 then
+        return false, table.concat(errors, "\n")
+    end
+    return true
+end
+
+
+-- Return all spans with the given name, ordered by start time.
+function _M.find_spans(filepath, name)
+    local spans_by_id, err = parse_spans(filepath)
+    if not spans_by_id then
+        return nil, err
+    end
+
+    local spans = {}
+    for _, span in pairs(spans_by_id) do
+        if span.name == name then
+            table.insert(spans, span)
+        end
+    end
+    table.sort(spans, function(a, b)
+        return tonumber(a.startTimeUnixNano) < tonumber(b.startTimeUnixNano)
+    end)
+    return spans
+end
+
+
+_M.get_attr_map = get_attr_map
+
+
+-- Check that the traceparent received by the upstream points to the span.
+function _M.check_propagated_parent(filepath, span)
+    local errors = {}
+    verify_propagated_parent(filepath, span, span.name, errors)
     if #errors > 0 then
         return false, table.concat(errors, "\n")
     end
