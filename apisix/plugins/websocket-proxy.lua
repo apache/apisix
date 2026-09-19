@@ -53,7 +53,7 @@ local schema = {
 
 local _M = {
     version = 0.1,
-    priority = 507,
+    priority = 511,
     name = "websocket-proxy",
     schema = schema,
 }

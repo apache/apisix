@@ -129,10 +129,10 @@ redirect
 response-rewrite
 openapi-to-mcp
 oas-validator
+websocket-proxy
 mcp-bridge
 degraphql
 kafka-proxy
-websocket-proxy
 grpc-transcode
 grpc-web
 http-dubbo
