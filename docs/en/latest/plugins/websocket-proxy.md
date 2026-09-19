@@ -42,16 +42,19 @@ messages, such as a client uploading a file in one WebSocket message.
 
 ## Attributes
 
-| Name                      | Type    | Required | Default | Valid values | Description |
-|---------------------------|---------|----------|---------|--------------|-------------|
-| client_max_payload_len    | integer | optional |         | >= 1         | Max size, in bytes, of a single WebSocket message this route accepts from the downstream client. Left unset, the default of 65535 applies. |
-| upstream_max_payload_len  | integer | optional |         | >= 1         | Max size, in bytes, of a single WebSocket message this route accepts from the upstream. Left unset, the default of 65535 applies. |
+Each attribute below is an endpoint-level limit, not just a "receive from that peer" limit: it also
+raises the send limit on the *other* endpoint, since a message relayed onward is always sent back
+out through the opposite side of the proxy. Setting only `client_max_payload_len` is therefore
+enough to let a large client message all the way through to the upstream: it raises both how much
+the client-facing side accepts and how much the upstream-facing side is allowed to send. The two
+attributes are independent of each other, so an asymmetric configuration (one raised, the other left
+at the default, or both raised to different values) is valid and does the expected thing in each
+direction.
 
-:::note
-This plugin has no effect on a route that uses `enable_websocket` instead of `upstream.scheme: ws`/`wss`.
-See the [scheme description in the Admin API reference](../admin-api.md#upstream) for the difference
-between the two.
-:::
+| Name                      | Type    | Required | Default | Valid values          | Description |
+|---------------------------|---------|----------|---------|------------------------|-------------|
+| client_max_payload_len    | integer | optional |         | 1 - 2147483647         | Max size, in bytes, of a single WebSocket message this route accepts from the downstream client, and the max size it will relay from the client out to the upstream. Left unset, the default of 65535 applies. |
+| upstream_max_payload_len  | integer | optional |         | 1 - 2147483647         | Max size, in bytes, of a single WebSocket message this route accepts from the upstream, and the max size it will relay from the upstream out to the client. Left unset, the default of 65535 applies. |
 
 ## Example usage
 
@@ -81,6 +84,28 @@ curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/r1' \
 ```
 
 Now, a WebSocket message of up to 1 MiB in either direction on `/ws` no longer closes the connection.
+
+## FAQ
+
+### Does this plugin apply to a route using `enable_websocket`?
+
+No. It only takes effect on a route whose `upstream.scheme` is `ws` or `wss`. `enable_websocket`
+uses nginx's own `proxy_pass` to relay raw bytes without parsing frames at all, so there is no
+frame-size limit for this plugin to raise there in the first place. See the
+[scheme description in the Admin API reference](../admin-api.md#upstream) for the difference
+between the two.
+
+### I raised `client_max_payload_len`, but a large message from the upstream still does not reach the client
+
+The two attributes are independent of each other. `client_max_payload_len` covers a
+client-originated message in both directions (see [Attributes](#attributes)); a large
+upstream-originated message needs `upstream_max_payload_len` raised instead.
+
+### My configuration was rejected with a schema error mentioning 2147483647
+
+`api7-lua-resty-websocket` only encodes a 31-bit frame length, so both attributes reject a value
+above 2147483647 (2^31 - 1) at configuration time, since the library could never actually honor it.
+Lower the value, or split the payload into multiple WebSocket messages, if you need more than that.
 
 ## Delete Plugin
 

@@ -471,6 +471,93 @@ function _M.websocket_echo_large()
 end
 
 
+-- Like websocket_echo_large, but replies to every text/binary frame with a
+-- short "received:<n>" ack instead of echoing the payload back, so a test
+-- can send a large frame in and only needs a large *receive* limit on the
+-- proxy in front of it, not also a large *send* limit for the reply.
+function _M.websocket_ack_large()
+    local websocket = require "resty.websocket.server"
+    local wb, err = websocket:new({max_payload_len = 4 * 1024 * 1024})
+    if not wb then
+        ngx.log(ngx.ERR, "failed to new websocket: ", err)
+        return ngx.exit(400)
+    end
+
+    while true do
+        local data, typ, err = wb:recv_frame()
+        if not data then
+            if err and err:find("timeout", 1, true) then
+                goto continue
+            end
+            ngx.log(ngx.ERR, "failed to receive frame: ", err)
+            return
+        end
+
+        if typ == "close" then
+            wb:send_close(1000, "")
+            return
+        elseif typ == "ping" then
+            wb:send_pong(data)
+        elseif typ == "text" or typ == "binary" then
+            local bytes, send_err = wb:send_text("received:" .. #data)
+            if not bytes then
+                ngx.log(ngx.ERR, "failed to send ack: ", send_err)
+                return
+            end
+        end
+
+        ::continue::
+    end
+end
+
+
+-- Like websocket_echo_large, but pushes one large ("x" * 1MiB) text frame
+-- right after the handshake, unprompted, so a test can observe a large
+-- upstream-to-client message without also having to send a large one itself.
+-- Falls into the same echo loop afterwards.
+function _M.websocket_send_large()
+    local websocket = require "resty.websocket.server"
+    local wb, err = websocket:new({max_payload_len = 4 * 1024 * 1024})
+    if not wb then
+        ngx.log(ngx.ERR, "failed to new websocket: ", err)
+        return ngx.exit(400)
+    end
+
+    local bytes, send_err = wb:send_text(string.rep("x", 1024 * 1024))
+    if not bytes then
+        ngx.log(ngx.ERR, "failed to send large frame: ", send_err)
+        return
+    end
+
+    while true do
+        local data, typ, err = wb:recv_frame()
+        if not data then
+            if err and err:find("timeout", 1, true) then
+                goto continue
+            end
+            ngx.log(ngx.ERR, "failed to receive frame: ", err)
+            return
+        end
+
+        if typ == "close" then
+            wb:send_close(1000, "")
+            return
+        elseif typ == "ping" then
+            wb:send_pong(data)
+        elseif typ == "text" or typ == "binary" then
+            local send = typ == "text" and wb.send_text or wb.send_binary
+            local ok, echo_err = send(wb, data)
+            if not ok then
+                ngx.log(ngx.ERR, "failed to echo frame: ", echo_err)
+                return
+            end
+        end
+
+        ::continue::
+    end
+end
+
+
 -- Like websocket_echo, but the first thing it sends back is a text frame
 -- carrying the request URI (with query string) it was actually dispatched
 -- with, so a test can confirm what path/query a fronting proxy forwarded.

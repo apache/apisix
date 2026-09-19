@@ -239,6 +239,7 @@
           "items": [
             "plugins/dubbo-proxy",
             "plugins/mqtt-proxy",
+            "plugins/websocket-proxy",
             "plugins/http-dubbo",
             "plugins/openapi-to-mcp"
           ]
