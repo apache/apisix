@@ -451,6 +451,44 @@ describe('websocket-proxy (ws/wss upstream scheme)', () => {
     });
   });
 
+  describe('frame size (websocket-proxy plugin)', () => {
+    it('closes the connection on a single frame over the 65535-byte default', async () => {
+      await putEchoRoute({
+        type: 'roundrobin',
+        scheme: 'ws',
+        nodes: { [ECHO_NODE]: 1 },
+      });
+
+      const code = await waitForClose(
+        '/websocket_echo',
+        (ws) => ws.send('x'.repeat(70000)),
+        true,
+      );
+      expect(code).toBe(1006);
+    }, 10000);
+
+    it('forwards a >64K frame in each direction once websocket-proxy raises max_payload_len', async () => {
+      await createRoute(
+        '/websocket_echo_large',
+        {
+          type: 'roundrobin',
+          scheme: 'ws',
+          nodes: { [ECHO_NODE]: 1 },
+        },
+        {
+          'websocket-proxy': {
+            client_max_payload_len: 2 * 1024 * 1024,
+            upstream_max_payload_len: 2 * 1024 * 1024,
+          },
+        },
+      );
+
+      const payload = 'x'.repeat(1024 * 1024);
+      const reply = await sendAndReceive('/websocket_echo_large', payload);
+      expect(reply).toBe(payload);
+    }, 15000);
+  });
+
   describe('concurrent connections', () => {
     it("keeps two simultaneous connections' frame data isolated from each other", async () => {
       await putEchoRoute(

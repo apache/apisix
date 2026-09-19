@@ -132,6 +132,7 @@ oas-validator
 mcp-bridge
 degraphql
 kafka-proxy
+websocket-proxy
 grpc-transcode
 grpc-web
 http-dubbo

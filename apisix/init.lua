@@ -1110,9 +1110,23 @@ function _M.websocket_content_phase()
         end
     end
 
+    -- max_payload_len defaults to 65535 on both sides unless the
+    -- websocket-proxy plugin's ws_handshake set a larger one on ctx; nil
+    -- through client_new_opts/upstream_new_opts keeps that default rather
+    -- than silently raising it for routes that never asked to.
+    local client_new_opts, upstream_new_opts
+    if api_ctx.websocket_proxy_client_max_payload_len then
+        client_new_opts = { max_payload_len = api_ctx.websocket_proxy_client_max_payload_len }
+    end
+    if api_ctx.websocket_proxy_upstream_max_payload_len then
+        upstream_new_opts = { max_payload_len = api_ctx.websocket_proxy_upstream_max_payload_len }
+    end
+
     local ok, proxy, err = pcall(ws_proxy.new, {
         aggregate_fragments = true,
         recv_timeout = recv_timeout_ms,
+        client_new_opts = client_new_opts,
+        upstream_new_opts = upstream_new_opts,
         on_frame = function(proxy, role, typ, payload, last, code)
             --   proxy: [table]       the proxy instance
             --    role: [string]      "client" or "upstream"
