@@ -1110,9 +1110,27 @@ function _M.websocket_content_phase()
         end
     end
 
+    -- max_recv_len/max_send_len default to 65535 on each side unless the
+    -- websocket-proxy plugin's ws_handshake set larger limits on ctx. Each
+    -- side's receive limit is its own configured value; its send limit is
+    -- the *other* side's configured value, since what a role sends out is
+    -- always a message it just relayed in from its counterpart (a message
+    -- the real client sent needs the upstream side's send limit raised to
+    -- match the client side's receive limit, and vice versa). A nil field
+    -- keeps that direction's library default instead of silently raising it.
+    local client_new_opts, upstream_new_opts
+    local client_max_len = api_ctx.websocket_proxy_client_max_payload_len
+    local upstream_max_len = api_ctx.websocket_proxy_upstream_max_payload_len
+    if client_max_len or upstream_max_len then
+        client_new_opts = {max_recv_len = client_max_len, max_send_len = upstream_max_len}
+        upstream_new_opts = {max_recv_len = upstream_max_len, max_send_len = client_max_len}
+    end
+
     local ok, proxy, err = pcall(ws_proxy.new, {
         aggregate_fragments = true,
         recv_timeout = recv_timeout_ms,
+        client_new_opts = client_new_opts,
+        upstream_new_opts = upstream_new_opts,
         on_frame = function(proxy, role, typ, payload, last, code)
             --   proxy: [table]       the proxy instance
             --    role: [string]      "client" or "upstream"
