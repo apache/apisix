@@ -53,6 +53,7 @@ MCP 服务运行在 APISIX 内部，不需要额外的进程或服务。
 | flatten_parameters | boolean | 否 | `false` | | 为 `false` 时，工具输入中的参数分别嵌套在 `pathParameters`、`queryParameters` 和 `headerParameters` 下；为 `true` 时，参数直接放在输入对象的顶层。 |
 | max_response_body_size | integer | 否 | `1048576` | >= 1024 | 读取到工具结果中的上游响应体大小上限（字节）。超出时调用失败并返回 `RESPONSE_TOO_LARGE`，不会把响应缓冲下来。超过 256 KiB 的工具结果以紧凑 JSON 返回，不再缩进。 |
 | max_document_size | integer | 否 | `4194304` | >= 1024 | OpenAPI 文档，以及文档内 `http(s)` 形式 `$ref` 拉取的文档的大小上限（字节）。超出上限的文档不会读入 worker，该路由直接报错。 |
+| max_expanded_nodes | integer | 否 | `50000` | >= 1000 | 单次 `$ref` 展开在工具输入 Schema 中最多产生的节点数。超出后该次展开的剩余部分降级为通用对象；足够大的正常文档也可能触及此上限。只有 `paths` 会被展开，文档其他部分不计入。 |
 | allowed_ref_hosts | array[string] | 否 | | | 文档内 `http(s)` 形式的 `$ref` 除 `openapi_url` 自身所在来源（scheme、主机与端口）外还可以指向的主机。每项为主机名或 `*.example.com` 形式的通配符，可加 `:port`；不带端口时匹配该主机的任意端口。 |
 | allowed_origins | array[string] | 否 | | | MCP 请求中允许的 `Origin` 头取值，写成 `scheme://host[:port]`。配置后完全以列表为准；`["*"]` 表示接受任意 origin。不配置时，`Origin` 只有在其主机是路由 `host`/`hosts` 声明的字面量主机（`*.example.com` 这类通配项不算），或它与请求两端都是回环地址时才被接受。不带 `Origin` 头的请求始终放行。 |
 

@@ -36,7 +36,7 @@ def main():
         print("FAIL no endpoint event (%s)" % stream.error)
         return
 
-    path, _, query = stream.endpoint.partition("?")
+    _, _, query = stream.endpoint.partition("?")
     own_status, _, _ = h.post_json(h.GATEWAY, stream.endpoint, PING)
     other_status, _, _ = h.post_json(h.GATEWAY, other + "?" + query, PING)
 

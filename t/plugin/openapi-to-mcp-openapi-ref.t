@@ -41,7 +41,7 @@ __DATA__
 --- config
     location /t {
         content_by_lua_block {
-            local ref = require("apisix.plugins.openapi-to-mcp.openapi.ref")
+            local ref = require("lib.openapi_to_mcp_ref_fragment")
             local spec = {
                 components = { schemas = { Pet = { type = "object" } } },
                 paths = { ["/p"] = { get = { responses = { ["$ref"] = "#/components/schemas/Pet" } } } },
@@ -59,7 +59,7 @@ object
 --- config
     location /t {
         content_by_lua_block {
-            local ref = require("apisix.plugins.openapi-to-mcp.openapi.ref")
+            local ref = require("lib.openapi_to_mcp_ref_fragment")
             local spec = {
                 components = { schemas = { ["a/b~c"] = { type = "string" } } },
                 x = { ["$ref"] = "#/components/schemas/a~1b~0c" },
@@ -77,7 +77,7 @@ string
 --- config
     location /t {
         content_by_lua_block {
-            local ref = require("apisix.plugins.openapi-to-mcp.openapi.ref")
+            local ref = require("lib.openapi_to_mcp_ref_fragment")
             -- these would name a file on the gateway's own filesystem
             local out = ref.resolve({
                 a = { ["$ref"] = "./common.yaml#/Pet" },
@@ -97,7 +97,7 @@ only internal and http(s) $ref is supported
 --- config
     location /t {
         content_by_lua_block {
-            local ref = require("apisix.plugins.openapi-to-mcp.openapi.ref")
+            local ref = require("lib.openapi_to_mcp_ref_fragment")
             local out = ref.resolve({ x = { ["$ref"] = "#/components/schemas/Missing" } })
             ngx.say(out.x.type)
         }
@@ -113,7 +113,7 @@ failed to resolve $ref
 --- config
     location /t {
         content_by_lua_block {
-            local ref = require("apisix.plugins.openapi-to-mcp.openapi.ref")
+            local ref = require("lib.openapi_to_mcp_ref_fragment")
             local spec = {
                 components = { schemas = {
                     Node = { type = "object", properties = { next = { ["$ref"] = "#/components/schemas/Node" } } },
@@ -146,7 +146,7 @@ true
 --- config
     location /t {
         content_by_lua_block {
-            local ref = require("apisix.plugins.openapi-to-mcp.openapi.ref")
+            local ref = require("lib.openapi_to_mcp_ref_fragment")
             local spec = {
                 components = { schemas = {
                     A = { type = "object", properties = { b = { ["$ref"] = "#/components/schemas/B" } } },
@@ -169,7 +169,7 @@ true
 --- config
     location /t {
         content_by_lua_block {
-            local ref = require("apisix.plugins.openapi-to-mcp.openapi.ref")
+            local ref = require("lib.openapi_to_mcp_ref_fragment")
             local spec = {
                 components = { schemas = { Pet = { type = "object" } } },
                 x = { ["$ref"] = "#/components/schemas/Pet" },
@@ -204,7 +204,7 @@ true
     location /t {
         content_by_lua_block {
             local core = require("apisix.core")
-            local ref = require("apisix.plugins.openapi-to-mcp.openapi.ref")
+            local ref = require("lib.openapi_to_mcp_ref_fragment")
             local out = ref.resolve({
                 x = { ["$ref"] = "http://127.0.0.1:11490/target.json#/components/schemas/Pet" },
             }, { allowed_hosts = { "127.0.0.1" } })
@@ -234,7 +234,7 @@ string 8
 --- config
     location /t {
         content_by_lua_block {
-            local ref = require("apisix.plugins.openapi-to-mcp.openapi.ref")
+            local ref = require("lib.openapi_to_mcp_ref_fragment")
             local out = ref.resolve({ x = { ["$ref"] = "http://127.0.0.1:11490/target.json" } },
                                    { allowed_hosts = { "127.0.0.1" } })
             ngx.say(out.x.type, " ", out.x.title)
@@ -249,7 +249,7 @@ object whole
 --- config
     location /t {
         content_by_lua_block {
-            local ref = require("apisix.plugins.openapi-to-mcp.openapi.ref")
+            local ref = require("lib.openapi_to_mcp_ref_fragment")
             -- port 1 refuses immediately, so this does not wait for a timeout
             local out = ref.resolve({ x = { ["$ref"] = "http://127.0.0.1:1/a.json#/Pet" } },
                                    { allowed_hosts = { "127.0.0.1" } })
@@ -267,7 +267,7 @@ failed to fetch an external $ref document
 --- config
     location /t {
         content_by_lua_block {
-            local ref = require("apisix.plugins.openapi-to-mcp.openapi.ref")
+            local ref = require("lib.openapi_to_mcp_ref_fragment")
             local spec = {}
             for i = 1, 5 do
                 spec["k" .. i] = { ["$ref"] = "http://127.0.0.1:1/a.json#/Pet" }
@@ -289,7 +289,7 @@ failed to fetch an external $ref document
 --- config
     location /t {
         content_by_lua_block {
-            local ref = require("apisix.plugins.openapi-to-mcp.openapi.ref")
+            local ref = require("lib.openapi_to_mcp_ref_fragment")
             local spec = {}
             for i = 1, 12 do
                 spec["k" .. i] = { ["$ref"] = "http://127.0.0.1:1/doc" .. i .. ".json#/Pet" }
@@ -309,7 +309,7 @@ too many external $ref documents
 --- config
     location /t {
         content_by_lua_block {
-            local ref = require("apisix.plugins.openapi-to-mcp.openapi.ref")
+            local ref = require("lib.openapi_to_mcp_ref_fragment")
             local out = ref.resolve({ x = { ["$ref"] = "http://127.0.0.1:11490/target.json" } },
                                     { base_origin = "http://example.com:80" })
             ngx.say(out.x.type)
@@ -336,7 +336,7 @@ points at a host that is not allowed
 --- config
     location /t {
         content_by_lua_block {
-            local ref = require("apisix.plugins.openapi-to-mcp.openapi.ref")
+            local ref = require("lib.openapi_to_mcp_ref_fragment")
             local out = ref.resolve({ x = { ["$ref"] = "http://127.0.0.1:11490/target.json" } },
                                     { base_origin = "http://example.com:80",
                                       allowed_hosts = { "127.0.0.1" } })
@@ -352,7 +352,7 @@ object whole
 --- config
     location /t {
         content_by_lua_block {
-            local ref = require("apisix.plugins.openapi-to-mcp.openapi.ref")
+            local ref = require("lib.openapi_to_mcp_ref_fragment")
             local ok = { "*.example.com", "other.test" }
             local out = ref.resolve({
                 a = { ["$ref"] = "http://specs.example.com/a.json#/Pet" },
@@ -373,7 +373,7 @@ points at a host that is not allowed
 --- config
     location /t {
         content_by_lua_block {
-            local ref = require("apisix.plugins.openapi-to-mcp.openapi.ref")
+            local ref = require("lib.openapi_to_mcp_ref_fragment")
             -- every level fans out four ways, so inlining would produce 4^16
             -- nodes without a budget
             local spec = { components = { schemas = {} } }
@@ -421,7 +421,7 @@ $ref expansion exceeded
 --- config
     location /t {
         content_by_lua_block {
-            local ref = require("apisix.plugins.openapi-to-mcp.openapi.ref")
+            local ref = require("lib.openapi_to_mcp_ref_fragment")
             -- another port of the same address is another origin: on a gateway
             -- it is where the Admin API and etcd answer
             local out = ref.resolve({ x = { ["$ref"] = "http://127.0.0.1:11490/target.json" } },
@@ -456,7 +456,7 @@ points at a host that is not allowed
 --- config
     location /t {
         content_by_lua_block {
-            local ref = require("apisix.plugins.openapi-to-mcp.openapi.ref")
+            local ref = require("lib.openapi_to_mcp_ref_fragment")
             local spec = { x = { ["$ref"] = "http://127.0.0.1:11490/target.json" } }
 
             ngx.say("named port: ",
@@ -481,7 +481,7 @@ points at a host that is not allowed
 --- config
     location /t {
         content_by_lua_block {
-            local ref = require("apisix.plugins.openapi-to-mcp.openapi.ref")
+            local ref = require("lib.openapi_to_mcp_ref_fragment")
             -- large enough to exceed the node budget on its own, with no $ref
             -- anywhere in it. Nothing may degrade: paths is the only subtree
             -- tools are generated from, and Lua does not define which subtree
@@ -502,3 +502,94 @@ points at a host that is not allowed
 paths: table
 operation: getPet
 components: table
+
+
+
+=== TEST 20: the budget is spent on paths, not on components
+--- config
+    location /t {
+        content_by_lua_block {
+            -- the module itself, not the fragment wrapper: this is about what
+            -- resolve() decides to expand
+            local ref = require("apisix.plugins.openapi-to-mcp.openapi.ref")
+            -- components that expand far past the budget on their own, beside
+            -- a paths entry needing a handful of nodes. The part tools come
+            -- from has to survive.
+            local spec = { openapi = "3.0.0", components = { schemas = {} },
+                           paths = { ["/pet"] = { get = {
+                               operationId = "getPet",
+                               responses = { ["200"] = {
+                                   ["$ref"] = "#/components/schemas/Pet" } },
+                           } } } }
+            local schemas = spec.components.schemas
+            schemas.Pet = { type = "object", title = "pet" }
+            schemas.L16 = { type = "string" }
+            for level = 1, 15 do
+                local next_ref = "#/components/schemas/L" .. (level + 1)
+                schemas["L" .. level] = { type = "object", properties = {
+                    a = { ["$ref"] = next_ref }, b = { ["$ref"] = next_ref },
+                    c = { ["$ref"] = next_ref }, d = { ["$ref"] = next_ref },
+                } }
+            end
+            schemas.Root = { ["$ref"] = "#/components/schemas/L1" }
+
+            local out = ref.resolve(spec)
+            ngx.say("path ref: ", out.paths["/pet"].get.responses["200"].title)
+            -- components come back as they were, refs and all
+            ngx.say("components untouched: ",
+                    tostring(out.components.schemas.Root["$ref"]))
+        }
+    }
+--- response_body
+path ref: pet
+components untouched: #/components/schemas/L1
+--- no_error_log
+$ref expansion exceeded
+
+
+
+=== TEST 21: max_expanded_nodes moves the budget
+--- config
+    location /t {
+        content_by_lua_block {
+            local ref = require("apisix.plugins.openapi-to-mcp.openapi.ref")
+            local spec = { openapi = "3.0.0", components = { schemas = {} },
+                           paths = { ["/pet"] = { get = {
+                               operationId = "getPet",
+                               responses = { ["200"] = {
+                                   ["$ref"] = "#/components/schemas/Big" } },
+                           } } } }
+            local big = { type = "object", properties = {} }
+            -- each property is two nodes, so this is past a 1000-node budget
+            -- and well inside a 100000-node one
+            for i = 1, 2000 do
+                big.properties["p" .. i] = { type = "string", title = "t" .. i }
+            end
+            spec.components.schemas.Big = big
+
+            -- past the budget a node is replaced by a generic object, which
+            -- is what a property that lost its title is
+            local function degraded(schema)
+                local count = 0
+                for _, property in pairs(schema.properties or {}) do
+                    if property.title == nil then
+                        count = count + 1
+                    end
+                end
+                return count
+            end
+
+            local tight = ref.resolve(spec, { max_expanded_nodes = 1000 })
+            ngx.say("under a tight budget: ",
+                    degraded(tight.paths["/pet"].get.responses["200"]) > 0)
+
+            local roomy = ref.resolve(spec, { max_expanded_nodes = 100000 })
+            local whole = roomy.paths["/pet"].get.responses["200"]
+            ngx.say("with room: ", degraded(whole), " ", whole.properties.p2000.title)
+        }
+    }
+--- response_body
+under a tight budget: true
+with room: 0 t2000
+--- error_log
+$ref expansion exceeded 1000 nodes

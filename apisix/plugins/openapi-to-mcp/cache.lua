@@ -58,7 +58,7 @@ end
 
 
 local function build_tools(openapi_url, flatten_parameters, allowed_ref_hosts,
-                           max_document_size)
+                           max_document_size, max_expanded_nodes)
     local spec, path_order, err = loader.fetch(openapi_url, nil, max_document_size)
     if not spec then
         return nil, err
@@ -73,6 +73,7 @@ local function build_tools(openapi_url, flatten_parameters, allowed_ref_hosts,
         base_origin = document_origin(openapi_url),
         allowed_hosts = allowed_ref_hosts,
         max_document_size = max_document_size,
+        max_expanded_nodes = max_expanded_nodes,
     })
     return generator.generate(resolved, path_order, {
         flatten_parameters = flatten_parameters,
@@ -106,11 +107,13 @@ function _M.get_tools(conf)
     local flatten_parameters = conf.flatten_parameters == true
     local allowed = conf.allowed_ref_hosts
     local max_document_size = conf.max_document_size
+    local max_expanded_nodes = conf.max_expanded_nodes
     local key = conf.openapi_url .. "#" .. tostring(flatten_parameters) ..
                 "#" .. tostring(max_document_size) ..
+                "#" .. tostring(max_expanded_nodes) ..
                 "#" .. hosts_key(allowed)
     return lru(key, CACHE_VERSION, build_tools, conf.openapi_url, flatten_parameters,
-               allowed, max_document_size)
+               allowed, max_document_size, max_expanded_nodes)
 end
 
 

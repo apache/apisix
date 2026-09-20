@@ -266,7 +266,7 @@ GET /mcp
 Origin: https://evil.example.com
 --- error_code: 403
 --- response_body
-{"message":"Origin not allowed"}
+{"message":"Origin not allowed. Add it to allowed_origins on this route to accept it."}
 --- error_log
 rejected an MCP request with a disallowed Origin
 
@@ -298,7 +298,7 @@ GET /mcp
 Origin: https://evil.example.com
 --- error_code: 403
 --- response_body
-{"message":"Origin not allowed"}
+{"message":"Origin not allowed. Add it to allowed_origins on this route to accept it."}
 --- error_log
 nothing to check it against
 

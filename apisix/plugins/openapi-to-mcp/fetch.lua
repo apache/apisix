@@ -85,6 +85,11 @@ function _M.request(url, opts)
     -- "identity", or with any other transfer coding, is read to the close like
     -- one with no framing at all. A Content-Length that is there but not
     -- reached is the one case where a close really is a truncated body.
+    --
+    -- The client also requires HTTP/1.1 for that, and the response does not
+    -- carry its version, so a chunked body on an HTTP/1.0 response is read to
+    -- the close and reported here as an error. Chunked is not part of
+    -- HTTP/1.0; refusing that response is the intended reading.
     local content_length = tonumber(res.headers["Content-Length"])
     local chunked = http.transfer_encoding_is_chunked(res.headers)
     local limit = opts.max_body_size

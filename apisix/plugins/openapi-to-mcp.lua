@@ -83,6 +83,14 @@ local schema = {
             minimum = 1024,
             default = 4194304,
         },
+        max_expanded_nodes = {
+            description = "Maximum number of nodes one $ref expansion may " ..
+            "produce in the tool input schemas. Past it the rest degrades to " ..
+            "a generic object.",
+            type = "integer",
+            minimum = 1000,
+            default = 50000,
+        },
         allowed_ref_hosts = {
             description = "Hosts an http(s) $ref inside the OpenAPI document " ..
             "may point at, besides the origin of openapi_url itself. Each " ..
@@ -103,7 +111,13 @@ local schema = {
             type = "array",
             minItems = 1,
             uniqueItems = true,
-            items = { type = "string", minLength = 1 },
+            -- an entry without a scheme matches nothing, and a Route
+            -- configured that way would refuse every browser without saying
+            -- why, so it is refused here instead
+            items = {
+                type = "string",
+                pattern = "^(\\*|[a-zA-Z][a-zA-Z0-9+.-]*://[^/?#\\s]+)$",
+            },
         },
         flatten_parameters = {
             description = "Whether to flatten query and path parameters " ..
@@ -226,9 +240,9 @@ local LOOPBACK_HOST = {
 }
 
 
--- "host", "host:port", "[::1]" or "[::1]:port" into a host and a port, the
--- scheme's default port standing in for an absent one.
-local function split_authority(authority, scheme)
+-- "host", "host:port", "[::1]" or "[::1]:port" into a host and the port as it
+-- was written, which is nil where the authority left it out.
+local function split_authority(authority)
     local host, port = str_match(authority, "^%[(.+)%]:(%d+)$")
     if not host then
         host = str_match(authority, "^%[(.+)%]$")
@@ -239,13 +253,13 @@ local function split_authority(authority, scheme)
     if not host then
         host = authority
     end
-    return str_lower(host or ""), port or DEFAULT_PORT[scheme] or ""
+    return str_lower(host or ""), port
 end
 
 
--- An Origin as its host and its full "scheme://host:port", or nil for one that
--- names no origin at all -- "null", which a sandboxed frame and a file:// page
--- both send.
+-- An Origin as its full "scheme://host:port", its host, and the port as it was
+-- written. All nil for one that names no origin at all -- "null", which a
+-- sandboxed frame and a file:// page both send.
 local function parse_origin(value)
     if type(value) ~= "string" then
         return nil
@@ -255,11 +269,26 @@ local function parse_origin(value)
         return nil
     end
     scheme = str_lower(scheme)
-    local host, port = split_authority(authority, scheme)
+    local host, port = split_authority(authority)
     if host == "" then
         return nil
     end
-    return scheme .. "://" .. host .. ":" .. port, host
+    return scheme .. "://" .. host .. ":" .. (port or DEFAULT_PORT[scheme] or ""),
+           host, port
+end
+
+
+-- The host this request was addressed to, and the port as the client wrote it.
+local function request_authority(ctx)
+    local host_header = core.request.header(ctx, "host")
+    if type(host_header) ~= "string" or host_header == "" then
+        return nil
+    end
+    local host, port = split_authority(host_header)
+    if host == "" then
+        return nil
+    end
+    return host, port
 end
 
 
@@ -293,18 +322,21 @@ end
 
 
 local function origin_rejected(conf, ctx)
-    local origin = core.request.header(ctx, "origin")
+    -- core.request.header() hands back the first of a repeated header, so the
+    -- whole table is needed to see that there was more than one
+    local headers = core.request.headers(ctx)
+    local origin = headers and headers["origin"]
     if origin == nil then
         return false
     end
     if type(origin) ~= "string" then
         -- more than one Origin header: nothing sends that, and there is no
-        -- single origin to compare
+        -- single origin to check
         core.log.warn("rejected an MCP request carrying more than one Origin")
         return true
     end
 
-    local normalised, origin_host = parse_origin(origin)
+    local normalised, origin_host, origin_port = parse_origin(origin)
     local allowed = conf.allowed_origins
 
     if allowed then
@@ -320,10 +352,18 @@ local function origin_rejected(conf, ctx)
     end
 
     if origin_host ~= nil then
+        local request_host, request_port = request_authority(ctx)
+        -- An origin is a scheme, a host and a port. The Route names hosts, so
+        -- the port has to come from the request the browser actually made:
+        -- the two agree when both spell it out the same way, or when neither
+        -- does. Nothing else, so that a page on another port of the same name
+        -- is not taken for this one.
+        local same_port = origin_port == request_port
+
         local hosts = literal_route_hosts(ctx)
         if hosts then
             for _, host in ipairs(hosts) do
-                if host == origin_host then
+                if host == origin_host and same_port then
                     return false
                 end
             end
@@ -335,13 +375,10 @@ local function origin_rejected(conf, ctx)
         -- No configuration to check against. Loopback at both ends is the one
         -- case that is still safe: an attacker's page cannot be served from
         -- the machine the gateway runs on.
-        local host_header = core.request.header(ctx, "host")
-        if LOOPBACK_HOST[origin_host] and type(host_header) == "string" then
-            local request_host = split_authority(host_header,
-                                                 str_lower(ctx.var.scheme or "http"))
-            if LOOPBACK_HOST[request_host] then
-                return false
-            end
+        if LOOPBACK_HOST[origin_host] and request_host ~= nil
+           and LOOPBACK_HOST[request_host] and same_port
+        then
+            return false
         end
     end
 
@@ -365,7 +402,8 @@ function _M.before_proxy(conf, ctx)
     core.response.set_header("Content-Type", "application/json")
 
     if origin_rejected(conf, ctx) then
-        return core.response.exit(403, { message = "Origin not allowed" })
+        return core.response.exit(403, { message = "Origin not allowed. Add it to " ..
+                                         "allowed_origins on this route to accept it." })
     end
 
     if opts.transport == "sse" then

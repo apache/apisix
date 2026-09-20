@@ -50,13 +50,12 @@ local EXTERNAL_BUDGET = 10
 -- room for billions of nodes. Expansion stops at this many nodes and degrades
 -- what is left to a generic object.
 --
--- Only the nodes an expansion produces are counted, never the document's own.
--- The document is already bounded by its own size limit, and charging its
--- nodes to this budget would make a large but perfectly ordinary spec run out
--- of it: the traversal covers components, tags and info as well as paths, in
--- an order Lua does not define, so whichever subtree came last -- possibly
--- paths, the only one tools are generated from -- would degrade to a generic
--- object and the route would answer tools/list with an empty list.
+-- Only the nodes an expansion produces are counted, never the document's own:
+-- charging those to this budget would make a large but perfectly ordinary spec
+-- run out of it. A route whose document legitimately expands past the default
+-- raises it with max_expanded_nodes; there is no way to tell that document
+-- from one built to exhaust memory except by how large the operator says its
+-- specs get.
 local MAX_NODES = 50000
 
 
@@ -230,9 +229,9 @@ local function expand(node, root, depth, active, ctx)
     -- the document itself holds rather than one an expansion produced
     if depth > 0 then
         ctx.nodes = ctx.nodes + 1
-        if ctx.nodes > MAX_NODES then
+        if ctx.nodes > ctx.max_nodes then
             if not ctx.warned then
-                core.log.warn("$ref expansion exceeded ", MAX_NODES,
+                core.log.warn("$ref expansion exceeded ", ctx.max_nodes,
                               " nodes, using generic object")
                 ctx.warned = true
             end
@@ -301,17 +300,36 @@ end
 
 -- opts.base_origin is the scheme, host and port openapi_url was fetched from,
 -- opts.allowed_hosts the operator's extra allow-list for external $ref targets,
--- and opts.max_document_size the ceiling on any document pulled in.
+-- opts.max_document_size the ceiling on any document pulled in, and
+-- opts.max_expanded_nodes the ceiling on what one expansion may produce.
+--
+-- Only `paths` is expanded. It is the only part tools are generated from, and
+-- expanding the rest -- components above all, which a document of any size
+-- fills with schemas that paths then points at -- would spend the node budget
+-- on nodes nothing reads, leaving the ones that matter to degrade to a generic
+-- object. Internal pointers still resolve against the whole document.
 function _M.resolve(spec, opts)
     opts = opts or {}
-    return expand(spec, spec, 0, {}, {
+    if type(spec) ~= "table" or type(spec.paths) ~= "table" then
+        return spec
+    end
+
+    local ctx = {
         docs = {},
         fetched = 0,
         nodes = 0,
+        max_nodes = opts.max_expanded_nodes or MAX_NODES,
         base_origin = opts.base_origin,
         allowed_hosts = opts.allowed_hosts,
         max_document_size = opts.max_document_size,
-    })
+    }
+
+    local resolved = {}
+    for key, value in pairs(spec) do
+        resolved[key] = value
+    end
+    resolved.paths = expand(spec.paths, spec, 0, {}, ctx)
+    return resolved
 end
 
 
