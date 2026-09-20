@@ -97,8 +97,9 @@ local schema = {
             description = "Origin header values accepted on MCP requests, as " ..
             "scheme://host[:port]. A request with no Origin header is always " ..
             "accepted. When unset, an Origin is accepted only if its host is " ..
-            "one the route declares in host/hosts, or if both it and the " ..
-            "request are on a loopback address. [\"*\"] accepts any origin.",
+            "a literal host the route declares in host/hosts -- a wildcard " ..
+            "entry does not count -- or if both it and the request are on a " ..
+            "loopback address. [\"*\"] accepts any origin.",
             type = "array",
             minItems = 1,
             uniqueItems = true,
@@ -208,9 +209,10 @@ end
 --
 -- Three things count as configured, in this order:
 --   * allowed_origins on the Plugin, ["*"] there accepting any origin;
---   * the Route's own host predicate, which the operator wrote and the
+--   * a literal host the Route declares, which the operator wrote and the
 --     attacker's name does not satisfy -- a request carrying another Host does
---     not match such a Route at all;
+--     not match such a Route at all. A wildcard entry does not count, see
+--     below;
 --   * a loopback address at both ends, which is the case MCP is written
 --     around: a page can only have http://localhost as its origin if it is
 --     served from the machine itself, and no rebinding produces that.
@@ -261,35 +263,32 @@ local function parse_origin(value)
 end
 
 
--- The hosts the Route itself declares, which is configuration rather than
+-- The literal hosts the Route declares, which is configuration rather than
 -- anything the request carries.
-local function route_hosts(ctx)
+--
+-- A "*.example.com" entry does not count. It is a routing predicate -- it says
+-- which requests reach this Route, not which origins are trusted -- and
+-- whoever controls any one name under it can serve a page there and rebind it
+-- to the gateway, which is the attack this check exists for. A Route matched
+-- on a wildcard has to name the origins it accepts in allowed_origins.
+local function literal_route_hosts(ctx)
     local route = ctx.matched_route and ctx.matched_route.value
     if not route then
         return nil
     end
-    if route.hosts then
-        return route.hosts
+    local declared = route.hosts or (route.host and { route.host })
+    if not declared then
+        return nil
     end
-    if route.host then
-        return { route.host }
-    end
-    return nil
-end
 
-
--- A Route host matches the way APISIX matches it: either literally or, for a
--- "*.example.com" entry, on the suffix.
-local function host_matches(pattern, host)
-    local lower = str_lower(pattern)
-    if lower == host then
-        return true
+    local literal
+    for _, host in ipairs(declared) do
+        if str_sub(host, 1, 1) ~= "*" then
+            literal = literal or {}
+            literal[#literal + 1] = str_lower(host)
+        end
     end
-    if str_sub(lower, 1, 2) == "*." then
-        local suffix = str_sub(lower, 2)
-        return #host > #suffix and str_sub(host, -#suffix) == suffix
-    end
-    return false
+    return literal
 end
 
 
@@ -321,10 +320,10 @@ local function origin_rejected(conf, ctx)
     end
 
     if origin_host ~= nil then
-        local hosts = route_hosts(ctx)
+        local hosts = literal_route_hosts(ctx)
         if hosts then
-            for _, pattern in ipairs(hosts) do
-                if host_matches(pattern, origin_host) then
+            for _, host in ipairs(hosts) do
+                if host == origin_host then
                     return false
                 end
             end

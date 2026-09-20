@@ -329,3 +329,34 @@ timeout 5 curl -sSN -o /dev/null -w "%{http_code}\n" http://localhost:1984/mcp \
 403
 --- error_log
 nothing to check it against
+
+
+
+=== TEST 19: an sse route matched on a wildcard host
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "sse",
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/openapi.json",
+                }, nil, { hosts = { "*.example.com" } } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 20: the wildcard routes the stream request but does not vouch for it
+--- exec
+timeout 5 curl -sSN -o /dev/null -w "%{http_code}\n" http://localhost:1984/mcp \
+    -H "Host: attacker.example.com" \
+    -H "Origin: http://attacker.example.com" 2>&1
+--- response_body
+403
+--- error_log
+nothing to check it against

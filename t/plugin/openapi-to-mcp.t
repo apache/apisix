@@ -1009,7 +1009,7 @@ passed
 
 
 
-=== TEST 58: the host predicate is what the Origin is checked against
+=== TEST 58: a literal host predicate is what the Origin is checked against
 --- exec
 served=$(timeout 5 curl -sS -o /dev/null -w "%{http_code}" -X POST http://localhost:1984/mcp \
     -H "Host: mcp.example.com" -H "Origin: http://mcp.example.com" \
@@ -1029,7 +1029,79 @@ is not a host of this route
 
 
 
-=== TEST 59: a route that accepts any origin on purpose
+=== TEST 59: a route matched on a wildcard host
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "streamable_http",
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/openapi.json",
+                }, nil, { hosts = { "*.example.com" } } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 60: a wildcard routes the request but does not vouch for its origin
+--- exec
+timeout 5 curl -sS -o /dev/null -w "%{http_code}\n" -X POST http://localhost:1984/mcp \
+    -H "Host: attacker.example.com" \
+    -H "Origin: http://attacker.example.com" \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    -d '{"jsonrpc":"2.0","id":1,"method":"ping"}' 2>&1
+--- response_body
+403
+--- error_log
+nothing to check it against
+
+
+
+=== TEST 61: the same wildcard route, naming the origin it accepts
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "streamable_http",
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/openapi.json",
+                    allowed_origins = { "http://app.example.com" },
+                }, nil, { hosts = { "*.example.com" } } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 62: an exact allowed_origins entry is how a wildcard route accepts one
+--- exec
+served=$(timeout 5 curl -sS -o /dev/null -w "%{http_code}" -X POST http://localhost:1984/mcp \
+    -H "Host: app.example.com" -H "Origin: http://app.example.com" \
+    -H "Content-Type: application/json" -H "Accept: application/json, text/event-stream" \
+    -d '{"jsonrpc":"2.0","id":1,"method":"ping"}' 2>&1)
+refused=$(timeout 5 curl -sS -o /dev/null -w "%{http_code}" -X POST http://localhost:1984/mcp \
+    -H "Host: attacker.example.com" -H "Origin: http://attacker.example.com" \
+    -H "Content-Type: application/json" -H "Accept: application/json, text/event-stream" \
+    -d '{"jsonrpc":"2.0","id":1,"method":"ping"}' 2>&1)
+echo "listed origin: $served"
+echo "another subdomain: $refused"
+--- response_body
+listed origin: 200
+another subdomain: 403
+
+
+
+=== TEST 63: a route that accepts any origin on purpose
 --- config
     location /t {
         content_by_lua_block {
@@ -1049,7 +1121,7 @@ passed
 
 
 
-=== TEST 60: with ["*"] any origin is served
+=== TEST 64: with ["*"] any origin is served
 --- request
 POST /mcp
 {"jsonrpc":"2.0","id":1,"method":"ping"}
@@ -1062,7 +1134,7 @@ qr/"result":\{\}/
 
 
 
-=== TEST 61: a configured header cannot carry a newline
+=== TEST 65: a configured header cannot carry a newline
 --- config
     location /t {
         content_by_lua_block {
@@ -1091,7 +1163,7 @@ qr/"result":\{\}/
 
 
 
-=== TEST 62: the API receives the Host it was reached on, port included
+=== TEST 66: the API receives the Host it was reached on, port included
 --- exec
 python3 t/plugin/openapi_to_mcp_harness.py /mcp \
     '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"getPet","arguments":{"pathParameters":{"petId":7}}}}' "
@@ -1103,7 +1175,7 @@ print(inner['data']['seen_host'])
 
 
 
-=== TEST 63: a route over an API that ends its body by closing the connection
+=== TEST 67: a route over an API that ends its body by closing the connection
 --- config
     location /t {
         content_by_lua_block {
@@ -1122,7 +1194,7 @@ passed
 
 
 
-=== TEST 64: a connection-close-delimited body is read whole, not reported as an error
+=== TEST 68: a connection-close-delimited body is read whole, not reported as an error
 --- max_size: 2048000
 --- exec
 python3 t/plugin/openapi_to_mcp_harness.py /mcp \
@@ -1135,7 +1207,7 @@ print(inner['status'], inner['data']['closed'], len(inner['data']['blob']))
 
 
 
-=== TEST 65: a route over an API that announces a non-chunked transfer coding
+=== TEST 69: a route over an API that announces a non-chunked transfer coding
 --- config
     location /t {
         content_by_lua_block {
@@ -1154,7 +1226,7 @@ passed
 
 
 
-=== TEST 66: "Transfer-Encoding: identity" is a close-delimited body, not a framed one
+=== TEST 70: "Transfer-Encoding: identity" is a close-delimited body, not a framed one
 --- max_size: 2048000
 --- exec
 python3 t/plugin/openapi_to_mcp_harness.py /mcp \
@@ -1167,7 +1239,7 @@ print(inner['status'], inner['data']['identity'], len(inner['data']['blob']))
 
 
 
-=== TEST 67: a body larger than one read chunk is reassembled
+=== TEST 71: a body larger than one read chunk is reassembled
 --- config
     location /t {
         content_by_lua_block {
@@ -1186,7 +1258,7 @@ passed
 
 
 
-=== TEST 68: the chunks add up to the whole body
+=== TEST 72: the chunks add up to the whole body
 --- max_size: 8192000
 --- exec
 python3 t/plugin/openapi_to_mcp_harness.py /mcp \
@@ -1199,7 +1271,7 @@ print(inner['status'], len(inner['data']['blob']))
 
 
 
-=== TEST 69: the schema rejects a header with a newline in the middle of it
+=== TEST 73: the schema rejects a header with a newline in the middle of it
 --- config
     location /t {
         content_by_lua_block {
@@ -1233,7 +1305,7 @@ print(inner['status'], len(inner['data']['blob']))
 
 
 
-=== TEST 70: a route whose header value ends with a newline
+=== TEST 74: a route whose header value ends with a newline
 --- config
     location /t {
         content_by_lua_block {
@@ -1253,7 +1325,7 @@ passed
 
 
 
-=== TEST 71: it never reaches the upstream, whatever the schema let through
+=== TEST 75: it never reaches the upstream, whatever the schema let through
 --- exec
 python3 t/plugin/openapi_to_mcp_harness.py /mcp \
     '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"getPet","arguments":{"pathParameters":{"petId":7}}}}' "
@@ -1267,7 +1339,7 @@ cannot appear in a request header
 
 
 
-=== TEST 72: a route header built from a variable
+=== TEST 76: a route header built from a variable
 --- config
     location /t {
         content_by_lua_block {
@@ -1287,7 +1359,7 @@ passed
 
 
 
-=== TEST 73: a newline arriving through that variable drops the header
+=== TEST 77: a newline arriving through that variable drops the header
 --- exec
 python3 t/plugin/openapi_to_mcp_harness.py '/mcp?trace=a%0d%0aX-Injected:%201' \
     '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"getPet","arguments":{"pathParameters":{"petId":7}}}}' "
@@ -1301,7 +1373,7 @@ cannot appear in a request header
 
 
 
-=== TEST 74: a route over a document that declares framing headers as parameters
+=== TEST 78: a route over a document that declares framing headers as parameters
 --- config
     location /t {
         content_by_lua_block {
@@ -1321,7 +1393,7 @@ passed
 
 
 
-=== TEST 75: a tool call cannot set the framing of the request the gateway sends
+=== TEST 79: a tool call cannot set the framing of the request the gateway sends
 --- exec
 python3 t/plugin/openapi_to_mcp_harness.py /mcp \
     '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"framed","arguments":{"headerParameters":{"Transfer-Encoding":"chunked","Content-Length":"4","Host":"internal"},"requestBody":{"a":1}}}}' "
@@ -1341,7 +1413,7 @@ a tool call cannot set this header
 
 
 
-=== TEST 76: a header parameter spelled in another case cannot replace a route header
+=== TEST 80: a header parameter spelled in another case cannot replace a route header
 --- exec
 python3 t/plugin/openapi_to_mcp_harness.py /mcp \
     '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"framed","arguments":{"headerParameters":{"authorization":"Bearer attacker"},"requestBody":{"a":1}}}}' "
