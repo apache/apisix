@@ -23,6 +23,7 @@ title: Changelog
 
 ## Table of Contents
 
+- [3.19.0](#3190)
 - [3.18.0](#3180)
 - [3.17.0](#3170)
 - [3.16.0](#3160)
@@ -85,6 +86,66 @@ title: Changelog
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 3.19.0
+
+**The changes marked with :warning: are not backward compatible.**
+
+### Change
+
+- :warning: feat(upstream): verify the upstream certificate against configurable CAs. `upstream.tls.verify` was only read by the `kafka` scheme and is now honoured for `https` and `grpcs` as well, so an upstream that already carried `verify: true` starts rejecting a certificate it cannot validate; `tls.ca_certs` picks the trust anchors per upstream [#13863](https://github.com/apache/apisix/pull/13863)
+- :warning: fix(openid-connect): validate the introspection issuer. With an explicit `claim_validator.issuer.valid_issuers`, a successful remote introspection response must now carry a string `iss` matching one of them, or the request is rejected with 401; omit the allowlist to keep the previous behavior [#13916](https://github.com/apache/apisix/pull/13916)
+- :warning: fix(batch-requests): bound aggregated response bodies. New `max_response_body_size` (1 MiB) and `max_response_body_size_total` (10 MiB) plugin metadata; a pipeline above either limit now returns 502 instead of the full aggregate [#13906](https://github.com/apache/apisix/pull/13906)
+- :warning: fix(basic-auth): reject an empty consumer password. `password` requires `minLength: 1`, so the Admin API rejects an empty value and a consumer already stored with one fails closed with 401 [#13884](https://github.com/apache/apisix/pull/13884)
+- :warning: fix(ai-proxy-multi): reject instances that share a name. `instance.name` is the instance identity across the balancer, the health checker, `ai-rate-limiting` and `semantic_opts.fallback`, so a route whose instances share a name is now rejected on write and dropped on reload [#13851](https://github.com/apache/apisix/pull/13851)
+- :warning: fix(workflow): reject invalid case expressions and missing action conf. A `case` expression that was silently accepted and then matched every request is now a schema error, and `actions` is pinned to exactly one `[name, conf]` pair, so a rule carrying several actions (only the first ever ran) or an action without its conf is rejected on write and dropped on reload [#13862](https://github.com/apache/apisix/pull/13862)
+
+### Core
+
+- feat(stream): support TLS passthrough on the stream proxy, so a stream route can pick its upstream from the SNI in the prereaded ClientHello and still forward the session encrypted [#13912](https://github.com/apache/apisix/pull/13912)
+- feat(stream): match a stream route by several SNIs through the new `snis` field, mutually exclusive with `sni` [#13911](https://github.com/apache/apisix/pull/13911)
+- feat(websocket): add the `ws`/`wss` upstream scheme, which proxies frames through APISIX itself and exposes the `ws_handshake`, `ws_client_frame`, `ws_upstream_frame` and `ws_close` plugin phases plus the `core.websocket` API [#13939](https://github.com/apache/apisix/pull/13939)
+- feat(upstream): slow start for newly observed upstream nodes via `warm_up_conf` [#13941](https://github.com/apache/apisix/pull/13941)
+- feat: improve API-driven standalone update reliability: workers report a per-entity configuration digest, `PUT /apisix/admin/configs` accepts a `wait` parameter and answers 200 once every worker has loaded the configuration (202 otherwise), and the shdict format carries the digest outside the JSON [#13904](https://github.com/apache/apisix/pull/13904)
+- feat(control-api): report the health checks a plugin owns, so `ai-proxy-multi` instance checkers show up in `/v1/healthcheck` [#13899](https://github.com/apache/apisix/pull/13899)
+- chore: upgrade lua-resty-dns-client to 7.1.2, fixing `finalCacheOnly` so a CNAME chain no longer fails with `empty record received` when the answer carries an EDNS(0) OPT record or is not in chain order [#13875](https://github.com/apache/apisix/pull/13875)
+- fix(etcd): watch from the revision the configuration was read at, so a write made while APISIX is starting is no longer lost [#13917](https://github.com/apache/apisix/pull/13917)
+- fix(etcd): check etcd availability before starting the watcher, so config objects do not wait on a watcher that never connected [#13934](https://github.com/apache/apisix/pull/13934)
+- fix(etcd): do not block writes when the deployment role cannot be read [#13885](https://github.com/apache/apisix/pull/13885)
+- fix(standalone): stop aborting stream connections before the first config arrives [#13855](https://github.com/apache/apisix/pull/13855)
+- fix(standalone): harden the declarative configuration paths: validate the shape of the request body instead of 500ing, log the parser error rather than the body (which can carry credentials and private keys), check a stream route's `superior_id` self reference during validation, and guard null deployment sections in the CLI [#13886](https://github.com/apache/apisix/pull/13886)
+- fix(control): always report healthcheck nodes as a JSON array, so `nodes` and the top-level list of `/v1/healthcheck` are `[]` instead of `{}` when empty [#13891](https://github.com/apache/apisix/pull/13891)
+- fix(plugin): align unavailable plugin handling: reject unknown plugin names before persistence, keep data-plane loading tolerant of them, and warn when one is skipped [#13928](https://github.com/apache/apisix/pull/13928)
+- fix: preserve servlet upstream URI boundaries by encoding the original path before proxying when servlet-style normalization is enabled [#13914](https://github.com/apache/apisix/pull/13914)
+- feat: label WebSocket sessions with `request_type=websocket`. A request answered with `101 Switching Protocols` is reported as `websocket` instead of `traditional_http` in `apisix_http_status`, `apisix_http_latency` and `apisix_bandwidth`, so a session can be kept out of latency queries [#13909](https://github.com/apache/apisix/pull/13909)
+- fix: write `request_type=websocket` through `ctx.var`, so a plugin that resolved `$request_type` before the upgrade does not leave the cached value at `traditional_http` [#13915](https://github.com/apache/apisix/pull/13915)
+
+### Plugins
+
+- feat: add the `openapi-to-mcp` plugin, serving an HTTP API to MCP clients from its OpenAPI document over Streamable HTTP and HTTP+SSE [#13942](https://github.com/apache/apisix/pull/13942)
+- feat(websocket): add the `websocket-proxy` plugin to customize proxy behaviors, starting with `client_max_payload_len` / `upstream_max_payload_len` for `ws`/`wss` upstreams [#13972](https://github.com/apache/apisix/pull/13972)
+- feat(graphql-limit-count): rate limit by GraphQL query cost. New `complexity` and `node_quantifier` cost strategies with per-field weights stored as `graphql_cost_decorations` under a Service; `depth` stays the default [#13840](https://github.com/apache/apisix/pull/13840)
+- feat: chaitin-waf response logging through `log_resp`, `resp_body_size` and `extra_ignored_content_types`, reported asynchronously after the response has been handed back to the client [#13763](https://github.com/apache/apisix/pull/13763)
+- feat(ai-proxy-multi): let configured HTTP statuses trigger a fallback via `fallback_http_statuses` [#13852](https://github.com/apache/apisix/pull/13852)
+- feat(saml-auth): add the lua-resty-saml 0.2.6 validation options `idp_issuers`, `sp_acs_url`, `sp_audiences`, `clock_skew`, `replay_dict` and `replay_ttl` [#13964](https://github.com/apache/apisix/pull/13964)
+- fix(redis): send the TLS SNI and add `redis_server_name`, so a Redis behind a name-routed TLS front works with `redis_ssl: true`; the SNI is skipped for an IP literal host [#13938](https://github.com/apache/apisix/pull/13938)
+- fix(ai-proxy): return 502 when a streaming upstream produces no output, instead of falling through to `balancer_by_lua` and answering nothing [#13870](https://github.com/apache/apisix/pull/13870)
+- fix(ai-proxy): do not turn a streaming read error after partial output into a 5xx, and do not retry a request whose partial output already reached the client [#13876](https://github.com/apache/apisix/pull/13876)
+- fix(ai-proxy): avoid aborting streams on empty flushes [#13947](https://github.com/apache/apisix/pull/13947)
+- fix(ai-providers): encode the Vertex AI model path segment [#13872](https://github.com/apache/apisix/pull/13872)
+- fix(ai-cache): key the passthrough protocol on the client method, path and query, so two upstream endpoints no longer collide on one cache entry [#13887](https://github.com/apache/apisix/pull/13887)
+- fix(ai-aliyun-content-moderation): report final results without usage [#13922](https://github.com/apache/apisix/pull/13922)
+- fix(feishu-auth, dingtalk-auth): bind the authorization code to the session that started the login. A random `state` is appended to the `redirect_uri` redirect and required back on the callback, so a code obtained elsewhere is no longer accepted on any session. Whatever serves `redirect_uri` has to pass `state` on to the identity provider; the header code path (`X-Feishu-Code` / `X-DingTalk-Code`) is unchanged [#13806](https://github.com/apache/apisix/pull/13806)
+- fix(jwe-decrypt): accept JWE tokens that authenticate the protected header, as RFC 7516 requires, and reject an unsupported `alg` or `enc` [#13889](https://github.com/apache/apisix/pull/13889)
+- fix(jwe-decrypt): reject malformed tokens with 400 instead of returning 500 [#13844](https://github.com/apache/apisix/pull/13844)
+- fix(basic-auth): split credentials on the first colon only, so a password containing `:` is no longer truncated [#13836](https://github.com/apache/apisix/pull/13836)
+- fix(data-mask): keep request header masking effective in the log phase, where `set_header()` silently did nothing on a 400 response [#13839](https://github.com/apache/apisix/pull/13839)
+- fix(redirect): compare `X-Forwarded-Proto` case-insensitively, so a proxy forwarding `HTTPS` no longer triggers an `http_to_https` redirect loop [#13865](https://github.com/apache/apisix/pull/13865)
+- fix(ua-restriction): deny the request when any User-Agent header matches the `deny_list` [#13869](https://github.com/apache/apisix/pull/13869)
+- fix(traffic-label): cache the compiled match expressions outside the plugin config, so the route configuration stays JSON encodable [#13901](https://github.com/apache/apisix/pull/13901)
+- fix(aws-lambda): request `/` for a path-less `function_uri` and log function error responses [#13908](https://github.com/apache/apisix/pull/13908)
+- fix(ext-plugin-post-resp): set `upstream_addr` and `upstream_response_time` for loggers [#13940](https://github.com/apache/apisix/pull/13940)
+- fix(openapi-to-mcp): apply schema defaults before validation, keep the resolved `base_url` and headers for the lifetime of an SSE session, and reject a document that is not an OpenAPI document [#13956](https://github.com/apache/apisix/pull/13956)
 
 ## 3.18.0
 
