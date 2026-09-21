@@ -451,6 +451,154 @@ describe('websocket-proxy (ws/wss upstream scheme)', () => {
     });
   });
 
+  describe('frame size (websocket-proxy plugin)', () => {
+    it('closes the connection on a single frame over the 65535-byte default', async () => {
+      await putEchoRoute({
+        type: 'roundrobin',
+        scheme: 'ws',
+        nodes: { [ECHO_NODE]: 1 },
+      });
+
+      const code = await waitForClose(
+        '/websocket_echo',
+        (ws) => ws.send('x'.repeat(70000)),
+        true,
+      );
+      expect(code).toBe(1006);
+    }, 10000);
+
+    it('forwards a >64K frame in each direction once websocket-proxy raises max_payload_len', async () => {
+      await createRoute(
+        '/websocket_echo_large',
+        {
+          type: 'roundrobin',
+          scheme: 'ws',
+          nodes: { [ECHO_NODE]: 1 },
+        },
+        {
+          'websocket-proxy': {
+            client_max_payload_len: 2 * 1024 * 1024,
+            upstream_max_payload_len: 2 * 1024 * 1024,
+          },
+        },
+      );
+
+      const payload = 'x'.repeat(1024 * 1024);
+      const reply = await sendAndReceive('/websocket_echo_large', payload);
+      expect(reply).toBe(payload);
+    }, 15000);
+
+    it('relays a >64K client message once only client_max_payload_len is raised, with no reply raised', async () => {
+      // websocket_ack_large replies with a short "received:<n>" ack instead
+      // of echoing, so this only exercises the client-to-upstream direction:
+      // it would still pass even if the (unconfigured) reply-out-to-client
+      // send limit were wrongly stuck at the default.
+      await createRoute(
+        '/websocket_ack_large',
+        {
+          type: 'roundrobin',
+          scheme: 'ws',
+          nodes: { [ECHO_NODE]: 1 },
+        },
+        {
+          'websocket-proxy': { client_max_payload_len: 2 * 1024 * 1024 },
+        },
+      );
+
+      const payload = 'x'.repeat(200000);
+      const reply = await sendAndReceive('/websocket_ack_large', payload);
+      expect(reply).toBe(`received:${payload.length}`);
+    }, 15000);
+
+    it('relays a >64K upstream push once only upstream_max_payload_len is raised, with no client message sent', async () => {
+      // websocket_send_large pushes a 1MiB frame unprompted right after the
+      // handshake; only the upstream-to-client direction needs raising here,
+      // so this catches a fix that raised the client's own receive limit
+      // (irrelevant, nothing large is sent to it) instead of its send limit.
+      await createRoute(
+        '/websocket_send_large',
+        {
+          type: 'roundrobin',
+          scheme: 'ws',
+          nodes: { [ECHO_NODE]: 1 },
+        },
+        {
+          'websocket-proxy': { upstream_max_payload_len: 2 * 1024 * 1024 },
+        },
+      );
+
+      const reply = await new Promise<string>((resolve, reject) => {
+        const ws = new WebSocket(`${PROXY_BASE}/websocket_send_large`);
+        ws.addEventListener('message', (ev) => {
+          resolve(ev.data as string);
+          ws.close();
+        });
+        ws.addEventListener('error', (ev) =>
+          reject(new Error((ev as unknown as { message?: string }).message ?? 'websocket error')),
+        );
+      });
+      expect(reply).toBe('x'.repeat(1024 * 1024));
+    }, 15000);
+
+    it('lets the larger of two asymmetric limits govern its own direction, not the smaller one', async () => {
+      // client_max_payload_len (100000) is smaller than the 1MiB push below,
+      // upstream_max_payload_len (2MiB) is larger: the push must still get
+      // through on the strength of the upstream-side limit alone, proving
+      // the two directions are not tied to the same configured value.
+      await createRoute(
+        '/websocket_send_large_asymmetric',
+        {
+          type: 'roundrobin',
+          scheme: 'ws',
+          nodes: { [ECHO_NODE]: 1 },
+        },
+        {
+          'websocket-proxy': {
+            client_max_payload_len: 100000,
+            upstream_max_payload_len: 2 * 1024 * 1024,
+          },
+          // the fixture is dispatched by URI (see t/lib/server.lua's go()),
+          // so rewrite this route's distinct client-facing path back to the
+          // websocket_send_large fixture the previous test already uses
+          'proxy-rewrite': { uri: '/websocket_send_large' },
+        },
+      );
+
+      const reply = await new Promise<string>((resolve, reject) => {
+        const ws = new WebSocket(`${PROXY_BASE}/websocket_send_large_asymmetric`);
+        ws.addEventListener('message', (ev) => {
+          resolve(ev.data as string);
+          ws.close();
+        });
+        ws.addEventListener('error', (ev) =>
+          reject(new Error((ev as unknown as { message?: string }).message ?? 'websocket error')),
+        );
+      });
+      expect(reply).toBe('x'.repeat(1024 * 1024));
+    }, 15000);
+
+    it('rejects a payload len beyond the library\'s 2147483647 (2^31 - 1) frame length limit', async () => {
+      const res = await requestAdminAPI(
+        '/apisix/admin/routes/ws-proxy-oversized-limit',
+        'PUT',
+        {
+          uri: '/websocket_echo_large',
+          upstream: {
+            type: 'roundrobin',
+            scheme: 'ws',
+            nodes: { [ECHO_NODE]: 1 },
+          },
+          plugins: {
+            'websocket-proxy': { client_max_payload_len: 2147483648 },
+          },
+        },
+        undefined,
+        { validateStatus: () => true },
+      );
+      expect(res.status).toBe(400);
+    });
+  });
+
   describe('concurrent connections', () => {
     it("keeps two simultaneous connections' frame data isolated from each other", async () => {
       await putEchoRoute(
