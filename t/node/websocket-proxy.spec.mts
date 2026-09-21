@@ -187,6 +187,14 @@ describe('websocket-proxy (ws/wss upstream scheme)', () => {
           // example-plugin's ws_client_frame/ws_upstream_frame hooks append
           // "-client"/"-upstream" to every text frame they see, in-flight.
           'example-plugin': { i: 1 },
+          // the log phase runs once the session is over: report the request
+          // type there, which only a websocket session should have set
+          'serverless-post-function': {
+            phase: 'log',
+            functions: [
+              'return function(conf, ctx) ngx.log(ngx.WARN, "ws request_type: ", ctx.var.request_type) end',
+            ],
+          },
         },
       );
 
