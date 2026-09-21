@@ -16,6 +16,8 @@
  */
 import { describe, expect, it, jest } from '@jest/globals';
 import axios from 'axios';
+import { readFileSync } from 'node:fs';
+import { type IncomingHttpHeaders, request } from 'node:http';
 import WS from 'ws';
 
 import { request as requestAdminAPI } from '../ts/admin_api';
@@ -53,7 +55,7 @@ const createRoute = async (
     upstream,
     plugins,
   });
-  expect(res.status).toBe(res.status < 300 ? res.status : 200);
+  expect(res.status).toBeLessThan(300);
   // give etcd -> apisix config sync a moment to land before the first request
   await wait(300);
   return id;
@@ -67,15 +69,76 @@ const createRoute = async (
 // that instant. PUTting the same fixed route id instead is a plain
 // overwrite, so there's no delete in flight to race with.
 const ECHO_ROUTE_ID = 'ws-proxy-echo';
-const putEchoRoute = async (upstream: object, plugins?: object) => {
-  const res = await requestAdminAPI(`/apisix/admin/routes/${ECHO_ROUTE_ID}`, 'PUT', {
-    uri: '/websocket_echo',
+const putRoute = async (id: string, uri: string, upstream: object, plugins?: object) => {
+  const res = await requestAdminAPI(`/apisix/admin/routes/${id}`, 'PUT', {
+    uri,
     upstream,
     plugins,
   });
-  expect(res.status).toBe(res.status < 300 ? res.status : 200);
+  expect(res.status).toBeLessThan(300);
   await wait(300);
 };
+const putEchoRoute = (upstream: object, plugins?: object) =>
+  putRoute(ECHO_ROUTE_ID, '/websocket_echo', upstream, plugins);
+// same idea for the fixture that reports the handshake headers it received
+const putHeadersRoute = (upstream: object, plugins?: object) =>
+  putRoute('ws-proxy-headers', '/websocket_echo_headers', upstream, plugins);
+// and for the fixture whose 127.0.0.1:1981 node refuses the handshake with a 503
+const REJECT_ROUTE_ID = 'ws-proxy-reject';
+const putRejectRoute = (upstream: object, plugins?: object) =>
+  putRoute(REJECT_ROUTE_ID, '/websocket_echo_or_reject', upstream, plugins);
+
+// Opens a websocket connection and resolves with the first frame received,
+// without sending anything: for fixtures that speak first.
+const receiveFirst = (url: string, protocols?: string[]) =>
+  new Promise<{ data: string; protocol: string }>((resolve, reject) => {
+    const ws = new WS(url, protocols);
+    ws.on('message', (data) => {
+      resolve({ data: data.toString(), protocol: ws.protocol });
+      ws.close();
+    });
+    ws.on('error', reject);
+  });
+
+// Resolves with the headers of the 101 answer to a handshake that offers the
+// given subprotocols. A raw request rather than a WebSocket client, since the
+// clients reject a server that selects none of the subprotocols they offered,
+// which is exactly the answer some of these cases are about.
+const handshakeHeaders = (path: string, protocols: string[]) =>
+  new Promise<IncomingHttpHeaders>((resolve, reject) => {
+    const req = request({
+      host: '127.0.0.1',
+      port: 1984,
+      path,
+      headers: {
+        Connection: 'Upgrade',
+        Upgrade: 'websocket',
+        'Sec-WebSocket-Key': 'dGhlIHNhbXBsZSBub25jZQ==',
+        'Sec-WebSocket-Version': '13',
+        'Sec-WebSocket-Protocol': protocols.join(', '),
+      },
+    });
+    req.on('upgrade', (res, socket) => {
+      socket.destroy();
+      resolve(res.headers);
+    });
+    req.on('response', (res) => reject(new Error(`unexpected status ${res.statusCode}`)));
+    req.on('error', reject);
+    req.end();
+  });
+
+// A plain http upgrade request, for asserting on the status the proxy itself
+// answers with when it cannot complete the handshake.
+const rawUpgrade = (path: string) =>
+  axios.get(`http://127.0.0.1:1984${path}`, {
+    headers: {
+      Connection: 'Upgrade',
+      Upgrade: 'websocket',
+      'Sec-WebSocket-Key': 'dGhlIHNhbXBsZSBub25jZQ==',
+      'Sec-WebSocket-Version': '13',
+    },
+    validateStatus: () => true,
+  });
 
 // Opens a websocket connection, sends one text frame, resolves with the
 // first frame received in reply (or rejects on error/close-before-reply).
@@ -349,31 +412,43 @@ describe('websocket-proxy (ws/wss upstream scheme)', () => {
   });
 
   describe('passive health check', () => {
-    it('marks a node unhealthy after enough failed connection attempts', async () => {
-      await putEchoRoute({
+    it('marks a node unhealthy after it answers the handshake with a failing status', async () => {
+      // 127.0.0.1:1981 accepts TCP connections but answers every handshake with
+      // a 503 (see websocket_echo_or_reject), so the active tcp check below can
+      // never flag it on its own: only the passive http status report the proxy
+      // makes for the non-101 response can move it to unhealthy.
+      await putRejectRoute({
         type: 'roundrobin',
         scheme: 'ws',
         retries: 1,
-        nodes: { [DEAD_NODE]: 1, [ECHO_NODE]: 1 },
+        nodes: { '127.0.0.1:1981': 1, [ECHO_NODE]: 1 },
         checks: {
-          active: { type: 'tcp', http_path: '/', timeout: 1, healthy: { interval: 1 } },
-          passive: { unhealthy: { tcp_failures: 1 } },
+          // probes only once at startup and then stay out of the way, so they can
+          // neither flag the node unhealthy nor flip it back to healthy again
+          active: {
+            type: 'tcp',
+            host: '127.0.0.1',
+            timeout: 1,
+            healthy: { interval: 3600 },
+            unhealthy: { interval: 3600 },
+          },
+          passive: { unhealthy: { http_statuses: [503], http_failures: 1 } },
         },
       });
 
-      // one connect attempt is enough to report a tcp failure for DEAD_NODE
-      await sendAndReceive('/websocket_echo', 'hello');
-
       let unhealthyFound = false;
       for (let i = 0; i < 10 && !unhealthyFound; i++) {
+        // each request may or may not pick the 503 node first; the retry makes
+        // it succeed either way, and a pick of that node reports the failure
+        expect(await sendAndReceive('/websocket_echo_or_reject', 'hello')).toBe('hello');
         await wait(500);
-        const res = await requestAdminAPI(`/v1/healthcheck/routes/${ECHO_ROUTE_ID}`);
-        const { nodes } = res.data as { nodes: { ip: string; port: number; status: string }[] };
-        unhealthyFound = nodes.some((n) => n.port === 1 && n.status !== 'healthy');
+        const res = await requestAdminAPI(`/v1/healthcheck/routes/${REJECT_ROUTE_ID}`);
+        const { nodes } = res.data as { nodes: { port: number; status: string }[] };
+        unhealthyFound = nodes.some((n) => n.port === 1981 && n.status !== 'healthy');
       }
 
       expect(unhealthyFound).toBe(true);
-    }, 15000);
+    }, 30000);
   });
 
   describe('upstream URI forwarding', () => {
@@ -426,7 +501,7 @@ describe('websocket-proxy (ws/wss upstream scheme)', () => {
 
   describe('client address headers', () => {
     it('overrides X-Real-IP and appends this hop to X-Forwarded-For, not what the client sent', async () => {
-      await createRoute('/websocket_echo_headers', {
+      await putHeadersRoute({
         type: 'roundrobin',
         scheme: 'ws',
         nodes: { [ECHO_NODE]: 1 },
@@ -448,6 +523,160 @@ describe('websocket-proxy (ws/wss upstream scheme)', () => {
       const seen = JSON.parse(reply);
       expect(seen.x_real_ip).toBe('127.0.0.1');
       expect(seen.x_forwarded_for).toBe('5.6.7.8, 127.0.0.1');
+    });
+  });
+
+  describe('upstream Host header', () => {
+    it('honors the host set by proxy-rewrite on the upstream handshake', async () => {
+      await putHeadersRoute(
+        { type: 'roundrobin', scheme: 'ws', nodes: { [ECHO_NODE]: 1 } },
+        { 'proxy-rewrite': { host: 'rewritten.example.com' } },
+      );
+
+      const { data } = await receiveFirst('ws://127.0.0.1:1984/websocket_echo_headers');
+      expect(JSON.parse(data).host).toBe('rewritten.example.com');
+    });
+
+    it("sends the retried node's own host with pass_host: node", async () => {
+      await putHeadersRoute({
+        type: 'roundrobin',
+        scheme: 'ws',
+        pass_host: 'node',
+        retries: 1,
+        nodes: { [DEAD_NODE]: 100, [ECHO_NODE]: 1 },
+      });
+
+      const { data } = await receiveFirst('ws://127.0.0.1:1984/websocket_echo_headers');
+      expect(JSON.parse(data).host).toBe(ECHO_NODE);
+    });
+  });
+
+  describe('wss upstream', () => {
+    // the fake server's TLS listener; its certificate is issued for test.com
+    const TLS_NODE = '127.0.0.1:1983';
+
+    it('proxies over TLS with certificate verification off', async () => {
+      await putHeadersRoute({
+        type: 'roundrobin',
+        scheme: 'wss',
+        tls: { verify: false },
+        nodes: { [TLS_NODE]: 1 },
+      });
+
+      const { data } = await receiveFirst('ws://127.0.0.1:1984/websocket_echo_headers');
+      expect(JSON.parse(data).host).toBe('127.0.0.1:1984');
+    });
+
+    it('verifies the certificate against the upstream host, port excluded', async () => {
+      await putHeadersRoute({
+        type: 'roundrobin',
+        scheme: 'wss',
+        pass_host: 'rewrite',
+        upstream_host: 'test.com:1983',
+        tls: { verify: true },
+        nodes: { [TLS_NODE]: 1 },
+      });
+
+      const { data } = await receiveFirst('ws://127.0.0.1:1984/websocket_echo_headers');
+      expect(JSON.parse(data).host).toBe('test.com:1983');
+    });
+
+    it('refuses an upstream whose certificate does not match the host', async () => {
+      await putHeadersRoute({
+        type: 'roundrobin',
+        scheme: 'wss',
+        tls: { verify: true },
+        nodes: { [TLS_NODE]: 1 },
+      });
+
+      const res = await rawUpgrade('/websocket_echo_headers');
+      expect(res.status).toBe(502);
+    });
+
+    it('rejects tls.ca_certs, which the ws/wss client cannot apply', async () => {
+      const cert = readFileSync(new URL('../certs/apisix.crt', import.meta.url), 'utf8');
+      const res = await requestAdminAPI(
+        '/apisix/admin/upstreams/ws-proxy-ca-certs',
+        'PUT',
+        {
+          type: 'roundrobin',
+          scheme: 'wss',
+          tls: { verify: true, ca_certs: [cert] },
+          nodes: { [TLS_NODE]: 1 },
+        },
+        undefined,
+        { validateStatus: () => true },
+      );
+      expect(res.status).toBe(400);
+    });
+  });
+
+  describe('subprotocol negotiation', () => {
+    it('answers the client with the subprotocol the upstream selected', async () => {
+      await createRoute('/websocket_subprotocol', {
+        type: 'roundrobin',
+        scheme: 'ws',
+        nodes: { [ECHO_NODE]: 1 },
+      });
+
+      const headers = await handshakeHeaders('/websocket_subprotocol?select=chat', [
+        'other',
+        'chat',
+      ]);
+      expect(headers['sec-websocket-protocol']).toBe('chat');
+    });
+
+    it('answers with no subprotocol when the upstream selected none', async () => {
+      // echoing the client's whole offer back instead would announce
+      // subprotocols the upstream never agreed to
+      const headers = await handshakeHeaders('/websocket_subprotocol?select=none', [
+        'other',
+        'chat',
+      ]);
+      expect(headers['sec-websocket-protocol']).toBeUndefined();
+    });
+  });
+
+  describe('traffic-split', () => {
+    it('proxies frames through a ws upstream chosen by traffic-split', async () => {
+      // the route's own upstream is plain http: only the traffic-split pick is ws
+      await putEchoRoute(
+        { type: 'roundrobin', scheme: 'http', nodes: { [ECHO_NODE]: 1 } },
+        {
+          'traffic-split': {
+            rules: [
+              {
+                weighted_upstreams: [
+                  {
+                    upstream: {
+                      type: 'roundrobin',
+                      scheme: 'ws',
+                      nodes: { [ECHO_NODE]: 1 },
+                    },
+                    weight: 1,
+                  },
+                ],
+              },
+            ],
+          },
+        },
+      );
+
+      expect(await sendAndReceive('/websocket_echo', 'hello')).toBe('hello');
+    });
+  });
+
+  describe('upstream retry after a non-101 handshake', () => {
+    it('retries the next node and completes the session on it', async () => {
+      // 127.0.0.1:1981 answers the handshake with a 503 (websocket_echo_or_reject)
+      await putRejectRoute({
+        type: 'roundrobin',
+        scheme: 'ws',
+        retries: 1,
+        nodes: { '127.0.0.1:1981': 100, [ECHO_NODE]: 1 },
+      });
+
+      expect(await sendAndReceive('/websocket_echo_or_reject', 'hello')).toBe('hello');
     });
   });
 
