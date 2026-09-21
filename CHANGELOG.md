@@ -94,14 +94,12 @@ title: Changelog
 ### Change
 
 - :warning: feat(upstream): verify the upstream certificate against configurable CAs. `upstream.tls.verify` was only read by the `kafka` scheme and is now honoured for `https` and `grpcs` as well, so an upstream that already carried `verify: true` starts rejecting a certificate it cannot validate; `tls.ca_certs` picks the trust anchors per upstream [#13863](https://github.com/apache/apisix/pull/13863)
-- :warning: feat: label WebSocket sessions with `request_type=websocket`. A request answered with `101 Switching Protocols` moves from `traditional_http` to `websocket` in `apisix_http_status`, `apisix_http_latency` and `apisix_bandwidth`, so existing queries, dashboards and alerts must account for the new label value [#13909](https://github.com/apache/apisix/pull/13909)
 - :warning: fix(openid-connect): validate the introspection issuer. With an explicit `claim_validator.issuer.valid_issuers`, a successful remote introspection response must now carry a string `iss` matching one of them, or the request is rejected with 401; omit the allowlist to keep the previous behavior [#13916](https://github.com/apache/apisix/pull/13916)
 - :warning: fix(feishu-auth, dingtalk-auth): bind the authorization code to the session that started the login. The query-string code path now requires a `state` that matches the session, so `redirect_uri` has to carry it through the login page and back; a user mid-flow across the upgrade gets a 401 and succeeds on retry. The header code path (`X-Feishu-Code` / `X-DingTalk-Code`) is unchanged [#13806](https://github.com/apache/apisix/pull/13806)
 - :warning: fix(batch-requests): bound aggregated response bodies. New `max_response_body_size` (1 MiB) and `max_response_body_size_total` (10 MiB) plugin metadata; a pipeline above either limit now returns 502 instead of the full aggregate [#13906](https://github.com/apache/apisix/pull/13906)
 - :warning: fix(basic-auth): reject an empty consumer password. `password` requires `minLength: 1`, so the Admin API rejects an empty value and a consumer already stored with one fails closed with 401 [#13884](https://github.com/apache/apisix/pull/13884)
 - :warning: fix(ai-proxy-multi): reject instances that share a name. `instance.name` is the instance identity across the balancer, the health checker, `ai-rate-limiting` and `semantic_opts.fallback`, so a route whose instances share a name is now rejected on write and dropped on reload [#13851](https://github.com/apache/apisix/pull/13851)
-- :warning: fix(workflow): reject invalid case expressions and missing action conf. A `case` value that was silently accepted and matched every request is now a schema error [#13862](https://github.com/apache/apisix/pull/13862)
-- :warning: fix(control): always report healthcheck nodes as a JSON array. `nodes` and the top-level list of `/v1/healthcheck` are `[]` instead of `{}` when empty [#13891](https://github.com/apache/apisix/pull/13891)
+- :warning: fix(workflow): reject invalid case expressions and missing action conf. A `case` expression that was silently accepted and then matched every request is now a schema error, and `actions` is pinned to exactly one `[name, conf]` pair, so a rule carrying several actions (only the first ever ran) or an action without its conf is rejected on write and dropped on reload [#13862](https://github.com/apache/apisix/pull/13862)
 
 ### Core
 
@@ -117,8 +115,10 @@ title: Changelog
 - fix(etcd): do not block writes when the deployment role cannot be read [#13885](https://github.com/apache/apisix/pull/13885)
 - fix(standalone): stop aborting stream connections before the first config arrives [#13855](https://github.com/apache/apisix/pull/13855)
 - fix(standalone): harden the declarative configuration paths: validate the shape of the request body instead of 500ing, log the parser error rather than the body (which can carry credentials and private keys), check a stream route's `superior_id` self reference during validation, and guard null deployment sections in the CLI [#13886](https://github.com/apache/apisix/pull/13886)
+- fix(control): always report healthcheck nodes as a JSON array, so `nodes` and the top-level list of `/v1/healthcheck` are `[]` instead of `{}` when empty [#13891](https://github.com/apache/apisix/pull/13891)
 - fix(plugin): align unavailable plugin handling: reject unknown plugin names before persistence, keep data-plane loading tolerant of them, and warn when one is skipped [#13928](https://github.com/apache/apisix/pull/13928)
 - fix: preserve servlet upstream URI boundaries by encoding the original path before proxying when servlet-style normalization is enabled [#13914](https://github.com/apache/apisix/pull/13914)
+- feat: label WebSocket sessions with `request_type=websocket`. A request answered with `101 Switching Protocols` is reported as `websocket` instead of `traditional_http` in `apisix_http_status`, `apisix_http_latency` and `apisix_bandwidth`, so a session can be kept out of latency queries [#13909](https://github.com/apache/apisix/pull/13909)
 - fix: write `request_type=websocket` through `ctx.var`, so a plugin that resolved `$request_type` before the upgrade does not leave the cached value at `traditional_http` [#13915](https://github.com/apache/apisix/pull/13915)
 
 ### Plugins
