@@ -673,6 +673,14 @@ local function check_upstream_conf(in_dp, conf)
         then
             return false, "`upstream_host` can't be empty when `pass_host` is `rewrite`"
         end
+
+        -- the ws/wss client connects through a plain cosocket, which can only
+        -- trust the global lua_ssl_trusted_certificate, not a per-upstream store
+        if (conf.scheme == "ws" or conf.scheme == "wss")
+            and conf.tls and conf.tls.ca_certs
+        then
+            return false, "`tls.ca_certs` is not supported by the `ws`/`wss` scheme"
+        end
     end
 
     if conf.tls and conf.tls.client_cert then
