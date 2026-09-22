@@ -1015,3 +1015,190 @@ qr/"traceId"\s*:\s*"(?!550e8400e29b41d4a716446655440000)[0-9a-f]{32}"/
             ngx.say("passed")
         }
     }
+
+
+
+=== TEST 50: set metadata so that every span is exported at once
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/opentelemetry',
+                ngx.HTTP_PUT,
+                [[{
+                    "batch_span_processor": {
+                        "max_export_batch_size": 1,
+                        "inactive_timeout": 0.5
+                    },
+                    "resource": {
+                        "service.name": "APISIX"
+                    },
+                    "collector": {
+                        "address": "127.0.0.1:4318",
+                        "request_timeout": 3
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+
+
+
+=== TEST 51: routes for the upstream CLIENT span checks
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local routes = {
+                {"/apisix/admin/routes/echo", [[{
+                    "plugins": {
+                        "opentelemetry": {"sampler": {"name": "always_on"}}
+                    },
+                    "upstream": {"nodes": {"127.0.0.1:1980": 1}, "type": "roundrobin"},
+                    "uri": "/echo"
+                }]]},
+                {"/apisix/admin/routes/specific_status", [[{
+                    "plugins": {
+                        "opentelemetry": {"sampler": {"name": "always_on"}}
+                    },
+                    "upstream": {"nodes": {"127.0.0.1:1980": 1}, "type": "roundrobin"},
+                    "uri": "/specific_status"
+                }]]},
+                {"/apisix/admin/routes/not_proxied", [[{
+                    "plugins": {
+                        "opentelemetry": {"sampler": {"name": "always_on"}},
+                        "fault-injection": {"abort": {"http_status": 403}}
+                    },
+                    "upstream": {"nodes": {"127.0.0.1:1980": 1}, "type": "roundrobin"},
+                    "uri": "/not_proxied"
+                }]]},
+            }
+            for _, r in ipairs(routes) do
+                local code, body = t(r[1], ngx.HTTP_PUT, r[2])
+                if code >= 300 then
+                    ngx.status = code
+                    ngx.say(body)
+                    return
+                end
+            end
+            ngx.say("passed")
+        }
+    }
+--- extra_yaml_config
+plugins:
+    - opentelemetry
+    - fault-injection
+
+
+
+=== TEST 52: upstream receives the CLIENT span id; span is child of the SERVER span
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local cjson = require("cjson.safe")
+
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/echo"
+            local res, err = httpc:request_uri(uri, {method = "GET"})
+            if not res then
+                ngx.say("request failed: ", err)
+                return
+            end
+            -- /echo mirrors the request headers back as response headers
+            local traceparent = res.headers["traceparent"]
+            local trace_id, injected_span_id = traceparent:match("^00%-(%x+)%-(%x+)%-%x+$")
+            if not injected_span_id then
+                ngx.say("bad traceparent sent to upstream: ", tostring(traceparent))
+                return
+            end
+
+            ngx.sleep(2)
+
+            local spans = {}
+            for line in io.lines("ci/pod/otelcol-contrib/data-otlp.json") do
+                local data = cjson.decode(line)
+                if data and data.resourceSpans then
+                    for _, rs in ipairs(data.resourceSpans) do
+                        for _, ss in ipairs(rs.scopeSpans or {}) do
+                            for _, span in ipairs(ss.spans or {}) do
+                                spans[span.spanId] = span
+                            end
+                        end
+                    end
+                end
+            end
+
+            local client = spans[injected_span_id]
+            if not client then
+                ngx.say("no exported span has the id sent to the upstream")
+                return
+            end
+            local root = spans[client.parentSpanId]
+            if not root then
+                ngx.say("parent of the CLIENT span was not exported")
+                return
+            end
+            local attrs = {}
+            for _, a in ipairs(client.attributes or {}) do
+                attrs[a.key] = a.value.stringValue or a.value.intValue
+            end
+
+            ngx.say("client name: ", client.name, ", kind: ", client.kind)
+            ngx.say("root name: ", root.name, ", kind: ", root.kind,
+                    ", same trace: ", root.traceId == client.traceId)
+            ngx.say("server.address: ", attrs["server.address"],
+                    ", server.port: ", attrs["server.port"],
+                    ", status: ", attrs["http.response.status_code"])
+            ngx.say("within root: ",
+                    tonumber(client.startTimeUnixNano) >= tonumber(root.startTimeUnixNano)
+                    and tonumber(client.endTimeUnixNano) <= tonumber(root.endTimeUnixNano))
+        }
+    }
+--- response_body
+client name: apisix.upstream, kind: 3
+root name: GET /echo, kind: 2, same trace: true
+server.address: 127.0.0.1, server.port: 1980, status: 200
+within root: true
+
+
+
+=== TEST 53: 5xx from the upstream marks the CLIENT span as error
+--- request
+GET /specific_status
+--- more_headers
+x-test-upstream-status: 502
+--- error_code: 502
+--- response_body
+upstream status: 502
+--- wait: 2
+
+
+
+=== TEST 54: check the CLIENT span of the 5xx request
+--- exec
+grep '"name":"apisix.upstream"' ci/pod/otelcol-contrib/data-otlp.json | tail -n 1
+--- response_body eval
+qr/"http.response.status_code","value":\{"intValue":"502"\}.*"status":\{"message":"upstream error: 502","code":2\}/
+
+
+
+=== TEST 55: request answered before proxying emits no CLIENT span
+--- exec
+echo '' > ci/pod/otelcol-contrib/data-otlp.json
+curl -s -o /dev/null http://127.0.0.1:1984/not_proxied
+sleep 2
+grep -c '"name":"apisix.upstream"' ci/pod/otelcol-contrib/data-otlp.json
+grep -c '"name":"GET /not_proxied"' ci/pod/otelcol-contrib/data-otlp.json
+--- response_body
+0
+1
+--- extra_yaml_config
+plugins:
+    - opentelemetry
+    - fault-injection

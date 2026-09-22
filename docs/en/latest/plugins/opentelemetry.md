@@ -36,6 +36,9 @@ The `opentelemetry` Plugin can be used to report tracing data according to the [
 
 The Plugin only supports binary-encoded [OTLP over HTTP](https://opentelemetry.io/docs/reference/specification/protocol/otlp/#otlphttp).
 
+Each request produces a `SERVER` span and a child `CLIENT` span named `apisix.upstream` for the call to the upstream.
+The `CLIENT` span carries `server.address`, `server.port` and `http.response.status_code`, and its ID is propagated to the upstream in `traceparent`, so APM service maps link APISIX to the upstream.
+
 ## Configurations
 
 By default, configurations of the Service name, tenant ID, collector, and batch span processor are pre-configured in [default configuration](https://github.com/apache/apisix/blob/master/apisix/cli/config.lua).
