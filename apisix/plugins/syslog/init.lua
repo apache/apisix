@@ -64,7 +64,7 @@ local function send_syslog_data(conf, log_message, api_ctx)
 
     if not logger then
         res = false
-        err_msg = "failed when initiating the sys logger processor".. err
+        err_msg = "failed when initiating the sys logger processor: " .. err
     end
 
     -- reuse the logger object
@@ -72,7 +72,7 @@ local function send_syslog_data(conf, log_message, api_ctx)
 
     if not ok then
         res = false
-        err_msg = "failed to log message" .. err
+        err_msg = "failed to log message: " .. err
     end
 
     return res, err_msg
