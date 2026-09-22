@@ -130,3 +130,34 @@ plugin_attr:
 GET /t
 --- response_body
 passed
+
+
+
+=== TEST 2: expired entries are reclaimed in bounded batches
+--- config
+    location /t {
+        content_by_lua_block {
+            local exporter = require("apisix.plugins.prometheus.exporter")
+            local dict = ngx.shared["prometheus-metrics"]
+
+            -- a permanent entry kept at the LRU tail stops the passive
+            -- per-write expiry scan, which is what lets expired entries pile
+            -- up in the first place
+            dict:set("flush_expired_tail", 1)
+            for i = 1, 20000 do
+                dict:set("flush_expired_" .. i, "v", 0.1)
+            end
+            ngx.sleep(0.2)
+
+            -- more than one batch, so the loop has to run again after the
+            -- delay instead of stopping at the first batch
+            local freed = exporter.flush_expired_metrics()
+            ngx.say("reclaimed all: ", freed >= 20000)
+            ngx.say("left over: ", exporter.flush_expired_metrics())
+            ngx.say("tail kept: ", dict:get("flush_expired_tail"))
+        }
+    }
+--- response_body
+reclaimed all: true
+left over: 0
+tail kept: 1

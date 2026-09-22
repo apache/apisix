@@ -89,6 +89,21 @@ end
 -- Default refresh interval
 local DEFAULT_REFRESH_INTERVAL = 15
 
+-- Default interval for reclaiming expired entries from the metrics shared dict
+local DEFAULT_FLUSH_EXPIRED_INTERVAL = 60
+
+-- Entries a single flush_expired() call may reclaim. The call holds the shared
+-- dict lock until it returns, so this is what bounds how long the workers can
+-- be kept waiting on that lock: measured at ~1ms per 10000 entries.
+local FLUSH_EXPIRED_BATCH = 10000
+
+-- Upper bound on the batches run by one tick, so the loop always finishes well
+-- within one interval. Whatever is left over is picked up by the next tick.
+local FLUSH_EXPIRED_MAX_BATCHES = 30
+
+-- Pause between batches, so the lock is not taken back to back
+local FLUSH_EXPIRED_BATCH_DELAY = 1
+
 local CACHED_METRICS_KEY = "cached_metrics_text"
 
 local metrics = {}
@@ -98,6 +113,10 @@ local inner_tab_arr = {}
 local exporter_timer_running = false
 
 local exporter_timer_created = false
+
+local flush_expired_timer_running = false
+
+local flush_expired_timer_created = false
 
 local function gen_arr(...)
     clear_tab(inner_tab_arr)
@@ -1201,6 +1220,105 @@ local function exporter_timer(premature, yieldable, cache_exptime)
 end
 
 
+-- Expired entries in the metrics shared dict are only logically dead: every
+-- dict API reports them as missing, but their slab pages stay allocated until
+-- something reclaims them. The passive per-write expiry scan cannot do it,
+-- because it stops at the first non-expired entry at the LRU tail and a
+-- permanent entry (the error metric, or any metric registered without an
+-- expire) inevitably ends up sitting there. Left alone, the dict fills up with
+-- dead entries and starts evicting live ones (apache/apisix#13658). The metrics
+-- library reclaims them from every worker once an hour with an unbounded
+-- flush_expired() call, which walks the whole LRU queue with the dict lock
+-- held. Draining them here instead -- in the privileged agent, in bounded
+-- batches -- keeps that backlog, and therefore the lock hold of any single
+-- call, small.
+local function flush_expired_metrics()
+    local dict = ngx.shared["prometheus-metrics"]
+    if not dict then
+        return 0
+    end
+
+    local total = 0
+    for _ = 1, FLUSH_EXPIRED_MAX_BATCHES do
+        -- a return value below the batch size means this call has already
+        -- walked the whole LRU queue, so there is nothing left to reclaim
+        local freed = dict:flush_expired(FLUSH_EXPIRED_BATCH)
+        total = total + freed
+        if freed < FLUSH_EXPIRED_BATCH then
+            break
+        end
+
+        ngx.sleep(FLUSH_EXPIRED_BATCH_DELAY)
+    end
+
+    return total
+end
+_M.flush_expired_metrics = flush_expired_metrics
+
+
+local function flush_expired_timer(premature)
+    if premature then
+        return
+    end
+
+    if flush_expired_timer_running then
+        core.log.warn("Previous metrics flush still running, skipping")
+        return
+    end
+
+    flush_expired_timer_running = true
+
+    local ok, err = pcall(flush_expired_metrics)
+    if not ok then
+        core.log.error("Failed to flush expired metrics: ", err)
+    end
+
+    flush_expired_timer_running = false
+end
+
+
+-- Nothing in the dict ever becomes expired unless at least one metric is
+-- registered with an expire, so the timer is only worth running then.
+local function metrics_expire_enabled(attr)
+    local metrics_attr = attr and attr.metrics
+    if type(metrics_attr) ~= "table" then
+        return false
+    end
+
+    for _, conf in pairs(metrics_attr) do
+        local expire = type(conf) == "table" and tonumber(conf.expire)
+        if expire and expire > 0 then
+            return true
+        end
+    end
+
+    return false
+end
+
+
+local function init_flush_expired_timer(attr)
+    if flush_expired_timer_created or not metrics_expire_enabled(attr) then
+        return
+    end
+
+    local interval = DEFAULT_FLUSH_EXPIRED_INTERVAL
+    if attr and attr.flush_expired_interval then
+        interval = attr.flush_expired_interval
+    end
+
+    if interval <= 0 then
+        return
+    end
+
+    local ok, err = ngx_timer_every(interval, flush_expired_timer)
+    if ok then
+        flush_expired_timer_created = true
+    else
+        core.log.error("Failed to start the metrics flush timer: ", err)
+    end
+end
+
+
 local function init_exporter_timer()
     if process.type() ~= "privileged agent" then
         return
@@ -1213,6 +1331,8 @@ local function init_exporter_timer()
     end
 
     local cache_exptime = refresh_interval * 2
+
+    init_flush_expired_timer(attr)
 
     exporter_timer(false, false, cache_exptime)
 
