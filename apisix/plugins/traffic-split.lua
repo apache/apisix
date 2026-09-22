@@ -201,7 +201,9 @@ local function set_upstream(upstream_info, ctx)
     end
     core.log.info("upstream_key: ", upstream_key)
     upstream.set(ctx, upstream_key, ctx.conf_version, up_conf)
-    if upstream_info.scheme == "https" then
+    -- the schemes handle_upstream() dispatches on ctx.upstream_scheme for
+    local scheme = upstream_info.scheme
+    if scheme == "https" or scheme == "ws" or scheme == "wss" then
         upstream.set_scheme(ctx, up_conf)
     end
     return

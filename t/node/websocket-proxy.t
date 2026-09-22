@@ -29,6 +29,10 @@ __DATA__
 --- max_size: 2048000
 --- exec
 cd t && pnpm test node/websocket-proxy.spec.mts 2>&1
+--- error_log
+plugin ws_handshake phase
+plugin ws_close phase
+ws request_type: websocket
 --- no_error_log
 failed to execute the script with status
 --- response_body eval
