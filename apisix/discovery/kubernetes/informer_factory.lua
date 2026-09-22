@@ -23,6 +23,7 @@ local type = type
 local core = require("apisix.core")
 local http = require("resty.http")
 
+
 local function list_query(informer)
     local arguments = {
         limit = informer.limit,
@@ -192,10 +193,30 @@ local function dispatch_event(event_string, informer)
             informer:on_modified(object)
         end
         -- elseif type == "BOOKMARK" then
-        --    do nothing
+        -- do nothing
     end
 
     return true
+end
+
+
+local function compute_watch_seconds(informer)
+    -- Preserve historical behaviour when neither field is configured (issue #8311).
+    if informer.watch_timeout_seconds == nil and informer.watch_jitter_seconds == nil then
+        return 1800 + math.random(9, 999)
+    end
+
+    local base = informer.watch_timeout_seconds or 1800
+    local jitter = informer.watch_jitter_seconds
+    if jitter == nil then
+        jitter = 990
+    end
+
+    if jitter > 0 then
+        return base + math.random(0, jitter)
+    end
+
+    return base
 end
 
 
@@ -206,7 +227,7 @@ local function watch(httpc, apiserver, informer)
             return true
         end
 
-        local watch_seconds = 1800 + math.random(9, 999)
+        local watch_seconds = compute_watch_seconds(informer)
         informer.overtime = watch_seconds
         local http_seconds = watch_seconds + 120
         httpc:set_timeouts(2000, 3000, http_seconds * 1000)
@@ -342,10 +363,12 @@ local function list_watch(informer, apiserver)
     return true
 end
 
+
 local _M = {
 }
 
-function _M.new(group, version, kind, plural, namespace)
+
+function _M.new(group, version, kind, plural, namespace, opts)
     local tp
     tp = type(group)
     if tp ~= "nil" and tp ~= "string" then
@@ -372,6 +395,11 @@ function _M.new(group, version, kind, plural, namespace)
         return nil, "plural should set to non-empty string"
     end
 
+    if opts ~= nil and type(opts) ~= "table" then
+        return nil, "opts should be a table or nil but " .. type(opts)
+    end
+    opts = opts or {}
+
     local path = ""
     if group == nil or group == "" then
         path = path .. "/api/" .. version
@@ -396,6 +424,8 @@ function _M.new(group, version, kind, plural, namespace)
         version = "",
         continue = "",
         stop = false,
+        watch_timeout_seconds = opts.watch_timeout_seconds,
+        watch_jitter_seconds = opts.watch_jitter_seconds,
         list_watch = list_watch
     }
 end

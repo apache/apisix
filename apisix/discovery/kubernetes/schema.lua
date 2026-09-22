@@ -110,6 +110,37 @@ local watch_endpoint_slices_schema = {
     default = false,
 }
 
+-- Watch and retry tuning. Allow operators to override fixed defaults so that
+-- discovery behaves correctly behind LBs / API server proxies that impose
+-- their own idle timeouts. See issue #8311.
+local watch_timeout_seconds_schema = {
+    type = "integer",
+    default = 1800,
+    minimum = 5,
+    maximum = 86400,
+}
+
+local watch_jitter_seconds_schema = {
+    type = "integer",
+    default = 990,
+    minimum = 0,
+    maximum = 86400,
+}
+
+local watch_retry_interval_seconds_schema = {
+    type = "integer",
+    default = 40,
+    minimum = 0,
+    maximum = 3600,
+}
+
+local watch_retry_max_seconds_schema = {
+    type = "integer",
+    default = 40,
+    minimum = 0,
+    maximum = 3600,
+}
+
 return {
     anyOf = {
         {
@@ -169,6 +200,10 @@ return {
                 default_weight = default_weight_schema,
                 shared_size = shared_size_schema,
                 watch_endpoint_slices = watch_endpoint_slices_schema,
+                watch_timeout_seconds = watch_timeout_seconds_schema,
+                watch_jitter_seconds = watch_jitter_seconds_schema,
+                watch_retry_interval_seconds = watch_retry_interval_seconds_schema,
+                watch_retry_max_seconds = watch_retry_max_seconds_schema,
             },
         },
         {
@@ -215,6 +250,10 @@ return {
                     default_weight = default_weight_schema,
                     shared_size = shared_size_schema,
                     watch_endpoint_slices = watch_endpoint_slices_schema,
+                    watch_timeout_seconds = watch_timeout_seconds_schema,
+                    watch_jitter_seconds = watch_jitter_seconds_schema,
+                    watch_retry_interval_seconds = watch_retry_interval_seconds_schema,
+                    watch_retry_max_seconds = watch_retry_max_seconds_schema,
                 },
                 required = { "id", "service", "client" }
             },
