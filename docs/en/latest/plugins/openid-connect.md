@@ -165,6 +165,12 @@ And reference it in the Plugin configuration:
 "client_secret": "$ENV://KEYCLOAK_CLIENT_SECRET"
 ```
 
+### Selecting an IdP configuration per request
+
+`client_id`, `client_secret`, and `discovery` also support `${var}` / `${var ?? default}` runtime-variable templates, resolved from the request context on every request (the same templating [`limit-count`](./limit-count.md) uses for `count`/`time_window`). This lets a higher-priority custom Plugin inspect the request, set `ctx.var.*`, and select the right IdP configuration for it, while `openid-connect` itself stays generic — it has no built-in notion of tenants, realms, or providers. See [`openid-connect-idp-selector`](./openid-connect-idp-selector.md) for a Plugin that does this based on the request's bearer token issuer.
+
+If a referenced variable is missing for a given request (for example, the custom Plugin didn't run or didn't recognize the request), `openid-connect` returns `500` with an error identifying which field failed to resolve, rather than forwarding an empty value to the identity provider.
+
 ## Examples
 
 The examples below demonstrate how you can configure the `openid-connect` Plugin for different scenarios.
