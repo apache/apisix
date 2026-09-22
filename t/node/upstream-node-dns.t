@@ -608,7 +608,7 @@ location /t {
                     return {address = "127.0.0.1"}
                 end
 
-                return nil, "dns server error: 3 name error"
+                return nil, "dns server error: 3 name error", 3
             end
 
             error("unknown domain: " .. domain)
@@ -668,7 +668,7 @@ location /t {
                     return {address = "127.0.0.1"}
                 end
 
-                return nil, "dns server error: 3 name error"
+                return nil, "dns server error: 3 name error", 3
             end
 
             error("unknown domain: " .. domain)
@@ -687,3 +687,198 @@ GET /t
 --- response_body
 200,503,200
 --- ignore_error_log
+
+
+
+=== TEST 19: upstream keeps the last resolved address while the DNS query fails
+--- init_by_lua_block
+    require "resty.core"
+    apisix = require("apisix")
+    core = require("apisix.core")
+    apisix.http_init()
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        local code, body = t('/apisix/admin/upstreams/1',
+             ngx.HTTP_PUT,
+             [[{
+                "nodes": {
+                    "test1.com:1980": 1
+                },
+                "type": "roundrobin",
+                "desc": "new upstream"
+            }]]
+            )
+        if code >= 300 then
+            ngx.status = code
+            ngx.say(body)
+            return
+        end
+
+        code, body = t('/apisix/admin/routes/1',
+             ngx.HTTP_PUT,
+             [[{
+                    "uri": "/hello",
+                    "upstream_id": "1"
+            }]]
+            )
+        if code >= 300 then
+            ngx.status = code
+            ngx.say(body)
+            return
+        end
+
+        local utils = require("apisix.core.utils")
+        local original_dns_parse = utils.dns_parse
+        local count = 0
+        utils.dns_parse = function (domain)
+            if domain == "test1.com" then
+                count = count + 1
+                if count == 1 then
+                    return {address = "127.0.0.1"}
+                end
+
+                return nil, "failed to query the DNS server: timeout"
+            end
+
+            error("unknown domain: " .. domain)
+        end
+
+        local code1 = t('/hello', ngx.HTTP_GET)
+        local code2 = t('/hello', ngx.HTTP_GET)
+        local code3 = t('/hello', ngx.HTTP_GET)
+        utils.dns_parse = original_dns_parse
+        ngx.say(code1, ",", code2, ",", code3)
+    }
+}
+--- request
+GET /t
+--- response_body
+200,200,200
+--- grep_error_log eval
+qr/resolve upstream which contain domain|dns resolver domain: test1.com error: [^,]+, keep the last resolved address: 127.0.0.1/
+--- grep_error_log_out
+resolve upstream which contain domain
+dns resolver domain: test1.com error: failed to query the DNS server: timeout, keep the last resolved address: 127.0.0.1
+dns resolver domain: test1.com error: failed to query the DNS server: timeout, keep the last resolved address: 127.0.0.1
+
+
+
+=== TEST 20: route keeps the last resolved address while the DNS query fails
+--- init_by_lua_block
+    require "resty.core"
+    apisix = require("apisix")
+    core = require("apisix.core")
+    apisix.http_init()
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        local code, body = t('/apisix/admin/routes/1',
+            ngx.HTTP_PUT,
+            [[{
+                "upstream": {
+                    "nodes": {
+                        "test1.com:1980": 1
+                    },
+                    "type": "roundrobin"
+                },
+                "uri": "/hello"
+            }]]
+            )
+        if code >= 300 then
+            ngx.status = code
+            ngx.say(body)
+            return
+        end
+
+        local utils = require("apisix.core.utils")
+        local original_dns_parse = utils.dns_parse
+        local count = 0
+        utils.dns_parse = function (domain)
+            if domain == "test1.com" then
+                count = count + 1
+                if count == 1 then
+                    return {address = "127.0.0.1"}
+                end
+
+                return nil, "failed to query the DNS server: timeout"
+            end
+
+            error("unknown domain: " .. domain)
+        end
+
+        local code1 = t('/hello', ngx.HTTP_GET)
+        local code2 = t('/hello', ngx.HTTP_GET)
+        local code3 = t('/hello', ngx.HTTP_GET)
+        utils.dns_parse = original_dns_parse
+        ngx.say(code1, ",", code2, ",", code3)
+    }
+}
+--- request
+GET /t
+--- response_body
+200,200,200
+--- grep_error_log eval
+qr/parse route which contain domain|dns resolver domain: test1.com error: [^,]+, keep the last resolved address: 127.0.0.1/
+--- grep_error_log_out
+parse route which contain domain
+dns resolver domain: test1.com error: failed to query the DNS server: timeout, keep the last resolved address: 127.0.0.1
+dns resolver domain: test1.com error: failed to query the DNS server: timeout, keep the last resolved address: 127.0.0.1
+
+
+
+=== TEST 21: a name that never resolved is still dropped while the DNS query fails
+--- init_by_lua_block
+    require "resty.core"
+    apisix = require("apisix")
+    core = require("apisix.core")
+    apisix.http_init()
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        local code, body = t('/apisix/admin/routes/1',
+            ngx.HTTP_PUT,
+            [[{
+                "upstream": {
+                    "nodes": {
+                        "test1.com:1980": 1
+                    },
+                    "type": "roundrobin"
+                },
+                "uri": "/hello"
+            }]]
+            )
+        if code >= 300 then
+            ngx.status = code
+            ngx.say(body)
+            return
+        end
+
+        local utils = require("apisix.core.utils")
+        local original_dns_parse = utils.dns_parse
+        utils.dns_parse = function (domain)
+            if domain == "test1.com" then
+                return nil, "failed to query the DNS server: timeout"
+            end
+
+            error("unknown domain: " .. domain)
+        end
+
+        local code1 = t('/hello', ngx.HTTP_GET)
+        local code2 = t('/hello', ngx.HTTP_GET)
+        utils.dns_parse = original_dns_parse
+        ngx.say(code1, ",", code2)
+    }
+}
+--- request
+GET /t
+--- response_body
+503,503
+--- grep_error_log eval
+qr/dns resolver domain: test1.com error: [^,\n]+|keep the last resolved address/
+--- grep_error_log_out
+dns resolver domain: test1.com error: failed to query the DNS server: timeout
+dns resolver domain: test1.com error: failed to query the DNS server: timeout
