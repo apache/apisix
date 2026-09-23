@@ -19,10 +19,12 @@ local setmetatable = setmetatable
 local ipairs = ipairs
 local type = type
 local pairs = pairs
+local rawget = rawget
 local pcall = pcall
 local load = load
 local math_floor = math.floor
 local math_huge = math.huge
+local table_sort = table.sort
 local core = require("apisix.core")
 local limit_count = require("apisix.plugins.limit-count.init")
 local policy_to_additional_properties = limit_count.policy_to_additional_properties
@@ -350,6 +352,36 @@ function _M.check_instance_status(conf, ctx, instance_name)
 end
 
 
+-- expose usage leaves by bare name, breadth first so shallower keys win
+local function inject_usage_vars(env, raw)
+    local level = {raw}
+    while #level > 0 do
+        local next_level = {}
+        for _, tab in ipairs(level) do
+            local keys = {}
+            for k in pairs(tab) do
+                if type(k) == "string" then
+                    keys[#keys + 1] = k
+                end
+            end
+            -- sorted for a stable winner on same-depth clashes
+            table_sort(keys)
+            for _, k in ipairs(keys) do
+                local v = tab[k]
+                if type(v) == "number" then
+                    if rawget(env, k) == nil and not expr_safe_env[k] then
+                        env[k] = v
+                    end
+                elseif type(v) == "table" then
+                    next_level[#next_level + 1] = v
+                end
+            end
+        end
+        level = next_level
+    end
+end
+
+
 local function eval_cost_expr(conf_cost_expr, raw)
     local fn_code = "return " .. conf_cost_expr
     -- build environment: safe math + usage variables (missing vars default to 0)
@@ -362,11 +394,7 @@ local function eval_cost_expr(conf_cost_expr, raw)
             return 0
         end
     })
-    for k, v in pairs(raw) do
-        if type(v) == "number" and not expr_safe_env[k] then
-            env[k] = v
-        end
-    end
+    inject_usage_vars(env, raw)
     local fn, err = load(fn_code, "cost_expr", "t", env)
     if not fn then
         return nil, "failed to compile cost_expr: " .. err

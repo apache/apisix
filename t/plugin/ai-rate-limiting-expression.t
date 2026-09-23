@@ -519,3 +519,161 @@ X-AI-Fixture: anthropic/messages-with-cache.json
 ]
 --- no_error_log
 [error]
+
+
+
+=== TEST 14: set route with expression reading nested usage leaves (OpenAI Responses)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/v1/responses",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": {
+                                "header": {
+                                    "Authorization": "Bearer test-key"
+                                }
+                            },
+                            "options": {
+                                "model": "gpt-4o-mini"
+                            },
+                            "override": {
+                                "endpoint": "http://127.0.0.1:1980"
+                            },
+                            "ssl_verify": false
+                        },
+                        "ai-rate-limiting": {
+                            "limit": 500,
+                            "time_window": 60,
+                            "limit_strategy": "expression",
+                            "cost_expr": "input_tokens - cached_tokens + output_tokens + reasoning_tokens"
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "canbeanything.com": 1
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 15: nested leaves - cost = 40 - 12 + 20 + 8 = 56 per request
+--- pipelined_requests eval
+[
+    "POST /v1/responses\n" . '{"model":"gpt-4o-mini","stream":false,"input":"Hello"}',
+    "POST /v1/responses\n" . '{"model":"gpt-4o-mini","stream":false,"input":"Hello"}',
+]
+--- more_headers
+X-AI-Fixture: openai/responses-with-cache.json
+--- response_headers_like eval
+[
+    "X-AI-RateLimit-Remaining-ai-proxy-openai: 500",
+    "X-AI-RateLimit-Remaining-ai-proxy-openai: 444",
+]
+--- no_error_log
+[error]
+
+
+
+=== TEST 16: nested leaves, streaming - cost = 20 - 10 + 5 + 3 = 18 per request
+--- pipelined_requests eval
+[
+    "POST /v1/responses\n" . '{"model":"gpt-4o-mini","stream":true,"input":"Hello"}',
+    "POST /v1/responses\n" . '{"model":"gpt-4o-mini","stream":true,"input":"Hello"}',
+]
+--- more_headers
+X-AI-Fixture: openai/responses-streaming-with-cache.sse
+--- response_headers_like eval
+[
+    "X-AI-RateLimit-Remaining-ai-proxy-openai: 500",
+    "X-AI-RateLimit-Remaining-ai-proxy-openai: 482",
+]
+--- no_error_log
+[error]
+
+
+
+=== TEST 17: set route with expression reading a leaf name present at two depths
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/v1/responses",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": {
+                                "header": {
+                                    "Authorization": "Bearer test-key"
+                                }
+                            },
+                            "options": {
+                                "model": "gpt-4o-mini"
+                            },
+                            "override": {
+                                "endpoint": "http://127.0.0.1:1980"
+                            },
+                            "ssl_verify": false
+                        },
+                        "ai-rate-limiting": {
+                            "limit": 500,
+                            "time_window": 60,
+                            "limit_strategy": "expression",
+                            "cost_expr": "cached_tokens"
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "canbeanything.com": 1
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 18: top-level field wins over nested one - cost = 5 per request
+--- pipelined_requests eval
+[
+    "POST /v1/responses\n" . '{"model":"gpt-4o-mini","stream":false,"input":"Hello"}',
+    "POST /v1/responses\n" . '{"model":"gpt-4o-mini","stream":false,"input":"Hello"}',
+]
+--- more_headers
+X-AI-Fixture: openai/responses-usage-clash.json
+--- response_headers_like eval
+[
+    "X-AI-RateLimit-Remaining-ai-proxy-openai: 500",
+    "X-AI-RateLimit-Remaining-ai-proxy-openai: 495",
+]
+--- no_error_log
+[error]
