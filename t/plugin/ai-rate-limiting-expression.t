@@ -522,7 +522,7 @@ X-AI-Fixture: anthropic/messages-with-cache.json
 
 
 
-=== TEST 14: set route with expression reading nested usage leaves (OpenAI Responses)
+=== TEST 14: set route with expression reading nested usage fields as parent__child (OpenAI Responses)
 --- config
     location /t {
         content_by_lua_block {
@@ -551,7 +551,7 @@ X-AI-Fixture: anthropic/messages-with-cache.json
                             "limit": 500,
                             "time_window": 60,
                             "limit_strategy": "expression",
-                            "cost_expr": "input_tokens - cached_tokens + output_tokens + reasoning_tokens"
+                            "cost_expr": "input_tokens - input_tokens_details__cached_tokens + output_tokens + output_tokens_details__reasoning_tokens"
                         }
                     },
                     "upstream": {
@@ -574,7 +574,7 @@ passed
 
 
 
-=== TEST 15: nested leaves - cost = 40 - 12 + 20 + 8 = 56 per request
+=== TEST 15: nested fields - cost = 40 - 12 + 20 + 8 = 56 per request
 --- pipelined_requests eval
 [
     "POST /v1/responses\n" . '{"model":"gpt-4o-mini","stream":false,"input":"Hello"}',
@@ -592,7 +592,7 @@ X-AI-Fixture: openai/responses-with-cache.json
 
 
 
-=== TEST 16: nested leaves, streaming - cost = 20 - 10 + 5 + 3 = 18 per request
+=== TEST 16: nested fields, streaming - cost = 20 - 10 + 5 + 3 = 18 per request
 --- pipelined_requests eval
 [
     "POST /v1/responses\n" . '{"model":"gpt-4o-mini","stream":true,"input":"Hello"}',
@@ -610,7 +610,77 @@ X-AI-Fixture: openai/responses-streaming-with-cache.sse
 
 
 
-=== TEST 17: set route with expression reading a leaf name present at two depths
+=== TEST 17: set route with a bare name that is nested only
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/v1/responses",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": {
+                                "header": {
+                                    "Authorization": "Bearer test-key"
+                                }
+                            },
+                            "options": {
+                                "model": "gpt-4o-mini"
+                            },
+                            "override": {
+                                "endpoint": "http://127.0.0.1:1980"
+                            },
+                            "ssl_verify": false
+                        },
+                        "ai-rate-limiting": {
+                            "limit": 500,
+                            "time_window": 60,
+                            "limit_strategy": "expression",
+                            "cost_expr": "input_tokens + cached_tokens"
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "canbeanything.com": 1
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 18: nested fields are not bound by their bare name - cost = 40 + 0 = 40 per request
+--- pipelined_requests eval
+[
+    "POST /v1/responses\n" . '{"model":"gpt-4o-mini","stream":false,"input":"Hello"}',
+    "POST /v1/responses\n" . '{"model":"gpt-4o-mini","stream":false,"input":"Hello"}',
+]
+--- more_headers
+X-AI-Fixture: openai/responses-with-cache.json
+--- response_headers_like eval
+[
+    "X-AI-RateLimit-Remaining-ai-proxy-openai: 500",
+    "X-AI-RateLimit-Remaining-ai-proxy-openai: 460",
+]
+--- no_error_log
+[error]
+
+
+
+=== TEST 19: set route with a bare name present at the top level and nested
 --- config
     location /t {
         content_by_lua_block {
@@ -662,7 +732,7 @@ passed
 
 
 
-=== TEST 18: top-level field wins over nested one - cost = 5 per request
+=== TEST 20: bare name reads the top-level field - cost = 5 per request
 --- pipelined_requests eval
 [
     "POST /v1/responses\n" . '{"model":"gpt-4o-mini","stream":false,"input":"Hello"}',
@@ -680,7 +750,7 @@ X-AI-Fixture: openai/responses-usage-clash.json
 
 
 
-=== TEST 19: set route with an explicit path to a field that also exists at the top level
+=== TEST 21: set route with the parent__child name of the same field
 --- config
     location /t {
         content_by_lua_block {
@@ -709,7 +779,7 @@ X-AI-Fixture: openai/responses-usage-clash.json
                             "limit": 500,
                             "time_window": 60,
                             "limit_strategy": "expression",
-                            "cost_expr": "input_tokens_details.cached_tokens"
+                            "cost_expr": "input_tokens_details__cached_tokens"
                         }
                     },
                     "upstream": {
@@ -732,7 +802,7 @@ passed
 
 
 
-=== TEST 20: explicit path reads the nested field - cost = 12 per request
+=== TEST 22: parent__child reads the nested field - cost = 12 per request
 --- pipelined_requests eval
 [
     "POST /v1/responses\n" . '{"model":"gpt-4o-mini","stream":false,"input":"Hello"}',
@@ -750,7 +820,7 @@ X-AI-Fixture: openai/responses-usage-clash.json
 
 
 
-=== TEST 21: set route with a bare name present in two sibling objects
+=== TEST 23: set route with a leaf name present in two sibling objects
 --- config
     location /t {
         content_by_lua_block {
@@ -779,7 +849,7 @@ X-AI-Fixture: openai/responses-usage-clash.json
                             "limit": 500,
                             "time_window": 60,
                             "limit_strategy": "expression",
-                            "cost_expr": "audio_tokens"
+                            "cost_expr": "prompt_tokens_details__audio_tokens * 2 + completion_tokens_details__audio_tokens + audio_tokens"
                         }
                     },
                     "upstream": {
@@ -802,7 +872,7 @@ passed
 
 
 
-=== TEST 22: ambiguous bare name charges the larger value - cost = 70 per request
+=== TEST 24: parent__child names pick each sibling field - cost = 30 * 2 + 70 + 0 = 130 per request
 --- pipelined_requests eval
 [
     "POST /v1/chat/completions\n" . '{"model":"gpt-4o-mini","messages":[{"role":"user","content":"Hello"}]}',
@@ -813,95 +883,14 @@ X-AI-Fixture: openai/chat-usage-audio.json
 --- response_headers_like eval
 [
     "X-AI-RateLimit-Remaining-ai-proxy-openai: 500",
-    "X-AI-RateLimit-Remaining-ai-proxy-openai: 430",
-]
---- no_error_log
-[alert]
-
-
-
-=== TEST 23: ambiguous bare name logs the explicit paths to use
---- request
-POST /v1/chat/completions
-{"model":"gpt-4o-mini","messages":[{"role":"user","content":"Hello"}]}
---- more_headers
-X-AI-Fixture: openai/chat-usage-audio.json
---- error_log
-ambiguous usage field 'audio_tokens' in cost_expr matches completion_tokens_details.audio_tokens, prompt_tokens_details.audio_tokens, charging the larger value, use an explicit path instead
-
-
-
-=== TEST 24: set route mixing explicit paths and bare names
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                    "uri": "/v1/chat/completions",
-                    "plugins": {
-                        "ai-proxy": {
-                            "provider": "openai",
-                            "auth": {
-                                "header": {
-                                    "Authorization": "Bearer test-key"
-                                }
-                            },
-                            "options": {
-                                "model": "gpt-4o-mini"
-                            },
-                            "override": {
-                                "endpoint": "http://127.0.0.1:1980"
-                            },
-                            "ssl_verify": false
-                        },
-                        "ai-rate-limiting": {
-                            "limit": 500,
-                            "time_window": 60,
-                            "limit_strategy": "expression",
-                            "cost_expr": "prompt_tokens_details.audio_tokens * 2 + completion_tokens_details.audio_tokens + cached_tokens"
-                        }
-                    },
-                    "upstream": {
-                        "type": "roundrobin",
-                        "nodes": {
-                            "canbeanything.com": 1
-                        }
-                    }
-                }]]
-            )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- response_body
-passed
-
-
-
-=== TEST 25: explicit paths resolve the clash - cost = 30 * 2 + 70 + 20 = 150 per request
---- pipelined_requests eval
-[
-    "POST /v1/chat/completions\n" . '{"model":"gpt-4o-mini","messages":[{"role":"user","content":"Hello"}]}',
-    "POST /v1/chat/completions\n" . '{"model":"gpt-4o-mini","messages":[{"role":"user","content":"Hello"}]}',
-]
---- more_headers
-X-AI-Fixture: openai/chat-usage-audio.json
---- response_headers_like eval
-[
-    "X-AI-RateLimit-Remaining-ai-proxy-openai: 500",
-    "X-AI-RateLimit-Remaining-ai-proxy-openai: 350",
+    "X-AI-RateLimit-Remaining-ai-proxy-openai: 370",
 ]
 --- no_error_log
 [error]
 
 
 
-=== TEST 26: set route with explicit paths that do not exist
+=== TEST 25: set route with parent__child names that do not exist
 --- config
     location /t {
         content_by_lua_block {
@@ -930,7 +919,7 @@ X-AI-Fixture: openai/chat-usage-audio.json
                             "limit": 500,
                             "time_window": 60,
                             "limit_strategy": "expression",
-                            "cost_expr": "prompt_tokens + no_such_details.audio_tokens + prompt_tokens_details.no_such_field"
+                            "cost_expr": "prompt_tokens + no_such_details__audio_tokens + prompt_tokens_details__no_such_field"
                         }
                     },
                     "upstream": {
@@ -953,7 +942,7 @@ passed
 
 
 
-=== TEST 27: missing explicit paths default to 0 - cost = 100 per request
+=== TEST 26: missing parent__child names default to 0 - cost = 100 per request
 --- pipelined_requests eval
 [
     "POST /v1/chat/completions\n" . '{"model":"gpt-4o-mini","messages":[{"role":"user","content":"Hello"}]}',
@@ -971,7 +960,7 @@ X-AI-Fixture: openai/chat-usage-audio.json
 
 
 
-=== TEST 28: set route reading a field nested two levels deep
+=== TEST 27: set route reading a field nested two levels deep
 --- config
     location /t {
         content_by_lua_block {
@@ -1000,7 +989,7 @@ X-AI-Fixture: openai/chat-usage-audio.json
                             "limit": 500,
                             "time_window": 60,
                             "limit_strategy": "expression",
-                            "cost_expr": "text_tokens + prompt_tokens_details.cached_tokens_details.text_tokens"
+                            "cost_expr": "prompt_tokens_details__cached_tokens_details__text_tokens + modality_details__text_tokens"
                         }
                     },
                     "upstream": {
@@ -1023,7 +1012,7 @@ passed
 
 
 
-=== TEST 29: deep bare name and deep path both resolve, arrays are skipped - cost = 9 + 9 = 18 per request
+=== TEST 28: deep fields join every level, arrays are skipped - cost = 9 + 0 = 9 per request
 --- pipelined_requests eval
 [
     "POST /v1/chat/completions\n" . '{"model":"gpt-4o-mini","messages":[{"role":"user","content":"Hello"}]}',
@@ -1034,105 +1023,7 @@ X-AI-Fixture: openai/chat-usage-deep.json
 --- response_headers_like eval
 [
     "X-AI-RateLimit-Remaining-ai-proxy-openai: 500",
-    "X-AI-RateLimit-Remaining-ai-proxy-openai: 482",
+    "X-AI-RateLimit-Remaining-ai-proxy-openai: 491",
 ]
 --- no_error_log
 [error]
-
-
-
-=== TEST 30: set route using math helpers and number literals around explicit paths
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                    "uri": "/v1/chat/completions",
-                    "plugins": {
-                        "ai-proxy": {
-                            "provider": "openai",
-                            "auth": {
-                                "header": {
-                                    "Authorization": "Bearer test-key"
-                                }
-                            },
-                            "options": {
-                                "model": "gpt-4o-mini"
-                            },
-                            "override": {
-                                "endpoint": "http://127.0.0.1:1980"
-                            },
-                            "ssl_verify": false
-                        },
-                        "ai-rate-limiting": {
-                            "limit": 500,
-                            "time_window": 60,
-                            "limit_strategy": "expression",
-                            "cost_expr": "floor(completion_tokens_details.audio_tokens / 1e1) + math.max(reasoning_tokens, 1)"
-                        }
-                    },
-                    "upstream": {
-                        "type": "roundrobin",
-                        "nodes": {
-                            "canbeanything.com": 1
-                        }
-                    }
-                }]]
-            )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- response_body
-passed
-
-
-
-=== TEST 31: helpers and literals are left as is - cost = 7 + 10 = 17 per request
---- pipelined_requests eval
-[
-    "POST /v1/chat/completions\n" . '{"model":"gpt-4o-mini","messages":[{"role":"user","content":"Hello"}]}',
-    "POST /v1/chat/completions\n" . '{"model":"gpt-4o-mini","messages":[{"role":"user","content":"Hello"}]}',
-]
---- more_headers
-X-AI-Fixture: openai/chat-usage-audio.json
---- response_headers_like eval
-[
-    "X-AI-RateLimit-Remaining-ai-proxy-openai: 500",
-    "X-AI-RateLimit-Remaining-ai-proxy-openai: 483",
-]
---- no_error_log
-[error]
-
-
-
-=== TEST 32: schema validation - malformed explicit paths are rejected
---- config
-    location /t {
-        content_by_lua_block {
-            local plugin = require("apisix.plugins.ai-rate-limiting")
-            local exprs = {
-                "input_tokens_details..cached_tokens",
-                "input_tokens_details. + 1",
-                "math.floor(input_tokens_details.cached_tokens) + 1e3",
-            }
-            for i, expr in ipairs(exprs) do
-                local ok, err = plugin.check_schema({
-                    limit = 100,
-                    time_window = 60,
-                    limit_strategy = "expression",
-                    cost_expr = expr,
-                })
-                ngx.say("expr ", i, ": ", ok and "valid" or err)
-            end
-        }
-    }
---- response_body
-expr 1: invalid cost_expr: invalid field reference: input_tokens_details..cached_tokens
-expr 2: invalid cost_expr: invalid field reference: input_tokens_details.
-expr 3: valid

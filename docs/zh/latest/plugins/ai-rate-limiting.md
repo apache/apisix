@@ -48,7 +48,7 @@ import TabItem from '@theme/TabItem';
 | time_window | integer | False | | >0 | 与速率限制 `limit` 对应的时间间隔（秒）。`time_window` 和 `instances.time_window` 中至少应配置一个。如果未配置 `rules`，则为必填项。 |
 | show_limit_quota_header | boolean | False | true | | 如果为 true，则在响应中包含速率限制头部。当未设置 `rules` 时，头部为 `X-AI-RateLimit-Limit-*`、`X-AI-RateLimit-Remaining-*` 和 `X-AI-RateLimit-Reset-*`，其中 `*` 是实例名称。当设置了 `rules` 时，详见 `rules.header_prefix`。 |
 | limit_strategy | string | False | total_tokens | [`total_tokens`, `prompt_tokens`, `completion_tokens`, `expression`] | 应用速率限制的令牌类型。`total_tokens` 是 `prompt_tokens` 和 `completion_tokens` 的总和。当设置为 `expression` 时，使用 `cost_expr` 字段动态计算令牌消耗。 |
-| cost_expr | string | False | | | 用于动态计算令牌消耗的 Lua 算术表达式。变量从 LLM API 原始使用量响应字段注入。嵌套字段可以用叶子字段名引用，例如用 `cached_tokens` 引用 `input_tokens_details.cached_tokens`，也可以用显式路径引用，例如 `input_tokens_details.cached_tokens`。叶子字段名解析为层级最浅的匹配字段。若同一层级有多个同名字段，例如 `prompt_tokens_details` 和 `completion_tokens_details` 中都有 `audio_tokens`，则取较大值并记录错误日志；请使用显式路径指定字段。缺失的变量默认为 0。仅在 `limit_strategy` 为 `expression` 时有效。示例：`input_tokens + cache_creation_input_tokens + output_tokens`。 |
+| cost_expr | string | False | | | 用于动态计算令牌消耗的 Lua 算术表达式。变量从 LLM API 原始使用量响应字段注入。嵌套字段通过用 `__` 连接父字段名和子字段名来引用，例如用 `input_tokens_details__cached_tokens` 引用 `input_tokens_details.cached_tokens`。数组会被跳过。缺失的变量默认为 0。仅在 `limit_strategy` 为 `expression` 时有效。示例：`input_tokens + cache_creation_input_tokens + output_tokens`。 |
 | instances | array[object] | False | | | LLM 实例速率限制配置。 |
 | instances.name | string | True | | | LLM 服务实例的名称。 |
 | instances.limit | integer | True | | >0 | 实例在给定时间间隔内允许的最大令牌数。 |
