@@ -1,0 +1,22 @@
+{
+  "id": "chatcmpl-deep1",
+  "object": "chat.completion",
+  "model": "{{model}}",
+  "choices": [
+    {
+      "index": 0,
+      "message": { "role": "assistant", "content": "Hello" },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 100,
+    "completion_tokens": 50,
+    "total_tokens": 150,
+    "prompt_tokens_details": {
+      "cached_tokens": 20,
+      "cached_tokens_details": { "text_tokens": 9 }
+    },
+    "modality_details": [ { "text_tokens": 100 } ]
+  }
+}
