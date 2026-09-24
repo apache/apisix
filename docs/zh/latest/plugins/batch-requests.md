@@ -69,7 +69,7 @@ plugins:
 
 ## 配置插件
 
-默认情况下，可以发送到 `/apisix/batch-requests` 的最大请求体不能大于 1 MiB。你可以通过 `apisix/admin/plugin_metadata/batch-requests` 更改插件的此配置：
+默认情况下，可以发送到 `/apisix/batch-requests` 的最大请求体和每个 pipeline 请求的最大响应体均为 1 MiB，单个 pipeline 的响应体总大小上限为 10 MiB。你可以通过 `/apisix/admin/plugin_metadata/batch-requests` 更改这些全局插件元数据配置：
 
 :::note
 
@@ -85,16 +85,22 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/batch-requests \
 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
-    "max_body_size": 4194304
+    "max_body_size": 4194304,
+    "max_response_body_size": 2097152,
+    "max_response_body_size_total": 20971520
 }'
 ```
 
+这些元数据配置在全局范围内生效，并应用于 `batch-requests` 插件处理的所有请求。
+
 ## 元数据
 
-| 名称               | 类型     | 必选项 | 默认值   | 有效值 | 描述                          |
-| ------------------ | ------- | -------| ------- | ------ | ---------------------------- |
-| max_body_size      | integer | 是     | 1048576 |[1, ...]| 请求体的最大大小，单位：bytes。 |
-| max_pipeline_items | integer | 是     | 1000    |[1, ...]| 单个 pipeline 中允许的最大请求数量。 |
+| 名称                         | 类型    | 必选项 | 默认值   | 有效值   | 描述                                             |
+| ---------------------------- | ------- | ------ | -------- | -------- | ------------------------------------------------ |
+| max_body_size                | integer | 是     | 1048576  | [1, ...] | 请求体的最大大小，单位：bytes。                  |
+| max_pipeline_items           | integer | 是     | 1000     | [1, ...] | 单个 pipeline 中允许的最大请求数量。             |
+| max_response_body_size       | integer | 否     | 1048576  | [1, ...] | 每个 pipeline 请求的最大响应体大小，单位：bytes。 |
+| max_response_body_size_total | integer | 否     | 10485760 | [1, ...] | 单个 pipeline 的最大响应体总大小，单位：bytes。  |
 
 ## 请求和响应格式
 
