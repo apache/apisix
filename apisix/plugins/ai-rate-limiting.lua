@@ -20,11 +20,17 @@ local ipairs = ipairs
 local type = type
 local pairs = pairs
 local rawget = rawget
+local rawset = rawset
 local pcall = pcall
 local load = load
 local math_floor = math.floor
 local math_huge = math.huge
 local table_sort = table.sort
+local table_concat = table.concat
+local str_find = string.find
+local str_sub = string.sub
+local str_gsub = string.gsub
+local str_gmatch = string.gmatch
 local core = require("apisix.core")
 local limit_count = require("apisix.plugins.limit-count.init")
 local policy_to_additional_properties = limit_count.policy_to_additional_properties
@@ -183,6 +189,10 @@ local limit_conf_cache = core.lrucache.new({
     ttl = 300, count = 512
 })
 
+local cost_expr_cache = core.lrucache.new({
+    ttl = 300, count = 512
+})
+
 
 -- safe math functions allowed in cost expressions
 local expr_safe_env = {
@@ -194,14 +204,147 @@ local expr_safe_env = {
     min = math.min,
 }
 
+local lua_keywords = {
+    ["and"] = true, ["break"] = true, ["do"] = true, ["else"] = true,
+    ["elseif"] = true, ["end"] = true, ["false"] = true, ["for"] = true,
+    ["function"] = true, ["goto"] = true, ["if"] = true, ["in"] = true,
+    ["local"] = true, ["nil"] = true, ["not"] = true, ["or"] = true,
+    ["repeat"] = true, ["return"] = true, ["then"] = true, ["true"] = true,
+    ["until"] = true, ["while"] = true,
+}
+
+-- private keys, unreachable from the expression
+local RAW_KEY = {}
+local PATHS_KEY = {}
+
+
+local function walk_path(raw, segs)
+    local v = raw
+    for i = 1, #segs do
+        if type(v) ~= "table" then
+            return 0
+        end
+        v = v[segs[i]]
+    end
+    if type(v) == "number" then
+        return v
+    end
+    return 0
+end
+
+
+-- search level by level; a clash on one level charges the larger value
+local function find_leaf(raw, name)
+    local v = raw[name]
+    if type(v) == "number" then
+        return v
+    end
+
+    local level, prefixes = {raw}, {""}
+    while true do
+        local best, hits = nil, 0
+        for i = 1, #level do
+            for k, tab in pairs(level[i]) do
+                if type(k) == "string" and type(tab) == "table" then
+                    local x = tab[name]
+                    if type(x) == "number" then
+                        hits = hits + 1
+                        if not best or x > best then
+                            best = x
+                        end
+                    end
+                end
+            end
+        end
+
+        if best then
+            if hits > 1 then
+                local paths = {}
+                for i = 1, #level do
+                    for k, tab in pairs(level[i]) do
+                        if type(k) == "string" and type(tab) == "table"
+                           and type(tab[name]) == "number" then
+                            paths[#paths + 1] = prefixes[i] .. k .. "." .. name
+                        end
+                    end
+                end
+                table_sort(paths)
+                core.log.error("ambiguous usage field '", name, "' in cost_expr matches ",
+                               table_concat(paths, ", "), ", charging the larger value, ",
+                               "use an explicit path instead")
+            end
+            return best
+        end
+
+        local next_level, next_prefixes = {}, {}
+        for i = 1, #level do
+            for k, tab in pairs(level[i]) do
+                if type(k) == "string" and type(tab) == "table" then
+                    next_level[#next_level + 1] = tab
+                    next_prefixes[#next_prefixes + 1] = prefixes[i] .. k .. "."
+                end
+            end
+        end
+        if #next_level == 0 then
+            return 0
+        end
+        level, prefixes = next_level, next_prefixes
+    end
+end
+
+
+local usage_mt = {
+    __index = function(t, k)
+        local segs = rawget(t, PATHS_KEY)[k]
+        local v
+        if segs then
+            v = walk_path(rawget(t, RAW_KEY), segs)
+        else
+            v = find_leaf(rawget(t, RAW_KEY), k)
+        end
+        rawset(t, k, v)
+        return v
+    end
+}
+
+
+-- rewrite usage names to reads on the `usage` argument
 local function compile_cost_expr(expr_str)
-    local fn_code = "return " .. expr_str
-    -- validate syntax by loading first
-    local fn, err = load(fn_code, "cost_expr", "t", expr_safe_env)
+    local paths = {}
+    local bad_name
+    local code = str_gsub(expr_str, "()([%a_][%w_%.]*)", function(pos, name)
+        -- skip number literals like 1e5 or 0x1F
+        if pos > 1 and str_find(str_sub(expr_str, pos - 1, pos - 1), "[%w_%.]") then
+            return nil
+        end
+        local head = str_gsub(name, "%..*", "")
+        if lua_keywords[name] or expr_safe_env[head] then
+            return nil
+        end
+        if str_find(name, ".", 1, true) then
+            if str_find(name, "..", 1, true) or str_sub(name, -1) == "." then
+                bad_name = bad_name or name
+                return nil
+            end
+            local segs = {}
+            for seg in str_gmatch(name, "[^%.]+") do
+                segs[#segs + 1] = seg
+            end
+            paths[name] = segs
+        end
+        return 'usage["' .. name .. '"]'
+    end)
+    if bad_name then
+        return nil, "invalid field reference: " .. bad_name
+    end
+
+    -- own env per expression so writes stay local to it
+    local env = setmetatable({}, {__index = expr_safe_env})
+    local fn, err = load("local usage = ...\nreturn " .. code, "cost_expr", "t", env)
     if not fn then
         return nil, err
     end
-    return fn_code
+    return {fn = fn, paths = paths}
 end
 
 
@@ -352,54 +495,13 @@ function _M.check_instance_status(conf, ctx, instance_name)
 end
 
 
--- expose usage leaves by bare name, breadth first so shallower keys win
-local function inject_usage_vars(env, raw)
-    local level = {raw}
-    while #level > 0 do
-        local next_level = {}
-        for _, tab in ipairs(level) do
-            local keys = {}
-            for k in pairs(tab) do
-                if type(k) == "string" then
-                    keys[#keys + 1] = k
-                end
-            end
-            -- sorted for a stable winner on same-depth clashes
-            table_sort(keys)
-            for _, k in ipairs(keys) do
-                local v = tab[k]
-                if type(v) == "number" then
-                    if rawget(env, k) == nil and not expr_safe_env[k] then
-                        env[k] = v
-                    end
-                elseif type(v) == "table" then
-                    next_level[#next_level + 1] = v
-                end
-            end
-        end
-        level = next_level
-    end
-end
-
-
-local function eval_cost_expr(conf_cost_expr, raw)
-    local fn_code = "return " .. conf_cost_expr
-    -- build environment: safe math + usage variables (missing vars default to 0)
-    local env = setmetatable({}, {
-        __index = function(_, k)
-            local v = expr_safe_env[k]
-            if v ~= nil then
-                return v
-            end
-            return 0
-        end
-    })
-    inject_usage_vars(env, raw)
-    local fn, err = load(fn_code, "cost_expr", "t", env)
-    if not fn then
+local function eval_cost_expr(conf, raw)
+    local compiled, err = cost_expr_cache(conf, nil, compile_cost_expr, conf.cost_expr)
+    if not compiled then
         return nil, "failed to compile cost_expr: " .. err
     end
-    local ok, result = pcall(fn)
+    local usage = setmetatable({[RAW_KEY] = raw, [PATHS_KEY] = compiled.paths}, usage_mt)
+    local ok, result = pcall(compiled.fn, usage)
     if not ok then
         return nil, "failed to evaluate cost_expr: " .. result
     end
@@ -421,7 +523,7 @@ local function get_token_usage(conf, ctx)
         if not raw then
             return
         end
-        local result, err = eval_cost_expr(conf.cost_expr, raw)
+        local result, err = eval_cost_expr(conf, raw)
         if not result then
             core.log.error(err)
             return
