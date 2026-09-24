@@ -24,7 +24,6 @@ local pcall = pcall
 local load = load
 local math_floor = math.floor
 local math_huge = math.huge
-local table_sort = table.sort
 local core = require("apisix.core")
 local limit_count = require("apisix.plugins.limit-count.init")
 local policy_to_additional_properties = limit_count.policy_to_additional_properties
@@ -359,23 +358,16 @@ local function inject_usage_vars(env, raw)
         local next_level = {}
         for _, item in ipairs(level) do
             local tab, prefix = item[1], item[2]
-            local keys = {}
-            for k in pairs(tab) do
+            for k, v in pairs(tab) do
                 if type(k) == "string" then
-                    keys[#keys + 1] = k
-                end
-            end
-            -- sorted for a stable winner on same-depth collisions
-            table_sort(keys)
-            for _, k in ipairs(keys) do
-                local v = tab[k]
-                local path = prefix and (prefix .. "__" .. k) or k
-                if type(v) == "number" then
-                    if rawget(env, path) == nil and not expr_safe_env[path] then
-                        env[path] = v
+                    local path = prefix and (prefix .. "__" .. k) or k
+                    if type(v) == "number" then
+                        if rawget(env, path) == nil and not expr_safe_env[path] then
+                            env[path] = v
+                        end
+                    elseif type(v) == "table" then
+                        next_level[#next_level + 1] = {v, path}
                     end
-                elseif type(v) == "table" then
-                    next_level[#next_level + 1] = {v, path}
                 end
             end
         end
