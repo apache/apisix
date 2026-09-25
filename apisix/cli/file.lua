@@ -31,6 +31,7 @@ local getenv = os.getenv
 local str_gmatch = string.gmatch
 local str_find = string.find
 local str_sub = string.sub
+local table_concat = table.concat
 local print = print
 
 local _M = {}
@@ -92,12 +93,32 @@ end
 
 -- Substitute env vars in raw text before parsing. YAML parser then infers
 -- types naturally: `"${{VAR}}"` stays string, `${{VAR}}` infers from value.
+-- Substitution runs line by line so that full-line comments stay untouched:
+-- a commented-out `# ${{VAR}}` must not fail startup when VAR is unset.
+-- Known limits of this text-level heuristic: an inline trailing comment is
+-- still substituted (`#` may legally appear inside YAML strings), and a
+-- block-scalar content line starting with `#` is skipped like a comment.
 local function resolve_conf_var_in_text(text)
-    local new_text, _, err = var_sub(text)
-    if err then
-        return nil, err
+    local parts = {}
+    -- a UTF-8 BOM would hide the `#` of a first-line comment, so detach it
+    if str_sub(text, 1, 3) == "\239\187\191" then
+        parts[1] = str_sub(text, 1, 3)
+        text = str_sub(text, 4)
     end
-    return new_text
+    for line, eol in str_gmatch(text, "([^\n]*)(\n?)") do
+        if is_empty_yaml_line(line) or not str_find(line, "${{", 1, true) then
+            -- comment / blank / no reference: keep the line as-is
+            parts[#parts + 1] = line
+        else
+            local new_line, _, err = var_sub(line)
+            if err then
+                return nil, err
+            end
+            parts[#parts + 1] = new_line
+        end
+        parts[#parts + 1] = eol
+    end
+    return table_concat(parts)
 end
 
 
