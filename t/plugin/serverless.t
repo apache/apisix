@@ -604,3 +604,56 @@ GET /hello
 --- error_code: 403
 --- response_body chomp
 forbidden
+
+
+
+=== TEST 27: set route with serverless-pre-function to set default uri arg
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "serverless-pre-function": {
+                            "phase": "rewrite",
+                            "functions" : ["return function(conf, ctx) local core = require(\"apisix.core\"); local uri_args = core.request.get_uri_args(ctx); if not uri_args.name then uri_args.name = \"world\"; core.request.set_uri_args(ctx, uri_args); end end"]
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/print_request_received"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 28: serverless-pre-function sets default uri arg
+--- request
+GET /print_request_received
+--- response_body_like
+qr/request_uri: \/print_request_received\?name=world/
+
+
+
+=== TEST 29: serverless-pre-function keeps existing uri arg
+--- request
+GET /print_request_received?name=apisix
+--- response_body_like
+qr/request_uri: \/print_request_received\?name=apisix/
