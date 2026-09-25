@@ -51,6 +51,7 @@ local string_format = string.format
 local string_lower = string.lower
 local update_time = ngx.update_time
 local tostring = tostring
+local pcall = pcall
 
 local lrucache = core.lrucache.new({
     type = 'plugin', count = 128, ttl = 24 * 60 * 60,
@@ -451,6 +452,20 @@ function _M.rewrite(conf, api_ctx)
 end
 
 
+-- the vendored opentelemetry-lua's batch_span_processor falls back to a
+-- synchronous flush (opening a cosocket) when it fails to schedule the
+-- background timer, which happens near the end of every worker shutdown;
+-- that synchronous call trips APISIX's own phase guard (patch.lua) when
+-- span:finish() runs inside a restricted phase like log_by_lua*, so guard
+-- it here as defense in depth (see opentelemetry-lua#106/#107 upstream)
+local function finish_span(span, end_time)
+    local ok, err = pcall(span.finish, span, end_time)
+    if not ok then
+        core.log.warn("failed to finish opentelemetry span, ignore error: ", err)
+    end
+end
+
+
 local function create_child_span(tracer, parent_span_ctx, spans, span)
     if not span or span.finished then
         return
@@ -469,7 +484,7 @@ local function create_child_span(tracer, parent_span_ctx, spans, span)
     if span.status then
         new_span:set_status(span.status.code, span.status.message)
     end
-    new_span:finish(span.end_time)
+    finish_span(new_span, span.end_time)
 end
 
 
@@ -556,7 +571,7 @@ function _M.log(conf, api_ctx)
         end
 
         update_time()
-        span:finish()
+        finish_span(span)
     end
 end
 
