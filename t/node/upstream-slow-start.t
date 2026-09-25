@@ -154,7 +154,7 @@ true
                         "type": "roundrobin",
                         "desc": "]] .. desc .. [[",
                         "nodes": ]] .. nodes .. [[,
-                        "warm_up_conf": {
+                        "slow_start": {
                             "slow_start_time_seconds": 10,
                             "min_weight_percent": 1,
                             "interval": 1
@@ -285,7 +285,7 @@ slow start finished for node 127.0.0.1:1981
                     [[{
                         "type": "roundrobin",
                         "nodes": ]] .. nodes .. [[,
-                        "warm_up_conf": {
+                        "slow_start": {
                             "slow_start_time_seconds": 10,
                             "min_weight_percent": 1,
                             "interval": 10
@@ -377,7 +377,7 @@ slow start began for node 127.0.0.1:1981
 
 
 
-=== TEST 6: without warm_up_conf the weights are used as configured
+=== TEST 6: without slow_start the weights are used as configured
 --- config
     location /t {
         content_by_lua_block {
@@ -464,7 +464,7 @@ slow start began for node
                         "upstream": {
                             "type": "roundrobin",
                             "nodes": ]] .. nodes .. [[,
-                            "warm_up_conf": {
+                            "slow_start": {
                                 "slow_start_time_seconds": 10,
                                 "min_weight_percent": 1,
                                 "interval": 1
@@ -533,7 +533,7 @@ qr{of upstream \S*/routes/4}
             local up_conf = {
                 resource_key = "/upstreams/version-suffix",
                 type = "roundrobin",
-                warm_up_conf = {
+                slow_start = {
                     slow_start_time_seconds = 10,
                     min_weight_percent = 1,
                     interval = 2,
@@ -608,7 +608,7 @@ still settled: #wm
                             "unhealthy": {"interval": 1, "tcp_failures": 1}
                         }
                     },
-                    "warm_up_conf": {
+                    "slow_start": {
                         "slow_start_time_seconds": 10,
                         "min_weight_percent": 1,
                         "interval": 1
@@ -694,7 +694,7 @@ left the upstream
             local up_conf = {
                 resource_key = "/upstreams/pending",
                 type = "roundrobin",
-                warm_up_conf = {
+                slow_start = {
                     slow_start_time_seconds = 100,
                     min_weight_percent = 1,
                     interval = 1,
@@ -769,7 +769,7 @@ slow start began for node 10.0.0.2:8080
             local n2 = {host = "10.0.1.2", port = 80, weight = 100, priority = 0}
             local scope = "/upstreams/race"
             local key = scope .. "|10.0.1.2:80"
-            local up_conf = {resource_key = scope, type = "roundrobin", warm_up_conf = conf}
+            local up_conf = {resource_key = scope, type = "roundrobin", slow_start = conf}
 
             up_conf.nodes = {n1}
             slow_start.effective_weights(up_conf, {n1})
@@ -809,7 +809,109 @@ refresh left the change alone: 0
 
 
 
-=== TEST 12: clean up
+=== TEST 12: a Pod is followed by its uid, not by its address
+--- config
+    location /t {
+        content_by_lua_block {
+            local slow_start = require("apisix.slow_start")
+            local conf = {
+                slow_start_time_seconds = 100,
+                min_weight_percent = 1,
+                interval = 1,
+                aggression = 1,
+            }
+            local up_conf = {
+                resource_key = "/upstreams/pods",
+                type = "roundrobin",
+                service_name = "default/web:http",
+                discovery_type = "kubernetes",
+                slow_start = conf,
+            }
+            local function pod(uid, ip)
+                return {host = ip, port = 80, weight = 100, priority = 0,
+                        metadata = {uid = uid}}
+            end
+
+            local a = pod("pod-a", "10.0.0.1")
+            up_conf.nodes = {a}
+            local weights = slow_start.effective_weights(up_conf, {a})
+            ngx.say("baseline: ", weights[1])
+
+            -- the same Pod answering on a new address keeps what it had
+            local moved = pod("pod-a", "10.0.0.9")
+            up_conf.nodes = {moved}
+            weights = slow_start.effective_weights(up_conf, {moved})
+            ngx.say("after the address changed: ", weights[1])
+
+            -- and an address a different Pod takes over is a different node
+            local b = pod("pod-b", "10.0.0.9")
+            up_conf.nodes = {b}
+            weights = slow_start.effective_weights(up_conf, {b})
+            ngx.say("after a new Pod took the address: ", weights[1])
+        }
+    }
+--- response_body
+baseline: 100
+after the address changed: 100
+after a new Pod took the address: 1
+--- error_log
+slow start began for node pod-b:80
+
+
+
+=== TEST 13: default_weight is the target a kubernetes endpoint ramps up to
+--- config
+    location /t {
+        content_by_lua_block {
+            local slow_start = require("apisix.slow_start")
+            local conf = {
+                slow_start_time_seconds = 100,
+                min_weight_percent = 1,
+                interval = 1,
+                aggression = 1,
+                default_weight = 50,
+            }
+            local old = {host = "10.0.1.1", port = 80, weight = 100, priority = 0,
+                         metadata = {uid = "pod-old"}}
+            local new = {host = "10.0.1.2", port = 80, weight = 100, priority = 0,
+                         metadata = {uid = "pod-new"}}
+
+            local up_conf = {
+                resource_key = "/upstreams/target-weight",
+                type = "roundrobin",
+                service_name = "default/web:http",
+                discovery_type = "kubernetes",
+                slow_start = conf,
+                nodes = {old},
+            }
+            slow_start.effective_weights(up_conf, {old})
+            up_conf.nodes = {old, new}
+            local weights = slow_start.effective_weights(up_conf, {old, new})
+            ngx.say("kubernetes: ", weights[1], " ", weights[2])
+
+            -- another registry hands out weights that mean something, so the
+            -- nodes keep them
+            local nacos = {
+                resource_key = "/upstreams/target-weight-nacos",
+                type = "roundrobin",
+                service_name = "web",
+                discovery_type = "nacos",
+                slow_start = conf,
+                nodes = {old},
+            }
+            slow_start.effective_weights(nacos, {old})
+            nacos.nodes = {old, new}
+            weights = slow_start.effective_weights(nacos, {old, new})
+            ngx.say("nacos: ", weights[1], " ", weights[2])
+        }
+    }
+--- response_body
+kubernetes: 50 1
+nacos: 100 1
+
+
+
+=== TEST 14: clean up
 --- config
     location /t {
         content_by_lua_block {

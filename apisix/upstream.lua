@@ -561,11 +561,11 @@ local function get_chash_key_schema(hash_on)
 end
 
 
--- Constraints of `warm_up_conf` within one upstream that JSON schema cannot
+-- Constraints of `slow_start` within one upstream that JSON schema cannot
 -- express. A ramp needs a single roundrobin tier to work in, so a combination it
 -- could never act on is rejected at the Admin API rather than accepted and
 -- ignored. Where the upstream is used is a different question: like every other
--- field that only applies to HTTP, `warm_up_conf` is simply ignored on the
+-- field that only applies to HTTP, `slow_start` is simply ignored on the
 -- stream path.
 --
 -- This runs on the configuration entry points only, never on the data plane
@@ -575,20 +575,27 @@ end
 -- upstream out of service over a field
 -- that only accelerates a ramp. `slow_start.usable()` logs and keeps proxying
 -- with the configured weights there.
-local function check_warm_up_conf(conf)
-    local warm_up_conf = conf.warm_up_conf
-    if not warm_up_conf then
+local function check_slow_start(conf)
+    local slow_start = conf.slow_start
+    if not slow_start then
         return true
     end
 
     if (conf.type or "roundrobin") ~= "roundrobin" then
-        return false, "warm_up_conf is only supported by the roundrobin upstream type"
+        return false, "slow_start is only supported by the roundrobin upstream type"
     end
 
-    local interval = warm_up_conf.interval or 1
-    if interval > warm_up_conf.slow_start_time_seconds then
-        return false, "warm_up_conf.interval can't be greater than " ..
-                      "warm_up_conf.slow_start_time_seconds"
+    -- a weight to ramp up to only means something where the nodes have no weight
+    -- of their own, which is what a Kubernetes endpoint looks like
+    if slow_start.default_weight and conf.discovery_type ~= "kubernetes" then
+        return false, "slow_start.default_weight is only supported by an upstream " ..
+                      "with discovery_type kubernetes"
+    end
+
+    local interval = slow_start.interval or 1
+    if interval > slow_start.slow_start_time_seconds then
+        return false, "slow_start.interval can't be greater than " ..
+                      "slow_start.slow_start_time_seconds"
     end
 
     -- APISIX drains the highest priority tier before it uses the next one, so a
@@ -602,7 +609,7 @@ local function check_warm_up_conf(conf)
             if i == 1 then
                 priority = node_priority
             elseif node_priority ~= priority then
-                return false, "warm_up_conf doesn't support an upstream with " ..
+                return false, "slow_start doesn't support an upstream with " ..
                               "nodes of different priorities"
             end
         end
@@ -610,7 +617,7 @@ local function check_warm_up_conf(conf)
 
     return true
 end
-_M.check_warm_up_conf = check_warm_up_conf
+_M.check_slow_start = check_slow_start
 
 
 local function check_upstream_conf(in_dp, conf)
@@ -620,7 +627,7 @@ local function check_upstream_conf(in_dp, conf)
             return false, "invalid configuration: " .. err
         end
 
-        local ok, err = check_warm_up_conf(conf)
+        local ok, err = check_slow_start(conf)
         if not ok then
             return false, err
         end

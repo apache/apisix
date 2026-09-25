@@ -38,7 +38,7 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: set upstream with warm_up_conf
+=== TEST 1: set upstream with slow_start
 --- config
     location /t {
         content_by_lua_block {
@@ -50,7 +50,7 @@ __DATA__
                     "nodes": [
                         {"host": "127.0.0.1", "port": 1980, "weight": 100}
                     ],
-                    "warm_up_conf": {
+                    "slow_start": {
                         "slow_start_time_seconds": 300,
                         "min_weight_percent": 1
                     }
@@ -78,7 +78,7 @@ passed
             local conf = {
                 type = "roundrobin",
                 nodes = {{host = "127.0.0.1", port = 1980, weight = 100}},
-                warm_up_conf = {
+                slow_start = {
                     slow_start_time_seconds = 300,
                     min_weight_percent = 1,
                 },
@@ -90,10 +90,10 @@ passed
                 return
             end
 
-            ngx.say("interval: ", conf.warm_up_conf.interval,
-                    ", aggression: ", conf.warm_up_conf.aggression,
+            ngx.say("interval: ", conf.slow_start.interval,
+                    ", aggression: ", conf.slow_start.aggression,
                     ", startup_grace_period_seconds: ",
-                    conf.warm_up_conf.startup_grace_period_seconds)
+                    conf.slow_start.startup_grace_period_seconds)
         }
     }
 --- response_body
@@ -113,7 +113,7 @@ interval: 1, aggression: 1, startup_grace_period_seconds: 0
                     "nodes": [
                         {"host": "127.0.0.1", "port": 1980, "weight": 100}
                     ],
-                    "warm_up_conf": {
+                    "slow_start": {
                         "slow_start_time_seconds": 300,
                         "min_weight_percent": 20,
                         "interval": 5,
@@ -148,7 +148,7 @@ passed
                     "nodes": [
                         {"host": "127.0.0.1", "port": 1980, "weight": 100}
                     ],
-                    "warm_up_conf": {
+                    "slow_start": {
                         "min_weight_percent": 1
                     }
                 }]]
@@ -176,7 +176,7 @@ qr/property .*slow_start_time_seconds.* is required/
                     "nodes": [
                         {"host": "127.0.0.1", "port": 1980, "weight": 100}
                     ],
-                    "warm_up_conf": {
+                    "slow_start": {
                         "slow_start_time_seconds": 10
                     }
                 }]]
@@ -205,7 +205,7 @@ qr/property .*min_weight_percent.* is required/
                         "nodes": [
                             {"host": "127.0.0.1", "port": 1980, "weight": 100}
                         ],
-                        "warm_up_conf": {
+                        "slow_start": {
                             "slow_start_time_seconds": 10,
                             "min_weight_percent": ]] .. percent .. [[
                         }
@@ -233,7 +233,7 @@ passed
                 [["slow_start_time_seconds": 0, "min_weight_percent": 1]],
                 [["slow_start_time_seconds": 10, "min_weight_percent": 1, "aggression": 0]],
                 [["slow_start_time_seconds": 10, "min_weight_percent": 1, "interval": 0]],
-                [["slow_start_time_seconds": 10, "min_weight_percent": 1, "default_weight": 1]],
+                [["slow_start_time_seconds": 10, "min_weight_percent": 1, "default_weight": 0]],
                 [["slow_start_time_seconds": 10, "min_weight_percent": 1,
                   "startup_grace_period_seconds": -1]],
                 [["slow_start_time_seconds": 10, "min_weight_percent": 1, "unknown": 1]],
@@ -247,7 +247,7 @@ passed
                         "nodes": [
                             {"host": "127.0.0.1", "port": 1980, "weight": 100}
                         ],
-                        "warm_up_conf": {]] .. case .. [[}
+                        "slow_start": {]] .. case .. [[}
                     }]]
                 )
                 if code < 300 then
@@ -263,7 +263,7 @@ passed
 
 
 
-=== TEST 8: reject warm_up_conf on a non roundrobin upstream
+=== TEST 8: reject slow_start on a non roundrobin upstream
 --- config
     location /t {
         content_by_lua_block {
@@ -276,7 +276,7 @@ passed
                     "nodes": [
                         {"host": "127.0.0.1", "port": 1980, "weight": 100}
                     ],
-                    "warm_up_conf": {
+                    "slow_start": {
                         "slow_start_time_seconds": 10,
                         "min_weight_percent": 1
                     }
@@ -289,7 +289,7 @@ passed
     }
 --- error_code: 400
 --- response_body eval
-qr/warm_up_conf is only supported by the roundrobin upstream type/
+qr/slow_start is only supported by the roundrobin upstream type/
 
 
 
@@ -305,7 +305,7 @@ qr/warm_up_conf is only supported by the roundrobin upstream type/
                     "nodes": [
                         {"host": "127.0.0.1", "port": 1980, "weight": 100}
                     ],
-                    "warm_up_conf": {
+                    "slow_start": {
                         "slow_start_time_seconds": 10,
                         "min_weight_percent": 1,
                         "interval": 11
@@ -319,7 +319,7 @@ qr/warm_up_conf is only supported by the roundrobin upstream type/
     }
 --- error_code: 400
 --- response_body eval
-qr/warm_up_conf.interval can't be greater than warm_up_conf.slow_start_time_seconds/
+qr/slow_start.interval can't be greater than slow_start.slow_start_time_seconds/
 
 
 
@@ -336,7 +336,7 @@ qr/warm_up_conf.interval can't be greater than warm_up_conf.slow_start_time_seco
                         {"host": "127.0.0.1", "port": 1980, "weight": 100, "priority": 0},
                         {"host": "127.0.0.1", "port": 1981, "weight": 100, "priority": -1}
                     ],
-                    "warm_up_conf": {
+                    "slow_start": {
                         "slow_start_time_seconds": 10,
                         "min_weight_percent": 1
                     }
@@ -349,11 +349,11 @@ qr/warm_up_conf.interval can't be greater than warm_up_conf.slow_start_time_seco
     }
 --- error_code: 400
 --- response_body eval
-qr/warm_up_conf doesn't support an upstream with nodes of different priorities/
+qr/slow_start doesn't support an upstream with nodes of different priorities/
 
 
 
-=== TEST 11: accept warm_up_conf on a route embedded upstream
+=== TEST 11: accept slow_start on a route embedded upstream
 --- config
     location /t {
         content_by_lua_block {
@@ -367,7 +367,7 @@ qr/warm_up_conf doesn't support an upstream with nodes of different priorities/
                         "nodes": [
                             {"host": "127.0.0.1", "port": 1980, "weight": 100}
                         ],
-                        "warm_up_conf": {
+                        "slow_start": {
                             "slow_start_time_seconds": 10,
                             "min_weight_percent": 1
                         }
@@ -388,7 +388,7 @@ passed
 
 
 
-=== TEST 12: accept warm_up_conf on a service embedded upstream
+=== TEST 12: accept slow_start on a service embedded upstream
 --- config
     location /t {
         content_by_lua_block {
@@ -401,7 +401,7 @@ passed
                         "nodes": [
                             {"host": "127.0.0.1", "port": 1980, "weight": 100}
                         ],
-                        "warm_up_conf": {
+                        "slow_start": {
                             "slow_start_time_seconds": 10,
                             "min_weight_percent": 1
                         }
@@ -422,7 +422,7 @@ passed
 
 
 
-=== TEST 13: reject warm_up_conf on a route embedded upstream that is not roundrobin
+=== TEST 13: reject slow_start on a route embedded upstream that is not roundrobin
 --- config
     location /t {
         content_by_lua_block {
@@ -436,7 +436,7 @@ passed
                         "nodes": [
                             {"host": "127.0.0.1", "port": 1980, "weight": 100}
                         ],
-                        "warm_up_conf": {
+                        "slow_start": {
                             "slow_start_time_seconds": 10,
                             "min_weight_percent": 1
                         }
@@ -450,11 +450,11 @@ passed
     }
 --- error_code: 400
 --- response_body eval
-qr/warm_up_conf is only supported by the roundrobin upstream type/
+qr/slow_start is only supported by the roundrobin upstream type/
 
 
 
-=== TEST 14: reject warm_up_conf in a traffic-split upstream
+=== TEST 14: reject slow_start in a traffic-split upstream
 --- config
     location /t {
         content_by_lua_block {
@@ -472,7 +472,7 @@ qr/warm_up_conf is only supported by the roundrobin upstream type/
                                         "nodes": [
                                             {"host": "127.0.0.1", "port": 1981, "weight": 100}
                                         ],
-                                        "warm_up_conf": {
+                                        "slow_start": {
                                             "slow_start_time_seconds": 10,
                                             "min_weight_percent": 1
                                         }
@@ -497,11 +497,11 @@ qr/warm_up_conf is only supported by the roundrobin upstream type/
     }
 --- error_code: 400
 --- response_body eval
-qr/warm_up_conf is not supported by the upstream of the traffic-split plugin/
+qr/slow_start is not supported by the upstream of the traffic-split plugin/
 
 
 
-=== TEST 15: declarative validation accepts warm_up_conf
+=== TEST 15: declarative validation accepts slow_start
 --- config
     location /t {
         content_by_lua_block {
@@ -514,7 +514,7 @@ qr/warm_up_conf is not supported by the upstream of the traffic-split plugin/
                             "id": "u1",
                             "type": "roundrobin",
                             "nodes": {"127.0.0.1:1980": 1},
-                            "warm_up_conf": {
+                            "slow_start": {
                                 "slow_start_time_seconds": 10,
                                 "min_weight_percent": 1
                             }
@@ -533,7 +533,7 @@ passed
 
 
 
-=== TEST 16: declarative validation still rejects an unusable warm_up_conf
+=== TEST 16: declarative validation still rejects an unusable slow_start
 --- config
     location /t {
         content_by_lua_block {
@@ -547,7 +547,7 @@ passed
                             "type": "chash",
                             "key": "remote_addr",
                             "nodes": {"127.0.0.1:1980": 1},
-                            "warm_up_conf": {
+                            "slow_start": {
                                 "slow_start_time_seconds": 10,
                                 "min_weight_percent": 1
                             }
@@ -562,7 +562,7 @@ passed
     }
 --- error_code: 400
 --- response_body eval
-qr/warm_up_conf is only supported by the roundrobin upstream type/
+qr/slow_start is only supported by the roundrobin upstream type/
 
 
 
@@ -580,7 +580,7 @@ qr/warm_up_conf is only supported by the roundrobin upstream type/
                 type = "chash",
                 key = "remote_addr",
                 nodes = {{host = "127.0.0.1", port = 1980, weight = 100, priority = 0}},
-                warm_up_conf = {
+                slow_start = {
                     slow_start_time_seconds = 10,
                     min_weight_percent = 1,
                 },
@@ -595,19 +595,82 @@ qr/warm_up_conf is only supported by the roundrobin upstream type/
         }
     }
 --- response_body
-admin: false warm_up_conf is only supported by the roundrobin upstream type
+admin: false slow_start is only supported by the roundrobin upstream type
 data plane schema: true nil
 
 
 
-=== TEST 18: clean up
+=== TEST 18: default_weight needs a kubernetes upstream
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/2',
+                ngx.HTTP_PUT,
+                [[{
+                    "type": "roundrobin",
+                    "nodes": [
+                        {"host": "127.0.0.1", "port": 1980, "weight": 100}
+                    ],
+                    "slow_start": {
+                        "slow_start_time_seconds": 10,
+                        "min_weight_percent": 1,
+                        "default_weight": 100
+                    }
+                }]]
+            )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- error_code: 400
+--- response_body eval
+qr/slow_start.default_weight is only supported by an upstream with discovery_type kubernetes/
+
+
+
+=== TEST 19: accept default_weight on a kubernetes upstream
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/4',
+                ngx.HTTP_PUT,
+                [[{
+                    "type": "roundrobin",
+                    "service_name": "default/nginx-service:http",
+                    "discovery_type": "kubernetes",
+                    "slow_start": {
+                        "slow_start_time_seconds": 300,
+                        "min_weight_percent": 1,
+                        "default_weight": 100
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 20: clean up
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
             for _, uri in ipairs({'/apisix/admin/routes/1',
                                   '/apisix/admin/services/1',
-                                  '/apisix/admin/upstreams/1?force=true'}) do
+                                  '/apisix/admin/upstreams/1?force=true',
+                                  '/apisix/admin/upstreams/4?force=true'}) do
                 local code, body = t(uri, ngx.HTTP_DELETE)
                 if code >= 300 then
                     ngx.status = code
