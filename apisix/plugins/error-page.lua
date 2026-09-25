@@ -37,6 +37,13 @@ local metadata_schema = {
     type = "object",
     properties = {
         enable = {type = "boolean", default = false},
+        error_403 = {
+            type = "object",
+            properties = {
+                body = {type = "string", default = err_body("403 Forbidden")},
+                content_type = {type = "string", default = "text/html"},
+            }
+        },
         error_404 = {
             type = "object",
             properties = {
@@ -94,7 +101,7 @@ local function get_metadata(ctx)
         return nil
     end
 
-    if status < 404 then
+    if status < 403 then
         return nil
     end
 
@@ -126,17 +133,27 @@ function _M.header_filter(conf, ctx)
     end
     local status = ngx.status
     local err_page = ctx.plugin_error_page_meta["error_" .. status]
+
+    -- resolve Nginx variables (e.g. $request_id, $remote_addr) in the body,
+    -- then set content-length based on the final rendered content
+    local body, err = core.utils.resolve_var(err_page.body, ctx.var)
+    if not body then
+        core.log.warn("failed to resolve variables in error-page body: ", err)
+        body = err_page.body
+    end
+    ctx.plugin_error_page_body = body
+
     core.response.set_header("content-type", err_page.content_type)
-    core.response.set_header("content-length", #err_page.body)
+    core.response.set_header("content-length", #body)
 end
 
 
 function _M.body_filter(conf, ctx)
-    if not ctx.plugin_error_page_meta then
+    if not ctx.plugin_error_page_body then
         return
     end
 
-    ngx.arg[1] = ctx.plugin_error_page_meta["error_" .. ngx.status].body
+    ngx.arg[1] = ctx.plugin_error_page_body
     ngx.arg[2] = true
 end
 
