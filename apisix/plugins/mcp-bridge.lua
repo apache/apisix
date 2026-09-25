@@ -86,19 +86,19 @@ local function on_connect(conf, ctx)
                 -- if there is an incomplete message it is buffered and
                 -- spliced before the next message
                 repeat
-                    local line, _
-                    line, _, stdout_partial = proc:stdout_read_line()
+                    local line, _, partial = proc:stdout_read_line()
                     if line then
-                        local ok, err = server.transport:send(
-                            stdout_partial and stdout_partial .. line or line
-                        )
+                        local msg = stdout_partial and (stdout_partial .. line) or line
+                        stdout_partial = nil
+                        local ok, err = server.transport:send(msg)
                         if not ok then
                             core.log.info("session ", server.session_id,
                                           " exit, failed to send response message: ", err)
                             need_exit = true
                             break
                         end
-                        stdout_partial = nil -- luacheck: ignore
+                    elseif partial and #partial > 0 then
+                        stdout_partial = (stdout_partial or "") .. partial
                     end
                 until not line
                 if need_exit then
@@ -106,19 +106,21 @@ local function on_connect(conf, ctx)
                 end
 
                 repeat
-                    local line, _
-                    line, _, stderr_partial = proc:stderr_read_line()
+                    local line, _, partial = proc:stderr_read_line()
                     if line then
+                        local content = stderr_partial and (stderr_partial .. line) or line
+                        stderr_partial = nil
                         local ok, err = server.transport:send(
                            '{"jsonrpc":"2.0","method":"notifications/stderr","params":{"content":"'
-                            .. (stderr_partial and stderr_partial .. line or line) .. '"}}')
+                            .. content .. '"}}')
                         if not ok then
                             core.log.info("session ", server.session_id,
                                           " exit, failed to send response message: ", err)
                             need_exit = true
                             break
                         end
-                        stderr_partial = "" -- luacheck: ignore
+                    elseif partial and #partial > 0 then
+                        stderr_partial = (stderr_partial or "") .. partial
                     end
                 until not line
                 if need_exit then
