@@ -20,6 +20,8 @@
 //go:generate protoc  --include_imports --descriptor_set_out=proto.pb --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative proto/src.proto
 //go:generate protoc --descriptor_set_out=echo.pb --include_imports --proto_path=$PWD/proto echo.proto
 //go:generate protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative proto/echo.proto
+//go:generate protoc -I . -I proto --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative proto/http_binding.proto
+//go:generate protoc -I proto --include_imports --descriptor_set_out=http_binding.pb proto/http_binding.proto
 
 // Package main implements a server for Greeter service.
 package main
@@ -79,6 +81,66 @@ type server struct {
 	pb.UnimplementedGreeterServer
 	pb.UnimplementedTestImportServer
 	pb.UnimplementedEchoServer
+	pb.UnimplementedItemServiceServer
+}
+
+// ItemService handlers for tests.
+
+func (s *server) GetItem(ctx context.Context, in *pb.GetItemRequest) (*pb.Reply, error) {
+	return &pb.Reply{Message: fmt.Sprintf("GetItem id=%s", in.GetId())}, nil
+}
+
+func (s *server) ListItems(ctx context.Context, in *pb.ListItemsRequest) (*pb.Reply, error) {
+	return &pb.Reply{Message: fmt.Sprintf("ListItems page_size=%d", in.GetPageSize())}, nil
+}
+
+func (s *server) CreateItem(ctx context.Context, in *pb.CreateItemRequest) (*pb.Reply, error) {
+	item := in.GetItem()
+	if item == nil {
+		return &pb.Reply{Message: "CreateItem item=nil"}, nil
+	}
+	return &pb.Reply{Message: fmt.Sprintf("CreateItem id=%s title=%s amount=%d request_id=%s",
+		item.GetId(), item.GetTitle(), item.GetAmount(), in.GetRequestId())}, nil
+}
+
+func (s *server) GetActiveItem(ctx context.Context, in *pb.ListItemsRequest) (*pb.Reply, error) {
+	return &pb.Reply{Message: "GetActiveItem"}, nil
+}
+
+func (s *server) GetItemNote(ctx context.Context, in *pb.GetItemNoteRequest) (*pb.Reply, error) {
+	return &pb.Reply{Message: fmt.Sprintf("GetItemNote item_id=%s note_id=%s",
+		in.GetItemId(), in.GetNoteId())}, nil
+}
+
+func (s *server) UpdateItem(ctx context.Context, in *pb.UpdateItemRequest) (*pb.Reply, error) {
+	return &pb.Reply{Message: fmt.Sprintf("UpdateItem id=%s title=%s",
+		in.GetId(), in.GetTitle())}, nil
+}
+
+func (s *server) ReplaceItem(ctx context.Context, in *pb.CreateItemRequest) (*pb.Reply, error) {
+	item := in.GetItem()
+	if item == nil {
+		return &pb.Reply{Message: "ReplaceItem item=nil"}, nil
+	}
+	return &pb.Reply{Message: fmt.Sprintf("ReplaceItem id=%s title=%s",
+		item.GetId(), item.GetTitle())}, nil
+}
+
+func (s *server) CancelItem(ctx context.Context, in *pb.UpdateItemRequest) (*pb.Reply, error) {
+	return &pb.Reply{Message: fmt.Sprintf("CancelItem id=%s title=%s",
+		in.GetId(), in.GetTitle())}, nil
+}
+
+func (s *server) DeleteItem(ctx context.Context, in *pb.GetItemRequest) (*pb.Reply, error) {
+	return &pb.Reply{Message: fmt.Sprintf("DeleteItem id=%s", in.GetId())}, nil
+}
+
+func (s *server) ReportItem(ctx context.Context, in *pb.GetItemRequest) (*pb.Reply, error) {
+	return &pb.Reply{Message: fmt.Sprintf("ReportItem id=%s", in.GetId())}, nil
+}
+
+func (s *server) UnannotatedItem(ctx context.Context, in *pb.GetItemRequest) (*pb.Reply, error) {
+	return &pb.Reply{Message: "UnannotatedItem"}, nil
 }
 
 // SayHello implements helloworld.GreeterServer
@@ -261,6 +323,7 @@ func main() {
 		pb.RegisterGreeterServer(s, &server{})
 		pb.RegisterTestImportServer(s, &server{})
 		pb.RegisterEchoServer(s, &server{})
+		pb.RegisterItemServiceServer(s, &server{})
 
 		if err := s.Serve(lis); err != nil {
 			log.Fatalf("failed to serve: %v", err)
