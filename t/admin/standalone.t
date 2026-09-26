@@ -58,11 +58,11 @@ __DATA__
 --- timeout: 15
 --- max_size: 204800
 --- exec
-cd t && pnpm test admin/standalone.spec.ts 2>&1
+cd t && pnpm test --no-color admin/standalone.spec.ts 2>&1
 --- no_error_log
 failed to execute the script with status
 --- response_body eval
-qr/PASS admin\/standalone.spec.ts/
+qr/Test Files\s+1 passed \(1\)/
 
 
 

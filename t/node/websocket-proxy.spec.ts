@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { describe, expect, it, jest } from '@jest/globals';
 import axios from 'axios';
 import { readFileSync } from 'node:fs';
 import { type IncomingHttpHeaders, request } from 'node:http';
@@ -24,10 +23,10 @@ import { request as requestAdminAPI } from '../ts/admin_api';
 import { wait } from '../ts/utils';
 
 // Every test here does at least one real websocket handshake plus etcd sync
-// round trip, which the shared 5s Jest default leaves little room for on a
+// round trip, which the shared 5s default leaves little room for on a
 // loaded machine; the handful of tests that need more than this still set
 // their own per-test timeout on top of it.
-jest.setTimeout(15000);
+vi.setConfig({ testTimeout: 15000 });
 
 const PROXY_BASE = 'ws://localhost:1984';
 // a loopback address nothing listens on, used as an unreachable upstream node

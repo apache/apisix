@@ -14,17 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import type { Config } from 'jest';
+import { defineConfig } from 'vitest/config';
 
-const config: Config = {
-  coverageProvider: 'v8',
-  testEnvironment: 'node',
-  testRegex: '(/__tests__/.*|(\\.|/)(spec|test))\\.(ts|mts)$',
-  transform: {
-    '^.+\\.(ts|mts)$': ['ts-jest', { useESM: true }],
+export default defineConfig({
+  test: {
+    environment: 'node',
+    globals: true,
+    include: ['**/*.{spec,test}.ts'],
+    coverage: { provider: 'v8' },
   },
-  extensionsToTreatAsEsm: ['.mts'],
-  moduleFileExtensions: ['ts', 'mts', 'js'],
-};
-
-export default config;
+});
