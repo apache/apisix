@@ -28,7 +28,7 @@ __DATA__
 --- timeout: 60
 --- max_size: 2048000
 --- exec
-cd t && pnpm test node/websocket-proxy.spec.mts 2>&1
+cd t && pnpm test --no-color node/websocket-proxy.spec.ts 2>&1
 --- error_log
 plugin ws_handshake phase
 plugin ws_close phase
@@ -36,4 +36,4 @@ ws request_type: websocket
 --- no_error_log
 failed to execute the script with status
 --- response_body eval
-qr/PASS node\/websocket-proxy.spec.mts/
+qr/Test Files\s+1 passed \(1\)/

@@ -54,7 +54,7 @@ sleep 1
 
 # run the mcp client test
 pushd t
-if ! timeout 60 pnpm test plugin/mcp-bridge.spec.mts 2>&1; then
+if ! timeout 60 pnpm test plugin/mcp-bridge.spec.ts 2>&1; then
     echo "failed: mcp-bridge client test failed"
     popd
     exit 1
