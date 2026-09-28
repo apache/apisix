@@ -244,6 +244,8 @@ function _M._delayed_sync(self, key, cost, syncer_id)
         if err then
             return nil, nil, err
         end
+        -- The refreshed remote quota already includes the flushed delta.
+        local_delta = 0
     end
 
     local queue_key = self:key_local_delta_keys(syncer_id)
