@@ -122,6 +122,7 @@
             "plugins/jwe-decrypt",
             "plugins/basic-auth",
             "plugins/openid-connect",
+            "plugins/openid-connect-idp-selector",
             "plugins/hmac-auth",
             "plugins/feishu-auth",
             "plugins/authz-casbin",
