@@ -19,7 +19,6 @@ import { existsSync } from 'node:fs';
 import { readFile, rm, writeFile } from 'node:fs/promises';
 import { promisify } from 'node:util';
 
-import { afterAll, beforeAll, describe, expect, it, jest } from '@jest/globals';
 import axios from 'axios';
 import * as compose from 'docker-compose';
 import { gql, request } from 'graphql-request';

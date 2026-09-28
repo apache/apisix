@@ -24,7 +24,6 @@
  * the point, now that the protocol layer is our own Lua rather than the SDK's
  * server half.
  */
-import { afterEach, describe, expect, it } from '@jest/globals';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
