@@ -296,6 +296,8 @@ Attributes:
 - `opentelemetry_trace_id`: 当前 span 的 trace_id
 - `opentelemetry_span_id`: 当前 span 的 span_id
 
+这些变量对应请求的 server span。发送给上游的 `traceparent` 请求头携带的是 `apisix.upstream` client span 的 span_id（该 span 是 server span 的子 span，每次上游尝试都会创建一个），因此与 `opentelemetry_span_id` 不同。
+
 配置插件元数据以将 `set_ngx_var` 设置为 true：
 
 ```shell
