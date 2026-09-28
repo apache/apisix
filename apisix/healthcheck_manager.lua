@@ -20,6 +20,7 @@ local pcall   = pcall
 local exiting      = ngx.worker.exiting
 local pairs    = pairs
 local tostring = tostring
+local table_concat = table.concat
 local core = require("apisix.core")
 local config_local   = require("apisix.core.config_local")
 local resource = require("apisix.resource")
@@ -250,10 +251,44 @@ function _M.fetch_checker(resource_path, resource_ver)
 end
 
 
+-- resty.healthcheck INTERNAL_STATES: 1=healthy, 2=unhealthy,
+-- 3=mostly_healthy, 4=mostly_unhealthy. Routing treats 1 and 3 as usable.
+local SHM_HEALTHY = {
+    [1] = true,
+    [3] = true,
+}
+
+
+-- SHM is the cross-worker source of truth. get_target_status reads a
+-- worker-local cache filled asynchronously via resty.events, so a worker
+-- that missed the event (or whose checker was created after another worker
+-- already flipped the node) keeps routing to an unhealthy node
+-- (apache/apisix#13888).
+local function fetch_shm_target_status(checker, ip, port, hostname)
+    local shm = checker.shm
+    local prefix = checker.TARGET_STATE
+    if not shm or not prefix or not ip or not port then
+        return nil
+    end
+    hostname = hostname or ip
+    local key = prefix .. ":" .. ip .. ":" .. tostring(port) .. ":" .. hostname
+    local state = shm:get(key)
+    if state == nil then
+        return nil
+    end
+    return SHM_HEALTHY[state] == true
+end
+
+
 function _M.fetch_node_status(checker, ip, port, hostname)
     -- check if the checker is valid
     if not checker or checker.dead then
         return true
+    end
+
+    local shm_ok = fetch_shm_target_status(checker, ip, port, hostname)
+    if shm_ok ~= nil then
+        return shm_ok
     end
 
     local ok, err = checker:get_target_status(ip, port, hostname)
@@ -270,6 +305,24 @@ function _M.fetch_node_status(checker, ip, port, hostname)
     end
 
     return ok, err
+end
+
+
+-- Cache-key fragment that changes when shm (or the local status_ver) changes,
+-- so a picker cached against a stale worker-local view is rebuilt.
+function _M.node_status_ver(checker, nodes, host, port)
+    if not checker or not nodes then
+        return "x"
+    end
+    local n = #nodes
+    local parts = core.table.new(n + 1, 0)
+    parts[1] = tostring(checker.status_ver or 0)
+    for i = 1, n do
+        local node = nodes[i]
+        parts[i + 1] = _M.fetch_node_status(checker, node.host, port or node.port, host)
+                       and "1" or "0"
+    end
+    return table_concat(parts, ":")
 end
 
 
