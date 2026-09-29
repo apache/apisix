@@ -81,6 +81,8 @@ __DATA__
                 {service_name = "ns/:p1", discovery_args = {cluster_ids = {"first"}}},
                 {service_name = "ns/svc:", discovery_args = {cluster_ids = {"first"}}},
                 {service_name = "ns/svc", discovery_args = {cluster_ids = {"first"}}},
+                {service_name = "ns:extra/svc:p1", discovery_args = {cluster_ids = {"first"}}},
+                {service_name = "ns/svc:p1:extra", discovery_args = {cluster_ids = {"first"}}},
             }
             for _, case in ipairs(cases) do
                 case.discovery_type = "kubernetes"
@@ -109,6 +111,8 @@ passed
 400 {"error_msg":"service_name must be namespace/name:port_name when discovery_args.cluster_ids is set, got: ns/:p1"}
 400 {"error_msg":"service_name must be namespace/name:port_name when discovery_args.cluster_ids is set, got: ns/svc:"}
 400 {"error_msg":"service_name must be namespace/name:port_name when discovery_args.cluster_ids is set, got: ns/svc"}
+400 {"error_msg":"service_name must be namespace/name:port_name when discovery_args.cluster_ids is set, got: ns:extra/svc:p1"}
+400 {"error_msg":"service_name must be namespace/name:port_name when discovery_args.cluster_ids is set, got: ns/svc:p1:extra"}
 
 
 

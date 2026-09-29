@@ -181,7 +181,7 @@ end
 
 
 -- with cluster_ids, service_name is "namespace/name:port_name"
-local cluster_ids_service_name_pattern = [[^([^/]+/[^/:]+):(.+)$]]
+local cluster_ids_service_name_pattern = [[^([^/:]+/[^/:]+):([^/:]+)$]]
 
 
 local function parse_cluster_ids_service_name(service_name)
