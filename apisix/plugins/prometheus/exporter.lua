@@ -238,25 +238,29 @@ local _M = {
 
 
 local function init_stream_metrics()
+    -- service and service_id follow the http metrics: both hold the id unless
+    -- prefer_name puts the name in service, and both are empty for a session
+    -- that never got as far as a route with a service
     metrics.stream_connection_total = prometheus:counter("stream_connection_total",
         "Total number of connections handled per stream route in APISIX",
-        {"route"})
+        {"route", "service", "service_id"})
 
     -- Keyed by listen_addr rather than by route: a session can end before any
     -- stream route is matched, and the byte counters come from nginx, which
-    -- only knows the listening address.
+    -- only knows the listening address. service and service_id split that
+    -- total further.
     metrics.stream_active_connections = prometheus:gauge(
         "stream_active_connections",
-        "Number of stream sessions currently being proxied per listening address",
-        {"listen_addr"})
+        "Number of stream sessions currently being proxied per listening address and service",
+        {"listen_addr", "service", "service_id"})
 
     metrics.stream_status = prometheus:counter("stream_status",
         "Stream sessions per termination status in APISIX",
-        {"code", "listen_addr", "node"})
+        {"code", "listen_addr", "service", "service_id", "node"})
 
     metrics.stream_bandwidth = prometheus:counter("stream_bandwidth",
         "Total bandwidth in bytes proxied by the stream subsystem in APISIX",
-        {"listen_addr", "type", "side"})
+        {"listen_addr", "service", "service_id", "type", "side"})
 
     xrpc.init_metrics(prometheus)
 end
@@ -317,6 +321,40 @@ local STREAM_PUBLISHED_PREFIX = "stream_bytes_published:"
 local STREAM_PUBLISH_LOCK = "stream_bytes_publishing"
 local STREAM_PUBLISH_LOCK_TTL = 10
 
+
+-- the same rule as the http metrics: the id, or the name with prefer_name
+local function stream_service_labels(conf, ctx)
+    local service_id = ctx.service_id
+    local name = ctx.service_name
+    if not service_id then
+        -- a route with an upstream_id keeps its service_id without the service
+        -- being merged in, and the http metrics still label it with it
+        service_id = ctx.matched_route.value.service_id
+        if not service_id then
+            return "", ""
+        end
+
+        local service = conf.prefer_name == true and service_fetch(service_id)
+        name = service and service.value.name
+    end
+
+    service_id = tostring(service_id)
+    if conf.prefer_name == true and name then
+        return name, service_id
+    end
+
+    return service_id, service_id
+end
+
+
+-- The zone is read where neither the session nor the plugin conf is at hand,
+-- so a session carries its label values into the zone itself; "" on a slot
+-- that was never labelled.
+local function stream_zone_labels(entry)
+    local labels = entry.labels
+    return labels[1] or "", labels[2] or ""
+end
+
 local stream_metrics_lib
 local stream_metrics_lib_checked = false
 local stream_zone_unavailable = false
@@ -343,16 +381,19 @@ local function stream_metrics_zone()
 end
 
 
-local function publish_stream_bytes(dict, listen_addr, direction, total)
+local function publish_stream_bytes(dict, listen_addr, service, service_id, direction,
+                                    total)
     local field = direction[1]
 
     if type(total) ~= "number" then
         core.log.error("stream metrics zone reported no ", field, " for ",
-                       listen_addr)
+                       listen_addr, " service ", service_id)
         return
     end
 
-    local key = STREAM_PUBLISHED_PREFIX .. listen_addr .. ":" .. field
+    -- a service name can hold any character but this one
+    local key = STREAM_PUBLISHED_PREFIX .. listen_addr .. "\31" .. service .. "\31"
+                .. service_id .. "\31" .. field
 
     local published = dict:get(key)
     if not published then
@@ -384,7 +425,7 @@ local function publish_stream_bytes(dict, listen_addr, direction, total)
     -- rebaselines rather than emitting a negative delta
     if total > published then
         metrics.stream_bandwidth:inc(total - published,
-            gen_arr(listen_addr, direction[2], direction[3]))
+            gen_arr(listen_addr, service, service_id, direction[2], direction[3]))
     end
 end
 
@@ -430,14 +471,17 @@ local function collect_stream_zone_metrics()
 
     for _, entry in ipairs(entries) do
         local listen_addr = entry.listen_addr
+        local service, service_id = stream_zone_labels(entry)
 
         -- the gauge carries no baseline and every reader writes the same
         -- value, so it is published whether or not this one took the lock
-        metrics.stream_active_connections:set(entry.active, gen_arr(listen_addr))
+        metrics.stream_active_connections:set(entry.active,
+            gen_arr(listen_addr, service, service_id))
 
         if publishing then
             for _, direction in ipairs(STREAM_BANDWIDTH_DIRECTIONS) do
-                publish_stream_bytes(dict, listen_addr, direction, entry[direction[1]])
+                publish_stream_bytes(dict, listen_addr, service, service_id, direction,
+                                     entry[direction[1]])
             end
         end
     end
@@ -944,7 +988,10 @@ function _M.stream_log(conf, ctx)
         end
     end
 
-    metrics.stream_connection_total:inc(1, gen_arr(route_id))
+    -- empty when the session ended before a route with a service matched
+    local service, service_id = stream_service_labels(conf, ctx)
+
+    metrics.stream_connection_total:inc(1, gen_arr(route_id, service, service_id))
 
     -- empty when the session ended before a node was picked
     local node = ""
@@ -953,7 +1000,41 @@ function _M.stream_log(conf, ctx)
     end
 
     metrics.stream_status:inc(1, gen_arr(stream_status_code(ctx),
-        stream_listen_addr(ctx), node))
+        stream_listen_addr(ctx), service, service_id, node))
+end
+
+
+-- logged once per worker, it would otherwise repeat on every session
+local stream_label_error_logged = false
+
+
+-- Labels the session in the metrics zone as it starts, so that its active
+-- count and every byte it moves from now on are accounted under its service
+-- while it is still open. A session that never gets here -- it ended before
+-- routing, its route has no service, or a plugin running before this one
+-- rejected it -- stays in the unlabelled total of its listen_addr.
+function _M.stream_preread(conf, ctx)
+    local service, service_id = stream_service_labels(conf, ctx)
+    if service_id == "" then
+        return
+    end
+
+    local lib = stream_metrics_zone()
+    if not lib then
+        return
+    end
+
+    -- "not accounted" is a listening address the zone does not count, such as
+    -- a unix socket. Anything else -- a full zone, or labels too long for it --
+    -- leaves the session in the unlabelled total, while apisix_stream_status
+    -- still has its service.
+    local ok, err = lib.set_labels({service, service_id})
+    if not ok and err ~= "not accounted" and not stream_label_error_logged then
+        stream_label_error_logged = true
+        core.log.warn("failed to label stream sessions, first seen on service ",
+                      service_id, ", they are only counted in the listen_addr ",
+                      "total: ", err)
+    end
 end
 
 
