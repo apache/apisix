@@ -667,6 +667,15 @@ local function check_upstream_conf(in_dp, conf)
         end
     end
 
+    -- a discovery module may check discovery_args against its own configuration
+    local dis = conf.discovery_type and discovery and discovery[conf.discovery_type]
+    if dis and dis.check_discovery_args then
+        local ok, err = dis.check_discovery_args(conf.discovery_args, conf.service_name, in_dp)
+        if not ok then
+            return false, err
+        end
+    end
+
     if is_http then
         if conf.pass_host == "rewrite" and
             (conf.upstream_host == nil or conf.upstream_host == "")
