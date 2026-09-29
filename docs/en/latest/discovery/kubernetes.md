@@ -305,7 +305,7 @@ The upstream nodes are the union of the matching endpoints in the listed cluster
 
 + Clusters that are not listed, including clusters added to the configuration later, never contribute nodes.
 
-+ When `cluster_ids` is set, `service_name` must not carry an `id` prefix. Such a configuration is rejected, and the error shows the `service_name` value.
++ When `cluster_ids` is set, `service_name` must match _[namespace]/[name]:[portName]_, so it cannot carry an `id` prefix. Any other value is rejected, and the error shows the `service_name` value.
 
 + The Admin API rejects an `id` that is not defined in the Kubernetes service discovery configuration of the APISIX instance that serves the Admin API, and the error lists all unknown `id`s. When a configuration with an unknown `id` still reaches the data plane, for example because it was written before a cluster was removed from the configuration, or because it comes from a standalone configuration file, the unknown `id`s are skipped and a warning that lists them is logged.
 

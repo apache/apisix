@@ -76,6 +76,11 @@ __DATA__
                 {service_name = "ns/svc:p1", discovery_args = {cluster_ids = {1}}},
                 {service_name = "ns/svc:p1", discovery_args = {cluster_ids = "first"}},
                 {service_name = "first/ns/svc:p1"},
+                {service_name = "svc:p1", discovery_args = {cluster_ids = {"first"}}},
+                {service_name = "/svc:p1", discovery_args = {cluster_ids = {"first"}}},
+                {service_name = "ns/:p1", discovery_args = {cluster_ids = {"first"}}},
+                {service_name = "ns/svc:", discovery_args = {cluster_ids = {"first"}}},
+                {service_name = "ns/svc", discovery_args = {cluster_ids = {"first"}}},
             }
             for _, case in ipairs(cases) do
                 case.discovery_type = "kubernetes"
@@ -99,6 +104,11 @@ passed
 400 {"error_msg":"invalid configuration: property \"discovery_args\" validation failed: property \"cluster_ids\" validation failed: failed to validate item 1: wrong type: expected string, got number"}
 400 {"error_msg":"invalid configuration: property \"discovery_args\" validation failed: property \"cluster_ids\" validation failed: wrong type: expected array, got string"}
 passed
+400 {"error_msg":"service_name must be namespace/name:port_name when discovery_args.cluster_ids is set, got: svc:p1"}
+400 {"error_msg":"service_name must be namespace/name:port_name when discovery_args.cluster_ids is set, got: /svc:p1"}
+400 {"error_msg":"service_name must be namespace/name:port_name when discovery_args.cluster_ids is set, got: ns/:p1"}
+400 {"error_msg":"service_name must be namespace/name:port_name when discovery_args.cluster_ids is set, got: ns/svc:"}
+400 {"error_msg":"service_name must be namespace/name:port_name when discovery_args.cluster_ids is set, got: ns/svc"}
 
 
 

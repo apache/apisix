@@ -303,7 +303,7 @@ nodes("release/default/plat-dev:port") 调用会得到如下的返回值：
 
 + 未列出的集群（包括之后新增到配置中的集群）不会提供节点。
 
-+ 设置 `cluster_ids` 时，`service_name` 不能带 `id` 前缀。这样的配置会被拒绝，错误信息中会给出 `service_name` 的值。
++ 设置 `cluster_ids` 时，`service_name` 必须满足格式 _[namespace]/[name]:[portName]_，因此不能带 `id` 前缀。其他格式的值会被拒绝，错误信息中会给出 `service_name` 的值。
 
 + 如果 `id` 不在提供 Admin API 的 APISIX 实例的 Kubernetes 服务发现配置中，Admin API 会拒绝该配置，错误信息会列出所有未知的 `id`。如果带有未知 `id` 的配置仍然到达了数据面，例如该配置写入于某个集群从配置中移除之前，或者来自 standalone 配置文件，未知的 `id` 会被跳过，并记录一条列出这些 `id` 的警告日志。
 

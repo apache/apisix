@@ -20,7 +20,6 @@ local type = type
 local ipairs = ipairs
 local pairs = pairs
 local string = string
-local str_find = string.find
 local error = error
 local tostring = tostring
 local is_http = ngx.config.subsystem == "http"
@@ -182,25 +181,23 @@ end
 
 
 -- with cluster_ids, service_name is "namespace/name:port_name"
-local function check_cluster_ids_service_name(service_name)
-    if str_find(service_name, "/[^/]*/") then
-        return false, "service_name must be namespace/name:port_name when "
-                      .. "discovery_args.cluster_ids is set, got: " .. service_name
+local cluster_ids_service_name_pattern = [[^([^/]+/[^/:]+):(.+)$]]
+
+
+local function parse_cluster_ids_service_name(service_name)
+    local match = ngx.re.match(service_name, cluster_ids_service_name_pattern, "jo")
+    if not match then
+        return nil, "service_name must be namespace/name:port_name when "
+                    .. "discovery_args.cluster_ids is set, got: " .. service_name
     end
-    return true
+    return match
 end
 
 
 local function selected_clusters_nodes(service_name, cluster_ids)
-    local ok, err = check_cluster_ids_service_name(service_name)
-    if not ok then
-        core.log.error(err)
-        return nil
-    end
-
-    local match = ngx.re.match(service_name, "^(.*):(.*)$", "jo")
+    local match, err = parse_cluster_ids_service_name(service_name)
     if not match then
-        core.log.error("get unexpected upstream service_name: ", service_name)
+        core.log.error(err)
         return nil
     end
     local endpoint_key, endpoint_port = match[1], match[2]
@@ -279,8 +276,8 @@ function _M.check_discovery_args(discovery_args, service_name, in_dp)
     end
 
     if service_name then
-        local ok, err = check_cluster_ids_service_name(service_name)
-        if not ok then
+        local match, err = parse_cluster_ids_service_name(service_name)
+        if not match then
             return false, err
         end
     end
