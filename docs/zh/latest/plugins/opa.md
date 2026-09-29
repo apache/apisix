@@ -56,10 +56,11 @@ import TabItem from '@theme/TabItem';
 | with_service | boolean | 否 | | | 若为 true，发送当前 Service 的信息。 |
 | with_consumer | boolean | 否 | | | 若为 true，发送当前消费者的信息。注意，Consumer 信息可能包含 API key 等敏感信息，仅在确认安全的情况下将此选项设为 `true`。 |
 | send_headers_upstream | array[string] | 否 | | >= 1 | 请求被允许时，需要从 OPA 响应转发到上游服务的请求头名称列表。 |
+| with_body | boolean | 否 | false | | 若为 true，发送请求体。注意，请求体可能包含密码或 API 密钥等敏感信息，仅在理解安全隐患的情况下启用此功能。 |
 
 ## 数据定义
 
-### APISIX 向 OPA 发送信息
+以下 JSON 显示了 APISIX 发送给 OPA 服务的数据：
 
 下述示例展示了 APISIX 向 OPA 服务发送的数据格式：
 
@@ -77,7 +78,8 @@ import TabItem from '@theme/TabItem';
         "query": {},
         "port": 9080,
         "method": "GET",
-        "host": "127.0.0.1"
+        "host": "127.0.0.1",
+        "body": {}
     },
     "var": {
         "timestamp": 1701234567,
@@ -97,6 +99,7 @@ import TabItem from '@theme/TabItem';
 - `type` 表示请求类型（`http` 或 `stream`）。
 - `request` 在 `type` 为 `http` 时使用，包含基本的请求信息（URL、请求头等）。
 - `var` 包含请求连接的基本信息（IP、端口、请求时间戳等）。
+- `request.body` 包含 HTTP 请求体。仅当插件配置中将 `with_body` 设置为 `true` 时才会包含此字段。当请求体为空时，该字段不存在。当请求体为 JSON 时，该字段为解析后的 JSON 值（对象、数组或原始值）；当请求体为非 JSON 时，该字段为原始字符串。
 - `route`、`service` 和 `consumer` 包含与 APISIX 中存储的相同数据，仅在这些对象上配置了 `opa` 插件时才会发送。
 
 ### OPA 向 APISIX 返回数据
