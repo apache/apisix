@@ -322,28 +322,36 @@ local STREAM_PUBLISH_LOCK = "stream_bytes_publishing"
 local STREAM_PUBLISH_LOCK_TTL = 10
 
 
--- the same rule as the http metrics: the id, or the name with prefer_name
+-- The same rule as the http metrics: the id, or the name with prefer_name.
+-- Resolved once per session: preread labels the zone with it and the log
+-- phase reuses it, so all four metrics name a session the same way even if
+-- its service is renamed while it is open.
 local function stream_service_labels(conf, ctx)
-    local service_id = ctx.service_id
+    local labels = ctx.prometheus_stream_service
+    if labels then
+        return labels[1], labels[2]
+    end
+
+    local service, service_id = "", ""
+    local id = ctx.service_id
     local name = ctx.service_name
-    if not service_id then
+    if not id then
         -- a route with an upstream_id keeps its service_id without the service
         -- being merged in, and the http metrics still label it with it
-        service_id = ctx.matched_route.value.service_id
-        if not service_id then
-            return "", ""
+        id = ctx.matched_route.value.service_id
+        if id then
+            local fetched = conf.prefer_name == true and service_fetch(id)
+            name = fetched and fetched.value.name
         end
-
-        local service = conf.prefer_name == true and service_fetch(service_id)
-        name = service and service.value.name
     end
 
-    service_id = tostring(service_id)
-    if conf.prefer_name == true and name then
-        return name, service_id
+    if id then
+        service_id = tostring(id)
+        service = conf.prefer_name == true and name or service_id
     end
 
-    return service_id, service_id
+    ctx.prometheus_stream_service = {service, service_id}
+    return service, service_id
 end
 
 

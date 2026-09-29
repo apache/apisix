@@ -461,13 +461,21 @@ and later traffic is counted as usual.
                 ngx.say(err)
                 return
             end
-            body = scrape()
+            body, err = scrape()
+            if not body then
+                ngx.say(err)
+                return
+            end
             local before = tonumber(svc_a_ingress(body))
 
             ngx.shared["prometheus-metrics"]:delete(
                 "stream_bytes_published:0.0.0.0:1985\31svc-a\31svc-a\31downstream_ingress")
 
-            body = scrape()
+            body, err = scrape()
+            if not body then
+                ngx.say(err)
+                return
+            end
             ngx.say("after the lost baseline: ", tonumber(svc_a_ingress(body)) == before)
 
             body, err = scrape_live_session()
@@ -487,3 +495,86 @@ GET /probe
 --- response_body
 after the lost baseline: true
 after one more session: +5
+
+
+
+=== TEST 10: a session keeps the service label it started with
+A route with an upstream_id and a service_id resolves its service name by
+itself. The name picked when the session starts labels it in the zone and is
+reused when it ends, so a rename while it is open does not split the session
+between two names across the metrics.
+--- config
+    location /probe {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local function put(uri, body)
+                local code, res = t(uri, ngx.HTTP_PUT, body)
+                if code > 300 then
+                    ngx.say(uri, ": ", res)
+                end
+                return code <= 300
+            end
+
+            if not put("/apisix/admin/services/svc-b", [[{
+                "name": "Billing",
+                "upstream": {
+                    "type": "roundrobin",
+                    "nodes": [{"host": "127.0.0.1", "port": 1993, "weight": 1}]
+                }
+            }]]) or not put("/apisix/admin/upstreams/up-1", [[{
+                "type": "roundrobin",
+                "nodes": [{"host": "127.0.0.1", "port": 1993, "weight": 1}]
+            }]]) or not put("/apisix/admin/stream_routes/1", [[{
+                "plugins": {
+                    "prometheus": {
+                        "prefer_name": true
+                    }
+                },
+                "upstream_id": "up-1",
+                "service_id": "svc-b"
+            }]]) then
+                return
+            end
+
+            ngx.sleep(1.5)
+
+            local sock = ngx.socket.tcp()
+            assert(sock:connect("127.0.0.1", 1985))
+            assert(sock:send("hello"))
+            assert(sock:receive("*l"))
+
+            -- renamed while the session is open
+            if not put("/apisix/admin/services/svc-b", [[{
+                "name": "Billing v2",
+                "upstream": {
+                    "type": "roundrobin",
+                    "nodes": [{"host": "127.0.0.1", "port": 1993, "weight": 1}]
+                }
+            }]]) then
+                return
+            end
+            ngx.sleep(1.5)
+
+            assert(sock:close())
+
+            local body, err = scrape()
+            if not body then
+                ngx.say(err)
+                return
+            end
+
+            local status = 'code="200",listen_addr="0.0.0.0:1985",service="%s",'
+                           .. 'service_id="svc-b",node="127.0.0.1:1993"'
+            ngx.say("status under the first name: ",
+                    series_value(body, "apisix_stream_status", status:format("Billing")))
+            ngx.say("status under the new name: ",
+                    series_value(body, "apisix_stream_status", status:format("Billing v2")))
+        }
+    }
+--- request
+GET /probe
+--- stream_enable
+--- timeout: 20
+--- response_body
+status under the first name: 1
+status under the new name: no-series
