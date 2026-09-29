@@ -94,6 +94,10 @@ end
 
 function _M.get_nodes_ver(resource_path)
     local res_conf = fetch_latest_conf(resource_path)
+    if not res_conf then
+        return nil
+    end
+
     local upstream = res_conf.value.upstream or res_conf.value
     return upstream._nodes_ver
 end
@@ -101,6 +105,10 @@ end
 
 function _M.set_nodes_ver_and_nodes(resource_path, nodes_ver, nodes)
     local res_conf = fetch_latest_conf(resource_path)
+    if not res_conf then
+        return
+    end
+
     local upstream = res_conf.value.upstream or res_conf.value
     upstream._nodes_ver = nodes_ver
     upstream.nodes = nodes
