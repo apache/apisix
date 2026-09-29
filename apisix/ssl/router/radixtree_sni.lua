@@ -178,8 +178,8 @@ function _M.match_and_set(api_ctx, match_only, alt_sni)
             -- it is expected that alternative SNI doesn't have a SSL certificate associated
             -- with it sometimes
             core.log.error("failed to find any SSL certificate by SNI: ", sni)
+            span:set_status(tracer.status.ERROR, "failed match SNI")
         end
-        span:set_status(tracer.status.ERROR, "failed match SNI")
         span:finish(api_ctx.ngx_ctx)
         return false
     end
