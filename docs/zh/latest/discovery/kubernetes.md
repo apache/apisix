@@ -299,13 +299,13 @@ nodes("release/default/plat-dev:port") 调用会得到如下的返回值：
 
 上游节点是所列集群中匹配 endpoints 的并集，并随这些集群中 endpoints 的变化而更新。同一个 `host:port` 出现在多个所列集群中时只使用一次。
 
-+ `cluster_ids` 是非空且元素不重复的字符串数组，仅适用于多集群模式。在单集群模式下，设置了 `cluster_ids` 的上游不会获得任何节点，并会记录错误日志。
++ `cluster_ids` 是非空且元素不重复的字符串数组，仅适用于多集群模式。Kubernetes 服务发现为单集群模式时，Admin API 会拒绝 `cluster_ids`。如果这样的上游通过其他方式到达数据面，它不会获得任何节点，并会记录错误日志。
 
 + 未列出的集群（包括之后新增到配置中的集群）不会提供节点。
 
-+ 设置 `cluster_ids` 时，`service_name` 不能带 `id` 前缀，Admin API 会拒绝这样的配置。
++ 设置 `cluster_ids` 时，`service_name` 不能带 `id` 前缀。这样的配置会被拒绝，错误信息中会给出 `service_name` 的值。
 
-+ 服务发现配置中不存在的 `id` 会被跳过，并在使用该上游时记录错误日志。Admin API 不会根据服务发现配置校验 `cluster_ids`。
++ 如果 `id` 不在提供 Admin API 的 APISIX 实例的 Kubernetes 服务发现配置中，Admin API 会拒绝该配置，错误信息会列出所有未知的 `id`。如果带有未知 `id` 的配置仍然到达了数据面，例如该配置写入于某个集群从配置中移除之前，或者来自 standalone 配置文件，未知的 `id` 会被跳过，并记录一条列出这些 `id` 的警告日志。
 
 + 所列集群都没有匹配的 endpoints 时，上游没有可用节点，不会改用其他集群的节点。
 

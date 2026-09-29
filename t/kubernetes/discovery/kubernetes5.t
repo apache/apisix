@@ -237,7 +237,7 @@ Content-type: application/json
 --- response_body
 { 1 1 1 0 2 2 2 0 1 0 2 }
 --- error_log
-kubernetes discovery cluster id not exist: third
+skip unknown kubernetes discovery cluster ids: third, service: ns-b/ep:p1
 
 
 
@@ -343,9 +343,9 @@ nil
 nil
 10.0.0.1:80 10.0.0.2:80 10.0.0.3:80 10.0.0.9:80
 --- error_log
-service_name must not carry a cluster id prefix when discovery_args.cluster_ids is set: second/ns/svc:p1
+service_name must be namespace/name:port_name when discovery_args.cluster_ids is set, got: second/ns/svc:p1
 --- no_error_log
-cluster id not exist
+skip unknown kubernetes discovery cluster ids
 
 
 
@@ -370,6 +370,7 @@ routes:
       discovery_args:
         cluster_ids:
           - third
+          - fourth
       type: roundrobin
   -
     uri: /hello_chunked
@@ -423,7 +424,7 @@ GET /t
 /hello1 503
 /hello_chunked 503
 --- error_log
-kubernetes discovery cluster id not exist: third
+skip unknown kubernetes discovery cluster ids: third, fourth, service: ns/svc:p1
 
 
 
@@ -471,47 +472,117 @@ discovery_args.cluster_ids requires kubernetes discovery configured with multipl
 
 
 
-=== TEST 7: validate cluster_ids
---- yaml_config
-apisix:
-  node_listen: 1984
-deployment:
-  role: data_plane
-  role_data_plane:
-    config_provider: yaml
+=== TEST 7: the data plane rejects a cluster id prefix but not an unknown id
+--- yaml_config eval: $::offline_yaml_config
+--- apisix_yaml
+upstreams:
+  -
+    id: 1
+    service_name: second/ns/svc:p1
+    discovery_type: kubernetes
+    discovery_args:
+      cluster_ids:
+        - second
+    type: roundrobin
+  -
+    id: 2
+    service_name: ns/svc:p1
+    discovery_type: kubernetes
+    discovery_args:
+      cluster_ids:
+        - second
+        - third
+    type: roundrobin
+routes:
+  -
+    uri: /hello
+    upstream_id: 1
+  -
+    uri: /hello1
+    upstream_id: 2
+#END
 --- config
     location /t {
         content_by_lua_block {
-            local upstream = require("apisix.upstream")
-            local cases = {
-                {service_name = "ns/svc:p1", discovery_args = {cluster_ids = {"first"}}},
-                {service_name = "ns/svc:p1", discovery_args = {cluster_ids = {"first", "second"}}},
-                {service_name = "first/ns/svc:p1", discovery_args = {cluster_ids = {"first"}}},
-                {service_name = "ns/svc:p1", discovery_args = {cluster_ids = {}}},
-                {service_name = "ns/svc:p1", discovery_args = {cluster_ids = {"first", "first"}}},
-                {service_name = "ns/svc:p1", discovery_args = {cluster_ids = {1}}},
-                {service_name = "ns/svc:p1", discovery_args = {cluster_ids = "first"}},
-                {service_name = "first/ns/svc:p1"},
-                {service_name = "first/ns/svc:p1", discovery_type = "nacos",
-                 discovery_args = {cluster_ids = {"first"}}},
-            }
-            for _, case in ipairs(cases) do
-                case.discovery_type = case.discovery_type or "kubernetes"
-                case.type = "roundrobin"
-                local ok, err = upstream.check_upstream_conf(case)
-                ngx.say(ok and "passed" or err)
+            local core = require("apisix.core")
+            local http = require("resty.http")
+
+            local dict = ngx.shared["kubernetes-second"]
+            dict:set("ns/svc", core.json.encode({p1 = {
+                {host = "127.0.0.1", port = 1980, weight = 50},
+            }}))
+            dict:set("ns/svc#version", "1")
+
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+            for _, path in ipairs({"/hello", "/hello1"}) do
+                local httpc = http.new()
+                local res, err = httpc:request_uri(uri .. path)
+                if not res then
+                    ngx.say(err)
+                    return
+                end
+                ngx.say(path, " ", res.status)
             end
         }
     }
 --- request
 GET /t
 --- response_body
-passed
-passed
-service_name must not carry a cluster id prefix when discovery_args.cluster_ids is set
-invalid configuration: property "discovery_args" validation failed: property "cluster_ids" validation failed: expect array to have at least 1 items
-invalid configuration: property "discovery_args" validation failed: property "cluster_ids" validation failed: expected unique items but items 1 and 2 are equal
-invalid configuration: property "discovery_args" validation failed: property "cluster_ids" validation failed: failed to validate item 1: wrong type: expected string, got number
-invalid configuration: property "discovery_args" validation failed: property "cluster_ids" validation failed: wrong type: expected array, got string
-passed
-passed
+/hello 502
+/hello1 200
+--- error_log
+service_name must be namespace/name:port_name when discovery_args.cluster_ids is set, got: second/ns/svc:p1
+skip unknown kubernetes discovery cluster ids: third, service: ns/svc:p1
+
+
+
+=== TEST 8: stream route with cluster_ids
+--- yaml_config eval: $::offline_yaml_config
+--- apisix_yaml
+stream_routes:
+  -
+    id: 1
+    server_addr: 127.0.0.1
+    server_port: 1985
+    upstream:
+      service_name: ns/svc:p1
+      discovery_type: kubernetes
+      discovery_args:
+        cluster_ids:
+          - second
+      type: roundrobin
+#END
+--- stream_extra_init_worker_by_lua
+    local core = require("apisix.core")
+    local d = require("apisix.discovery.kubernetes")
+
+    local function set_endpoints(id, key, endpoints, version)
+        local dict = ngx.shared["kubernetes-" .. id .. "-stream"]
+        dict:set(key, core.json.encode(endpoints))
+        dict:set(key .. "#version", version)
+    end
+
+    set_endpoints("first", "ns/svc", {p1 = {
+        {host = "127.0.0.1", port = 1979, weight = 50},
+        {host = "127.0.0.1", port = 1995, weight = 50},
+    }}, "1")
+    set_endpoints("second", "ns/svc", {p1 = {
+        {host = "127.0.0.1", port = 1995, weight = 50},
+        {host = "127.0.0.2", port = 1995, weight = 50},
+    }}, "1")
+
+    local nodes = d.nodes("ns/svc:p1", {cluster_ids = {"first", "second"}})
+    local addrs = {}
+    for _, node in ipairs(nodes) do
+        table.insert(addrs, node.host .. ":" .. node.port)
+    end
+    table.sort(addrs)
+    core.log.warn("stream nodes of first and second: ", table.concat(addrs, " "))
+--- stream_request
+m
+--- stream_response
+hello world
+--- error_log
+stream nodes of first and second: 127.0.0.1:1979 127.0.0.1:1995 127.0.0.2:1995
+--- no_error_log
+skip unknown kubernetes discovery cluster ids

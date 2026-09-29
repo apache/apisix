@@ -28,7 +28,6 @@ local ipairs = ipairs
 local pairs = pairs
 local pcall = pcall
 local str_byte = string.byte
-local str_find = string.find
 local ngx_var = ngx.var
 local is_http = ngx.config.subsystem == "http"
 local upstreams
@@ -614,26 +613,6 @@ end
 _M.check_warm_up_conf = check_warm_up_conf
 
 
--- With `discovery_args.cluster_ids`, kubernetes discovery takes the clusters
--- from that list, so `service_name` is `namespace/name:port_name` and a
--- `cluster_id/namespace/name:port_name` form would be ambiguous.
-local function check_discovery_args(conf)
-    local discovery_args = conf.discovery_args
-    if conf.discovery_type ~= "kubernetes" or not discovery_args
-        or not discovery_args.cluster_ids
-    then
-        return true
-    end
-
-    if conf.service_name and str_find(conf.service_name, "/[^/]*/") then
-        return false, "service_name must not carry a cluster id prefix " ..
-                      "when discovery_args.cluster_ids is set"
-    end
-
-    return true
-end
-
-
 local function check_upstream_conf(in_dp, conf)
     if not in_dp then
         local ok, err = check_schema(conf)
@@ -642,11 +621,6 @@ local function check_upstream_conf(in_dp, conf)
         end
 
         local ok, err = check_warm_up_conf(conf)
-        if not ok then
-            return false, err
-        end
-
-        local ok, err = check_discovery_args(conf)
         if not ok then
             return false, err
         end
@@ -690,6 +664,15 @@ local function check_upstream_conf(in_dp, conf)
             if core.utils.parse_ipv6(node.host) and str_byte(node.host, 1) ~= str_byte("[") then
                 conf.nodes[i].host = "[" .. node.host .. "]"
             end
+        end
+    end
+
+    -- a discovery module may check discovery_args against its own configuration
+    local dis = conf.discovery_type and discovery and discovery[conf.discovery_type]
+    if dis and dis.check_discovery_args then
+        local ok, err = dis.check_discovery_args(conf.discovery_args, conf.service_name, in_dp)
+        if not ok then
+            return false, err
         end
     end
 

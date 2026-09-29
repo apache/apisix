@@ -181,11 +181,20 @@ local function merge_cluster_nodes(endpoint_dicts, endpoint_key, endpoint_port)
 end
 
 
--- service_name is "namespace/name:port_name", the clusters come from cluster_ids
-local function selected_clusters_nodes(service_name, cluster_ids)
+-- with cluster_ids, service_name is "namespace/name:port_name"
+local function check_cluster_ids_service_name(service_name)
     if str_find(service_name, "/[^/]*/") then
-        core.log.error("service_name must not carry a cluster id prefix ",
-                       "when discovery_args.cluster_ids is set: ", service_name)
+        return false, "service_name must be namespace/name:port_name when "
+                      .. "discovery_args.cluster_ids is set, got: " .. service_name
+    end
+    return true
+end
+
+
+local function selected_clusters_nodes(service_name, cluster_ids)
+    local ok, err = check_cluster_ids_service_name(service_name)
+    if not ok then
+        core.log.error(err)
         return nil
     end
 
@@ -198,11 +207,12 @@ local function selected_clusters_nodes(service_name, cluster_ids)
 
     local endpoint_dicts = core.table.new(#cluster_ids, 0)
     local versions = core.table.new(#cluster_ids, 0)
+    local unknown_ids
     for _, id in ipairs(cluster_ids) do
         local endpoint_dict = ctx[id]
         if not endpoint_dict then
-            core.log.error("kubernetes discovery cluster id not exist: ", id,
-                           ", service: ", service_name)
+            unknown_ids = unknown_ids or {}
+            core.table.insert(unknown_ids, id)
         else
             local endpoint_version = endpoint_dict:get(endpoint_key .. "#version")
             if endpoint_version then
@@ -210,6 +220,11 @@ local function selected_clusters_nodes(service_name, cluster_ids)
                 core.table.insert(versions, id .. "#" .. endpoint_version)
             end
         end
+    end
+
+    if unknown_ids then
+        core.log.warn("skip unknown kubernetes discovery cluster ids: ",
+                      core.table.concat(unknown_ids, ", "), ", service: ", service_name)
     end
 
     if #endpoint_dicts == 0 then
@@ -254,6 +269,52 @@ function _M.init_worker()
         _M.nodes = multiple_mode_nodes
         multiple_mode_init(discovery_conf)
     end
+end
+
+
+function _M.check_discovery_args(discovery_args, service_name, in_dp)
+    local cluster_ids = discovery_args and discovery_args.cluster_ids
+    if not cluster_ids then
+        return true
+    end
+
+    if service_name then
+        local ok, err = check_cluster_ids_service_name(service_name)
+        if not ok then
+            return false, err
+        end
+    end
+
+    -- the data plane resolves the ids at runtime, where an unknown id is skipped
+    if in_dp then
+        return true
+    end
+
+    local discovery_conf = local_conf.discovery.kubernetes
+    if #discovery_conf == 0 then
+        return false, "discovery_args.cluster_ids requires kubernetes discovery "
+                      .. "configured with multiple clusters"
+    end
+
+    local known_ids = {}
+    for _, conf in ipairs(discovery_conf) do
+        known_ids[conf.id] = true
+    end
+
+    local unknown_ids
+    for _, id in ipairs(cluster_ids) do
+        if not known_ids[id] then
+            unknown_ids = unknown_ids or {}
+            core.table.insert(unknown_ids, id)
+        end
+    end
+
+    if unknown_ids then
+        return false, "unknown kubernetes discovery cluster ids in "
+                      .. "discovery_args.cluster_ids: " .. core.table.concat(unknown_ids, ", ")
+    end
+
+    return true
 end
 
 
