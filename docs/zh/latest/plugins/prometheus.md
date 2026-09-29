@@ -202,6 +202,20 @@ Prometheus 中有不同类型的指标。要了解它们之间的区别，请参
 | llm_model          | AI 请求实际使用的目标模型。优先使用 AI 实例中配置的模型，否则使用客户端请求的模型；传统 HTTP 流量中为空字符串。 |
 | response_source    | 响应来源：`apisix` 表示由 APISIX 生成，`nginx` 表示 NGINX 代理错误，`upstream` 表示来自上游服务的响应。                              |
 
+### Stream 指标的 Service 标签
+
+四个 Stream 指标都带有 `service` 和 `service_id` 标签，取值规则与 HTTP 指标相同：`service_id` 为会话所匹配 Stream Route 所属 Service 的 ID；`service` 默认也是该 ID，当 Route 上 `prometheus` 插件的 `prefer_name` 为 `true` 时为 Service 的名称。会话未到达属于某个 Service 的 Stream Route 时（例如 TLS 握手失败或未匹配到任何 Route），两个标签均为空，这类会话只计入对应 `listen_addr` 的总量，因此按 `service` 求和的结果与此前的总量一致。
+
+`apisix_stream_active_connections` 和 `apisix_stream_bandwidth` 在会话进行中即按 Service 拆分：Stream `prometheus` 插件在会话开始时为其标记所属 Service，此后该会话的活跃计数和传输的字节都计入该 Service。
+
+### `apisix_stream_connection_total` 的标签
+
+| 名称 | 描述 |
+| --- | --- |
+| route | 匹配的 Stream Route 的 ID；`prefer_name` 为 `true` 时为其名称。 |
+| service | `prefer_name` 为 `false`（默认）时为匹配的 Stream Route 所属 Service 的 ID，为 `true` 时为该 Service 的名称。会话未到达属于某个 Service 的 Stream Route 时为空。 |
+| service_id | 匹配的 Stream Route 所属 Service 的 ID。会话未到达属于某个 Service 的 Stream Route 时为空。 |
+
 ### `apisix_stream_active_connections` 的标签
 
 接受会话时，该 gauge 会递增；会话结束时递减，因此无需等到会话结束即可反映实时并发量。
@@ -209,6 +223,8 @@ Prometheus 中有不同类型的指标。要了解它们之间的区别，请参
 | 名称 | 描述 |
 | --- | --- |
 | listen_addr | 客户端连接的监听地址，例如 `0.0.0.0:9100`。 |
+| service | `prefer_name` 为 `false`（默认）时为匹配的 Stream Route 所属 Service 的 ID，为 `true` 时为该 Service 的名称。会话未到达属于某个 Service 的 Stream Route 时为空。 |
+| service_id | 匹配的 Stream Route 所属 Service 的 ID。会话未到达属于某个 Service 的 Stream Route 时为空。 |
 
 ### `apisix_stream_status` 的标签
 
@@ -218,6 +234,8 @@ Prometheus 中有不同类型的指标。要了解它们之间的区别，请参
 | --- | --- |
 | code | 会话结束方式：`200` 表示正常关闭、worker 关闭，或终止原因缺失或无法识别；`400` 表示客户端重置或预读数据无效等客户端问题；`403` 表示被访问规则拒绝；`500` 表示内部错误；`502` 表示连接失败、重置或空闲超时等上游或传输问题；`503` 表示被连接数限制拒绝。 |
 | listen_addr | 客户端连接的监听地址，例如 `0.0.0.0:9100`。 |
+| service | `prefer_name` 为 `false`（默认）时为匹配的 Stream Route 所属 Service 的 ID，为 `true` 时为该 Service 的名称。会话未到达属于某个 Service 的 Stream Route 时为空。 |
+| service_id | 匹配的 Stream Route 所属 Service 的 ID。会话未到达属于某个 Service 的 Stream Route 时为空。 |
 | node | 使用的上游节点地址；未选择节点时为空。 |
 
 UDP 没有关闭、FIN 或重置信号，因此只会出现其中一部分状态代码。
@@ -229,6 +247,8 @@ UDP 没有关闭、FIN 或重置信号，因此只会出现其中一部分状态
 | 名称 | 描述 |
 | --- | --- |
 | listen_addr | 客户端连接的监听地址，例如 `0.0.0.0:9100`。 |
+| service | `prefer_name` 为 `false`（默认）时为匹配的 Stream Route 所属 Service 的 ID，为 `true` 时为该 Service 的名称。会话未到达属于某个 Service 的 Stream Route 时为空。 |
+| service_id | 匹配的 Stream Route 所属 Service 的 ID。会话未到达属于某个 Service 的 Stream Route 时为空。 |
 | side | 字节经过的连接侧：`downstream` 表示 APISIX 与客户端之间，`upstream` 表示 APISIX 与上游之间。 |
 | type | 相对 APISIX 的方向，与 `apisix_bandwidth` 一致：`ingress` 表示 APISIX 接收的字节，`egress` 表示 APISIX 发送的字节。 |
 
@@ -750,25 +770,25 @@ curl "http://127.0.0.1:9091/apisix/prometheus/metrics"
 ```text
 # HELP apisix_stream_connection_total APISIX 中每个 Stream Route 处理的总连接数
 # TYPE apisix_stream_connection_total counter
-apisix_stream_connection_total{route="prometheus-route"} 1
-# HELP apisix_stream_active_connections Number of stream sessions currently being proxied per listening address
+apisix_stream_connection_total{route="prometheus-route",service="",service_id=""} 1
+# HELP apisix_stream_active_connections Number of stream sessions currently being proxied per listening address and service
 # TYPE apisix_stream_active_connections gauge
-apisix_stream_active_connections{listen_addr="0.0.0.0:9100"} 0
+apisix_stream_active_connections{listen_addr="0.0.0.0:9100",service="",service_id=""} 0
 # HELP apisix_stream_status Stream sessions per termination status in APISIX
 # TYPE apisix_stream_status counter
-apisix_stream_status{code="200",listen_addr="0.0.0.0:9100",node="54.237.103.220:80"} 1
+apisix_stream_status{code="200",listen_addr="0.0.0.0:9100",service="",service_id="",node="54.237.103.220:80"} 1
 # HELP apisix_stream_bandwidth Total bandwidth in bytes proxied by the stream subsystem in APISIX
 # TYPE apisix_stream_bandwidth counter
-apisix_stream_bandwidth{listen_addr="0.0.0.0:9100",type="ingress",side="downstream"} 78
-apisix_stream_bandwidth{listen_addr="0.0.0.0:9100",type="egress",side="downstream"} 219
-apisix_stream_bandwidth{listen_addr="0.0.0.0:9100",type="egress",side="upstream"} 78
-apisix_stream_bandwidth{listen_addr="0.0.0.0:9100",type="ingress",side="upstream"} 219
+apisix_stream_bandwidth{listen_addr="0.0.0.0:9100",service="",service_id="",type="ingress",side="downstream"} 78
+apisix_stream_bandwidth{listen_addr="0.0.0.0:9100",service="",service_id="",type="egress",side="downstream"} 219
+apisix_stream_bandwidth{listen_addr="0.0.0.0:9100",service="",service_id="",type="egress",side="upstream"} 78
+apisix_stream_bandwidth{listen_addr="0.0.0.0:9100",service="",service_id="",type="ingress",side="upstream"} 219
 ```
 
-实际的上游地址和字节数取决于请求。上例中的活跃连接 gauge 为 `0`，因为抓取指标时请求已完成；如需观察正值，请在连接保持打开时抓取指标。
+本例中的 Stream Route 不属于任何 Service，因此 `service` 和 `service_id` 为空。实际的上游地址和字节数取决于请求。上例中的活跃连接 gauge 为 `0`，因为抓取指标时请求已完成；如需观察正值，请在连接保持打开时抓取指标。
 
 :::note
 
-`apisix_stream_active_connections` 和 `apisix_stream_bandwidth` 使用由 `nginx_config.stream.metrics_zone_size` 配置的 NGINX 共享内存区，默认大小为 `1m`。这两个指标依赖 APISIX-Runtime；如果运行时不提供对应模块，则不会发布这两个指标。
+`apisix_stream_active_connections` 和 `apisix_stream_bandwidth` 使用由 `nginx_config.stream.metrics_zone_size` 配置的 NGINX 共享内存区，默认大小为 `1m`。这两个指标依赖 APISIX-Runtime；如果运行时不提供对应模块，则不会发布这两个指标。该共享内存区为每个监听地址及其上出现的每个 Service 各分配一个 slot，`1m` 约可容纳 760 个 slot，其中最多四分之三分配给 Service。slot 用尽后，新 Service 的会话只计入其 `listen_addr` 的总量，并记录一条警告日志。
 
 :::
