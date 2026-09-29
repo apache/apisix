@@ -284,6 +284,35 @@ a nodes("release/default/plat-dev:port") call will get follow result:
    }
   ```
 
+### Select Clusters with `cluster_ids`
+
+In multi-cluster mode, an upstream can get its nodes from several clusters at once by listing their `id`s in `discovery_args.cluster_ids`. The `service_name` then uses the single-cluster pattern _[namespace]/[name]:[portName]_, without the `id` prefix:
+
+```json
+{
+    "type": "roundrobin",
+    "discovery_type": "kubernetes",
+    "service_name": "default/plat-dev:port",
+    "discovery_args": {
+        "cluster_ids": ["release", "staging"]
+    }
+}
+```
+
+The upstream nodes are the union of the matching endpoints in the listed clusters, and they follow the endpoint changes in those clusters. When the same `host:port` is found in more than one listed cluster, it is used once.
+
++ `cluster_ids` is a non-empty array of unique strings. It only applies to multi-cluster mode. In single-cluster mode, an upstream with `cluster_ids` gets no nodes and an error is logged.
+
++ Clusters that are not listed, including clusters added to the configuration later, never contribute nodes.
+
++ When `cluster_ids` is set, `service_name` must not carry an `id` prefix. The Admin API rejects such a configuration.
+
++ An `id` that is not defined in the service discovery configuration is skipped, and an error is logged when the upstream is used. The Admin API does not check `cluster_ids` against the service discovery configuration.
+
++ When none of the listed clusters has matching endpoints, the upstream has no valid nodes. Nodes from other clusters are never used instead.
+
+Without `cluster_ids`, the query interface described above is unchanged.
+
 ## Q&A
 
 **Q: Why only support configuration token to access _Kubernetes APIServer_?**

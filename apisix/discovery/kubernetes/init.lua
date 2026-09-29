@@ -20,7 +20,9 @@ local type = type
 local ipairs = ipairs
 local pairs = pairs
 local string = string
+local str_find = string.find
 local error = error
+local tostring = tostring
 local is_http = ngx.config.subsystem == "http"
 local process = require("ngx.process")
 local core = require("apisix.core")
@@ -87,7 +89,13 @@ local function single_mode_init(conf)
 end
 
 
-local function single_mode_nodes(service_name)
+local function single_mode_nodes(service_name, discovery_args)
+    if discovery_args and discovery_args.cluster_ids then
+        core.log.error("discovery_args.cluster_ids requires kubernetes discovery ",
+                       "configured with multiple clusters, service: ", service_name)
+        return nil
+    end
+
     return k8s_core.resolve_nodes(
         endpoint_lrucache, service_name,
         "^(.*):(.*)$",   -- namespace/name:port_name
@@ -154,7 +162,73 @@ local function multiple_mode_init(confs)
 end
 
 
-local function multiple_mode_nodes(service_name)
+local function merge_cluster_nodes(endpoint_dicts, endpoint_key, endpoint_port)
+    local nodes = {}
+    local seen = {}
+    for _, endpoint_dict in ipairs(endpoint_dicts) do
+        local cluster_nodes = k8s_core.create_endpoint_lrucache(endpoint_dict, endpoint_key,
+                                                                endpoint_port)
+        for _, node in ipairs(cluster_nodes or {}) do
+            local addr = node.host .. ":" .. tostring(node.port)
+            if not seen[addr] then
+                seen[addr] = true
+                core.table.insert(nodes, node)
+            end
+        end
+    end
+
+    return nodes
+end
+
+
+-- service_name is "namespace/name:port_name", the clusters come from cluster_ids
+local function selected_clusters_nodes(service_name, cluster_ids)
+    if str_find(service_name, "/[^/]*/") then
+        core.log.error("service_name must not carry a cluster id prefix ",
+                       "when discovery_args.cluster_ids is set: ", service_name)
+        return nil
+    end
+
+    local match = ngx.re.match(service_name, "^(.*):(.*)$", "jo")
+    if not match then
+        core.log.error("get unexpected upstream service_name: ", service_name)
+        return nil
+    end
+    local endpoint_key, endpoint_port = match[1], match[2]
+
+    local endpoint_dicts = core.table.new(#cluster_ids, 0)
+    local versions = core.table.new(#cluster_ids, 0)
+    for _, id in ipairs(cluster_ids) do
+        local endpoint_dict = ctx[id]
+        if not endpoint_dict then
+            core.log.error("kubernetes discovery cluster id not exist: ", id,
+                           ", service: ", service_name)
+        else
+            local endpoint_version = endpoint_dict:get(endpoint_key .. "#version")
+            if endpoint_version then
+                core.table.insert(endpoint_dicts, endpoint_dict)
+                core.table.insert(versions, id .. "#" .. endpoint_version)
+            end
+        end
+    end
+
+    if #endpoint_dicts == 0 then
+        core.log.info("get empty endpoint version from selected clusters for ", service_name)
+        return nil
+    end
+
+    return endpoint_lrucache(service_name .. "#" .. core.table.concat(cluster_ids, ","),
+                             core.table.concat(versions, ","),
+                             merge_cluster_nodes, endpoint_dicts, endpoint_key, endpoint_port)
+end
+
+
+local function multiple_mode_nodes(service_name, discovery_args)
+    local cluster_ids = discovery_args and discovery_args.cluster_ids
+    if cluster_ids then
+        return selected_clusters_nodes(service_name, cluster_ids)
+    end
+
     return k8s_core.resolve_nodes(
         endpoint_lrucache, service_name,
         "^(.*)/(.*/.*):(.*)$",   -- id/namespace/name:port_name

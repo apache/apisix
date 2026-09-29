@@ -282,6 +282,35 @@ nodes("release/default/plat-dev:port") 调用会得到如下的返回值：
    }
   ```
 
+### 使用 `cluster_ids` 选择集群
+
+在多集群模式下，上游可以通过 `discovery_args.cluster_ids` 列出多个集群的 `id`，同时从这些集群获取节点。此时 `service_name` 使用单集群模式的格式 _[namespace]/[name]:[portName]_，不带 `id` 前缀：
+
+```json
+{
+    "type": "roundrobin",
+    "discovery_type": "kubernetes",
+    "service_name": "default/plat-dev:port",
+    "discovery_args": {
+        "cluster_ids": ["release", "staging"]
+    }
+}
+```
+
+上游节点是所列集群中匹配 endpoints 的并集，并随这些集群中 endpoints 的变化而更新。同一个 `host:port` 出现在多个所列集群中时只使用一次。
+
++ `cluster_ids` 是非空且元素不重复的字符串数组，仅适用于多集群模式。在单集群模式下，设置了 `cluster_ids` 的上游不会获得任何节点，并会记录错误日志。
+
++ 未列出的集群（包括之后新增到配置中的集群）不会提供节点。
+
++ 设置 `cluster_ids` 时，`service_name` 不能带 `id` 前缀，Admin API 会拒绝这样的配置。
+
++ 服务发现配置中不存在的 `id` 会被跳过，并在使用该上游时记录错误日志。Admin API 不会根据服务发现配置校验 `cluster_ids`。
+
++ 所列集群都没有匹配的 endpoints 时，上游没有可用节点，不会改用其他集群的节点。
+
+不设置 `cluster_ids` 时，上述查询接口的行为不变。
+
 ## Q&A
 
 **Q: 为什么只支持配置 token 来访问 Kubernetes APIServer?**
