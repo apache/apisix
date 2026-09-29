@@ -54,6 +54,8 @@ github:
           - master
           - release/*
         excludes: []
+      bypass_teams:
+        - root
       restrict_deletion: true
       restrict_force_push: true
       required_pull_request_reviews:
