@@ -283,7 +283,7 @@ nginx_config:
         access_log_format: main '$rate_limiting_info';
 --- error_code: 200
 --- access_log eval
-qr/\{\\x22rate_limiting_key\\x22:\\x22\/apisix\/routes\/1:\d+:test\.com\\x22,\\x22rate_limiting_limit\\x22:2,\\x22rate_limiting_remaining\\x22:1,\\x22rate_limiting_reset\\x22:10}/
+qr/\{\\x22rate_limiting_key\\x22:\\x22\/apisix\/routes\/1:\d+:test\.com\\x22,\\x22rate_limiting_limit\\x22:2,\\x22rate_limiting_remaining\\x22:1,\\x22rate_limiting_reset\\x22:10,\\x22window_type\\x22:\\x22fixed\\x22,\\x22window_size_ms\\x22:10000,\\x22decision\\x22:\\x22allowed\\x22,\\x22cost\\x22:1,/
 
 
 
@@ -452,3 +452,55 @@ GET /t
 passed
 --- error_log
 resolved value must be a positive number
+
+
+
+=== TEST 14: set up route keyed on a request header, decoding rate_limiting_info in log phase
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "limit-count": {
+                                "count": 2,
+                                "time_window": 60,
+                                "key_type": "var",
+                                "key": "http_x_client"
+                            },
+                            "serverless-post-function": {
+                                "phase": "log",
+                                "functions": ["return function(conf, ctx) local info = require('cjson.safe').decode(ngx.var.rate_limiting_info) ngx.log(ngx.WARN, 'decoded rate limiting key: ', info and info.rate_limiting_key) end"]
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 15: rate_limiting_info stays valid JSON when the key has quotes and backslashes
+--- request
+GET /hello
+--- more_headers
+x-client: a"b\c
+--- error_code: 200
+--- error_log eval
+qr/decoded rate limiting key: \/apisix\/routes\/1:\d+:a"b\\c/

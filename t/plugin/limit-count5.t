@@ -252,7 +252,7 @@ nginx_config:
         access_log_format: main '$rate_limiting_info';
 --- error_code: 200
 --- access_log eval
-qr/\{\\x22rate_limiting_key\\x22:\\x22\/apisix\/routes\/1:\d+:test\.com\\x22,\\x22rate_limiting_limit\\x22:2,\\x22rate_limiting_remaining\\x22:1,\\x22rate_limiting_reset\\x22:10}/
+qr/\{\\x22rate_limiting_key\\x22:\\x22\/apisix\/routes\/1:\d+:test\.com\\x22,\\x22rate_limiting_limit\\x22:2,\\x22rate_limiting_remaining\\x22:1,\\x22rate_limiting_reset\\x22:10,\\x22window_type\\x22:\\x22fixed\\x22,\\x22window_size_ms\\x22:10000,\\x22decision\\x22:\\x22allowed\\x22,\\x22cost\\x22:1,/
 
 
 

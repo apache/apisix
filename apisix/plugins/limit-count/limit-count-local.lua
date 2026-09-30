@@ -32,20 +32,6 @@ local mt = {
     __index = _M
 }
 
-local function set_endtime(self, key, time_window)
-    -- set an end time
-    local end_time = ngx_now() + time_window
-    -- save to dict by key
-    local success, err = self.dict:set(key, end_time, time_window)
-
-    if not success then
-        core.log.error("dict set key ", key, " error: ", err)
-    end
-
-    local reset = time_window
-    return reset
-end
-
 local function read_reset(self, key)
     -- read from dict
     local end_time = (self.dict:get(key) or 0)
@@ -54,6 +40,24 @@ local function read_reset(self, key)
         reset = 0
     end
     return reset
+end
+
+local function set_endtime(self, key, time_window)
+    -- set an end time
+    local end_time = ngx_now() + time_window
+    -- save to dict by key. A zero-cost request (a dry-run check) may have
+    -- started this window already, so keep the end time it recorded.
+    local success, err = self.dict:add(key, end_time, time_window)
+
+    if not success then
+        if err == "exists" then
+            return read_reset(self, key), false
+        end
+        core.log.error("dict set key ", key, " error: ", err)
+    end
+
+    local reset = time_window
+    return reset, true
 end
 
 function _M.new(plugin_name, limit, window, window_type)
@@ -115,13 +119,15 @@ function _M.incoming(self, key, flag_or_cost, _conf, cost_arg)
         remaining_or_err = self.limit - consumed_or_err
     end
 
+    local created = false
     if remaining_or_err == self.limit - cost then
-        reset = set_endtime(self, key, self.window)
+        reset, created = set_endtime(self, key, self.window)
     else
         reset = read_reset(self, key)
     end
 
-    return delay, remaining_or_err, reset
+    return delay, remaining_or_err, reset,
+           {count = delay and consumed_or_err or nil, created = created}
 end
 
 return _M
