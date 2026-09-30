@@ -494,11 +494,27 @@ function _M.check_tls_bool(fields, conf, plugin_name)
 end
 
 
+local json_escapes = {
+    ['"'] = '\\"',
+    ['\\'] = '\\\\',
+    ['\b'] = '\\b',
+    ['\f'] = '\\f',
+    ['\n'] = '\\n',
+    ['\r'] = '\\r',
+    ['\t'] = '\\t',
+}
+local function json_escape_char(c)
+    return json_escapes[c] or str_format("\\u%04x", str_byte(c))
+end
+
+
 function _M.set_var_rate_limiting_info(ctx, key, limit, remaining, reset)
     if not ctx then
         return
     end
-    key = key or ""
+    -- the key usually comes from a request variable, so escape it to keep
+    -- the value valid JSON
+    key = str_gsub(tostring(key or ""), '[%c"\\]', json_escape_char)
     limit = limit or 0
     remaining = tonumber(remaining) or 0
     reset = reset or 0
