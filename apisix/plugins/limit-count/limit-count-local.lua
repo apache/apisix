@@ -32,20 +32,6 @@ local mt = {
     __index = _M
 }
 
-local function set_endtime(self, key, time_window)
-    -- set an end time
-    local end_time = ngx_now() + time_window
-    -- save to dict by key
-    local success, err = self.dict:set(key, end_time, time_window)
-
-    if not success then
-        core.log.error("dict set key ", key, " error: ", err)
-    end
-
-    local reset = time_window
-    return reset
-end
-
 local function read_reset(self, key)
     -- read from dict
     local end_time = (self.dict:get(key) or 0)
@@ -53,6 +39,24 @@ local function read_reset(self, key)
     if reset < 0 then
         reset = 0
     end
+    return reset
+end
+
+local function set_endtime(self, key, time_window)
+    -- set an end time
+    local end_time = ngx_now() + time_window
+    -- save to dict by key. A zero-cost request (a dry-run check) may have
+    -- started this window already, so keep the end time it recorded.
+    local success, err = self.dict:add(key, end_time, time_window)
+
+    if not success then
+        if err == "exists" then
+            return read_reset(self, key)
+        end
+        core.log.error("dict set key ", key, " error: ", err)
+    end
+
+    local reset = time_window
     return reset
 end
 
