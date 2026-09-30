@@ -43,7 +43,9 @@ import TabItem from '@theme/TabItem';
 
 运行哪些检测器以及使用何种阈值，完全由通过 `project_id` 选择的 **Lakera 项目策略**控制。网关侧没有检测器列表；Lakera 每次调用返回单一的判定结果。
 
-`ai-lakera-guard` 插件应与 [`ai-proxy`](./ai-proxy.md) 或 [`ai-proxy-multi`](./ai-proxy-multi.md) 插件配合使用以代理 LLM 请求。它依赖 `ai-proxy` 填充的上下文，以协议感知的方式提取对话内容。
+`ai-lakera-guard` 插件应与 [`ai-proxy`](./ai-proxy.md) 或 [`ai-proxy-multi`](./ai-proxy-multi.md) 插件配合使用以代理 LLM 请求。它依赖 `ai-proxy` 填充的上下文，以协议感知的方式提取请求内容。
+
+请求扫描支持 Chat Completions、Responses API、Embeddings、Anthropic Messages 和 Bedrock Converse 请求。对于 Responses，插件会将 `instructions` 和 `input` 中的文本转换为对话消息。对于 Embeddings，插件会扫描 `input` 中的文本。响应扫描适用于返回生成文本的协议；Embeddings 响应包含向量而不是文本。
 
 未经过 `ai-proxy`/`ai-proxy-multi` 的请求（例如插件绑定在 Consumer 或 Service 级别时的普通 HTTP 流量）无法被检查。默认情况下，此类请求会被直接放行而不做检查；该行为可通过 `fail_mode` 配置。
 
@@ -63,7 +65,7 @@ import TabItem from '@theme/TabItem';
 | timeout | integer | 否 | `5000` | >= 1 | Lakera 请求超时时间（毫秒）。 |
 | ssl_verify | boolean | 否 | `true` | | 如果为 `true`，则验证 Lakera 端点的 TLS 证书。 |
 | reveal_failure_categories | boolean | 否 | `false` | | 如果为 `true`，将匹配到的 Lakera `detector_type`（及其置信度结果）追加到返回给客户端的拒绝消息中。无论该设置如何，插件始终会向 Lakera 请求完整的每个检测器的 `breakdown` 并写入网关日志；此标志仅控制面向客户端的暴露。 |
-| deny_code | integer | 否 | `200` | 200 - 599 | 请求被拦截时返回的 HTTP 状态码。默认为 `200`，使响应体——一个携带 `request_failure_message` 的、与提供商兼容的聊天补全（或 SSE）——在客户端 SDK 中被解析为正常的拒绝消息（与 Lakera Guard 自身返回 `200` 并附带判定结果的方式一致）。如果你希望拦截以 HTTP 错误的形式呈现，可设置为 4xx（例如 `403`）。 |
+| deny_code | integer | 否 | `200` | 200 - 599 | 请求被拦截时返回的 HTTP 状态码。默认为 `200`，使携带 `request_failure_message` 且采用检测到的协议格式的响应体在客户端 SDK 中被解析为正常的拒绝消息（与 Lakera Guard 自身返回 `200` 并附带判定结果的方式一致）。如果你希望拦截以 HTTP 错误的形式呈现，可设置为 4xx（例如 `403`）。 |
 | request_failure_message | string | 否 | `Request blocked by Lakera Guard` | | 请求被拦截时返回的拒绝文本（作为与提供商兼容的响应中的 assistant 消息）。 |
 | response_failure_message | string | 否 | `Response blocked by Lakera Guard` | | LLM 响应被拦截时（`direction` 为 `output` 或 `both`）返回的拒绝文本（作为与提供商兼容的响应中的 assistant 消息）。 |
 
