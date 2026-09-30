@@ -2151,3 +2151,50 @@ X-Custom-RateLimit-Limit: 1
 X-Custom-RateLimit-Remaining: 0
 X-Custom-RateLimit-Reset: 28
 ```
+
+### Log Why a Request Was Allowed or Rejected
+
+The Plugin records its decision in the `$rate_limiting_info` variable as a JSON object, which you can add to the access log or to the `log_format` of a logger Plugin. For example, add it to the access log in `config.yaml`:
+
+```yaml
+nginx_config:
+  http:
+    access_log_format: '$remote_addr - [$time_local] "$request" $status "$rate_limiting_info"'
+```
+
+A request counted in a fixed window logs a value like this:
+
+```json
+{"rate_limiting_key":"/apisix/routes/1:1:127.0.0.1","rate_limiting_limit":10,"rate_limiting_remaining":3,"rate_limiting_reset":42,"window_type":"fixed","window_size_ms":60000,"decision":"allowed","cost":1,"evaluated_at_ms":1759212345678,"current_window":{"start_ms":1759212300123,"end_ms":1759212360123,"count":7,"created":false}}
+```
+
+A request counted in a sliding window logs a value like this:
+
+```json
+{"rate_limiting_key":"/apisix/routes/1:1:127.0.0.1","rate_limiting_limit":10,"rate_limiting_remaining":3,"rate_limiting_reset":14,"window_type":"sliding","window_size_ms":60000,"decision":"allowed","cost":1,"evaluated_at_ms":1759212345678,"current_window":{"id":29320205,"start_ms":1759212300000,"end_ms":1759212360000,"count":4},"previous_window":{"count":10,"weight":0.238700,"weighted_count":2.387}}
+```
+
+All `*_ms` fields are Unix timestamps or durations in milliseconds, taken from the clock of the APISIX instance. A field that applies to the window type but is unknown for the request is `null`. The fields are:
+
+* `rate_limiting_key`, `rate_limiting_limit`, `rate_limiting_remaining`, `rate_limiting_reset`: the counter key, the quota, the remaining quota and the seconds until the reset, as in the rate limiting headers. When a sliding window rejects a request, `rate_limiting_reset` is the time until a request can be allowed again, which may be earlier than the end of the window.
+* `window_type`: `fixed` or `sliding`.
+* `window_size_ms`: the `time_window` in milliseconds.
+* `decision`: `allowed`, `rejected`, or `error` when the counter could not be updated, for example because Redis is unreachable. An `error` value only carries the fields above.
+* `cost`: what this request added to the counter. A fixed window counts a request even when it rejects it. A sliding window and delayed synchronization only count allowed requests, so a rejected request has a `cost` of `0`.
+* `evaluated_at_ms`: when the request was checked.
+* `current_window.count`: the counter of the current window after this request, including its `cost`. It is `null` when the local fixed window rejects the request.
+* `current_window.start_ms` and `current_window.end_ms`: the boundaries of the current window.
+
+A fixed window is not aligned to the clock: it starts with the first request counted under the key and ends `time_window` seconds later. `current_window.created` is `true` for the request that started the window. It is only known with the `local` policy and is `null` with the Redis policies, where the window end is derived from the TTL of the Redis counter and may differ by a few milliseconds from one request to another.
+
+A sliding window is aligned to the clock: `current_window.id` counts the windows since the Unix epoch, so the current window starts at `id * window_size_ms`. A request is allowed while the current window's count plus the previous window's count weighted by the share of the previous window still inside the sliding range stays below the quota. `previous_window.count` is that previous count, capped at the quota, `previous_window.weight` is the share, from 0 to 1, and `previous_window.weighted_count` is their product.
+
+With delayed synchronization (`sync_interval`), the counter shared through Redis is only read once per interval, and a `delayed_sync` object describes what the request was checked against:
+
+* `delayed_sync.synced_at_ms`: when this APISIX instance last synchronized the counter.
+* `delayed_sync.synced_count`: the count of the current window in Redis at that time.
+* `delayed_sync.local_delta`: what this APISIX instance counted since then and has not synchronized yet, excluding this request.
+
+`current_window.count` is then an estimate, `synced_count + local_delta + cost`, that does not include what other instances counted since their last synchronization. For a sliding window, `current_window` and `previous_window` describe the windows at the time of the last synchronization: the weight applied to the previous window is fixed at synchronization time, so `previous_window.weight` is the weight that was used for this request, not the weight at `evaluated_at_ms`.
+
+When multiple `rules` are configured, the variable describes the last rule that was checked, which is the rule that rejected the request if any did.

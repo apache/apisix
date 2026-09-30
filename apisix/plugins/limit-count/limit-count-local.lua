@@ -51,13 +51,13 @@ local function set_endtime(self, key, time_window)
 
     if not success then
         if err == "exists" then
-            return read_reset(self, key)
+            return read_reset(self, key), false
         end
         core.log.error("dict set key ", key, " error: ", err)
     end
 
     local reset = time_window
-    return reset
+    return reset, true
 end
 
 function _M.new(plugin_name, limit, window, window_type)
@@ -119,13 +119,15 @@ function _M.incoming(self, key, flag_or_cost, _conf, cost_arg)
         remaining_or_err = self.limit - consumed_or_err
     end
 
+    local created = false
     if remaining_or_err == self.limit - cost then
-        reset = set_endtime(self, key, self.window)
+        reset, created = set_endtime(self, key, self.window)
     else
         reset = read_reset(self, key)
     end
 
-    return delay, remaining_or_err, reset
+    return delay, remaining_or_err, reset,
+           {count = delay and consumed_or_err or nil, created = created}
 end
 
 return _M
