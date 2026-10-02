@@ -145,6 +145,7 @@ When an instance's `provider` is set to `bedrock`, the Plugin expects requests i
 | keepalive                           | boolean        | False    | true                            |              | If true, keep the connection alive when requesting the LLM service. |
 | keepalive_timeout                   | integer        | False    | 60000                           | greater than or equal to 1000 | Request timeout in milliseconds when requesting the LLM service. |
 | keepalive_pool                      | integer        | False    | 30                              |              | Keepalive pool size for when connecting with the LLM service. |
+| streaming_flush_interval_ms         | integer        | False    | 10                              | greater than or equal to 0 | Interval in milliseconds for the background flush thread. When `> 0` (default: `10`), a background timer calls `ngx.flush(false)` every N ms, batching output for bursty upstreams. For SSE streams, only complete frames or converted events queued for the client trigger a flush; partial frames wait for the remaining upstream data. If a periodic flush returns `nothing to flush`, the stream continues. When `0`, the background thread is disabled and each chunk is flushed synchronously via `ngx.flush(true)`, guaranteeing immediate client delivery. |
 | ssl_verify                          | boolean        | False    | true                            |              | If true, verify the LLM service's certificate. |
 
 ## Request Header Forwarding
