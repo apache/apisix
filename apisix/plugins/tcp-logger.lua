@@ -93,7 +93,7 @@ local function send_tcp_data(conf, log_message)
     local sock, soc_err = tcp()
 
     if not sock then
-        return false, "failed to init the socket" .. soc_err
+        return false, "failed to init the socket: " .. soc_err
     end
 
     sock:settimeout(conf.timeout)
@@ -156,7 +156,7 @@ function _M.log(conf, ctx)
         end
 
         if not data then
-            core.log.error('error occurred while encoding the data: ', err)
+            return false, 'error occurred while encoding the data: ' .. err
         end
 
         return send_tcp_data(conf, data)
