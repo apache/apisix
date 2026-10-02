@@ -244,6 +244,8 @@ local _M = {
     "data-mask",
     "proxy-cache",
     "body-transformer",
+    "soap-signer",
+    "xml-signer",
     "ai-prompt-template",
     "ai-prompt-decorator",
     "ai-prompt-guard",
