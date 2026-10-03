@@ -110,6 +110,88 @@ local function get_request_table()
 end
 
 
+-- Body/form only; no query fallback.
+local function get_body_table()
+    local method = ngx.req.get_method()
+    if method ~= "POST" and method ~= "PUT" and method ~= "PATCH" then
+        return nil
+    end
+
+    local content_type = ngx.req.get_headers()["Content-Type"] or ""
+
+    if string.find(content_type, "application/json", 1, true) then
+        local req_body = core.request.get_body()
+        if not req_body then
+            return nil
+        end
+
+        local data = json.decode(req_body)
+        if data == nil then
+            return nil, "failed to decode the request body as JSON"
+        end
+
+        return data
+    end
+
+    if string.find(content_type, "application/x-www-form-urlencoded", 1, true) then
+        return ngx.req.get_post_args()
+    end
+
+    return nil
+end
+
+
+-- Fields a google.api.http binding may draw on:
+--   absent      path and query only, body not read
+--   "*"         body is the whole message, query not read
+--   "<field>"   body becomes that field, siblings from query
+function _M.get_annotated_request_table(binding)
+    local body_field = binding.body
+    local request_table
+
+    if body_field == "*" then
+        local body, err = get_body_table()
+        if err then
+            return nil, err
+        end
+        request_table = body or {}
+    else
+        request_table = ngx.req.get_uri_args()
+        if body_field and body_field ~= "" then
+            local body, err = get_body_table()
+            if err then
+                return nil, err
+            end
+            request_table[body_field] = body
+        end
+    end
+
+    if binding.path_params then
+        request_table = _M.merge_path_params(request_table, binding.path_params)
+    end
+
+    return request_table
+end
+
+
+-- Path params override body/query. Values stay strings; map_message coerces.
+function _M.merge_path_params(request_table, path_params)
+    if type(request_table) ~= "table" then
+        request_table = {}
+    end
+
+    for name, value in pairs(path_params) do
+        if type(value) == "table" then
+            request_table[name] = _M.merge_path_params(request_table[name], value)
+        else
+            request_table[name] = value
+        end
+    end
+
+    return request_table
+end
+
+
 local function get_from_request(request_table, name, kind)
     if not request_table then
         return nil
