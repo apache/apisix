@@ -248,6 +248,9 @@ POST /hello
         { "role": "system", "content": "badword" }
     ]
 }
+--- error_code: 200
+--- response_body
+hello world
 
 
 
@@ -1038,3 +1041,17 @@ POST /v1/responses
 --- response_body
 {"message":"Request contains prohibited content"}
 --- error_code: 400
+
+=== TEST 45: embeddings array input passes through when there are no messages to check
+--- request
+POST /hello
+{
+    "model": "text-embedding-3-small",
+    "input": [
+        "hello",
+        "world"
+    ]
+}
+--- error_code: 200
+--- response_body
+hello world
