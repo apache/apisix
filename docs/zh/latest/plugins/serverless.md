@@ -88,9 +88,9 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 以下示例演示如何在不同场景中配置 `serverless-pre-function` 和 `serverless-post-function` 插件。
 
-### 在阶段前后记录信息
+### 设置默认查询参数
 
-以下示例演示如何配置 serverless 插件，在 `rewrite` [阶段](../terminology/plugin.md#plugins-execution-lifecycle)之前和之后执行自定义逻辑，将信息记录到错误日志中。
+以下示例演示如何配置 serverless pre-function，在 `rewrite` [阶段](../terminology/plugin.md#plugins-execution-lifecycle)为未提供 `name` 查询参数的请求添加默认值。
 
 创建如下路由：
 
@@ -115,13 +115,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
       "serverless-pre-function": {
         "phase": "rewrite",
         "functions" : [
-          "return function() ngx.log(ngx.ERR, \"serverless pre function\"); end"
-        ]
-      },
-      "serverless-post-function": {
-        "phase": "rewrite",
-        "functions" : [
-          "return function(conf, ctx) ngx.log(ngx.ERR, \"match uri \", ctx.curr_req_matched and ctx.curr_req_matched._path); end"
+          "return function(conf, ctx) local core = require(\"apisix.core\"); local uri_args = core.request.get_uri_args(ctx); if not uri_args.name then uri_args.name = \"world\"; core.request.set_uri_args(ctx, uri_args); end end"
         ]
       }
     },
@@ -150,15 +144,13 @@ services:
             phase: rewrite
             functions:
               - |
-                return function()
-                  ngx.log(ngx.ERR, "serverless pre function")
-                end
-          serverless-post-function:
-            phase: rewrite
-            functions:
-              - |
                 return function(conf, ctx)
-                  ngx.log(ngx.ERR, "match uri ", ctx.curr_req_matched and ctx.curr_req_matched._path)
+                  local core = require("apisix.core")
+                  local uri_args = core.request.get_uri_args(ctx)
+                  if not uri_args.name then
+                    uri_args.name = "world"
+                    core.request.set_uri_args(ctx, uri_args)
+                  end
                 end
     upstream:
       type: roundrobin
@@ -210,16 +202,13 @@ spec:
         phase: rewrite
         functions:
           - |
-            return function()
-              ngx.log(ngx.ERR, "serverless pre function")
-            end
-    - name: serverless-post-function
-      config:
-        phase: rewrite
-        functions:
-          - |
             return function(conf, ctx)
-              ngx.log(ngx.ERR, "match uri ", ctx.curr_req_matched and ctx.curr_req_matched._path)
+              local core = require("apisix.core")
+              local uri_args = core.request.get_uri_args(ctx)
+              if not uri_args.name then
+                uri_args.name = "world"
+                core.request.set_uri_args(ctx, uri_args)
+              end
             end
 ---
 apiVersion: gateway.networking.k8s.io/v1
@@ -282,16 +271,13 @@ spec:
             phase: rewrite
             functions:
               - |
-                return function()
-                  ngx.log(ngx.ERR, "serverless pre function")
-                end
-        - name: serverless-post-function
-          config:
-            phase: rewrite
-            functions:
-              - |
                 return function(conf, ctx)
-                  ngx.log(ngx.ERR, "match uri ", ctx.curr_req_matched and ctx.curr_req_matched._path)
+                  local core = require("apisix.core")
+                  local uri_args = core.request.get_uri_args(ctx)
+                  if not uri_args.name then
+                    uri_args.name = "world"
+                    core.request.set_uri_args(ctx, uri_args)
+                  end
                 end
 ```
 
@@ -309,17 +295,20 @@ kubectl apply -f serverless-functions-ic.yaml
 
 </Tabs>
 
-向路由发送请求：
+向路由发送不带 `name` 查询参数的请求：
 
 ```shell
 curl -i "http://127.0.0.1:9080/anything"
 ```
 
-你应该会收到 `HTTP/1.1 200 OK` 响应，并在错误日志中看到以下条目：
+你应该会收到 `HTTP/1.1 200 OK` 响应，响应体中应包含如下内容：
 
-```text
-2024/05/09 15:07:09 [error] 51#51: *3963 [lua] [string "return function() ngx.log(ngx.ERR, "serverles..."]:1: func(): serverless pre function, client: 172.21.0.1, server: _, request: "GET /anything HTTP/1.1", host: "127.0.0.1:9080"
-2024/05/09 15:16:58 [error] 50#50: *9343 [lua] [string "return function(conf, ctx) ngx.log(ngx.ERR, "..."]:1: func(): match uri /anything, client: 172.21.0.1, server: _, request: "GET /anything HTTP/1.1", host: "127.0.0.1:9080"
+```json
+{
+  "args": {
+    "name": "world"
+  }
+}
 ```
 
-第一条记录由 pre-function 添加，第二条记录由 post-function 添加。
+pre-function 会保留请求中已有的 `name` 查询参数。例如，`curl -i "http://127.0.0.1:9080/anything?name=apisix"` 应在响应体中返回 `"name": "apisix"`。
