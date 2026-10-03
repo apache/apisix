@@ -56,7 +56,7 @@ function install_dependencies_with_yum() {
     sudo yum install -y  \
         gcc gcc-c++ curl wget unzip xz gnupg perl-ExtUtils-Embed cpanminus patch libyaml-devel \
         perl perl-devel pcre pcre-devel pcre2 pcre2-devel openldap-devel \
-        openresty-zlib-devel openresty-pcre-devel libxml2-devel libxslt-devel zlib-devel
+        openresty-zlib-devel openresty-pcre-devel libxml2-devel libxslt-devel zlib-devel libzstd-devel
 }
 
 # Install dependencies on ubuntu and debian
@@ -81,7 +81,7 @@ function install_dependencies_with_apt() {
     sudo apt-get update
 
     # install some compilation tools
-    sudo apt-get install -y curl make gcc g++ cpanminus libpcre3 libpcre3-dev libpcre2-dev libyaml-dev unzip openresty-zlib-dev openresty-pcre-dev libxml2-dev libxslt-dev zlib1g-dev
+    sudo apt-get install -y curl make gcc g++ cpanminus libpcre3 libpcre3-dev libpcre2-dev libyaml-dev unzip openresty-zlib-dev openresty-pcre-dev libxml2-dev libxslt-dev zlib1g-dev libzstd-dev
 }
 
 # Identify the different distributions and call the corresponding function
