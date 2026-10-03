@@ -68,20 +68,30 @@ APISIX can serve as an **[AI Gateway](https://apisix.apache.org/ai-gateway/)** t
 APISIX also provides the [`mcp-bridge`](https://apisix.apache.org/blog/2025/04/21/host-mcp-server-with-api-gateway/) plugin to seamlessly convert stdio-based MCP servers to scalable HTTP SSE services.
 
 ## Get Started
+This guide shows you how to install and run APISIX, create your first route, and send a request through APISIX.
 
-Install and run APISIX with a single command using the quickstart script (requires [Docker](https://docs.docker.com/get-docker/)):
+### Prerequisites
+Make sure Docker is installed and running on your system.
+
+### 1. Install and start APISIX
+
+Run the following command to install and start APISIX using the quickstart script:
 
 ```shell
 curl -sL https://run.api7.ai/apisix/quickstart | sh
 ```
 
-This starts APISIX (listening on port `9080`) together with its etcd configuration store. Verify it is running:
+The quickstart script starts APISIX on port 9080 and its etcd configuration store. 
 
+### 2. Verify that APISIX is running
+
+Send a request to APISIX on port 9080:
 ```shell
 curl "http://127.0.0.1:9080" --head | grep Server
 ```
 
-Create your first route via the Admin API (port `9180`) to proxy requests to an upstream service:
+### 3. Create your first route
+Create a route using the APISIX Admin API on port 9180. This route forwards requests from /get to the httpbin.org upstream service:
 
 ```shell
 curl -i "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT -d '
@@ -95,16 +105,17 @@ curl -i "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT -d '
   }
 }'
 ```
-
-Send a request through APISIX to confirm the route works:
+### 4. Send a request through APISIX
+Send a request to the /get route:
 
 ```shell
 curl "http://127.0.0.1:9080/get"
 ```
+If the route is configured correctly, APISIX forwards the request to httpbin.org and returns the response.
 
-To learn more, follow the [Getting Started](https://apisix.apache.org/docs/apisix/getting-started/) guide and the [installation documentation](https://apisix.apache.org/docs/apisix/installation-guide/) for other deployment methods. To extend APISIX, see the [plugin development guide](docs/en/latest/plugin-develop.md), the [plugin concept](docs/en/latest/terminology/plugin.md), and the [REST Admin API](docs/en/latest/admin-api.md) reference.
+To learn more, see the [Getting Started](https://apisix.apache.org/docs/apisix/getting-started/) guide and the [installation documentation](https://apisix.apache.org/docs/apisix/installation-guide/) for other deployment methods. To extend APISIX, see the [plugin development guide](docs/en/latest/plugin-develop.md), the [plugin concept](docs/en/latest/terminology/plugin.md), and the [REST Admin API](docs/en/latest/admin-api.md) reference.
 
-For more documents, please refer to the [Apache APISIX Documentation site](https://apisix.apache.org/docs/apisix/getting-started/).
+For complete documentation, refer to the [Apache APISIX Documentation site](https://apisix.apache.org/docs/apisix/getting-started/).
 
 ## Features
 
