@@ -837,3 +837,55 @@ POST /grpctest
 Content-Type: application/json
 --- response_body eval
 qr/"items":\[\]/
+
+
+
+=== TEST 32: set route with proto_id as an integer
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "methods": ["POST"],
+                    "uri": "/grpctest",
+                    "plugins": {
+                        "grpc-transcode": {
+                            "proto_id": 1,
+                            "service": "helloworld.Greeter",
+                            "method": "SayHello"
+                        }
+                    },
+                    "upstream": {
+                        "scheme": "grpc",
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:10051": 1
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 33: hit route, an integer proto_id resolves the same proto
+--- request
+POST /grpctest
+{"name":"world"}
+--- more_headers
+Content-Type: application/json
+--- response_body eval
+qr/"message":"Hello world"/
