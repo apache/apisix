@@ -119,6 +119,7 @@ end
 C.xmlInitParser()
 
 local XML_ELEMENT_NODE = 1
+local XML_DTD_NODE = 14
 local XML_PARSE_NONET = 2048
 local EXCLUSIVE_C14N = 1
 
@@ -148,15 +149,20 @@ function _M.parse(value)
         return nil, "XML body is empty"
     end
 
-    local upper = value:upper()
-    if upper:find("<!DOCTYPE", 1, true) or upper:find("<!ENTITY", 1, true) then
-        return nil, "DTD and entity declarations are not allowed"
-    end
-
     local doc = C.xmlReadMemory(value, #value, "document.xml", nil, XML_PARSE_NONET)
     if doc == nil then
         return nil, "failed to parse XML"
     end
+
+    local child = ffi.cast("xmlNodePtr", doc).children
+    while child ~= nil do
+        if child.type == XML_DTD_NODE then
+            C.xmlFreeDoc(doc)
+            return nil, "DTD and entity declarations are not allowed"
+        end
+        child = child.next
+    end
+
     ffi.gc(doc, C.xmlFreeDoc)
     return doc
 end
@@ -235,7 +241,7 @@ end
 
 function _M.ensure_namespace(doc, node, prefix, href)
     local by_href = C.xmlSearchNsByHref(doc, node, xml_char(href))
-    if by_href ~= nil then
+    if by_href ~= nil and by_href.prefix ~= nil then
         return by_href
     end
 

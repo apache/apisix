@@ -67,14 +67,29 @@ local function find_envelope_parts(doc)
         return nil, "not_soap", "unsupported SOAP namespace"
     end
 
-    local body = xml.find_child(root, soap_namespace, "Body")
+    local body, header
+    for child in xml.each_child(root) do
+        if xml.namespace_uri(child) == soap_namespace then
+            local name = xml.name(child)
+            if name == "Body" then
+                if body then
+                    return nil, "invalid_soap", "exactly one SOAP Body is required"
+                end
+                body = child
+            elseif name == "Header" then
+                if header then
+                    return nil, "invalid_soap", "at most one SOAP Header is allowed"
+                end
+                header = child
+            end
+        end
+    end
     if not body then
         return nil, "invalid_soap", "SOAP Body is required"
     end
 
-    local header = xml.find_child(root, soap_namespace, "Header")
     if not header then
-        header = xml.new_node(body.ns, "Header")
+        header = xml.new_node(root.ns, "Header")
         xml.add_before(body, header)
     end
 

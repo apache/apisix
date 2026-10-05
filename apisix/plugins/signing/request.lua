@@ -62,9 +62,14 @@ function _M.rewrite(plugin_name, conf, ctx, sign)
 
     local body, body_err = core.request.get_body(conf.request.max_body_bytes, ctx)
     if not body then
-        core.log.error(plugin_name, " failed to read request body")
-        return body_err and 413 or 400,
-               {message = body_err and "body_too_large" or "empty_body"}
+        core.log.error(plugin_name, " failed to read request body: ", body_err)
+        if not body_err then
+            return 400, {message = "empty_body"}
+        end
+        if body_err:find("is greater than the maximum size", 1, true) then
+            return 413, {message = "body_too_large"}
+        end
+        return 500, {message = "internal_error"}
     end
 
     if conf.signature.algorithm == "rsa-sha1" then
