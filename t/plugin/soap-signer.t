@@ -353,3 +353,180 @@ routes: []
 GET /t
 --- response_body
 signed without KeyInfo
+
+
+
+=== TEST 6: reject malformed SOAP envelopes
+--- apisix_yaml
+routes: []
+#END
+--- config
+    location /t {
+        content_by_lua_block {
+            local signer = require("apisix.plugins.soap-signer.signer")
+
+            local function read(path)
+                local file = assert(io.open(path, "rb"))
+                local value = file:read("*a")
+                file:close()
+                return value
+            end
+
+            local conf = {
+                credentials = {
+                    certificate = read("t/certs/server.crt"),
+                    private_key = read("t/certs/server.key"),
+                },
+                soap = {version = "auto", must_understand = true},
+                timestamp = {ttl_seconds = 300},
+            }
+            local function envelope(children)
+                return '<s:Envelope xmlns:s="' .. signer.namespaces.soap11 .. '">'
+                       .. children .. "</s:Envelope>"
+            end
+
+            local bodies = {
+                envelope("<s:Body/><s:Header/>"),
+                envelope("<s:Body/><s:Body/>"),
+                envelope("<s:Header/><s:Header/><s:Body/>"),
+                envelope("<s:Header/>"),
+                '<!DOCTYPE s:Envelope [<!ENTITY x "y">]>' .. envelope("<s:Body/>"),
+            }
+            for _, body in ipairs(bodies) do
+                local _, code, err = signer.sign(body, conf, 1790856000)
+                ngx.say(code, ": ", err)
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+invalid_soap: SOAP Header must precede SOAP Body
+invalid_soap: exactly one SOAP Body is required
+invalid_soap: at most one SOAP Header is allowed
+invalid_soap: SOAP Body is required
+invalid_soap: DTD and entity declarations are not allowed
+
+
+
+=== TEST 7: keep a single wsu:Timestamp in a reused Security header
+--- apisix_yaml
+routes: []
+#END
+--- config
+    location /t {
+        content_by_lua_block {
+            local signer = require("apisix.plugins.soap-signer.signer")
+            local xml = require("apisix.plugins.signing.xml")
+            local ns = signer.namespaces
+
+            local function read(path)
+                local file = assert(io.open(path, "rb"))
+                local value = file:read("*a")
+                file:close()
+                return value
+            end
+
+            local conf = {
+                credentials = {
+                    certificate = read("t/certs/server.crt"),
+                    private_key = read("t/certs/server.key"),
+                },
+                soap = {version = "auto", must_understand = true},
+                timestamp = {ttl_seconds = 300},
+            }
+            local function envelope(security)
+                return string.format([[
+<s:Envelope xmlns:s="%s" xmlns:wsse="%s" xmlns:wsu="%s">
+  <s:Header><wsse:Security>%s</wsse:Security></s:Header>
+  <s:Body><Ping/></s:Body>
+</s:Envelope>]], ns.soap11, ns.wsse, ns.wsu, security)
+            end
+
+            local _, code, err = signer.sign(envelope([[
+<wsu:Timestamp wsu:Id="TS-client">
+  <wsu:Created>2026-10-05T00:00:00Z</wsu:Created>
+  <wsu:Expires>2026-10-05T00:05:00Z</wsu:Expires>
+</wsu:Timestamp>]]), conf, 1790856000)
+            ngx.say(code, ": ", err)
+
+            local signed = assert(signer.sign(envelope([[
+<wsse:UsernameToken><wsse:Username>user</wsse:Username></wsse:UsernameToken>]]),
+                conf, 1790856000))
+            local doc = assert(xml.parse(signed))
+            local root = assert(xml.root(doc))
+            ngx.say(#xml.find_all(root, ns.wsse, "Security"), " ",
+                    #xml.find_all(root, ns.wsse, "UsernameToken"), " ",
+                    #xml.find_all(root, ns.wsu, "Timestamp"), " ",
+                    #xml.find_all(root, ns.ds, "Signature"))
+            xml.free_document(doc)
+        }
+    }
+--- request
+GET /t
+--- response_body
+invalid_soap: wsse:Security already contains a wsu:Timestamp
+1 1 1 1
+
+
+
+=== TEST 8: canonicalize default-namespaced Body content as external verifiers do
+--- apisix_yaml
+routes: []
+#END
+--- config
+    location /t {
+        content_by_lua_block {
+            local digest = require("resty.openssl.digest")
+            local signer = require("apisix.plugins.soap-signer.signer")
+            local xml = require("apisix.plugins.signing.xml")
+            local ns = signer.namespaces
+
+            local function read(path)
+                local file = assert(io.open(path, "rb"))
+                local value = file:read("*a")
+                file:close()
+                return value
+            end
+
+            local signed = assert(signer.sign([[
+<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
+  <s:Body><Ping xmlns="urn:test"><Item>1</Item><Note xmlns="">x</Note></Ping></s:Body>
+</s:Envelope>]], {
+                credentials = {
+                    certificate = read("t/certs/server.crt"),
+                    private_key = read("t/certs/server.key"),
+                },
+                soap = {version = "auto", must_understand = true},
+                timestamp = {ttl_seconds = 300},
+            }, 1790856000))
+
+            local doc = assert(xml.parse(signed))
+            local root = assert(xml.root(doc))
+            local body = assert(xml.find_child(root, ns.soap11, "Body"))
+            local body_id = assert(xml.get_namespaced_property(body, ns.wsu, "Id"))
+
+            -- Exclusive C14N of the Body, written out by hand.
+            local expected = '<s:Body xmlns:s="' .. ns.soap11 .. '" xmlns:wsu="' .. ns.wsu
+                             .. '" wsu:Id="' .. body_id .. '">'
+                             .. '<Ping xmlns="urn:test"><Item>1</Item><Note xmlns="">x</Note></Ping>'
+                             .. "</s:Body>"
+            local context = assert(digest.new("sha256"))
+            assert(context:update(expected))
+            local expected_digest = ngx.encode_base64(assert(context:final()))
+
+            local actual_digest
+            for _, reference in ipairs(xml.find_all(root, ns.ds, "Reference")) do
+                if xml.get_property(reference, "URI") == "#" .. body_id then
+                    actual_digest = xml.content(assert(xml.find_child(
+                        reference, ns.ds, "DigestValue")))
+                end
+            end
+            xml.free_document(doc)
+            ngx.say(actual_digest == expected_digest)
+        }
+    }
+--- request
+GET /t
+--- response_body
+true

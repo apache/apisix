@@ -52,9 +52,10 @@ rewrite phase:
 1. Buffers and parses the SOAP XML with external network access disabled.
 2. Detects SOAP 1.1 or SOAP 1.2 from the Envelope namespace and validates it
    against `soap.version`.
-3. Preserves an existing SOAP Header or creates one before the Body.
+3. Preserves an existing SOAP Header, which must precede the Body, or creates
+   one before the Body.
 4. Creates or reuses `wsse:Security` and sets the SOAP `mustUnderstand`
-   attribute.
+   attribute. A reused header must not already contain a `wsu:Timestamp`.
 5. Assigns a `wsu:Id` to the Body when it does not already have one.
 6. Creates a UTC Timestamp with `Created`, `Expires`, and a unique `wsu:Id`.
 7. Embeds the X.509 certificate in a `wsse:BinarySecurityToken` unless
@@ -319,7 +320,7 @@ unchanged.
 | HTTP status | Message | Cause |
 | --- | --- | --- |
 | `400` | `empty_body` | The selected request has no body. |
-| `400` | `invalid_soap` | XML parsing failed, Body is absent, duplicate `wsu:Id` values exist, or a DTD/entity declaration is present. |
+| `400` | `invalid_soap` | XML parsing failed, Body is absent or duplicated, Header is duplicated or follows the Body, duplicate `wsu:Id` values exist, the `wsse:Security` header already contains a `wsu:Timestamp`, or a DTD/entity declaration is present. |
 | `400` | `not_soap` | The root is not a supported SOAP Envelope or does not match `soap.version`. |
 | `400` | `already_signed` | The message already contains a `ds:Signature`. |
 | `413` | `body_too_large` | The body exceeds `request.max_body_bytes`. |

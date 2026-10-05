@@ -20,6 +20,9 @@ local resty_sha256 = require("resty.sha256")
 local resty_string = require("resty.string")
 local x509 = require("resty.openssl.x509")
 
+local tostring = tostring
+local type = type
+
 
 local credential_cache = core.lrucache.new({
     ttl = 300,

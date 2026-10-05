@@ -16,6 +16,8 @@
 --
 local ffi = require("ffi")
 
+local type = type
+
 
 ffi.cdef[[
 typedef unsigned char xmlChar;
@@ -84,7 +86,6 @@ xmlNodePtr xmlDocGetRootElement(const xmlDoc *doc);
 xmlDocPtr xmlNewDoc(const xmlChar *version);
 xmlNodePtr xmlDocCopyNode(xmlNodePtr node, xmlDocPtr doc, int extended);
 xmlNodePtr xmlDocSetRootElement(xmlDocPtr doc, xmlNodePtr root);
-int xmlReconciliateNs(xmlDocPtr doc, xmlNodePtr tree);
 
 xmlNsPtr xmlNewNs(xmlNodePtr node, const xmlChar *href, const xmlChar *prefix);
 xmlNsPtr xmlSearchNs(xmlDocPtr doc, xmlNodePtr node, const xmlChar *name_space);
@@ -339,7 +340,6 @@ function _M.canonicalize(node)
         return nil, "failed to copy canonicalization node"
     end
     C.xmlDocSetRootElement(doc, copy)
-    C.xmlReconciliateNs(doc, copy)
 
     local result, err = canonicalize_document(doc)
     C.xmlFreeDoc(doc)

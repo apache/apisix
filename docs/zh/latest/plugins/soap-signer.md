@@ -42,8 +42,8 @@ description: soap-signer 插件使用 X.509 WS-Security 签名为 SOAP 请求体
 
 1. 在禁用外部网络访问的情况下缓冲并解析 SOAP XML。
 2. 根据 Envelope 命名空间识别 SOAP 1.1 或 SOAP 1.2，并按照 `soap.version` 验证版本。
-3. 保留已有的 SOAP Header；若不存在，则在 Body 前创建。
-4. 创建或复用 `wsse:Security`，并设置 SOAP `mustUnderstand` 属性。
+3. 保留已有的 SOAP Header（必须位于 Body 之前）；若不存在，则在 Body 前创建。
+4. 创建或复用 `wsse:Security`，并设置 SOAP `mustUnderstand` 属性；被复用的标头不得已经包含 `wsu:Timestamp`。
 5. 如果 Body 尚无 `wsu:Id`，则为其分配 ID。
 6. 创建包含 `Created`、`Expires` 和唯一 `wsu:Id` 的 UTC Timestamp。
 7. 除非 `signature.key_info` 为 `none`，否则在 `wsse:BinarySecurityToken` 中嵌入 X.509 证书。
@@ -240,7 +240,7 @@ curl http://127.0.0.1:9080/signed-soap \
 | HTTP 状态码 | 消息 | 原因 |
 | --- | --- | --- |
 | `400` | `empty_body` | 被选中的请求没有请求体。 |
-| `400` | `invalid_soap` | XML 解析失败、Body 缺失、存在重复 `wsu:Id`，或存在 DTD/实体声明。 |
+| `400` | `invalid_soap` | XML 解析失败、Body 缺失或重复、Header 重复或位于 Body 之后、存在重复 `wsu:Id`、`wsse:Security` 标头已包含 `wsu:Timestamp`，或存在 DTD/实体声明。 |
 | `400` | `not_soap` | 根元素不是受支持的 SOAP Envelope，或与 `soap.version` 不匹配。 |
 | `400` | `already_signed` | 消息已包含 `ds:Signature`。 |
 | `413` | `body_too_large` | 请求体超过 `request.max_body_bytes`。 |

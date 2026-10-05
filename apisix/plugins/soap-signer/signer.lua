@@ -21,6 +21,9 @@ local algorithms = require("apisix.plugins.signing.algorithms")
 local credentials = require("apisix.plugins.signing.credentials")
 local xml = require("apisix.plugins.signing.xml")
 
+local ipairs = ipairs
+local ngx = ngx
+local os = os
 local encode_base64 = ngx.encode_base64
 
 local SOAP11 = "http://schemas.xmlsoap.org/soap/envelope/"
@@ -79,6 +82,9 @@ local function find_envelope_parts(doc)
             elseif name == "Header" then
                 if header then
                     return nil, "invalid_soap", "at most one SOAP Header is allowed"
+                end
+                if body then
+                    return nil, "invalid_soap", "SOAP Header must precede SOAP Body"
                 end
                 header = child
             end
@@ -302,6 +308,12 @@ function _M.sign(body, conf, now)
         return nil, "invalid_soap", unique_err
     end
 
+    envelope.security = xml.find_child(envelope.header, WSSE, "Security")
+    if envelope.security and xml.find_child(envelope.security, WSU, "Timestamp") then
+        xml.free_document(doc)
+        return nil, "invalid_soap", "wsse:Security already contains a wsu:Timestamp"
+    end
+
     local runtime, credential_err = credentials.load(conf.credentials)
     if not runtime then
         xml.free_document(doc)
@@ -309,7 +321,6 @@ function _M.sign(body, conf, now)
     end
 
     ensure_namespaces(envelope)
-    envelope.security = xml.find_child(envelope.header, WSSE, "Security")
     if not envelope.security then
         envelope.security = xml.new_child(envelope.header, envelope.wsse_ns, "Security")
     end

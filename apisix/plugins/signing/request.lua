@@ -16,7 +16,10 @@
 --
 local core = require("apisix.core")
 
+local ipairs = ipairs
 local ngx = ngx
+local tostring = tostring
+local type = type
 
 local _M = {}
 

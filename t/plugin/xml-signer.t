@@ -410,10 +410,22 @@ routes: []
 
                 content_type = "application/xml"
                 body = nil
-                body_err = "too large"
+                body_err = "request size 2048 is greater than the maximum size 1024 allowed"
                 status, response = request.rewrite("xml-signer", conf, {}, sign)
                 assert(status == 413)
                 assert(response.message == "body_too_large")
+                assert(sign_calls == 1)
+
+                body_err = "failed to read request body"
+                status, response = request.rewrite("xml-signer", conf, {}, sign)
+                assert(status == 500)
+                assert(response.message == "internal_error")
+                assert(sign_calls == 1)
+
+                body_err = nil
+                status, response = request.rewrite("xml-signer", conf, {}, sign)
+                assert(status == 400)
+                assert(response.message == "empty_body")
                 assert(sign_calls == 1)
             end)
 
@@ -431,3 +443,7 @@ routes: []
 GET /t
 --- response_body
 request pipeline verified
+--- error_log
+xml-signer failed to read request body: request size 2048 is greater than the maximum size 1024 allowed
+xml-signer failed to read request body: failed to read request body
+xml-signer failed to read request body: nil
