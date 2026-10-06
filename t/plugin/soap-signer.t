@@ -74,6 +74,9 @@ routes: []
 GET /t
 --- response_body
 true
+false
+true
+false
 
 
 
