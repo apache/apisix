@@ -59,10 +59,12 @@ rewrite phase:
 6. Creates an enveloped `ds:Signature` under the document root.
 7. Adds X.509 `ds:KeyInfo` unless `signature.key_info` is `none`.
 8. Canonicalizes and signs `ds:SignedInfo` with the configured RSA private key.
-9. Replaces the upstream request body and updates `Content-Length`.
+9. Replaces the upstream request body, updates `Content-Length`, and removes
+   body-digest headers that no longer describe the signed body.
 
 The body is serialized as UTF-8 after signing. Insignificant formatting such as
 indentation or quote style can therefore differ from the original request.
+Requests with an explicit non-UTF-8 `charset` are rejected.
 
 The generated signature has the following structure:
 
@@ -111,7 +113,7 @@ The generated signature has the following structure:
 | `signature.algorithm` | string | False | `rsa-sha256` | Signature and reference digest algorithm. Valid values are `rsa-sha256` and `rsa-sha1`. |
 | `signature.key_info` | string | False | `x509_data` | Key information included in the signature. Use `x509_data` to embed the certificate or `none` to omit `ds:KeyInfo`. |
 | `request.methods` | array[string] | False | `["POST"]` | Request methods to sign. Other methods pass through unchanged. |
-| `request.content_types` | array[string] | False | `["application/xml", "text/xml"]` | Accepted media types. Parameters such as `charset` are ignored. |
+| `request.content_types` | array[string] | False | `["application/xml", "text/xml"]` | Accepted media types. Parameters are ignored except that an explicit non-UTF-8 `charset` is rejected. |
 | `request.max_body_bytes` | integer | False | `5242880` | Maximum request body size in bytes. Valid range: 1024 to 67108864. |
 
 NOTE: `encrypt_fields = {"credentials.private_key"}` is defined in the
@@ -302,7 +304,7 @@ through unchanged.
 | `400` | `invalid_xml` | XML parsing failed, the document has no root, or a DTD/entity declaration is present. |
 | `400` | `already_signed` | The document already contains a `ds:Signature`. |
 | `413` | `body_too_large` | The body exceeds `request.max_body_bytes`. |
-| `415` | `unsupported_media_type` | The selected method uses a Content-Type not listed in `request.content_types`. |
+| `415` | `unsupported_media_type` | The selected method uses a Content-Type not listed in `request.content_types` or declares a non-UTF-8 charset. |
 | `500` | `credential_error` | A Secret could not be resolved, PEM parsing failed, the key is not RSA, or the certificate and key do not match. |
 | `500` | `signing_error` | Canonicalization, digest generation, signing, or serialization failed. |
 

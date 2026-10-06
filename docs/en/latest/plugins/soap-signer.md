@@ -62,7 +62,12 @@ rewrite phase:
   `signature.key_info` is `none`.
 8. Calculates a digest for both the Body and Timestamp using the algorithm
    selected by `signature.algorithm`.
-9. Signs canonicalized `ds:SignedInfo` and updates the upstream request body.
+9. Signs canonicalized `ds:SignedInfo`, replaces the upstream request body,
+   updates `Content-Length`, and removes body-digest headers that no longer
+   describe the signed body.
+
+The body is serialized as UTF-8. Requests with an explicit non-UTF-8 `charset`
+are rejected.
 
 The generated security header has this general structure:
 
@@ -113,7 +118,7 @@ The generated security header has this general structure:
 | `soap.must_understand` | boolean | False | `true` | Value of the SOAP `mustUnderstand` attribute on the Security header. |
 | `timestamp.ttl_seconds` | integer | False | `300` | Timestamp lifetime. Valid range: 1 to 86400 seconds. |
 | `request.methods` | array[string] | False | `["POST"]` | Request methods to sign. Other methods pass through unchanged. |
-| `request.content_types` | array[string] | False | `["text/xml", "application/soap+xml", "application/xml"]` | Accepted media types. |
+| `request.content_types` | array[string] | False | `["text/xml", "application/soap+xml", "application/xml"]` | Accepted media types. An explicit non-UTF-8 `charset` is rejected. |
 | `request.max_body_bytes` | integer | False | `5242880` | Maximum request body size in bytes. Valid range: 1024 to 67108864. |
 
 NOTE: `encrypt_fields = {"credentials.private_key"}` is defined in the
@@ -320,11 +325,11 @@ unchanged.
 | HTTP status | Message | Cause |
 | --- | --- | --- |
 | `400` | `empty_body` | The selected request has no body. |
-| `400` | `invalid_soap` | XML parsing failed, Body is absent or duplicated, Header is duplicated or follows the Body, duplicate `wsu:Id` values exist, the `wsse:Security` header already contains a `wsu:Timestamp`, or a DTD/entity declaration is present. |
+| `400` | `invalid_soap` | XML parsing failed, Body is absent or duplicated, Header is duplicated or follows the Body, recognized XML ID values (`wsu:Id`, `xml:id`, and unqualified `Id`) are duplicated, the `wsse:Security` header already contains a `wsu:Timestamp`, or a DTD/entity declaration is present. |
 | `400` | `not_soap` | The root is not a supported SOAP Envelope or does not match `soap.version`. |
 | `400` | `already_signed` | The message already contains a `ds:Signature`. |
 | `413` | `body_too_large` | The body exceeds `request.max_body_bytes`. |
-| `415` | `unsupported_media_type` | The selected method uses a Content-Type not listed in `request.content_types`. |
+| `415` | `unsupported_media_type` | The selected method uses a Content-Type not listed in `request.content_types` or declares a non-UTF-8 charset. |
 | `500` | `credential_error` | A Secret could not be resolved, PEM parsing failed, the key is not RSA, or the certificate and key do not match. |
 | `500` | `signing_error` | ID generation, canonicalization, digest generation, signing, or serialization failed. |
 

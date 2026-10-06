@@ -352,7 +352,7 @@ routes: []
             local body = "<root/>"
             local body_err
             local rewritten_body
-            local cleared_header
+            local cleared_headers = {}
 
             ngx.req.get_method = function()
                 return method
@@ -361,7 +361,7 @@ routes: []
                 rewritten_body = value
             end
             ngx.req.clear_header = function(name)
-                cleared_header = name
+                cleared_headers[name] = true
             end
             core.request.header = function(_, name)
                 assert(name == "Content-Type")
@@ -394,7 +394,12 @@ routes: []
                 assert(sign_calls == 1)
                 assert(rewritten_body == "<root/>-signed")
                 assert(ctx["Content-Length"] == tostring(#rewritten_body))
-                assert(cleared_header == "Transfer-Encoding")
+                assert(cleared_headers["Transfer-Encoding"])
+                for _, name in ipairs({
+                    "Content-MD5", "Digest", "Content-Digest", "Repr-Digest",
+                }) do
+                    assert(cleared_headers[name])
+                end
 
                 method = "GET"
                 assert(request.rewrite("xml-signer", conf, {}, sign) == nil)
@@ -403,6 +408,20 @@ routes: []
                 method = "POST"
                 content_type = "text/plain"
                 local status, response = request.rewrite(
+                    "xml-signer", conf, {}, sign)
+                assert(status == 415)
+                assert(response.message == "unsupported_media_type")
+                assert(sign_calls == 1)
+
+                content_type = "application/xml; charset=iso-8859-1"
+                status, response = request.rewrite(
+                    "xml-signer", conf, {}, sign)
+                assert(status == 415)
+                assert(response.message == "unsupported_media_type")
+                assert(sign_calls == 1)
+
+                content_type = "application/xml; charset=utf-8; charset=iso-8859-1"
+                status, response = request.rewrite(
                     "xml-signer", conf, {}, sign)
                 assert(status == 415)
                 assert(response.message == "unsupported_media_type")

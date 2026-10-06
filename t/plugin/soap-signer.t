@@ -391,6 +391,13 @@ routes: []
                 envelope("<s:Header/><s:Header/><s:Body/>"),
                 envelope("<s:Header/>"),
                 '<!DOCTYPE s:Envelope [<!ENTITY x "y">]>' .. envelope("<s:Body/>"),
+                envelope('<s:Body xmlns:wsu="' .. signer.namespaces.wsu
+                         .. '" wsu:Id="duplicate"><Ping xml:id="duplicate"/>'
+                         .. "</s:Body>"),
+                envelope('<s:Body xmlns:wsu="' .. signer.namespaces.wsu
+                         .. '" xmlns:xenc="http://www.w3.org/2001/04/xmlenc#'
+                         .. '" wsu:Id="duplicate"><xenc:EncryptedData '
+                         .. 'Id="duplicate"/></s:Body>'),
             }
             for _, body in ipairs(bodies) do
                 local _, code, err = signer.sign(body, conf, 1790856000)
@@ -406,6 +413,8 @@ invalid_soap: exactly one SOAP Body is required
 invalid_soap: at most one SOAP Header is allowed
 invalid_soap: SOAP Body is required
 invalid_soap: DTD and entity declarations are not allowed
+invalid_soap: duplicate XML ID
+invalid_soap: duplicate XML ID
 
 
 

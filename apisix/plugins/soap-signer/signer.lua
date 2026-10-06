@@ -162,8 +162,7 @@ local function reject_duplicate_ids(root)
     local seen = {}
     local duplicate
     xml.walk(root, function(node)
-        local id = get_id(node)
-        if id then
+        for _, id in ipairs(xml.id_values(node)) do
             if seen[id] then
                 duplicate = id
             end

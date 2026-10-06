@@ -48,9 +48,9 @@ description: xml-signer 插件为 XML 请求体添加 enveloped XML 数字签名
 6. 在文档根元素下创建 enveloped `ds:Signature`。
 7. 除非 `signature.key_info` 为 `none`，否则添加 X.509 `ds:KeyInfo`。
 8. 对 `ds:SignedInfo` 执行 canonicalization，并使用配置的 RSA 私钥签名。
-9. 替换发往上游的请求体并更新 `Content-Length`。
+9. 替换发往上游的请求体、更新 `Content-Length`，并移除不再对应签名后请求体的摘要标头。
 
-签名后的请求体会以 UTF-8 序列化，因此缩进、引号风格等无关格式可能与原请求不同。
+签名后的请求体会以 UTF-8 序列化，因此缩进、引号风格等无关格式可能与原请求不同。显式声明非 UTF-8 `charset` 的请求会被拒绝。
 
 生成的签名结构如下：
 
@@ -96,7 +96,7 @@ description: xml-signer 插件为 XML 请求体添加 enveloped XML 数字签名
 | `signature.algorithm` | string | 否 | `rsa-sha256` | 签名和引用摘要算法。可选值为 `rsa-sha256` 和 `rsa-sha1`。 |
 | `signature.key_info` | string | 否 | `x509_data` | 签名中包含的密钥信息。使用 `x509_data` 嵌入证书，或使用 `none` 省略 `ds:KeyInfo`。 |
 | `request.methods` | array[string] | 否 | `["POST"]` | 要签名的请求方法。其他方法的请求保持不变并直接转发。 |
-| `request.content_types` | array[string] | 否 | `["application/xml", "text/xml"]` | 接受的媒体类型；会忽略 `charset` 等参数。 |
+| `request.content_types` | array[string] | 否 | `["application/xml", "text/xml"]` | 接受的媒体类型；会忽略其他参数，但会拒绝显式声明非 UTF-8 `charset` 的请求。 |
 | `request.max_body_bytes` | integer | 否 | `5242880` | 请求体最大字节数，有效范围为 1024 到 67108864。 |
 
 注意：schema 中定义了 `encrypt_fields = {"credentials.private_key"}`，因此直接配置的私钥会在 etcd 中加密。建议使用 [APISIX Secret](../terminology/secret.md) 引用，避免密钥材料保存在路由配置中。
@@ -223,7 +223,7 @@ curl http://127.0.0.1:9080/signed-xml \
 | `400` | `invalid_xml` | XML 解析失败、文档没有根元素，或存在 DTD/实体声明。 |
 | `400` | `already_signed` | 文档已包含 `ds:Signature`。 |
 | `413` | `body_too_large` | 请求体超过 `request.max_body_bytes`。 |
-| `415` | `unsupported_media_type` | 请求方法匹配，但 Content-Type 未列入 `request.content_types`。 |
+| `415` | `unsupported_media_type` | 请求方法匹配，但 Content-Type 未列入 `request.content_types`，或声明了非 UTF-8 字符集。 |
 | `500` | `credential_error` | Secret 解析失败、PEM 解析失败、密钥不是 RSA，或证书与私钥不匹配。 |
 | `500` | `signing_error` | canonicalization、摘要生成、签名或序列化失败。 |
 

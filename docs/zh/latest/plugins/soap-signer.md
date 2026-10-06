@@ -48,7 +48,9 @@ description: soap-signer 插件使用 X.509 WS-Security 签名为 SOAP 请求体
 6. 创建包含 `Created`、`Expires` 和唯一 `wsu:Id` 的 UTC Timestamp。
 7. 除非 `signature.key_info` 为 `none`，否则在 `wsse:BinarySecurityToken` 中嵌入 X.509 证书。
 8. 使用 `signature.algorithm` 指定的算法分别计算 Body 和 Timestamp 的摘要。
-9. 对 canonicalized `ds:SignedInfo` 签名，并更新发往上游的请求体。
+9. 对 canonicalized `ds:SignedInfo` 签名，替换发往上游的请求体、更新 `Content-Length`，并移除不再对应签名后请求体的摘要标头。
+
+请求体会以 UTF-8 序列化。显式声明非 UTF-8 `charset` 的请求会被拒绝。
 
 生成的安全标头大致如下：
 
@@ -95,7 +97,7 @@ description: soap-signer 插件使用 X.509 WS-Security 签名为 SOAP 请求体
 | `soap.must_understand` | boolean | 否 | `true` | Security 标头中 SOAP `mustUnderstand` 属性的值。 |
 | `timestamp.ttl_seconds` | integer | 否 | `300` | Timestamp 有效期，有效范围为 1 到 86400 秒。 |
 | `request.methods` | array[string] | 否 | `["POST"]` | 要签名的请求方法。其他方法的请求保持不变并直接转发。 |
-| `request.content_types` | array[string] | 否 | `["text/xml", "application/soap+xml", "application/xml"]` | 接受的媒体类型。 |
+| `request.content_types` | array[string] | 否 | `["text/xml", "application/soap+xml", "application/xml"]` | 接受的媒体类型；显式声明非 UTF-8 `charset` 的请求会被拒绝。 |
 | `request.max_body_bytes` | integer | 否 | `5242880` | 请求体最大字节数，有效范围为 1024 到 67108864。 |
 
 注意：schema 中定义了 `encrypt_fields = {"credentials.private_key"}`，因此直接配置的私钥会在 etcd 中加密。建议使用 [APISIX Secret](../terminology/secret.md) 引用，避免密钥材料保存在路由配置中。
@@ -240,11 +242,11 @@ curl http://127.0.0.1:9080/signed-soap \
 | HTTP 状态码 | 消息 | 原因 |
 | --- | --- | --- |
 | `400` | `empty_body` | 被选中的请求没有请求体。 |
-| `400` | `invalid_soap` | XML 解析失败、Body 缺失或重复、Header 重复或位于 Body 之后、存在重复 `wsu:Id`、`wsse:Security` 标头已包含 `wsu:Timestamp`，或存在 DTD/实体声明。 |
+| `400` | `invalid_soap` | XML 解析失败、Body 缺失或重复、Header 重复或位于 Body 之后、XML ID（`wsu:Id`、`xml:id` 和无命名空间的 `Id`）重复、`wsse:Security` 标头已包含 `wsu:Timestamp`，或存在 DTD/实体声明。 |
 | `400` | `not_soap` | 根元素不是受支持的 SOAP Envelope，或与 `soap.version` 不匹配。 |
 | `400` | `already_signed` | 消息已包含 `ds:Signature`。 |
 | `413` | `body_too_large` | 请求体超过 `request.max_body_bytes`。 |
-| `415` | `unsupported_media_type` | 请求方法匹配，但 Content-Type 未列入 `request.content_types`。 |
+| `415` | `unsupported_media_type` | 请求方法匹配，但 Content-Type 未列入 `request.content_types`，或声明了非 UTF-8 字符集。 |
 | `500` | `credential_error` | Secret 解析失败、PEM 解析失败、密钥不是 RSA，或证书与私钥不匹配。 |
 | `500` | `signing_error` | ID 生成、canonicalization、摘要生成、签名或序列化失败。 |
 

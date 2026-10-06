@@ -103,6 +103,7 @@ xmlAttrPtr xmlSetProp(xmlNodePtr node, const xmlChar *name,
                       const xmlChar *value);
 xmlChar *xmlGetNsProp(const xmlNodePtr node, const xmlChar *name,
                       const xmlChar *name_space);
+xmlChar *xmlGetNoNsProp(const xmlNodePtr node, const xmlChar *name);
 xmlChar *xmlGetProp(const xmlNodePtr node, const xmlChar *name);
 xmlChar *xmlNodeGetContent(const xmlNodePtr cur);
 
@@ -123,6 +124,9 @@ local XML_ELEMENT_NODE = 1
 local XML_DTD_NODE = 14
 local XML_PARSE_NONET = 2048
 local EXCLUSIVE_C14N = 1
+local XML_ID_NAMESPACE = "http://www.w3.org/XML/1998/namespace"
+local WSU_ID_NAMESPACE = "http://docs.oasis-open.org/wss/2004/01/"
+                          .. "oasis-200401-wss-wssecurity-utility-1.0.xsd"
 
 local _M = {}
 
@@ -299,6 +303,36 @@ end
 
 function _M.get_property(node, name)
     return copy_and_free(C.xmlGetProp(node, xml_char(name)))
+end
+
+
+function _M.id_values(node)
+    local values = {}
+    local attribute = node.properties
+    while attribute ~= nil do
+        local name = ffi.string(attribute.name)
+        local namespace_uri
+        if attribute.ns ~= nil and attribute.ns.href ~= nil then
+            namespace_uri = ffi.string(attribute.ns.href)
+        end
+
+        if (name == "Id" and (namespace_uri == nil
+                              or namespace_uri == WSU_ID_NAMESPACE))
+           or (name == "id" and namespace_uri == XML_ID_NAMESPACE) then
+            local value
+            if namespace_uri then
+                value = copy_and_free(C.xmlGetNsProp(
+                    node, xml_char(name), xml_char(namespace_uri)))
+            else
+                value = copy_and_free(C.xmlGetNoNsProp(node, xml_char(name)))
+            end
+            if value then
+                values[#values + 1] = value
+            end
+        end
+        attribute = attribute.next
+    end
+    return values
 end
 
 

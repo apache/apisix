@@ -23,6 +23,13 @@ local type = type
 
 local _M = {}
 
+local BODY_DIGEST_HEADERS = {
+    "Content-MD5",
+    "Digest",
+    "Content-Digest",
+    "Repr-Digest",
+}
+
 
 local function contains(values, expected)
     for _, value in ipairs(values) do
@@ -43,6 +50,48 @@ local function normalized_content_type(value)
 end
 
 
+local function has_unsupported_charset(value)
+    if not value then
+        return false
+    end
+
+    local parameter_start
+    local quoted = false
+    local escaped = false
+
+    for index = 1, #value + 1 do
+        local char = value:sub(index, index)
+        if index > #value or (char == ";" and not quoted) then
+            if parameter_start then
+                local parameter = value:sub(parameter_start, index - 1)
+                local name, charset = parameter:match(
+                    "^%s*([^=%s]+)%s*=%s*(.-)%s*$")
+                if name and name:lower() == "charset" then
+                    charset = charset:match("^%s*(.-)%s*$")
+                    if charset:sub(1, 1) == '"' and charset:sub(-1) == '"' then
+                        charset = charset:sub(2, -2)
+                    end
+                    charset = charset:lower()
+                    if charset ~= "utf-8" and charset ~= "utf8" then
+                        return true
+                    end
+                end
+            end
+            parameter_start = index + 1
+        elseif char == '"' and not escaped then
+            quoted = not quoted
+        end
+
+        if char == "\\" and quoted and not escaped then
+            escaped = true
+        else
+            escaped = false
+        end
+    end
+    return false
+end
+
+
 function _M.rewrite(plugin_name, conf, ctx, sign)
     if type(conf) ~= "table" then
         return 500, {message = "internal_error"}
@@ -57,9 +106,12 @@ function _M.rewrite(plugin_name, conf, ctx, sign)
         return
     end
 
-    local content_type = normalized_content_type(
-        core.request.header(ctx, "Content-Type"))
+    local content_type_header = core.request.header(ctx, "Content-Type")
+    local content_type = normalized_content_type(content_type_header)
     if not contains(conf.request.content_types, content_type) then
+        return 415, {message = "unsupported_media_type"}
+    end
+    if has_unsupported_charset(content_type_header) then
         return 415, {message = "unsupported_media_type"}
     end
 
@@ -90,6 +142,9 @@ function _M.rewrite(plugin_name, conf, ctx, sign)
     ngx.req.set_body_data(signed)
     core.request.set_header(ctx, "Content-Length", tostring(#signed))
     ngx.req.clear_header("Transfer-Encoding")
+    for _, header in ipairs(BODY_DIGEST_HEADERS) do
+        ngx.req.clear_header(header)
+    end
 end
 
 
