@@ -28,6 +28,7 @@ local encode_base64 = ngx.encode_base64
 
 local SOAP11 = "http://schemas.xmlsoap.org/soap/envelope/"
 local SOAP12 = "http://www.w3.org/2003/05/soap-envelope"
+local SOAP12_ULTIMATE_RECEIVER = SOAP12 .. "/role/ultimateReceiver"
 local WSSE = "http://docs.oasis-open.org/wss/2004/01/"
              .. "oasis-200401-wss-wssecurity-secext-1.0.xsd"
 local WSU = "http://docs.oasis-open.org/wss/2004/01/"
@@ -106,6 +107,25 @@ local function find_envelope_parts(doc)
         body = body,
         soap_namespace = soap_namespace,
     }
+end
+
+
+local function find_security(header, soap_namespace)
+    local role_attribute = soap_namespace == SOAP11 and "actor" or "role"
+    local security
+    for child in xml.each_child(header) do
+        if xml.name(child) == "Security" and xml.namespace_uri(child) == WSSE then
+            local role = xml.get_namespaced_property(child, soap_namespace, role_attribute)
+            if role == nil or (soap_namespace == SOAP12
+                               and role == SOAP12_ULTIMATE_RECEIVER) then
+                if security then
+                    return nil, "multiple wsse:Security headers target the ultimate receiver"
+                end
+                security = child
+            end
+        end
+    end
+    return security
 end
 
 
@@ -308,7 +328,13 @@ function _M.sign(body, conf, now)
         return nil, "invalid_soap", unique_err
     end
 
-    envelope.security = xml.find_child(envelope.header, WSSE, "Security")
+    local security_err
+    envelope.security, security_err = find_security(envelope.header,
+                                                     envelope.soap_namespace)
+    if security_err then
+        xml.free_document(doc)
+        return nil, "invalid_soap", security_err
+    end
     if envelope.security and xml.find_child(envelope.security, WSU, "Timestamp") then
         xml.free_document(doc)
         return nil, "invalid_soap", "wsse:Security already contains a wsu:Timestamp"

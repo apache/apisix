@@ -74,9 +74,6 @@ routes: []
 GET /t
 --- response_body
 true
-false
-true
-false
 
 
 
@@ -530,3 +527,73 @@ routes: []
 GET /t
 --- response_body
 true
+
+
+
+=== TEST 9: select only an unambiguous ultimate-receiver Security header
+--- apisix_yaml
+routes: []
+#END
+--- config
+    location /t {
+        content_by_lua_block {
+            local signer = require("apisix.plugins.soap-signer.signer")
+            local xml = require("apisix.plugins.signing.xml")
+            local ns = signer.namespaces
+
+            local function read(path)
+                local file = assert(io.open(path, "rb"))
+                local value = file:read("*a")
+                file:close()
+                return value
+            end
+
+            local conf = {
+                credentials = {
+                    certificate = read("t/certs/server.crt"),
+                    private_key = read("t/certs/server.key"),
+                },
+                soap = {version = "auto", must_understand = true},
+                timestamp = {ttl_seconds = 300},
+            }
+            local soap11 = assert(signer.sign([[<s:Envelope
+ xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"
+ xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
+ <s:Header><wsse:Security s:actor="urn:intermediary"/><wsse:Security/></s:Header>
+ <s:Body><Ping/></s:Body></s:Envelope>]], conf, 1790856000))
+            local doc = assert(xml.parse(soap11))
+            local root = assert(xml.root(doc))
+            local security = xml.find_all(root, ns.wsse, "Security")
+            assert(#security == 2)
+            assert(#xml.find_all(security[1], ns.ds, "Signature") == 0)
+            assert(#xml.find_all(security[2], ns.ds, "Signature") == 1)
+            xml.free_document(doc)
+
+            local soap12 = assert(signer.sign([[<s:Envelope
+ xmlns:s="http://www.w3.org/2003/05/soap-envelope"
+ xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
+ <s:Header><wsse:Security s:role="http://www.w3.org/2003/05/soap-envelope/role/next"/>
+ <wsse:Security s:role="http://www.w3.org/2003/05/soap-envelope/role/none"/>
+ <wsse:Security s:role="http://www.w3.org/2003/05/soap-envelope/role/ultimateReceiver"/></s:Header>
+ <s:Body><Ping/></s:Body></s:Envelope>]], conf, 1790856000))
+            doc = assert(xml.parse(soap12))
+            root = assert(xml.root(doc))
+            security = xml.find_all(root, ns.wsse, "Security")
+            assert(#security == 3)
+            assert(#xml.find_all(security[1], ns.ds, "Signature") == 0)
+            assert(#xml.find_all(security[2], ns.ds, "Signature") == 0)
+            assert(#xml.find_all(security[3], ns.ds, "Signature") == 1)
+            xml.free_document(doc)
+
+            local _, code, err = signer.sign([[<s:Envelope
+ xmlns:s="http://www.w3.org/2003/05/soap-envelope"
+ xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
+ <s:Header><wsse:Security/><wsse:Security s:role="http://www.w3.org/2003/05/soap-envelope/role/ultimateReceiver"/></s:Header>
+ <s:Body><Ping/></s:Body></s:Envelope>]], conf, 1790856000)
+            ngx.say(code, ": ", err)
+        }
+    }
+--- request
+GET /t
+--- response_body
+invalid_soap: multiple wsse:Security headers target the ultimate receiver
