@@ -55,6 +55,9 @@ __DATA__
                                 "session": {
                                     "secret": "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK"
                                 }
+                            },
+                            "proxy-rewrite": {
+                                "regex_uri": ["^/oidc-tpl-default/.*", "/uri"]
                             }
                         },
                         "upstream": {
@@ -123,7 +126,7 @@ passed
 --- no_error_log
 [error]
 --- response_body_like
-uri: /oidc-tpl-default/uri
+uri: /uri
 cookie: .*
 
 
@@ -210,6 +213,9 @@ openid-connect: resolved value of "client_id" is empty
                                 "ssl_verify": false,
                                 "timeout": 10,
                                 "introspection_endpoint_auth_method": "client_secret_post"
+                            },
+                            "proxy-rewrite": {
+                                "regex_uri": ["^/oidc-tpl-header/.*", "/hello"]
                             }
                         },
                         "upstream": {
@@ -273,6 +279,8 @@ passed
             ngx.say(call(secret))
         }
     }
+--- error_log
+OIDC introspection failed
 --- response_body
 200
 401
