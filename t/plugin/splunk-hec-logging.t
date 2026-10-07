@@ -601,3 +601,53 @@ passed
 tail -n 1 ci/pod/vector/splunk.log
 --- response_body eval
 qr/.*"upstream_host":"127.0.0.1".*/
+
+
+
+=== TEST 17: set route with upstream returning non-200 JSON without text field
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, {
+                uri = "/hello",
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:1980"] = 1
+                    }
+                },
+                plugins = {
+                    ["splunk-hec-logging"] = {
+                        endpoint = {
+                            uri = "http://127.0.0.1:1980/error_json_no_text",
+                            token = "BD274822-96AA-4DA6-90EC-18940FB2414C"
+                        },
+                        batch_max_size = 1,
+                        inactive_timeout = 1
+                    }
+                }
+            })
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 18: test route with upstream returning non-200 JSON without text field
+--- request
+GET /hello
+--- wait: 2
+--- response_body
+hello world
+--- error_log
+Batch Processor[splunk-hec-logging] failed to process entries: failed to send splunk, Forbidden: missing permissions
+--- no_error_log
+attempt to concatenate field 'text'
+
