@@ -53,8 +53,8 @@ local MAX_AUTH_FLOW_RESTARTS = 3
 
 local VAR_TEMPLATE_DESC =
     "supports ${var} / ${var ?? default} templates, resolved " ..
-    "per-request from the request context (e.g. a value set by " ..
-    "a higher-priority custom plugin)"
+    "per-request from the request context (e.g. http_<header_name> for a " ..
+    "request header, or a value set by another plugin)"
 
 
 -- Session config is passed as-is to resty.session.start(); the only

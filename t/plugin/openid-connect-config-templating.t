@@ -190,3 +190,90 @@ passed
 --- error_log
 openid-connect: resolved value of "client_id" is empty
 --- error_code: 500
+
+
+
+=== TEST 5: bearer-only route with credentials templated from request headers
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/oidc-tpl-header',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "openid-connect": {
+                                "discovery": "http://127.0.0.1:8080/realms/University/.well-known/openid-configuration",
+                                "client_id": "${http_x_client_id}",
+                                "client_secret": "${http_x_client_secret}",
+                                "bearer_only": true,
+                                "ssl_verify": false,
+                                "timeout": 10,
+                                "introspection_endpoint_auth_method": "client_secret_post"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/oidc-tpl-header/*"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 6: header-resolved values authenticate; a later request with other values neither reuses nor leaks them
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local httpc = http.new()
+            local secret = "d1ec69e9-55d2-4109-a3ea-befa071579d5"
+
+            local res, err = httpc:request_uri(
+                "http://127.0.0.1:8080/realms/University/protocol/openid-connect/token", {
+                    method = "POST",
+                    body = "grant_type=password&client_id=course_management&client_secret="
+                           .. secret .. "&username=teacher@gmail.com&password=123456",
+                    headers = {["Content-Type"] = "application/x-www-form-urlencoded"},
+                })
+            if not res then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+            local token = require("cjson").decode(res.body).access_token
+
+            local function call(client_secret)
+                local r, e = httpc:request_uri("http://127.0.0.1:" .. ngx.var.server_port
+                                               .. "/oidc-tpl-header/hello", {
+                    method = "GET",
+                    headers = {
+                        ["Authorization"] = "Bearer " .. token,
+                        ["X-Client-Id"] = "course_management",
+                        ["X-Client-Secret"] = client_secret,
+                    },
+                })
+                return r and r.status or e
+            end
+
+            ngx.say(call(secret))
+            ngx.say(call("wrong-secret"))
+            ngx.say(call(secret))
+        }
+    }
+--- response_body
+200
+401
+200

@@ -122,7 +122,6 @@
             "plugins/jwe-decrypt",
             "plugins/basic-auth",
             "plugins/openid-connect",
-            "plugins/openid-connect-consumer-selector",
             "plugins/hmac-auth",
             "plugins/feishu-auth",
             "plugins/authz-casbin",

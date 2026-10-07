@@ -165,31 +165,23 @@ And reference it in the Plugin configuration:
 "client_secret": "$ENV://KEYCLOAK_CLIENT_SECRET"
 ```
 
-### Selecting an IdP configuration per request
+### Per-request templating of `client_id`, `client_secret` and `discovery`
 
-`client_id`, `client_secret`, and `discovery` also support `${var}` / `${var ?? default}` runtime-variable templates, resolved from the request context on every request (the same templating [`limit-count`](./limit-count.md) uses for `count`/`time_window`). This lets a higher-priority custom Plugin inspect the request and select the right IdP configuration for it, while `openid-connect` itself stays generic — it has no built-in notion of tenants, realms, or providers, and doesn't hard-code any provider-specific routing logic.
+`client_id`, `client_secret`, and `discovery` support `${var}` / `${var ?? default}` templates, resolved from the request context on every request (the same templating [`limit-count`](./limit-count.md) uses for `count`/`time_window`). Only values containing `${` are treated as templates; any other value, including one with a bare `$`, is used as-is. The Plugin configuration is never modified, so each request resolves its own values.
 
-For example, to route different requests to different IdP configurations from a single Route, a custom Plugin running before `openid-connect` (higher `priority`) can inspect the request and set request-context variables accordingly:
-
-```lua
--- inside a custom higher-priority Plugin's rewrite() phase
-local config = select_idp_config(ctx) -- your own request -> IdP-config mapping
-ctx.var.oidc_discovery = config.discovery
-ctx.var.oidc_client_id = config.client_id
-ctx.var.oidc_client_secret = config.client_secret
-```
-
-`openid-connect` then references those variables generically:
+For example, clients can send the values in request headers and reference them with `http_<header_name>`:
 
 ```json
 {
-  "discovery": "${oidc_discovery}",
-  "client_id": "${oidc_client_id}",
-  "client_secret": "${oidc_client_secret}"
+  "discovery": "${http_x_oidc_discovery}",
+  "client_id": "${http_x_oidc_client_id ?? my-default-client}",
+  "client_secret": "${http_x_oidc_client_secret}"
 }
 ```
 
-If a referenced variable is missing for a given request (for example, the custom Plugin didn't run or didn't recognize the request), `openid-connect` returns `500` with an error identifying which field failed to resolve, rather than forwarding an empty value to the identity provider.
+Variables can also be set by another Plugin that runs earlier, but this is not required.
+
+If a template resolves to an empty value (for example, the header is missing and no default is given), `openid-connect` returns `500` instead of forwarding an empty value to the identity provider.
 
 ## Examples
 

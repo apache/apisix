@@ -74,7 +74,6 @@ ua-restriction
 referer-restriction
 csrf
 uri-blocker
-openid-connect-consumer-selector
 request-validation
 chaitin-waf
 multi-auth
