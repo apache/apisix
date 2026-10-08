@@ -114,41 +114,51 @@ function _M.sort_nodes(nodes, sort_type)
 end
 
 
--- ─── resty.consul options ─────────────────────────────────────────────
+-- ─── blocking query watchers ──────────────────────────────────────────
 
-local function get_opts(consul_server, is_catalog)
-    local opts = {
-        host = consul_server.host,
-        port = consul_server.port,
-        connect_timeout = consul_server.connect_timeout,
-        read_timeout = consul_server.read_timeout,
-        default_args = {
-            token = consul_server.token,
-        }
-    }
-    if not consul_server.keepalive then
-        return opts
+-- The watchers only need the status and the X-Consul-Index header, so they read
+-- them with resty.http request() and close the connection without reading the
+-- body. resty.http reads a body in a child coroutine, and connect() kills the
+-- watcher that has not returned yet: ngx.thread.kill does not cancel a read
+-- pending in a child coroutine, and its completion would later resume connect()
+-- at an unrelated yield point.
+local function watch_request(consul_server, url, index)
+    local httpc = http.new()
+    httpc:set_timeout(consul_server.connect_timeout)
+    local ok, err = httpc:connect(consul_server.host, consul_server.port)
+    if not ok then
+        return nil, err
     end
 
-    opts.default_args.wait = consul_server.wait_timeout
-
-    if is_catalog then
-        opts.default_args.index = consul_server.catalog_index
+    local query
+    if consul_server.keepalive then
+        -- blocking query: wait plus the 1/16 jitter Consul may add, plus read timeout
+        local wait = consul_server.wait_timeout * 1000
+        httpc:set_timeout(wait + wait / 16 + consul_server.read_timeout)
+        query = {index = index, wait = consul_server.wait_timeout .. "s"}
     else
-        opts.default_args.index = consul_server.health_index
+        httpc:set_timeout(consul_server.read_timeout)
     end
 
-    return opts
+    local res
+    res, err = httpc:request({
+        path = "/v1" .. url,
+        query = query,
+        headers = {["X-Consul-Token"] = consul_server.token},
+    })
+    httpc:close()
+    if not res then
+        return nil, err
+    end
+
+    return {status = res.status, headers = res.headers}
 end
 
 
--- ─── blocking query watchers ──────────────────────────────────────────
-
 function _M.watch_catalog(consul_server)
-    local client = resty_consul:new(get_opts(consul_server, true))
-
     ::RETRY::
-    local watch_result, watch_err = client:get(consul_server.consul_watch_catalog_url)
+    local watch_result, watch_err = watch_request(consul_server,
+            consul_server.consul_watch_catalog_url, consul_server.catalog_index)
     local watch_error_info = (watch_err ~= nil and watch_err)
                              or ((watch_result ~= nil and watch_result.status ~= 200)
                              and watch_result.status)
@@ -174,10 +184,9 @@ end
 
 
 function _M.watch_health(consul_server)
-    local client = resty_consul:new(get_opts(consul_server, false))
-
     ::RETRY::
-    local watch_result, watch_err = client:get(consul_server.consul_watch_health_url)
+    local watch_result, watch_err = watch_request(consul_server,
+            consul_server.consul_watch_health_url, consul_server.health_index)
     local watch_error_info = (watch_err ~= nil and watch_err)
             or ((watch_result ~= nil and watch_result.status ~= 200)
             and watch_result.status)
