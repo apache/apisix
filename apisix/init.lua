@@ -482,6 +482,15 @@ local function verify_https_client(ctx)
 
     local matched_ssl = ctx.matched_ssl
     if matched_ssl.value.client and apisix_ssl.support_client_verification() then
+        local sni = apisix_ssl.server_name()
+        if sni ~= host then
+            -- A reused connection cannot negotiate the target host's client certificate.
+            -- Reject it before checking the certificate so clients can retry with its SNI.
+            core.log.error("client certificate verified with SNI ", sni,
+                           ", but the host is ", host)
+            return false, 421
+        end
+
         local verified = apisix_base_flags.client_cert_verified_in_handshake
         if not verified then
             -- vanilla OpenResty requires to check the verification result
@@ -495,17 +504,6 @@ local function verify_https_client(ctx)
 
                 return false
             end
-        end
-
-        local sni = apisix_ssl.server_name()
-        if sni ~= host then
-            -- There is a case that the user configures a SSL object with `*.domain`,
-            -- and the client accesses with SNI `a.domain` but uses Host `b.domain`.
-            -- This case is complex and we choose to restrict the access until there
-            -- is a stronge demand in real world.
-            core.log.error("client certificate verified with SNI ", sni,
-                           ", but the host is ", host)
-            return false
         end
 
         if not verify_tls_session_resumption() then
@@ -858,8 +856,9 @@ function _M.http_access_phase()
 
     local span = tracer.start(ngx_ctx, "apisix.phase.access", tracer.kind.server)
 
-    if not verify_https_client(api_ctx) then
-        return core.response.exit(400)
+    local verified, status = verify_https_client(api_ctx)
+    if not verified then
+        return core.response.exit(status or 400)
     end
 
     debug.dynamic_debug(api_ctx)
