@@ -158,7 +158,7 @@ GET /t
 --- response_body
 127.0.0.1:8500 ssl: false
 consul.local:443 ssl: true
-only support consul http or https schema address, eg: http://address:port or https://address:port
+invalid consul server address: bad uri: tcp://127.0.0.1:8500, the valid format: http://address:port or https://address:port
 
 
 

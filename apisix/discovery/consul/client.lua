@@ -116,19 +116,27 @@ end
 
 -- ─── resty.consul options ─────────────────────────────────────────────
 
+local function set_tls_opts(opts, consul_server)
+    if consul_server.ssl then
+        opts.ssl = true
+        opts.ssl_verify = true
+        opts.sni_host = consul_server.host
+    end
+    return opts
+end
+
+
 local function get_opts(consul_server, is_catalog)
     local opts = {
         host = consul_server.host,
         port = consul_server.port,
-        ssl = consul_server.ssl,
-        ssl_verify = true,
-        sni_host = consul_server.host,
         connect_timeout = consul_server.connect_timeout,
         read_timeout = consul_server.read_timeout,
         default_args = {
             token = consul_server.token,
         }
     }
+    set_tls_opts(opts, consul_server)
     if not consul_server.keepalive then
         return opts
     end
@@ -252,8 +260,12 @@ function _M.format_consul_params(consul_conf)
     local consul_server_list = core.table.new(0, #servers)
 
     for _, v in pairs(servers) do
-        -- parse_uri only accepts http and https, any other scheme yields nil
-        local scheme, host, port, path = unpack(http.parse_uri(nil, v) or {})
+        local parsed, err = http.parse_uri(nil, v)
+        if not parsed then
+            return nil, "invalid consul server address: " .. err
+                        .. ", the valid format: http://address:port or https://address:port"
+        end
+        local scheme, host, port, path = unpack(parsed)
         if scheme ~= "http" and scheme ~= "https" then
             return nil, "only support consul http or https schema address, "
                         .. "eg: http://address:port or https://address:port"
@@ -307,18 +319,15 @@ function _M.fetch_services_from_server(consul_server, options)
     local preserve_metadata = options.preserve_metadata or false
     local key_builder = options.key_builder
 
-    local consul_client = resty_consul:new({
+    local consul_client = resty_consul:new(set_tls_opts({
         host = consul_server.host,
         port = consul_server.port,
-        ssl = consul_server.ssl,
-        ssl_verify = true,
-        sni_host = consul_server.host,
         connect_timeout = consul_server.connect_timeout,
         read_timeout = consul_server.read_timeout,
         default_args = {
             token = consul_server.token
         }
-    })
+    }, consul_server))
 
     -- fetch catalog
     local catalog_success, catalog_res, catalog_err = pcall(function()
