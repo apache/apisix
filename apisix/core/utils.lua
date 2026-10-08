@@ -24,6 +24,7 @@ local core_str       = require("apisix.core.string")
 local rfind_char     = core_str.rfind_char
 local table          = require("apisix.core.table")
 local log            = require("apisix.core.log")
+local json           = require("apisix.core.json")
 local string         = require("apisix.core.string")
 local dns_client     = require("apisix.core.dns.client")
 local ngx_re         = require("ngx.re")
@@ -494,162 +495,62 @@ function _M.check_tls_bool(fields, conf, plugin_name)
 end
 
 
-local json_escapes = {
-    ['"'] = '\\"',
-    ['\\'] = '\\\\',
-    ['\b'] = '\\b',
-    ['\f'] = '\\f',
-    ['\n'] = '\\n',
-    ['\r'] = '\\r',
-    ['\t'] = '\\t',
-}
-local function json_escape_char(c)
-    return json_escapes[c] or str_format("\\u%04x", str_byte(c))
-end
-
-
 local function to_ms(seconds)
+    if seconds == nil then
+        return json.null
+    end
     return math_floor(seconds * 1000 + 0.5)
 end
 
 
-local function int_or_null(value)
+local function round(value, scale)
+    return math_floor(value * scale + 0.5) / scale
+end
+
+
+local function or_null(value)
     if value == nil then
-        return "null"
+        return json.null
     end
-    return str_format("%d", value)
+    return value
 end
 
 
-local function ms_or_null(seconds)
-    if seconds == nil then
-        return "null"
-    end
-    return str_format("%d", to_ms(seconds))
-end
-
-
-local function bool_or_null(value)
-    if value == nil then
-        return "null"
-    end
-    return value and "true" or "false"
-end
-
-
--- a non-negative number with `digits` decimals
-local function fixed_point(value, digits)
-    local scale = 10 ^ digits
-    local scaled = math_floor(value * scale + 0.5)
-    return str_format("%d.%0" .. digits .. "d", math_floor(scaled / scale), scaled % scale)
-end
-
-
--- sliding windows are aligned to the clock: the window containing `now` is
--- the id-th one since the epoch, and the previous window's count is weighted
--- by the share of it still inside the sliding range
-local function sliding_window_of(now, window_size)
-    local id = math_floor(now / window_size)
-    return id, id * window_size, (window_size - now % window_size) / window_size
-end
-
-
--- handles every case, including the null values, see format_common_detail
--- for the common ones
-local function format_detail(detail)
-    local window_type = detail.window_type
+local function current_window_info(detail)
     local window_size = detail.window_size
-    local fields = str_format(',"window_type":"%s","window_size_ms":%d,"decision":"%s"',
-                              window_type, to_ms(window_size), detail.decision)
-    if detail.decision == "error" then
-        return fields
-    end
-
-    fields = fields .. str_format(',"cost":%d,"evaluated_at_ms":%d',
-                                  detail.cost, to_ms(detail.now))
-
-    local delayed = detail.delayed_sync
-    if delayed then
-        fields = fields .. str_format(
-            ',"delayed_sync":{"synced_at_ms":%s,"synced_count":%s,"local_delta":%s}',
-            ms_or_null(delayed.synced_at), int_or_null(delayed.synced_count),
-            int_or_null(delayed.local_delta))
-    end
-
-    if window_type ~= "sliding" then
-        local window_end = detail.window_end
-        return fields .. str_format(
-            ',"current_window":{"start_ms":%s,"end_ms":%s,"count":%s,"created":%s}',
-            ms_or_null(window_end and window_end - window_size), ms_or_null(window_end),
-            int_or_null(detail.count), bool_or_null(detail.created))
-    end
-
-    local id, window_start, weight
-    if detail.window_now then
-        id, window_start, weight = sliding_window_of(detail.window_now, window_size)
-    end
-    local last_count = detail.last_count
-    return fields .. str_format(
-        ',"current_window":{"id":%s,"start_ms":%s,"end_ms":%s,"count":%s}'
-        .. ',"previous_window":{"count":%s,"weight":%s,"weighted_count":%s}',
-        int_or_null(id), ms_or_null(window_start),
-        ms_or_null(window_start and window_start + window_size),
-        int_or_null(detail.count), int_or_null(last_count),
-        weight and fixed_point(weight, 6) or "null",
-        (weight and last_count) and fixed_point(last_count * weight, 3) or "null")
-end
-
-
--- The variable is set on every rate limited request, so the common cases,
--- where the counter is not synced with a delay and every value is known, are
--- formatted in a single string.format call and with integers only, which
--- keeps their cost close to the four original fields alone.
-local function format_common_detail(key, limit, remaining, reset, detail)
-    local decision = detail.decision
-    local count = detail.count
-    if decision == "error" or detail.delayed_sync or not count then
-        return nil
-    end
-
-    local window_size = detail.window_size
-    local window_size_ms = to_ms(window_size)
     if detail.window_type ~= "sliding" then
         local window_end = detail.window_end
-        if not window_end then
-            return nil
-        end
-        local end_ms = to_ms(window_end)
-        return str_format(
-            '{"rate_limiting_key":"%s","rate_limiting_limit":%d,'
-            .. '"rate_limiting_remaining":%d,"rate_limiting_reset":%d,'
-            .. '"window_type":"fixed","window_size_ms":%d,"decision":"%s","cost":%d,'
-            .. '"evaluated_at_ms":%d,"current_window":{"start_ms":%d,"end_ms":%d,'
-            .. '"count":%d,"created":%s}}',
-            key, limit, remaining, reset, window_size_ms, decision, detail.cost,
-            to_ms(detail.now), end_ms - window_size_ms, end_ms, count,
-            bool_or_null(detail.created))
+        return {
+            start_ms = to_ms(window_end and window_end - window_size),
+            end_ms = to_ms(window_end),
+            count = or_null(detail.count),
+            created = or_null(detail.created),
+        }
     end
 
+    -- sliding windows are aligned to the clock: the window containing
+    -- `window_now` is the id-th one since the epoch, and the previous window's
+    -- count is weighted by the share of it still inside the sliding range
     local window_now = detail.window_now
     local last_count = detail.last_count
-    if not window_now or not last_count then
-        return nil
+    local id, window_start, weight
+    if window_now then
+        id = math_floor(window_now / window_size)
+        window_start = id * window_size
+        weight = (window_size - window_now % window_size) / window_size
     end
-    local id, window_start, weight = sliding_window_of(window_now, window_size)
-    local start_ms = to_ms(window_start)
-    local weight_e6 = math_floor(weight * 1000000 + 0.5)
-    local weighted_e3 = math_floor(last_count * weight * 1000 + 0.5)
-    return str_format(
-        '{"rate_limiting_key":"%s","rate_limiting_limit":%d,'
-        .. '"rate_limiting_remaining":%d,"rate_limiting_reset":%d,'
-        .. '"window_type":"sliding","window_size_ms":%d,"decision":"%s","cost":%d,'
-        .. '"evaluated_at_ms":%d,"current_window":{"id":%d,"start_ms":%d,"end_ms":%d,'
-        .. '"count":%d},"previous_window":{"count":%d,"weight":%d.%06d,'
-        .. '"weighted_count":%d.%03d}}',
-        key, limit, remaining, reset, window_size_ms, decision, detail.cost,
-        to_ms(detail.now), id, start_ms, start_ms + window_size_ms, count, last_count,
-        math_floor(weight_e6 / 1000000), weight_e6 % 1000000,
-        math_floor(weighted_e3 / 1000), weighted_e3 % 1000)
+
+    return {
+        id = or_null(id),
+        start_ms = to_ms(window_start),
+        end_ms = to_ms(window_start and window_start + window_size),
+        count = or_null(detail.count),
+    }, {
+        count = or_null(last_count),
+        weight = weight and round(weight, 1e6) or json.null,
+        weighted_count = (weight and last_count) and round(last_count * weight, 1e3)
+                         or json.null,
+    }
 end
 
 
@@ -659,21 +560,34 @@ function _M.set_var_rate_limiting_info(ctx, key, limit, remaining, reset, detail
     if not ctx then
         return
     end
-    -- the key usually comes from a request variable, so escape it to keep
-    -- the value valid JSON
-    key = str_gsub(tostring(key or ""), '[%c"\\]', json_escape_char)
-    limit = limit or 0
-    remaining = tonumber(remaining) or 0
-    reset = reset or 0
 
-    local info = detail and format_common_detail(key, limit, remaining, reset, detail)
-    if not info then
-        info = str_format(
-            '{"rate_limiting_key":"%s","rate_limiting_limit":%d,'
-            .. '"rate_limiting_remaining":%d,"rate_limiting_reset":%d%s}',
-            key, limit, remaining, reset, detail and format_detail(detail) or "")
+    local info = {
+        rate_limiting_key = tostring(key or ""),
+        rate_limiting_limit = math_floor(limit or 0),
+        rate_limiting_remaining = math_floor(tonumber(remaining) or 0),
+        rate_limiting_reset = math_floor(reset or 0),
+    }
+
+    if detail then
+        info.window_type = detail.window_type
+        info.window_size_ms = to_ms(detail.window_size)
+        info.decision = detail.decision
+        if detail.decision ~= "error" then
+            info.cost = detail.cost
+            info.evaluated_at_ms = to_ms(detail.now)
+            local delayed = detail.delayed_sync
+            if delayed then
+                info.delayed_sync = {
+                    synced_at_ms = to_ms(delayed.synced_at),
+                    synced_count = or_null(delayed.synced_count),
+                    local_delta = or_null(delayed.local_delta),
+                }
+            end
+            info.current_window, info.previous_window = current_window_info(detail)
+        end
     end
-    ctx.var.rate_limiting_info = info
+
+    ctx.var.rate_limiting_info = json.encode(info)
 end
 
 

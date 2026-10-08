@@ -99,4 +99,24 @@ function _M.log()
 end
 
 
+-- Logs the original fields of $rate_limiting_info and the request summary.
+function _M.log_quota()
+    local raw = ngx.var.rate_limiting_info
+    local info, err = cjson.decode(raw)
+    if not info then
+        ngx.log(ngx.ERR, "invalid rate_limiting_info: ", err, ": ", raw)
+        return
+    end
+
+    ngx.log(ngx.WARN, "rate limiting quota: key=", info.rate_limiting_key,
+            " limit=", info.rate_limiting_limit,
+            " remaining=", info.rate_limiting_remaining,
+            " reset=", info.rate_limiting_reset,
+            " window_type=", show(info.window_type),
+            " window_size_ms=", show(info.window_size_ms),
+            " decision=", show(info.decision),
+            " cost=", show(info.cost))
+end
+
+
 return _M

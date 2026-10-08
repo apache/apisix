@@ -2165,16 +2165,16 @@ nginx_config:
 A request counted in a fixed window logs a value like this:
 
 ```json
-{"rate_limiting_key":"/apisix/routes/1:1:127.0.0.1","rate_limiting_limit":10,"rate_limiting_remaining":3,"rate_limiting_reset":42,"window_type":"fixed","window_size_ms":60000,"decision":"allowed","cost":1,"evaluated_at_ms":1759212345678,"current_window":{"start_ms":1759212300123,"end_ms":1759212360123,"count":7,"created":false}}
+{"rate_limiting_key":"\/apisix\/routes\/1:1:127.0.0.1","rate_limiting_limit":10,"rate_limiting_remaining":3,"rate_limiting_reset":42,"window_type":"fixed","window_size_ms":60000,"decision":"allowed","cost":1,"evaluated_at_ms":1759212345678,"current_window":{"start_ms":1759212300123,"end_ms":1759212360123,"count":7,"created":false}}
 ```
 
 A request counted in a sliding window logs a value like this:
 
 ```json
-{"rate_limiting_key":"/apisix/routes/1:1:127.0.0.1","rate_limiting_limit":10,"rate_limiting_remaining":3,"rate_limiting_reset":14,"window_type":"sliding","window_size_ms":60000,"decision":"allowed","cost":1,"evaluated_at_ms":1759212345678,"current_window":{"id":29320205,"start_ms":1759212300000,"end_ms":1759212360000,"count":4},"previous_window":{"count":10,"weight":0.238700,"weighted_count":2.387}}
+{"rate_limiting_key":"\/apisix\/routes\/1:1:127.0.0.1","rate_limiting_limit":10,"rate_limiting_remaining":3,"rate_limiting_reset":14,"window_type":"sliding","window_size_ms":60000,"decision":"allowed","cost":1,"evaluated_at_ms":1759212345678,"current_window":{"id":29320205,"start_ms":1759212300000,"end_ms":1759212360000,"count":4},"previous_window":{"count":10,"weight":0.2387,"weighted_count":2.387}}
 ```
 
-All `*_ms` fields are Unix timestamps or durations in milliseconds, taken from the clock of the APISIX instance. A field that applies to the window type but is unknown for the request is `null`. The fields are:
+The fields are not in a fixed order, and the JSON encoder escapes `/` in the key as `\/`. All `*_ms` fields are Unix timestamps or durations in milliseconds, taken from the clock of the APISIX instance. A field that applies to the window type but is unknown for the request is `null`. The fields are:
 
 * `rate_limiting_key`, `rate_limiting_limit`, `rate_limiting_remaining`, `rate_limiting_reset`: the counter key, the quota, the remaining quota and the seconds until the reset, as in the rate limiting headers. When a sliding window rejects a request, `rate_limiting_reset` is the time until a request can be allowed again, which may be earlier than the end of the window.
 * `window_type`: `fixed` or `sliding`.

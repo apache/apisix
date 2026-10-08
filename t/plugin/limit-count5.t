@@ -218,6 +218,10 @@ APISIX-RATELIMIT-RESET: \d+
                                 "time_window": 10,
                                 "key_type": "var",
                                 "key": "http_host"
+                            },
+                            "serverless-post-function": {
+                                "phase": "log",
+                                "functions": ["return function() require('lib.rate_limiting_info').log_quota() end"]
                             }
                         },
                         "upstream": {
@@ -241,18 +245,14 @@ passed
 
 
 
-=== TEST 7: check access log contains rate_limiting_info
+=== TEST 7: rate_limiting_info carries the quota and the decision
 --- request
 GET /hello
 --- more_headers
 host: test.com
---- extra_yaml_config
-nginx_config:
-    http:
-        access_log_format: main '$rate_limiting_info';
 --- error_code: 200
---- access_log eval
-qr/\{\\x22rate_limiting_key\\x22:\\x22\/apisix\/routes\/1:\d+:test\.com\\x22,\\x22rate_limiting_limit\\x22:2,\\x22rate_limiting_remaining\\x22:1,\\x22rate_limiting_reset\\x22:10,\\x22window_type\\x22:\\x22fixed\\x22,\\x22window_size_ms\\x22:10000,\\x22decision\\x22:\\x22allowed\\x22,\\x22cost\\x22:1,/
+--- error_log eval
+qr/rate limiting quota: key=\/apisix\/routes\/1:\d+:test\.com limit=2 remaining=1 reset=10 window_type=fixed window_size_ms=10000 decision=allowed cost=1/
 
 
 

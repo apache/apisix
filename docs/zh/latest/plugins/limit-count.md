@@ -2166,16 +2166,16 @@ nginx_config:
 计入固定窗口的请求记录的值类似如下：
 
 ```json
-{"rate_limiting_key":"/apisix/routes/1:1:127.0.0.1","rate_limiting_limit":10,"rate_limiting_remaining":3,"rate_limiting_reset":42,"window_type":"fixed","window_size_ms":60000,"decision":"allowed","cost":1,"evaluated_at_ms":1759212345678,"current_window":{"start_ms":1759212300123,"end_ms":1759212360123,"count":7,"created":false}}
+{"rate_limiting_key":"\/apisix\/routes\/1:1:127.0.0.1","rate_limiting_limit":10,"rate_limiting_remaining":3,"rate_limiting_reset":42,"window_type":"fixed","window_size_ms":60000,"decision":"allowed","cost":1,"evaluated_at_ms":1759212345678,"current_window":{"start_ms":1759212300123,"end_ms":1759212360123,"count":7,"created":false}}
 ```
 
 计入滑动窗口的请求记录的值类似如下：
 
 ```json
-{"rate_limiting_key":"/apisix/routes/1:1:127.0.0.1","rate_limiting_limit":10,"rate_limiting_remaining":3,"rate_limiting_reset":14,"window_type":"sliding","window_size_ms":60000,"decision":"allowed","cost":1,"evaluated_at_ms":1759212345678,"current_window":{"id":29320205,"start_ms":1759212300000,"end_ms":1759212360000,"count":4},"previous_window":{"count":10,"weight":0.238700,"weighted_count":2.387}}
+{"rate_limiting_key":"\/apisix\/routes\/1:1:127.0.0.1","rate_limiting_limit":10,"rate_limiting_remaining":3,"rate_limiting_reset":14,"window_type":"sliding","window_size_ms":60000,"decision":"allowed","cost":1,"evaluated_at_ms":1759212345678,"current_window":{"id":29320205,"start_ms":1759212300000,"end_ms":1759212360000,"count":4},"previous_window":{"count":10,"weight":0.2387,"weighted_count":2.387}}
 ```
 
-所有 `*_ms` 字段都是以毫秒为单位的 Unix 时间戳或时长，取自 APISIX 实例的时钟。适用于该窗口类型、但对本次请求未知的字段为 `null`。各字段含义如下：
+字段的顺序不固定，JSON 编码会把键中的 `/` 转义为 `\/`。所有 `*_ms` 字段都是以毫秒为单位的 Unix 时间戳或时长，取自 APISIX 实例的时钟。适用于该窗口类型、但对本次请求未知的字段为 `null`。各字段含义如下：
 
 * `rate_limiting_key`、`rate_limiting_limit`、`rate_limiting_remaining`、`rate_limiting_reset`：计数器的键、配额、剩余配额以及距重置的秒数，与限流响应头一致。滑动窗口拒绝请求时，`rate_limiting_reset` 是距离可以再次放行请求的时间，可能早于窗口结束时间。
 * `window_type`：`fixed` 或 `sliding`。
