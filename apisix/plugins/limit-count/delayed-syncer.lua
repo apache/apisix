@@ -119,10 +119,14 @@ function _M.sync_to_shm(self, key, remaining, reset, local_delta)
         return err
     end
 
-    _, err = self.shd:incr(self:key_local_delta(key), -local_delta, 0, 2 * self.window)
-    if err then
-        core.log.error("incr local delta shm to failed: ", err, ", key: ", key)
-        return err
+    -- nothing was flushed: don't create an empty local delta entry, a failed
+    -- sync would take it for a pending delta and charge the fallback limiter
+    if local_delta ~= 0 then
+        _, err = self.shd:incr(self:key_local_delta(key), -local_delta, 0, 2 * self.window)
+        if err then
+            core.log.error("incr local delta shm to failed: ", err, ", key: ", key)
+            return err
+        end
     end
 end
 

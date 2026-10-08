@@ -233,3 +233,118 @@ passed
 --- error_log
 sync to redis failed
 --- timeout: 10
+
+
+
+=== TEST 5: fixed window, redis, delayed sync
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "limit-count": {
+                                "count": 1,
+                                "time_window": 60,
+                                "window_type": "fixed",
+                                "key_type": "constant",
+                                "key": "delayed-sync-redis-error",
+                                "policy": "redis",
+                                "redis_host": "127.0.0.1",
+                                "sync_interval": 0.1
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 6: a quota refresh without a local delta leaves nothing to charge when redis fails later
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local redis = require("resty.redis")
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local dict = ngx.shared["plugin-limit-count"]
+
+            local function hit()
+                local res, err = http.new():request_uri(uri)
+                return res and res.status or err
+            end
+
+            local function redis_keys()
+                local red = redis:new()
+                assert(red:connect("127.0.0.1", 6379))
+                return red, assert(red:keys("*delayed-sync-redis-error*"))
+            end
+
+            -- what the fallback limiter has counted for this route
+            local function fallback_count()
+                local sum = 0
+                for _, key in ipairs(dict:get_keys(0)) do
+                    if key:find("^/apisix/routes/")
+                       and key:find("delayed-sync-redis-error", 1, true) then
+                        sum = sum + dict:get(key)
+                    end
+                end
+                return sum
+            end
+
+            local red, keys = redis_keys()
+            for _, key in ipairs(keys) do
+                red:del(key)
+            end
+
+            local codes = {hit()}
+            ngx.sleep(0.3)
+
+            -- the local delta key expired
+            for _, key in ipairs(dict:get_keys(0)) do
+                if key:find("^local_delta#") then
+                    dict:delete(key)
+                end
+            end
+
+            -- rejected; its sync refreshes the quota from Redis with nothing
+            -- to flush
+            codes[2] = hit()
+            ngx.sleep(0.3)
+
+            -- make the next sync fail: the counter is no longer an integer
+            red, keys = redis_keys()
+            for _, key in ipairs(keys) do
+                red:set(key, "not-a-number", "KEEPTTL")
+            end
+
+            local before = fallback_count()
+            codes[3] = hit()
+            ngx.sleep(0.3)
+
+            ngx.say(table.concat(codes, " "), ", fallback count ", before, " -> ",
+                    fallback_count())
+        }
+    }
+--- response_body
+200 503 503, fallback count 0 -> 0
+--- error_log
+sync to redis failed
+--- timeout: 10
