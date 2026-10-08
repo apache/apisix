@@ -125,10 +125,14 @@ function _M.sync_to_shm(self, key, remaining, reset, local_delta, info)
         return err
     end
 
-    _, err = self.shd:incr(self:key_local_delta(key), -local_delta, 0, 2 * self.window)
-    if err then
-        core.log.error("incr local delta shm to failed: ", err, ", key: ", key)
-        return err
+    -- nothing was flushed: don't create an empty local delta entry, a failed
+    -- sync would take it for a pending delta and charge the fallback limiter
+    if local_delta ~= 0 then
+        _, err = self.shd:incr(self:key_local_delta(key), -local_delta, 0, 2 * self.window)
+        if err then
+            core.log.error("incr local delta shm to failed: ", err, ", key: ", key)
+            return err
+        end
     end
 
     return nil, quota
@@ -357,7 +361,12 @@ local function sync_key(self, key)
         core.log.error("get local delta from shm failed: ", err)
     end
 
-    if delta then
+    -- the key expires two windows after its creation and is not renewed, so a
+    -- node that only rejects loses it; flush anyway, otherwise that node keeps
+    -- judging on the same cached quota until the quota itself expires
+    if not err then
+        local had_delta = delta ~= nil
+        delta = delta or 0
         local flush = self.limiter.commit or self.limiter.incoming
         local _, remaining_or_err, reset, info = flush(self.limiter, key, delta)
         -- compat
@@ -365,7 +374,8 @@ local function sync_key(self, key)
             self:sync_to_shm(key, remaining_or_err, reset, delta, info)
         elseif remaining_or_err ~= "rejected" then
             core.log.error("sync to redis failed: ", remaining_or_err, ", key: ", key)
-            if self.limiter.fallback_limiter then
+            -- without a local delta there is nothing to account for locally
+            if self.limiter.fallback_limiter and had_delta then
                 core.log.warn("try use fallback limiter to do rate limiting")
                 if delta < 1 then
                     delta = 1
