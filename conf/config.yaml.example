@@ -439,7 +439,7 @@ nginx_config:                     # Config for render the template to generate n
 #       path: "logs/consul_kv.dump" # Location of the dump file.
 #       expire: 2592000             # Specify the expiration time of the dump file in units of seconds.
 #  consul:                          # Consul
-#    servers:                       # Consul address(es)
+#    servers:                       # Consul address(es), http or https
 #      - "http://127.0.0.1:8500"
 #      - "http://127.0.0.1:8600"
 #    skip_services:                 # Skip services during service discovery.

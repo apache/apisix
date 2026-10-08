@@ -69,6 +69,18 @@ discovery:
       - "http://127.0.0.1:8500"
 ```
 
+Each server address uses the `http` or `https` scheme, and the two can be mixed in one list. An `https` address without a port connects to port 443. APISIX verifies the certificate of an `https` Consul server against the host in the address, so configure the CA bundle that signed it with `apisix.ssl.ssl_trusted_certificate`:
+
+```yaml
+apisix:
+  ssl:
+    ssl_trusted_certificate: /path/to/consul-ca.crt
+discovery:
+  consul:
+    servers:
+      - "https://consul.example.com:8501"
+```
+
 The `keepalive` has two optional values:
 
 - `true`, default and recommend value, use the long pull way to query consul servers

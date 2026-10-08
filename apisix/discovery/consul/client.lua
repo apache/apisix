@@ -120,6 +120,9 @@ local function get_opts(consul_server, is_catalog)
     local opts = {
         host = consul_server.host,
         port = consul_server.port,
+        ssl = consul_server.ssl,
+        ssl_verify = true,
+        sni_host = consul_server.host,
         connect_timeout = consul_server.connect_timeout,
         read_timeout = consul_server.read_timeout,
         default_args = {
@@ -249,15 +252,19 @@ function _M.format_consul_params(consul_conf)
     local consul_server_list = core.table.new(0, #servers)
 
     for _, v in pairs(servers) do
-        local scheme, host, port, path = unpack(http.parse_uri(nil, v))
-        if scheme ~= "http" then
-            return nil, "only support consul http schema address, eg: http://address:port"
+        -- parse_uri only accepts http and https, any other scheme yields nil
+        local scheme, host, port, path = unpack(http.parse_uri(nil, v) or {})
+        if scheme ~= "http" and scheme ~= "https" then
+            return nil, "only support consul http or https schema address, "
+                        .. "eg: http://address:port or https://address:port"
         elseif path ~= "/" or core.string.has_suffix(v, '/') then
-            return nil, "invalid consul server address, the valid format: http://address:port"
+            return nil, "invalid consul server address, the valid format: "
+                        .. "http://address:port or https://address:port"
         end
         core.table.insert(consul_server_list, {
             host = host,
             port = port,
+            ssl = scheme == "https",
             token = consul_conf.token,
             connect_timeout = consul_conf.timeout.connect,
             read_timeout = consul_conf.timeout.read,
@@ -303,6 +310,9 @@ function _M.fetch_services_from_server(consul_server, options)
     local consul_client = resty_consul:new({
         host = consul_server.host,
         port = consul_server.port,
+        ssl = consul_server.ssl,
+        ssl_verify = true,
+        sni_host = consul_server.host,
         connect_timeout = consul_server.connect_timeout,
         read_timeout = consul_server.read_timeout,
         default_args = {
