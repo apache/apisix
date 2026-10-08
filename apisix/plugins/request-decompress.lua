@@ -28,7 +28,7 @@ local IDENTITY_ENCODING = "identity"
 local DEFLATE_OPTS = {windowBits = 15}
 
 local DECOMPRESS_OPTS = {decompress = true}
-local DECOMPRESS_ERRORS = {
+local BODY_ERRORS = {
     unsupported_encoding = {status = 415},
     decompress_failed = {status = 400, message = "failed to decompress request body"},
     too_large = {status = 413, message = "request body is too large"},
@@ -59,11 +59,31 @@ local _M = {
     priority = 2850,
     name = plugin_name,
     schema = schema,
+    -- a route that configures the plugin owns the request, so the instance from
+    -- a global rule is dropped and the body is handled exactly once
+    run_policy = "prefer_route",
 }
 
 
 function _M.check_schema(conf)
     return core.schema.check(schema, conf)
+end
+
+
+-- an unclassified cause is a read failure rather than anything the client did
+local function body_error(err, err_kind)
+    core.log.error("failed reading request body, err: ", err)
+
+    local known = err_kind and BODY_ERRORS[err_kind]
+    if not known then
+        return 500, {message = "error reading the request body. err: " .. err}
+    end
+
+    if err_kind == "unsupported_encoding" then
+        core.response.set_header("Accept-Encoding", core.request.SUPPORTED_CONTENT_ENCODINGS)
+    end
+
+    return known.status, {message = known.message or err}
 end
 
 
@@ -107,27 +127,16 @@ function _M.rewrite(conf, ctx)
     local original, encoding
     if conf.forward_compressed then
         encoding = core.request.header(ctx, "Content-Encoding")
-        local raw, raw_err = core.request.get_body(conf.max_req_body_size, ctx)
+        local raw, raw_err, raw_kind = core.request.get_body(conf.max_req_body_size, ctx)
         if raw_err then
-            core.log.error("failed reading request body, err: ", raw_err)
-            return 500, {message = "error reading the request body. err: " .. raw_err}
+            return body_error(raw_err, raw_kind)
         end
         original = raw
     end
 
     local body, err, err_kind = core.request.get_body(conf.max_req_body_size, ctx, DECOMPRESS_OPTS)
     if err then
-        core.log.error("failed reading request body, err: ", err)
-
-        local decompress_err = err_kind and DECOMPRESS_ERRORS[err_kind]
-        if not decompress_err then
-            return 500, {message = "error reading the request body. err: " .. err}
-        end
-
-        if err_kind == "unsupported_encoding" then
-            core.response.set_header("Accept-Encoding", core.request.SUPPORTED_CONTENT_ENCODINGS)
-        end
-        return decompress_err.status, {message = decompress_err.message or err}
+        return body_error(err, err_kind)
     end
 
     if body then
@@ -153,6 +162,8 @@ function _M.before_proxy(_, ctx)
     if not state then
         return
     end
+    -- the state is an instruction to carry out once, not a description
+    ctx.request_decompress = nil
 
     -- read through core so a body another plugin moved to a file is found too
     local current = core.request.get_body(nil, ctx) or ""

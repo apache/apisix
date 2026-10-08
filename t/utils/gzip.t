@@ -45,3 +45,113 @@ __DATA__
 --- request
 GET /t
 --- error_code: 200
+
+
+
+=== TEST 2: a concatenated stream inflates every member
+--- config
+    location /t {
+        content_by_lua_block {
+            local gzip = require("apisix.utils.gzip")
+            local payload = gzip.deflate_gzip([[{"name":]])
+                            .. gzip.deflate_gzip([["doggie"}]])
+
+            local out, err = gzip.inflate_gzip(payload)
+            ngx.say("err: ", err)
+            ngx.say("out: ", out)
+        }
+    }
+--- request
+GET /t
+--- response_body
+err: nil
+out: {"name":"doggie"}
+
+
+
+=== TEST 3: max_output bounds every member together
+--- config
+    location /t {
+        content_by_lua_block {
+            local gzip = require("apisix.utils.gzip")
+            local parts = {}
+            for _ = 1, 20 do
+                parts[#parts + 1] = gzip.deflate_gzip(string.rep("d", 100))
+            end
+            local payload = table.concat(parts)
+
+            -- every member inflates to 100 bytes, their total is 2000
+            local out, err, exceeded = gzip.inflate_gzip(payload, nil, nil, 128)
+            ngx.say("out: ", out)
+            ngx.say("err: ", err)
+            ngx.say("exceeded: ", exceeded)
+
+            local all = gzip.inflate_gzip(payload, nil, nil, 4096)
+            ngx.say("under a 4096 cap: ", #all, " bytes")
+        }
+    }
+--- request
+GET /t
+--- response_body
+out: nil
+err: inflated data is greater than the maximum size 128 allowed
+exceeded: true
+under a 4096 cap: 2000 bytes
+
+
+
+=== TEST 4: a corrupt later member is rejected
+--- config
+    location /t {
+        content_by_lua_block {
+            local gzip = require("apisix.utils.gzip")
+            local payload = gzip.deflate_gzip([[{"a":1}]]) .. "not a gzip member"
+
+            local out, err = gzip.inflate_gzip(payload)
+            ngx.say("out: ", out)
+            ngx.say("err: ", err)
+        }
+    }
+--- request
+GET /t
+--- response_body
+out: nil
+err: inflate gzip err: INFLATE: data error
+
+
+
+=== TEST 5: bytes trailing the last member are rejected
+--- config
+    location /t {
+        content_by_lua_block {
+            local gzip = require("apisix.utils.gzip")
+            local payload = gzip.deflate_gzip([[{"a":1}]]) .. "\0"
+
+            local out, err = gzip.inflate_gzip(payload)
+            ngx.say("out: ", out)
+            ngx.say("err: ", err)
+        }
+    }
+--- request
+GET /t
+--- response_body
+out: nil
+err: inflate gzip err: INFLATE: Data error, no input bytes
+
+
+
+=== TEST 6: an empty payload is still an error
+--- config
+    location /t {
+        content_by_lua_block {
+            local gzip = require("apisix.utils.gzip")
+            local out, err = gzip.inflate_gzip("")
+            ngx.say("out: ", out)
+            ngx.say("err: ", err)
+        }
+    }
+--- request
+GET /t
+--- response_body
+out: nil
+err: inflate gzip err: INFLATE: Data error, no input bytes

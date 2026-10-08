@@ -16,44 +16,68 @@
 --
 local zlib = require("ffi-zlib")
 local str_buffer = require("string.buffer")
+local str_sub = string.sub
+local Z_OK = zlib.zlib.Z_OK
+local DEFAULT_CHUNK = 16384
 local _M = {}
 
 
--- max_output aborts the stream once the inflated data exceeds it, so an
--- oversized payload is never fully buffered. Third return value flags that case.
+-- A gzip stream may carry several members concatenated (RFC 1952 section 2.2),
+-- and one inflate run stops at the end of the first one. Every member is
+-- inflated in turn, so a concatenated payload is never silently truncated and
+-- max_output bounds their total. max_output aborts the stream as soon as the
+-- running total crosses it, so an oversized payload is never fully buffered;
+-- the third return value flags that case. Bytes left after the last member are
+-- fed to a further inflate, which rejects them.
 function _M.inflate_gzip(data, buf_size, opts, max_output)
-    local inputs = str_buffer.new():set(data)
+    buf_size = buf_size or DEFAULT_CHUNK
     local outputs = str_buffer.new()
     local written = 0
     local exceeded = false
+    local pos = 1
 
     local read_inputs = function(size)
-        local data = inputs:get(size)
-        if data == "" then
+        if pos > #data then
             return nil
         end
-        return data
+        local chunk = str_sub(data, pos, pos + size - 1)
+        pos = pos + #chunk
+        return chunk
     end
 
-    local write_outputs = function(data)
+    local write_outputs = function(chunk)
         if max_output then
-            written = written + #data
+            written = written + #chunk
             if written > max_output then
                 exceeded = true
                 return nil, "output size limit exceeded"
             end
         end
-        return outputs:put(data)
+        return outputs:put(chunk)
     end
 
-    local ok, err = zlib.inflateGzip(read_inputs, write_outputs, buf_size, opts)
-    if not ok then
-        if exceeded then
-            return nil, "inflated data is greater than the maximum size "
-                        .. max_output .. " allowed", true
+    repeat
+        local stream, inbuf, outbuf = zlib.createStream(buf_size)
+
+        local init = zlib.initInflate(stream, opts)
+        if init ~= Z_OK then
+            zlib.zlib.inflateEnd(stream)
+            return nil, "inflate gzip err: INIT: " .. zlib.zlib_err(init)
         end
-        return nil, "inflate gzip err: " .. err
-    end
+
+        local ok, err = zlib.inflate(read_inputs, write_outputs, buf_size,
+                                     stream, inbuf, outbuf)
+        if not ok then
+            if exceeded then
+                return nil, "inflated data is greater than the maximum size "
+                            .. max_output .. " allowed", true
+            end
+            return nil, "inflate gzip err: " .. err
+        end
+
+        -- the member stopped short of the bytes that begin the next one
+        pos = pos - stream.avail_in
+    until pos > #data
 
     return outputs:get()
 end

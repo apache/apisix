@@ -34,13 +34,15 @@ The `request-decompress` Plugin decompresses a request body sent with a `Content
 
 A request without a `Content-Encoding` header passes through untouched and its body is never read, so the same Route serves both compressed and uncompressed clients.
 
+A gzip body may carry several members concatenated, which [RFC 1952 section 2.2](https://www.rfc-editor.org/rfc/rfc1952#section-2.2) allows. Every member is decompressed and `max_req_body_size` bounds their total.
+
 By default the Upstream also receives the decompressed body and the `Content-Encoding` header is removed. Set `forward_compressed` to `true` to send a compressed body Upstream instead, while the Plugins on the Route still read the plain one.
 
 ## Attributes
 
 | Name | Type | Required | Default | Valid values | Description |
 | ---- | ---- | -------- | ------- | ------------ | ----------- |
-| max_req_body_size | integer | False | 1048576 | >= 1 | Maximum size in bytes of the decompressed request body. A body that inflates beyond this size is rejected with a `413`. The limit is applied while decompressing, so an oversized payload is never buffered in full. |
+| max_req_body_size | integer | False | 1048576 | >= 1 | Maximum size in bytes of the request body, applied both to the body as it arrives and to the decompressed result. A body beyond this size is rejected with a `413`. The limit is applied while decompressing, so an oversized payload is never buffered in full. |
 | forward_compressed | boolean | False | false | | If true, the Upstream receives a compressed body instead of the decompressed one. |
 
 ## Rejections
@@ -48,8 +50,8 @@ By default the Upstream also receives the decompressed body and the `Content-Enc
 | Condition | Status | Notes |
 | --------- | ------ | ----- |
 | A coding other than `gzip`, `deflate` or `identity`, such as `br` | `415` | The response carries an `Accept-Encoding: gzip, deflate` header, as [RFC 9110](https://www.rfc-editor.org/rfc/rfc9110#section-12.5.3) recommends. |
-| A malformed compressed body | `400` | |
-| A body inflating beyond `max_req_body_size` | `413` | |
+| A malformed compressed body, or bytes trailing the last gzip member | `400` | |
+| A body beyond `max_req_body_size`, as received or once decompressed | `413` | |
 
 ## Examples
 
@@ -189,6 +191,8 @@ The Upstream receives the body still compressed, with the `Content-Encoding` hea
 ## Plugin order
 
 `request-decompress` runs in the `rewrite` phase with a priority of `2850`. That places it after the Plugins that reject a request cheaply, so a blocked request is never decompressed, and before every Plugin that reads the request body.
+
+A Route that configures the Plugin takes precedence over a Global Rule that also configures it, so the request body is handled once with the Route's settings.
 
 Two consequences are worth knowing, and both can be changed with [`_meta.priority`](../terminology/plugin.md#plugins-execution-order):
 

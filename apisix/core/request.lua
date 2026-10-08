@@ -354,6 +354,8 @@ local function decompress_body(body, max_size, ctx)
 end
 
 
+-- the third return value names a size violation, so a caller can answer 413
+-- rather than 500. A read failure is left unclassified.
 local function read_body(max_size, ctx)
     if max_size then
         local var = ctx and ctx.var or ngx.var
@@ -368,7 +370,7 @@ local function read_body(max_size, ctx)
                     clear_header("expect")
                 end
 
-                return nil, err
+                return nil, err, "too_large"
             end
         end
     end
@@ -379,7 +381,7 @@ local function read_body(max_size, ctx)
     if req_body then
         local ok, err = check_size(#req_body, max_size)
         if not ok then
-            return nil, err
+            return nil, err, "too_large"
         end
 
         return req_body
@@ -400,7 +402,7 @@ local function read_body(max_size, ctx)
 
         local ok, err = check_size(size, max_size)
         if not ok then
-            return nil, err
+            return nil, err, "too_large"
         end
     end
 
@@ -416,11 +418,12 @@ end
 -- `Content-Encoding` of gzip or deflate; it is off by default, so callers that
 -- need the bytes as they arrived, a signature check among them, are unaffected.
 -- On failure the third return value is one of `unsupported_encoding`,
--- `decompress_failed` or `too_large`.
+-- `decompress_failed` or `too_large`. A body over `max_size` is `too_large`
+-- whether the limit was reached while reading it or while inflating it.
 function _M.get_body(max_size, ctx, opts)
-    local body, err = read_body(max_size, ctx)
+    local body, err, err_kind = read_body(max_size, ctx)
     if err then
-        return nil, err
+        return nil, err, err_kind
     end
 
     -- a bare `return body` keeps the single return value callers may splat
