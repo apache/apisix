@@ -2196,6 +2196,6 @@ nginx_config:
 * `delayed_sync.synced_count`：当时 Redis 中当前窗口的计数。
 * `delayed_sync.local_delta`：该 APISIX 实例自那以后计入、尚未同步的值，不含本次请求。
 
-此时 `current_window.count` 是估算值，即 `synced_count + local_delta + cost`，不包含其他实例自各自上次同步以来的计数。对于滑动窗口，`current_window` 和 `previous_window` 描述的是上一次同步时的窗口：上一个窗口的权重在同步时就已确定，因此 `previous_window.weight` 是本次请求实际使用的权重，而不是 `evaluated_at_ms` 时刻的权重。快照只在其窗口结束之后才会刷新，因此在窗口边界之后几毫秒内到达的请求仍按上一次的快照判定，此时它的 `evaluated_at_ms` 会晚于 `current_window.end_ms`。
+此时 `current_window.count` 是估算值，即 `synced_count + local_delta + cost`，不包含其他实例自各自上次同步以来的计数。对于滑动窗口，`current_window` 和 `previous_window` 描述的是上一次同步时的窗口：上一个窗口的权重在同步时就已确定，因此 `previous_window.weight` 是本次请求实际使用的权重，而不是 `evaluated_at_ms` 时刻的权重。快照在每次同步时都会被替换（同步会在请求之后 `sync_interval` 内进行），在窗口结束、快照到期时也会刷新。在窗口边界之后、下一次同步之前到达的请求仍按上一次的快照判定，因此它的 `evaluated_at_ms` 可能短暂地晚于 `current_window.end_ms`。
 
 配置多条 `rules` 时，该变量描述最后一条被检查的规则；如果有规则拒绝了请求，就是该规则。
