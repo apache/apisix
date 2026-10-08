@@ -340,7 +340,11 @@ local function sync_key(self, key)
         core.log.error("get local delta from shm failed: ", err)
     end
 
-    if delta then
+    -- the key expires two windows after its creation and is not renewed, so a
+    -- node that only rejects loses it; flush anyway, otherwise that node keeps
+    -- judging on the same cached quota until the quota itself expires
+    if not err then
+        delta = delta or 0
         local flush = self.limiter.commit or self.limiter.incoming
         local _, remaining_or_err, reset = flush(self.limiter, key, delta)
         -- compat
