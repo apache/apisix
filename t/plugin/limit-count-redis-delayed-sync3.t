@@ -137,3 +137,99 @@ passed
 --- response_body
 200 200 503 503 200
 --- timeout: 10
+
+
+
+=== TEST 3: fixed window, unreachable redis, delayed sync
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "limit-count": {
+                                "count": 1,
+                                "time_window": 60,
+                                "window_type": "fixed",
+                                "key_type": "constant",
+                                "key": "delayed-sync-no-redis",
+                                "policy": "redis",
+                                "redis_host": "127.0.0.1",
+                                "redis_port": 16399,
+                                "sync_interval": 0.1
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 4: without a local delta, a failed sync does not charge the fallback limiter
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local dict = ngx.shared["plugin-limit-count"]
+
+            local function hit()
+                local res, err = http.new():request_uri(uri)
+                return res and res.status or err
+            end
+
+            -- what the fallback limiter has counted for this route
+            local function fallback_count()
+                local sum = 0
+                for _, key in ipairs(dict:get_keys(0)) do
+                    -- the fixed window counter is stored under the limit key
+                    if key:find("^/apisix/routes/")
+                       and key:find("delayed-sync-no-redis", 1, true) then
+                        sum = sum + dict:get(key)
+                    end
+                end
+                return sum
+            end
+
+            -- admitted on the fallback limiter, then synced to it
+            local codes = {hit()}
+            ngx.sleep(0.3)
+            local before = fallback_count()
+
+            -- the local delta key expired: the node has nothing to sync
+            for _, key in ipairs(dict:get_keys(0)) do
+                if key:find("^local_delta#") then
+                    dict:delete(key)
+                end
+            end
+
+            -- rejected, and the sync it schedules fails against Redis
+            codes[2] = hit()
+            ngx.sleep(0.3)
+
+            ngx.say(table.concat(codes, " "), ", fallback count ", before, " -> ",
+                    fallback_count())
+        }
+    }
+--- response_body
+200 503, fallback count 1 -> 1
+--- error_log
+sync to redis failed
+--- timeout: 10
