@@ -131,7 +131,34 @@ server 1
 
 
 
-=== TEST 4: scheme per server address, other schemes are still rejected
+=== TEST 4: the certificate of an https consul server is verified
+--- http_config
+    # same endpoint as above, but its certificate is not signed by the trusted CA
+    lua_ssl_trusted_certificate ../../certs/mtls_ca.crt;
+
+    server {
+        listen 18501 ssl;
+        ssl_certificate             ../../certs/localhost_slapd_cert.pem;
+        ssl_certificate_key         ../../certs/localhost_slapd_key.pem;
+
+        location / {
+            proxy_pass http://127.0.0.1:8500;
+        }
+    }
+--- yaml_config eval: main::yaml_config("https://localhost:18501", "false")
+--- apisix_yaml eval: $::apisix_yaml
+--- request
+GET /hello
+--- error_code: 503
+--- error_log eval
+[
+    qr/connect consul: https:\/\/localhost:18501\/v1 .* with error: \d+: unable to (get local issuer|verify the first) certificate/,
+    qr/consul service not found: default\/service_tls/,
+]
+
+
+
+=== TEST 5: scheme per server address, other schemes are still rejected
 --- config
     location /t {
         content_by_lua_block {
@@ -162,7 +189,7 @@ invalid consul server address: bad uri: tcp://127.0.0.1:8500, the valid format: 
 
 
 
-=== TEST 5: clean nodes
+=== TEST 6: clean nodes
 --- config
 location /v1/agent {
     proxy_pass http://127.0.0.1:8500;
