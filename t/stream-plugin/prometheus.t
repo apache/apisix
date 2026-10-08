@@ -128,7 +128,7 @@ hello world
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_stream_connection_total\{route="mqtt"\} 1/
+qr/apisix_stream_connection_total\{route="mqtt",service="",service_id=""\} 1/
 
 
 
@@ -161,7 +161,7 @@ Received unexpected MQTT packet type+flags
 --- request
 GET /t
 --- response_body eval
-qr/apisix_stream_connection_total\{route="mqtt"\} 2/
+qr/apisix_stream_connection_total\{route="mqtt",service="",service_id=""\} 2/
 
 
 
