@@ -2152,3 +2152,50 @@ X-Custom-RateLimit-Limit: 1
 X-Custom-RateLimit-Remaining: 0
 X-Custom-RateLimit-Reset: 28
 ```
+
+### 记录请求被放行或拒绝的原因
+
+插件会把本次判定写入 `$rate_limiting_info` 变量，值为一个 JSON 对象，可以加入访问日志，或加入日志类插件的 `log_format`。例如，在 `config.yaml` 中把它加入访问日志：
+
+```yaml
+nginx_config:
+  http:
+    access_log_format: '$remote_addr - [$time_local] "$request" $status "$rate_limiting_info"'
+```
+
+计入固定窗口的请求记录的值类似如下：
+
+```json
+{"rate_limiting_key":"/apisix/routes/1:1:127.0.0.1","rate_limiting_limit":10,"rate_limiting_remaining":3,"rate_limiting_reset":42,"window_type":"fixed","window_size_ms":60000,"decision":"allowed","cost":1,"evaluated_at_ms":1759212345678,"current_window":{"start_ms":1759212300123,"end_ms":1759212360123,"count":7,"created":false}}
+```
+
+计入滑动窗口的请求记录的值类似如下：
+
+```json
+{"rate_limiting_key":"/apisix/routes/1:1:127.0.0.1","rate_limiting_limit":10,"rate_limiting_remaining":3,"rate_limiting_reset":14,"window_type":"sliding","window_size_ms":60000,"decision":"allowed","cost":1,"evaluated_at_ms":1759212345678,"current_window":{"id":29320205,"start_ms":1759212300000,"end_ms":1759212360000,"count":4},"previous_window":{"count":10,"weight":0.2387,"weighted_count":2.387}}
+```
+
+字段的顺序不固定。所有 `*_ms` 字段都是以毫秒为单位的 Unix 时间戳或时长，取自 APISIX 实例的时钟。适用于该窗口类型、但对本次请求未知的字段为 `null`。各字段含义如下：
+
+* `rate_limiting_key`、`rate_limiting_limit`、`rate_limiting_remaining`、`rate_limiting_reset`：计数器的键、配额、剩余配额以及距重置的秒数，与限流响应头一致。滑动窗口拒绝请求时，`rate_limiting_reset` 是距离可以再次放行请求的时间，可能早于窗口结束时间。
+* `window_type`：`fixed` 或 `sliding`。
+* `window_size_ms`：以毫秒表示的 `time_window`。
+* `decision`：`allowed`、`rejected`，或在无法更新计数器（例如 Redis 不可达）时为 `error`。值为 `error` 时只包含以上字段。
+* `cost`：本次请求计入计数器的值。固定窗口即使拒绝请求也会计数；滑动窗口和延迟同步只对放行的请求计数，因此被拒绝请求的 `cost` 为 `0`。
+* `evaluated_at_ms`：检查本次请求的时间。
+* `current_window.count`：计入本次请求（含其 `cost`）之后当前窗口的计数。本地固定窗口拒绝请求时为 `null`。
+* `current_window.start_ms` 和 `current_window.end_ms`：当前窗口的起止时间。
+
+固定窗口不与时钟对齐：它从该键下计入的第一个请求开始，持续 `time_window` 秒。`current_window.created` 在开启该窗口的请求上为 `true`。它只在 `local` 策略下可知，在 Redis 策略下为 `null`；Redis 策略下窗口结束时间由 Redis 计数器的 TTL 推算，不同请求之间可能相差几毫秒。
+
+滑动窗口与时钟对齐：`current_window.id` 是自 Unix 纪元以来的窗口序号，当前窗口从 `id * window_size_ms` 开始。当前窗口的计数加上上一个窗口按其仍处于滑动范围内的比例加权后的计数，只要低于配额，请求就会被放行。`previous_window.count` 是上一个窗口的计数（不超过配额），`previous_window.weight` 是该比例（0 到 1），`previous_window.weighted_count` 是两者的乘积。
+
+启用延迟同步（`sync_interval`）时，通过 Redis 共享的计数器每个间隔只读取一次，`delayed_sync` 对象描述了本次请求所依据的数据：
+
+* `delayed_sync.synced_at_ms`：该 APISIX 实例上一次同步计数器的时间。
+* `delayed_sync.synced_count`：当时 Redis 中当前窗口的计数。
+* `delayed_sync.local_delta`：该 APISIX 实例自那以后计入、尚未同步的值，不含本次请求。
+
+此时 `current_window.count` 是估算值，即 `synced_count + local_delta + cost`，不包含其他实例自各自上次同步以来的计数。对于滑动窗口，`current_window` 和 `previous_window` 描述的是上一次同步时的窗口：上一个窗口的权重在同步时就已确定，因此 `previous_window.weight` 是本次请求实际使用的权重，而不是 `evaluated_at_ms` 时刻的权重。快照只在其窗口结束之后才会刷新，因此在窗口边界之后几毫秒内到达的请求仍按上一次的快照判定，此时它的 `evaluated_at_ms` 会晚于 `current_window.end_ms`。
+
+配置多条 `rules` 时，该变量描述最后一条被检查的规则；如果有规则拒绝了请求，就是该规则。
