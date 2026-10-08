@@ -650,4 +650,3 @@ hello world
 Batch Processor[splunk-hec-logging] failed to process entries: failed to send splunk, Forbidden: missing permissions
 --- no_error_log
 attempt to concatenate field 'text'
-
