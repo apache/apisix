@@ -921,3 +921,81 @@ status: 200
 content-encoding: gzip
 upstream body unchanged: false
 upstream body inflates to: {"foo":"hello world","bar":30}
+
+
+
+=== TEST 26: route whose body another plugin moves to a file
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local core = require("apisix.core")
+            local func = [[return function(conf, ctx)
+                local path = ngx.config.prefix() .. "logs/request-decompress-body.txt"
+                local f = assert(io.open(path, "w"))
+                f:write('{"name":"from-file"}')
+                f:close()
+                ngx.req.set_body_file(path)
+            end]]
+
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                core.json.encode({
+                    uri = "/echo",
+                    plugins = {
+                        ["request-decompress"] = {
+                            forward_compressed = true
+                        },
+                        ["serverless-pre-function"] = {
+                            phase = "access",
+                            functions = {func}
+                        }
+                    },
+                    upstream = {
+                        type = "roundrobin",
+                        nodes = {["127.0.0.1:1980"] = 1}
+                    }
+                })
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 27: a body held in a file is compressed from the file
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local gzip = require("apisix.utils.gzip")
+
+            local httpc = http.new()
+            local res, err = httpc:request_uri("http://127.0.0.1:1984/echo", {
+                method = "POST",
+                body = gzip.deflate_gzip([[{"name":"doggie"}]]),
+                headers = {
+                    ["Content-Type"] = "application/json",
+                    ["Content-Encoding"] = "gzip"
+                }
+            })
+            if not res then
+                ngx.say(err)
+                return
+            end
+
+            ngx.say("status: ", res.status)
+            ngx.say("content-encoding: ", res.headers["Content-Encoding"] or "none")
+            ngx.say("upstream body inflates to: ", gzip.inflate_gzip(res.body))
+        }
+    }
+--- response_body
+status: 200
+content-encoding: gzip
+upstream body inflates to: {"name":"from-file"}

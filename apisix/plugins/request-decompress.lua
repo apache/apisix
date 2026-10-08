@@ -154,7 +154,8 @@ function _M.before_proxy(_, ctx)
         return
     end
 
-    local current = ngx_req.get_body_data() or ""
+    -- read through core so a body another plugin moved to a file is found too
+    local current = core.request.get_body(nil, ctx) or ""
 
     -- nothing rewrote the body, so the bytes as they arrived still apply
     if current == state.plain then
