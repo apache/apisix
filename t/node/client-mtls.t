@@ -492,7 +492,7 @@ curl -k https://localhost:1994/hello -H "Host: test.com"
 --- response_body eval
 qr/421 Misdirected Request/
 --- error_log
-client certificate verified with SNI localhost, but the host is test.com
+request SNI localhost does not match host test.com for an mTLS-enabled SSL configuration
 
 
 
@@ -570,7 +570,7 @@ curl --cert t/certs/mtls_client.crt --key t/certs/mtls_client.key -k https://loc
 --- response_body eval
 qr/421 Misdirected Request/
 --- error_log
-client certificate verified with SNI localhost, but the host is test.com
+request SNI localhost does not match host test.com for an mTLS-enabled SSL configuration
 
 
 

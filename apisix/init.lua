@@ -486,8 +486,8 @@ local function verify_https_client(ctx)
         if sni ~= host then
             -- A reused connection cannot negotiate the target host's client certificate.
             -- Reject it before checking the certificate so clients can retry with its SNI.
-            core.log.error("client certificate verified with SNI ", sni,
-                           ", but the host is ", host)
+            core.log.error("request SNI ", sni, " does not match host ", host,
+                           " for an mTLS-enabled SSL configuration")
             return false, 421
         end
 
