@@ -52,6 +52,10 @@ end
 
 
 local function get_response(ctx, http_obj)
+    -- This plugin performs the upstream request itself instead of using the
+    -- NGINX proxy path. Let tracing plugins know that their injected context
+    -- can be observed by an external service even if this plugin exits early.
+    ctx._apisix_upstream_started = true
     local ok, err = http_obj:connect({
         scheme = ctx.upstream_scheme,
         host = ctx.picked_server.host,
@@ -167,10 +171,12 @@ function _M.before_proxy(conf, ctx)
     ctx.var.upstream_addr = ctx.picked_server.host .. ":" .. ctx.picked_server.port
     ctx.var.upstream_response_time = ngx.now() - start_time
     if not res or err then
+        ctx._apisix_upstream_error = true
         core.log.error("failed to request: ", err or "")
         close(http_obj)
         return 502
     end
+    ctx._apisix_upstream_status = res.status
     res.body_reader = timed_body_reader(ctx, res.body_reader)
     ctx.runner_ext_response = res
 
