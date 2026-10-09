@@ -82,6 +82,16 @@ local function verify(spans_by_id, expected, actual, path, errors)
             path, expected.kind, tostring(actual.kind)))
     end
 
+    if expected.status_code then
+        -- OTLP JSON omits the status code when it is UNSET (0)
+        local code = actual.status and actual.status.code or 0
+        if code ~= expected.status_code then
+            table.insert(errors, string.format(
+                "%s: expected status_code=%d, got=%s",
+                path, expected.status_code, tostring(code)))
+        end
+    end
+
     if expected.attributes then
         local attr_map = get_attr_map(actual)
         for key, val in pairs(expected.attributes) do
