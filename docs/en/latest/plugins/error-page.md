@@ -45,6 +45,9 @@ There are no attributes to configure this Plugin on Routes, Services, or other r
 | Name | Type | Required | Default | Description |
 | ---- | ---- | -------- | ------- | ----------- |
 | enable | boolean | False | false | Set to `true` to enable the Plugin. |
+| error_403 | object | False | | Custom error page for 403 responses. |
+| error_403.body | string | False | Default HTML page | Response body for 403 responses. |
+| error_403.content_type | string | False | text/html | Content type of the response body. |
 | error_404 | object | False | | Custom error page for 404 responses. |
 | error_404.body | string | False | Default HTML page | Response body for 404 responses. |
 | error_404.content_type | string | False | text/html | Content type of the response body. |
@@ -57,6 +60,21 @@ There are no attributes to configure this Plugin on Routes, Services, or other r
 | error_503 | object | False | | Custom error page for 503 responses. |
 | error_503.body | string | False | Default HTML page | Response body for 503 responses. |
 | error_503.content_type | string | False | text/html | Content type of the response body. |
+
+The `body` of each error page supports Nginx variables, which are resolved before the response is sent. For example, you can embed the request ID to help users and administrators correlate error responses with logs:
+
+```json
+{
+    "enable": true,
+    "error_404": {
+        "body": "<html><body><h1>404 Not Found</h1><p>Request ID: $request_id</p></body></html>",
+        "content_type": "text/html"
+    }
+}
+```
+
+Variables can be written as `$var` or `${var}`, and a default value can be specified with the `??` operator (e.g. `$http_x_custom_id??unknown`). To output a literal dollar sign, escape it with a backslash (e.g. `\$100` renders as `\$100`).
+
 
 ## Enable Plugin
 
