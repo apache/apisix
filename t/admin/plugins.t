@@ -74,6 +74,7 @@ ua-restriction
 referer-restriction
 csrf
 uri-blocker
+request-decompress
 request-validation
 chaitin-waf
 multi-auth

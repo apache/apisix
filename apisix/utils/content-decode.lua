@@ -15,37 +15,13 @@
 -- limitations under the License.
 --
 local pcall = pcall
-local zlib = require("ffi-zlib")
+local inflate_gzip = require("apisix.utils.gzip").inflate_gzip
 local str_buffer = require("string.buffer")
 local is_br_libs_loaded, brotli = pcall(require, "brotli")
-local content_decode_funcs = {}
+local content_decode_funcs = {
+    gzip = inflate_gzip,
+}
 local _M = {}
-
-
-local function inflate_gzip(data)
-    local inputs = str_buffer.new():set(data)
-    local outputs = str_buffer.new()
-
-    local read_inputs = function(size)
-        local data = inputs:get(size)
-        if data == "" then
-            return nil
-        end
-        return data
-    end
-
-    local write_outputs = function(data)
-        return outputs:put(data)
-    end
-
-    local ok, err = zlib.inflateGzip(read_inputs, write_outputs)
-    if not ok then
-        return nil, "inflate gzip err: " .. err
-    end
-
-    return outputs:get()
-end
-content_decode_funcs.gzip = inflate_gzip
 
 
 local function brotli_stream_decode(read_inputs, write_outputs)
