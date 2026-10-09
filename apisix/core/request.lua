@@ -25,7 +25,6 @@ local json = require("apisix.core.json")
 local io = require("apisix.core.io")
 local multipart = require("multipart")
 local core_str = require("apisix.core.string")
-local inflate_gzip = require("apisix.utils.gzip").inflate_gzip
 local req_add_header
 if ngx.config.subsystem == "http" then
     local ngx_req = require "ngx.req"
@@ -38,9 +37,7 @@ local clear_header = ngx.req.clear_header
 local tonumber  = tonumber
 local error     = error
 local type      = type
-local ipairs    = ipairs
 local str_fmt   = string.format
-local str_gmatch = string.gmatch
 local str_lower = string.lower
 local req_read_body = ngx.req.read_body
 local req_get_body_data = ngx.req.get_body_data
@@ -284,79 +281,11 @@ local function test_expect(var)
 end
 
 
-local IDENTITY_ENCODING = "identity"
--- gzip and deflate are both zlib streams, inflate_gzip auto-detects the header
-local SUPPORTED_ENCODINGS = {
-    gzip = true,
-    deflate = true,
-}
-
--- advertised in Accept-Encoding when a request is rejected over its encoding
-_M.SUPPORTED_CONTENT_ENCODINGS = "gzip, deflate"
-
-
-local function collect_codings(value, codings)
-    for coding in str_gmatch(value, "[^,%s]+") do
-        codings[#codings + 1] = str_lower(coding)
-    end
-end
-
-
--- codings are returned in the order they were applied to the body
-local function get_content_encodings(ctx)
-    local value = _headers(ctx)["content-encoding"]
-    if not value then
-        return nil
-    end
-
-    local codings = {}
-    if type(value) == "table" then
-        for _, v in ipairs(value) do
-            collect_codings(v, codings)
-        end
-    else
-        collect_codings(value, codings)
-    end
-
-    return codings
-end
-_M.get_content_encodings = get_content_encodings
-
-
--- inflates the body in the reverse order the codings were applied. The third
--- return value names the failure so callers can pick a status code.
-local function decompress_body(body, max_size, ctx)
-    local codings = get_content_encodings(ctx)
-    if not codings then
-        return body
-    end
-
-    for _, coding in ipairs(codings) do
-        if coding ~= IDENTITY_ENCODING and not SUPPORTED_ENCODINGS[coding] then
-            return nil, "unsupported content encoding: " .. coding, "unsupported_encoding"
-        end
-    end
-
-    for i = #codings, 1, -1 do
-        if codings[i] ~= IDENTITY_ENCODING then
-            local plain, err, exceeded = inflate_gzip(body, nil, nil, max_size)
-            if not plain then
-                if exceeded then
-                    return nil, err, "too_large"
-                end
-                return nil, err, "decompress_failed"
-            end
-            body = plain
-        end
-    end
-
-    return body
-end
-
-
--- the third return value names a size violation, so a caller can answer 413
--- rather than 500. A read failure is left unclassified.
-local function read_body(max_size, ctx)
+--- Read the request body.
+--
+-- On a body larger than `max_size` the third return value is `too_large`, so a
+-- caller can answer 413 rather than 500. A read failure is left unclassified.
+function _M.get_body(max_size, ctx)
     if max_size then
         local var = ctx and ctx.var or ngx.var
         local content_length = tonumber(var.http_content_length)
@@ -408,30 +337,6 @@ local function read_body(max_size, ctx)
 
     local req_body, err = io.get_file(file_name)
     return req_body, err
-end
-
-
---- Read the request body.
---
--- `max_size` bounds the body read into memory, and bounds the inflated data as
--- well when decompression is on. `opts.decompress` inflates a body sent with a
--- `Content-Encoding` of gzip or deflate; it is off by default, so callers that
--- need the bytes as they arrived, a signature check among them, are unaffected.
--- On failure the third return value is one of `unsupported_encoding`,
--- `decompress_failed` or `too_large`. A body over `max_size` is `too_large`
--- whether the limit was reached while reading it or while inflating it.
-function _M.get_body(max_size, ctx, opts)
-    local body, err, err_kind = read_body(max_size, ctx)
-    if err then
-        return nil, err, err_kind
-    end
-
-    -- a bare `return body` keeps the single return value callers may splat
-    if not body or not (opts and opts.decompress) then
-        return body
-    end
-
-    return decompress_body(body, max_size, ctx)
 end
 
 

@@ -18,7 +18,10 @@
 local core    = require("apisix.core")
 local gzip    = require("apisix.utils.gzip")
 local ipairs  = ipairs
+local type    = type
 local ngx_req = ngx.req
+local str_gmatch = string.gmatch
+local str_lower  = string.lower
 local tab_concat = table.concat
 
 local plugin_name = "request-decompress"
@@ -27,7 +30,14 @@ local IDENTITY_ENCODING = "identity"
 -- windowBits 15 emits a zlib stream, which is the deflate coding
 local DEFLATE_OPTS = {windowBits = 15}
 
-local DECOMPRESS_OPTS = {decompress = true}
+-- gzip and deflate are both zlib streams, inflate_gzip auto-detects the header
+local SUPPORTED_ENCODINGS = {
+    gzip = true,
+    deflate = true,
+}
+-- advertised in Accept-Encoding when a request is rejected over its encoding
+local SUPPORTED_CONTENT_ENCODINGS = "gzip, deflate"
+
 local BODY_ERRORS = {
     unsupported_encoding = {status = 415},
     decompress_failed = {status = 400, message = "failed to decompress request body"},
@@ -70,6 +80,36 @@ function _M.check_schema(conf)
 end
 
 
+local function collect_codings(value, codings)
+    for coding in str_gmatch(value, "[^,%s]+") do
+        codings[#codings + 1] = str_lower(coding)
+    end
+end
+
+
+-- codings are returned in the order they were applied to the body. A repeated
+-- Content-Encoding header carries as many codings as a single comma-joined one.
+local function get_content_encodings(ctx)
+    -- read from the header table, since core.request.header collapses a
+    -- repeated header to its first line
+    local value = core.request.headers(ctx)["content-encoding"]
+    if not value then
+        return nil
+    end
+
+    local codings = {}
+    if type(value) == "table" then
+        for _, v in ipairs(value) do
+            collect_codings(v, codings)
+        end
+    else
+        collect_codings(value, codings)
+    end
+
+    return codings
+end
+
+
 -- an unclassified cause is a read failure rather than anything the client did
 local function body_error(err, err_kind)
     core.log.error("failed reading request body, err: ", err)
@@ -80,10 +120,27 @@ local function body_error(err, err_kind)
     end
 
     if err_kind == "unsupported_encoding" then
-        core.response.set_header("Accept-Encoding", core.request.SUPPORTED_CONTENT_ENCODINGS)
+        core.response.set_header("Accept-Encoding", SUPPORTED_CONTENT_ENCODINGS)
     end
 
     return known.status, {message = known.message or err}
+end
+
+
+-- inflates the body in the reverse order the codings were applied, bounding
+-- their total output by max_size. The third return value names the failure.
+local function decompress(body, max_size, codings)
+    for i = #codings, 1, -1 do
+        if codings[i] ~= IDENTITY_ENCODING then
+            local plain, err, exceeded = gzip.inflate_gzip(body, nil, nil, max_size)
+            if not plain then
+                return nil, err, exceeded and "too_large" or "decompress_failed"
+            end
+            body = plain
+        end
+    end
+
+    return body
 end
 
 
@@ -119,28 +176,33 @@ end
 
 function _M.rewrite(conf, ctx)
     -- an uncompressed request is left untouched, its body is never read
-    local codings = core.request.get_content_encodings(ctx)
+    local codings = get_content_encodings(ctx)
     if not codings then
         return
     end
 
-    local original
-    if conf.forward_compressed then
-        local raw, raw_err, raw_kind = core.request.get_body(conf.max_req_body_size, ctx)
-        if raw_err then
-            return body_error(raw_err, raw_kind)
+    -- a coding we cannot inflate is rejected before the body is read
+    for _, coding in ipairs(codings) do
+        if coding ~= IDENTITY_ENCODING and not SUPPORTED_ENCODINGS[coding] then
+            return body_error("unsupported content encoding: " .. coding,
+                              "unsupported_encoding")
         end
-        original = raw
     end
 
-    local body, err, err_kind = core.request.get_body(conf.max_req_body_size, ctx, DECOMPRESS_OPTS)
+    local original, err, err_kind = core.request.get_body(conf.max_req_body_size, ctx)
     if err then
         return body_error(err, err_kind)
     end
 
-    if body then
+    local body
+    if original then
+        body, err, err_kind = decompress(original, conf.max_req_body_size, codings)
+        if not body then
+            return body_error(err, err_kind)
+        end
         ngx_req.set_body_data(body)
     end
+
     core.request.set_header(ctx, "Content-Encoding", nil)
 
     clear_content_length_cache(ctx)

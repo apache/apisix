@@ -580,54 +580,13 @@ header: new
 
 
 
-=== TEST 19: get_body keeps the raw body unless opts.decompress is set
+=== TEST 19: get_body marks a body over max_size as too_large
 --- config
     location /read {
         content_by_lua_block {
             local core = require("apisix.core")
             ngx.ctx.api_ctx = {}
-            local ctx = ngx.ctx.api_ctx
-
-            local raw = core.request.get_body(nil, ctx)
-            ngx.say("raw is the plain body: ", raw == [[{"name":"doggie"}]])
-
-            local plain, err, kind = core.request.get_body(nil, ctx, {decompress = true})
-            ngx.say("plain: ", plain)
-            ngx.say("err: ", err, ", kind: ", kind)
-        }
-    }
-    location /t {
-        content_by_lua_block {
-            local http = require("resty.http")
-            local gzip = require("apisix.utils.gzip")
-            local httpc = http.new()
-            local res, err = httpc:request_uri("http://127.0.0.1:1984/read", {
-                method = "POST",
-                body = gzip.deflate_gzip([[{"name":"doggie"}]]),
-                headers = {["Content-Encoding"] = "gzip"}
-            })
-            if not res then
-                ngx.say(err)
-                return
-            end
-            ngx.print(res.body)
-        }
-    }
---- response_body
-raw is the plain body: false
-plain: {"name":"doggie"}
-err: nil, kind: nil
-
-
-
-=== TEST 20: an unsupported coding is reported back
---- config
-    location /read {
-        content_by_lua_block {
-            local core = require("apisix.core")
-            ngx.ctx.api_ctx = {}
-            local body, err, kind = core.request.get_body(nil, ngx.ctx.api_ctx,
-                                                          {decompress = true})
+            local body, err, kind = core.request.get_body(8, ngx.ctx.api_ctx)
             ngx.say("body: ", body)
             ngx.say("err: ", err)
             ngx.say("kind: ", kind)
@@ -639,8 +598,7 @@ err: nil, kind: nil
             local httpc = http.new()
             local res, err = httpc:request_uri("http://127.0.0.1:1984/read", {
                 method = "POST",
-                body = "whatever",
-                headers = {["Content-Encoding"] = "br"}
+                body = [[{"name":"doggie"}]],
             })
             if not res then
                 ngx.say(err)
@@ -651,79 +609,5 @@ err: nil, kind: nil
     }
 --- response_body
 body: nil
-err: unsupported content encoding: br
-kind: unsupported_encoding
-
-
-
-=== TEST 21: a corrupt stream is reported back
---- config
-    location /read {
-        content_by_lua_block {
-            local core = require("apisix.core")
-            ngx.ctx.api_ctx = {}
-            local body, err, kind = core.request.get_body(nil, ngx.ctx.api_ctx,
-                                                          {decompress = true})
-            ngx.say("body: ", body)
-            ngx.say("kind: ", kind)
-        }
-    }
-    location /t {
-        content_by_lua_block {
-            local http = require("resty.http")
-            local gzip = require("apisix.utils.gzip")
-            local body = gzip.deflate_gzip([[{"name":"doggie"}]])
-            local httpc = http.new()
-            local res, err = httpc:request_uri("http://127.0.0.1:1984/read", {
-                method = "POST",
-                body = body:sub(1, #body - 6),
-                headers = {["Content-Encoding"] = "gzip"}
-            })
-            if not res then
-                ngx.say(err)
-                return
-            end
-            ngx.print(res.body)
-        }
-    }
---- response_body
-body: nil
-kind: decompress_failed
-
-
-
-=== TEST 22: max_size bounds the inflated body
---- config
-    location /read {
-        content_by_lua_block {
-            local core = require("apisix.core")
-            ngx.ctx.api_ctx = {}
-            local body, err, kind = core.request.get_body(64, ngx.ctx.api_ctx,
-                                                          {decompress = true})
-            ngx.say("body: ", body)
-            ngx.say("err: ", err)
-            ngx.say("kind: ", kind)
-        }
-    }
-    location /t {
-        content_by_lua_block {
-            local http = require("resty.http")
-            local gzip = require("apisix.utils.gzip")
-            local raw = [[{"name":"]] .. string.rep("d", 2048) .. [["}]]
-            local httpc = http.new()
-            local res, err = httpc:request_uri("http://127.0.0.1:1984/read", {
-                method = "POST",
-                body = gzip.deflate_gzip(raw),
-                headers = {["Content-Encoding"] = "gzip"}
-            })
-            if not res then
-                ngx.say(err)
-                return
-            end
-            ngx.print(res.body)
-        }
-    }
---- response_body
-body: nil
-err: inflated data is greater than the maximum size 64 allowed
+err: request size 17 is greater than the maximum size 8 allowed
 kind: too_large
