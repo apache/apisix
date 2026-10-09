@@ -273,7 +273,6 @@ local _M = {
     "response-rewrite",
     "openapi-to-mcp",
     "oas-validator",
-    "mcp-bridge",
     "degraphql",
     "kafka-proxy",
     "websocket-proxy",
