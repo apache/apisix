@@ -124,9 +124,8 @@ function _M.rewrite(conf, ctx)
         return
     end
 
-    local original, encoding
+    local original
     if conf.forward_compressed then
-        encoding = core.request.header(ctx, "Content-Encoding")
         local raw, raw_err, raw_kind = core.request.get_body(conf.max_req_body_size, ctx)
         if raw_err then
             return body_error(raw_err, raw_kind)
@@ -149,7 +148,6 @@ function _M.rewrite(conf, ctx)
     if conf.forward_compressed and original then
         ctx.request_decompress = {
             codings = codings,
-            encoding = encoding,
             original = original,
             plain = body,
         }
@@ -166,19 +164,27 @@ function _M.before_proxy(_, ctx)
     ctx.request_decompress = nil
 
     -- read through core so a body another plugin moved to a file is found too
-    local current = core.request.get_body(nil, ctx) or ""
+    local current, err = core.request.get_body(nil, ctx)
+    if err then
+        core.log.error("failed reading request body, err: ", err)
+        return 500, {message = "error reading the request body. err: " .. err}
+    end
+    -- a body a plugin emptied is not a body that could not be read
+    current = current or ""
 
     -- nothing rewrote the body, so the bytes as they arrived still apply
     if current == state.plain then
         ngx_req.set_body_data(state.original)
-        core.request.set_header(ctx, "Content-Encoding", state.encoding)
+        -- the codings as the client applied them, which a repeated
+        -- Content-Encoding header makes longer than any single header line
+        core.request.set_header(ctx, "Content-Encoding", tab_concat(state.codings, ", "))
         clear_content_length_cache(ctx)
         return
     end
 
-    local body, applied, err = compress(current, state.codings)
+    local body, applied, compress_err = compress(current, state.codings)
     if not body then
-        core.log.error("failed to compress request body, err: ", err)
+        core.log.error("failed to compress request body, err: ", compress_err)
         return 500, {message = "failed to compress request body"}
     end
 

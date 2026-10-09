@@ -1527,3 +1527,150 @@ upstream body inflates to: {"name":"doggie"}
 status: 200
 content-encoding: none
 upstream body: {"name":"doggie"}
+
+
+
+=== TEST 41: route forwarding a compressed body
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local core = require("apisix.core")
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                core.json.encode({
+                    uri = "/echo",
+                    plugins = {
+                        ["request-decompress"] = {
+                            forward_compressed = true
+                        }
+                    },
+                    upstream = {
+                        type = "roundrobin",
+                        nodes = {["127.0.0.1:1980"] = 1}
+                    }
+                })
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 42: a repeated Content-Encoding header keeps every coding
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local gzip = require("apisix.utils.gzip")
+            local body = gzip.deflate_gzip(gzip.deflate_gzip([[{"name":"doggie"}]]))
+
+            local httpc = http.new()
+            local res, err = httpc:request_uri("http://127.0.0.1:1984/echo", {
+                method = "POST",
+                body = body,
+                headers = {
+                    ["Content-Type"] = "application/json",
+                    -- two header lines rather than one comma separated value
+                    ["Content-Encoding"] = {"gzip", "gzip"}
+                }
+            })
+            if not res then
+                ngx.say(err)
+                return
+            end
+
+            ngx.say("status: ", res.status)
+            ngx.say("content-encoding: ", res.headers["Content-Encoding"] or "none")
+            ngx.say("upstream body unchanged: ", res.body == body)
+        }
+    }
+--- response_body
+status: 200
+content-encoding: gzip, gzip
+upstream body unchanged: true
+
+
+
+=== TEST 43: route whose body another plugin makes unreadable
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local core = require("apisix.core")
+            local func = [[return function(conf, ctx)
+                local path = ngx.config.prefix() .. "logs/request-decompress-locked.txt"
+                local f = assert(io.open(path, "w"))
+                f:write('{"name":"from-file"}')
+                f:close()
+                -- set_body_file checks the file is readable, so it is locked
+                -- only afterwards, leaving the read in before_proxy to fail
+                ngx.req.set_body_file(path)
+                os.execute("chmod 000 " .. path)
+            end]]
+
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                core.json.encode({
+                    uri = "/echo",
+                    plugins = {
+                        ["request-decompress"] = {
+                            forward_compressed = true
+                        },
+                        ["serverless-pre-function"] = {
+                            phase = "access",
+                            functions = {func}
+                        }
+                    },
+                    upstream = {
+                        type = "roundrobin",
+                        nodes = {["127.0.0.1:1980"] = 1}
+                    }
+                })
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 44: a body that cannot be read is an error, not an empty body
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local gzip = require("apisix.utils.gzip")
+
+            local httpc = http.new()
+            local res, err = httpc:request_uri("http://127.0.0.1:1984/echo", {
+                method = "POST",
+                body = gzip.deflate_gzip([[{"name":"doggie"}]]),
+                headers = {
+                    ["Content-Type"] = "application/json",
+                    ["Content-Encoding"] = "gzip"
+                }
+            })
+            if not res then
+                ngx.say(err)
+                return
+            end
+
+            ngx.say("status: ", res.status)
+        }
+    }
+--- response_body
+status: 500
+--- error_log
+failed reading request body, err:
