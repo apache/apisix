@@ -61,6 +61,37 @@ local DOCUMENTS = {
         } } },
     },
 
+    -- a tool that declares one header parameter
+    ["/headerparam.json"] = {
+        openapi = "3.0.0",
+        info = { title = "Header", version = "1" },
+        paths = { ["/traced"] = { get = {
+            operationId = "traced",
+            parameters = {
+                { name = "X-Trace", ["in"] = "header", schema = { type = "string" } },
+                { name = "Authorization", ["in"] = "header", schema = { type = "string" } },
+            },
+        } } },
+    },
+
+    -- a document that declares framing headers, and one spelled in another
+    -- case than the Route's own header, as tool parameters
+    ["/framing.json"] = {
+        openapi = "3.0.0",
+        info = { title = "Framing", version = "1" },
+        paths = { ["/framed"] = { post = {
+            operationId = "framed",
+            parameters = {
+                { name = "Transfer-Encoding", ["in"] = "header", schema = { type = "string" } },
+                { name = "Content-Length", ["in"] = "header", schema = { type = "string" } },
+                { name = "Host", ["in"] = "header", schema = { type = "string" } },
+                { name = "authorization", ["in"] = "header", schema = { type = "string" } },
+            },
+            requestBody = { content = { ["application/json"] = {
+                schema = { type = "object" } } } },
+        } } },
+    },
+
     -- parameters declared on the Path Item, one of them overridden
     ["/pathitem.json"] = {
         openapi = "3.0.0",
@@ -77,6 +108,31 @@ local DOCUMENTS = {
                 },
             },
         } },
+    },
+
+    -- one operation over the endpoint that answers with a large body
+    ["/large.json"] = {
+        openapi = "3.0.0",
+        info = { title = "Large", version = "1" },
+        paths = { ["/large"] = { get = {
+            operationId = "getLarge",
+            parameters = {
+                { name = "size", ["in"] = "query", schema = { type = "integer" } },
+            },
+        } } },
+    },
+
+    -- one operation over the endpoint that closes the connection to end the body
+    ["/closing.json"] = {
+        openapi = "3.0.0",
+        info = { title = "Closing", version = "1" },
+        paths = { ["/closing"] = { get = { operationId = "getClosing" } } },
+    },
+
+    ["/identity.json"] = {
+        openapi = "3.0.0",
+        info = { title = "Identity", version = "1" },
+        paths = { ["/identity"] = { get = { operationId = "getIdentity" } } },
     },
 
     -- a request body whose only media type is not JSON
@@ -165,10 +221,56 @@ local function read_body()
 end
 
 
+-- Answers without a Content-Length and without chunked encoding, ending the
+-- body by closing the connection: the shape an HTTP/1.0 upstream produces, and
+-- the one a reader that stops at the first "closed" would throw away.
+local function closing_body()
+    ngx.req.read_body()
+    local sock = assert(ngx.req.socket(true))
+    sock:send("HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n" ..
+              "Connection: close\r\n\r\n" ..
+              '{"closed":true,"blob":"' .. string.rep("y", 1024) .. '"}')
+    return ngx.exit(200)
+end
+
+
+-- Announces a transfer coding that is not chunked and sends no Content-Length,
+-- so the body still ends at the close. The client reads it exactly like an
+-- unframed one, which a reader keying off the header's mere presence does not.
+local function identity_body()
+    ngx.req.read_body()
+    local sock = assert(ngx.req.socket(true))
+    sock:send("HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n" ..
+              "Transfer-Encoding: identity\r\nConnection: close\r\n\r\n" ..
+              '{"identity":true,"blob":"' .. string.rep("z", 1024) .. '"}')
+    return ngx.exit(200)
+end
+
+
+-- answers with a body of the requested size, for the response size limit
+local function large_body()
+    local size = tonumber(ngx.var.arg_size) or (2 * 1024 * 1024)
+    ngx.header["Content-Type"] = "application/json"
+    ngx.print('{"blob":"', string.rep("x", size), '"}')
+end
+
+
 -- content handler for `location /`
 function _M.serve()
     local uri = ngx.var.uri
     ngx.header["Content-Type"] = "application/json"
+
+    if uri == "/large" then
+        return large_body()
+    end
+
+    if uri == "/closing" then
+        return closing_body()
+    end
+
+    if uri == "/identity" then
+        return identity_body()
+    end
 
     local doc = DOCUMENTS[uri]
     if doc then
@@ -189,7 +291,13 @@ function _M.serve()
         seen_path = ngx.var.request_uri,
         seen_method = ngx.req.get_method(),
         seen_auth = ngx.req.get_headers()["authorization"],
+        seen_injected = ngx.req.get_headers()["x-injected"],
+        seen_trace = ngx.req.get_headers()["x-trace"],
+        seen_host = ngx.var.http_host,
+        seen_forwarded = ngx.req.get_headers()["x-forwarded-for"],
         seen_content_type = ngx.req.get_headers()["content-type"],
+        seen_transfer_encoding = ngx.req.get_headers()["transfer-encoding"],
+        seen_content_length = ngx.req.get_headers()["content-length"],
         seen_body = ngx.req.get_method() ~= "GET" and read_body() or nil,
     }))
 end
@@ -197,16 +305,22 @@ end
 
 -- PUT one openapi-to-mcp route per { id, uri, conf[, plugins] } entry.
 -- Prints and returns false on the first failure, true when all are in.
+-- route[5], when given, is merged into the route body itself, for the cases
+-- that need a predicate of their own such as `hosts`
 function _M.put_routes(routes)
     for _, route in ipairs(routes) do
         local id, uri, conf, plugins = route[1], route[2], route[3], route[4] or {}
         plugins["openapi-to-mcp"] = conf
+        local body_table = {
+            uri = uri,
+            plugins = plugins,
+            upstream = { nodes = { ["127.0.0.1:1980"] = 1 }, type = "roundrobin" },
+        }
+        for key, value in pairs(route[5] or {}) do
+            body_table[key] = value
+        end
         local code, body = t("/apisix/admin/routes/" .. id, ngx.HTTP_PUT,
-            core.json.encode({
-                uri = uri,
-                plugins = plugins,
-                upstream = { nodes = { ["127.0.0.1:1980"] = 1 }, type = "roundrobin" },
-            }))
+            core.json.encode(body_table))
         if code >= 300 then
             ngx.say("route ", id, ": ", body)
             return false

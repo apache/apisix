@@ -26,8 +26,22 @@ local DICT_NAME = "mcp-session"
 -- An idle session is dropped after 30 minutes.
 local SESSION_TTL = 1800
 
+-- mcp-bridge stores its own sessions in this dict with a ":queue" suffix, so
+-- these keys carry a prefix of their own rather than relying on two plugins
+-- never generating the same id.
+local KEY_PREFIX = "openapi-to-mcp:"
 local ALIVE_SUFFIX = ":alive"
 local QUEUE_SUFFIX = ":queue"
+
+
+local function alive_key(session_id)
+    return KEY_PREFIX .. session_id .. ALIVE_SUFFIX
+end
+
+
+local function queue_key(session_id)
+    return KEY_PREFIX .. session_id .. QUEUE_SUFFIX
+end
 
 
 local function store()
@@ -39,29 +53,37 @@ local function store()
 end
 
 
+
+-- The value stored under the :alive key carries two things.
+--
+-- `owner` identifies the route, and the consumer if one was authenticated, the
+-- stream belongs to. A message is only accepted from the same owner: without it
+-- a session id issued on one route could be used to push a result into that
+-- stream from another route, with another route's configuration.
+--
 -- `context` is what the stream resolved when it was opened -- the base_url and
--- the headers, after `${...}` substitution. It is stored with the session
+-- the headers, after variable substitution. It is stored with the session
 -- because a message POST carries none of the request state those variables were
 -- read from: the endpoint the client is handed is "<path>?sessionId=<uuid>" and
--- nothing else. Resolving again there would silently produce empty values.
-function _M.create(context)
+-- nothing else. Resolving again there would silently produce empty values. A
+-- configuration that holds no variables freezes nothing.
+function _M.create(owner, context)
     local dict, err = store()
     if not dict then
         return nil, err
     end
 
-    local marker = true
-    if type(context) == "table" then
-        local encoded, encode_err = core.json.encode(context)
-        if encoded then
-            marker = encoded
-        else
-            core.log.warn("failed to store MCP session context: ", encode_err)
-        end
+    local marker, encode_err = core.json.encode({
+        owner = owner or "",
+        context = type(context) == "table" and context or nil,
+    })
+    if not marker then
+        core.log.warn("failed to store MCP session context: ", encode_err)
+        marker = core.json.encode({ owner = owner or "" })
     end
 
     local session_id = core.id.gen_uuid_v4()
-    local ok, set_err = dict:set(session_id .. ALIVE_SUFFIX, marker, SESSION_TTL)
+    local ok, set_err = dict:set(alive_key(session_id), marker, SESSION_TTL)
     if not ok then
         return nil, "failed to register session: " .. tostring(set_err)
     end
@@ -69,8 +91,9 @@ function _M.create(context)
 end
 
 
--- The values frozen by _M.create(), or nil for a session that stored none.
-function _M.context(session_id)
+-- What was stored with the session, or nil when there is nothing to read or it
+-- cannot be understood -- in which case the session counts as gone.
+local function stored_marker(session_id)
     if type(session_id) ~= "string" or session_id == "" then
         return nil
     end
@@ -78,27 +101,31 @@ function _M.context(session_id)
     if not dict then
         return nil
     end
-    local marker = dict:get(session_id .. ALIVE_SUFFIX)
-    if type(marker) ~= "string" then
+    local stored = dict:get(alive_key(session_id))
+    if type(stored) ~= "string" then
         return nil
     end
-    local context = core.json.decode(marker)
-    if type(context) ~= "table" then
+    local decoded = core.json.decode(stored)
+    if type(decoded) ~= "table" then
         return nil
     end
-    return context
+    return decoded
 end
 
 
-function _M.exists(session_id)
-    if type(session_id) ~= "string" or session_id == "" then
+-- The values frozen by _M.create(), or nil for a session that stored none.
+function _M.context(session_id)
+    local marker = stored_marker(session_id)
+    return marker and marker.context or nil
+end
+
+
+function _M.exists(session_id, owner)
+    local marker = stored_marker(session_id)
+    if not marker then
         return false
     end
-    local dict = store()
-    if not dict then
-        return false
-    end
-    return dict:get(session_id .. ALIVE_SUFFIX) ~= nil
+    return marker.owner == (owner or "")
 end
 
 
@@ -110,13 +137,15 @@ function _M.touch(session_id)
     if not dict then
         return false, err
     end
-    -- Re-set the value that is already there: it carries the frozen context,
-    -- and writing `true` back would drop it halfway through the session.
-    local marker = dict:get(session_id .. ALIVE_SUFFIX)
+    -- Re-set the value that is already there: it carries the owner and the
+    -- frozen context, and writing a placeholder back would drop both halfway
+    -- through the session.
+    local key = alive_key(session_id)
+    local marker = dict:get(key)
     if marker == nil then
-        marker = true
+        return false, "session is gone"
     end
-    local ok, set_err = dict:set(session_id .. ALIVE_SUFFIX, marker, SESSION_TTL)
+    local ok, set_err = dict:set(key, marker, SESSION_TTL)
     if not ok then
         return false, "failed to refresh session: " .. tostring(set_err)
     end
@@ -134,11 +163,11 @@ function _M.push(session_id, message)
     -- Never resurrect the queue of a torn-down session: nothing would drain it,
     -- and a shared dict list carries no TTL, so the entry would sit there until
     -- the dict runs out of room.
-    if dict:get(session_id .. ALIVE_SUFFIX) == nil then
+    if dict:get(alive_key(session_id)) == nil then
         return nil, "session is gone"
     end
 
-    local length, push_err = dict:rpush(session_id .. QUEUE_SUFFIX, message)
+    local length, push_err = dict:rpush(queue_key(session_id), message)
     if not length then
         return nil, "failed to queue message: " .. tostring(push_err)
     end
@@ -149,8 +178,8 @@ function _M.push(session_id, message)
     -- enough: either destroy ran before the push and this sees the session
     -- gone, or it ran after and deleted the queue itself. Neither order leaves
     -- a list behind.
-    if dict:get(session_id .. ALIVE_SUFFIX) == nil then
-        dict:delete(session_id .. QUEUE_SUFFIX)
+    if dict:get(alive_key(session_id)) == nil then
+        dict:delete(queue_key(session_id))
         return nil, "session is gone"
     end
 
@@ -163,7 +192,7 @@ function _M.pop(session_id)
     if not dict then
         return nil
     end
-    local message = dict:lpop(session_id .. QUEUE_SUFFIX)
+    local message = dict:lpop(queue_key(session_id))
     return message
 end
 
@@ -174,8 +203,8 @@ function _M.destroy(session_id)
         return
     end
     -- shared dict lists carry no TTL of their own, so drop it explicitly
-    dict:delete(session_id .. QUEUE_SUFFIX)
-    dict:delete(session_id .. ALIVE_SUFFIX)
+    dict:delete(queue_key(session_id))
+    dict:delete(alive_key(session_id))
 end
 
 

@@ -15,7 +15,7 @@
 -- limitations under the License.
 --
 local core       = require("apisix.core")
-local http       = require("resty.http")
+local fetch      = require("apisix.plugins.openapi-to-mcp.fetch")
 local lyaml      = require("lyaml")
 local pcall      = pcall
 local type       = type
@@ -32,6 +32,12 @@ local re_find    = ngx.re.find
 local _M = {}
 
 local DEFAULT_TIMEOUT = 5000
+
+-- A document is read into memory and expanded from there, and up to
+-- MAX_EXTERNAL_DOCS of them are pulled in by $ref, so the host that serves one
+-- does not get to decide how much of the worker it uses. A route whose
+-- document is legitimately larger raises the ceiling with max_document_size.
+local MAX_DOCUMENT_SIZE = 4 * 1024 * 1024
 
 -- A JSON key is quoted and may escape the solidus as "\/" -- cjson does this by
 -- default, and several other encoders offer it -- so the key cannot be matched
@@ -178,16 +184,16 @@ function _M.validate(spec)
 end
 
 
-function _M.fetch(url, timeout)
-    local httpc, err = http.new()
-    if not httpc then
-        return nil, nil, "failed to create http client: " .. tostring(err)
-    end
-    httpc:set_timeout(timeout or DEFAULT_TIMEOUT)
-
-    local res, req_err = httpc:request_uri(url, { method = "GET" })
+function _M.fetch(url, timeout, max_body_size)
+    local res, err = fetch.request(url, {
+        timeout = timeout or DEFAULT_TIMEOUT,
+        max_body_size = max_body_size or MAX_DOCUMENT_SIZE,
+    })
     if not res then
-        return nil, nil, "failed to fetch openapi spec: " .. tostring(req_err)
+        return nil, nil, "failed to fetch openapi spec: " .. tostring(err)
+    end
+    if res.truncated then
+        return nil, nil, "openapi spec exceeds " .. (max_body_size or MAX_DOCUMENT_SIZE) .. " bytes"
     end
     if res.status ~= 200 then
         return nil, nil, "unexpected status " .. res.status .. " while fetching openapi spec"

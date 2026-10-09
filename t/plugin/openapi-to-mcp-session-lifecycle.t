@@ -67,7 +67,7 @@ __DATA__
             local id = assert(session.create())
             local dict = ngx.shared["mcp-session"]
             ngx.say("alive: ", tostring(session.exists(id)))
-            ngx.say("ttl: ", dict:ttl(id .. ":alive"))
+            ngx.say("ttl: ", dict:ttl("openapi-to-mcp:" .. id .. ":alive"))
         }
     }
 --- response_body
@@ -87,10 +87,10 @@ ttl: 1800
             session.destroy(id)
 
             local dict = ngx.shared["mcp-session"]
-            ngx.say("alive: ", tostring(dict:get(id .. ":alive")))
+            ngx.say("alive: ", tostring(dict:get("openapi-to-mcp:" .. id .. ":alive")))
             -- a shared dict list carries no TTL of its own, so a queue left
             -- behind would sit there until the dict runs out of room
-            ngx.say("queue: ", tostring(dict:llen(id .. ":queue")))
+            ngx.say("queue: ", tostring(dict:llen("openapi-to-mcp:" .. id .. ":queue")))
             ngx.say("exists: ", tostring(session.exists(id)))
         }
     }
@@ -112,7 +112,7 @@ exists: false
             local ok, err = session.push(id, "late")
             ngx.say("push: ", tostring(ok), " ", tostring(err))
             -- nothing would ever drain a queue recreated here
-            ngx.say("queue: ", tostring(ngx.shared["mcp-session"]:llen(id .. ":queue")))
+            ngx.say("queue: ", tostring(ngx.shared["mcp-session"]:llen("openapi-to-mcp:" .. id .. ":queue")))
         }
     }
 --- response_body
@@ -136,7 +136,7 @@ queue: 0
             local real_rpush = dict.rpush
             dict.rpush = function(self, key, value)
                 local length = real_rpush(self, key, value)
-                dict:delete(id .. ":alive")
+                dict:delete("openapi-to-mcp:" .. id .. ":alive")
                 return length
             end
 
@@ -144,7 +144,7 @@ queue: 0
             dict.rpush = real_rpush
 
             ngx.say("push: ", tostring(ok), " ", tostring(err))
-            ngx.say("queue: ", tostring(dict:llen(id .. ":queue")))
+            ngx.say("queue: ", tostring(dict:llen("openapi-to-mcp:" .. id .. ":queue")))
         }
     }
 --- response_body
@@ -204,3 +204,57 @@ python3 t/plugin/openapi_to_mcp_session_reconnect.py /mcp-session-life 2>&1
     }
 --- response_body
 cleaned
+
+
+
+=== TEST 9: a session is bound to the owner it was created for
+--- config
+    location /t {
+        content_by_lua_block {
+            local session = require("apisix.plugins.openapi-to-mcp.session")
+            local id = assert(session.create("route-1\0alice"))
+            ngx.say("same owner: ", tostring(session.exists(id, "route-1\0alice")))
+            ngx.say("other route: ", tostring(session.exists(id, "route-2\0alice")))
+            ngx.say("other consumer: ", tostring(session.exists(id, "route-1\0bob")))
+            ngx.say("no owner: ", tostring(session.exists(id, nil)))
+        }
+    }
+--- response_body
+same owner: true
+other route: false
+other consumer: false
+no owner: false
+
+
+
+=== TEST 10: refreshing a session keeps its owner
+--- config
+    location /t {
+        content_by_lua_block {
+            local session = require("apisix.plugins.openapi-to-mcp.session")
+            local id = assert(session.create("route-1\0alice"))
+            ngx.say("touched: ", tostring(session.touch(id)))
+            ngx.say("still bound: ", tostring(session.exists(id, "route-1\0alice")))
+        }
+    }
+--- response_body
+touched: true
+still bound: true
+
+
+
+=== TEST 11: the dict keys carry a prefix of their own
+--- config
+    location /t {
+        content_by_lua_block {
+            local session = require("apisix.plugins.openapi-to-mcp.session")
+            local dict = ngx.shared["mcp-session"]
+            local id = assert(session.create("route-1"))
+            -- mcp-bridge stores <id>:queue in this same dict
+            ngx.say("prefixed: ", tostring(dict:get("openapi-to-mcp:" .. id .. ":alive") ~= nil))
+            ngx.say("bare key: ", tostring(dict:get(id .. ":alive")))
+        }
+    }
+--- response_body
+prefixed: true
+bare key: nil
