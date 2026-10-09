@@ -1,0 +1,139 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package http_binding;
+option go_package = "./proto";
+
+import "google/api/annotations.proto";
+
+// Fixture for use_http_annotations.
+service ItemService {
+  rpc GetItem(GetItemRequest) returns (Reply) {
+    option (google.api.http) = {
+      get: "/api/v1/items/{id}"
+    };
+  }
+
+  rpc ListItems(ListItemsRequest) returns (Reply) {
+    option (google.api.http) = {
+      get: "/api/v1/items"
+    };
+  }
+
+  // body: "item"
+  rpc CreateItem(CreateItemRequest) returns (Reply) {
+    option (google.api.http) = {
+      post: "/api/v1/items"
+      body: "item"
+    };
+  }
+
+  // Conflicts with GetItem; static path should win.
+  rpc GetActiveItem(ListItemsRequest) returns (Reply) {
+    option (google.api.http) = {
+      get: "/api/v1/items/active"
+    };
+  }
+
+  rpc GetItemNote(GetItemNoteRequest) returns (Reply) {
+    option (google.api.http) = {
+      get: "/api/v1/items/{item_id}/notes/{note_id}"
+      additional_bindings {
+        get: "/api/v1/i/{item_id}/n/{note_id}"
+      }
+    };
+  }
+
+  // Path-bound field plus a body: path wins.
+  rpc UpdateItem(UpdateItemRequest) returns (Reply) {
+    option (google.api.http) = {
+      patch: "/api/v1/items/{id}"
+      body: "*"
+    };
+  }
+
+  // Same, bound field inside the body sub-message.
+  rpc ReplaceItem(CreateItemRequest) returns (Reply) {
+    option (google.api.http) = {
+      put: "/api/v1/items/{item.id}"
+      body: "item"
+    };
+  }
+
+  // No body; also covers the :verb suffix.
+  rpc CancelItem(UpdateItemRequest) returns (Reply) {
+    option (google.api.http) = {
+      post: "/api/v1/items/{id}:cancel"
+    };
+  }
+
+  rpc DeleteItem(GetItemRequest) returns (Reply) {
+    option (google.api.http) = {
+      delete: "/api/v1/items/{id}"
+    };
+  }
+
+  // custom pattern: no fixed HTTP method, ignored.
+  rpc ReportItem(GetItemRequest) returns (Reply) {
+    option (google.api.http) = {
+      custom: {
+        kind: "REPORT"
+        path: "/api/v1/items/{id}:report"
+      }
+    };
+  }
+
+  // No annotation: unreachable in this mode.
+  rpc UnannotatedItem(GetItemRequest) returns (Reply) {}
+}
+
+// Single field keeps assertions independent of JSON key order.
+message Reply {
+  string message = 1;
+}
+
+message Item {
+  string id = 1;
+  string title = 2;
+  int64 amount = 3;
+}
+
+message GetItemRequest {
+  string id = 1;
+}
+
+message ListItemsRequest {
+  int32 page_size = 1;
+}
+
+message CreateItemRequest {
+  Item item = 1;
+  // Outside body: "item", so it comes from the query.
+  string request_id = 2;
+}
+
+message UpdateItemRequest {
+  string id = 1;
+  string title = 2;
+}
+
+message GetItemNoteRequest {
+  string item_id = 1;
+  string note_id = 2;
+}

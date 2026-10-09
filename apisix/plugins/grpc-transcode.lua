@@ -20,6 +20,7 @@ local schema_def  = require("apisix.schema_def")
 local proto       = require("apisix.plugins.grpc-transcode.proto")
 local request     = require("apisix.plugins.grpc-transcode.request")
 local response    = require("apisix.plugins.grpc-transcode.response")
+local http_rule   = require("apisix.plugins.grpc-transcode.http_rule")
 
 
 local plugin_name = "grpc-transcode"
@@ -56,12 +57,19 @@ local schema = {
         },
         proto_id  = schema_def.id_schema,
         service = {
-            description = "the grpc service name",
+            description = "the grpc service name, not required with use_http_annotations",
             type        = "string"
         },
         method = {
-            description = "the method name in the grpc service.",
+            description = "the grpc method name, not required with use_http_annotations",
             type    = "string"
+        },
+        use_http_annotations = {
+            description = "resolve the service and method from the google.api.http "
+                       .. "annotations in the proto; needs a proto compiled with "
+                       .. "`protoc --include_imports --descriptor_set_out`",
+            type        = "boolean",
+            default     = false
         },
         deadline = {
             description = "deadline for grpc, millisecond",
@@ -93,8 +101,12 @@ local schema = {
         },
     },
     additionalProperties = true,
-    required = { "proto_id", "service", "method" },
+    required = { "proto_id" },
 }
+
+-- service/method required unless use_http_annotations.
+local schema_with_method = core.table.deepcopy(schema)
+schema_with_method.required = { "proto_id", "service", "method" }
 
 -- Based on https://cloud.google.com/apis/design/errors#handling_errors
 local status_rel = {
@@ -135,7 +147,8 @@ end
 
 
 function _M.check_schema(conf)
-    local ok, err = core.schema.check(schema, conf)
+    local ok, err = core.schema.check(
+        conf.use_http_annotations and schema or schema_with_method, conf)
     if not ok then
         return false, err
     end
@@ -154,18 +167,54 @@ function _M.access(conf, ctx)
     end
 
     local proto_obj, err = proto.fetch(proto_id)
-    if err then
-        core.log.error("proto load error: ", err)
-        return
+    if not proto_obj then
+        -- Proto missing or mid-sync: fail closed.
+        core.log.error("proto load error: ", err or "proto not available")
+        return 503
     end
 
-    local ok, err, err_code = request(proto_obj, conf.service,
-                                      conf.method, conf.pb_option, conf.deadline)
+    local service, method = conf.service, conf.method
+    local binding
+    if conf.use_http_annotations then
+        local rules, err = http_rule.fetch(proto_obj)
+        if not rules then
+            core.log.error("failed to build the google.api.http routing table: ", err)
+            return 503
+        end
+
+        -- Use ngx.var.uri: ctx.var is cached before proxy-rewrite runs.
+        local uri = ngx.var.uri
+        local http_method = core.request.get_method()
+        local rule, path_params = http_rule.match(rules, http_method, uri)
+        if not rule then
+            -- The path may still be bound, just not for this method.
+            local allowed = http_rule.allowed_methods(rules, uri)
+            if allowed then
+                core.log.warn("no google.api.http binding matches ", http_method, " ", uri,
+                              ", allowed: ", core.table.concat(allowed, ", "))
+                core.response.set_header("Allow", core.table.concat(allowed, ", "))
+                return 405
+            end
+
+            core.log.warn("no google.api.http binding matches ", http_method, " ", uri)
+            return 404
+        end
+
+        core.log.info("google.api.http matched ", rule.service, "/", rule.method)
+        service, method = rule.service, rule.method
+        binding = {body = rule.body, path_params = path_params}
+    end
+
+    local ok, err, err_code = request(proto_obj, service, method,
+                                      conf.pb_option, conf.deadline, nil, binding)
     if not ok then
         core.log.error("transform request error: ", err)
         return err_code
     end
 
+    -- response transcoding needs the same service/method that the request used
+    ctx.grpc_transcode_service = service
+    ctx.grpc_transcode_method = method
     ctx.proto_obj = proto_obj
 
 end
@@ -206,7 +255,10 @@ function _M.body_filter(conf, ctx)
         return
     end
 
-    local err = response(ctx, proto_obj, conf.service, conf.method, conf.pb_option,
+    local service = ctx.grpc_transcode_service or conf.service
+    local method = ctx.grpc_transcode_method or conf.method
+
+    local err = response(ctx, proto_obj, service, method, conf.pb_option,
                          conf.show_status_in_body, conf.status_detail_type,
                          conf.max_resp_body_size)
     if err then
