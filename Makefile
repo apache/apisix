@@ -345,6 +345,12 @@ install: runtime
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/serverless
 	$(ENV_INSTALL) apisix/plugins/serverless/*.lua $(ENV_INST_LUADIR)/apisix/plugins/serverless/
 
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/signing
+	$(ENV_INSTALL) apisix/plugins/signing/*.lua $(ENV_INST_LUADIR)/apisix/plugins/signing/
+
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/soap-signer
+	$(ENV_INSTALL) apisix/plugins/soap-signer/*.lua $(ENV_INST_LUADIR)/apisix/plugins/soap-signer/
+
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/syslog
 	$(ENV_INSTALL) apisix/plugins/syslog/*.lua $(ENV_INST_LUADIR)/apisix/plugins/syslog/
 
@@ -356,6 +362,9 @@ install: runtime
 
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/secret
 	$(ENV_INSTALL) apisix/secret/*.lua $(ENV_INST_LUADIR)/apisix/secret/
+
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/xml-signer
+	$(ENV_INSTALL) apisix/plugins/xml-signer/*.lua $(ENV_INST_LUADIR)/apisix/plugins/xml-signer/
 
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/zipkin
 	$(ENV_INSTALL) apisix/plugins/zipkin/*.lua $(ENV_INST_LUADIR)/apisix/plugins/zipkin/

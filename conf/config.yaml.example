@@ -601,6 +601,8 @@ plugins:                           # plugin list (sorted by priority)
   - ai-rate-limiting               # priority: 1030
   - ai-aliyun-content-moderation   # priority: 1029
   - ai-lakera-guard                # priority: 1028
+  - soap-signer                    # priority: 1027
+  - xml-signer                     # priority: 1026
   - proxy-mirror                   # priority: 1010
   - graphql-proxy-cache            # priority: 1009
   - proxy-rewrite                  # priority: 1008
