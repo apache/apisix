@@ -256,7 +256,6 @@
             "plugins/kafka-proxy",
             "plugins/websocket-proxy",
             "plugins/http-dubbo",
-            "plugins/mcp-bridge",
             "plugins/openapi-to-mcp"
           ]
         }
