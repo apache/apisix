@@ -32,6 +32,7 @@ local schema = {
         cls_topic = { type = "string" },
         scheme = { type = "string", enum = {"http", "https"}, default = "https" },
         ssl_verify = { type = "boolean", default = true },
+        compress_type = { type = "string", enum = {"none", "zstd"}, default = "none" },
         secret_id = { type = "string" },
         secret_key = { type = "string" },
         sample_ratio = {
@@ -145,7 +146,8 @@ function _M.log(conf, ctx)
         local sdk, err = cls_sdk.new(
                             conf.scheme, conf.cls_host,
                             conf.cls_topic, conf.secret_id,
-                            conf.secret_key, conf.ssl_verify)
+                            conf.secret_key, conf.ssl_verify,
+                            conf.compress_type)
         if err then
             core.log.error("init sdk failed err:", err)
             return false, err
