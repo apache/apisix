@@ -1598,21 +1598,23 @@ upstream body unchanged: true
 
 
 
-=== TEST 43: route whose body another plugin makes unreadable
+=== TEST 43: route whose body file another plugin removes
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local core = require("apisix.core")
             local func = [[return function(conf, ctx)
-                local path = ngx.config.prefix() .. "logs/request-decompress-locked.txt"
+                local path = ngx.config.prefix() .. "logs/request-decompress-gone.txt"
                 local f = assert(io.open(path, "w"))
                 f:write('{"name":"from-file"}')
                 f:close()
-                -- set_body_file checks the file is readable, so it is locked
-                -- only afterwards, leaving the read in before_proxy to fail
+                -- set_body_file checks the file is readable, so it is removed
+                -- only afterwards, leaving the read in before_proxy to fail.
+                -- Removing it rather than dropping its permissions, which root
+                -- would read straight through
                 ngx.req.set_body_file(path)
-                os.execute("chmod 000 " .. path)
+                os.remove(path)
             end]]
 
             local code, body = t('/apisix/admin/routes/1',
