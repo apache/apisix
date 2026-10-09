@@ -687,3 +687,62 @@ GET /t
 GET /t
 --- error_log
 "body":"hello world\n"
+
+
+
+=== TEST 22: add plugin with a logger that fails to send the log
+--- extra_init_by_lua
+    local logger_socket = require("resty.logger.socket")
+    logger_socket.new = function()
+        return {
+            log = function()
+                return nil, "mocked send failure"
+            end
+        }
+    end
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            t('/apisix/admin/plugin_metadata/syslog', ngx.HTTP_DELETE)
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "syslog": {
+                                "batch_max_size": 1,
+                                "flush_limit": 1,
+                                "host" : "127.0.0.1",
+                                "port" : 5140
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 23: hit route, send failure is reported with a separator before the cause
+--- request
+GET /hello
+--- response_body
+hello world
+--- wait: 0.5
+--- error_log
+failed to log message: mocked send failure
