@@ -490,9 +490,9 @@ GET /t
 --- exec
 curl -k https://localhost:1994/hello -H "Host: test.com"
 --- response_body eval
-qr/400 Bad Request/
+qr/421 Misdirected Request/
 --- error_log
-client certificate verified with SNI localhost, but the host is test.com
+request SNI localhost does not match host test.com for an mTLS-enabled SSL configuration
 
 
 
@@ -568,9 +568,9 @@ GET /t
 --- exec
 curl --cert t/certs/mtls_client.crt --key t/certs/mtls_client.key -k https://localhost:1994/hello -H "Host: test.com"
 --- response_body eval
-qr/400 Bad Request/
+qr/421 Misdirected Request/
 --- error_log
-client certificate verified with SNI localhost, but the host is test.com
+request SNI localhost does not match host test.com for an mTLS-enabled SSL configuration
 
 
 
