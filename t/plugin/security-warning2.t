@@ -580,7 +580,7 @@ Keeping tls disabled in tcp-logger configuration is a security risk
         }
     }
 --- response_body_like eval
-qr/\{"appid":"unset","header_prefix":"X-","server":"http:\/\/127\.0\.0\.1:12180"\}/
+qr/\{"header_prefix":"X-","server":"http:\/\/127\.0\.0\.1:12180"\}/
 --- error_log
 Using wolf-rbac server with no TLS is a security risk
 
@@ -591,16 +591,15 @@ Using wolf-rbac server with no TLS is a security risk
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/consumers',
+            local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
                 [[{
-                    "username": "wolf_rbac_unit_test",
                     "plugins": {
                         "wolf-rbac": {
-                            "appid": "wolf-rbac-app",
                             "server": "https://127.0.0.1:1982"
                         }
-                    }
+                    },
+                    "uri": "/hello"
                 }]]
                 )
 
