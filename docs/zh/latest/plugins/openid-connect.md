@@ -164,6 +164,24 @@ export KEYCLOAK_CLIENT_SECRET=abc
 "client_secret": "$ENV://KEYCLOAK_CLIENT_SECRET"
 ```
 
+### 按请求模板化 `client_id`、`client_secret` 和 `discovery`
+
+`client_id`、`client_secret` 和 `discovery` 支持 `${var}` / `${var ?? default}` 模板，在每次请求时从请求上下文中解析（与 [`limit-count`](./limit-count.md) 用于 `count`/`time_window` 的模板机制相同）。只有包含 `${` 的值才会被视为模板，其他值（包括含有单独 `$` 的值）将按原样使用。插件配置本身不会被修改，每个请求独立解析自己的值。
+
+例如，客户端可以通过请求头传递这些值，并使用 `http_<header_name>` 引用：
+
+```json
+{
+  "discovery": "${http_x_oidc_discovery}",
+  "client_id": "${http_x_oidc_client_id ?? my-default-client}",
+  "client_secret": "${http_x_oidc_client_secret}"
+}
+```
+
+变量也可以由更早运行的其他插件设置，但这不是必需的。
+
+如果模板解析为空值（例如缺少请求头且未提供默认值），`openid-connect` 将返回 `500`，而不是向身份提供商转发空值。
+
 ## 示例
 
 以下示例展示了如何针对不同场景配置 `openid-connect` 插件。

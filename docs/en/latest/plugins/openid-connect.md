@@ -165,6 +165,24 @@ And reference it in the Plugin configuration:
 "client_secret": "$ENV://KEYCLOAK_CLIENT_SECRET"
 ```
 
+### Per-request templating of `client_id`, `client_secret` and `discovery`
+
+`client_id`, `client_secret`, and `discovery` support `${var}` / `${var ?? default}` templates, resolved from the request context on every request (the same templating [`limit-count`](./limit-count.md) uses for `count`/`time_window`). Only values containing `${` are treated as templates; any other value, including one with a bare `$`, is used as-is. The Plugin configuration is never modified, so each request resolves its own values.
+
+For example, clients can send the values in request headers and reference them with `http_<header_name>`:
+
+```json
+{
+  "discovery": "${http_x_oidc_discovery}",
+  "client_id": "${http_x_oidc_client_id ?? my-default-client}",
+  "client_secret": "${http_x_oidc_client_secret}"
+}
+```
+
+Variables can also be set by another Plugin that runs earlier, but this is not required.
+
+If a template resolves to an empty value (for example, the header is missing and no default is given), `openid-connect` returns `500` instead of forwarding an empty value to the identity provider.
+
 ## Examples
 
 The examples below demonstrate how you can configure the `openid-connect` Plugin for different scenarios.
