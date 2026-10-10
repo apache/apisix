@@ -388,3 +388,49 @@ apisix:
 --- response_body
 userkey
 mt39FazQccyMqt4ctoRV7w==
+
+
+
+=== TEST 16: non-table csrf token (JSON number)
+--- request
+POST /hello
+--- more_headers
+apisix-csrf-token: MTIz
+Cookie: apisix-csrf-token=MTIz
+--- error_code: 401
+--- error_log: decode token error
+--- no_error_log
+attempt to index
+--- response_body
+{"error_msg":"Failed to verify the csrf token signature"}
+
+
+
+=== TEST 17: non-table csrf token (JSON boolean)
+--- request
+POST /hello
+--- more_headers
+apisix-csrf-token: dHJ1ZQ==
+Cookie: apisix-csrf-token=dHJ1ZQ==
+--- error_code: 401
+--- error_log: decode token error
+--- no_error_log
+attempt to index
+--- response_body
+{"error_msg":"Failed to verify the csrf token signature"}
+
+
+
+=== TEST 18: csrf token with invalid non-numeric expires
+--- request
+POST /hello
+--- more_headers
+apisix-csrf-token: eyJyYW5kb20iOjAuMSwiZXhwaXJlcyI6ImludmFsaWQiLCJzaWduIjoiYWJjIn0=
+Cookie: apisix-csrf-token=eyJyYW5kb20iOjAuMSwiZXhwaXJlcyI6ImludmFsaWQiLCJzaWduIjoiYWJjIn0=
+--- error_code: 401
+--- error_log: no expires in token
+--- no_error_log
+attempt to perform arithmetic
+--- response_body
+{"error_msg":"Failed to verify the csrf token signature"}
+
