@@ -84,7 +84,6 @@ t/plugin/grpc-web/grpc-web-server
 t/plugin/grpc-web/node_modules/
 pack
 pack-v*-linux.tgz*
-t/plugin/mcp/servers/
 t/node_modules/
 
 # release tar package
@@ -99,3 +98,5 @@ dump.rdb
 /data/
 # telemetry dumped by the otel collector during tests
 ci/pod/otelcol-contrib/data-otlp.json
+# bytecode from importing the .py test drivers
+t/plugin/__pycache__/

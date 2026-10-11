@@ -19,6 +19,7 @@ local consumer_mod    = require("apisix.consumer")
 local base64          = require("ngx.base64")
 local aes             = require("resty.aes")
 local sub_str         = string.sub
+local type            = type
 local cipher          = aes.cipher(256, "gcm")
 
 local plugin_name     = "jwe-decrypt"
@@ -84,7 +85,12 @@ function _M.check_schema(conf, schema_type)
             -- restrict the length of secret, we use A256GCM for encryption,
             -- so the length should be 32 chars only
             if conf.is_base64_encoded then
-                if #base64.decode_base64url(conf.secret) ~= 32 then
+                local decoded = base64.decode_base64url(conf.secret)
+                if not decoded then
+                    return false, "the secret should be a base64url encoded string"
+                end
+
+                if #decoded ~= 32 then
                     return false, "the secret length after base64 decode should be 32 chars"
                 end
             else
@@ -122,7 +128,9 @@ local function load_jwe_token(jwe_token)
         return o
     end
     o.header_obj = core.json.decode(he)
-    if not o.header_obj then
+    -- a JSON scalar decodes to a non-table value, `null` even to a truthy
+    -- userdata, so indexing the header later would throw
+    if type(o.header_obj) ~= "table" then
         return o
     end
     o.valid = true
@@ -130,19 +138,53 @@ local function load_jwe_token(jwe_token)
 end
 
 
+-- the plugin only implements direct encryption with A256GCM; reject a token
+-- that asks for anything else instead of failing later with a decrypt error
+local function unsupported_header(header_obj)
+    if header_obj.alg ~= nil and header_obj.alg ~= "dir" then
+        return true
+    end
+
+    return header_obj.enc ~= nil and header_obj.enc ~= "A256GCM"
+end
+
+
 local function jwe_decrypt_with_obj(o, consumer)
     local secret = get_secret(consumer.auth_conf)
-    local dec = base64.decode_base64url
+    if not secret then
+        return nil, "invalid secret in the consumer configuration"
+    end
 
-    local aes_default = aes:new(
+    local dec = base64.decode_base64url
+    local iv, ciphertext, tag = dec(o.iv), dec(o.ciphertext), dec(o.tag)
+    if not iv or not ciphertext or not tag then
+        return nil, "invalid base64url encoding in the JWE token"
+    end
+
+    local aes_default, err = aes:new(
         secret,
         nil,
         cipher,
-        {iv = dec(o.iv)}
+        {iv = iv}
     )
+    if not aes_default then
+        return nil, err
+    end
 
-    local decrypted, err = aes_default:decrypt(dec(o.ciphertext), dec(o.tag))
-    return decrypted, err
+    -- RFC 7516 authenticates the encoded protected header as the AES-GCM
+    -- additional authenticated data, which is what JWE libraries produce
+    local decrypted, decrypt_err = aes_default:decrypt(ciphertext, tag, o.header)
+    if decrypted then
+        return decrypted
+    end
+
+    -- tokens built the way APISIX used to build them carry no AAD
+    local plaintext, legacy_err = aes_default:decrypt(ciphertext, tag)
+    if not plaintext then
+        return nil, decrypt_err or legacy_err
+    end
+
+    return plaintext
 end
 
 
@@ -175,9 +217,14 @@ end
 function _M.rewrite(conf, ctx)
     -- fetch token and hide credentials if necessary
     local jwe_token, err = fetch_jwe_token(conf, ctx)
-    if not jwe_token and conf.strict then
-        core.log.info("failed to fetch JWE token: ", err)
-        return 403, { message = "missing JWE token in request" }
+    if not jwe_token then
+        -- If true, throw a 403 error if JWE token is missing from the request.
+        -- If false, do not throw an error when JWE token is not found.
+        if conf.strict then
+            core.log.info("failed to fetch JWE token: ", err)
+            return 403, { message = "missing JWE token in request" }
+        end
+        return
     end
 
     local jwe_obj = load_jwe_token(jwe_token)
@@ -187,6 +234,10 @@ function _M.rewrite(conf, ctx)
 
     if not jwe_obj.header_obj.kid then
         return 400, { message = "missing kid in JWE token" }
+    end
+
+    if unsupported_header(jwe_obj.header_obj) then
+        return 400, { message = "unsupported alg or enc in JWE token" }
     end
 
     local consumer = get_consumer(jwe_obj.header_obj.kid)

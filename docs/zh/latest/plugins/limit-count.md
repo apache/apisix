@@ -38,32 +38,43 @@ import TabItem from '@theme/TabItem';
 
 `limit-count` 插件使用固定窗口或滑动窗口算法，通过给定时间间隔内的请求数量来限制请求速率。超过配置配额的请求将被拒绝。
 
-你可能会在响应中看到以下速率限制标头：
+使用默认响应标头名称时，在单限流模式下将 `show_limit_quota_header` 设置为 `true`，响应中会包含以下速率限制标头：
 
 * `X-RateLimit-Limit`：总配额
 * `X-RateLimit-Remaining`：剩余配额
 * `X-RateLimit-Reset`：计数器重置的剩余秒数
 
+在 `rules` 模式下，每条规则都会使用带前缀的标头，例如 `X-Jack-RateLimit-Reset` 或 `X-1-RateLimit-Reset`。详情请参见 `rules.header_prefix`。
+
+### 本地限流与 Redis 限流
+
+`limit-count` 插件支持两种计数器存储模式：
+
+* **本地限流：** 每个 APISIX 实例分别维护计数器。当流量分发到多个实例时，整体有效配额约等于配置配额乘以实例数量。未配置 `policy` 或将其设置为 `local` 时使用此默认模式。
+* **基于 Redis 的限流：** APISIX 实例通过 Redis 共享计数器，因此同一配置配额适用于所有实例。单个 Redis 实例使用 `redis`，Redis 集群使用 `redis-cluster`，由 Redis Sentinel 管理的节点使用 `redis-sentinel`。
+
+APISIX 3.18.0 及后续版本支持 Redis Sentinel、滑动窗口和 Redis 延迟同步。APISIX 3.16.0 及后续版本支持多条规则和通过变量解析限流值。
+
 ## 属性
 
 | 名称                | 类型    | 必选项      | 默认值        | 有效值                                   | 描述                                                                                                                                                                                                                                 |
 | ------------------- | ------- | ---------- | ------------- | --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| count | integer 或 string | 否 | | > 0 | 给定时间间隔内允许的最大请求数。如果未配置 `rules`，则此项必填。支持从 APISIX 3.16.0 起使用 [lua-resty-expr](https://github.com/api7/lua-resty-expr)。 |
-| time_window | integer 或 string | 否 | | > 0 | 速率限制 `count` 对应的时间间隔（以秒为单位）。如果未配置 `rules`，则此项必填。支持从 APISIX 3.16.0 起使用 [lua-resty-expr](https://github.com/api7/lua-resty-expr)。 |
-| window_type | string | 否 | fixed | ["fixed","sliding"] | 插件使用的窗口算法。 |
-| rules | array[object] | 否 | | | 速率限制规则列表。每个规则是一个包含 `count`、`time_window` 和 `key` 的对象。如果配置了 `rules`，则顶层的 `count` 和 `time_window` 将被忽略。 |
-| rules.count | integer 或 string | 是 | | > 0 | 给定时间间隔内允许的最大请求数。支持 [lua-resty-expr](https://github.com/api7/lua-resty-expr)。 |
-| rules.time_window | integer 或 string | 是 | | > 0 | 速率限制 `count` 对应的时间间隔（以秒为单位）。支持 [lua-resty-expr](https://github.com/api7/lua-resty-expr)。 |
-| rules.key | string | 是 | | | 用于统计请求的键。如果配置的键不存在，则不会执行该规则。`key` 被解释为变量的组合，例如：`$http_custom_a $http_custom_b`。 |
-| rules.header_prefix | string | 否 | | | 速率限制标头的前缀。如果已配置，响应将包含 `X-{header_prefix}-RateLimit-Limit`、`X-{header_prefix}-RateLimit-Remaining` 和 `X-{header_prefix}-RateLimit-Reset` 标头。如果未配置，则使用规则数组中规则的索引作为前缀。 |
+| count | integer 或 string | 否 | | > 0 | `time_window` 内允许的最大请求数。未配置 `rules` 时，必须与 `time_window` 一起配置；请勿与 `rules` 同时配置。字符串可以是数值，也可以通过 `$` 前缀引用 APISIX 或 NGINX 变量。解析结果必须是小于或等于 `9007199254740991` 的正整数，否则 APISIX 返回 `500 Internal Server Error`；`allow_degradation` 为 `true` 时除外。APISIX 3.16.0 及后续版本支持字符串值，APISIX 3.18.0 及后续版本支持运行时校验。 |
+| time_window | integer 或 string | 否 | | > 0 | `count` 对应的时间间隔，单位为秒。未配置 `rules` 时，必须与 `count` 一起配置；请勿与 `rules` 同时配置。字符串可以是数值，也可以通过 `$` 前缀引用 APISIX 或 NGINX 变量。解析结果必须是小于或等于 `9007199254740991` 的正整数，否则 APISIX 返回 `500 Internal Server Error`；`allow_degradation` 为 `true` 时除外。APISIX 3.16.0 及后续版本支持字符串值，APISIX 3.18.0 及后续版本支持运行时校验。 |
+| window_type | string | 否 | fixed | ["fixed","sliding"] | 限流窗口算法。`fixed` 对每个时间窗口独立执行配额；`sliding` 在计算当前计数时对上一个窗口加权，从而平滑窗口边界处的突发流量。APISIX 3.18.0 及后续版本支持 `sliding`。 |
+| rules | array[object] | 否 | | | 按顺序执行的限流规则。请勿将 `rules` 与顶层的 `count`、`time_window` 或 `group` 同时配置；顶层 `key` 和 `key_type` 在规则模式下不生效。每条规则必须使用唯一的 `key`。如果请求中无法解析规则的键表达式，则跳过该规则。 |
+| rules.count | integer 或 string | 是 | | > 0 | 规则的 `time_window` 内允许的最大请求数。字符串可以是数值，也可以通过 `$` 前缀引用 APISIX 或 NGINX 变量。解析结果必须是小于或等于 `9007199254740991` 的正整数，否则 APISIX 返回 `500 Internal Server Error`；`allow_degradation` 为 `true` 时除外。 |
+| rules.time_window | integer 或 string | 是 | | > 0 | 规则中 `count` 对应的时间间隔，单位为秒。字符串可以是数值，也可以通过 `$` 前缀引用 APISIX 或 NGINX 变量。解析结果必须是小于或等于 `9007199254740991` 的正整数，否则 APISIX 返回 `500 Internal Server Error`；`allow_degradation` 为 `true` 时除外。 |
+| rules.key | string | 是 | | | 用作该规则计数键的变量表达式。每个 APISIX 或 NGINX 变量都必须带 `$` 前缀，例如 `$remote_addr` 或 `$remote_addr $http_x_tenant`。顶层 `key_type` 不适用。如果该键表达式无法从请求中解析出任何变量，则跳过该规则。 |
+| rules.header_prefix | string | 否 | | | 插入该规则配额标头中 `RateLimit-` 之前的前缀。例如，`foo` 会生成 `X-foo-RateLimit-Limit`、`X-foo-RateLimit-Remaining` 和 `X-foo-RateLimit-Reset`。如果省略，则使用从 1 开始的规则索引，因此第一条规则会生成 `X-1-RateLimit-*`。仅当 `show_limit_quota_header` 为 `true` 时发送。 |
 | key_type | string | 否 | var | ["var","var_combination","constant"] | key 的类型。如果 `key_type` 为 `var`，则 `key` 将被解释为变量。如果 `key_type` 为 `var_combination`，则 `key` 将被解释为变量的组合。如果 `key_type` 为 `constant`，则 `key` 将被解释为常量。 |
 | key | string | 否 | remote_addr | | 用于计数请求的 key。如果 `key_type` 为 `var`，则 `key` 将被解释为变量。变量不需要以美元符号（`$`）为前缀。如果 `key_type` 为 `var_combination`，则 `key` 会被解释为变量的组合。所有变量都应该以美元符号 (`$`) 为前缀。如果 `key_type` 为 `constant`，则 `key` 会被解释为常量值。 |
 | rejected_code | integer | 否 | 503 | [200,...,599] | 请求因超出阈值而被拒绝时返回的 HTTP 状态代码。 |
 | rejected_msg | string | 否 | | 非空 | 请求因超出阈值而被拒绝时返回的响应主体。 |
 | policy | string | 否 | local | ["local","redis","redis-cluster","redis-sentinel"] | 速率限制计数器的策略。如果是 `local`，则计数器存储在本地内存中。如果是 `redis`，则计数器存储在 Redis 实例上。如果是 `redis-cluster`，则计数器存储在 Redis 集群中。如果是 `redis-sentinel`，则计数器存储在通过 Sentinel 发现的 Redis 主节点上。 |
-| allow_degradation | boolean | 否 | false | | 如果为 true，则允许 APISIX 在插件或其依赖项不可用时继续处理没有插件的请求。 |
-| show_limit_quota_header | boolean | 否 | true | | 如果为 true，则在响应标头中包含 `X-RateLimit-Limit` 以显示总配额和 `X-RateLimit-Remaining` 以显示剩余配额。 |
-| sync_interval | number | 否 | | -1 或 >= 0.1 | Redis 类策略的延迟同步间隔，单位为秒。设置为 `-1` 可显式禁用延迟同步。 |
+| allow_degradation | boolean | 否 | false | | 如果为 `true`，当计数器后端发生故障，或通过变量解析的 `count` 或 `time_window` 无效时，APISIX 会继续处理请求但不执行限流。如果为 `false`，这些故障会返回 `500 Internal Server Error`。 |
+| show_limit_quota_header | boolean | 否 | true | | 如果为 `true`，则在响应中包含配额标头。使用默认插件元数据时，单限流模式使用 `X-RateLimit-Limit`、`X-RateLimit-Remaining` 和 `X-RateLimit-Reset`。在 `rules` 模式下，每条规则都会输出 `rules.header_prefix` 中说明的带前缀标头。 |
+| sync_interval | number | 否 | -1 | -1 或 >= 0.1；小于顶层数值型 `time_window` | Redis 类策略的延迟同步间隔，单位为秒。设置为 `-1` 时，每个请求都会直接同步。如果顶层动态 `time_window` 或 `rules.time_window` 的解析值小于或等于 `sync_interval`，APISIX 会对该请求回退为直接同步。APISIX 3.18.0 及后续版本支持延迟同步。 |
 | group | string | 否 | | 非空 | 插件的 `group` ID，以便同一 `group` 的路由可以共享相同的速率限制计数器。 |
 | redis_host | string | 否 | | | Redis 节点的地址。当 `policy` 为 `redis` 时必填。 |
 | redis_port | integer | 否 | 6379 | [1,...] | 当 `policy` 为 `redis` 时，Redis 节点的端口。 |
@@ -71,9 +82,10 @@ import TabItem from '@theme/TabItem';
 | redis_password | string | 否 | | | 当 `policy` 为 `redis`、`redis-cluster` 或 `redis-sentinel` 时，Redis 节点的密码。 |
 | redis_ssl | boolean | 否 | false | | 如果为 true，则在 `policy` 为 `redis` 时使用 SSL 连接 Redis。 |
 | redis_ssl_verify | boolean | 否 | false | | 如果为 true，则在 `policy` 为 `redis` 时验证服务器 SSL 证书。 |
+| redis_server_name | string | 否 | | | 当 `policy` 为 `redis` 且 `redis_ssl` 为 true 时使用的 TLS SNI。默认使用 `redis_host`。当 `redis_ssl_verify` 为 true 时，证书还必须与该名称匹配，因此当 `redis_host` 是证书未覆盖的别名时请设置此项。 |
 | redis_database | integer | 否 | 0 | >= 0 | 当 `policy` 为 `redis` 或 `redis-sentinel` 时，Redis 中的数据库编号。 |
 | redis_timeout | integer | 否 | 1000 | [1,...] | 当 `policy` 为 `redis` 或 `redis-cluster` 时，Redis 超时值（以毫秒为单位）。 |
-| redis_keepalive_timeout | integer | 否 | 10000 | ≥ 1000 | 当 `policy` 为 `redis` 或 `redis-cluster` 时，与 Redis 的空闲连接超时时间，单位为毫秒。 |
+| redis_keepalive_timeout | integer | 否 | `redis` 和 `redis-cluster` 为 10000；`redis-sentinel` 为 60000 | `redis` 和 `redis-cluster` >= 1000；`redis-sentinel` >= 1 | Redis 空闲连接超时时间，单位为毫秒。 |
 | redis_keepalive_pool | integer | 否 | 100 | ≥ 1 | 当 `policy` 为 `redis` 或 `redis-cluster` 时，与 Redis 的连接池最大连接数。 |
 | redis_cluster_nodes | array[string] | 否 | | | 具有至少一个地址的 Redis 集群节点列表。当 `policy` 为 `redis-cluster` 时必填。 |
 | redis_cluster_name | string | 否 | | | Redis 集群的名称。当 `policy` 为 `redis-cluster` 时必填。 |
@@ -1394,7 +1406,7 @@ curl -i "http://127.0.0.1:9080/get"
 
 ### 使用 Redis Sentinel 在 APISIX 节点之间共享配额
 
-以下示例演示如何使用带 [Sentinel](https://redis.io/docs/management/sentinel/) 的 Redis 在多个 APISIX 节点之间进行速率限制，以实现高可用。Sentinel 监控 Redis 主节点，并在主节点故障时将一个副本提升为主节点。APISIX 通过配置的 Sentinel 节点发现当前主节点，因此共享配额可以在故障转移后无需修改配置继续生效。
+以下示例演示如何使用带 [Sentinel](https://redis.io/docs/management/sentinel/) 的 Redis 在多个 APISIX 节点之间进行限流，以实现高可用。Sentinel 监控 Redis 主节点，并在主节点故障时将一个副本提升为主节点。APISIX 通过配置的 Sentinel 节点发现当前主节点，因此共享配额可以在故障转移后无需修改配置继续生效。APISIX 3.18.0 及后续版本支持 `redis-sentinel` 策略。
 
 在每个 APISIX 实例上，使用以下配置创建一个路由。请相应调整 Admin API 地址、Sentinel 节点、主节点名称和凭据：
 
@@ -1445,7 +1457,7 @@ curl -i "http://127.0.0.1:9080/get"
 
 默认情况下，`limit-count` 使用固定窗口，计数器在每个 `time_window` 开始时重置。在窗口边界附近，这可能允许达到配置速率的两倍，因为客户端可能在一个窗口结束时耗尽配额，又在下一个窗口开始时再次耗尽配额。
 
-将 `window_type` 设置为 `sliding` 可使用滑动窗口，它通过对上一个窗口的计数加权来平滑边界处的限流。`window_type` 适用于所有 policy（`local`、`redis`、`redis-cluster` 和 `redis-sentinel`）。
+将 `window_type` 设置为 `sliding` 可使用滑动窗口，它通过对上一个窗口的计数加权来平滑边界处的限流。在 APISIX 3.18.0 及后续版本中，`window_type` 适用于所有策略（`local`、`redis`、`redis-cluster` 和 `redis-sentinel`）。
 
 使用以下配置创建一个路由：
 
@@ -1483,7 +1495,7 @@ curl -i "http://127.0.0.1:9080/get"
 
 ### 通过延迟同步减少 Redis 往返
 
-对于基于 Redis 的 policy（`redis`、`redis-cluster` 和 `redis-sentinel`），APISIX 默认在每个请求时与 Redis 同步计数器。在高流量路由上，这会为每个请求增加一次 Redis 往返。
+对于基于 Redis 的策略（`redis`、`redis-cluster` 和 `redis-sentinel`），APISIX 默认在每个请求时与 Redis 同步计数器。在高流量路由上，这会为每个请求增加一次 Redis 往返。APISIX 3.18.0 及后续版本支持延迟同步。
 
 设置 `sync_interval`（单位：秒）可改为批量同步：在两次同步之间，计数由本地内存提供，并每隔一个间隔与 Redis 对账一次。这可以减少 Redis 往返和尾延迟，代价是全局计数最多滞后一个间隔的本地增量。将 `sync_interval` 设置为 `-1`（默认行为）则在每个请求时同步。
 
@@ -1518,7 +1530,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-`sync_interval` 必须不小于 `0.1` 且小于 `time_window`。延迟同步使用 `plugin-limit-count-lock` 共享字典，该字典默认已配置，因此无需额外配置。
+`sync_interval` 必须不小于 `0.1`。在单限流模式下，它还必须小于顶层的数值型 `time_window`。如果 `rules.time_window` 的值或顶层的动态 `time_window` 解析后的值小于或等于 `sync_interval`，APISIX 会回退为对该请求直接同步。解析后的时间窗口大于 `sync_interval` 时，仍使用延迟同步。延迟同步使用 `plugin-limit-count-lock` 共享字典，该字典默认已配置，因此无需额外配置。
 
 向路由发送请求：
 
@@ -1527,6 +1539,8 @@ curl -i "http://127.0.0.1:9080/get"
 ```
 
 请求在本地计数，并每秒与 Redis 对账一次。一旦达到 60 秒内 1000 个请求的配额，后续请求将返回 `HTTP/1.1 429 Too Many Requests`。
+
+在同步发生之前，不同 APISIX 实例中的计数器可能暂时不一致，因此并发请求可能在同步间隔内超过配置配额。如果精确的跨实例限流比减少 Redis 流量更重要，请使用直接同步。
 
 ### 使用匿名消费者进行速率限制
 
@@ -2138,3 +2152,50 @@ X-Custom-RateLimit-Limit: 1
 X-Custom-RateLimit-Remaining: 0
 X-Custom-RateLimit-Reset: 28
 ```
+
+### 记录请求被放行或拒绝的原因
+
+插件会把本次判定写入 `$rate_limiting_info` 变量，值为一个 JSON 对象，可以加入访问日志，或加入日志类插件的 `log_format`。例如，在 `config.yaml` 中把它加入访问日志：
+
+```yaml
+nginx_config:
+  http:
+    access_log_format: '$remote_addr - [$time_local] "$request" $status "$rate_limiting_info"'
+```
+
+计入固定窗口的请求记录的值类似如下：
+
+```json
+{"rate_limiting_key":"/apisix/routes/1:1:127.0.0.1","rate_limiting_limit":10,"rate_limiting_remaining":3,"rate_limiting_reset":42,"window_type":"fixed","window_size_ms":60000,"decision":"allowed","cost":1,"evaluated_at_ms":1759212345678,"current_window":{"start_ms":1759212300123,"end_ms":1759212360123,"count":7,"created":false}}
+```
+
+计入滑动窗口的请求记录的值类似如下：
+
+```json
+{"rate_limiting_key":"/apisix/routes/1:1:127.0.0.1","rate_limiting_limit":10,"rate_limiting_remaining":3,"rate_limiting_reset":14,"window_type":"sliding","window_size_ms":60000,"decision":"allowed","cost":1,"evaluated_at_ms":1759212345678,"current_window":{"id":29320205,"start_ms":1759212300000,"end_ms":1759212360000,"count":4},"previous_window":{"count":10,"weight":0.2387,"weighted_count":2.387}}
+```
+
+字段的顺序不固定。所有 `*_ms` 字段都是以毫秒为单位的 Unix 时间戳或时长，取自 APISIX 实例的时钟。适用于该窗口类型、但对本次请求未知的字段为 `null`。各字段含义如下：
+
+* `rate_limiting_key`、`rate_limiting_limit`、`rate_limiting_remaining`、`rate_limiting_reset`：计数器的键、配额、剩余配额以及距重置的秒数，与限流响应头一致。滑动窗口拒绝请求时，`rate_limiting_reset` 是距离可以再次放行请求的时间，可能早于窗口结束时间。
+* `window_type`：`fixed` 或 `sliding`。
+* `window_size_ms`：以毫秒表示的 `time_window`。
+* `decision`：`allowed`、`rejected`，或在无法更新计数器（例如 Redis 不可达）时为 `error`。值为 `error` 时只包含以上字段。
+* `cost`：本次请求计入计数器的值。固定窗口即使拒绝请求也会计数；滑动窗口和延迟同步只对放行的请求计数，因此被拒绝请求的 `cost` 为 `0`。
+* `evaluated_at_ms`：检查本次请求的时间。
+* `current_window.count`：计入本次请求（含其 `cost`）之后当前窗口的计数。本地固定窗口拒绝请求时为 `null`。
+* `current_window.start_ms` 和 `current_window.end_ms`：当前窗口的起止时间。
+
+固定窗口不与时钟对齐：它从该键下计入的第一个请求开始，持续 `time_window` 秒。`current_window.created` 在开启该窗口的请求上为 `true`。它只在 `local` 策略下可知，在 Redis 策略下为 `null`；Redis 策略下窗口结束时间由 Redis 计数器的 TTL 推算，不同请求之间可能相差几毫秒。
+
+滑动窗口与时钟对齐：`current_window.id` 是自 Unix 纪元以来的窗口序号，当前窗口从 `id * window_size_ms` 开始。当前窗口的计数加上上一个窗口按其仍处于滑动范围内的比例加权后的计数，只要低于配额，请求就会被放行。`previous_window.count` 是上一个窗口的计数（不超过配额），`previous_window.weight` 是该比例（0 到 1），`previous_window.weighted_count` 是两者的乘积。
+
+启用延迟同步（`sync_interval`）时，通过 Redis 共享的计数器每个间隔只读取一次，`delayed_sync` 对象描述了本次请求所依据的数据：
+
+* `delayed_sync.synced_at_ms`：该 APISIX 实例上一次同步计数器的时间。
+* `delayed_sync.synced_count`：当时 Redis 中当前窗口的计数。
+* `delayed_sync.local_delta`：该 APISIX 实例自那以后计入、尚未同步的值，不含本次请求。
+
+此时 `current_window.count` 是估算值，即 `synced_count + local_delta + cost`，不包含其他实例自各自上次同步以来的计数。对于滑动窗口，`current_window` 和 `previous_window` 描述的是上一次同步时的窗口：上一个窗口的权重在同步时就已确定，因此 `previous_window.weight` 是本次请求实际使用的权重，而不是 `evaluated_at_ms` 时刻的权重。快照只在其窗口结束之后才会刷新，因此在窗口边界之后几毫秒内到达的请求仍按上一次的快照判定，此时它的 `evaluated_at_ms` 会晚于 `current_window.end_ms`。
+
+配置多条 `rules` 时，该变量描述最后一条被检查的规则；如果有规则拒绝了请求，就是该规则。

@@ -759,3 +759,27 @@ passed
 GET /hello
 --- response_body
 hello world
+
+
+
+=== TEST 34: hit route and multiple user-agents not in denylist
+--- request
+GET /hello
+--- more_headers
+User-Agent:foo/bar
+User-Agent:baz/qux
+--- error_code: 200
+--- response_body
+hello world
+
+
+
+=== TEST 35: hit route and multiple user-agents all in denylist
+--- request
+GET /hello
+--- more_headers
+User-Agent:my-bot1
+User-Agent:my-bot1-extra
+--- error_code: 403
+--- response_body
+{"message":"Not allowed"}

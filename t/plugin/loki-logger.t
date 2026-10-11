@@ -616,3 +616,68 @@ hello world
         }
     }
 --- error_code: 200
+
+
+
+=== TEST 22: data encryption for headers
+--- yaml_config
+apisix:
+    data_encryption:
+        enable_encrypt_fields: true
+        keyring:
+            - edd1c9f0985e76a2
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, {
+                uri = "/hello",
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:1980"] = 1
+                    }
+                },
+                plugins = {
+                    ["loki-logger"] = {
+                        endpoint_addrs = {"http://127.0.0.1:8199"},
+                        headers = {
+                            Authorization = "Basic ZWxhc3RpYzoxMjM0NTY="
+                        },
+                        batch_max_size = 1,
+                        inactive_timeout = 1
+                    }
+                }
+            })
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            ngx.sleep(0.1)
+
+            -- get plugin conf from admin api, header is decrypted
+            local code, message, res = t('/apisix/admin/routes/1',
+                ngx.HTTP_GET
+            )
+            res = json.decode(res)
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(message)
+                return
+            end
+
+            ngx.say(res.value.plugins["loki-logger"].headers.Authorization)
+
+            -- get plugin conf from etcd, header is encrypted
+            local etcd = require("apisix.core.etcd")
+            local res = assert(etcd.get('/routes/1'))
+            local stored = res.body.node.value.plugins["loki-logger"].headers.Authorization
+            ngx.say(stored ~= "Basic ZWxhc3RpYzoxMjM0NTY=" and "encrypted" or "plaintext")
+        }
+    }
+--- response_body
+Basic ZWxhc3RpYzoxMjM0NTY=
+encrypted

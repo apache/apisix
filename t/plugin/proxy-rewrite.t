@@ -1724,3 +1724,38 @@ GET /test/echo
 x-src: from-src
 --- response_body_like eval
 qr/x-multi: cap-echo\nx-multi: from-src/
+
+
+
+=== TEST 66: CRLF in a reflected uri is encoded, not injected into the upstream request line
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, {
+                uri = "/reflect*",
+                plugins = {
+                    ["proxy-rewrite"] = {
+                        regex_uri = {"^(/reflect.*)", "/print_request_received?orig=$1"}
+                    }
+                },
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {["127.0.0.1:1980"] = 1}
+                }
+            })
+            if code >= 300 then ngx.status = code; ngx.say(body); return end
+
+            local http = require("resty.http")
+            local httpc = http.new()
+            local res = httpc:request_uri("http://127.0.0.1:" .. ngx.var.server_port
+                .. "/reflect%0d%0aX-Injected:pwn")
+            ngx.print(res.body)
+        }
+    }
+--- request
+GET /t
+--- response_body eval
+qr{request_uri: /print_request_received\?orig=/reflect%0[Dd]%0[Aa]X-Injected}
+--- no_error_log
+[error]

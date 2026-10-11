@@ -42,8 +42,26 @@ import TabItem from '@theme/TabItem';
 - `X-Forwarded-Proto`：协议
 - `X-Forwarded-Method`：HTTP 方法
 - `X-Forwarded-Host`：主机
-- `X-Forwarded-Uri`：URI
+- `X-Forwarded-Uri`：规范化后的 URI，包含查询字符串
 - `X-Forwarded-For`：源 IP
+
+:::note
+
+这些请求头描述的是客户端发送的原始请求。如果该路由同时使用 [proxy-rewrite](./proxy-rewrite.md) 改写请求，上游服务收到的是改写后的协议、方法、主机和 URI，而上述请求头仍然携带客户端的值。
+
+如果授权服务需要根据上游服务实际收到的 URI 做出决策，请通过 `extra_headers` 和 `$upstream_uri` 变量显式传递：
+
+```json
+{
+  "extra_headers": {
+    "X-Forwarded-Upstream-Uri": "$upstream_uri"
+  }
+}
+```
+
+`$upstream_uri` 由改写转发路径的插件设置，例如 `proxy-rewrite`。当没有插件改写请求时该变量为空，此时上游服务收到的就是 `X-Forwarded-Uri` 中的 URI。
+
+:::
 
 ## 属性
 

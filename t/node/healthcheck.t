@@ -224,7 +224,7 @@ GET /t
 --- response_body
 [{"count":12,"port":"1980"}]
 --- grep_error_log eval
-qr/\([^)]+\) unhealthy .* for '.*'/
+qr/\([^)]+\) unhealthy TCP increment \([12]\/2\) for '.*'/
 --- grep_error_log_out
 (upstream#/apisix/routes/1) unhealthy TCP increment (1/2) for 'foo.com(127.0.0.1:1970)'
 (upstream#/apisix/routes/1) unhealthy TCP increment (2/2) for 'foo.com(127.0.0.1:1970)'
@@ -910,7 +910,7 @@ GET /t
 --- response_body
 [{"count":12,"port":"1980"}]
 --- grep_error_log eval
-qr/\([^)]+\) unhealthy .* for '.*'/
+qr/\([^)]+\) unhealthy TCP increment \([12]\/2\) for '.*'/
 --- grep_error_log_out
 (upstream#/apisix/upstreams/1) unhealthy TCP increment (1/2) for 'foo.com(127.0.0.1:1970)'
 (upstream#/apisix/upstreams/1) unhealthy TCP increment (2/2) for 'foo.com(127.0.0.1:1970)'

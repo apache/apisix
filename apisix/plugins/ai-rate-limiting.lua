@@ -19,6 +19,7 @@ local setmetatable = setmetatable
 local ipairs = ipairs
 local type = type
 local pairs = pairs
+local rawget = rawget
 local pcall = pcall
 local load = load
 local math_floor = math.floor
@@ -350,6 +351,31 @@ function _M.check_instance_status(conf, ctx, instance_name)
 end
 
 
+-- expose nested usage fields as parent__child, shallower keys win
+local function inject_usage_vars(env, raw)
+    local level = {{raw, nil}}
+    while #level > 0 do
+        local next_level = {}
+        for _, item in ipairs(level) do
+            local tab, prefix = item[1], item[2]
+            for k, v in pairs(tab) do
+                if type(k) == "string" then
+                    local path = prefix and (prefix .. "__" .. k) or k
+                    if type(v) == "number" then
+                        if rawget(env, path) == nil and not expr_safe_env[path] then
+                            env[path] = v
+                        end
+                    elseif type(v) == "table" then
+                        next_level[#next_level + 1] = {v, path}
+                    end
+                end
+            end
+        end
+        level = next_level
+    end
+end
+
+
 local function eval_cost_expr(conf_cost_expr, raw)
     local fn_code = "return " .. conf_cost_expr
     -- build environment: safe math + usage variables (missing vars default to 0)
@@ -362,11 +388,7 @@ local function eval_cost_expr(conf_cost_expr, raw)
             return 0
         end
     })
-    for k, v in pairs(raw) do
-        if type(v) == "number" and not expr_safe_env[k] then
-            env[k] = v
-        end
-    end
+    inject_usage_vars(env, raw)
     local fn, err = load(fn_code, "cost_expr", "t", env)
     if not fn then
         return nil, "failed to compile cost_expr: " .. err

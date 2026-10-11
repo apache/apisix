@@ -263,3 +263,91 @@ X-Forwarded-Proto: http
 X-Forwarded-Proto: grpc
 --- response_headers
 X-Forwarded-Proto: http
+
+
+
+=== TEST 9: remove X-Forwarded-Host, no trusted_addresses (apache/apisix#13753)
+--- yaml_config
+apisix:
+    node_listen: 1984
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
+--- apisix_yaml
+routes:
+  -
+    id: 1
+    uri: /echo
+    plugins:
+        proxy-rewrite:
+            headers:
+                remove:
+                  - "X-Forwarded-Host"
+    upstream_id: 1
+upstreams:
+  -
+    id: 1
+    nodes:
+        "127.0.0.1:1980": 1
+    type: roundrobin
+#END
+--- request
+GET /echo
+--- response_headers
+X-Forwarded-Host:
+
+
+
+=== TEST 10: remove X-Forwarded-Host from a trusted client
+--- apisix_yaml
+routes:
+  -
+    id: 1
+    uri: /echo
+    plugins:
+        proxy-rewrite:
+            headers:
+                remove:
+                  - "X-Forwarded-Host"
+    upstream_id: 1
+upstreams:
+  -
+    id: 1
+    nodes:
+        "127.0.0.1:1980": 1
+    type: roundrobin
+#END
+--- request
+GET /echo
+--- more_headers
+X-Forwarded-Host: client.example.com
+--- response_headers
+X-Forwarded-Host:
+
+
+
+=== TEST 11: customize X-Forwarded-Host
+--- apisix_yaml
+routes:
+  -
+    id: 1
+    uri: /echo
+    plugins:
+        proxy-rewrite:
+            headers:
+                X-Forwarded-Host: my-upstream.example.com
+    upstream_id: 1
+upstreams:
+  -
+    id: 1
+    nodes:
+        "127.0.0.1:1980": 1
+    type: roundrobin
+#END
+--- request
+GET /echo
+--- more_headers
+X-Forwarded-Host: client.example.com
+--- response_headers
+X-Forwarded-Host: my-upstream.example.com

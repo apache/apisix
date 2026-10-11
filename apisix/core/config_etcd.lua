@@ -21,12 +21,12 @@
 
 local table        = require("apisix.core.table")
 local config_local = require("apisix.core.config_local")
-local config_util  = require("apisix.core.config_util")
 local log          = require("apisix.core.log")
 local json         = require("apisix.core.json")
 local etcd_apisix  = require("apisix.core.etcd")
 local core_str     = require("apisix.core.string")
 local new_tab      = require("table.new")
+local nkeys        = require("table.nkeys")
 local inspect      = require("inspect")
 local process      = require("ngx.process")
 local check_schema = require("apisix.core.schema").check
@@ -70,6 +70,9 @@ if not is_http then
 end
 local created_obj  = {}
 local loaded_configuration = {}
+-- the etcd revision loaded_configuration was read at, kept separately because
+-- its entries are removed as they are consumed
+local loaded_configuration_rev
 local configuration_loaded_time
 local watch_ctx
 
@@ -125,6 +128,29 @@ local function produce_res(res, err)
 end
 
 
+local function wait_for_etcd_available(etcd_cli, prefix)
+    while true do
+        local res, err = etcd_cli:get(prefix)
+        if not res then
+            log.error("etcd get: ", err)
+            ngx_sleep(3)
+        elseif not (res.body and res.body.header and res.body.header.revision) then
+            log.error("etcd response missing header.revision")
+            ngx_sleep(3)
+        else
+            local rev = tonumber(res.body.header.revision)
+            if not rev then
+                log.error("etcd response has invalid header.revision: ",
+                          tostring(res.body.header.revision))
+                ngx_sleep(3)
+            else
+                return rev
+            end
+        end
+    end
+end
+
+
 local function do_run_watch(premature)
     if premature then
         return
@@ -144,39 +170,15 @@ local function do_run_watch(premature)
             error("failed to create etcd instance: " .. string(err))
         end
 
-        local rev = 0
-        if loaded_configuration then
-            local _, res = next(loaded_configuration)
-            if res then
-                rev = tonumber(res.headers["X-Etcd-Index"])
-                if not rev or rev <= 0 then
-                    log.warn("invalid or missing X-Etcd-Index header, ",
-                             "will fetch revision from etcd directly")
-                    rev = 0
-                end
-            end
-        end
-
-        if rev == 0 then
-            while true do
-                local res, err = watch_ctx.cli:get(watch_ctx.prefix)
-                if not res then
-                    log.error("etcd get: ", err)
-                    ngx_sleep(3)
-                elseif not (res.body and res.body.header and res.body.header.revision) then
-                    log.error("etcd response missing header.revision")
-                    ngx_sleep(3)
-                else
-                    rev = tonumber(res.body.header.revision)
-                    if not rev then
-                        log.error("etcd response has invalid header.revision: ",
-                                  tostring(res.body.header.revision))
-                        ngx_sleep(3)
-                    else
-                        break
-                    end
-                end
-            end
+        -- Config objects take watch_ctx.started as permission to wait only for
+        -- events from the main watcher. Do not publish that state until etcd
+        -- has answered at least one request. The returned revision is only the
+        -- fallback when no configuration was preloaded: using a newer revision
+        -- in place of the snapshot revision would skip intervening writes.
+        local current_rev = wait_for_etcd_available(watch_ctx.cli, watch_ctx.prefix)
+        local rev = loaded_configuration_rev
+        if not rev or rev == 0 then
+            rev = current_rev
         end
 
         watch_ctx.rev = rev + 1
@@ -197,18 +199,9 @@ local function do_run_watch(premature)
     opts.need_cancel = true
     opts.start_revision = watch_ctx.rev
 
-    -- get latest revision
-    local res, err = watch_ctx.cli:readdir(watch_ctx.prefix .. "/phantomkey")
-    if err then
-        log.error("failed to get latest revision, err: ", err)
-    end
-    local latest_rev
-    if res and res.body and res.body.header and res.body.header.revision then
-        latest_rev = tonumber(res.body.header.revision)
-    else
-        log.error("failed to get latest revision, res: ", json.delay_encode(res))
-    end
-
+    -- A watch timeout must not advance start_revision: it cannot tell an idle
+    -- prefix from a stream that died silently, and skipping ahead loses the
+    -- events etcd already wrote into that stream. See #13067.
     log.info("restart watchdir: start_revision=", opts.start_revision)
 
     local res_func, err, http_cli = watch_ctx.cli:watchdir(watch_ctx.prefix, opts)
@@ -227,12 +220,6 @@ local function do_run_watch(premature)
                 err ~= "broken pipe"
             then
                 log.error("wait watch event: ", err)
-            end
-            if err == "timeout" then
-                if latest_rev and watch_ctx.rev < latest_rev + 1 then
-                    watch_ctx.rev = latest_rev + 1
-                    log.info("etcd watch timeout, upgrade revision to ", watch_ctx.rev)
-                end
             end
             cancel_watch(http_cli)
             break
@@ -561,9 +548,7 @@ end
 local function load_full_data(self, dir_res, headers, prev_values, prev_values_hash)
     local err
     local changed = false
-    -- previous items carried over because their new data failed the check;
-    -- their clean handlers must NOT be fired
-    local carried = {}
+    local prev_keys_still_present = 0
 
     if self.single_item then
         self.values = new_tab(1, 0)
@@ -581,7 +566,7 @@ local function load_full_data(self, dir_res, headers, prev_values, prev_values_h
         end
 
         if data_valid and self.checker then
-            data_valid, err = self.checker(item.value)
+            data_valid, err = self.checker(item.value, item.key)
             if not data_valid then
                 log.error("failed to check item data of [", self.key,
                           "] err:", err, " ,val: ", json.delay_encode(item.value))
@@ -592,8 +577,6 @@ local function load_full_data(self, dir_res, headers, prev_values, prev_values_h
             changed = true
             insert_tab(self.values, item)
             self.values_hash[self.key] = #self.values
-
-            item.clean_handlers = {}
 
             if self.filter then
                 self.filter(item)
@@ -609,7 +592,6 @@ local function load_full_data(self, dir_res, headers, prev_values, prev_values_h
                          "], keep the previous configuration, err: ", err)
                 insert_tab(self.values, prev_item)
                 self.values_hash[self.key] = #self.values
-                carried[prev_item] = true
             end
         end
 
@@ -628,6 +610,22 @@ local function load_full_data(self, dir_res, headers, prev_values, prev_values_h
 
         for _, item in ipairs(values) do
             local key = short_key(self, item.key)
+            local prev_item = get_prev_item(prev_values, prev_values_hash, key)
+            if prev_item then
+                prev_keys_still_present = prev_keys_still_present + 1
+            end
+
+            -- Deliberately leaves `changed` alone, so a reload that changed
+            -- nothing does not bump conf_version and rebuild every router.
+            -- Same semantics as sync_data, which re-runs the checker and filter
+            -- only for the keys that changed.
+            if prev_item and prev_item.modifiedIndex == item.modifiedIndex then
+                insert_tab(self.values, prev_item)
+                self.values_hash[key] = #self.values
+                self:upgrade_version(item.modifiedIndex)
+                goto continue
+            end
+
             local data_valid = true
             err = nil
             if type(item.value) ~= "table" then
@@ -662,37 +660,31 @@ local function load_full_data(self, dir_res, headers, prev_values, prev_values_h
                 self.values_hash[key] = #self.values
 
                 item.value.id = key
-                item.clean_handlers = {}
 
                 if self.filter then
                     self.filter(item)
                 end
 
-            else
-                local prev_item = get_prev_item(prev_values, prev_values_hash, key)
-                if prev_item then
-                    -- keep serving with the last valid configuration instead of
-                    -- silently dropping the whole item on a full reload, see the
-                    -- incremental path in sync_data for the same semantics
-                    log.warn("failed to check item data of [", self.key, "/", key,
-                             "], keep the previous configuration, err: ", err)
-                    insert_tab(self.values, prev_item)
-                    self.values_hash[key] = #self.values
-                    carried[prev_item] = true
-                end
+            elseif prev_item then
+                -- keep serving with the last valid configuration instead of
+                -- silently dropping the whole item on a full reload, see the
+                -- incremental path in sync_data for the same semantics
+                log.warn("failed to check item data of [", self.key, "/", key,
+                         "], keep the previous configuration, err: ", err)
+                insert_tab(self.values, prev_item)
+                self.values_hash[key] = #self.values
             end
 
             self:upgrade_version(item.modifiedIndex)
-        end
-    end
 
-    -- fire the clean handlers of the previous items that were not carried
-    -- over: they were either replaced by a new value or deleted from etcd
-    if prev_values then
-        for _, item in ipairs(prev_values) do
-            if item and not carried[item] then
-                config_util.fire_all_clean_handlers(item)
-            end
+            ::continue::
+        end
+
+        -- A deletion leaves every surviving key untouched, so it has to be
+        -- detected separately or a reload that only deletes would keep
+        -- serving the removed items.
+        if prev_values_hash and prev_keys_still_present < nkeys(prev_values_hash) then
+            changed = true
         end
     end
 
@@ -837,18 +829,12 @@ local function sync_data(self)
 
         local pre_index = self.values_hash[key]
         if pre_index then
-            local pre_val = self.values[pre_index]
-            if pre_val then
-                config_util.fire_all_clean_handlers(pre_val)
-            end
-
             if res.value then
                 if not self.single_item then
                     res.value.id = key
                 end
 
                 self.values[pre_index] = res
-                res.clean_handlers = {}
                 log.info("update data by key: ", key)
 
             else
@@ -859,7 +845,6 @@ local function sync_data(self)
             end
 
         elseif res.value then
-            res.clean_handlers = {}
             insert_tab(self.values, res)
             self.values_hash[key] = #self.values
             if not self.single_item then
@@ -1223,6 +1208,7 @@ end
 
 local function init_loaded_configuration()
     loaded_configuration = {}
+    loaded_configuration_rev = nil
     local etcd_cli, prefix, err = etcd_apisix.new_without_proxy()
     if not etcd_cli then
         return "failed to start a etcd instance: " .. err
@@ -1231,6 +1217,17 @@ local function init_loaded_configuration()
     local res, err = readdir(etcd_cli, prefix, create_formatter(prefix))
     if not res then
         return err
+    end
+
+    -- One readdir backs every entry create_formatter() stored, so there is a
+    -- single revision to record. Nothing is consumed yet at this point, so an
+    -- empty table here means the read stored nothing -- unlike the same test
+    -- made at watch time, which is the bug being fixed. Leave that case alone:
+    -- with no preloaded data every resource type reads for itself at first
+    -- sync, which already picks up whatever was written since, and the
+    -- rev == 0 path below keeps handling it exactly as before.
+    if next(loaded_configuration) then
+        loaded_configuration_rev = tonumber(res.headers["X-Etcd-Index"])
     end
 
     configuration_loaded_time = ngx_time()

@@ -23,7 +23,8 @@ local ipairs = ipairs
 local table_insert = core.table.insert
 local table_concat = core.table.concat
 
-local batch_processor_manager = bp_manager_mod.new("sys logger")
+-- shared by the http and the stream syslog plugin, both named "syslog"
+local batch_processor_manager = bp_manager_mod.new("sys logger", "syslog")
 
 local lrucache = core.lrucache.new({
     ttl = 300, count = 512, serial_creating = true,

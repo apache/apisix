@@ -55,8 +55,22 @@ rerun_flaky_tests() {
 
     local tests
     local n_test
+    local failed
+    local n_failed
+    # Every file prove reported as failed, and the subset this function knows
+    # how to rerun. They differ for anything that is not a .t -- a shell script
+    # named directly in a test target, say. The rerun's exit status becomes this
+    # function's, so a failure left out of the rerun is silently forgiven; and
+    # with no rerunnable file at all the command below would degrade into a bare
+    # `prove` over the default t/ directory. Refuse both.
+    failed="$(awk '/^[^[:space:]]+[[:space:]]+\(.*Failed: .*\)/{ print $1 }' "$1")"
     tests="$(awk '/^t\/.*.t\s+\(.+ Failed: .+\)/{ print $1 }' "$1")"
-    n_test="$(echo "$tests" | wc -l)"
+    n_failed="$(printf '%s\n' "$failed" | grep -c .)"
+    n_test="$(printf '%s\n' "$tests" | grep -c .)"
+    if [ "$n_test" -eq 0 ] || [ "$n_test" -ne "$n_failed" ]; then
+        # something failed that this function cannot rerun
+        exit 1
+    fi
     if [ "$n_test" -gt 10 ]; then
         # too many tests failed
         exit 1
@@ -108,7 +122,15 @@ install_nodejs () {
     export PNPM_HOME="/pnpm"
     export PATH="$PNPM_HOME:$PATH"
     corepack enable pnpm
-    pnpm setup
+    # Pin the pnpm used outside t/, which has its own packageManager pin.
+    # pnpm 12 turned two long-standing warnings into hard errors that both
+    # break CI: running "pnpm setup" under sudo, and "pnpm dlx" installing a
+    # package whose dependency has an unapproved build script -- the latter
+    # hits t/plugin/grpc-web.t, which runs the client through "pnpx tsx"
+    # (esbuild). 11.25.0 is the last version CI was green on.
+    # Expiry: drop this pin once grpc-web.t no longer needs pnpm to run
+    # esbuild's build script unprompted.
+    corepack prepare pnpm@11.25.0 --activate
 }
 
 install_brotli () {

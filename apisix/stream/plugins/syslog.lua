@@ -21,7 +21,7 @@ local bp_manager_mod = require("apisix.utils.batch-processor-manager")
 local syslog = require("apisix.plugins.syslog.init")
 local plugin_name = "syslog"
 
-local batch_processor_manager = bp_manager_mod.new("stream sys logger")
+local batch_processor_manager = bp_manager_mod.new("stream sys logger", plugin_name)
 local schema = {
     type = "object",
     properties = {
@@ -54,7 +54,7 @@ local _M = {
     priority = 401,
     name = plugin_name,
     schema = schema,
-    metadata_schema = metadata_schema,
+    metadata_schema = batch_processor_manager:wrap_metadata_schema(metadata_schema),
     flush_syslog = syslog.flush_syslog,
 }
 

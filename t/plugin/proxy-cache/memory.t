@@ -1554,3 +1554,76 @@ GET /t
 --- response_body
 purge=200
 leftover=0
+
+
+
+=== TEST 48: a crafted URI cannot collide with another request's Vary variant
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local http = require("resty.http")
+
+            -- earlier tests left exact-match routes on /vary-encoding behind,
+            -- and an exact match wins over the prefix route below, so the
+            -- victim requests would otherwise never reach it
+            for _, id in ipairs({"proxy-cache-vary-enc", "proxy-cache-vary-purge"}) do
+                t('/apisix/admin/routes/' .. id, ngx.HTTP_DELETE)
+            end
+
+            local code, body = t('/apisix/admin/routes/proxy-cache-vary-collision', ngx.HTTP_PUT, [[{
+                "uri": "/vary-encoding*",
+                "plugins": {
+                    "proxy-cache": {
+                        "cache_strategy": "memory",
+                        "cache_key": ["$host", "$uri"],
+                        "cache_zone": "memory_cache",
+                        "cache_method": ["GET"],
+                        "cache_http_status": [200],
+                        "cache_ttl": 300
+                    }
+                },
+                "upstream": {
+                    "nodes": {
+                        "127.0.0.1:1986": 1
+                    },
+                    "type": "roundrobin"
+                }
+            }]])
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local base = "http://127.0.0.1:" .. ngx.var.server_port
+            local function fetch(path, enc)
+                local res, err = http.new():request_uri(base .. path, {
+                    headers = { ["Accept-Encoding"] = enc },
+                })
+                if not res then return nil, err end
+                local body = res.body and res.body:gsub("%s+$", "") or ""
+                return res.headers["Apisix-Cache-Status"], body
+            end
+
+            -- the variant key the plugin derives for this request
+            local crafted = "/vary-encoding::" .. ngx.md5("gzip")
+
+            local status, cached = fetch("/vary-encoding", "gzip")
+            ngx.say("victim_1=", status, " body=", cached)
+
+            -- a request whose own cache key is the victim's variant key: it
+            -- must neither read nor overwrite the entry cached above
+            status, cached = fetch(crafted)
+            ngx.say("crafted=", status, " body=", cached)
+
+            status, cached = fetch("/vary-encoding", "gzip")
+            ngx.say("victim_2=", status, " body=", cached)
+        }
+    }
+--- request
+GET /t
+--- response_body
+victim_1=MISS body=encoding=gzip
+crafted=MISS body=hello world!
+victim_2=HIT body=encoding=gzip

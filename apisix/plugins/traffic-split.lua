@@ -117,6 +117,16 @@ function _M.check_schema(conf)
                     end
                 end
             end
+
+            -- the upstreams this plugin builds are rebuilt per request and carry
+            -- no stable scope, so slow start has nowhere to keep the lifecycle of
+            -- their nodes
+            for _, wupstream in ipairs(rule.weighted_upstreams or {}) do
+                if wupstream.upstream and wupstream.upstream.warm_up_conf then
+                    return false, "warm_up_conf is not supported by the upstream of " ..
+                                  "the traffic-split plugin"
+                end
+            end
         end
     end
 
@@ -191,7 +201,9 @@ local function set_upstream(upstream_info, ctx)
     end
     core.log.info("upstream_key: ", upstream_key)
     upstream.set(ctx, upstream_key, ctx.conf_version, up_conf)
-    if upstream_info.scheme == "https" then
+    -- the schemes handle_upstream() dispatches on ctx.upstream_scheme for
+    local scheme = upstream_info.scheme
+    if scheme == "https" or scheme == "ws" or scheme == "wss" then
         upstream.set_scheme(ctx, up_conf)
     end
     return

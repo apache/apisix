@@ -897,3 +897,595 @@ nginx_config:
 GET /hello?password=secret&token=mytoken
 --- access_log eval
 qr/GET \/hello\?token=\*\*\*\*\* HTTP\/\d+\.\d+/
+
+
+
+=== TEST 21: create route for removing a middle JSON array element
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "data-mask": {
+                                "request": [
+                                    {
+                                        "action": "remove",
+                                        "body_format": "json",
+                                        "name": "$.items[1]",
+                                        "type": "body"
+                                    }
+                                ]
+                            },
+                            "file-logger": {
+                                "include_req_body": true,
+                                "path": "mask-json-array-hole.log"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+
+
+
+=== TEST 22: verify removing a middle array element compacts the array
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+
+            os.remove("mask-json-array-hole.log")
+            local code = t("/hello", ngx.HTTP_POST, [[{"items":["a","drop-me","c"]}]])
+
+            local fd, err = io.open("mask-json-array-hole.log", "r")
+            if not fd then
+                core.log.error("failed to open file: ", err)
+                return
+            end
+            local line = fd:read()
+            local log = core.json.decode(line)
+            os.remove("mask-json-array-hole.log")
+
+            if not log or not log.request or not log.request.body then
+                ngx.say("missing logged request body")
+                return
+            end
+
+            local body = core.json.decode(log.request.body)
+            if not body or type(body.items) ~= "table" then
+                ngx.say("items missing: " .. tostring(log.request.body))
+                return
+            end
+            if #body.items ~= 2 then
+                ngx.say("expected compacted array of 2, got: " .. core.json.encode(body.items))
+                return
+            end
+            if body.items[1] ~= "a" or body.items[2] ~= "c" then
+                ngx.say("array not compacted: " .. core.json.encode(body.items))
+                return
+            end
+            ngx.say("success")
+        }
+    }
+--- response_body
+success
+
+
+
+=== TEST 23: create route for removing all JSON array elements
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "data-mask": {
+                                "request": [
+                                    {
+                                        "action": "remove",
+                                        "body_format": "json",
+                                        "name": "$.items[*]",
+                                        "type": "body"
+                                    }
+                                ]
+                            },
+                            "file-logger": {
+                                "include_req_body": true,
+                                "path": "mask-json-array-star.log"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+
+
+
+=== TEST 24: verify removing all array elements yields an empty array
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+
+            os.remove("mask-json-array-star.log")
+            local code = t("/hello", ngx.HTTP_POST, [[{"items":["a","b","c"]}]])
+
+            local fd, err = io.open("mask-json-array-star.log", "r")
+            if not fd then
+                core.log.error("failed to open file: ", err)
+                return
+            end
+            local line = fd:read()
+            local log = core.json.decode(line)
+            os.remove("mask-json-array-star.log")
+
+            if not log or not log.request or not log.request.body then
+                ngx.say("missing logged request body")
+                return
+            end
+
+            local body = core.json.decode(log.request.body)
+            if not body or type(body.items) ~= "table" then
+                ngx.say("items missing: " .. tostring(log.request.body))
+                return
+            end
+            if #body.items ~= 0 then
+                ngx.say("expected empty array, got: " .. core.json.encode(body.items))
+                return
+            end
+            ngx.say("success")
+        }
+    }
+--- response_body
+success
+
+
+
+=== TEST 25: create route for removing non-contiguous JSON array elements
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "data-mask": {
+                                "request": [
+                                    {
+                                        "action": "remove",
+                                        "body_format": "json",
+                                        "name": "$.items[0,2]",
+                                        "type": "body"
+                                    }
+                                ]
+                            },
+                            "file-logger": {
+                                "include_req_body": true,
+                                "path": "mask-json-array-multi.log"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+
+
+
+=== TEST 26: verify removing non-contiguous array elements keeps the unmatched item
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+
+            os.remove("mask-json-array-multi.log")
+            local code = t("/hello", ngx.HTTP_POST, [[{"items":["a","b","c"]}]])
+
+            local fd, err = io.open("mask-json-array-multi.log", "r")
+            if not fd then
+                core.log.error("failed to open file: ", err)
+                return
+            end
+            local line = fd:read()
+            local log = core.json.decode(line)
+            os.remove("mask-json-array-multi.log")
+
+            if not log or not log.request or not log.request.body then
+                ngx.say("missing logged request body")
+                return
+            end
+
+            local body = core.json.decode(log.request.body)
+            if not body or type(body.items) ~= "table" then
+                ngx.say("items missing: " .. tostring(log.request.body))
+                return
+            end
+            if #body.items ~= 1 then
+                ngx.say("expected compacted array of 1, got: " .. core.json.encode(body.items))
+                return
+            end
+            if body.items[1] ~= "b" then
+                ngx.say("wrong remaining element: " .. core.json.encode(body.items))
+                return
+            end
+            ngx.say("success")
+        }
+    }
+--- response_body
+success
+
+
+
+=== TEST 27: header masking with a logger, upstream returns 400
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "data-mask": {
+                                "request": [
+                                    {
+                                        "action": "replace",
+                                        "name": "x-secret",
+                                        "type": "header",
+                                        "value": "*****"
+                                    }
+                                ]
+                            },
+                            "file-logger": {
+                                "path": "mask-header-400.log"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/specific_status"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+
+
+
+=== TEST 28: verify the header is masked for every response status
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+
+            local function req(status)
+                local headers = {}
+                headers["x-secret"] = "PLAINTEXT"
+                headers["x-test-upstream-status"] = status
+                t("/specific_status", ngx.HTTP_GET, "", nil, headers)
+            end
+
+            req("500")
+            req("400")
+            ngx.sleep(0.5)
+
+            local fd, err = io.open("mask-header-400.log", "r")
+            if not fd then
+                core.log.error("failed to open file: ", err)
+                return
+            end
+            for line in fd:lines() do
+                local log = core.json.decode(line)
+                local value = log.request.headers["x-secret"]
+                if value ~= "*****" then
+                    ngx.say("status ", log.response.status, " header mask failed: ", value)
+                    fd:close()
+                    return
+                end
+            end
+            fd:close()
+            os.remove("mask-header-400.log")
+            ngx.say("success")
+        }
+    }
+--- response_body
+success
+
+
+
+=== TEST 29: header masking with a custom log_format, upstream returns 400
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "data-mask": {
+                                "request": [
+                                    {
+                                        "action": "replace",
+                                        "name": "x-secret",
+                                        "type": "header",
+                                        "value": "*****"
+                                    }
+                                ]
+                            },
+                            "file-logger": {
+                                "path": "mask-header-fmt-400.log",
+                                "log_format": {
+                                    "status": "$status",
+                                    "secret": "$http_x_secret"
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/specific_status"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+
+
+
+=== TEST 30: verify the custom log_format value is masked for every response status
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+
+            local function req(status)
+                local headers = {}
+                headers["x-secret"] = "PLAINTEXT"
+                headers["x-test-upstream-status"] = status
+                t("/specific_status", ngx.HTTP_GET, "", nil, headers)
+            end
+
+            req("500")
+            req("400")
+            ngx.sleep(0.5)
+
+            local fd, err = io.open("mask-header-fmt-400.log", "r")
+            if not fd then
+                core.log.error("failed to open file: ", err)
+                return
+            end
+            for line in fd:lines() do
+                local log = core.json.decode(line)
+                if log.secret ~= "*****" then
+                    ngx.say("status ", log.status, " header mask failed: ", log.secret)
+                    fd:close()
+                    return
+                end
+            end
+            fd:close()
+            os.remove("mask-header-fmt-400.log")
+            ngx.say("success")
+        }
+    }
+--- response_body
+success
+
+
+
+=== TEST 31: header masking when APISIX rewrites the response status to 400
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "data-mask": {
+                                "request": [
+                                    {
+                                        "action": "replace",
+                                        "name": "x-secret",
+                                        "type": "header",
+                                        "value": "*****"
+                                    }
+                                ]
+                            },
+                            "response-rewrite": {
+                                "status_code": 400
+                            },
+                            "file-logger": {
+                                "path": "mask-rewrite-400.log"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+
+
+
+=== TEST 32: verify the mask holds when the upstream succeeded
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+
+            local headers = {}
+            headers["x-secret"] = "PLAINTEXT"
+            t("/hello", ngx.HTTP_GET, "", nil, headers)
+            ngx.sleep(0.5)
+
+            local fd, err = io.open("mask-rewrite-400.log", "r")
+            if not fd then
+                core.log.error("failed to open file: ", err)
+                return
+            end
+            local line = fd:read()
+            fd:close()
+            os.remove("mask-rewrite-400.log")
+
+            local log = core.json.decode(line)
+            if log.request.headers["x-secret"] ~= "*****" then
+                ngx.say("header mask failed: ", log.request.headers["x-secret"])
+                return
+            end
+            ngx.say("success")
+        }
+    }
+--- response_body
+success
+
+
+
+=== TEST 33: header masking when APISIX rejects the request with 400
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "data-mask": {
+                                "request": [
+                                    {
+                                        "action": "replace",
+                                        "name": "x-secret",
+                                        "type": "header",
+                                        "value": "*****"
+                                    }
+                                ]
+                            },
+                            "fault-injection": {
+                                "abort": {
+                                    "http_status": 400,
+                                    "body": "rejected"
+                                }
+                            },
+                            "file-logger": {
+                                "path": "mask-abort-400.log"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+
+
+
+=== TEST 34: verify the mask holds when the upstream is never reached
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+
+            local headers = {}
+            headers["x-secret"] = "PLAINTEXT"
+            t("/hello", ngx.HTTP_GET, "", nil, headers)
+            ngx.sleep(0.5)
+
+            local fd, err = io.open("mask-abort-400.log", "r")
+            if not fd then
+                core.log.error("failed to open file: ", err)
+                return
+            end
+            local line = fd:read()
+            fd:close()
+            os.remove("mask-abort-400.log")
+
+            local log = core.json.decode(line)
+            if log.request.headers["x-secret"] ~= "*****" then
+                ngx.say("header mask failed: ", log.request.headers["x-secret"])
+                return
+            end
+            ngx.say("success")
+        }
+    }
+--- response_body
+success

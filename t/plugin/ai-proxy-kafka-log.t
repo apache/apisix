@@ -44,16 +44,16 @@ add_block_preprocessor(sub {
         core.log.info("send data to kafka: ", data)
     end
     local old_add = bp_manager.add_entry
-    bp_manager.add_entry = function(self, conf, entry, max_pending_entries)
-        local ok = old_add(self, conf, entry, max_pending_entries)
+    bp_manager.add_entry = function(self, conf, entry)
+        local ok = old_add(self, conf, entry)
         if ok then
             log_send_data(entry)
         end
         return ok
     end
     local old_new = bp_manager.add_entry_to_new_processor
-    bp_manager.add_entry_to_new_processor = function(self, conf, entry, ctx, func, max_pending_entries)
-        local ok = old_new(self, conf, entry, ctx, func, max_pending_entries)
+    bp_manager.add_entry_to_new_processor = function(self, conf, entry, ctx, func)
+        local ok = old_new(self, conf, entry, ctx, func)
         if ok then
             log_send_data(entry)
         end

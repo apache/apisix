@@ -73,8 +73,8 @@ property "event_properties" validation failed: wrong type: expected object, got 
 --- timeout: 302
 --- max_size: 2048000
 --- exec
-cd t && pnpm test plugin/lago.spec.mts 2>&1
+cd t && pnpm test --no-color plugin/lago.spec.ts 2>&1
 --- no_error_log
 failed to execute the script with status
 --- response_body eval
-qr/PASS plugin\/lago.spec.mts/
+qr/Test Files\s+1 passed \(1\)/

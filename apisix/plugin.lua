@@ -163,6 +163,16 @@ local function check_disable(plugin_conf)
     return plugin_conf._meta.disable
 end
 
+
+local function warn_unavailable_plugin(name, plugin_conf)
+    if check_disable(plugin_conf) ~= true then
+        core.log.warn("plugin [", name, "] is not enabled and will be skipped")
+    end
+end
+-- exposed for callers that must not act on a plugin config which never runs,
+-- such as the control API reporting the health checkers a plugin owns
+_M.check_disable = check_disable
+
 local PLUGIN_TYPE_HTTP = 1
 local PLUGIN_TYPE_STREAM = 2
 local PLUGIN_TYPE_HTTP_WASM = 3
@@ -818,7 +828,14 @@ local function merge_consumer_route(route_conf, consumer_conf, consumer_group_co
         return route_conf
     end
 
-    local new_route_conf = core.table.deepcopy(route_conf)
+    -- some plugins cache request-time state on their conf object (resolved DNS
+    -- nodes, probed backend versions, ...). Deep-copying the plugin confs would
+    -- hand every consumer its own copy and drop that state, so keep them shared
+    -- by reference, as they already are on the route without consumer auth. The
+    -- `plugins` container itself is still a fresh table, so the merge below
+    -- overwrites its keys without touching the original route conf.
+    local new_route_conf = core.table.deepcopy(route_conf,
+        { shallow_prefix = "self.value.plugins" })
 
     if has_group_plugins then
         for name, conf in pairs(consumer_group_conf.value.plugins) do
@@ -1006,8 +1023,7 @@ local function check_single_plugin_schema(name, plugin_conf, schema_type, skip_d
         end
 
         if skip_disabled_plugin then
-            core.log.warn("skipping check schema for disabled or unknown plugin [",
-                                    name, "]. Enable the plugin or modify configuration")
+            warn_unavailable_plugin(name, plugin_conf)
             return true
         else
             return false, "unknown plugin [" .. name .. "]"
@@ -1261,6 +1277,7 @@ local function stream_check_schema(plugins_conf, schema_type, skip_disabled_plug
         local plugin_obj = stream_local_plugins_hash[name]
         if not plugin_obj then
             if skip_disabled_plugin then
+                warn_unavailable_plugin(name, plugin_conf)
                 goto CONTINUE
             else
                 return false, "unknown plugin [" .. name .. "]"
@@ -1308,7 +1325,9 @@ end
 
 function _M.stream_plugin_checker(item, in_cp)
     if item.plugins then
-        local skip_disabled_plugins = not in_cp
+        -- config_etcd passes the key as the second checker argument, so only
+        -- an explicit boolean marks validation on the control plane.
+        local skip_disabled_plugins = in_cp ~= true
         if core.config.type == "yaml" or core.config.type == "json" then
             skip_disabled_plugins = false
         end
@@ -1403,6 +1422,11 @@ function _M.run_plugin(phase, plugins, api_ctx)
                             core.log.warn(plugins[i].name, " exits with status code ", code)
                         end
 
+                        -- a stream session is rejected by closing it, so the
+                        -- code never reaches $status; keep it for the log
+                        -- phase, which still runs after ngx_exit
+                        api_ctx.stream_rejected_code = code
+
                         ngx_exit(1)
                     end
                 end
@@ -1494,7 +1518,6 @@ local function merge_global_rules(global_rules, conf_version)
         },
         createdIndex = conf_version,
         modifiedIndex = conf_version,
-        clean_handlers = {},
     }
 
     return dummy_global_rule
@@ -1519,17 +1542,37 @@ function _M.run_global_rules(api_ctx, global_rules, conf_version, phase_name)
                                                              global_rules,
                                                              conf_version)
 
-        local plugins = core.tablepool.fetch("plugins", 32, 0)
         local route = api_ctx.matched_route
         api_ctx.conf_type = "global_rule"
         api_ctx.conf_version = dummy_global_rule.modifiedIndex
         api_ctx.conf_id = dummy_global_rule.value.id
 
-        core.table.clear(plugins)
-        plugins = _M.filter(api_ctx, dummy_global_rule, plugins, route)
+        -- The filtered set depends only on the merged global rule (itself cached
+        -- per conf_version) and on the matched route, so it does not need
+        -- recomputing in every phase. This matters most for body_filter, which
+        -- runs once per response buffer. Route plugins are already reused this
+        -- way through api_ctx.plugins; global rules were not.
+        -- The route is part of the key because plugins with
+        -- run_policy == "prefer_route" are skipped when the route configures the
+        -- same plugin, and api_ctx.matched_route is replaced when a consumer's
+        -- configuration is merged in -- which happens after the rewrite phase
+        -- has run but before access.
+        -- The table is returned to the pool in http_log_phase.
+        local plugins = api_ctx.global_plugins
+        if not (plugins
+                and api_ctx.global_plugins_route == route
+                and api_ctx.global_plugins_version == dummy_global_rule.modifiedIndex)
+        then
+            plugins = plugins or core.tablepool.fetch("global_plugins", 32, 0)
+            core.table.clear(plugins)
+            plugins = _M.filter(api_ctx, dummy_global_rule, plugins, route)
+
+            api_ctx.global_plugins = plugins
+            api_ctx.global_plugins_route = route
+            api_ctx.global_plugins_version = dummy_global_rule.modifiedIndex
+        end
 
         _M.run_plugin(phase_name, plugins, api_ctx)
-        core.tablepool.release("plugins", plugins)
 
         api_ctx.conf_type = orig_conf_type
         api_ctx.conf_version = orig_conf_version

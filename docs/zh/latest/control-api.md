@@ -132,7 +132,7 @@ APISIX 中一些插件添加了自己的 control API。如果你对他们感兴�
 
 * name: 资源 ID，健康检查的报告对象。
 * type: 健康检查类型，取值为 `["http", "https", "tcp"]`。
-* nodes: 检查节点列表。
+* nodes: 检查节点列表。在健康检查器注册检查目标之前该字段为空数组（`[]`），健康检查器在上游第一次处理请求时才会创建。
 * nodes[i].ip: IP 地址。
 * nodes[i].port: 端口。
 * nodes[i].status: 状态：`["healthy", "unhealthy", "mostly_healthy", "mostly_unhealthy"]`。
@@ -140,6 +140,36 @@ APISIX 中一些插件添加了自己的 control API。如果你对他们感兴�
 * nodes[i].counter.http_failure: HTTP 访问失败计数器。
 * nodes[i].counter.tcp_failure: TCP 连接或读写的失败计数器。
 * nodes[i].counter.timeout_failure: 超时计数器。
+
+插件也可以对不属于任何上游的节点进行主动健康检查。[ai-proxy-multi](./plugins/ai-proxy-multi.md)
+就是这样：它探测每个 LLM 实例，并在选择目标时跳过不健康的实例。这类检查器会额外带上两个字段：
+
+```json
+{
+  "name": "/apisix/routes/1#plugins['ai-proxy-multi'].instances[0]",
+  "plugin": "ai-proxy-multi",
+  "meta": {
+    "instance": "openai"
+  },
+  "type": "http",
+  "nodes": [
+    {
+      "ip": "52.86.68.46",
+      "port": 443,
+      "status": "healthy",
+      "counter": {
+        "http_failure": 0,
+        "success": 2,
+        "timeout_failure": 0,
+        "tcp_failure": 0
+      }
+    }
+  ]
+}
+```
+
+* plugin: 拥有该健康检查器的插件名。上游自身的健康检查器没有该字段。
+* meta: 由插件填写，用于描述该检查器代表什么，内容由插件自行定义；`ai-proxy-multi` 在其中报告实例名。
 
 用户也可以通过 `/v1/healthcheck/$src_type/$src_id` 来获取指定 health checker 的状态。
 
@@ -179,16 +209,44 @@ APISIX 中一些插件添加了自己的 control API。如果你对他们感兴�
 
 :::note
 
-只有一个上游满足以下条件时，它的健康检查状态才会出现在结果里面：
-
-* 上游配置了健康检查。
-* 上游在任何一个 worker 进程处理过客户端请求。
+上游只要配置了健康检查，就会出现在结果里面。在上游于任意一个 worker 进程处理过客户端请求之前，
+健康检查器尚未创建，此时它的 `nodes` 为空数组。
 
 :::
 
 如果你使用浏览器访问该 API，你将得到一个网页：
 
 ![Health Check Status Page](https://raw.githubusercontent.com/apache/apisix/master/docs/assets/images/health_check_status_page.png)
+
+### GET /v1/healthcheck/{src_type}/{src_id}/checkers
+
+以数组形式返回某个资源拥有的全部健康检查器，数组元素与上文描述的 entry 结构一致。
+一个资源可能拥有多个健康检查器——它自身的上游，加上每个插件实例各一个——而
+`GET /v1/healthcheck/$src_type/$src_id` 返回的是单个对象，无法表达这种情况。
+
+例如，`GET /v1/healthcheck/routes/1/checkers` 返回：
+
+```json
+[
+  {
+    "name": "/apisix/routes/1",
+    "type": "http",
+    "nodes": [...]
+  },
+  {
+    "name": "/apisix/routes/1#plugins['ai-proxy-multi'].instances[0]",
+    "plugin": "ai-proxy-multi",
+    "meta": {
+      "instance": "openai"
+    },
+    "type": "http",
+    "nodes": [...]
+  }
+]
+```
+
+资源没有配置任何健康检查在这里不算错误：它拥有一个空的检查器集合，接口返回 `[]`。
+只有资源本身不存在时才返回 `404`。
 
 ### POST /v1/gc
 

@@ -68,14 +68,15 @@ When an instance's `provider` is set to `bedrock`, the Plugin expects requests i
 | Name                               | Type            | Required | Default                           | Valid values | Description |
 |------------------------------------|----------------|----------|-----------------------------------|--------------|-------------|
 | fallback_strategy                  | string or array         | False    |  | string: "instance_health_and_rate_limiting", "http_429", "http_5xx"<br />array: ["rate_limiting", "http_429", "http_5xx"] | Fallback strategy. When set, the Plugin will check whether the specified instance's token has been exhausted when a request is forwarded. If so, forward the request to the next instance regardless of the instance priority. When not set, the Plugin will not forward the request to low priority instances when token of the high priority instance is exhausted. |
-| max_retries                        | integer        | False    |                                   | greater or equal to 0 | Maximum number of fallback retries after the initial request fails. Bounds how many additional instances a single request tries, so it does not exhaust every configured instance. Only takes effect together with `fallback_strategy`. When unset, the Plugin retries until an instance succeeds or all are tried. |
-| retry_on_failure_within_ms         | integer        | False    |                                   | greater or equal to 1 | Only fall back to another instance when the upstream fails within this many milliseconds. Fast failures (such as connection errors or quick `429`/`5xx`) are retried, while a slow failure that takes longer than this is returned to the client directly to avoid doubling the wait time. Only takes effect together with `fallback_strategy`. When unset, the Plugin retries regardless of how long the failed attempt took. |
+| fallback_http_statuses             | array[integer] | False    |                                   | between 400 and 599 | Additional upstream HTTP status codes that make the request fall back to another instance, on top of the `http_429` and `http_5xx` entries of `fallback_strategy`. Use it for statuses that mean the instance's credential is unusable rather than the request being wrong, such as `[401, 402]` when an API key is expired or out of quota. It is opt-in per status because most `4xx` responses are caused by the request itself and retrying them on another instance would only burn quota. `max_retries` and `retry_on_failure_within_ms` bound these retries the same way they bound the `fallback_strategy` ones. |
+| max_retries                        | integer        | False    |                                   | greater or equal to 0 | Maximum number of fallback retries after the initial request fails. Bounds how many additional instances a single request tries, so it does not exhaust every configured instance. Only takes effect together with `fallback_strategy` or `fallback_http_statuses`. When unset, the Plugin retries until an instance succeeds or all are tried. |
+| retry_on_failure_within_ms         | integer        | False    |                                   | greater or equal to 1 | Only fall back to another instance when the upstream fails within this many milliseconds. Fast failures (such as connection errors or quick `429`/`5xx`) are retried, while a slow failure that takes longer than this is returned to the client directly to avoid doubling the wait time. Only takes effect together with `fallback_strategy` or `fallback_http_statuses`. When unset, the Plugin retries regardless of how long the failed attempt took. |
 | balancer                           | object         | False    |                                   |              | Load balancing configurations. |
 | balancer.algorithm                 | string         | False    | roundrobin                     | [roundrobin, chash, semantic] | Load balancing algorithm. When set to `roundrobin`, weighted round robin algorithm is used. When set to `chash`, consistent hashing algorithm is used. When set to `semantic`, the Plugin picks an instance by the semantic similarity between the request prompt and each instance's `examples`, and its options are configured under `semantic_opts`. Note that `semantic` does not participate in health checks or `fallback_strategy` / retry — an upstream failure on the chosen instance is returned to the client; it only falls back (to the `semantic_opts.fallback` instance, else the first instance) when no instance clears its threshold or embedding fails. |
 | balancer.hash_on                   | string         | False    |                                   | [vars, headers, cookie, consumer, vars_combinations] | Used when `type` is `chash`. Support hashing on [NGINX variables](https://nginx.org/en/docs/varindex.html), headers, cookie, consumer, or a combination of [NGINX variables](https://nginx.org/en/docs/varindex.html). |
 | balancer.key                       | string         | False    |                                   |              | Used when `type` is `chash`. When `hash_on` is set to `header` or `cookie`, `key` is required. When `hash_on` is set to `consumer`, `key` is not required as the consumer name will be used as the key automatically. |
 | instances                          | array[object]  | True     |                                   |              | LLM instance configurations. |
-| instances.name                     | string         | True     |                                   |              | Name of the LLM service instance. |
+| instances.name                     | string         | True     |                                   |              | Name of the LLM service instance. It must be unique within `instances`, since it identifies the instance in the balancer, in its health checker, and in other Plugins that reference it, such as `ai-rate-limiting`. |
 | instances.provider                 | string         | True     |                                   | [openai, deepseek, azure-openai, aimlapi, anthropic, openrouter, gemini, vertex-ai, bedrock, openai-compatible] | LLM service provider. When set to `openai`, the Plugin will proxy the request to `api.openai.com`. When set to `deepseek`, the Plugin will proxy the request to `api.deepseek.com`. When set to `aimlapi`, the Plugin uses the OpenAI-compatible driver and proxies the request to `api.aimlapi.com` by default. When set to `anthropic`, the Plugin will proxy the request to `api.anthropic.com` by default. When set to `openrouter`, the Plugin uses the OpenAI-compatible driver and proxies the request to `openrouter.ai` by default. When set to `gemini`, the Plugin uses the OpenAI-compatible driver and proxies the request to `generativelanguage.googleapis.com` by default. When set to `vertex-ai`, the Plugin will proxy the request to `aiplatform.googleapis.com` by default and requires `provider_conf` or `override`. When set to `bedrock`, the Plugin proxies the request to Amazon Bedrock's Converse API at `bedrock-runtime.{region}.amazonaws.com` and signs the request with AWS SigV4. Requires `provider_conf.region` and `auth.aws`. When set to `openai-compatible`, the Plugin will proxy the request to the custom endpoint configured in `override`. |
 | instances.provider_conf            | object         | False     |                                   |              | Configuration for the specific provider. Required when `provider` is set to `vertex-ai` and `override` is not configured. Required when `provider` is set to `bedrock`. |
 | instances.provider_conf.project_id | string         | True     |                                   |              | Google Cloud Project ID. |
@@ -152,12 +153,31 @@ By default, `ai-proxy-multi` forwards the incoming client request headers to the
 
 Because the LLM upstream is often a third-party service, be aware that any header the client sends (for example `Authorization`, `Cookie`, or internal application headers) is forwarded to that provider unless it is overridden by `auth.header`. If the client should not expose certain headers to the LLM provider, strip them before the request reaches `ai-proxy-multi`, for example with the [`proxy-rewrite`](./proxy-rewrite.md) plugin.
 
+## Upstream HTTP Client
+
+Requests to the LLM upstream go through `ngx_http_ffi_client`, a C HTTP client that costs around half the outbound CPU time of `lua-resty-http`. Both clients behave the same on the wire.
+
+`plugin_attr.ai-proxy.http_client` in `config.yaml` names the client:
+
+```yaml
+plugin_attr:
+  ai-proxy:
+    http_client: ngx_http_ffi_client # or lua-resty-http
+```
+
+- `ngx_http_ffi_client` (default): the C client. It requires an APISIX runtime built with the module, which the runtime pinned in `.requirements` is. On a runtime without it, the request fails and the error names the missing module; the plugin never silently switches clients.
+- `lua-resty-http`: the Lua client, on every runtime.
+
+The setting covers `ai-proxy`, `ai-proxy-multi`, and `ai-request-rewrite`, which share the same transport.
+
 ## Upstream Error Responses
 
 When the selected LLM upstream returns a `429` or `5xx` status, `ai-proxy-multi` reads the upstream error body before deciding whether to fall back:
 
-- If the request is retried on another instance (per `fallback_strategy`, `max_retries`, and `retry_on_failure_within_ms`), the failed instance's error body is recorded in the error log for diagnostics, since a later attempt's response is sent to the client instead.
-- If the request is not retried (no matching `fallback_strategy`, retries exhausted, or the failure took longer than `retry_on_failure_within_ms`), the upstream status code and error body are returned to the client, preserving the upstream `Content-Type`.
+- If the request is retried on another instance (per `fallback_strategy`, `fallback_http_statuses`, `max_retries`, and `retry_on_failure_within_ms`), the failed instance's error body is recorded in the error log for diagnostics, since a later attempt's response is sent to the client instead.
+- If the request is not retried (no matching `fallback_strategy` or `fallback_http_statuses`, retries exhausted, or the failure took longer than `retry_on_failure_within_ms`), the upstream status code and error body are returned to the client, preserving the upstream `Content-Type`.
+
+A streaming response is different once part of it has been delivered. The downstream response is committed as `200` with the first SSE event, so a later failure to read from the upstream (a connection reset or a read timeout) can no longer change the status, and falling back would bill another instance for a response the client can never receive. In that case `ai-proxy-multi` stops reading, closes the upstream connection, and ends the downstream stream where it is, without a protocol-specific terminator such as `[DONE]`, `message_stop`, or `response.completed`; well-behaved clients should treat a missing terminator as an incomplete response. A read error that happens before any event reaches the client is unaffected: it still maps to `504` for a timeout and `500` otherwise, and is still eligible for fallback.
 
 ## Examples
 
@@ -2609,6 +2629,8 @@ kubectl apply -f ai-proxy-multi-ic.yaml
 </Tabs>
 
 For verification, the behaviours should be consistent with the verification in [active health checks](../tutorials/health-check.md).
+
+The status these checks produce is reported by the [Control API](../control-api.md): `GET /v1/healthcheck` lists one entry per instance, and `GET /v1/healthcheck/routes/{id}/checkers` returns every checker the Route owns. Each entry carries the instance name in `meta.instance`.
 
 ### Include LLM Information in Access Log
 

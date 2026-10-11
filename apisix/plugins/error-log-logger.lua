@@ -378,6 +378,17 @@ local function create_producer(broker_list, broker_config, cluster_name)
 end
 
 
+-- redact_brokers returns a copy of the kafka broker list carrying only host and
+-- port, so the sasl_config credentials are never written to logs.
+local function redact_brokers(brokers)
+    local safe = {}
+    for i, b in ipairs(brokers or {}) do
+        safe[i] = {host = b.host, port = b.port}
+    end
+    return safe
+end
+
+
 local function send_to_kafka(log_message)
     -- avoid race of the global config
     local metadata = plugin.plugin_metadata(plugin_name)
@@ -390,7 +401,7 @@ local function send_to_kafka(log_message)
     end
 
     core.log.info("sending a batch logs to kafka brokers: ",
-                  core.json.delay_encode(config.kafka.brokers))
+                  core.json.delay_encode(redact_brokers(config.kafka.brokers)))
 
     local broker_config = {}
     broker_config["request_timeout"] = config.timeout * 1000
@@ -418,7 +429,7 @@ local function send_to_kafka(log_message)
                             config.kafka.key, core.json.encode(log_message[i]))
         if not ok then
             return false, "failed to send data to Kafka topic: " .. err ..
-                          ", brokers: " .. core.json.encode(config.kafka.brokers)
+                          ", brokers: " .. core.json.encode(redact_brokers(config.kafka.brokers))
         end
         core.log.info("send data to kafka: ", core.json.delay_encode(log_message[i]))
     end

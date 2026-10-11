@@ -98,12 +98,18 @@ function _M.key_remote_quota(self, key)
 end
 
 
-function _M.sync_to_shm(self, key, remaining, reset, local_delta)
+function _M.sync_to_shm(self, key, remaining, reset, local_delta, info)
     local quota = {
         remaining = remaining,
         reset = reset,
         sync_at = ngx_now(),
     }
+    -- window details of the synced counter, only reported in $rate_limiting_info
+    if info then
+        quota.count = info.count
+        quota.last_count = info.last_count
+        quota.window_now = info.now
+    end
 
     local _, err, quota_json
 
@@ -119,11 +125,17 @@ function _M.sync_to_shm(self, key, remaining, reset, local_delta)
         return err
     end
 
-    _, err = self.shd:incr(self:key_local_delta(key), -local_delta, 0, 2 * self.window)
-    if err then
-        core.log.error("incr local delta shm to failed: ", err, ", key: ", key)
-        return err
+    -- nothing was flushed: don't create an empty local delta entry, a failed
+    -- sync would take it for a pending delta and charge the fallback limiter
+    if local_delta ~= 0 then
+        _, err = self.shd:incr(self:key_local_delta(key), -local_delta, 0, 2 * self.window)
+        if err then
+            core.log.error("incr local delta shm to failed: ", err, ", key: ", key)
+            return err
+        end
     end
+
+    return nil, quota
 end
 
 
@@ -147,7 +159,8 @@ function _M.delayed_sync(self, key, cost, syncer_id)
     end
 
     -- wrap the delayed syncer call in a pcall to avoid the lock being held forever
-    local ok, remaining, reset, err = pcall(self._delayed_sync, self, key, cost, syncer_id)
+    local ok, remaining, reset, err, info = pcall(self._delayed_sync, self, key, cost,
+                                                 syncer_id)
     if not ok then
         err = remaining
         remaining = nil
@@ -159,12 +172,12 @@ function _M.delayed_sync(self, key, cost, syncer_id)
         core.log.error("unlock key(" .. key .. ") failed: ", err_unlock)
     end
 
-    return remaining, reset, err
+    return remaining, reset, err, info
 end
 
 
 function _M._delayed_sync(self, key, cost, syncer_id)
-    local _, reset, remote_quota_json
+    local _, reset, remote_quota_json, info
     local local_delta, err  = self.shd:get(self:key_local_delta(key))
     if err then
         return nil, nil, err
@@ -209,7 +222,7 @@ function _M._delayed_sync(self, key, cost, syncer_id)
         -- is at/over the limit; the fixed-window backend has no commit() and its
         -- incoming() already increments before reporting "rejected".
         local flush = self.limiter.commit or self.limiter.incoming
-        _, remaining_or_err, reset = flush(self.limiter, key, local_delta)
+        _, remaining_or_err, reset, info = flush(self.limiter, key, local_delta)
         if type(remaining_or_err) ~= "string" then
             remote_remaining = remaining_or_err
             remote_reset = reset
@@ -217,7 +230,7 @@ function _M._delayed_sync(self, key, cost, syncer_id)
             core.log.error("sync to redis failed: ", remaining_or_err, ", key: ", key)
             if self.limiter.fallback_limiter then
                 core.log.warn("try use fallback limiter to do rate limiting")
-                _, remaining_or_err, reset =
+                _, remaining_or_err, reset, info =
                        self.limiter.fallback_limiter:incoming(key, local_delta)
                 if type(remaining_or_err) ~= "string" then
                     remote_remaining = remaining_or_err
@@ -240,7 +253,7 @@ function _M._delayed_sync(self, key, cost, syncer_id)
 
         core.log.info("sync to shm, key: ", key, ", remote_remaining: ", remote_remaining,
                     ", remote_reset: ", remote_reset)
-        err = self:sync_to_shm(key, remote_remaining, remote_reset, local_delta)
+        err, quota = self:sync_to_shm(key, remote_remaining, remote_reset, local_delta, info)
         if err then
             return nil, nil, err
         end
@@ -330,7 +343,15 @@ function _M._delayed_sync(self, key, cost, syncer_id)
         end
     end
 
-    return remaining, reset
+    return remaining, reset, nil, {
+        delayed_sync = {
+            synced_at = quota.sync_at,
+            synced_count = quota.count,
+            local_delta = local_delta,
+        },
+        last_count = quota.last_count,
+        window_now = quota.window_now,
+    }
 end
 
 
@@ -340,32 +361,38 @@ local function sync_key(self, key)
         core.log.error("get local delta from shm failed: ", err)
     end
 
-    if delta then
+    -- the key expires two windows after its creation and is not renewed, so a
+    -- node that only rejects loses it; flush anyway, otherwise that node keeps
+    -- judging on the same cached quota until the quota itself expires
+    if not err then
+        local had_delta = delta ~= nil
+        delta = delta or 0
         local flush = self.limiter.commit or self.limiter.incoming
-        local _, remaining_or_err, reset = flush(self.limiter, key, delta)
+        local _, remaining_or_err, reset, info = flush(self.limiter, key, delta)
         -- compat
         if type(remaining_or_err) ~= "string" then
-            self:sync_to_shm(key, remaining_or_err, reset, delta)
+            self:sync_to_shm(key, remaining_or_err, reset, delta, info)
         elseif remaining_or_err ~= "rejected" then
             core.log.error("sync to redis failed: ", remaining_or_err, ", key: ", key)
-            if self.limiter.fallback_limiter then
+            -- without a local delta there is nothing to account for locally
+            if self.limiter.fallback_limiter and had_delta then
                 core.log.warn("try use fallback limiter to do rate limiting")
                 if delta < 1 then
                     delta = 1
                 end
-                _, remaining_or_err, reset =
+                _, remaining_or_err, reset, info =
                    self.limiter.fallback_limiter:incoming(key, delta)
                 if type(remaining_or_err) ~= "string" then
-                    self:sync_to_shm(key, remaining_or_err, reset, delta)
+                    self:sync_to_shm(key, remaining_or_err, reset, delta, info)
                 elseif remaining_or_err ~= "rejected" then
                     core.log.error("sync to fallback_limiter failed: ",
                                         remaining_or_err, ", key: ", key)
                 else
-                    self:sync_to_shm(key, 0, reset, delta)
+                    self:sync_to_shm(key, 0, reset, delta, info)
                 end
             end
         else
-            self:sync_to_shm(key, 0, reset, delta)
+            self:sync_to_shm(key, 0, reset, delta, info)
         end
     end
 end

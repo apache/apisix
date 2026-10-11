@@ -202,6 +202,14 @@ This disables the local file source of configuration in favor of the API. When A
 
     Allow setting an index for each resource. APISIX compares this index to its modifiedIndex to determine whether to accept the update.
 
+* `?wait` query parameter on `PUT /apisix/admin/configs`
+
+    Controls whether the request waits for the configuration to be applied before responding.
+
+    - Without `?wait` (or with `?wait=0`), APISIX returns `202 Accepted` as soon as the configuration is accepted, without waiting to confirm it has been applied.
+    - With `?wait=<milliseconds>`, APISIX waits up to that many milliseconds and returns `200 OK` once every worker, including the stream subsystem if enabled, has confirmed applying this configuration. If the deadline is reached first, it returns `202 Accepted` instead, meaning the update was accepted but not yet confirmed as fully applied. The wait time is capped at 60000 (60 seconds).
+    - This has no effect when the request is skipped with `204` because its `X-Digest` matches the currently loaded configuration.
+
 ##### Example
 
 1. get configuration
@@ -250,7 +258,19 @@ The client can determine its content. The value is transparent to APISIX and wil
 
 :::
 
-3. update based on resource type
+3. wait for the update to be applied
+
+```shell
+curl -X PUT "http://127.0.0.1:9180/apisix/admin/configs?wait=3000" \
+    -H "X-API-KEY: <apikey>" \
+    -H "Content-Type: application/json" \
+    -H "X-Digest: example_string#3" \
+    -d '{}'
+```
+
+With `?wait=3000`, this call blocks for up to 3 seconds and returns `200 OK` as soon as every worker has confirmed applying this configuration. If the deadline is reached first, it falls back to `202 Accepted`, same as a request without `?wait`.
+
+4. update based on resource type
 
 In APISIX memory, the current configuration is:
 

@@ -83,6 +83,7 @@ cas-auth
 authz-casbin
 authz-casdoor
 wolf-rbac
+ldap-auth-advanced
 ldap-auth
 hmac-auth
 basic-auth
@@ -126,8 +127,9 @@ traffic-label
 traffic-split
 redirect
 response-rewrite
+openapi-to-mcp
 oas-validator
-mcp-bridge
+websocket-proxy
 degraphql
 kafka-proxy
 grpc-transcode
@@ -263,7 +265,7 @@ plugins:
                 ngx.HTTP_GET,
                 nil,
                 [[
-{"title":"work with consumer object","required":["username","password"],"properties":{"username":{"type":"string"},"password":{"type":"string"}},"type":"object"}
+{"title":"work with consumer object","required":["username","password"],"properties":{"username":{"type":"string"},"password":{"type":"string","minLength":1}},"type":"object"}
                 ]]
                 )
 
@@ -338,7 +340,7 @@ qr/\{"metadata_schema":\{"properties":\{"ikey":\{"minimum":0,"type":"number"\},"
         }
     }
 --- response_body eval
-qr/\[\{"name":"multi-auth","priority":2600\},\{"name":"wolf-rbac","priority":2555\},\{"name":"ldap-auth","priority":2540\},\{"name":"hmac-auth","priority":2530\},\{"name":"basic-auth","priority":2520\},\{"name":"jwt-auth","priority":2510\},\{"name":"jwe-decrypt","priority":2509\},\{"name":"key-auth","priority":2500\}\]/
+qr/\[\{"name":"multi-auth","priority":2600\},\{"name":"wolf-rbac","priority":2555\},\{"name":"ldap-auth-advanced","priority":2541\},\{"name":"ldap-auth","priority":2540\},\{"name":"hmac-auth","priority":2530\},\{"name":"basic-auth","priority":2520\},\{"name":"jwt-auth","priority":2510\},\{"name":"jwe-decrypt","priority":2509\},\{"name":"key-auth","priority":2500\}\]/
 
 
 
@@ -370,7 +372,7 @@ qr/\[\{"name":"multi-auth","priority":2600\},\{"name":"wolf-rbac","priority":255
         }
     }
 --- response_body eval
-qr/\{"encrypt_fields":\["password"\],"properties":\{"password":\{"type":"string"\},"username":\{"type":"string"\}\},"required":\["username","password"\],"title":"work with consumer object","type":"object"\}/
+qr/\{"encrypt_fields":\["password"\],"properties":\{"password":\{"minLength":1,"type":"string"\},"username":\{"type":"string"\}\},"required":\["username","password"\],"title":"work with consumer object","type":"object"\}/
 
 
 

@@ -106,6 +106,7 @@ local _M = {
         ["prometheus-metrics"] = "128m",
         ["prometheus-cache"] = "10m",
         ["standalone-config"] = "10m",
+        ["standalone-status"] = "1m",
         ["status-report"] = "1m",
         ["upstream-healthcheck"] = "10m",
       }
@@ -117,6 +118,7 @@ local _M = {
       access_log_format = "$remote_addr [$time_local] $protocol $status $bytes_sent $bytes_received $session_time",
       -- luacheck: pop
       access_log_format_escape = "default",
+      metrics_zone_size = "1m",
       lua_shared_dict = {
         ["etcd-cluster-health-check-stream"] = "10m",
         ["lrucache-lock-stream"] = "10m",
@@ -167,6 +169,7 @@ local _M = {
         ["plugin-limit-conn"] = "10m",
         ["worker-events"] = "10m",
         ["lrucache-lock"] = "10m",
+        ["upstream-slow-start"] = "10m",
         ["balancer-ewma"] = "10m",
         ["balancer-ewma-locks"] = "10m",
         ["balancer-ewma-last-touched-at"] = "10m",
@@ -176,6 +179,7 @@ local _M = {
         ["plugin-limit-conn-redis-cluster-slot-lock"] = "1m",
         ["plugin-graphql-limit-count"] = "10m",
         ["plugin-graphql-limit-count-reset-header"] = "10m",
+        ["plugin-saml-auth-replay"] = "10m",
         ["plugin-ai-rate-limiting"] = "10m",
         ["plugin-ai-rate-limiting-reset-header"] = "10m",
         tracing_buffer = "32m",
@@ -223,6 +227,7 @@ local _M = {
     "authz-casbin",
     "authz-casdoor",
     "wolf-rbac",
+    "ldap-auth-advanced",
     "ldap-auth",
     "hmac-auth",
     "basic-auth",
@@ -268,10 +273,11 @@ local _M = {
     "traffic-split",
     "redirect",
     "response-rewrite",
+    "openapi-to-mcp",
     "oas-validator",
-    "mcp-bridge",
     "degraphql",
     "kafka-proxy",
+    "websocket-proxy",
     "grpc-transcode",
     "grpc-web",
     "http-dubbo",
@@ -309,6 +315,9 @@ local _M = {
   },
   stream_plugins = { "ip-restriction", "limit-conn", "mqtt-proxy", "syslog", "traffic-split" },
   plugin_attr = {
+    ["ai-proxy"] = {
+      http_client = "ngx_http_ffi_client"
+    },
     ["log-rotate"] = {
       timeout = 10000,
       interval = 3600,

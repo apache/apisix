@@ -138,7 +138,7 @@ routes:
 --- response_body
 [{"count":12,"port":"1980"}]
 --- grep_error_log eval
-qr/\([^)]+\) unhealthy .* for '.*'/
+qr/\([^)]+\) unhealthy TCP increment \([12]\/2\) for '.*'/
 --- grep_error_log_out
 (upstream#/services/1) unhealthy TCP increment (1/2) for 'foo.com(127.0.0.1:1970)'
 (upstream#/services/1) unhealthy TCP increment (2/2) for 'foo.com(127.0.0.1:1970)'
@@ -227,7 +227,7 @@ routes:
 --- response_body
 [{"count":12,"port":"1980"}]
 --- grep_error_log eval
-qr/\([^)]+\) unhealthy .* for '.*'/
+qr/\([^)]+\) unhealthy TCP increment \([12]\/2\) for '.*'/
 --- grep_error_log_out
 (upstream#/routes/arr_1) unhealthy TCP increment (1/2) for 'foo.com(127.0.0.1:1970)'
 (upstream#/routes/arr_1) unhealthy TCP increment (2/2) for 'foo.com(127.0.0.1:1970)'

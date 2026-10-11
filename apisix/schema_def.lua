@@ -414,6 +414,48 @@ local private_key_schema = {
 }
 
 
+local warm_up_conf_schema = {
+    description = "slow start: ramp a newly observed node up to its configured weight",
+    type = "object",
+    properties = {
+        slow_start_time_seconds = {
+            description = "seconds a new node takes to reach its full weight",
+            type = "integer",
+            minimum = 1,
+        },
+        min_weight_percent = {
+            description = "lowest effective weight, as a percentage of the original weight",
+            type = "integer",
+            minimum = 1,
+            maximum = 100,
+        },
+        interval = {
+            description = "seconds between two effective weight refreshes",
+            type = "integer",
+            minimum = 1,
+            default = 1,
+        },
+        aggression = {
+            description = "shape of the ramp: 1 is linear, above 1 ramps up faster " ..
+                          "at the beginning, below 1 slower",
+            type = "number",
+            minimum = 0.01,
+            default = 1,
+        },
+        startup_grace_period_seconds = {
+            description = "seconds after the data plane started during which a node " ..
+                          "observed for the first time is considered mature",
+            type = "integer",
+            minimum = 0,
+            default = 0,
+        },
+    },
+    required = {"slow_start_time_seconds", "min_weight_percent"},
+    additionalProperties = false,
+}
+_M.warm_up_conf = warm_up_conf_schema
+
+
 local upstream_schema = {
     type = "object",
     properties = {
@@ -427,6 +469,7 @@ local upstream_schema = {
 
         -- properties
         nodes = nodes_schema,
+        warm_up_conf = warm_up_conf_schema,
         retries = {
             type = "integer",
             minimum = 0,
@@ -444,9 +487,14 @@ local upstream_schema = {
                 client_key = private_key_schema,
                 verify = {
                     type = "boolean",
-                    description = "Turn on server certificate verification, "..
-                        "currently only kafka upstream is supported",
-                    default = false,
+                    description = "enable or disable upstream certificate verification, " ..
+                        "fall back to the nginx configuration when not set",
+                },
+                ca_certs = {
+                    type = "array",
+                    description = "CA certificates used to verify the upstream certificate",
+                    minItems = 1,
+                    items = certificate_scheme,
                 },
             },
             dependencies = {
@@ -501,9 +549,9 @@ local upstream_schema = {
         scheme = {
             default = "http",
             enum = {"grpc", "grpcs", "http", "https", "tcp", "tls", "udp",
-                "kafka"},
+                "kafka", "ws", "wss"},
             description = "The scheme of the upstream." ..
-                " For L7 proxy, it can be one of grpc/grpcs/http/https." ..
+                " For L7 proxy, it can be one of grpc/grpcs/http/https/ws/wss." ..
                 " For L4 proxy, it can be one of tcp/tls/udp." ..
                 " For specific protocols, it can be kafka."
         },
@@ -521,6 +569,15 @@ local upstream_schema = {
                 group_name = {
                     description = "group name",
                     type = "string",
+                },
+                cluster_ids = {
+                    description = "ids of the kubernetes discovery clusters to get nodes from",
+                    type = "array",
+                    minItems = 1,
+                    uniqueItems = true,
+                    items = {
+                        type = "string",
+                    },
                 },
             }
         },
@@ -784,6 +841,60 @@ _M.credential = {
     additionalProperties = false,
 }
 
+-- A GraphQL cost decoration: the weight of one position in the upstream GraphQL
+-- schema, consumed by the graphql-limit-count plugin. Owned by a service --
+-- service_id is taken from the Admin API path, never from the request body.
+_M.graphql_cost_decoration = {
+    type = "object",
+    properties = {
+        id = id_schema,
+        service_id = id_schema,
+        field_path = {
+            type = "string",
+            pattern = [[^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)*$]],
+            description = "the decorated position in the schema graph. A single "
+                          .. "<GraphQL type> weights every field returning that "
+                          .. "type; <GraphQL type>.<field> weights that field "
+                          .. "wherever it is selected; further field segments pin "
+                          .. "the decoration to one chain of selections, as in "
+                          .. "Query.products.nodes.reviews. The root type "
+                          .. "(Query / Mutation) names the operation itself, and "
+                          .. "so weights the whole query",
+        },
+        -- cost(field) = ( sum of the children ) * mul + add
+        add_value = {
+            type = "number",
+            minimum = 0,
+            default = 1,
+            description = "the field's own cost",
+        },
+        add_arguments = {
+            type = "array",
+            items = {type = "string", minLength = 1},
+            description = "query arguments whose values are added to add_value",
+        },
+        mul_value = {
+            type = "number",
+            minimum = 0,
+            default = 1,
+            description = "multiplies the cost of everything selected under the field",
+        },
+        mul_arguments = {
+            type = "array",
+            items = {type = "string", minLength = 1},
+            description = "query arguments whose values are multiplied into mul_value",
+        },
+        name = rule_name_def,
+        desc = desc_def,
+        labels = labels_def,
+        create_time = timestamp_def,
+        update_time = timestamp_def,
+    },
+    required = {"field_path"},
+    additionalProperties = false,
+}
+
+
 _M.upstream = upstream_schema
 
 
@@ -991,11 +1102,33 @@ _M.stream_route = {
             type = "string",
             pattern = host_def_pat,
         },
+        snis = {
+            description = "server name indications, matched as alternatives",
+            type = "array",
+            items = {
+                type = "string",
+                pattern = host_def_pat,
+            },
+            minItems = 1,
+            uniqueItems = true,
+        },
+        tls_passthrough = {
+            description = "forward the TLS stream to the upstream untouched instead of "
+                          .. "terminating it here; only consulted on a mixed listen, one "
+                          .. "with both tls and tls_passthrough set",
+            type = "boolean",
+            default = false,
+        },
         upstream = upstream_schema,
         upstream_id = id_schema,
         service_id = id_schema,
         plugins = plugins_schema,
         protocol = xrpc_protocol_schema,
+    },
+    -- `snis` is the plural form of `sni`, not an addition to it. Carrying both
+    -- would leave the precedence between them to guesswork.
+    ["not"] = {
+        required = {"sni", "snis"},
     },
     additionalProperties = false,
 }

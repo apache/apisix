@@ -19,7 +19,7 @@
 -- Provides HTTP client lifecycle management for AI provider requests.
 
 local core = require("apisix.core")
-local http = require("resty.http")
+local http_client = require("apisix.utils.http")
 local ngx_now = ngx.now
 local pairs = pairs
 local ipairs = ipairs
@@ -28,7 +28,40 @@ local type = type
 local str_lower = string.lower
 local tostring = tostring
 
+local attr_schema = {
+    type = "object",
+    properties = {
+        http_client = http_client.client_schema,
+    },
+}
+
 local _M = {}
+
+local client_name
+
+
+--- Which client this transport should use.
+-- `plugin_attr.ai-proxy.http_client` names it; the shared module owns the
+-- names, validation and loading. Read on first request, because local_conf is
+-- not readable while this module is still loading.
+local function resolve_client_name()
+    if client_name then
+        return client_name
+    end
+
+    local local_conf = core.config.local_conf()
+    local attr = core.table.try_read_attr(local_conf, "plugin_attr", "ai-proxy") or {}
+
+    local ok, err = core.schema.check(attr_schema, attr)
+    if not ok then
+        core.log.error("invalid plugin_attr.ai-proxy: ", err)
+        return nil, "invalid plugin_attr.ai-proxy: " .. err
+    end
+
+    client_name = attr.http_client or http_client.DEFAULT_CLIENT
+
+    return client_name
+end
 
 
 --- Map network errors to HTTP status codes.
@@ -100,7 +133,12 @@ end
 -- @return string|nil Error message
 -- @return table|nil Upstream metadata on failure (for recording failed attempts)
 function _M.request(params, timeout)
-    local httpc, err = http.new()
+    local name, name_err = resolve_client_name()
+    if not name then
+        return nil, "failed to create http client: " .. name_err
+    end
+
+    local httpc, err = http_client.new(name)
     if not httpc then
         return nil, "failed to create http client: " .. (err or "unknown")
     end

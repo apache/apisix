@@ -42,11 +42,11 @@ The `proxy-rewrite` Plugin offers options to rewrite requests that APISIX forwar
 |-----------------------------|---------------|----------|---------|----------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | uri                         | string        | False    |         |                                                                                                                                        |  New Upstream URI path. Value supports [NGINX variables](https://nginx.org/en/docs/http/ngx_http_core_module.html). For example, `$arg_name`.                                                                                                                                                                                                                                                                                                                       |
 | method                      | string        | False    |         | ["GET", "POST", "PUT", "HEAD", "DELETE", "OPTIONS", "MKCOL", "COPY", "MOVE", "PROPFIND", "LOCK", "UNLOCK", "PATCH", "TRACE"] | HTTP method to rewrite requests to use.                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| regex_uri                   | array[string] | False    |         |                                                                                                                                        | Regular expressions used to match the URI path from client requests and compose a new Upstream URI path. When both `uri` and `regex_uri` are configured, `uri` has a higher priority. The array should contain one or more **key-value pairs**, with the key being the regular expression to match URI against and value being the new Upstream URI path. For example, with `["^/iresty/(. *)/(. *)", "/$1-$2", ^/theothers/*", "/theothers"]`, if a request is originally sent to `/iresty/hello/world`, the Plugin will rewrite the Upstream URI path to `/iresty/hello-world`; if a request is originally sent to `/theothers/hello/world`, the Plugin will rewrite the Upstream URI path to `/theothers`. |
+| regex_uri                   | array[string] | False    |         |                                                                                                                                        | Regular expressions used to match the URI path from client requests and compose a new Upstream URI path. When both `uri` and `regex_uri` are configured, `uri` has a higher priority. Provide one or more pattern-replacement pairs in a flat array. The Plugin evaluates pairs in order and applies the first match. For example, with `["^/test/(.*)/(.*)", "/$1-$2", "^/other/(.*)", "/other"]`, a request to `/test/user/agent` is rewritten to `/user-agent`, and a request to `/other/hello` is rewritten to `/other`. |
 | host                        | string        | False    |         |                                                                                                                                        | Set [`Host`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Host) request header.                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | headers                     | object        | False    |         |                                                                                                                                   |   Header actions to be executed. Can be set to objects of action verbs `add`, `remove`, and/or `set`; or an object consisting of headers to be `set`. When multiple action verbs are configured, actions are executed in the order of `add`, `remove`, and `set`.                |
-| headers.add     | object   | False     |        |                 | Headers to append to requests. If a header already present in the request, the header value will be appended. Header value could be set to a constant, one or more [NGINX variables](https://nginx.org/en/docs/http/ngx_http_core_module.html), or the matched result of `regex_uri` using variables such as `$1-$2-$3`. A value could also be an array of such values (e.g. `["val1", "val2"]`) to append the header multiple times, resulting in multiple headers with the same name.                                                                                              |
-| headers.set     | object  | False     |        |                 | Headers to set to requests. If a header already present in the request, the header value will be overwritten. Header value could be set to a constant, one or more [NGINX variables](https://nginx.org/en/docs/http/ngx_http_core_module.html), or the matched result of `regex_uri` using variables such as `$1-$2-$3`. A value could also be an array of such values (e.g. `["val1", "val2"]`) to replace the header with multiple values (multiple headers with the same name). Should not be used to set `Host`.                                                                                       |
+| headers.add     | object   | False     |        |                 | Headers to append to requests. If a header is already present, its configured value is appended. A value can be a constant, one or more [NGINX variables](https://nginx.org/en/docs/http/ngx_http_core_module.html), or a `regex_uri` capture such as `$1-$2-$3`. A value can also be an array. Each element is resolved independently and appended as a separate header line in array order. Array values are supported in APISIX 3.18.0 and later. |
+| headers.set     | object  | False     |        |                 | Headers to set on requests. If a header is already present, its value is overwritten. A value can be a constant, one or more [NGINX variables](https://nginx.org/en/docs/http/ngx_http_core_module.html), or a `regex_uri` capture such as `$1-$2-$3`. A value can also be an array. Each element is resolved independently, and the array replaces any existing value with separate header lines in array order. Array values are supported in APISIX 3.18.0 and later. Do not use this field to set `Host`. |
 | headers.remove  | array[string]   | False     |        |                 | Headers to remove from requests.
 | use_real_request_uri_unsafe | boolean       | False    | false   |                                                                                                                                        | If true, bypass URI normalization and allow for the full original request URI. Enabling this option is considered unsafe.         |
 
@@ -111,7 +111,7 @@ You should see a response similar to the following:
 
 ### Rewrite URI And Set Headers
 
-The following example demonstrates how you can rewrite the request Upstream URI and set additional header values. If the same headers present in the client request, the corresponding header values set in the Plugin will overwrite the values present in the client request.
+The following example rewrites the Upstream URI and sets request headers. A scalar value sets one header line, while an array sets repeated header lines in array order. Here, `X-Api-Engine` remains a scalar and `X-Api-Version` replaces any client value with two values.
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -125,7 +125,10 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
         "uri": "/anything",
         "headers": {
           "set": {
-            "X-Api-Version": "v1",
+            "X-Api-Version": [
+              "v1",
+              "v2"
+            ],
             "X-Api-Engine": "apisix"
           }
         }
@@ -134,7 +137,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     "upstream": {
       "type": "roundrobin",
       "nodes": {
-        "httpbin.org:80": 1
+        "httpbingo.org:80": 1
       }
     }
   }'
@@ -143,95 +146,30 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 Send a request to verify:
 
 ```shell
-curl "http://127.0.0.1:9080/" -H '"X-Api-Version": "v2"'
+curl "http://127.0.0.1:9080/" -H "X-Api-Version: client"
 ```
 
 You should see a response similar to the following:
 
-```text
-{
-  "args": {},
-  "data": "",
-  "files": {},
-  "form": {},
-  "headers": {
-    "Accept": "*/*",
-    "Host": "httpbin.org",
-    "User-Agent": "curl/8.2.1",
-    "X-Amzn-Trace-Id": "Root=1-64fed73a-59cd3bd640d76ab16c97f1f1",
-    "X-Api-Engine": "apisix",
-    "X-Api-Version": "v1",
-    "X-Forwarded-Host": "127.0.0.1"
-  },
-  "json": null,
-  "method": "GET",
-  "origin": "::1, 103.248.35.179",
-  "url": "http://localhost/anything"
-}
-```
-
-Note that both headers present and the header value of `X-Api-Version` configured in the Plugin overwrites the header value passed in the request.
-
-### Rewrite URI And Append Headers
-
-The following example demonstrates how you can rewrite the request Upstream URI and append additional header values. If the same headers present in the client request, their headers values will append to the configured header values in the plugin.
-
-```shell
-curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
-  -H "X-API-KEY: ${admin_key}" \
-  -d '{
-    "id": "proxy-rewrite-route",
-    "methods": ["GET"],
-    "uri": "/",
-    "plugins": {
-      "proxy-rewrite": {
-        "uri": "/headers",
-        "headers": {
-          "add": {
-            "X-Api-Version": "v1",
-            "X-Api-Engine": "apisix"
-          }
-        }
-      }
-    },
-    "upstream": {
-      "type": "roundrobin",
-      "nodes": {
-        "httpbin.org:80": 1
-      }
-    }
-  }'
-```
-
-Send a request to verify:
-
-```shell
-curl "http://127.0.0.1:9080/" -H '"X-Api-Version": "v2"'
-```
-
-You should see a response similar to the following:
-
-```text
+```json
 {
   "headers": {
-    "Accept": "*/*",
-    "Host": "httpbin.org",
-    "User-Agent": "curl/8.2.1",
-    "X-Amzn-Trace-Id": "Root=1-64fed73a-59cd3bd640d76ab16c97f1f1",
-    "X-Api-Engine": "apisix",
-    "X-Api-Version": "v1,v2",
-    "X-Forwarded-Host": "127.0.0.1"
+    "X-Api-Engine": [
+      "apisix"
+    ],
+    "X-Api-Version": [
+      "v1",
+      "v2"
+    ]
   }
 }
 ```
 
-Note that both headers present and the header value of `X-Api-Version` configured in the Plugin is appended by the header value passed in the request.
+The Plugin sends two `X-Api-Version` header lines in the configured order. The incoming `client` value is absent because `headers.set` replaces existing values. The scalar `X-Api-Engine` configuration continues to set one header line.
 
-### Set or Append Multiple Values for the Same Header
+### Rewrite URI And Append Headers
 
-Both `set` and `add` accept an array value to produce multiple headers with the same name. Use `set` to replace any incoming header with the listed values, or `add` to append them to the existing ones.
-
-The following example sets two `X-Api-Version` headers on the upstream request:
+The following example rewrites the request Upstream URI and appends additional header values. If the same header is present in the client request, the Plugin preserves the incoming value and appends each configured array element as a separate header line in array order.
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -242,10 +180,14 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     "uri": "/",
     "plugins": {
       "proxy-rewrite": {
-        "uri": "/headers",
+        "uri": "/anything",
         "headers": {
-          "set": {
-            "X-Api-Version": ["v1", "v2"]
+          "add": {
+            "X-Api-Version": [
+              "v1",
+              "v2"
+            ],
+            "X-Api-Engine": "apisix"
           }
         }
       }
@@ -253,13 +195,36 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     "upstream": {
       "type": "roundrobin",
       "nodes": {
-        "httpbin.org:80": 1
+        "httpbingo.org:80": 1
       }
     }
   }'
 ```
 
-The upstream receives `X-Api-Version: v1` and `X-Api-Version: v2`. Replacing `set` with `add` keeps any `X-Api-Version` already present in the client request and appends `v1` and `v2` to it.
+Send a request to verify:
+
+```shell
+curl "http://127.0.0.1:9080/" -H "X-Api-Version: client"
+```
+
+You should see a response similar to the following:
+
+```json
+{
+  "headers": {
+    "X-Api-Engine": [
+      "apisix"
+    ],
+    "X-Api-Version": [
+      "client",
+      "v1",
+      "v2"
+    ]
+  }
+}
+```
+
+The incoming `client` value is preserved, followed by the configured `v1` and `v2` values. The scalar `X-Api-Engine` configuration adds one header line.
 
 ### Remove Existing Header
 

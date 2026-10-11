@@ -25,7 +25,7 @@ local core            = require("apisix.core")
 local str_format      = core.string.format
 
 local plugin_name = "lago"
-local batch_processor_manager = bp_manager_mod.new("lago logger")
+local batch_processor_manager = bp_manager_mod.new("lago logger", plugin_name)
 
 local schema = {
     type = "object",
@@ -120,15 +120,26 @@ schema = batch_processor_manager:wrap_schema(schema)
 schema.properties.batch_max_size.default = 100
 
 
+local metadata_schema = batch_processor_manager:wrap_metadata_schema({
+    type = "object",
+    properties = {},
+})
+
+
 local _M = {
     version = 0.1,
     priority = 415,
     name = plugin_name,
     schema = schema,
+    metadata_schema = metadata_schema,
 }
 
 
 function _M.check_schema(conf, schema_type)
+    if schema_type == core.schema.TYPE_METADATA then
+        return core.schema.check(metadata_schema, conf)
+    end
+
     local check = {"endpoint_addrs"}
     core.utils.check_https(check, conf, plugin_name)
     core.utils.check_tls_bool({"ssl_verify"}, conf, plugin_name)

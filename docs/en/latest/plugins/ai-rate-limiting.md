@@ -48,7 +48,7 @@ The `ai-rate-limiting` Plugin enforces token-based rate limiting for requests se
 | time_window | integer | False | | >0 | The time interval corresponding to the rate limiting `limit` in seconds. At least one of `time_window` and `instances.time_window` should be configured. Required if `rules` is not configured. |
 | show_limit_quota_header | boolean | False | true | | If true, includes rate limiting response headers. When `rules` is not set, the headers are `X-AI-RateLimit-Limit-*`, `X-AI-RateLimit-Remaining-*`, and `X-AI-RateLimit-Reset-*`, where `*` is the instance name. When `rules` is set, see `rules.header_prefix` for details. |
 | limit_strategy | string | False | total_tokens | [`total_tokens`, `prompt_tokens`, `completion_tokens`, `expression`] | Type of token to apply rate limiting. `total_tokens` is the sum of `prompt_tokens` and `completion_tokens`. When set to `expression`, the `cost_expr` field is used to dynamically calculate token cost. |
-| cost_expr | string | False | | | Lua arithmetic expression for dynamic token cost calculation. Variables are injected from the LLM API raw usage response fields. Missing variables default to 0. Only valid when `limit_strategy` is `expression`. Example: `input_tokens + cache_creation_input_tokens + output_tokens`. |
+| cost_expr | string | False | | | Lua arithmetic expression for dynamic token cost calculation. Variables are injected from the LLM API raw usage response fields. Nested fields are referenced by joining the parent and child keys with `__`, e.g. `input_tokens_details__cached_tokens` for `input_tokens_details.cached_tokens`. Arrays are skipped. Missing variables default to 0. Only valid when `limit_strategy` is `expression`. Example: `input_tokens + cache_creation_input_tokens + output_tokens`. |
 | instances | array[object] | False | | | LLM instance rate limiting configurations. |
 | instances.name | string | True | | | Name of the LLM service instance. |
 | instances.limit | integer | True | | >0 | The maximum number of tokens allowed within a given time interval for an instance. |
@@ -65,6 +65,7 @@ The `ai-rate-limiting` Plugin enforces token-based rate limiting for requests se
 | redis_timeout | integer | False | 1000 | [1,...] | The Redis timeout value in milliseconds when `policy` is `redis` or `redis-cluster`. |
 | redis_ssl | boolean | False | false | | If true, use SSL to connect to Redis when `policy` is `redis`. |
 | redis_ssl_verify | boolean | False | false | | If true, verify the server SSL certificate when `policy` is `redis`. |
+| redis_server_name | string | False | | | TLS SNI when `policy` is `redis` and `redis_ssl` is true. Defaults to `redis_host`. When `redis_ssl_verify` is true the certificate must also match this name, so set it when `redis_host` is an alias the certificate does not cover. |
 | redis_cluster_nodes | array[string] | False | | | The list of Redis cluster nodes with at least one address. Required when `policy` is `redis-cluster`. |
 | redis_cluster_name | string | False | | | The name of the Redis cluster. Required when `policy` is `redis-cluster`. |
 | redis_cluster_ssl | boolean | False | false | | If true, use SSL to connect to Redis when `policy` is `redis-cluster`. |

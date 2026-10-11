@@ -36,6 +36,7 @@ rm logs/nginx.pid || true
 
 # check no corresponding process
 make run
+wait_for_pidfile logs/nginx.pid
 oldpid=$(< logs/nginx.pid)
 make stop
 sleep 0.5

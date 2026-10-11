@@ -50,7 +50,7 @@ local function is_data_plane()
 
     local role = try_read_attr(local_conf, "deployment", "role")
     if role == "data_plane" then
-      return true
+        return true
     end
 
     return false
@@ -62,7 +62,9 @@ local function disable_write_if_data_plane()
     local data_plane, err = is_data_plane()
     if err then
         log.error("failed to check data plane role: ", err)
-        return true, err
+        -- the guard only warns for now, so failing to read the local config
+        -- must not be stricter than a confirmed data plane role
+        return false, err
     end
 
     if data_plane then
@@ -144,7 +146,11 @@ local function _new(etcd_conf)
         return nil, nil, err
     end
 
-    etcd_cli = wrap_etcd_client(etcd_cli)
+    local wrap_err
+    etcd_cli, wrap_err = wrap_etcd_client(etcd_cli)
+    if not etcd_cli then
+        return nil, nil, wrap_err
+    end
 
     return etcd_cli, prefix
 end

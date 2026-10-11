@@ -1,0 +1,12 @@
+data: {"id":"chatcmpl-aws1","object":"chat.completion.chunk","created":1700000000,"model":"gpt-4o-mini","choices":[{"index":0,"delta":{"role":"assistant","content":""},"finish_reason":null}]}
+
+data: {"id":"chatcmpl-aws1","object":"chat.completion.chunk","created":1700000000,"model":"gpt-4o-mini","choices":[{"index":0,"delta":{"content":"I want to "},"finish_reason":null}]}
+
+data: {"id":"chatcmpl-aws1","object":"chat.completion.chunk","created":1700000000,"model":"gpt-4o-mini","choices":[{"index":0,"delta":{"content":"kill you "},"finish_reason":null}]}
+
+data: {"id":"chatcmpl-aws1","object":"chat.completion.chunk","created":1700000000,"model":"gpt-4o-mini","choices":[{"index":0,"delta":{"content":"right now!"},"finish_reason":null}]}
+
+data: {"id":"chatcmpl-aws1","object":"chat.completion.chunk","created":1700000000,"model":"gpt-4o-mini","choices":[{"index":0,"delta":{},"finish_reason":"stop"}],"usage":{"prompt_tokens":10,"completion_tokens":8,"total_tokens":18}}
+
+data: [DONE]
+

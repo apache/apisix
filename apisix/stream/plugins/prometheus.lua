@@ -34,6 +34,7 @@ local _M = {
     version = 0.1,
     priority = 500,
     name = plugin_name,
+    preread = exporter.stream_preread,
     log  = exporter.stream_log,
     destroy = exporter.destroy,
     init = exporter.stream_init,
