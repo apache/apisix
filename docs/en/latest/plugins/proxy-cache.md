@@ -110,7 +110,7 @@ On-disk caching strategy offers the advantages of data persistency when system r
 
 The following example demonstrates how you can use `proxy-cache` Plugin on a Route to cache data on disk.
 
-When using the on-disk caching strategy, the cache TTL is determined by value from the response header `Expires` or `Cache-Control`. If none of these headers is present or if APISIX returns `502 Bad Gateway` or `504 Gateway Timeout` due to unavailable Upstreams, the cache TTL defaults to the value configured in the [configuration files](#static-configuration).
+When using the on-disk caching strategy, the cache TTL is determined by value from the response header `Expires` or `Cache-Control`. If none of these headers is present or if APISIX returns `502 Bad Gateway` or `504 Gateway Timeout` due to unavailable Upstreams, the cache TTL defaults to the value configured in the [configuration files](#static-configurations).
 
 Create a Route with the `proxy-cache` Plugin to cache data on disk:
 

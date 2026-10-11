@@ -52,7 +52,7 @@ When the maximum batch size is exceeded, the data in the queue is pushed to Logg
 | include_resp_body_expr | array         | False    |         | When the `include_resp_body` attribute is set to `true`, use this to filter based on [lua-resty-expr](https://github.com/api7/lua-resty-expr). If present, only logs the response if the expression evaluates to `true`.       |
 | max_resp_body_bytes | integer | False | 524288 | Response bodies within this size will be logged, if the size exceeds the configured value it will be truncated before logging. |
 
-This Plugin supports using batch processors to aggregate and process entries (logs/data) in a batch. This avoids the need for frequently submitting the data. The batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. See [Batch Processor](../batch-processor.md#configuration) for more information or setting your custom configuration.
+This Plugin supports using batch processors to aggregate and process entries (logs/data) in a batch. This avoids the need for frequently submitting the data. The batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. See [Batch Processor](../batch-processor.md#configurations) for more information or setting your custom configuration.
 
 To generate a Customer token, go to `<your assigned subdomain>/loggly.com/tokens` or navigate to Logs > Source setup > Customer tokens.
 
