@@ -30,13 +30,13 @@ description: The request-decompress Plugin decompresses a request body sent with
 
 ## Description
 
-The `request-decompress` Plugin decompresses a request body sent with a `Content-Encoding` of `gzip` or `deflate`, which [RFC 9110](https://www.rfc-editor.org/rfc/rfc9110#section-8.4) allows, and rewrites the request with the plain body. Every Plugin that runs after it reads the decompressed content, so `oas-validator`, `request-validation`, `body-transformer`, `chaitin-waf` and the logging Plugins work on a compressed request the same way they do on a plain one.
+The `request-decompress` Plugin decompresses a request body sent with a `Content-Encoding` of `gzip` or `deflate`, which [RFC 9110](https://www.rfc-editor.org/rfc/rfc9110#section-8.4) allows, and rewrites the request with the plain body. Every Plugin that runs after it reads the decompressed content, so `oas-validator`, `request-validation`, `body-transformer`, `chaitin-waf` and the logging Plugins work on a compressed request the same way they do on a plain one, unless `forward_compressed` is enabled.
 
 A request without a `Content-Encoding` header passes through untouched and its body is never read, so the same Route serves both compressed and uncompressed clients.
 
 A gzip body may carry several members concatenated, which [RFC 1952 section 2.2](https://www.rfc-editor.org/rfc/rfc1952#section-2.2) allows. Every member is decompressed and `max_req_body_size` bounds their total.
 
-By default the Upstream also receives the decompressed body and the `Content-Encoding` header is removed. Set `forward_compressed` to `true` to send a compressed body Upstream instead, while the Plugins on the Route still read the plain one.
+By default the Upstream also receives the decompressed body and the `Content-Encoding` header is removed. Set `forward_compressed` to `true` to send a compressed body Upstream instead, while the Plugins that run before the request is proxied still read the plain one.
 
 ## Attributes
 
@@ -198,3 +198,5 @@ Two consequences are worth knowing, and both can be changed with [`_meta.priorit
 
 - `hmac-auth` with `validate_request_body` enabled hashes the decompressed body on a Route that also enables this Plugin. A client that signs the compressed bytes needs `hmac-auth` configured with a priority above `2850`.
 - Decompression happens before authentication, so an unauthenticated client can cause decompression work. It is bounded by `max_req_body_size` and by `client_max_body_size`.
+
+With `forward_compressed` enabled, the compressed body is restored just before the request is proxied, so the Plugins that read the body in the `log` phase see the compressed bytes. `include_req_body` and a `request_body` entry in a custom log format record them as they went Upstream.
