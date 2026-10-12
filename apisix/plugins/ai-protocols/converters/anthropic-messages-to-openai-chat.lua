@@ -112,6 +112,9 @@ local CACHE_CREATION_DETAIL_KEYS = {
 
 
 local function cache_creation_tokens(usage)
+    if type(usage) ~= "table" then
+        return 0
+    end
     local v = usage.cache_creation_input_tokens
     if type(v) == "number" and v > 0 then
         return v

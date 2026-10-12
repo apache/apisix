@@ -55,8 +55,10 @@ end
 
 -- message_delta usage is cumulative but may omit fields reported at
 -- message_start (and some providers only report cache tokens there), so
--- accumulate the raw fields across events before computing usage.
-local function accumulate_usage(state, raw)
+-- merge the raw fields across events before computing usage. A later event
+-- overwrites a field rather than adding to it, because the values are
+-- cumulative: summing them would double-count.
+local function merge_usage_fields(state, raw)
     if type(state) ~= "table" then
         return raw
     end
@@ -122,7 +124,7 @@ function _M.parse_sse_event(event, ctx, state)
         if type(data.usage) == "table" then
             return {
                 type = "usage",
-                usage = to_usage(accumulate_usage(state, data.usage)),
+                usage = to_usage(merge_usage_fields(state, data.usage)),
                 raw_usage = data.usage,
             }
         end
@@ -140,7 +142,7 @@ function _M.parse_sse_event(event, ctx, state)
             local usage = data.message.usage
             return {
                 type = "usage",
-                usage = to_usage(accumulate_usage(state, usage)),
+                usage = to_usage(merge_usage_fields(state, usage)),
                 raw_usage = usage,
             }
         end

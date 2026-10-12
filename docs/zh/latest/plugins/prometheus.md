@@ -321,7 +321,7 @@ APISIX 在开始 LLM 上游尝试时递增该 gauge，并在请求的日志阶�
 
 ### `apisix_llm_prompt_tokens` 的标签
 
-prompt token 包含从缓存读取和写入缓存的 token。对于 Anthropic Messages API，其值为 `input_tokens + cache_read_input_tokens + cache_creation_input_tokens`，与 OpenAI 的 `prompt_tokens` 含义一致。
+prompt token 数包含从缓存读取和写入缓存的 token 数。对于 Anthropic Messages API，其值为 `input_tokens + cache_read_input_tokens + cache_creation_input_tokens`，与 OpenAI 的 `prompt_tokens` 含义一致。
 
 | 名称 | 描述 |
 | ---------- | ----------------------------------------------------------------------------------------------------------------------------- |
