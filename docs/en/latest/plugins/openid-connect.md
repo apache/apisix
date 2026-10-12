@@ -76,6 +76,9 @@ The `openid-connect` Plugin supports the integration with [OpenID Connect (OIDC)
 | set_raw_id_token_header | boolean | False | false | | If true and if the raw signed ID token JWT is available, set the value in the `X-Raw-ID-Token` request header. Unlike `X-ID-Token`, this header contains the original RS256-signed JWT from the identity provider and can be verified against the provider's JWKS endpoint. The plugin automatically persists the raw JWT in the session when this option is enabled. |
 | set_userinfo_header | boolean | False | true | | If true and if user info data is available, set the value in the `X-Userinfo` request header. |
 | set_refresh_token_header | boolean | False | false | | If true and if the refresh token is available, set the value in the `X-Refresh-Token` request header. |
+| upstream_headers | array[object] | False | | | Claims to forward to the Upstream as request headers. The Plugin clears every declared header first, then sets it only from a verified claim, so a client cannot supply its own value, including on requests let through by `unauth_action` set to `pass`. With `bearer_only`, `public_key`, `use_jwks`, or introspection, claims come from the verified access token payload or the introspection response. In the authorization code flow, claims come from the ID token, then from the user info for claims the ID token does not contain. |
+| upstream_headers.header | string | True | | | Name of the Upstream request header. |
+| upstream_headers.path | array[string] | True | | | Keys leading to the claim, one key per nesting level, such as `["org", "id"]`. A key is matched literally, so a claim name containing `://`, `/`, or `.` is a single key. Strings are forwarded as is, numbers and booleans as text, arrays of strings, numbers, or booleans joined with a space, and other arrays and objects as JSON. If the claim is missing, `null`, or empty, the header is not set. |
 | session | object | False | | | Session configuration used when `bearer_only` is `false` and the Plugin uses Authorization Code flow. |
 | session.secret | string | True | | 16 or more characters | Key used for session encryption and HMAC operation when `bearer_only` is `false`. |
 | session.cookie_name | string | False | | | Session cookie name. Forwarded to [lua-resty-session](https://github.com/bungle/lua-resty-session#configuration) 4.x as `cookie_name`. |
@@ -459,6 +462,36 @@ The following diagram illustrates the interaction between different entities whe
 ![User info flow diagram](https://static.api7.ai/uploads/2026/04/21/WU7wdpMu_7-user-info-flow.webp)
 
 When `set_userinfo_header` is `true` (the default), the Plugin sets user info data in the `X-Userinfo` request header, which the Upstream can use for further processing.
+
+### Forward Claims to the Upstream
+
+The following example forwards selected claims of a verified bearer token to the Upstream as request headers, so that the Upstream does not need to parse the token.
+
+Configure `upstream_headers` in the Plugin, where each entry names a header and the `path` of keys leading to the claim:
+
+```json
+"openid-connect": {
+  "client_id": "api",
+  "discovery": "https://idp.example.com/.well-known/openid-configuration",
+  "bearer_only": true,
+  "use_jwks": true,
+  "upstream_headers": [
+    { "header": "X-Profile-Id", "path": ["https://example.com/claims/profile/id"] },
+    { "header": "X-Org-Id", "path": ["org", "id"] },
+    { "header": "X-Client-Scopes", "path": ["scope"] }
+  ]
+}
+```
+
+For a token with the payload `{"https://example.com/claims/profile/id": "profile-1", "org": {"id": 42}, "scope": ["read", "write"]}`, the Upstream receives the following headers:
+
+```text
+X-Profile-Id: profile-1
+X-Org-Id: 42
+X-Client-Scopes: read write
+```
+
+If a claim is not in the token, the Upstream does not receive the header, even when the client sent one.
 
 ## Troubleshooting
 
