@@ -2601,3 +2601,81 @@ X-AI-Fixture: openai/chat-streaming-with-cache.sse
 qr/(?s)(?=.*"input_tokens":15)(?=.*"cache_read_input_tokens":10)(?=.*"cache_creation_input_tokens":5)/
 --- access_log eval
 qr/127\.0\.0\.1:1980 200 [\d.]+ \"\S+\" \S+ \S+ [\d.]+ 30 15 45 true false 0 \S* 10 5 \d+/
+
+
+
+=== TEST 70: cache-creation tokens are read from the LiteLLM usage field shapes
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local converter = require("apisix.plugins.ai-protocols.converters.anthropic-messages-to-openai-chat")
+
+            local function convert(usage)
+                local res = converter.convert_response({
+                    id = "x", model = "m",
+                    choices = {{ message = { role = "assistant", content = "hi" },
+                                 finish_reason = "stop" }},
+                    usage = usage,
+                }, { var = {} })
+                return res.usage
+            end
+
+            -- top-level usage.cache_creation_input_tokens
+            local u = convert({ prompt_tokens = 100, completion_tokens = 10,
+                                cache_creation_input_tokens = 30,
+                                prompt_tokens_details = { cached_tokens = 20 } })
+            assert(u.input_tokens == 50, "top-level input: " .. u.input_tokens)
+            assert(u.cache_creation_input_tokens == 30, "top-level creation")
+
+            -- prompt_tokens_details.cache_creation_tokens, no cached_tokens
+            u = convert({ prompt_tokens = 100, completion_tokens = 10,
+                          prompt_tokens_details = { cache_creation_tokens = 30 } })
+            assert(u.input_tokens == 70, "cache_creation_tokens input: " .. u.input_tokens)
+            assert(u.cache_creation_input_tokens == 30, "cache_creation_tokens creation")
+
+            -- prompt_tokens_details.cache_write_tokens
+            u = convert({ prompt_tokens = 100, completion_tokens = 10,
+                          prompt_tokens_details = { cached_tokens = 20,
+                                                    cache_write_tokens = 30 } })
+            assert(u.input_tokens == 50, "cache_write_tokens input: " .. u.input_tokens)
+            assert(u.cache_creation_input_tokens == 30, "cache_write_tokens creation")
+
+            -- streaming: usage on the finish_reason chunk
+            local state = { is_first = true }
+            converter.convert_sse_events({
+                type = "data",
+                data = { id = "x", model = "m", choices = {{ delta = { content = "hi" } }} },
+            }, {}, state)
+            converter.convert_sse_events({
+                type = "data",
+                data = {
+                    choices = {{ delta = {}, finish_reason = "stop" }},
+                    usage = { prompt_tokens = 100, completion_tokens = 10,
+                              prompt_tokens_details = { cached_tokens = 20,
+                                                        cache_write_tokens = 30 } },
+                },
+            }, {}, state)
+            -- the deferred message_delta is flushed by the next chunk
+            local events = converter.convert_sse_events({
+                type = "data",
+                data = { choices = {} },
+            }, {}, state)
+            local msg_delta
+            for _, e in ipairs(events) do
+                if e.type == "message_delta" then
+                    msg_delta = core.json.decode(e.data)
+                end
+            end
+            assert(msg_delta, "message_delta emitted")
+            assert(msg_delta.usage.input_tokens == 50,
+                   "stream input: " .. msg_delta.usage.input_tokens)
+            assert(msg_delta.usage.cache_creation_input_tokens == 30, "stream creation")
+
+            ngx.say("OK")
+        }
+    }
+--- response_body
+OK
+--- no_error_log
+[error]
