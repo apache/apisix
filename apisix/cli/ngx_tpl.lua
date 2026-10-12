@@ -556,9 +556,9 @@ http {
     uninitialized_variable_warn off;
 
     {% if http.access_log_buffer then %}
-    access_log {* http.access_log *} main buffer={* http.access_log_buffer *} flush=3;
+    access_log {* http.access_log *} main buffer={* http.access_log_buffer *} flush=3{% if http.access_log_if then %} if={* http.access_log_if *}{% end %};
     {% else %}
-    access_log {* http.access_log *} main buffer=16384 flush=3;
+    access_log {* http.access_log *} main buffer=16384 flush=3{% if http.access_log_if then %} if={* http.access_log_if *}{% end %};
     {% end %}
     {% end %}
     open_file_cache  max=1000 inactive=60;
