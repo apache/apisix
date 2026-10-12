@@ -181,7 +181,7 @@ qr/(?s)(?=.*"type":"thinking")(?=.*"thinking":"Let me think step by step)(?=.*"s
 
 
 
-=== TEST 8: cached_tokens deducted from input_tokens
+=== TEST 8: cached_tokens and cache_creation_input_tokens deducted from input_tokens
 --- request
 POST /v1/messages
 {"model":"claude-sonnet-4-20250514","max_tokens":1024,"messages":[{"role":"user","content":"test"}]}
@@ -190,7 +190,7 @@ Content-Type: application/json
 X-AI-Fixture: openai/chat-with-reasoning.json
 --- error_code: 200
 --- response_body_like eval
-qr/(?s)(?=.*"input_tokens":20)(?=.*"cache_read_input_tokens":10)(?=.*"cache_creation_input_tokens":5)/
+qr/(?s)(?=.*"input_tokens":15)(?=.*"cache_read_input_tokens":10)(?=.*"cache_creation_input_tokens":5)/
 --- no_error_log
 [error]
 
@@ -1808,7 +1808,7 @@ qr/127\.0\.0\.1:1980 200 [\d.]+ \"\S+\" claude-3-5-sonnet-20241022 claude-3-5-so
 
 
 
-=== TEST 50: Anthropic non-streaming writes cache tokens to access log
+=== TEST 50: Anthropic non-streaming writes cache tokens to access log, prompt tokens include cache
 --- request
 POST /v1/messages
 {"messages":[{"role":"user","content":"Hello"}],"model":"claude-3-5-sonnet-20241022","max_tokens":1024}
@@ -1816,11 +1816,11 @@ POST /v1/messages
 X-AI-Fixture: anthropic/messages-with-cache.json
 --- error_code: 200
 --- access_log eval
-qr/127\.0\.0\.1:1980 200 [\d.]+ \"\S+\" claude-3-5-sonnet-20241022 claude-3-5-sonnet-20241022 [\d.]+ 50 30 80 false false 0 \S* 200 100 0/
+qr/127\.0\.0\.1:1980 200 [\d.]+ \"\S+\" claude-3-5-sonnet-20241022 claude-3-5-sonnet-20241022 [\d.]+ 350 30 380 false false 0 \S* 200 100 0/
 
 
 
-=== TEST 51: Anthropic streaming writes cache tokens to access log
+=== TEST 51: Anthropic streaming writes cache tokens to access log, prompt tokens include cache
 --- request
 POST /v1/messages
 {"messages":[{"role":"user","content":"Hello"}],"model":"claude-3-5-sonnet-20241022","max_tokens":1024,"stream":true}
@@ -1828,7 +1828,7 @@ POST /v1/messages
 X-AI-Fixture: anthropic/messages-streaming-with-cache.sse
 --- error_code: 200
 --- access_log eval
-qr/127\.0\.0\.1:1980 200 [\d.]+ \"\S+\" claude-3-5-sonnet-20241022 claude-3-5-sonnet-20241022 [\d.]+ 50 30 80 true false 0 \S* 200 100 0/
+qr/127\.0\.0\.1:1980 200 [\d.]+ \"\S+\" claude-3-5-sonnet-20241022 claude-3-5-sonnet-20241022 [\d.]+ 350 30 380 true false 0 \S* 200 100 0/
 
 
 
@@ -2479,3 +2479,125 @@ OK
 OK
 --- no_error_log
 [error]
+
+
+
+=== TEST 65: set route for native Anthropic protocol with cache tokens in message_delta
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/v1/messages",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "anthropic",
+                            "auth": {
+                                "header": {
+                                    "x-api-key": "test-key"
+                                }
+                            },
+                            "options": {
+                                "model": "claude-3-5-sonnet-20241022"
+                            },
+                            "override": {
+                                "endpoint": "http://127.0.0.1:1980"
+                            },
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 66: Anthropic streaming picks up cache tokens reported only in message_delta
+--- request
+POST /v1/messages
+{"messages":[{"role":"user","content":"Hello"}],"model":"claude-3-5-sonnet-20241022","max_tokens":1024,"stream":true}
+--- more_headers
+X-AI-Fixture: anthropic/messages-streaming-with-cache-in-delta.sse
+--- error_code: 200
+--- access_log eval
+qr/127\.0\.0\.1:1980 200 [\d.]+ \"\S+\" claude-3-5-sonnet-20241022 claude-3-5-sonnet-20241022 [\d.]+ 350 30 380 true false 0 \S* 200 100 0/
+
+
+
+=== TEST 67: set route for Anthropic client with OpenAI-compatible upstream
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/v1/messages",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai-compatible",
+                            "auth": {
+                                "header": {
+                                    "Authorization": "Bearer test-token"
+                                }
+                            },
+                            "options": {
+                                "model": "gpt-4o"
+                            },
+                            "override": {
+                                "endpoint": "http://127.0.0.1:1980"
+                            },
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 68: converted non-streaming response logs the upstream prompt_tokens, cache included
+--- request
+POST /v1/messages
+{"model":"claude-sonnet-4-20250514","max_tokens":1024,"messages":[{"role":"user","content":"test"}]}
+--- more_headers
+Content-Type: application/json
+X-AI-Fixture: openai/chat-with-reasoning.json
+--- error_code: 200
+--- response_body_like eval
+qr/(?s)(?=.*"input_tokens":15)(?=.*"cache_read_input_tokens":10)(?=.*"cache_creation_input_tokens":5)/
+--- access_log eval
+qr/127\.0\.0\.1:1980 200 [\d.]+ \"\S+\" \S+ \S+ [\d.]+ 30 15 45 false false 0 \S* 10 5 0/
+
+
+
+=== TEST 69: converted streaming response deducts cache tokens from input_tokens and logs the upstream prompt_tokens
+--- request
+POST /v1/messages
+{"model":"claude-sonnet-4-20250514","max_tokens":1024,"stream":true,"messages":[{"role":"user","content":"test"}]}
+--- more_headers
+Content-Type: application/json
+X-AI-Fixture: openai/chat-streaming-with-cache.sse
+--- error_code: 200
+--- response_body_like eval
+qr/(?s)(?=.*"input_tokens":15)(?=.*"cache_read_input_tokens":10)(?=.*"cache_creation_input_tokens":5)/
+--- access_log eval
+qr/127\.0\.0\.1:1980 200 [\d.]+ \"\S+\" \S+ \S+ [\d.]+ 30 15 45 true false 0 \S* 10 5 \d+/

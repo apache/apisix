@@ -333,6 +333,8 @@ APISIX increments this gauge when an LLM upstream attempt starts and decrements 
 
 ### Labels for `apisix_llm_prompt_tokens`
 
+Prompt tokens include tokens read from and written to the prompt cache. For the Anthropic Messages API, this is `input_tokens + cache_read_input_tokens + cache_creation_input_tokens`, which matches the meaning of OpenAI's `prompt_tokens`.
+
 | Name | Description                                                                                                                   |
 | ---------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | route_id      | ID of the Route that the metric corresponds to when `prefer_name` is `false` (default), and name of the Route when `prefer_name` is `true`. Defaults to an empty string if no Route is matched. |
