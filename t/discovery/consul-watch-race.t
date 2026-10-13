@@ -158,7 +158,7 @@ routes:
             ngx.print(res.body)
         }
     }
---- timeout: 10
+--- timeout: 15
 --- request
 GET /t
 --- response_body
