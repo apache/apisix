@@ -64,7 +64,7 @@ deadline=$(( $(date +%s) + 20 ))
 while [ "$(date +%s)" -lt "$deadline" ]; do
     curl -s --connect-timeout 1 --max-time 2 http://127.0.0.1:9100 >/dev/null 2>&1 || true
     if curl -s --connect-timeout 1 --max-time 2 http://127.0.0.1:9091/apisix/prometheus/metrics \
-         | grep -qE 'apisix_stream_connection_total\{route="1"\} [1-9][0-9]*'; then
+         | grep -qE 'apisix_stream_connection_total\{route="1",service="",service_id=""\} [1-9][0-9]*'; then
         ok=1
         break
     fi
@@ -106,7 +106,7 @@ out=""
 while [ "$(date +%s)" -lt "$deadline" ]; do
     curl -s --connect-timeout 1 --max-time 2 http://127.0.0.1:9100 >/dev/null 2>&1 || true
     out="$(curl -s --connect-timeout 1 --max-time 2 http://127.0.0.1:9091/apisix/prometheus/metrics || true)"
-    if echo "$out" | grep -qE 'apisix_stream_connection_total\{route="1"\} [1-9][0-9]*'; then
+    if echo "$out" | grep -qE 'apisix_stream_connection_total\{route="1",service="",service_id=""\} [1-9][0-9]*'; then
         ok=1
         break
     fi

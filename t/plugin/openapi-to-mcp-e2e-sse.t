@@ -80,3 +80,109 @@ post status: 202
 protocolVersion: 2024-11-05
 serverInfo: openapi2mcp-sse 0.0.1
 unknown session status: 404
+
+
+
+=== TEST 3: an sse route whose header carries a request variable
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "sse",
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/openapi.json",
+                    headers = { Authorization = "Bearer ${http_x_user}" },
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 4: the value resolved when the stream opened is the one used
+--- exec
+python3 t/plugin/openapi_to_mcp_sse_frozen_vars.py /mcp 2>&1
+--- response_body
+post status: 202
+upstream saw: Bearer alice
+
+
+
+=== TEST 5: the same route with the variable written without braces
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "sse",
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/openapi.json",
+                    -- resolve_var takes this form too, so the stream has to
+                    -- freeze what it resolved here as well
+                    headers = { Authorization = "Bearer $http_x_user" },
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 6: a brace-less variable is frozen just the same
+--- exec
+python3 t/plugin/openapi_to_mcp_sse_frozen_vars.py /mcp 2>&1
+--- response_body
+post status: 202
+upstream saw: Bearer alice
+
+
+
+=== TEST 7: a route whose configuration holds no variable
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "sse",
+                    base_url = "http://127.0.0.1:11460",
+                    headers = { Authorization = "fixed-credential" },
+                    openapi_url = "http://127.0.0.1:11460/openapi.json",
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 8: its session record keeps no copy of the resolved headers
+--- config
+    location /t {
+        content_by_lua_block {
+            local session = require("apisix.plugins.openapi-to-mcp.session")
+            local dict = ngx.shared["mcp-session"]
+
+            -- what handle_get stores when nothing needs re-resolving
+            local plain = assert(session.create(nil))
+            ngx.say("plain context: ", tostring(session.context(plain)))
+
+            -- and what it stores when the configuration holds a variable
+            local frozen = assert(session.create({ headers = { Authorization = "Bearer t" } }))
+            ngx.say("frozen context: ", session.context(frozen).headers.Authorization)
+            ngx.say("in the dict: ",
+                    tostring(string.find(tostring(dict:get(plain .. ":alive")),
+                                         "Bearer", 1, true) ~= nil))
+        }
+    }
+--- response_body
+plain context: nil
+frozen context: Bearer t
+in the dict: false

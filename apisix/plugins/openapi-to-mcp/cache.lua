@@ -54,6 +54,11 @@ local function build_tools(openapi_url, flatten_parameters)
         return nil, err
     end
 
+    local ok, invalid = loader.validate(spec)
+    if not ok then
+        return nil, invalid
+    end
+
     local resolved = ref.resolve(spec)
     return generator.generate(resolved, path_order, {
         flatten_parameters = flatten_parameters,

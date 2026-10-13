@@ -32,6 +32,7 @@ description = {
 
 dependencies = {
     "lua-resty-ctxdump = 0.1-0",
+    "api7-lua-resty-websocket = 0.2.0-0",
     "api7-lua-resty-redis-connector = 0.13.0",
     "lyaml = 6.2.8-1",
     "api7-lua-resty-dns-client = 7.1.2-0",
@@ -52,7 +53,7 @@ dependencies = {
     "lua-resty-radixtree = 2.9.2-0",
     "lua-protobuf = 0.5.3-1",
     "lua-resty-openidc = 1.9.0-1",
-    "lua-resty-saml = 0.2.5",
+    "lua-resty-saml = 0.2.6",
     "luafilesystem = 1.8.0-1",
     "nginx-lua-prometheus-api7 = 1.0.0-1",
     "jsonschema = 0.9.13-0",

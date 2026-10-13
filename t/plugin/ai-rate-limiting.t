@@ -1783,3 +1783,102 @@ apisix:
 --- response_body
 somepassword
 encrypted
+
+
+
+=== TEST 41: set route for checking the reset time after a request that consumed nothing
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/ai",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": {
+                                "header": {
+                                    "Authorization": "Bearer token"
+                                }
+                            },
+                            "options": {
+                                "model": "gpt-35-turbo-instruct"
+                            },
+                            "override": {
+                                "endpoint": "http://127.0.0.1:1980"
+                            },
+                            "ssl_verify": false
+                        },
+                        "ai-rate-limiting": {
+                            "limit": 100,
+                            "time_window": 3
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "canbeanything.com": 1
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 42: the window end stays put when a request charges no tokens
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/ai"
+            local function send(fixture, status)
+                local httpc = http.new()
+                return httpc:request_uri(uri, {
+                    method = "POST",
+                    body = [[{"messages": [{"role": "user", "content": "hi"}]}]],
+                    headers = {
+                        ["Content-Type"] = "application/json",
+                        ["Authorization"] = "Bearer token",
+                        ["X-AI-Fixture"] = fixture,
+                        ["X-AI-Fixture-Status"] = status,
+                    },
+                })
+            end
+
+            -- the upstream fails, so this request starts the window without
+            -- charging any token
+            local res, err = send("openai/chat-error.json", "500")
+            if not res then
+                ngx.say("request failed: ", err)
+                return
+            end
+
+            ngx.sleep(1.5)
+            res, err = send("openai/chat-model-echo.json", "200")
+            if not res then
+                ngx.say("request failed: ", err)
+                return
+            end
+            local reset = tonumber(res.headers["X-AI-RateLimit-Reset-ai-proxy-openai"])
+            if not reset or reset > 2 then
+                ngx.say("unexpected reset: ", res.headers["X-AI-RateLimit-Reset-ai-proxy-openai"])
+                return
+            end
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+--- error_log
+failed to get token usage for llm service

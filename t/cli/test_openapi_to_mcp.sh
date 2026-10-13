@@ -18,8 +18,7 @@
 
 . ./t/cli/common.sh
 
-# openapi-to-mcp keeps its SSE sessions in the mcp-session shared dict, which
-# is also what mcp-bridge uses. Enabling either one declares it.
+# openapi-to-mcp keeps its SSE sessions in the mcp-session shared dict.
 
 echo '
 plugins:

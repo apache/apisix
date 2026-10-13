@@ -190,6 +190,8 @@ local scheme_to_port = {
     https = 443,
     grpc = 80,
     grpcs = 443,
+    ws = 80,
+    wss = 443,
 }
 
 
@@ -665,11 +667,28 @@ local function check_upstream_conf(in_dp, conf)
         end
     end
 
+    -- a discovery module may check discovery_args against its own configuration
+    local dis = conf.discovery_type and discovery and discovery[conf.discovery_type]
+    if dis and dis.check_discovery_args then
+        local ok, err = dis.check_discovery_args(conf.discovery_args, conf.service_name, in_dp)
+        if not ok then
+            return false, err
+        end
+    end
+
     if is_http then
         if conf.pass_host == "rewrite" and
             (conf.upstream_host == nil or conf.upstream_host == "")
         then
             return false, "`upstream_host` can't be empty when `pass_host` is `rewrite`"
+        end
+
+        -- the ws/wss client connects through a plain cosocket, which can only
+        -- trust the global lua_ssl_trusted_certificate, not a per-upstream store
+        if (conf.scheme == "ws" or conf.scheme == "wss")
+            and conf.tls and conf.tls.ca_certs
+        then
+            return false, "`tls.ca_certs` is not supported by the `ws`/`wss` scheme"
         end
     end
 
