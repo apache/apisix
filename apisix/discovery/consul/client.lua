@@ -119,7 +119,7 @@ end
 local function set_tls_opts(opts, consul_server)
     if consul_server.ssl then
         opts.ssl = true
-        opts.ssl_verify = true
+        opts.ssl_verify = consul_server.ssl_verify
         opts.sni_host = consul_server.host
     end
     return opts
@@ -279,6 +279,7 @@ function _M.format_consul_params(consul_conf)
             host = host,
             port = port,
             ssl = scheme == "https",
+            ssl_verify = consul_conf.ssl_verify ~= false,
             token = consul_conf.token,
             connect_timeout = consul_conf.timeout.connect,
             read_timeout = consul_conf.timeout.read,

@@ -58,7 +58,8 @@ _EOC_
 
 
 sub main::yaml_config {
-    my ($servers, $keepalive) = @_;
+    my ($servers, $keepalive, $ssl_verify) = @_;
+    my $ssl_verify_conf = defined $ssl_verify ? "    ssl_verify: $ssl_verify\n" : "";
     return <<_EOC_;
 apisix:
   node_listen: 1984
@@ -77,6 +78,7 @@ discovery:
     weight: 1
     fetch_interval: 1
     keepalive: $keepalive
+$ssl_verify_conf
 _EOC_
 }
 
@@ -131,7 +133,7 @@ server 1
 
 
 
-=== TEST 4: the certificate of an https consul server is verified
+=== TEST 4: the certificate of an https consul server is verified by default
 --- http_config
     # same endpoint as above, but its certificate is not signed by the trusted CA
     lua_ssl_trusted_certificate ../../certs/mtls_ca.crt;
@@ -158,7 +160,42 @@ GET /hello
 
 
 
-=== TEST 5: scheme per server address, other schemes are still rejected
+=== TEST 5: ssl_verify false accepts a certificate the DP does not trust
+--- http_config
+    # same endpoint as above, but its certificate is not signed by the trusted CA
+    lua_ssl_trusted_certificate ../../certs/mtls_ca.crt;
+
+    server {
+        listen 18501 ssl;
+        ssl_certificate             ../../certs/localhost_slapd_cert.pem;
+        ssl_certificate_key         ../../certs/localhost_slapd_key.pem;
+
+        location / {
+            proxy_pass http://127.0.0.1:8500;
+        }
+    }
+
+    server {
+        listen 30511;
+
+        location /hello {
+            content_by_lua_block {
+                ngx.say("server 1")
+            }
+        }
+    }
+--- yaml_config eval: main::yaml_config("https://localhost:18501", "false", "false")
+--- apisix_yaml eval: $::apisix_yaml
+--- request
+GET /hello
+--- response_body
+server 1
+--- no_error_log
+[error]
+
+
+
+=== TEST 6: scheme per server address, other schemes are still rejected
 --- config
     location /t {
         content_by_lua_block {
@@ -170,8 +207,15 @@ GET /hello
                 timeout = timeout,
             })
             for _, s in ipairs(servers or {}) do
-                ngx.say(s.host, ":", s.port, " ssl: ", s.ssl)
+                ngx.say(s.host, ":", s.port, " ssl: ", s.ssl, " ssl_verify: ", s.ssl_verify)
             end
+
+            servers, err = client.format_consul_params({
+                servers = {"https://consul.local:8501"},
+                timeout = timeout,
+                ssl_verify = false,
+            })
+            ngx.say(servers[1].host, ":", servers[1].port, " ssl_verify: ", servers[1].ssl_verify)
 
             servers, err = client.format_consul_params({
                 servers = {"https://127.0.0.1:8501", "tcp://127.0.0.1:8500"},
@@ -183,13 +227,14 @@ GET /hello
 --- request
 GET /t
 --- response_body
-127.0.0.1:8500 ssl: false
-consul.local:443 ssl: true
+127.0.0.1:8500 ssl: false ssl_verify: true
+consul.local:443 ssl: true ssl_verify: true
+consul.local:8501 ssl_verify: false
 invalid consul server address: bad uri: tcp://127.0.0.1:8500, the valid format: http://address:port or https://address:port
 
 
 
-=== TEST 6: clean nodes
+=== TEST 7: clean nodes
 --- config
 location /v1/agent {
     proxy_pass http://127.0.0.1:8500;
