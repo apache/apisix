@@ -240,6 +240,20 @@ when either actually rewrites the URI (a stripped trailing slash, a servlet-styl
 matching without keeping `%2F`. The fallback is safe; the encoded-slash match
 simply does not apply to such requests.
 
+#### 6. Path forwarded to the upstream
+
+Routes are matched on the normalized `$uri`: Nginx percent-decodes the path,
+resolves dot segments (including encoded ones such as `..%2F` and `%2e%2e`) and
+merges consecutive slashes. When the request path needs only percent-decoding,
+APISIX forwards the original request line to the upstream. When Nginx also
+resolved dot segments or merged slashes, APISIX forwards the matched path
+re-encoded, followed by the original query string. For example, a request to
+`/admin/..%2Fapi/x` matches a route for `/api/*` and the upstream receives
+`/api/x`.
+
+Plugins that set the upstream URI, such as `proxy-rewrite`, still take
+precedence.
+
 ### How to filter route by Nginx built-in variable?
 
 Nginx provides a variety of built-in variables that can be used to filter routes based on certain criteria. Here is an example of how to filter routes by Nginx built-in variables:

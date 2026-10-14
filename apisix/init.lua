@@ -887,6 +887,20 @@ function _M.http_access_phase()
         end
     end
 
+    -- Nginx resolved dot segments or merged slashes in $uri, so forward the
+    -- path the route was matched on.
+    if not (local_conf.apisix and local_conf.apisix.normalize_uri_like_servlet) then
+        local path = api_ctx.var.request_uri
+        local args_pos = core.string.find(path, "?")
+        if args_pos then
+            path = str_sub(path, 1, args_pos - 1)
+        end
+        if path ~= uri and percent_decode(path, false) ~= uri then
+            api_ctx.var.upstream_uri = core.utils.uri_safe_encode(uri)
+                                       .. api_ctx.var.is_args .. (api_ctx.var.args or "")
+        end
+    end
+
     -- To prevent being hacked by untrusted request_uri, here we
     -- record the normalized but not rewritten uri as request_uri,
     -- the original request_uri can be accessed via var.real_request_uri
