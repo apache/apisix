@@ -147,3 +147,19 @@ if [ "$ok" -ne 1 ]; then
 fi
 
 echo "passed: process metrics work when only stream is enabled"
+
+# the export-only http block runs on the same timer limits as the stream
+# subsystem, so the reported limits hold for every Lua VM
+http_block="$(sed -n '/^http {/,/^}/p' conf/nginx.conf)"
+if ! echo "$http_block" | grep -q "lua_max_pending_timers 16384;" \
+    || ! echo "$http_block" | grep -q "lua_max_running_timers 4096;"; then
+    echo "failed: the stream-only http block does not carry the timer limits"
+    exit 1
+fi
+
+if ! echo "$out" | grep -qE 'apisix_nginx_timers_max\{state="pending"\} 16384$'; then
+    echo "failed: nginx_timers_max does not report the configured limit"
+    exit 1
+fi
+
+echo "passed: the stream-only http block carries the timer limits"
