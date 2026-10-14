@@ -439,9 +439,10 @@ nginx_config:                     # Config for render the template to generate n
 #       path: "logs/consul_kv.dump" # Location of the dump file.
 #       expire: 2592000             # Specify the expiration time of the dump file in units of seconds.
 #  consul:                          # Consul
-#    servers:                       # Consul address(es)
+#    servers:                       # Consul address(es), http or https
 #      - "http://127.0.0.1:8500"
 #      - "http://127.0.0.1:8600"
+#    ssl_verify: true               # Default true. Verify the certificate of https servers.
 #    skip_services:                 # Skip services during service discovery.
 #      - "service_a"
 #    timeout:
@@ -622,7 +623,6 @@ plugins:                           # plugin list (sorted by priority)
   - response-rewrite               # priority: 899
   - openapi-to-mcp                 # priority: 540
   - oas-validator                  # priority: 512
-  - mcp-bridge                     # priority: 510
   - degraphql                      # priority: 509
   - kafka-proxy                    # priority: 508
   #- dubbo-proxy                   # priority: 507

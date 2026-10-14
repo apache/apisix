@@ -570,6 +570,15 @@ local upstream_schema = {
                     description = "group name",
                     type = "string",
                 },
+                cluster_ids = {
+                    description = "ids of the kubernetes discovery clusters to get nodes from",
+                    type = "array",
+                    minItems = 1,
+                    uniqueItems = true,
+                    items = {
+                        type = "string",
+                    },
+                },
             }
         },
         pass_host = {
