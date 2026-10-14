@@ -288,11 +288,7 @@ function _M.init(registry, extra_labels)
 end
 
 
-function _M.report()
-    if not gauges then
-        return
-    end
-
+local function report()
     process_label = process_label or get_process_label()
     local extra = extra_label_values and extra_label_values() or no_extra_labels
 
@@ -329,18 +325,29 @@ function _M.report()
 end
 
 
+-- Writes this process's values now. A failure here is logged rather than
+-- raised, so it can never cost the caller the rest of the exposition.
+function _M.refresh()
+    if not gauges then
+        return
+    end
+
+    local ok, err = pcall(report)
+    if not ok then
+        core.log.error("failed to report process metrics: ", err)
+    end
+end
+
+
 local function tick(premature)
     if premature or stopped then
         timer_running = false
         return
     end
 
-    local ok, err = pcall(_M.report)
-    if not ok then
-        core.log.error("failed to report process metrics: ", err)
-    end
+    _M.refresh()
 
-    ok, err = timer_at(interval, tick)
+    local ok, err = timer_at(interval, tick)
     if not ok then
         timer_running = false
         core.log.error("failed to schedule process metrics: ", err)

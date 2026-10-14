@@ -1204,7 +1204,7 @@ end
 
 local function collect(yieldable)
     -- the other processes report their own values on a timer
-    process_metrics.report()
+    process_metrics.refresh()
 
     -- collect ngx.shared.DICT status
     shared_dict_status()
