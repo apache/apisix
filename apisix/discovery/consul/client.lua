@@ -155,10 +155,13 @@ end
 
 -- ─── blocking query watchers ──────────────────────────────────────────
 
+-- watch_catalog / watch_health run one blocking query. They return the watch
+-- type and the new index (an error index on failure), or nothing when the
+-- index did not change.
+
 function _M.watch_catalog(consul_server)
     local client = resty_consul:new(get_opts(consul_server, true))
 
-    ::RETRY::
     local watch_result, watch_err = client:get(consul_server.consul_watch_catalog_url)
     local watch_error_info = (watch_err ~= nil and watch_err)
                              or ((watch_result ~= nil and watch_result.status ~= 200)
@@ -177,7 +180,7 @@ function _M.watch_catalog(consul_server)
         local random_delay = math_random(default_random_range)
         log.info("watch catalog has no change, re-watch consul after ", random_delay, " seconds")
         core_sleep(random_delay)
-        goto RETRY
+        return
     end
 
     return watch_type_catalog, watch_result.headers['X-Consul-Index']
@@ -187,7 +190,6 @@ end
 function _M.watch_health(consul_server)
     local client = resty_consul:new(get_opts(consul_server, false))
 
-    ::RETRY::
     local watch_result, watch_err = client:get(consul_server.consul_watch_health_url)
     local watch_error_info = (watch_err ~= nil and watch_err)
             or ((watch_result ~= nil and watch_result.status ~= 200)
@@ -206,7 +208,7 @@ function _M.watch_health(consul_server)
         local random_delay = math_random(default_random_range)
         log.info("watch health has no change, re-watch consul after ", random_delay, " seconds")
         core_sleep(random_delay)
-        goto RETRY
+        return
     end
 
     return watch_type_health, watch_result.headers['X-Consul-Index']

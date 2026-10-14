@@ -74,6 +74,7 @@ ua-restriction
 referer-restriction
 csrf
 uri-blocker
+request-decompress
 request-validation
 chaitin-waf
 multi-auth
@@ -130,7 +131,6 @@ response-rewrite
 openapi-to-mcp
 oas-validator
 websocket-proxy
-mcp-bridge
 degraphql
 kafka-proxy
 grpc-transcode

@@ -42,8 +42,26 @@ The `forward-auth` Plugin supports the integration with an external authorizatio
 - `X-Forwarded-Proto`: scheme
 - `X-Forwarded-Method`: HTTP method
 - `X-Forwarded-Host`: host
-- `X-Forwarded-Uri`: URI
+- `X-Forwarded-Uri`: normalized URI, including the query string
 - `X-Forwarded-For`: source IP
+
+:::note
+
+These headers describe the request as the client sent it. If the Route also rewrites the request with [proxy-rewrite](./proxy-rewrite.md), the Upstream service receives the rewritten scheme, method, host, and URI, while the headers above keep carrying the client values.
+
+If your authorization service decides based on the URI that the Upstream service receives, forward it explicitly with `extra_headers` and the `$upstream_uri` variable:
+
+```json
+{
+  "extra_headers": {
+    "X-Forwarded-Upstream-Uri": "$upstream_uri"
+  }
+}
+```
+
+`$upstream_uri` is set by the Plugins that rewrite the forwarded path, such as `proxy-rewrite`. It is empty when nothing rewrites the request, in which case the Upstream service receives the URI in `X-Forwarded-Uri`.
+
+:::
 
 ## Attributes
 
