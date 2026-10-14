@@ -2679,3 +2679,115 @@ qr/127\.0\.0\.1:1980 200 [\d.]+ \"\S+\" \S+ \S+ [\d.]+ 30 15 45 true false 0 \S*
 OK
 --- no_error_log
 [error]
+
+
+
+=== TEST 71: converted streaming logs cache-creation tokens from top-level usage.cache_creation_input_tokens
+--- request
+POST /v1/messages
+{"model":"claude-sonnet-4-20250514","max_tokens":1024,"stream":true,"messages":[{"role":"user","content":"test"}]}
+--- more_headers
+Content-Type: application/json
+X-AI-Fixture: openai/chat-streaming-cache-write-top-level.sse
+--- error_code: 200
+--- response_body_like eval
+qr/(?s)(?=.*"input_tokens":15)(?=.*"cache_read_input_tokens":10)(?=.*"cache_creation_input_tokens":5)/
+--- access_log eval
+qr/127\.0\.0\.1:1980 200 [\d.]+ \"\S+\" \S+ \S+ [\d.]+ 30 15 45 true false 0 \S* 10 5 \d+/
+
+
+
+=== TEST 72: converted streaming logs cache-creation tokens from prompt_tokens_details.cache_write_tokens
+--- request
+POST /v1/messages
+{"model":"claude-sonnet-4-20250514","max_tokens":1024,"stream":true,"messages":[{"role":"user","content":"test"}]}
+--- more_headers
+Content-Type: application/json
+X-AI-Fixture: openai/chat-streaming-cache-write-tokens.sse
+--- error_code: 200
+--- response_body_like eval
+qr/(?s)(?=.*"input_tokens":15)(?=.*"cache_read_input_tokens":10)(?=.*"cache_creation_input_tokens":5)/
+--- access_log eval
+qr/127\.0\.0\.1:1980 200 [\d.]+ \"\S+\" \S+ \S+ [\d.]+ 30 15 45 true false 0 \S* 10 5 \d+/
+
+
+
+=== TEST 73: converted streaming logs cache-creation tokens from prompt_tokens_details.cache_creation_tokens
+--- request
+POST /v1/messages
+{"model":"claude-sonnet-4-20250514","max_tokens":1024,"stream":true,"messages":[{"role":"user","content":"test"}]}
+--- more_headers
+Content-Type: application/json
+X-AI-Fixture: openai/chat-streaming-cache-creation-tokens.sse
+--- error_code: 200
+--- response_body_like eval
+qr/(?s)(?=.*"input_tokens":15)(?=.*"cache_read_input_tokens":10)(?=.*"cache_creation_input_tokens":5)/
+--- access_log eval
+qr/127\.0\.0\.1:1980 200 [\d.]+ \"\S+\" \S+ \S+ [\d.]+ 30 15 45 true false 0 \S* 10 5 \d+/
+
+
+
+=== TEST 74: converted streaming reads DeepSeek prompt_cache_hit_tokens as cache reads
+--- request
+POST /v1/messages
+{"model":"claude-sonnet-4-20250514","max_tokens":1024,"stream":true,"messages":[{"role":"user","content":"test"}]}
+--- more_headers
+Content-Type: application/json
+X-AI-Fixture: openai/chat-streaming-deepseek-cache.sse
+--- error_code: 200
+--- response_body_like eval
+qr/(?s)(?=.*"input_tokens":20)(?=.*"cache_read_input_tokens":10)(?!.*"cache_creation_input_tokens")/
+--- access_log eval
+qr/127\.0\.0\.1:1980 200 [\d.]+ \"\S+\" \S+ \S+ [\d.]+ 30 15 45 true false 0 \S* 10 0 \d+/
+
+
+
+=== TEST 75: OpenAI usage extraction reads every supported cache field shape
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local openai_chat = require("apisix.plugins.ai-protocols.openai-chat")
+
+            local cases = {
+                { { prompt_tokens = 30, cache_creation_input_tokens = 5,
+                    prompt_tokens_details = { cached_tokens = 10 } }, 10, 5 },
+                { { prompt_tokens = 30,
+                    prompt_tokens_details = { cached_tokens = 10, cache_write_tokens = 5 } },
+                  10, 5 },
+                { { prompt_tokens = 30,
+                    prompt_tokens_details = { cached_tokens = 10, cache_creation_tokens = 5 } },
+                  10, 5 },
+                { { prompt_tokens = 30,
+                    prompt_tokens_details = { cached_tokens = 10,
+                                              cache_creation_input_tokens = 5 } },
+                  10, 5 },
+                { { prompt_tokens = 30, prompt_cache_hit_tokens = 10 }, 10, 0 },
+                { { prompt_tokens = 30 }, 0, 0 },
+            }
+            for i, c in ipairs(cases) do
+                local raw, read, creation = c[1], c[2], c[3]
+                raw.completion_tokens = 15
+
+                local usage = openai_chat.extract_usage({ usage = raw })
+                assert(usage.cache_read_input_tokens == read, "non-stream read " .. i)
+                assert(usage.cache_creation_input_tokens == creation,
+                       "non-stream creation " .. i)
+
+                local res = openai_chat.parse_sse_event({
+                    type = "message",
+                    data = core.json.encode({ choices = {}, usage = raw }),
+                }, {}, {})
+                assert(res.usage.cache_read_input_tokens == read, "stream read " .. i)
+                assert(res.usage.cache_creation_input_tokens == creation,
+                       "stream creation " .. i)
+                assert(res.raw_usage.prompt_tokens == 30, "raw usage " .. i)
+            end
+
+            ngx.say("OK")
+        }
+    }
+--- response_body
+OK
+--- no_error_log
+[error]

@@ -25,6 +25,7 @@
 -- fields never reach the upstream provider.
 
 local core = require("apisix.core")
+local openai_chat = require("apisix.plugins.ai-protocols.openai-chat")
 local resty_sha256 = require("resty.sha256")
 local to_hex = require("resty.string").to_hex
 local table = table
@@ -102,36 +103,6 @@ end
 
 
 -- SSE event helpers
--- prompt_tokens_details keys that carry cache-write tokens, in LiteLLM's
--- order, followed by the cache_creation_input_tokens shape some upstreams use.
-local CACHE_CREATION_DETAIL_KEYS = {
-    "cache_creation_tokens",
-    "cache_write_tokens",
-    "cache_creation_input_tokens",
-}
-
-
-local function cache_creation_tokens(usage)
-    if type(usage) ~= "table" then
-        return 0
-    end
-    local v = usage.cache_creation_input_tokens
-    if type(v) == "number" and v > 0 then
-        return v
-    end
-    local details = usage.prompt_tokens_details
-    if type(details) == "table" then
-        for _, key in ipairs(CACHE_CREATION_DETAIL_KEYS) do
-            v = details[key]
-            if type(v) == "number" and v > 0 then
-                return v
-            end
-        end
-    end
-    return 0
-end
-
-
 local function make_sse_event(event_type, data)
     return { type = event_type, data = core.json.encode(data) }
 end
@@ -819,13 +790,11 @@ function _M.convert_response(res_body, ctx)
 
         -- Anthropic input_tokens excludes both cache reads and cache writes,
         -- while OpenAI prompt_tokens includes them (same as LiteLLM).
-        local creation = cache_creation_tokens(res_body.usage)
-        if type(details) == "table" then
-            local cached = details.cached_tokens or 0
-            usage.input_tokens = math_max(0, prompt_tokens - cached - creation)
+        local cached = openai_chat.cache_read_tokens(res_body.usage)
+        local creation = openai_chat.cache_creation_tokens(res_body.usage)
+        usage.input_tokens = math_max(0, prompt_tokens - cached - creation)
+        if type(details) == "table" or cached > 0 then
             usage.cache_read_input_tokens = cached
-        else
-            usage.input_tokens = math_max(0, prompt_tokens - creation)
         end
         if creation > 0 then
             usage.cache_creation_input_tokens = creation
@@ -863,13 +832,9 @@ local function openai_to_anthropic_sse(openai_chunk, state, tool_name_map)
         if state.pending_stop then
             local message_delta = state.pending_message_delta
             if type(openai_chunk.usage) == "table" and not message_delta.usage then
-                local details = openai_chunk.usage.prompt_tokens_details
                 local prompt_tokens = openai_chunk.usage.prompt_tokens or 0
-                local cached = 0
-                if type(details) == "table" then
-                    cached = details.cached_tokens or 0
-                end
-                local creation = cache_creation_tokens(openai_chunk.usage)
+                local cached = openai_chat.cache_read_tokens(openai_chunk.usage)
+                local creation = openai_chat.cache_creation_tokens(openai_chunk.usage)
                 message_delta.usage = {
                     input_tokens  = math_max(0, prompt_tokens - cached - creation),
                     output_tokens = openai_chunk.usage.completion_tokens or 0,
@@ -1033,13 +998,9 @@ local function openai_to_anthropic_sse(openai_chunk, state, tool_name_map)
         }
 
         if type(openai_chunk.usage) == "table" then
-            local details = openai_chunk.usage.prompt_tokens_details
             local prompt_tokens = openai_chunk.usage.prompt_tokens or 0
-            local cached = 0
-            if type(details) == "table" then
-                cached = details.cached_tokens or 0
-            end
-            local creation = cache_creation_tokens(openai_chunk.usage)
+            local cached = openai_chat.cache_read_tokens(openai_chunk.usage)
+            local creation = openai_chat.cache_creation_tokens(openai_chunk.usage)
             message_delta.usage = {
                 input_tokens  = math_max(0, prompt_tokens - cached - creation),
                 output_tokens = openai_chunk.usage.completion_tokens or 0,
