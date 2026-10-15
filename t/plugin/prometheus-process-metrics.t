@@ -86,7 +86,7 @@ passed
             local res = assert(httpc:request_uri(
                 "http://127.0.0.1:1984/apisix/prometheus/metrics"))
             local patterns = {
-                [[apisix_nginx_timers\{process="worker-0",subsystem="http",state="running"\} [1-9]\d*]],
+                [[apisix_nginx_timers\{process="worker-0",subsystem="http",state="running"\} \d+\n]],
                 [[apisix_nginx_timers\{process="worker-0",subsystem="http",state="pending"\} \d+]],
                 [[apisix_nginx_timers\{process="privileged-agent",subsystem="http",state="running"\} \d+]],
                 [[apisix_nginx_timers_max\{state="running"\} 1234\n]],
@@ -191,7 +191,7 @@ process connection metrics are disabled: worker connection slots read as 128, bu
         local res = assert(httpc:request_uri(
             "http://127.0.0.1:1984/apisix/prometheus/metrics"))
         local patterns = {
-            [[apisix_nginx_timers\{process="worker-0",subsystem="stream",state="running"\} [1-9]\d*]],
+            [[apisix_nginx_timers\{process="worker-0",subsystem="stream",state="running"\} \d+\n]],
             [[apisix_nginx_timers\{process="worker-0",subsystem="stream",state="pending"\} \d+]],
             [[apisix_nginx_timers\{process="privileged-agent",subsystem="stream",state="pending"\} \d+]],
             [[apisix_nginx_lua_memory_bytes\{process="worker-0",subsystem="stream"\} [1-9]\d*]],

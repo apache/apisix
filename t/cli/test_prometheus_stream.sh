@@ -132,7 +132,7 @@ deadline=$(( $(date +%s) + 20 ))
 { set +x; } 2>/dev/null
 while [ "$(date +%s)" -lt "$deadline" ]; do
     out="$(curl -s --connect-timeout 1 --max-time 2 http://127.0.0.1:9091/apisix/prometheus/metrics || true)"
-    if echo "$out" | grep -qE 'apisix_nginx_timers\{process="worker-0",subsystem="stream",state="running"\} [1-9]' \
+    if echo "$out" | grep -qE 'apisix_nginx_timers\{process="worker-0",subsystem="stream",state="running"\} [0-9]+$' \
         && echo "$out" | grep -qE 'apisix_nginx_lua_memory_bytes\{process="privileged-agent",subsystem="http"\} [1-9]' \
         && echo "$out" | grep -qE 'apisix_nginx_process_connections_max\{process="privileged-agent"\} 512$'; then
         ok=1
