@@ -140,11 +140,11 @@ request-uri=/api/x
 
 
 
-=== TEST 6: merged slashes forward the matched path
+=== TEST 6: merged slashes alone are forwarded unchanged
 --- request
-GET /api//x
+GET /api/https://example.com//x
 --- response_body
-request-uri=/api/x
+request-uri=/api/https://example.com//x
 
 
 

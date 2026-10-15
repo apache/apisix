@@ -244,10 +244,10 @@ simply does not apply to such requests.
 
 Routes are matched on the normalized `$uri`: Nginx percent-decodes the path,
 resolves dot segments (including encoded ones such as `..%2F` and `%2e%2e`) and
-merges consecutive slashes. When the request path needs only percent-decoding,
-APISIX forwards the original request line to the upstream. When Nginx also
-resolved dot segments or merged slashes, APISIX forwards the matched path
-re-encoded, followed by the original query string. For example, a request to
+merges consecutive slashes. When the decoded request path has no `.` or `..`
+segment, APISIX forwards the original request line to the upstream, consecutive
+slashes included. When it has one, APISIX forwards the matched path re-encoded,
+followed by the original query string. For example, a request to
 `/admin/..%2Fapi/x` matches a route for `/api/*` and the upstream receives
 `/api/x`.
 

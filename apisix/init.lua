@@ -591,6 +591,17 @@ local function build_match_uri_keep_encoded_slash(path, current_uri)
 end
 
 
+-- whether the decoded path has a "." or ".." segment
+local function has_dot_segment(path)
+    if not core.string.find(path, ".") and not core.string.find(path, "%") then
+        return false
+    end
+    local decoded = percent_decode(path, false) .. "/"
+    return core.string.find(decoded, "/./") ~= nil
+           or core.string.find(decoded, "/../") ~= nil
+end
+
+
 local function common_phase(phase_name)
     local api_ctx = ngx.ctx.api_ctx
     if not api_ctx then
@@ -887,15 +898,15 @@ function _M.http_access_phase()
         end
     end
 
-    -- Nginx resolved dot segments or merged slashes in $uri, so forward the
-    -- path the route was matched on.
+    -- Nginx resolved dot segments in $uri, so forward the path the route was
+    -- matched on.
     if not (local_conf.apisix and local_conf.apisix.normalize_uri_like_servlet) then
         local path = api_ctx.var.request_uri
         local args_pos = core.string.find(path, "?")
         if args_pos then
             path = str_sub(path, 1, args_pos - 1)
         end
-        if path ~= uri and percent_decode(path, false) ~= uri then
+        if path ~= uri and has_dot_segment(path) then
             api_ctx.var.upstream_uri = core.utils.uri_safe_encode(uri)
                                        .. api_ctx.var.is_args .. (api_ctx.var.args or "")
         end
