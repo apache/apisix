@@ -31,6 +31,7 @@ local tonumber      = tonumber
 local tostring      = tostring
 local pcall         = pcall
 local ipairs        = ipairs
+local pairs         = pairs
 local select        = select
 
 
@@ -142,6 +143,7 @@ local CONNECTIONS_VERDICT_KEY = "process_metrics:connections_readable"
 local _M = {}
 
 local gauges
+local registry
 local dict
 local process_label
 local no_extra_labels = {}
@@ -153,6 +155,7 @@ local verdict_logged = false
 local timer_running = false
 local stopped = true
 local interval = DEFAULT_INTERVAL
+local retired_cleanups = 0
 
 
 local function get_process_label()
@@ -262,7 +265,8 @@ end
 
 -- extra_labels, when given, appends the same labels to every gauge here:
 -- {names = {...}, values = function() return {...} end}
-function _M.init(registry, extra_labels)
+function _M.init(prometheus_registry, extra_labels)
+    registry = prometheus_registry
     dict = registry.dict
     if extra_labels then
         extra_label_names = extra_labels.names
@@ -347,10 +351,44 @@ function _M.refresh()
 end
 
 
+-- A reload with fewer workers leaves the series of the workers that are gone
+-- in the shared dict, where nothing overwrites them any more. Expiring them is
+-- not an option: some nginx-lua-prometheus versions do not renew the key index
+-- of a series that is set again, so a live series would expire as well.
+local function remove_retired_workers()
+    local names = {}
+    for _, gauge in pairs(gauges) do
+        names[gauge.name] = true
+    end
+
+    local worker_count = ngx.worker.count()
+    local key_index = registry.key_index
+    for _, key in ipairs(key_index:list()) do
+        local name = key:match("^([^{]+){")
+        local id = name and names[name] and key:match('process="worker%-(%d+)"')
+        if id and tonumber(id) >= worker_count then
+            key_index:remove(key)
+            dict:delete(key)
+        end
+    end
+end
+
+
 local function tick(premature)
     if premature or stopped then
         timer_running = false
+        if stopped then
+            core.log.info("process metrics stopped")
+        end
         return
+    end
+
+    if retired_cleanups > 0 then
+        retired_cleanups = retired_cleanups - 1
+        local ok, err = pcall(remove_retired_workers)
+        if not ok then
+            core.log.error("failed to remove the metrics of retired workers: ", err)
+        end
     end
 
     _M.refresh()
@@ -371,6 +409,14 @@ function _M.start(report_interval)
 
     interval = report_interval or DEFAULT_INTERVAL
     stopped = false
+
+    -- one process is enough, and the privileged agent always exists. The second
+    -- pass, one interval later, catches a sample that an exiting worker was
+    -- still writing while the first one ran.
+    if subsystem == "http" and process.type() == "privileged agent" then
+        retired_cleanups = 2
+    end
+
     if timer_running then
         return
     end
@@ -380,7 +426,10 @@ function _M.start(report_interval)
     if not ok then
         timer_running = false
         core.log.error("failed to start process metrics: ", err)
+        return
     end
+
+    core.log.info("process metrics started, reporting every ", interval, "s")
 end
 
 
