@@ -164,10 +164,18 @@ local function get_process_label()
 end
 
 
+-- The CLI refuses to start without nginx_config, but a forced re-read of
+-- config.yaml at runtime (plugin reload) can still drop it: `nginx_config: ~`
+-- deletes the default table while merging.
+local function nginx_config()
+    return core.config.local_conf().nginx_config or {}
+end
+
+
 local function timers_max()
-    local nginx_config = core.config.local_conf().nginx_config or {}
-    return nginx_config.max_running_timers or DEFAULT_MAX_RUNNING_TIMERS,
-           nginx_config.max_pending_timers or DEFAULT_MAX_PENDING_TIMERS
+    local conf = nginx_config()
+    return conf.max_running_timers or DEFAULT_MAX_RUNNING_TIMERS,
+           conf.max_pending_timers or DEFAULT_MAX_PENDING_TIMERS
 end
 
 
@@ -195,7 +203,7 @@ local function check_cycle_layout()
         return false, "unexpected nginx cycle layout"
     end
 
-    local event = core.config.local_conf().nginx_config.event
+    local event = nginx_config().event
     local expected = event and tonumber(event.worker_connections)
     if connection_n ~= expected then
         return false, "worker connection slots read as " .. tostring(connection_n)
