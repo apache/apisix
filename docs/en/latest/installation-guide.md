@@ -115,6 +115,8 @@ See the [apisix-helm-chart repository](https://github.com/apache/apisix-helm-cha
 
 For a distribution supported by the APISIX RPM repository, add the repository and install the package:
 
+Starting with APISIX 3.14.0, RPM packages are built on UBI 9 instead of UBI 8. When installing a specific version from an RPM URL, confirm the repository path and package filename for that release.
+
 ```shell
 sudo dnf install -y dnf-plugins-core
 sudo dnf config-manager --add-repo \
