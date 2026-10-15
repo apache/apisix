@@ -43,6 +43,7 @@ add_block_preprocessor(sub {
             content_by_lua_block {
                 ngx.say("protected-handler")
                 ngx.say("route-marker=", ngx.var.http_x_route_marker or "")
+                ngx.say("request-uri=", ngx.var.request_uri)
             }
         }
 
@@ -50,6 +51,13 @@ add_block_preprocessor(sub {
             content_by_lua_block {
                 ngx.say("path-handler")
                 ngx.say("route-marker=", ngx.var.http_x_route_marker or "")
+                ngx.say("request-uri=", ngx.var.request_uri)
+            }
+        }
+
+        location /early-plugin {
+            content_by_lua_block {
+                ngx.say("observed-upstream-uri=", ngx.var.http_x_observed_upstream_uri or "")
                 ngx.say("request-uri=", ngx.var.request_uri)
             }
         }
@@ -66,6 +74,23 @@ __DATA__
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
+            local code, body = t("/apisix/admin/consumers",
+                ngx.HTTP_PUT,
+                {
+                    username = "jack",
+                    plugins = {
+                        ["key-auth"] = {
+                            key = "secret-key",
+                        },
+                    },
+                }
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
             local routes = {
                 {
                     id = "protected-exact-path",
@@ -73,7 +98,9 @@ __DATA__
                     priority = 100000,
                     uri = "/anything",
                     plugins = {
-                        ["key-auth"] = {},
+                        ["key-auth"] = {
+                            hide_credentials = true,
+                        },
                     },
                 },
                 {
@@ -93,6 +120,20 @@ __DATA__
                         },
                     },
                 },
+                {
+                    id = "early-plugin-test",
+                    host = "servlet-uri.test",
+                    priority = 100001,
+                    uri = "/early-plugin/*",
+                    plugins = {
+                        ["serverless-pre-function"] = {
+                            phase = "rewrite",
+                            functions = {
+                                "return function(conf, ctx) ngx.req.set_header('X-Observed-Upstream-Uri', ctx.var.upstream_uri or '') end",
+                            },
+                        },
+                    },
+                },
             }
 
             for _, route in ipairs(routes) do
@@ -101,7 +142,7 @@ __DATA__
                     type = "roundrobin",
                 }
 
-                local code, body = t("/apisix/admin/routes/" .. route.id,
+                code, body = t("/apisix/admin/routes/" .. route.id,
                     ngx.HTTP_PUT, route)
                 if code >= 300 then
                     ngx.status = code
@@ -143,7 +184,55 @@ qr/^path-handler\nroute-marker=[a-f]{6}\nrequest-uri=\/anything%3Fprobe;jsession
 
 
 
-=== TEST 4: delete routes
+=== TEST 4: query string is preserved when normalize_uri_like_servlet is on
+--- request
+GET /anything/sub;jsessionid=x?foo=1&bar=2
+--- more_headers
+Host: servlet-uri.test
+--- response_body_like eval
+qr/^path-handler\nroute-marker=[a-f]{6}\nrequest-uri=\/anything\/sub;jsessionid=x\?foo=1&bar=2\n$/
+--- no_error_log
+[error]
+
+
+
+=== TEST 5: query modifications (key-auth hide_credentials) are preserved during servlet normalization
+--- request
+GET /anything;jsessionid=x?apikey=secret-key&foo=1
+--- more_headers
+Host: servlet-uri.test
+--- response_body eval
+"path-handler\nroute-marker=\nrequest-uri=/anything;jsessionid=x?foo=1\n"
+--- no_error_log
+[error]
+
+
+
+=== TEST 6: when all query args are stripped by hide_credentials, no trailing question mark is sent upstream
+--- request
+GET /anything;jsessionid=x?apikey=secret-key
+--- more_headers
+Host: servlet-uri.test
+--- response_body eval
+"path-handler\nroute-marker=\nrequest-uri=/anything;jsessionid=x\n"
+--- no_error_log
+[error]
+
+
+
+=== TEST 7: early plugins (rewrite/access phase) observe servlet path parameters in upstream_uri
+--- request
+GET /early-plugin/test;jsessionid=x?foo=1
+--- more_headers
+Host: servlet-uri.test
+--- response_body eval
+"observed-upstream-uri=/early-plugin/test;jsessionid=x\nrequest-uri=/early-plugin/test;jsessionid=x?foo=1\n"
+--- no_error_log
+[error]
+
+
+
+=== TEST 8: delete routes and consumer
 --- config
     location /t {
         content_by_lua_block {
@@ -151,6 +240,7 @@ qr/^path-handler\nroute-marker=[a-f]{6}\nrequest-uri=\/anything%3Fprobe;jsession
             local route_ids = {
                 "protected-exact-path",
                 "public-wildcard-fallback",
+                "early-plugin-test",
             }
 
             for _, route_id in ipairs(route_ids) do
@@ -161,6 +251,14 @@ qr/^path-handler\nroute-marker=[a-f]{6}\nrequest-uri=\/anything%3Fprobe;jsession
                     ngx.say(body)
                     return
                 end
+            end
+
+            local code, body = t("/apisix/admin/consumers/jack",
+                ngx.HTTP_DELETE)
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
             end
 
             ngx.say("passed")
