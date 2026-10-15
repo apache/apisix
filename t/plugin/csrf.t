@@ -434,3 +434,46 @@ attempt to perform arithmetic
 --- response_body
 {"error_msg":"Failed to verify the csrf token signature"}
 
+
+
+
+=== TEST 19: non-table csrf token (JSON null)
+--- request
+POST /hello
+--- more_headers
+apisix-csrf-token: bnVsbA==
+Cookie: apisix-csrf-token=bnVsbA==
+--- error_code: 401
+--- error_log: decode token error
+--- no_error_log
+attempt to index
+--- response_body
+{"error_msg":"Failed to verify the csrf token signature"}
+
+
+
+=== TEST 20: csrf token with invalid random type
+--- request
+POST /hello
+--- more_headers
+apisix-csrf-token: eyJyYW5kb20iOnRydWUsImV4cGlyZXMiOjk5OTk5OTk5OTksInNpZ24iOiJhYmMifQ==
+Cookie: apisix-csrf-token=eyJyYW5kb20iOnRydWUsImV4cGlyZXMiOjk5OTk5OTk5OTksInNpZ24iOiJhYmMifQ==
+--- error_code: 401
+--- error_log: no random in token
+--- no_error_log
+attempt to concatenate
+--- response_body
+{"error_msg":"Failed to verify the csrf token signature"}
+
+
+
+=== TEST 21: csrf token with invalid sign type
+--- request
+POST /hello
+--- more_headers
+apisix-csrf-token: eyJyYW5kb20iOjAuMSwiZXhwaXJlcyI6OTk5OTk5OTk5OSwic2lnbiI6MTIzfQ==
+Cookie: apisix-csrf-token=eyJyYW5kb20iOjAuMSwiZXhwaXJlcyI6OTk5OTk5OTk5OSwic2lnbiI6MTIzfQ==
+--- error_code: 401
+--- error_log: Invalid signatures
+--- response_body
+{"error_msg":"Failed to verify the csrf token signature"}
