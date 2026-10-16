@@ -106,7 +106,7 @@ local function get(conf, key)
 
     core.log.info("main: ", main_key, " sub: ", sub_key)
 
-    local res, err = container_cache(main_key, conf, make_request_to_vault,
+    local res, err = container_cache(main_key, conf, conf.timeout or 5, make_request_to_vault,
                                      conf, "GET", main_key)
     if not res then
         return nil, "failed to retrtive data from vault kv engine: " .. err

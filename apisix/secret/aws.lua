@@ -131,7 +131,8 @@ function _M.get(conf, key)
     while true do
         core.log.info("main: ", main_key, sub_key and ", sub: " .. sub_key or "")
 
-        local res, err, not_found = container_cache(main_key, conf, make_request_to_aws,
+        -- 60s is the request timeout of lua-resty-aws
+        local res, err, not_found = container_cache(main_key, conf, 60, make_request_to_aws,
                                                     conf, main_key)
         if res then
             if not sub_key then

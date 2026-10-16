@@ -255,3 +255,50 @@ failed requests: 0
 rotated: true
 --- error_log
 successfully refresh stale obj for key
+
+
+
+=== TEST 5: callers sharing a container read are released when the read fails or its caller goes away
+--- config
+    location /t {
+        content_by_lua_block {
+            local cache = require("apisix.secret").new_container_cache()
+            local reads = 0
+            local function failing_read()
+                reads = reads + 1
+                ngx.sleep(0.2)
+                error("boom")
+            end
+            local function slow_read()
+                reads = reads + 1
+                ngx.sleep(0.2)
+                return "value" .. reads
+            end
+
+            local start = ngx.now()
+            local threads = {}
+            for i = 1, 3 do
+                threads[i] = ngx.thread.spawn(cache, "failing", "v", 5, failing_read)
+            end
+            for i = 1, 3 do
+                local _, val, err = ngx.thread.wait(threads[i])
+                ngx.say("failing read: ", val, " ", err:find("boom", 1, true) ~= nil)
+            end
+
+            -- the first caller is killed while the read is in flight
+            local first = ngx.thread.spawn(cache, "slow", "v", 5, slow_read)
+            local second = ngx.thread.spawn(cache, "slow", "v", 5, slow_read)
+            ngx.thread.kill(first)
+            local _, val = ngx.thread.wait(second)
+            ngx.say("after the first caller went away: ", val)
+
+            ngx.update_time()
+            ngx.say("reads: ", reads, ", waited less than a second: ", ngx.now() - start < 1)
+        }
+    }
+--- response_body
+failing read: nil true
+failing read: nil true
+failing read: nil true
+after the first caller went away: value2
+reads: 2, waited less than a second: true

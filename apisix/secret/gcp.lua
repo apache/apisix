@@ -183,7 +183,8 @@ function _M.get(conf, key)
 
     core.log.info("main: ", main_key, sub_key and ", sub: " .. sub_key or "")
 
-    local res, err = container_cache(main_key, conf, make_request_to_gcp, conf, main_key)
+    -- requests to gcp use the default cosocket timeout of 60s
+    local res, err = container_cache(main_key, conf, 60, make_request_to_gcp, conf, main_key)
     if not res then
         return nil, "failed to retrtive data from gcp secret manager: " .. err
     end

@@ -30,6 +30,8 @@ local upper     = string.upper
 local byte      = string.byte
 local type      = type
 local pcall     = pcall
+local tostring  = tostring
+local timer_at  = ngx.timer.at
 local pairs     = pairs
 local ipairs    = ipairs
 local sort      = table.sort
@@ -181,46 +183,59 @@ _M.fetch_by_uri = fetch_by_uri_secret
 -- two reads that a rotation can fall between. This cache keeps a container read
 -- for a moment and makes concurrent readers in the worker share the read in
 -- flight, so fields resolved together come from the same read.
+--
+-- The read runs in a timer rather than in the first caller, so a caller whose
+-- request is aborted (a client leaving mid-handshake) cannot strand the others.
 local CONTAINER_TTL = 1
-local INFLIGHT_WAIT = 10
 
+local function read_container(premature, lru, inflight, key, pending, read, ...)
+    local ok, val, err, extra = pcall(read, ...)
+    if not ok then
+        val, err, extra = nil, "failed to read secret container: " .. tostring(val), nil
+    end
+
+    pending.val, pending.err, pending.extra = val, err, extra
+    if inflight[key] == pending then
+        inflight[key] = nil
+    end
+    if val ~= nil and not premature then
+        lru:set(key, {val = val, ver = pending.ver}, CONTAINER_TTL)
+    end
+
+    local waiting = -pending.sema:count()
+    if waiting > 0 then
+        pending.sema:post(waiting)
+    end
+end
+
+-- `timeout` is the provider's own request timeout, in seconds, and bounds how
+-- long a caller waits for the shared read.
 function _M.new_container_cache()
     local lru = lru_new(64)
     local inflight = {}
 
-    return function (key, ver, read, ...)
+    return function (key, ver, timeout, read, ...)
         local hit = lru:get(key)
         if hit and hit.ver == ver then
             return hit.val
         end
 
         local pending = inflight[key]
-        if pending and pending.ver == ver then
-            if pending.sema:wait(INFLIGHT_WAIT) then
-                return pending.val, pending.err, pending.extra
+        if not pending or pending.ver ~= ver then
+            pending = {ver = ver, sema = semaphore.new()}
+            local ok, err = timer_at(0, read_container, lru, inflight, key, pending,
+                                     read, ...)
+            if not ok then
+                core.log.warn("failed to create timer to read secret container: ", err)
+                return read(...)
             end
-            -- the reader may have been aborted along with its request
-            if inflight[key] == pending then
-                inflight[key] = nil
-            end
+            inflight[key] = pending
         end
 
-        pending = {ver = ver, sema = semaphore.new()}
-        inflight[key] = pending
-        local val, err, extra = read(...)
-        pending.val, pending.err, pending.extra = val, err, extra
-        if inflight[key] == pending then
-            inflight[key] = nil
+        if not pending.sema:wait(timeout) then
+            return nil, "timed out waiting for the secret container read"
         end
-        if val ~= nil then
-            lru:set(key, {val = val, ver = ver}, CONTAINER_TTL)
-        end
-
-        local waiting = -pending.sema:count()
-        if waiting > 0 then
-            pending.sema:post(waiting)
-        end
-        return val, err, extra
+        return pending.val, pending.err, pending.extra
     end
 end
 
