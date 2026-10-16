@@ -1070,7 +1070,7 @@ function _M.grpc_access_phase()
         apisix_ngx_client.enable_mirror()
     end
 
-    if api_ctx.client_max_body_size and has_mod then
+    if api_ctx.client_max_body_size then
         local ok, err = apisix_ngx_client.set_client_max_body_size(
             api_ctx.client_max_body_size)
         if not ok then
