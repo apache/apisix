@@ -373,6 +373,11 @@ end
 -- from another version of the secret. Other references resolve as in
 -- fetch_secrets.
 function _M.fetch_ssl_secrets(ssl_conf)
+    -- the resolved conf is only read, so inline PEM objects need no copy
+    if not _M.has_secret_ref(ssl_conf) then
+        return ssl_conf
+    end
+
     local new_conf = core.table.deepcopy(ssl_conf)
     local seen, uris = {}, {}
     for _, field in ipairs(SSL_MATERIAL_FIELDS) do
