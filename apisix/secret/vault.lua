@@ -20,6 +20,7 @@
 
 local core       = require("apisix.core")
 local http       = require("resty.http")
+local secret     = require("apisix.secret")
 
 local norm_path = require("pl.path").normpath
 
@@ -47,6 +48,8 @@ local schema = {
 local _M = {
     schema = schema
 }
+
+local container_cache = secret.new_container_cache()
 
 local function make_request_to_vault(conf, method, key, data)
     local httpc = http.new()
@@ -103,7 +106,8 @@ local function get(conf, key)
 
     core.log.info("main: ", main_key, " sub: ", sub_key)
 
-    local res, err = make_request_to_vault(conf, "GET", main_key)
+    local res, err = container_cache(main_key, conf, make_request_to_vault,
+                                     conf, "GET", main_key)
     if not res then
         return nil, "failed to retrtive data from vault kv engine: " .. err
     end

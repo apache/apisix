@@ -19,6 +19,8 @@ local require   = require
 local core      = require("apisix.core")
 local string    = require("apisix.core.string")
 local tracer    = require("apisix.tracer")
+local lru_new   = require("resty.lrucache").new
+local semaphore = require("ngx.semaphore")
 
 local local_conf = require("apisix.core.config_local").local_conf()
 
@@ -29,6 +31,9 @@ local byte      = string.byte
 local type      = type
 local pcall     = pcall
 local pairs     = pairs
+local ipairs    = ipairs
+local sort      = table.sort
+local concat    = table.concat
 local ngx       = ngx
 
 local _M = {}
@@ -171,6 +176,55 @@ end
 _M.fetch_by_uri = fetch_by_uri_secret
 
 
+-- A provider resolves one field per call but reads the whole container (a
+-- vault path, a JSON secret, ...) to do it, so a certificate and its key are
+-- two reads that a rotation can fall between. This cache keeps a container read
+-- for a moment and makes concurrent readers in the worker share the read in
+-- flight, so fields resolved together come from the same read.
+local CONTAINER_TTL = 1
+local INFLIGHT_WAIT = 10
+
+function _M.new_container_cache()
+    local lru = lru_new(64)
+    local inflight = {}
+
+    return function (key, ver, read, ...)
+        local hit = lru:get(key)
+        if hit and hit.ver == ver then
+            return hit.val
+        end
+
+        local pending = inflight[key]
+        if pending and pending.ver == ver then
+            if pending.sema:wait(INFLIGHT_WAIT) then
+                return pending.val, pending.err, pending.extra
+            end
+            -- the reader may have been aborted along with its request
+            if inflight[key] == pending then
+                inflight[key] = nil
+            end
+        end
+
+        pending = {ver = ver, sema = semaphore.new()}
+        inflight[key] = pending
+        local val, err, extra = read(...)
+        pending.val, pending.err, pending.extra = val, err, extra
+        if inflight[key] == pending then
+            inflight[key] = nil
+        end
+        if val ~= nil then
+            lru:set(key, {val = val, ver = ver}, CONTAINER_TTL)
+        end
+
+        local waiting = -pending.sema:count()
+        if waiting > 0 then
+            pending.sema:post(waiting)
+        end
+        return val, err, extra
+    end
+end
+
+
 local function new_lrucache()
     local ttl = core.table.try_read_attr(local_conf, "apisix", "lru", "secret", "ttl")
     if not ttl then
@@ -206,6 +260,7 @@ local function new_lrucache()
 end
 
 local secrets_cache = new_lrucache()
+local ssl_material_cache = new_lrucache()
 
 
 
@@ -259,6 +314,71 @@ function _M.fetch_secrets(refs, use_cache)
 
     local new_refs = core.table.deepcopy(refs)
     return retrieve_refs(new_refs, use_cache)
+end
+
+
+local SSL_MATERIAL_FIELDS = {"cert", "key", "certs", "keys"}
+
+local function collect_refs(v, seen, uris)
+    if type(v) == "table" then
+        for _, item in ipairs(v) do
+            collect_refs(item, seen, uris)
+        end
+    elseif _M.is_secret_ref(v) and not seen[v] then
+        seen[v] = true
+        uris[#uris + 1] = v
+    end
+end
+
+local function fetch_all(uris)
+    local vals = {}
+    for _, uri in ipairs(uris) do
+        local val, err = fetch(uri, false)
+        if val == nil then
+            return nil, "failed to resolve secret reference: " .. uri
+                        .. ", err: " .. (err or "no value")
+        end
+        vals[uri] = val
+    end
+    return vals
+end
+
+local function substitute(v, vals)
+    if type(v) == "table" then
+        for i, item in ipairs(v) do
+            v[i] = substitute(item, vals)
+        end
+        return v
+    end
+    return vals[v] or v
+end
+
+-- Resolves an ssl object. Its certificates and keys are fetched, cached and
+-- refreshed as one unit, so a handshake never pairs a certificate with a key
+-- from another version of the secret. Other references resolve as in
+-- fetch_secrets.
+function _M.fetch_ssl_secrets(ssl_conf)
+    local new_conf = core.table.deepcopy(ssl_conf)
+    local seen, uris = {}, {}
+    for _, field in ipairs(SSL_MATERIAL_FIELDS) do
+        collect_refs(new_conf[field], seen, uris)
+    end
+
+    if #uris > 0 then
+        -- the same references share one entry whichever ssl object holds them
+        sort(uris)
+        local version = secrets and secrets.conf_version or ""
+        local vals, err = ssl_material_cache(concat(uris, " "), version, fetch_all, uris)
+        if not vals then
+            return nil, err
+        end
+
+        for _, field in ipairs(SSL_MATERIAL_FIELDS) do
+            new_conf[field] = substitute(new_conf[field], vals)
+        end
+    end
+
+    return retrieve_refs(new_conf, true)
 end
 
 
