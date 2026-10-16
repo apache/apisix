@@ -45,6 +45,7 @@ local get_protos = require("apisix.plugins.grpc-transcode.proto").protos
 local service_fetch = require("apisix.http.service").get
 local latency_details = require("apisix.utils.log-util").latency_details_in_ms
 local xrpc = require("apisix.stream.xrpc")
+local process_metrics = require("apisix.plugins.prometheus.process_metrics")
 local unpack = unpack
 local next = next
 local str_sub = string.sub
@@ -500,12 +501,22 @@ local function collect_stream_zone_metrics()
 end
 
 
+local function get_refresh_interval()
+    local attr = plugin.plugin_attr("prometheus")
+    if attr and attr.refresh_interval then
+        return attr.refresh_interval
+    end
+    return DEFAULT_REFRESH_INTERVAL
+end
+
+
 function _M.http_init(prometheus_enabled_in_stream)
     -- todo: support hot reload, we may need to update the lua-prometheus
     -- library
     if ngx.get_phase() ~= "init" and ngx.get_phase() ~= "init_worker"  then
         if prometheus_bkp then
             prometheus = prometheus_bkp
+            process_metrics.start(get_refresh_interval())
         end
         return
     end
@@ -695,6 +706,8 @@ function _M.http_init(prometheus_enabled_in_stream)
             ai_cache_embedding_latency_buckets,
             ai_cache_embedding_latency_exptime)
 
+    process_metrics.init(prometheus)
+
     if prometheus_enabled_in_stream then
         init_stream_metrics()
     end
@@ -703,6 +716,7 @@ end
 
 function _M.stream_init()
     if ngx.get_phase() ~= "init" and ngx.get_phase() ~= "init_worker"  then
+        process_metrics.start(get_refresh_interval())
         return
     end
 
@@ -722,6 +736,9 @@ function _M.stream_init()
     prometheus = base_prometheus.init("prometheus-metrics", metric_prefix)
 
     init_stream_metrics()
+
+    process_metrics.init(prometheus)
+    process_metrics.start(get_refresh_interval())
 end
 
 
@@ -1186,6 +1203,9 @@ end
 
 
 local function collect(yieldable)
+    -- the other processes report their own values on a timer
+    process_metrics.refresh()
+
     -- collect ngx.shared.DICT status
     shared_dict_status()
 
@@ -1291,14 +1311,12 @@ end
 
 
 local function init_exporter_timer()
+    local refresh_interval = get_refresh_interval()
+
+    process_metrics.start(refresh_interval)
+
     if process.type() ~= "privileged agent" then
         return
-    end
-
-    local refresh_interval = DEFAULT_REFRESH_INTERVAL
-    local attr = plugin.plugin_attr("prometheus")
-    if attr and attr.refresh_interval then
-        refresh_interval = attr.refresh_interval
     end
 
     local cache_exptime = refresh_interval * 2
@@ -1457,6 +1475,8 @@ end
 
 
 function _M.destroy()
+    process_metrics.stop()
+
     if prometheus ~= nil then
         prometheus_bkp = prometheus
         prometheus = nil
