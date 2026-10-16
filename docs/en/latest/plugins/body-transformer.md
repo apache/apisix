@@ -69,13 +69,13 @@ The transformation template uses [lua-resty-template](https://github.com/bungle/
 
 You can also use auxiliary functions `_escape_json()` and `_escape_xml()` to escape special characters such as double quotes, `_body` to access request body, and `_ctx` to access context variables.
 
-In all cases, you should ensure that the transformation template is a valid JSON string.
+When you embed a template directly in an Admin API JSON document, encode it as a valid JSON string. For complex templates, base64-encode the content and set `template_is_base64` to `true`.
 
-### Transform between JSON and XML SOAP
+### Transform Between JSON and SOAP XML
 
-The following example transforms a client request from JSON to SOAP XML and transforms the upstream SOAP XML response back to JSON. It assumes APISIX is running in the `apisix-quickstart-net` Docker network created by the quickstart script.
+The following example accepts JSON from a client, sends SOAP XML upstream, and returns the SOAP response as JSON. It assumes APISIX is running in the `apisix-quickstart-net` Docker network created by the quickstart script.
 
-Clone the Spring sample service and check out the revision validated by this example:
+Clone the Spring sample service and check out the revision tested in this example:
 
 ```shell
 git clone "https://github.com/spring-guides/gs-producing-web-service.git"
@@ -214,16 +214,6 @@ You should receive a response similar to the following:
   "capital": "Madrid",
   "name": "Spain"
 }
-```
-
-Remove the route and sample service when you finish:
-
-```shell
-curl "http://127.0.0.1:9180/apisix/admin/routes/body-transformer-route" -X DELETE \
-  -H "X-API-KEY: ${admin_key}"
-
-docker rm -f quickstart-soap-service
-docker volume rm soap-maven-cache
 ```
 
 ### Modify Request Body
