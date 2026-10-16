@@ -1219,7 +1219,7 @@ local function serialize_claim(value)
     end
 
     if value_type == "table" then
-        -- Kong sends an empty array as {} too
+        -- an empty array goes out as {} as well
         if next(value) == nil then
             return ngx_encode_base64("{}")
         end
