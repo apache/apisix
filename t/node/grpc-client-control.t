@@ -65,10 +65,8 @@ client intended to send too large chunked body
 
 
 
-=== TEST: client-control zero keeps gRPC request bodies unlimited after internal redirect
+=== TEST: client-control zero lets a gRPC body exceed the 30 MiB Nginx limit
 --- http2
---- config
-    client_max_body_size 1m;
 --- apisix_yaml
 routes:
   - id: grpc-no-body-limit
@@ -83,22 +81,21 @@ routes:
       type: roundrobin
 #END
 --- exec
-perl -e 'print "{\"name\":\"", "x" x (2 * 1024 * 1024), "\"}"' | grpcurl -import-path ./t/grpc_server_example/proto -proto helloworld.proto -plaintext -d @ 127.0.0.1:1984 helloworld.Greeter.SayHello >/dev/null 2>&1 && echo passed
---- response_body: passed
+perl -e 'print "{\"name\":\"", "x" x (31 * 1024 * 1024), "\"}"' | grpcurl -import-path ./t/grpc_server_example/proto -proto helloworld.proto -plaintext -d @ 127.0.0.1:1984 helloworld.Greeter.SayHello 2>&1
+--- response_body_like: ResourceExhausted
+--- timeout: 60
 
 
 
-=== TEST: client-control raises the gRPC body limit above the global limit
+=== TEST: client-control raises the gRPC body limit above the 30 MiB Nginx limit
 --- http2
---- config
-    client_max_body_size 1m;
 --- apisix_yaml
 routes:
   - id: grpc-larger-body-limit
     uri: /helloworld.Greeter/SayHello
     plugins:
       client-control:
-        max_body_size: 5242880
+        max_body_size: 52428800
     upstream:
       scheme: grpc
       nodes:
@@ -106,5 +103,6 @@ routes:
       type: roundrobin
 #END
 --- exec
-perl -e 'print "{\"name\":\"", "x" x (2 * 1024 * 1024), "\"}"' | grpcurl -import-path ./t/grpc_server_example/proto -proto helloworld.proto -plaintext -d @ 127.0.0.1:1984 helloworld.Greeter.SayHello >/dev/null 2>&1 && echo passed
---- response_body: passed
+perl -e 'print "{\"name\":\"", "x" x (31 * 1024 * 1024), "\"}"' | grpcurl -import-path ./t/grpc_server_example/proto -proto helloworld.proto -plaintext -d @ 127.0.0.1:1984 helloworld.Greeter.SayHello 2>&1
+--- response_body_like: ResourceExhausted
+--- timeout: 60
