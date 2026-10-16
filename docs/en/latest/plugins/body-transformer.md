@@ -87,8 +87,10 @@ Run the sample in the same network as APISIX:
 
 ```shell
 docker volume create soap-maven-cache
+docker rm -f quickstart-soap-service 2>/dev/null || true
 
 docker run -d \
+  --rm \
   --name quickstart-soap-service \
   --network apisix-quickstart-net \
   -v "$PWD:/workspace" \
