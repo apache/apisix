@@ -139,6 +139,8 @@ X-Age: 30
 X-Big: 1700000000123
 X-Client-Id: client-a
 X-Dotted: dotted
+X-Empty-Array: e30=
+X-Empty-Object: e30=
 X-Org-Id: 42
 X-Org-Tags: eyJ0aWVyIjoiZ29sZCJ9
 X-Profile-Id: p-1
@@ -146,7 +148,6 @@ X-Ratio: 0.5
 X-Roles: W3sibmFtZSI6ImEifV0=
 X-Scope: read write
 X-Scp: WyJyZWFkIiwid3JpdGUiXQ==
-X-Verified: false
 
 
 

@@ -26,7 +26,6 @@ local dump_jwk          = require("resty.openssl.auxiliary.jwk").dump_jwk
 local string            = string
 local ngx               = ngx
 local ipairs            = ipairs
-local next              = next
 local type              = type
 local tostring          = tostring
 local pcall             = pcall
@@ -1198,8 +1197,8 @@ local function lookup_claim(claims, path)
 end
 
 
--- Strings as is, numbers and booleans as text, arrays and objects as
--- base64 of their JSON. Missing, null or empty yields nil.
+-- Strings as is, numbers and true as text, tables as base64 of their
+-- JSON. Missing, null and false yield nil, like Kong.
 local function serialize_claim(value)
     local value_type = type(value)
     if value_type == "string" then
@@ -1214,15 +1213,15 @@ local function serialize_claim(value)
         return tostring(value)
     end
 
-    if value_type == "boolean" then
-        return tostring(value)
+    if value == true then
+        return "true"
     end
 
-    if value_type ~= "table" or next(value) == nil then
-        return nil
+    if value_type == "table" then
+        return ngx_encode_base64(core.json.encode(value))
     end
 
-    return ngx_encode_base64(core.json.encode(value))
+    return nil
 end
 
 
