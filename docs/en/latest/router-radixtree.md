@@ -243,16 +243,23 @@ simply does not apply to such requests.
 #### 6. Path forwarded to the upstream
 
 Routes are matched on the normalized `$uri`: Nginx percent-decodes the path,
-resolves dot segments (including encoded ones such as `..%2F` and `%2e%2e`) and
-merges consecutive slashes. When the decoded request path has no `.` or `..`
-segment, APISIX forwards the original request line to the upstream, consecutive
-slashes included. When it has one, APISIX forwards the matched path re-encoded,
-followed by the original query string. For example, a request to
-`/admin/..%2Fapi/x` matches a route for `/api/*` and the upstream receives
-`/api/x`.
+resolves dot segments (including encoded ones such as `..%2F` and `%2e%2e`),
+cuts the path at `#` and merges consecutive slashes. When the request path
+differs from `$uri` only by percent-encoding or consecutive slashes, APISIX
+forwards the original request line to the upstream. Otherwise it forwards the
+matched path, escaped by Nginx, with the current query string. For example, a
+request to `/admin/..%2Fapi/x` matches a route for `/api/*` and the upstream
+receives `/api/x`.
 
-Plugins that set the upstream URI, such as `proxy-rewrite`, still take
-precedence.
+In that case encoded delimiters arrive decoded: `/api/./a%2Fb%3Bc` reaches the
+upstream as `/api/a/b;c`, while `/api/a%2Fb` is forwarded as is.
+
+Changes that plugins make to the path or the query string after matching still
+apply, and plugins that set the upstream URI, such as `proxy-rewrite`, still
+take precedence.
+
+This section does not apply when `normalize_uri_like_servlet` is enabled, which
+sets the upstream path itself.
 
 ### How to filter route by Nginx built-in variable?
 
