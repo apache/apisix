@@ -106,6 +106,13 @@ helm install apisix apisix/apisix --create-namespace  --namespace apisix
 
 ### 通过 RPM 仓库安装
 
+在 Rocky Linux 9 上安装前，先启用 CRB 仓库。APISIX RPM 依赖的 `libyaml-devel` 由该仓库提供：
+
+```shell
+sudo dnf install -y dnf-plugins-core
+sudo dnf config-manager --set-enabled crb
+```
+
 ```shell
 sudo yum-config-manager --add-repo https://repos.apiseven.com/packages/redhat/apache-apisix.repo
 ```

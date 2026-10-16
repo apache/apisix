@@ -119,6 +119,15 @@ The repository URL uses the system's major release version. Starting with APISIX
 
 ```shell
 sudo dnf install -y dnf-plugins-core
+```
+
+On Rocky Linux 9, enable the CRB repository before installing APISIX. It provides the `libyaml-devel` dependency required by the RPM:
+
+```shell
+sudo dnf config-manager --set-enabled crb
+```
+
+```shell
 sudo dnf config-manager --add-repo \
   https://repos.apiseven.com/packages/redhat/apache-apisix.repo
 sudo dnf install -y apisix
