@@ -140,12 +140,12 @@ X-Big: 1700000000123
 X-Client-Id: client-a
 X-Dotted: dotted
 X-Org-Id: 42
-X-Org-Tags: {"tier":"gold"}
+X-Org-Tags: eyJ0aWVyIjoiZ29sZCJ9
 X-Profile-Id: p-1
 X-Ratio: 0.5
-X-Roles: [{"name":"a"}]
+X-Roles: W3sibmFtZSI6ImEifV0=
 X-Scope: read write
-X-Scp: read write
+X-Scp: WyJyZWFkIiwid3JpdGUiXQ==
 X-Verified: false
 
 
@@ -429,7 +429,7 @@ passed
 anonymous: 200
 authenticated: 200
   x-claim-client-id: client-a
-  x-claim-client-scopes: read write
+  x-claim-client-scopes: WyJyZWFkIiwid3JpdGUiXQ==
 
 
 

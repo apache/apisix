@@ -78,7 +78,7 @@ The `openid-connect` Plugin supports the integration with [OpenID Connect (OIDC)
 | set_refresh_token_header | boolean | False | false | | If true and if the refresh token is available, set the value in the `X-Refresh-Token` request header. |
 | upstream_headers | array[object] | False | | | Claims to forward to the Upstream as request headers. The Plugin clears every declared header first, then sets it only from a verified claim, so a client cannot supply its own value, including on requests let through by `unauth_action` set to `pass`. With `bearer_only`, `public_key`, `use_jwks`, or introspection, claims come from the verified access token payload or the introspection response. In the authorization code flow, claims come from the ID token, then from the user info for claims the ID token does not contain. |
 | upstream_headers.header | string | True | | | Name of the Upstream request header. |
-| upstream_headers.path | array[string] | True | | | Keys leading to the claim, one key per nesting level, such as `["org", "id"]`. A key is matched literally, so a claim name containing `://`, `/`, or `.` is a single key. Strings are forwarded as is, numbers and booleans as text, arrays of strings, numbers, or booleans joined with a space, and other arrays and objects as JSON. If the claim is missing, `null`, or empty, the header is not set. |
+| upstream_headers.path | array[string] | True | | | Keys leading to the claim, one key per nesting level, such as `["org", "id"]`. A key is matched literally, so a claim name containing `://`, `/`, or `.` is a single key. Strings are forwarded as is, numbers and booleans as text, and arrays and objects as base64-encoded JSON. If the claim is missing, `null`, or empty, the header is not set. |
 | session | object | False | | | Session configuration used when `bearer_only` is `false` and the Plugin uses Authorization Code flow. |
 | session.secret | string | True | | 16 or more characters | Key used for session encryption and HMAC operation when `bearer_only` is `false`. |
 | session.cookie_name | string | False | | | Session cookie name. Forwarded to [lua-resty-session](https://github.com/bungle/lua-resty-session#configuration) 4.x as `cookie_name`. |
@@ -488,8 +488,10 @@ For a token with the payload `{"https://example.com/claims/profile/id": "profile
 ```text
 X-Profile-Id: profile-1
 X-Org-Id: 42
-X-Client-Scopes: read write
+X-Client-Scopes: WyJyZWFkIiwid3JpdGUiXQ==
 ```
+
+The `scope` array is forwarded as base64-encoded JSON, which decodes to `["read","write"]`.
 
 If a claim is not in the token, the Upstream does not receive the header, even when the client sent one.
 

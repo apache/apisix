@@ -23,7 +23,6 @@ local jwt               = require("resty.jwt")
 local jsonschema        = require('jsonschema')
 local pkey              = require("resty.openssl.pkey")
 local dump_jwk          = require("resty.openssl.auxiliary.jwk").dump_jwk
-local isarray           = require("table.isarray")
 local string            = string
 local ngx               = ngx
 local ipairs            = ipairs
@@ -1199,8 +1198,8 @@ local function lookup_claim(claims, path)
 end
 
 
--- Strings as is, numbers and booleans as text, arrays of scalars joined
--- by a space, anything else as JSON. Missing, null or empty yields nil.
+-- Strings as is, numbers and booleans as text, arrays and objects as
+-- base64 of their JSON. Missing, null or empty yields nil.
 local function serialize_claim(value)
     local value_type = type(value)
     if value_type == "string" then
@@ -1223,19 +1222,7 @@ local function serialize_claim(value)
         return nil
     end
 
-    if isarray(value) then
-        local items = core.table.new(#value, 0)
-        for i, item in ipairs(value) do
-            local item_type = type(item)
-            if item_type ~= "string" and item_type ~= "number" and item_type ~= "boolean" then
-                return core.json.encode(value)
-            end
-            items[i] = serialize_claim(item)
-        end
-        return concat(items, " ")
-    end
-
-    return core.json.encode(value)
+    return ngx_encode_base64(core.json.encode(value))
 end
 
 
