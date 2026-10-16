@@ -883,7 +883,11 @@ function _M.http_access_phase()
             api_ctx.var.uri = new_uri
             -- Forward the original path so servlet upstreams can consume params
             -- after ';'. URI-encode it before proxying to keep delimiters as path data.
-            api_ctx.var.upstream_uri = core.utils.uri_safe_encode(uri)
+            -- We set api_ctx.var.upstream_uri early so early plugins (like ext-plugin,
+            -- graphql-limit-count) observe the servlet path parameters.
+            local servlet_uri = core.utils.uri_safe_encode(uri)
+            api_ctx.var.upstream_uri = servlet_uri
+            api_ctx.servlet_upstream_uri = servlet_uri
         end
     end
 
@@ -1037,6 +1041,15 @@ function _M.http_access_phase()
         plugin.run_plugin("access", plugins, api_ctx)
     end
     span:finish(ngx_ctx)
+
+    if api_ctx.servlet_upstream_uri then
+        if api_ctx.var.upstream_uri == api_ctx.servlet_upstream_uri or
+           not api_ctx.var.upstream_uri or api_ctx.var.upstream_uri == "" then
+            api_ctx.var.upstream_uri = api_ctx.servlet_upstream_uri
+                                       .. (api_ctx.var.is_args or "")
+                                       .. (api_ctx.var.args or "")
+        end
+    end
 
     _M.handle_upstream(api_ctx, route, enable_websocket)
 end
