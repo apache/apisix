@@ -1199,7 +1199,7 @@ end
 
 
 -- Strings as is, numbers and true as text, tables as base64 of their
--- JSON. Missing, null and false yield nil, like Kong.
+-- JSON. Missing, null and false yield nil.
 local function serialize_claim(value)
     local value_type = type(value)
     if value_type == "string" then
