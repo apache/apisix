@@ -26,6 +26,7 @@ local dump_jwk          = require("resty.openssl.auxiliary.jwk").dump_jwk
 local string            = string
 local ngx               = ngx
 local ipairs            = ipairs
+local next              = next
 local type              = type
 local tostring          = tostring
 local pcall             = pcall
@@ -1218,6 +1219,10 @@ local function serialize_claim(value)
     end
 
     if value_type == "table" then
+        -- Kong sends an empty array as {} too
+        if next(value) == nil then
+            return ngx_encode_base64("{}")
+        end
         return ngx_encode_base64(core.json.encode(value))
     end
 
