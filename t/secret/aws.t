@@ -446,3 +446,4 @@ $secret://aws/mysecret/apisix/full/path/field
 failed to decode result, secret: apisix/full/path, field: field
 --- no_error_log
 full-value
+--- timeout: 10
