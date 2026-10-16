@@ -118,17 +118,19 @@ sudo yum install apisix
 
 :::tip
 
-你也可以安装指定版本的 APISIX。以下以 APISIX 3.19.0 为例：
+如需安装指定版本，先查询当前系统对应的 RPM 仓库中可用的 APISIX 版本：
 
 ```shell
-sudo yum install apisix-3.19.0
+sudo yum --showduplicates list apisix
 ```
+
+然后使用 `sudo yum install apisix-<版本号>` 安装查询到的版本。
 
 :::
 
 ### 通过 RPM 包离线安装：
 
-从 APISIX 3.14.0 起，RPM 包的构建基础由 UBI 8 升级为 UBI 9。安装其他版本时，请在 RPM 仓库中确认对应的目录和文件名。
+从 APISIX 3.14.0 起，RPM 包的构建基础由 UBI 8 升级为 UBI 9。以下以 EL9 x86_64 上的 APISIX 3.19.0 为例。安装其他版本时，请在对应系统的 RPM 仓库中确认目录和文件名。
 
 将 APISIX 离线 RPM 包下载到 `apisix` 文件夹：
 
