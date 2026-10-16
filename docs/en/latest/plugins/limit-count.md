@@ -1498,6 +1498,8 @@ For Redis-based policies (`redis`, `redis-cluster`, and `redis-sentinel`), APISI
 
 Set `sync_interval` (in seconds) to synchronize in batches instead: between intervals the counter is served from local memory and reconciled with Redis once per interval. This reduces Redis round trips and tail latency, at the cost of the global count lagging by up to one interval's local delta. Set `sync_interval` to `-1` (the default behavior) to synchronize on every request.
 
+If the cached Redis quota expires or is missing, APISIX synchronizes pending local counts before evaluating the current request. The refreshed quota already includes those counts, so each accepted request is counted once.
+
 Create a Route with the following configurations. Adjust the Redis connection settings accordingly:
 
 ```shell
