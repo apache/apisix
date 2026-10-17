@@ -629,3 +629,50 @@ GET /t
 GET /t
 --- error_log
 "body":"opentracing\n"
+
+
+
+=== TEST 18: json encode failure in batch processor callback returns error gracefully
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local plugin = require("apisix.plugins.tcp-logger")
+            local orig_encode = core.json.encode
+            core.json.encode = function()
+                return nil, "mocked encoding error"
+            end
+
+            local conf = {
+                host = "127.0.0.1",
+                port = 43000,
+                batch_max_size = 1,
+            }
+
+            local ctx = {
+                var = {
+                    host = "127.0.0.1",
+                    remote_addr = "127.0.0.1",
+                    uri = "/t",
+                    request_uri = "/t",
+                    scheme = "http",
+                    request_method = "GET",
+                    status = 200,
+                }
+            }
+
+            plugin.log(conf, ctx)
+            core.json.encode = orig_encode
+            ngx.say("done")
+        }
+    }
+--- request
+GET /t
+--- response_body
+done
+--- wait: 0.5
+--- error_log
+error occurred while encoding the data: mocked encoding error
+--- no_error_log
+bad argument #1 to 'send'
+
