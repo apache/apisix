@@ -1646,6 +1646,11 @@ function _M.test_params_in_overridden_endpoint()
     ngx.say("passed")
 end
 
+function _M.error_json_no_text()
+    ngx.status = 403
+    ngx.say([[{"message":"Forbidden: missing permissions"}]])
+end
+
 
 -- Please add your fake upstream above
 function _M.go()
