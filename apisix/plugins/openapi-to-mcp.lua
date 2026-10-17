@@ -103,6 +103,13 @@ end
 
 
 function _M.access(conf, ctx)
+    -- The coordination signal for the MCP plugins that run after this one.
+    -- A plugin such as mcp-tools-acl (priority 539) only has a JSON-RPC
+    -- conversation to police when this plugin is on the route, and it has no
+    -- other way to tell: the request body alone looks the same on a route that
+    -- proxies plain JSON.
+    ctx.openapi_to_mcp_active = true
+
     if conf.transport == "streamable_http" then
         local base_url, headers = resolve_conf(conf, ctx)
 
