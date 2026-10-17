@@ -56,6 +56,36 @@ make stop
 
 echo "passed: admin https enabled"
 
+# check admin_listen supports an array of addresses (IPv4 + IPv6 dual-stack)
+
+git checkout conf/config.yaml
+
+echo '
+apisix:
+  enable_admin: true
+deployment:
+  admin:
+    admin_listen:
+      - ip: 0.0.0.0
+        port: 9180
+      - ip: "[::]"
+        port: 9180
+' > conf/config.yaml
+
+make init
+
+if ! grep "listen 0.0.0.0:9180;" conf/nginx.conf > /dev/null; then
+    echo "failed: admin_listen array should generate the IPv4 listen directive"
+    exit 1
+fi
+
+if ! grep "listen \[::\]:9180;" conf/nginx.conf > /dev/null; then
+    echo "failed: admin_listen array should generate the IPv6 listen directive"
+    exit 1
+fi
+
+echo "passed: admin_listen supports IPv4 + IPv6 dual-stack"
+
 echo '
 apisix:
   enable_admin: true
