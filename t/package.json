@@ -11,7 +11,7 @@
     "@types/google-protobuf": "^3.15.12",
     "@types/node": "22.14.1",
     "@types/ws": "^8.18.1",
-    "axios": "^1.16.0",
+    "axios": "^1.20.0",
     "docker-compose": "^1.2.0",
     "google-protobuf": "^3.21.4",
     "graphql": "^16.11.0",
