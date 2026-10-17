@@ -283,6 +283,9 @@ function _M.build_request(self, conf, body, opts)
         -- Passed through as given: a string goes out verbatim (the client's own
         -- bytes), a table is encoded by the transport.
         body = body,
+        -- Providers that route through a redirect declare it, so the transport
+        -- follows the hop instead of handing the 3xx back downstream.
+        follow_redirects = self.follow_redirects,
     }
 
     -- AWS SigV4 signing (must be last — signs the finalized body)
