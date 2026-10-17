@@ -37,6 +37,12 @@ add_block_preprocessor(sub {
                 local data = ngx.req.get_body_data()
                 local headers = ngx.req.get_headers()
                 ngx.log(ngx.WARN, "tencent-cloud-cls body: ", data)
+                if data and #data >= 4 then
+                    -- the first 4 bytes of the body, used to check the payload format
+                    ngx.log(ngx.WARN, "tencent-cloud-cls body head: ",
+                            string.format("%02x%02x%02x%02x", data:byte(1),
+                                          data:byte(2), data:byte(3), data:byte(4)))
+                end
                 for k, v in pairs(headers) do
                     ngx.log(ngx.WARN, "tencent-cloud-cls headers: " .. k .. ":" .. v)
                 end
@@ -768,4 +774,102 @@ GET /opentracing
 opentracing
 --- error_log
 Batch Processor[tencent-cloud-cls] successfully processed the entries
+--- wait: 0.5
+
+
+
+=== TEST 23: schema check, unsupported compress type
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.tencent-cloud-cls")
+            local ok, err = plugin.check_schema({
+                cls_host = "ap-guangzhou.cls.tencentyun.com",
+                cls_topic = "143b5d70-139b-4aec-b54e-bb97756916de",
+                secret_id = "secret_id",
+                secret_key = "secret_key",
+                compress_type = "lz4",
+            })
+            if not ok then
+                ngx.say(err)
+            end
+
+            ngx.say("done")
+        }
+    }
+--- response_body
+property "compress_type" validation failed: matches none of the enum values
+done
+
+
+
+=== TEST 24: add plugin with zstd compress
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "tencent-cloud-cls": {
+                                "scheme": "http",
+                                "cls_host": "127.0.0.1:10420",
+                                "cls_topic": "143b5d70-139b-4aec-b54e-bb97756916de",
+                                "secret_id": "secret_id",
+                                "secret_key": "secret_key",
+                                "compress_type": "zstd",
+                                "batch_max_size": 1,
+                                "max_retry_count": 1,
+                                "retry_delay": 2,
+                                "buffer_duration": 2,
+                                "inactive_timeout": 2
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/opentracing"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 25: upload log with zstd compress
+--- request
+GET /opentracing
+--- response_body
+opentracing
+--- error_log eval
+qr/tencent-cloud-cls body head: 28b52ffd[\s\S]*tencent-cloud-cls headers: x-cls-compress-type:zstd/
+--- wait: 0.5
+--- skip_eval
+3: system("ldconfig -p 2>/dev/null | grep -q libzstd")
+
+
+
+=== TEST 26: fall back to uncompressed upload when compress fails
+--- extra_init_by_lua
+    local zstd = require("apisix.utils.zstd")
+    zstd.compress = function(data)
+        return nil, "mock compress error"
+    end
+--- request
+GET /opentracing
+--- response_body
+opentracing
+--- error_log eval
+qr/failed to compress the log data with zstd, upload it uncompressed, err: mock compress error[\s\S]*Batch Processor\[tencent-cloud-cls\] successfully processed the entries/
 --- wait: 0.5

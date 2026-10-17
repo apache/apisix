@@ -21,6 +21,7 @@ local http = require("resty.http")
 local socket = require("socket")
 local str_util = require("resty.string")
 local core = require("apisix.core")
+local zstd = require("apisix.utils.zstd")
 local core_gethostname = require("apisix.core.utils").gethostname
 local json = core.json
 local json_encode = json.encode
@@ -48,6 +49,10 @@ local MAX_SINGLE_VALUE_SIZE = 1 * 1024 * 1024
 local MAX_LOG_GROUP_VALUE_SIZE = 5 * 1024 * 1024 -- 5MB
 
 local cls_api_path = "/structuredlog"
+-- compress type used when uploading logs, see
+-- https://www.tencentcloud.com/document/product/614/16873
+local COMPRESS_TYPE_NONE = "none"
+local COMPRESS_TYPE_ZSTD = "zstd"
 local auth_expire_time = 60
 local cls_conn_timeout = 1000
 local cls_read_timeout = 10000
@@ -196,12 +201,16 @@ message LogGroupList
 end
 
 
-function _M.new(scheme, host, topic, secret_id, secret_key, ssl_verify)
+function _M.new(scheme, host, topic, secret_id, secret_key, ssl_verify, compress_type)
     if not pb_state then
         local err = init_pb_state()
         if err then
             return nil, err
         end
+    end
+    if compress_type ~= nil and compress_type ~= COMPRESS_TYPE_NONE
+       and compress_type ~= COMPRESS_TYPE_ZSTD then
+        return nil, "unsupported compress type: " .. compress_type
     end
     local self = {
         scheme = scheme,
@@ -210,6 +219,7 @@ function _M.new(scheme, host, topic, secret_id, secret_key, ssl_verify)
         secret_id = secret_id,
         secret_key = secret_key,
         ssl_verify = ssl_verify,
+        compress_type = compress_type or COMPRESS_TYPE_NONE,
     }
     return setmetatable(self, mt)
 end
@@ -240,10 +250,22 @@ function _M.send_cls_request(self, pb_obj)
         ["Authorization"] = sign(self.secret_id, self.secret_key, cls_api_path),
     }
 
-    -- TODO: support lz4/zstd compress
+    local body = pb_data
+    if self.compress_type == COMPRESS_TYPE_ZSTD then
+        local compressed, err = zstd.compress(pb_data)
+        if compressed then
+            body = compressed
+            headers["x-cls-compress-type"] = COMPRESS_TYPE_ZSTD
+        else
+            -- compression is only an optimization, never drop the logs because of it
+            core.log.error("failed to compress the log data with zstd, "
+                           .. "upload it uncompressed, err: ", err)
+        end
+    end
+
     local params = {
         method = "POST",
-        body = pb_data,
+        body = body,
         headers = headers,
         ssl_verify = self.ssl_verify,
     }
