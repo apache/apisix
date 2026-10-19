@@ -166,6 +166,16 @@ local function is_too_large(err)
 end
 
 
+-- ngx.req.get_post_args() parses the body without a size check of its own.
+local function form_body_too_large(max_req_body_size, ctx)
+    if not max_req_body_size then
+        return false
+    end
+    local _, err = core.request.get_body(max_req_body_size, ctx)
+    return err and is_too_large(err)
+end
+
+
 -- Request input for protojson = false. Same sources and precedence as before
 -- the ProtoJSON mode was added: a JSON body for POST/PUT/PATCH, otherwise
 -- (or when the body is not valid JSON) form arguments for POST and the query
@@ -194,6 +204,9 @@ local function get_request_table(max_req_body_size, ctx)
     end
 
     if method == "POST" then
+        if form_body_too_large(max_req_body_size, ctx) then
+            return nil, "request body too large"
+        end
         return ngx.req.get_post_args()
     end
 
@@ -236,6 +249,9 @@ function _M.get_protojson_request_table(max_req_body_size, ctx)
     end
 
     if method == "POST" and mime == "application/x-www-form-urlencoded" then
+        if form_body_too_large(max_req_body_size, ctx) then
+            return nil, "request body too large"
+        end
         local data, err = ngx.req.get_post_args()
         if err then
             return nil, "invalid or truncated form data: " .. tostring(err)

@@ -70,16 +70,18 @@ By default, the Plugin keeps its original JSON mapping: field names as written i
 
 When `protojson` is `true`, the Plugin follows the [ProtoJSON](https://protobuf.dev/programming-guides/json/) mapping in both directions:
 
-* Responses use the `json_name` of each field (lowerCamelCase unless the `.proto` file sets another name). Requests accept both the `json_name` and the original field name, and ignore unknown fields.
+* Responses use the `json_name` of each field (lowerCamelCase unless the `.proto` file sets another name). Requests accept both the `json_name` and the original field name, and ignore unknown fields. A field set under both names is rejected.
 * 64-bit integers are strings in responses. Requests accept strings, and numbers up to 2^53.
+* 32-bit integers are numbers. Requests also accept numbers written as strings.
 * Enums are names in responses. Requests accept names and numbers.
 * `bytes` are base64 strings.
 * `float` and `double` special values are `"NaN"`, `"Infinity"` and `"-Infinity"`. Requests also accept numbers written as strings.
+* Request values must match the field type. A fraction or an out-of-range value for a 32-bit integer, enum or `float` field, a value of another JSON type, and more than one member of a `oneof` are rejected with `400`.
 * Well-known types use their JSON forms: `Timestamp` as an RFC 3339 string, `Duration` as `"1.5s"`, `FieldMask` as `"fieldA,fieldB.subField"`, wrappers as the wrapped value, `Struct`, `Value` and `ListValue` as plain JSON, and `Any` as the embedded message with an `@type` field (a well-known type goes into a `value` field).
 * Proto3 fields without presence tracking are omitted when they hold their default value, as are empty repeated and map fields. Fields with presence (`optional`, `oneof` members, message fields and proto2 fields) are kept even when they hold a default value.
 * The 64-bit integer, enum and default value options of `pb_option` do not apply.
 
-Requests with `Content-Type: application/json` are read from the JSON body for every method except `GET` and `HEAD`, and invalid JSON is rejected with `400`. Other requests are read from form arguments (`POST` with `application/x-www-form-urlencoded`) or from the query string, where `bool` and 32-bit integer fields also accept their string forms.
+Requests with `Content-Type: application/json` are read from the JSON body for every method except `GET` and `HEAD`, and invalid JSON is rejected with `400`. Other requests are read from form arguments (`POST` with `application/x-www-form-urlencoded`) or from the query string, where `bool` fields and enum numbers also accept their string forms.
 
 The following table compares the two modes:
 
@@ -90,6 +92,7 @@ The following table compares the two modes:
 | `bytes` | raw string | base64 string |
 | `google.protobuf.Timestamp` | `{"seconds": 1700000000, "nanos": 0}` | `"2023-11-14T22:13:20Z"` |
 | `google.protobuf.Int32Value` | `{"value": 5}` | `5` |
+| `int32` value `1.5` or `3000000000` | truncated or wrapped around | rejected with `400` |
 | Empty repeated field | `[]` | omitted |
 | Proto3 field with its default value | included, with the default `auto_default_values` | omitted |
 | Invalid JSON request body | read from form arguments or the query string instead | rejected with `400` |

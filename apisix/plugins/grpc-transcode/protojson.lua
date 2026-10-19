@@ -48,6 +48,11 @@ local int64_types = {
     fixed64 = true, sfixed64 = true,
 }
 local MAX_SAFE_JSON_INTEGER = 9007199254740991
+local int32_min = {int32 = -2147483648, sint32 = -2147483648, sfixed32 = -2147483648,
+                   uint32 = 0, fixed32 = 0}
+local int32_max = {int32 = 2147483647, sint32 = 2147483647, sfixed32 = 2147483647,
+                   uint32 = 4294967295, fixed32 = 4294967295}
+local FLOAT_MAX = 3.4028234663852886e38
 local function fail(path, msg)
     error("ProtoJSON " .. path .. ": " .. msg, 0)
 end
@@ -75,10 +80,10 @@ end
 
 local function load_fields(types, ft)
     local fields = {}
-    for name, _, field_type, _, label in pb.fields(ft) do
+    for name, _, field_type, _, label, oneof in pb.fields(ft) do
         local _, _, kind = pb.type(field_type)
         local info = {name=name, field_type=field_type, label=label,
-            kind=kind,
+            kind=kind, oneof=oneof,
             camel=camel_case(name),
             repeated = label == "repeated" or label == "packed",
             -- plain: the decoded Lua value is already its ProtoJSON value.
@@ -95,6 +100,7 @@ local function load_fields(types, ft)
         elseif kind == "enum" then
             info.enum_zero = pb.enum(field_type, 0)
         end
+        if oneof then fields.oneofs = true end
         fields[#fields+1] = info
     end
     types[ft] = fields
@@ -177,22 +183,67 @@ local function integer_map_key(k)
     return format("%.0f", k)
 end
 
-local function parse_decimal_float(ctx, v, depth)
-    if type(v) == "number" then return v end
-    if v == "NaN" then return 0/0 end
-    if v == "Infinity" then return huge end
-    if v == "-Infinity" then return -huge end
-    if type(v) ~= "string" then fail_at(ctx, depth, "invalid floating-point value") end
-    -- Strings are legal for float/double in ProtoJSON (including exponent).
-    -- Keep hex and Lua-specific number spellings out of this path.
-    local number = v:match("^%-?%d+%.?%d*$") or
-                   v:match("^%-?%d+%.?%d*[eE][+-]?%d+$")
-    if not number then fail_at(ctx, depth, "invalid floating-point value") end
-    local out = tonumber(v)
-    if not out or out == huge or out == -huge then
-        fail_at(ctx, depth, "invalid or out-of-range floating-point value")
+-- Quoted numbers use the JSON number spelling: hex and Lua-specific number
+-- spellings stay out.
+local function number_string(v)
+    return v:match("^%-?%d+%.?%d*$") or v:match("^%-?%d+%.?%d*[eE][+-]?%d+$")
+end
+
+local function parse_decimal_float(ctx, ft, v, depth)
+    local out = v
+    if type(v) == "string" then
+        if v == "NaN" then return 0/0 end
+        if v == "Infinity" then return huge end
+        if v == "-Infinity" then return -huge end
+        -- Strings are legal for float/double in ProtoJSON (including exponent).
+        out = number_string(v) and tonumber(v)
+    elseif type(v) ~= "number" then
+        out = nil
+    end
+    if not out then fail_at(ctx, depth, "invalid floating-point value") end
+    -- Only the quoted names above stand for infinity; a finite number must fit
+    -- the field, lua-protobuf would turn a too large float into infinity.
+    if out == huge or out == -huge or (ft == "float" and abs(out) > FLOAT_MAX) then
+        fail_at(ctx, depth, "floating-point value out of range")
     end
     return out
+end
+
+-- 32-bit integers come as JSON numbers or, as ProtoJSON allows, as quoted
+-- numbers. lua-protobuf would truncate a fraction and wrap a value that does
+-- not fit, so both are checked here.
+local function int32_to(ctx, ft, v, depth)
+    local n = v
+    if type(v) == "string" then
+        n = number_string(v) and tonumber(v)
+    elseif type(v) ~= "number" then
+        n = nil
+    end
+    if not n or n ~= floor(n) then fail_at(ctx, depth, "invalid 32-bit integer") end
+    if n < int32_min[ft] or n > int32_max[ft] then
+        fail_at(ctx, depth, "32-bit integer out of range")
+    end
+    return n
+end
+
+-- Enums take a value name or an int32 number. Query and form values are
+-- strings, so there a quoted number is accepted as well.
+local function enum_to(ctx, ft, v, depth)
+    if type(v) == "string" then
+        if ctx.string_scalars and number_string(v) then
+            v = tonumber(v)
+        else
+            -- pb.enum() would also resolve a quoted number; value names never
+            -- look like one.
+            local n = not number_string(v) and pb.enum(ft, v)
+            if not n then fail_at(ctx, depth, "unknown enum value name") end
+            return n
+        end
+    end
+    if type(v) ~= "number" or v ~= floor(v) or v < -2147483648 or v > 2147483647 then
+        fail_at(ctx, depth, "enum must be a value name or a 32-bit integer")
+    end
+    return v
 end
 
 
@@ -218,9 +269,14 @@ local to_proto, from_proto
 -- descriptor cache instead of calling pb.type() for every field.
 local value_to
 
-local function scalar_to(ctx, ft, v, depth)
+local function scalar_to(ctx, ft, kind, v, depth)
+    if kind == "enum" then return enum_to(ctx, ft, v, depth) end
     if ft == "double" or ft == "float" then
-        return parse_decimal_float(ctx, v, depth)
+        return parse_decimal_float(ctx, ft, v, depth)
+    end
+    if ft == "string" then
+        if type(v) ~= "string" then fail_at(ctx, depth, "expected string") end
+        return v
     end
     if ft == "bool" then
         if type(v) == "boolean" then return v end
@@ -230,17 +286,8 @@ local function scalar_to(ctx, ft, v, depth)
         end
         fail_at(ctx, depth, "boolean must be true or false")
     end
-    if type(v) == "string" and ctx.string_scalars and
-       (ft == "int32" or ft == "uint32" or ft == "sint32" or
-        ft == "fixed32" or ft == "sfixed32") then
-        if not v:match("^%-?%d+$") then fail_at(ctx, depth, "invalid decimal integer") end
-        local n = tonumber(v)
-        local unsigned = (ft == "uint32" or ft == "fixed32")
-        if not n or n % 1 ~= 0 or (unsigned and (n < 0 or n > 4294967295)) or
-           (not unsigned and (n < -2147483648 or n > 2147483647)) then
-            fail_at(ctx, depth, "32-bit integer out of range")
-        end
-        return n
+    if int32_min[ft] then
+        return int32_to(ctx, ft, v, depth)
     end
     if ft == "bytes" then
         if type(v) ~= "string" then fail_at(ctx, depth, "bytes must be base64 string") end
@@ -260,7 +307,7 @@ local function field_to(ctx, ft, kind, v, depth)
         return nil
     end
     if kind == "message" then return to_proto(ctx, ft, v, depth) end
-    return scalar_to(ctx, ft, v, depth)
+    return scalar_to(ctx, ft, kind, v, depth)
 end
 
 local function struct_to(ctx, v, depth)
@@ -340,15 +387,32 @@ function to_proto(ctx, ft, v, depth)
     local out = new_tab(0, count)
     local type_names = ctx.names and ctx.names[ft]
     local child = depth + 1
+    -- members of a oneof seen so far; allocated only for messages that have one
+    local oneofs = fields.oneofs and {}
     for i = 1, count do
         local desc = fields[i]
         local name, field_type = desc.name, desc.field_type
         local item = v[name]
-        if item == nil then
-            item = v[json_name_of(desc, type_names)]
+        local json_name = json_name_of(desc, type_names)
+        if json_name ~= name then
+            local other = v[json_name]
+            if item == nil then
+                item = other
+            elseif other ~= nil then
+                trail[child] = name
+                fail_at(ctx, child, "field is set twice, as " .. name .. " and " .. json_name)
+            end
         end
         if item ~= nil and (item ~= null or field_type == VALUE) then
             trail[child] = name
+            local oneof = oneofs and desc.oneof
+            if oneof then
+                if oneofs[oneof] then
+                    fail_at(ctx, child, "oneof " .. oneof .. " is already set by "
+                                        .. oneofs[oneof])
+                end
+                oneofs[oneof] = name
+            end
             local kind = desc.kind
             if kind == "map" then
                 if type(item) ~= "table" or array(item) then
@@ -361,12 +425,12 @@ function to_proto(ctx, ft, v, depth)
                     local wire_key = k
                     if key_type == "bool" then
                         if k ~= "true" and k ~= "false" then
-                            fail_at(ctx, depth, "invalid bool map key")
+                            fail_at(ctx, child, "invalid bool map key")
                         end
                         wire_key = k == "true"
                     elseif key_type ~= "string" then
                         if type(k) ~= "string" or not k:match("^%-?%d+$") then
-                            fail_at(ctx, depth, "invalid integer map key")
+                            fail_at(ctx, child, "invalid integer map key")
                         end
                         if int64_types[key_type] then
                             -- lua-protobuf accepts #decimal strings for 64-bit
@@ -375,13 +439,11 @@ function to_proto(ctx, ft, v, depth)
                         else
                             wire_key = tonumber(k)
                             if not wire_key or wire_key ~= floor(wire_key) then
-                                fail_at(ctx, depth, "invalid integer map key")
+                                fail_at(ctx, child, "invalid integer map key")
                             end
-                            local unsigned = key_type == "uint32" or key_type == "fixed32"
-                            if (unsigned and (wire_key < 0 or wire_key > 4294967295)) or
-                               (not unsigned and
-                                (wire_key < -2147483648 or wire_key > 2147483647)) then
-                                fail_at(ctx, depth, "integer map key out of range")
+                            if wire_key < int32_min[key_type] or
+                               wire_key > int32_max[key_type] then
+                                fail_at(ctx, child, "integer map key out of range")
                             end
                         end
                     end

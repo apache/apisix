@@ -505,3 +505,198 @@ property "protojson" validation failed: wrong type: expected boolean, got string
 property "any_empty_format" validation failed: matches none of the enum values
 property "error_response_format" validation failed: matches none of the enum values
 property "max_req_body_size" validation failed: expected 0 to be at least 1
+
+
+
+=== TEST 20: set proto and route for request value checks
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local json = require("toolkit.json")
+
+            local code, body = t('/apisix/admin/protos/3', ngx.HTTP_PUT, json.encode({
+                content = [[
+                    syntax = "proto3";
+                    package validation;
+                    service Checker {
+                        rpc Check (CheckRequest) returns (CheckReply) {}
+                    }
+                    enum Color {
+                        COLOR_UNSPECIFIED = 0;
+                        COLOR_RED = 1;
+                    }
+                    message CheckRequest {
+                        int32 small = 1;
+                        uint32 count = 2;
+                        sint32 delta = 3;
+                        fixed32 mask = 4;
+                        float ratio = 5;
+                        string label = 6;
+                        Color color = 7;
+                        string user_name = 8;
+                        oneof target {
+                            string id = 9;
+                            int32 index = 10;
+                        }
+                        map<int32, string> tags = 11;
+                    }
+                    message CheckReply {}
+                ]]
+            }))
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            code, body = t('/apisix/admin/routes/101', ngx.HTTP_PUT, json.encode({
+                uri = "/protojson/check",
+                plugins = {["grpc-transcode"] = {
+                    proto_id = "3",
+                    service = "validation.Checker",
+                    method = "Check",
+                    protojson = true,
+                }},
+                upstream = {
+                    scheme = "grpc",
+                    type = "roundrobin",
+                    nodes = {["127.0.0.1:10051"] = 1},
+                },
+            }))
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 21: request values are checked against the field type before encoding
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/protojson/check"
+            for _, body in ipairs({
+                '{"small": 1.5}',
+                '{"small": 3e10}',
+                '{"small": true}',
+                '{"count": -1}',
+                '{"delta": 2147483648}',
+                '{"mask": "1.5"}',
+                '{"color": 1.5}',
+                '{"color": "COLOR_BLUE"}',
+                '{"color": "1"}',
+                '{"ratio": 1e300}',
+                '{"label": 123}',
+                '{"user_name": "a", "userName": "b"}',
+                '{"id": "a", "index": 1}',
+                '{"tags": {"x": "a"}}',
+                '{"tags": {"1": 5}}',
+            }) do
+                local res = assert(http.new():request_uri(uri, {
+                    method = "POST",
+                    body = body,
+                    headers = {["Content-Type"] = "application/json"},
+                    keepalive = false,
+                }))
+                ngx.say(res.status, " ", body)
+            end
+        }
+    }
+--- response_body
+400 {"small": 1.5}
+400 {"small": 3e10}
+400 {"small": true}
+400 {"count": -1}
+400 {"delta": 2147483648}
+400 {"mask": "1.5"}
+400 {"color": 1.5}
+400 {"color": "COLOR_BLUE"}
+400 {"color": "1"}
+400 {"ratio": 1e300}
+400 {"label": 123}
+400 {"user_name": "a", "userName": "b"}
+400 {"id": "a", "index": 1}
+400 {"tags": {"x": "a"}}
+400 {"tags": {"1": 5}}
+--- error_log
+ProtoJSON .validation.CheckRequest.small: invalid 32-bit integer
+ProtoJSON .validation.CheckRequest.small: 32-bit integer out of range
+ProtoJSON .validation.CheckRequest.count: 32-bit integer out of range
+ProtoJSON .validation.CheckRequest.delta: 32-bit integer out of range
+ProtoJSON .validation.CheckRequest.mask: invalid 32-bit integer
+ProtoJSON .validation.CheckRequest.color: enum must be a value name or a 32-bit integer
+ProtoJSON .validation.CheckRequest.color: unknown enum value name
+ProtoJSON .validation.CheckRequest.ratio: floating-point value out of range
+ProtoJSON .validation.CheckRequest.label: expected string
+ProtoJSON .validation.CheckRequest.user_name: field is set twice, as user_name and userName
+ProtoJSON .validation.CheckRequest.index: oneof target is already set by id
+ProtoJSON .validation.CheckRequest.tags: invalid integer map key
+ProtoJSON .validation.CheckRequest.tags: expected string
+
+
+
+=== TEST 22: 32-bit integers written as strings or with an exponent, enum numbers in the query
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local json = require("toolkit.json")
+            local base = "http://127.0.0.1:" .. ngx.var.server_port .. "/protojson/hello"
+            for _, body in ipairs({
+                [[{"name":"x","person":{"name":"p","age":"7"}}]],
+                [[{"name":"x","person":{"name":"p","age":1e2}}]],
+                [[{"name":"x","person":{"name":"p","age":2147483647}}]],
+            }) do
+                local res = assert(http.new():request_uri(base, {
+                    method = "POST",
+                    body = body,
+                    headers = {["Content-Type"] = "application/json"},
+                    keepalive = false,
+                }))
+                ngx.say(res.status, " ", json.encode((json.decode(res.body, 1, json.null))))
+            end
+            local res = assert(http.new():request_uri(base .. "?name=x&gender=2",
+                                                      {keepalive = false}))
+            ngx.say(res.status, " ", json.encode((json.decode(res.body, 1, json.null))))
+        }
+    }
+--- response_body
+200 {"message":"Hello x, name: p, age: 7"}
+200 {"message":"Hello x, name: p, age: 100"}
+200 {"message":"Hello x, name: p, age: 2147483647"}
+200 {"gender":"GENDER_FEMALE","message":"Hello x"}
+
+
+
+=== TEST 23: request body limit applies to form bodies in both modes
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            for _, path in ipairs({"/protojson/request-limit", "/legacy/request-limit"}) do
+                local uri = "http://127.0.0.1:" .. ngx.var.server_port .. path
+                for _, body in ipairs({"name=x", "name=a+name+longer+than+thirty-two+bytes"}) do
+                    local res = assert(http.new():request_uri(uri, {
+                        method = "POST",
+                        body = body,
+                        headers = {["Content-Type"] = "application/x-www-form-urlencoded"},
+                        keepalive = false,
+                    }))
+                    ngx.say(res.status)
+                end
+            end
+        }
+    }
+--- response_body
+200
+413
+200
+413
+--- error_log
+grpc-transcode invalid request: request body too large

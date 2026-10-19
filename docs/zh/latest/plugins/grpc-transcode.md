@@ -70,16 +70,18 @@ description: grpc-transcode 插件在 HTTP 请求与 gRPC 请求及其对应响�
 
 当 `protojson` 为 `true` 时，插件在请求和响应两个方向上都遵循 [ProtoJSON](https://protobuf.dev/programming-guides/json/) 映射：
 
-* 响应使用每个字段的 `json_name`（除非 `.proto` 文件另行指定，否则为 lowerCamelCase）。请求同时接受 `json_name` 和原始字段名，并忽略未知字段。
+* 响应使用每个字段的 `json_name`（除非 `.proto` 文件另行指定，否则为 lowerCamelCase）。请求同时接受 `json_name` 和原始字段名，并忽略未知字段。同一字段同时以两种名称出现时会被拒绝。
 * 64 位整数在响应中为字符串。请求接受字符串，以及不超过 2^53 的数字。
+* 32 位整数为数字。请求也接受以字符串形式书写的数字。
 * 枚举在响应中为名称。请求接受名称和数值。
 * `bytes` 为 base64 字符串。
 * `float` 和 `double` 的特殊值为 `"NaN"`、`"Infinity"` 和 `"-Infinity"`。请求也接受以字符串形式书写的数字。
+* 请求中的值必须符合字段类型。32 位整数、枚举或 `float` 字段的小数或超出范围的值、其他 JSON 类型的值，以及同一 `oneof` 中设置多个成员，都会以 `400` 拒绝。
 * 知名类型（well-known types）使用其 JSON 形式：`Timestamp` 为 RFC 3339 字符串，`Duration` 为 `"1.5s"`，`FieldMask` 为 `"fieldA,fieldB.subField"`，包装类型为被包装的值，`Struct`、`Value` 和 `ListValue` 为普通 JSON，`Any` 为带有 `@type` 字段的嵌入消息（知名类型放在 `value` 字段中）。
 * 未跟踪存在性（presence）的 proto3 字段在取默认值时会被省略，空的 repeated 和 map 字段同样会被省略。跟踪存在性的字段（`optional`、`oneof` 成员、消息字段以及 proto2 字段）即使取默认值也会保留。
 * `pb_option` 中的 64 位整数、枚举和默认值选项不再生效。
 
-对于 `Content-Type: application/json` 的请求，除 `GET` 和 `HEAD` 外的所有方法都从 JSON 请求体读取，无效的 JSON 会以 `400` 拒绝。其他请求从表单参数（`POST` 且为 `application/x-www-form-urlencoded`）或查询字符串读取，此时 `bool` 和 32 位整数字段也接受字符串形式。
+对于 `Content-Type: application/json` 的请求，除 `GET` 和 `HEAD` 外的所有方法都从 JSON 请求体读取，无效的 JSON 会以 `400` 拒绝。其他请求从表单参数（`POST` 且为 `application/x-www-form-urlencoded`）或查询字符串读取，此时 `bool` 字段和枚举数值也接受字符串形式。
 
 下表对比了两种模式：
 
@@ -90,6 +92,7 @@ description: grpc-transcode 插件在 HTTP 请求与 gRPC 请求及其对应响�
 | `bytes` | 原始字符串 | base64 字符串 |
 | `google.protobuf.Timestamp` | `{"seconds": 1700000000, "nanos": 0}` | `"2023-11-14T22:13:20Z"` |
 | `google.protobuf.Int32Value` | `{"value": 5}` | `5` |
+| `int32` 值 `1.5` 或 `3000000000` | 被截断或溢出回绕 | 以 `400` 拒绝 |
 | 空的 repeated 字段 | `[]` | 省略 |
 | 取默认值的 proto3 字段 | 包含（默认使用 `auto_default_values`） | 省略 |
 | 无效的 JSON 请求体 | 改为从表单参数或查询字符串读取 | 以 `400` 拒绝 |
