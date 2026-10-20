@@ -418,6 +418,9 @@ routes:
       type: roundrobin
   -
     uri: /hello_test_group
+    plugins:
+      proxy-rewrite:
+        uri: /hello
     upstream:
       service_name: APISIX-NACOS
       discovery_type: nacos
