@@ -1066,6 +1066,10 @@ http {
             proxy_no_cache                      $upstream_no_cache;
             proxy_cache_bypass                  $upstream_cache_bypass;
 
+            # PURGE deletes the cache file, but a descriptor kept by the http-level
+            # open_file_cache would keep serving the purged entry as a HIT
+            open_file_cache                     off;
+
             {% end %}
 
             proxy_pass      $upstream_scheme://apisix_backend$upstream_uri;
