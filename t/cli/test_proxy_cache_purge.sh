@@ -40,7 +40,7 @@ nginx_config:
 
 rm -rf /tmp/disk_cache_one/*
 make run
-sleep 1
+wait_for_tcp 127.0.0.1 9180
 
 admin() {
     curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:9180/apisix/admin$1 -X PUT -d "$2"
