@@ -840,3 +840,96 @@ GET /server_port
 --- error_code: 502
 --- error_log
 upstream SSL certificate verify error
+
+
+
+=== TEST 19: inline upstream with keepalive_pool
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin")
+            local json = require("toolkit.json")
+            local data = {
+                uri = "/hello",
+                plugins = {
+                    ["traffic-split"] = {
+                        rules = {
+                            {
+                                weighted_upstreams = {
+                                    {
+                                        upstream = {
+                                            type = "roundrobin",
+                                            nodes = {
+                                                ["127.0.0.1:1970"] = 1
+                                            },
+                                            keepalive_pool = {
+                                                size = 4,
+                                                idle_timeout = 8,
+                                                requests = 2
+                                            }
+                                        },
+                                        weight = 1
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:1980"] = 1
+                    }
+                }
+            }
+            local code, body = t.test('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                json.encode(data)
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 20: hit, the connection pool follows keepalive_pool of the inline upstream
+--- log_level: debug
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+                        .. "/hello"
+            for i = 1, 3 do
+                local httpc = http.new()
+                local res, err = httpc:request_uri(uri)
+                if not res then
+                    ngx.say(err)
+                    return
+                end
+                ngx.print(res.body)
+            end
+        }
+    }
+--- response_body
+1970
+1970
+1970
+--- grep_error_log eval
+qr/lua balancer: keepalive .*/
+--- grep_error_log_out eval
+qr/^lua balancer: keepalive create pool, name: (\S+), size: 4
+lua balancer: keepalive no free connection, cpool: \S+
+lua balancer: keepalive saving connection \S+, cpool: \S+, connections: 1
+lua balancer: keepalive reusing connection \S+, requests: 1, cpool: \S+
+lua balancer: keepalive not saving connection \S+, cpool: \S+, connections: 0
+lua balancer: keepalive free pool \S+, name: \1
+lua balancer: keepalive create pool, name: \1, size: 4
+lua balancer: keepalive no free connection, cpool: \S+
+lua balancer: keepalive saving connection \S+, cpool: \S+, connections: 1
+$/
