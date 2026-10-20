@@ -611,12 +611,13 @@ end
 -- into `api_ctx.upstream_ssl`. Shared by the http and stream subsystems.
 -- Returns false on error (invalid/missing referenced ssl object).
 local function resolve_upstream_client_cert(api_ctx)
-    if not (api_ctx.matched_upstream and api_ctx.matched_upstream.tls and
-            api_ctx.matched_upstream.tls.client_cert_id) then
+    -- upstream_conf is already set here only when traffic-split picked an inline upstream
+    local up_conf = api_ctx.upstream_conf or api_ctx.matched_upstream
+    if not (up_conf and up_conf.tls and up_conf.tls.client_cert_id) then
         return true
     end
 
-    local cert_id = api_ctx.matched_upstream.tls.client_cert_id
+    local cert_id = up_conf.tls.client_cert_id
     local upstream_ssl = router.router_ssl.get_by_id(cert_id)
     if not upstream_ssl or upstream_ssl.type ~= "client" then
         local err = upstream_ssl and

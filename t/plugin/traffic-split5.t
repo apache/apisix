@@ -634,3 +634,209 @@ nginx_config:
 GET /t
 --- response_body
 passed.
+
+
+
+=== TEST 13: inline upstream with tls.client_cert and tls.client_key
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin")
+            local json = require("toolkit.json")
+            local data = {
+                uri = "/server_port",
+                plugins = {
+                    ["traffic-split"] = {
+                        rules = {
+                            {
+                                weighted_upstreams = {
+                                    {
+                                        upstream = {
+                                            scheme = "https",
+                                            type = "roundrobin",
+                                            nodes = {
+                                                ["127.0.0.1:1983"] = 1
+                                            },
+                                            tls = {
+                                                client_cert = t.read_file("t/certs/mtls_client.crt"),
+                                                client_key = t.read_file("t/certs/mtls_client.key"),
+                                            }
+                                        },
+                                        weight = 1
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:1980"] = 1
+                    }
+                }
+            }
+            local code, body = t.test('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                json.encode(data)
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 14: hit, the client certificate is sent to the upstream
+--- upstream_server_config
+    ssl_client_certificate ../../certs/mtls_ca.crt;
+    ssl_verify_client on;
+--- request
+GET /server_port
+--- response_body chomp
+1983
+
+
+
+=== TEST 15: inline upstream with tls.client_cert_id
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin")
+            local json = require("toolkit.json")
+            local code, body = t.test('/apisix/admin/ssls/1',
+                ngx.HTTP_PUT,
+                json.encode({
+                    type = "client",
+                    cert = t.read_file("t/certs/mtls_client.crt"),
+                    key = t.read_file("t/certs/mtls_client.key"),
+                })
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local data = {
+                uri = "/server_port",
+                plugins = {
+                    ["traffic-split"] = {
+                        rules = {
+                            {
+                                weighted_upstreams = {
+                                    {
+                                        upstream = {
+                                            scheme = "https",
+                                            type = "roundrobin",
+                                            nodes = {
+                                                ["127.0.0.1:1983"] = 1
+                                            },
+                                            tls = {
+                                                client_cert_id = 1
+                                            }
+                                        },
+                                        weight = 1
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:1980"] = 1
+                    }
+                }
+            }
+            local code, body = t.test('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                json.encode(data)
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 16: hit, the client certificate referenced by id is sent to the upstream
+--- upstream_server_config
+    ssl_client_certificate ../../certs/mtls_ca.crt;
+    ssl_verify_client on;
+--- request
+GET /server_port
+--- response_body chomp
+1983
+
+
+
+=== TEST 17: inline upstream with tls.verify and tls.ca_certs
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin")
+            local json = require("toolkit.json")
+            local data = {
+                uri = "/server_port",
+                plugins = {
+                    ["traffic-split"] = {
+                        rules = {
+                            {
+                                weighted_upstreams = {
+                                    {
+                                        upstream = {
+                                            scheme = "https",
+                                            type = "roundrobin",
+                                            nodes = {
+                                                ["127.0.0.1:1983"] = 1
+                                            },
+                                            tls = {
+                                                verify = true,
+                                                ca_certs = {t.read_file("t/certs/mtls_ca.crt")}
+                                            }
+                                        },
+                                        weight = 1
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:1980"] = 1
+                    }
+                }
+            }
+            local code, body = t.test('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                json.encode(data)
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 18: hit, the upstream certificate is not signed by the configured CA
+--- request
+GET /server_port
+--- error_code: 502
+--- error_log
+upstream SSL certificate verify error
