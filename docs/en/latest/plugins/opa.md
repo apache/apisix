@@ -41,6 +41,8 @@ The `opa` Plugin supports the integration with [Open Policy Agent (OPA)](https:/
 
 Once configured, the OPA engine will evaluate the client request to a protected Route to determine whether the request should have access to the Upstream resource based on the defined policies.
 
+If the request has a W3C `traceparent` header, for example one injected by the [`opentelemetry`](./opentelemetry.md) Plugin, the Plugin forwards it to OPA so that OPA's spans join the same trace.
+
 ## Attributes
 
 | Name | Type | Required | Default | Valid values | Description |

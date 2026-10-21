@@ -41,6 +41,8 @@ import TabItem from '@theme/TabItem';
 
 配置后，OPA 引擎将根据定义的策略评估客户端对受保护路由的请求，以决定是否允许其访问上游资源。
 
+如果请求携带 W3C `traceparent` 请求头（例如由 [`opentelemetry`](./opentelemetry.md) 插件注入），插件会将其转发给 OPA，使 OPA 的 span 加入同一条链路。
+
 ## 属性
 
 | 名称 | 类型 | 必选项 | 默认值 | 有效值 | 描述 |
