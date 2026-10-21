@@ -123,7 +123,7 @@ curl -i "http://127.0.0.1:9080/api/v3/pet" -X POST \
 
 ### 使用远程规范 URL 校验请求
 
-以下示例演示如何从远程 URL 获取 OpenAPI 规范。规范在首次获取后会被缓存，缓存时长由插件元数据的 `spec_url_ttl` 参数决定。
+以下示例演示如何从远程 URL 获取 OpenAPI 规范。规范在首次获取后会被缓存，缓存时长由插件元数据的 `spec_url_ttl` 参数决定。声明相同 `spec_url`、且 `ssl_verify` 与 `spec_url_request_headers` 也相同的资源共享同一份缓存；当不再有路由、服务、消费者等资源声明该 URL 时，对应的缓存会被释放。
 
 配置插件元数据以设置远程规范的缓存时间：
 

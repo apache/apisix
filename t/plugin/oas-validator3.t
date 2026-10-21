@@ -575,6 +575,7 @@ status: 200
 passed
 
 
+
 === TEST 24: changing spec_url on a route releases the previously compiled spec
 --- config
     location /t {
