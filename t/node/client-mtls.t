@@ -863,6 +863,7 @@ hello world
 fetching data from env uri
 
 
+
 === TEST 29: verify_https_client does not crash when ngx.ctx.matched_ssl is nil
 --- config
     location /t {
@@ -870,16 +871,17 @@ fetching data from env uri
             local apisix = require("apisix")
             local core = require("apisix.core")
 
-            -- simulate an HTTPS request where ngx.ctx.matched_ssl is nil
+            -- simulate an HTTPS request context where ngx.ctx.matched_ssl is nil
             ngx.ctx.matched_ssl = nil
-            ngx.var.scheme = "https"
 
             local api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
             ngx.ctx.api_ctx = api_ctx
             api_ctx.ngx_ctx = ngx.ctx
             core.ctx.set_vars_meta(api_ctx)
 
-            -- http_access_phase calls verify_https_client
+            -- ctx.var.scheme is read-only in ngx.var, mock cache lookup for scheme
+            api_ctx.var._cache["scheme"] = "https"
+
             apisix.http_access_phase()
             ngx.say("passed")
         }
@@ -891,4 +893,3 @@ passed
 --- no_error_log
 [error]
 attempt to index local 'matched_ssl' (a nil value)
-
