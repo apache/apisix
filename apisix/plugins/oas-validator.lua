@@ -20,6 +20,7 @@ local secret = require("apisix.secret")
 local plugin = require("apisix.plugin")
 local ov   = require("resty.openapi_validator")
 local http = require("resty.http")
+local resty_lock = require("resty.lock")
 local ngx_req = ngx.req
 local ngx_md5 = ngx.md5
 local ngx_now = ngx.now
@@ -183,20 +184,43 @@ local function fetch_and_compile(conf)
     return validator
 end
 
-local function create_spec_url_entry(conf, cache_key, ttl)
+local function get_fresh_shared_entry(cache_key, ttl)
     local entry = shared_spec_url_entries[cache_key]
     if entry and ngx_now() - entry.fetched_at < ttl then
         return entry
     end
+end
 
-    local validator, err = fetch_and_compile(conf)
-    if not validator then
-        return nil, err
+local function create_spec_url_entry(conf, cache_key, ttl)
+    local entry = get_fresh_shared_entry(cache_key, ttl)
+    if entry then
+        return entry
     end
 
-    entry = {validator = validator, fetched_at = ngx_now()}
-    shared_spec_url_entries[cache_key] = entry
-    return entry
+    -- spec_url_lrucache only serialises per resource, so resources sharing a
+    -- cold URL would otherwise each fetch and keep their own compiled copy
+    local lock, err = resty_lock:new("lrucache-lock")
+    if not lock then
+        return nil, "failed to create lock: " .. err
+    end
+
+    local elapsed, lock_err = lock:lock(plugin_name .. "#" .. cache_key)
+    if not elapsed then
+        return nil, "failed to acquire the lock: " .. lock_err
+    end
+
+    entry = get_fresh_shared_entry(cache_key, ttl)
+    if not entry then
+        local validator
+        validator, err = fetch_and_compile(conf)
+        if validator then
+            entry = {validator = validator, fetched_at = ngx_now()}
+            shared_spec_url_entries[cache_key] = entry
+        end
+    end
+
+    lock:unlock()
+    return entry, err
 end
 
 local _M = {
@@ -260,15 +284,9 @@ local function get_validator(conf)
 
     -- Key by the declaring resource with the URL key as version, so a changed
     -- spec_url replaces the resource's slot instead of adding another one.
-    local parent = conf._meta and conf._meta.parent
-    local entry, err
-    if parent and parent.resource_key then
-        entry, err = lrucache(parent.resource_key, cache_key, create_spec_url_entry,
-                              conf, cache_key, spec_url_lrucache_ttl)
-    else
-        entry, err = lrucache(cache_key, nil, create_spec_url_entry,
-                              conf, cache_key, spec_url_lrucache_ttl)
-    end
+    local entry, err = lrucache(conf._meta.parent.resource_key, cache_key,
+                                create_spec_url_entry, conf, cache_key,
+                                spec_url_lrucache_ttl)
     if not entry then
         return nil, err
     end

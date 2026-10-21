@@ -32,6 +32,9 @@ add_block_preprocessor(sub {
         location /counted/ {
             content_by_lua_block {
                 ngx.shared.oas_spec_fetches:incr(ngx.var.uri, 1, 0)
+                if ngx.var.arg_delay then
+                    ngx.sleep(tonumber(ngx.var.arg_delay))
+                end
                 local file = io.open("t/spec/spec.json", "r")
                 local content = file:read("*a")
                 file:close()
@@ -790,7 +793,7 @@ d: 2
                 collectgarbage()
             end
             local code, body = t.test('/apisix/admin/plugin_metadata/oas-validator',
-                ngx.HTTP_PUT, {spec_url_ttl = 1})
+                ngx.HTTP_PUT, {spec_url_ttl = 2})
             assert(code < 300, body)
             put_route(1, "http://127.0.0.1:1979/counted/f.json")
             put_route(2, "http://127.0.0.1:1979/counted/f.json")
@@ -798,8 +801,11 @@ d: 2
             hit(2)
             ngx.say("f: ", fetches:get("/counted/f.json"))
 
-            ngx.sleep(1.5)
-            -- serves the stale spec and queues a background refresh
+            ngx.sleep(2.5)
+            -- serves the stale spec and queues a background refresh; the two
+            -- refreshes may run on different ticks of the 1s refresh timer, so
+            -- the ttl must stay above that gap for the second one to reuse the
+            -- first one's fetch
             hit(1)
             hit(2)
             ngx.sleep(1.5)
@@ -814,3 +820,64 @@ d: 2
 f: 1
 f: 2
 --- timeout: 10
+
+
+
+=== TEST 28: resources hitting one cold spec_url concurrently fetch it once
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin")
+            local http = require("resty.http")
+            local fetches = ngx.shared.oas_spec_fetches
+
+            local function put_route(id, spec_url)
+                local code, body = t.test('/apisix/admin/routes/' .. id, ngx.HTTP_PUT, {
+                    uri = "/api/v3/pet",
+                    host = "r" .. id .. ".test",
+                    plugins = {["oas-validator"] = {spec_url = spec_url}},
+                    upstream = {type = "roundrobin", nodes = {["127.0.0.1:1970"] = 1}},
+                })
+                assert(code < 300, body)
+                ngx.sleep(0.5)
+            end
+
+            local function hit(id)
+                local res, err = http.new():request_uri(
+                    "http://127.0.0.1:" .. ngx.var.server_port .. "/api/v3/pet", {
+                    method = "POST",
+                    body = '{"id": 10, "name": "doggie", "photoUrls": ["string"]}',
+                    headers = {
+                        ["Content-Type"] = "application/json",
+                        ["Host"] = "r" .. id .. ".test",
+                    },
+                })
+                assert(res and res.status == 200, err or (res and res.status))
+            end
+
+            local function full_gc()
+                collectgarbage()
+                collectgarbage()
+            end
+            local spec_url = "http://127.0.0.1:1979/counted/g.json?delay=0.3"
+            put_route(1, spec_url)
+            put_route(2, spec_url)
+            put_route(3, spec_url)
+
+            local threads = {}
+            for id = 1, 3 do
+                threads[id] = ngx.thread.spawn(hit, id)
+            end
+            for id = 1, 3 do
+                assert(ngx.thread.wait(threads[id]))
+            end
+
+            ngx.say("g: ", fetches:get("/counted/g.json"))
+
+            for id = 1, 3 do
+                t.test('/apisix/admin/routes/' .. id, ngx.HTTP_DELETE)
+            end
+        }
+    }
+--- response_body
+g: 1
