@@ -26,6 +26,7 @@ local pairs = pairs
 local pcall = pcall
 local unpack = unpack
 local tostring = tostring
+local setmetatable = setmetatable
 local ngx = ngx
 local get_phase = ngx.get_phase
 local timer_every = ngx.timer.every
@@ -47,7 +48,9 @@ local can_yield_phases = {
     timer = true
 }
 
-local stale_obj_pool = {}
+-- weak keys: an lrucache dropped by its owner (e.g. rebuilt with a new ttl)
+-- must not be kept alive by its pending refresh entries
+local stale_obj_pool = setmetatable({}, {__mode = "k"})
 
 local GLOBAL_ITEMS_COUNT = 1024
 local GLOBAL_TTL         = 60 * 60          -- 60 min

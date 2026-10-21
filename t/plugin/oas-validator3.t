@@ -25,8 +25,19 @@ add_block_preprocessor(sub {
     my ($block) = @_;
 
     my $http_config = $block->http_config // <<_EOC_;
+    lua_shared_dict oas_spec_fetches 1m;
+
     server {
         listen 1979;
+        location /counted/ {
+            content_by_lua_block {
+                ngx.shared.oas_spec_fetches:incr(ngx.var.uri, 1, 0)
+                local file = io.open("t/spec/spec.json", "r")
+                local content = file:read("*a")
+                file:close()
+                ngx.print(content)
+            }
+        }
         location /spec.json {
             content_by_lua_block {
                 local file = io.open("t/spec/spec.json", "r")
@@ -562,3 +573,243 @@ status: 200
     }
 --- response_body
 passed
+
+
+=== TEST 24: changing spec_url on a route releases the previously compiled spec
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin")
+            local http = require("resty.http")
+            local fetches = ngx.shared.oas_spec_fetches
+
+            local function put_route(id, spec_url)
+                local code, body = t.test('/apisix/admin/routes/' .. id, ngx.HTTP_PUT, {
+                    uri = "/api/v3/pet",
+                    host = "r" .. id .. ".test",
+                    plugins = {["oas-validator"] = {spec_url = spec_url}},
+                    upstream = {type = "roundrobin", nodes = {["127.0.0.1:1970"] = 1}},
+                })
+                assert(code < 300, body)
+                ngx.sleep(0.5)
+            end
+
+            local function hit(id)
+                local res, err = http.new():request_uri(
+                    "http://127.0.0.1:" .. ngx.var.server_port .. "/api/v3/pet", {
+                    method = "POST",
+                    body = '{"id": 10, "name": "doggie", "photoUrls": ["string"]}',
+                    headers = {
+                        ["Content-Type"] = "application/json",
+                        ["Host"] = "r" .. id .. ".test",
+                    },
+                })
+                assert(res and res.status == 200, err or (res and res.status))
+            end
+
+            local function full_gc()
+                collectgarbage()
+                collectgarbage()
+            end
+            put_route(1, "http://127.0.0.1:1979/counted/a.json")
+            hit(1)
+            put_route(1, "http://127.0.0.1:1979/counted/b.json")
+            hit(1)
+            full_gc()
+
+            -- nothing references a.json any more, so another route declaring
+            -- it has to fetch it again
+            put_route(2, "http://127.0.0.1:1979/counted/a.json")
+            hit(2)
+
+            ngx.say("a: ", fetches:get("/counted/a.json"))
+            ngx.say("b: ", fetches:get("/counted/b.json"))
+
+            t.test('/apisix/admin/routes/1', ngx.HTTP_DELETE)
+            t.test('/apisix/admin/routes/2', ngx.HTTP_DELETE)
+        }
+    }
+--- response_body
+a: 2
+b: 1
+
+
+
+=== TEST 25: routes declaring the same spec_url share one compiled spec
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin")
+            local http = require("resty.http")
+            local fetches = ngx.shared.oas_spec_fetches
+
+            local function put_route(id, spec_url)
+                local code, body = t.test('/apisix/admin/routes/' .. id, ngx.HTTP_PUT, {
+                    uri = "/api/v3/pet",
+                    host = "r" .. id .. ".test",
+                    plugins = {["oas-validator"] = {spec_url = spec_url}},
+                    upstream = {type = "roundrobin", nodes = {["127.0.0.1:1970"] = 1}},
+                })
+                assert(code < 300, body)
+                ngx.sleep(0.5)
+            end
+
+            local function hit(id)
+                local res, err = http.new():request_uri(
+                    "http://127.0.0.1:" .. ngx.var.server_port .. "/api/v3/pet", {
+                    method = "POST",
+                    body = '{"id": 10, "name": "doggie", "photoUrls": ["string"]}',
+                    headers = {
+                        ["Content-Type"] = "application/json",
+                        ["Host"] = "r" .. id .. ".test",
+                    },
+                })
+                assert(res and res.status == 200, err or (res and res.status))
+            end
+
+            local function full_gc()
+                collectgarbage()
+                collectgarbage()
+            end
+            put_route(1, "http://127.0.0.1:1979/counted/c.json")
+            put_route(2, "http://127.0.0.1:1979/counted/c.json")
+            hit(1)
+            hit(2)
+            hit(1)
+            hit(2)
+
+            ngx.say("c: ", fetches:get("/counted/c.json"))
+
+            t.test('/apisix/admin/routes/1', ngx.HTTP_DELETE)
+            t.test('/apisix/admin/routes/2', ngx.HTTP_DELETE)
+        }
+    }
+--- response_body
+c: 1
+
+
+
+=== TEST 26: changing spec_url_ttl releases the specs held by the previous cache
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin")
+            local http = require("resty.http")
+            local fetches = ngx.shared.oas_spec_fetches
+
+            local function put_route(id, spec_url)
+                local code, body = t.test('/apisix/admin/routes/' .. id, ngx.HTTP_PUT, {
+                    uri = "/api/v3/pet",
+                    host = "r" .. id .. ".test",
+                    plugins = {["oas-validator"] = {spec_url = spec_url}},
+                    upstream = {type = "roundrobin", nodes = {["127.0.0.1:1970"] = 1}},
+                })
+                assert(code < 300, body)
+                ngx.sleep(0.5)
+            end
+
+            local function hit(id)
+                local res, err = http.new():request_uri(
+                    "http://127.0.0.1:" .. ngx.var.server_port .. "/api/v3/pet", {
+                    method = "POST",
+                    body = '{"id": 10, "name": "doggie", "photoUrls": ["string"]}',
+                    headers = {
+                        ["Content-Type"] = "application/json",
+                        ["Host"] = "r" .. id .. ".test",
+                    },
+                })
+                assert(res and res.status == 200, err or (res and res.status))
+            end
+
+            local function full_gc()
+                collectgarbage()
+                collectgarbage()
+            end
+            put_route(1, "http://127.0.0.1:1979/counted/d.json")
+            hit(1)
+
+            local code, body = t.test('/apisix/admin/plugin_metadata/oas-validator',
+                ngx.HTTP_PUT, {spec_url_ttl = 7200})
+            assert(code < 300, body)
+            ngx.sleep(0.5)
+            -- the next request replaces the cache with one for the new ttl
+            put_route(2, "http://127.0.0.1:1979/counted/e.json")
+            hit(2)
+            full_gc()
+
+            -- the previous cache was the last holder of d.json, so it is
+            -- fetched again
+            hit(1)
+            ngx.say("d: ", fetches:get("/counted/d.json"))
+
+            t.test('/apisix/admin/plugin_metadata/oas-validator', ngx.HTTP_DELETE)
+            t.test('/apisix/admin/routes/1', ngx.HTTP_DELETE)
+            t.test('/apisix/admin/routes/2', ngx.HTTP_DELETE)
+        }
+    }
+--- response_body
+d: 2
+
+
+
+=== TEST 27: an expired spec is refetched even when another route shares it
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin")
+            local http = require("resty.http")
+            local fetches = ngx.shared.oas_spec_fetches
+
+            local function put_route(id, spec_url)
+                local code, body = t.test('/apisix/admin/routes/' .. id, ngx.HTTP_PUT, {
+                    uri = "/api/v3/pet",
+                    host = "r" .. id .. ".test",
+                    plugins = {["oas-validator"] = {spec_url = spec_url}},
+                    upstream = {type = "roundrobin", nodes = {["127.0.0.1:1970"] = 1}},
+                })
+                assert(code < 300, body)
+                ngx.sleep(0.5)
+            end
+
+            local function hit(id)
+                local res, err = http.new():request_uri(
+                    "http://127.0.0.1:" .. ngx.var.server_port .. "/api/v3/pet", {
+                    method = "POST",
+                    body = '{"id": 10, "name": "doggie", "photoUrls": ["string"]}',
+                    headers = {
+                        ["Content-Type"] = "application/json",
+                        ["Host"] = "r" .. id .. ".test",
+                    },
+                })
+                assert(res and res.status == 200, err or (res and res.status))
+            end
+
+            local function full_gc()
+                collectgarbage()
+                collectgarbage()
+            end
+            local code, body = t.test('/apisix/admin/plugin_metadata/oas-validator',
+                ngx.HTTP_PUT, {spec_url_ttl = 1})
+            assert(code < 300, body)
+            put_route(1, "http://127.0.0.1:1979/counted/f.json")
+            put_route(2, "http://127.0.0.1:1979/counted/f.json")
+            hit(1)
+            hit(2)
+            ngx.say("f: ", fetches:get("/counted/f.json"))
+
+            ngx.sleep(1.5)
+            -- serves the stale spec and queues a background refresh
+            hit(1)
+            hit(2)
+            ngx.sleep(1.5)
+            ngx.say("f: ", fetches:get("/counted/f.json"))
+
+            t.test('/apisix/admin/plugin_metadata/oas-validator', ngx.HTTP_DELETE)
+            t.test('/apisix/admin/routes/1', ngx.HTTP_DELETE)
+            t.test('/apisix/admin/routes/2', ngx.HTTP_DELETE)
+        }
+    }
+--- response_body
+f: 1
+f: 2
+--- timeout: 10

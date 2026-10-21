@@ -22,9 +22,11 @@ local ov   = require("resty.openapi_validator")
 local http = require("resty.http")
 local ngx_req = ngx.req
 local ngx_md5 = ngx.md5
+local ngx_now = ngx.now
 local pairs = pairs
 local ipairs = ipairs
 local tostring = tostring
+local setmetatable = setmetatable
 local tab_sort = table.sort
 local tab_concat = table.concat
 
@@ -124,6 +126,11 @@ local metadata_schema = {
 local spec_url_lrucache
 local spec_url_lrucache_ttl
 
+-- Compiled specs keyed by spec URL cache key, so resources declaring the same
+-- URL share one copy. Weak values: an entry lives only while some resource's
+-- slot in spec_url_lrucache still holds it.
+local shared_spec_url_entries = setmetatable({}, {__mode = "v"})
+
 local function get_spec_url_ttl()
     local metadata = plugin.plugin_metadata(plugin_name)
     if metadata and metadata.value and metadata.value.spec_url_ttl then
@@ -174,6 +181,22 @@ local function fetch_and_compile(conf)
     end
 
     return validator
+end
+
+local function create_spec_url_entry(conf, cache_key, ttl)
+    local entry = shared_spec_url_entries[cache_key]
+    if entry and ngx_now() - entry.fetched_at < ttl then
+        return entry
+    end
+
+    local validator, err = fetch_and_compile(conf)
+    if not validator then
+        return nil, err
+    end
+
+    entry = {validator = validator, fetched_at = ngx_now()}
+    shared_spec_url_entries[cache_key] = entry
+    return entry
 end
 
 local _M = {
@@ -234,11 +257,22 @@ local function get_validator(conf)
         end
         cache_key = cache_key .. "#" .. ngx_md5(tab_concat(parts, "&"))
     end
-    local validator, err = lrucache(cache_key, nil, fetch_and_compile, conf)
-    if not validator then
+
+    -- Key by the declaring resource with the URL key as version, so a changed
+    -- spec_url replaces the resource's slot instead of adding another one.
+    local parent = conf._meta and conf._meta.parent
+    local entry, err
+    if parent and parent.resource_key then
+        entry, err = lrucache(parent.resource_key, cache_key, create_spec_url_entry,
+                              conf, cache_key, spec_url_lrucache_ttl)
+    else
+        entry, err = lrucache(cache_key, nil, create_spec_url_entry,
+                              conf, cache_key, spec_url_lrucache_ttl)
+    end
+    if not entry then
         return nil, err
     end
-    return validator
+    return entry.validator
 end
 
 

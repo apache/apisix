@@ -235,3 +235,32 @@ fetch obj: true
 create obj 2 time
 fetch obj: true
 fetch obj: true
+
+
+
+=== TEST 7: a dropped lrucache releases its cached objects
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+
+            local lru_get = core.lrucache.new({
+                ttl = 10, count = 256, invalid_stale = true, refresh_stale = true,
+            })
+            local probe = setmetatable({}, {__mode = "v"})
+            lru_get("key", "ver", function ()
+                local obj = {}
+                probe[1] = obj
+                return obj
+            end)
+
+            lru_get = nil
+            collectgarbage()
+            collectgarbage()
+            ngx.say("released: ", probe[1] == nil)
+        }
+    }
+--- request
+GET /t
+--- response_body
+released: true
