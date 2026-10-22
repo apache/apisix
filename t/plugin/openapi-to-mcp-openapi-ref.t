@@ -567,29 +567,74 @@ $ref expansion exceeded
             end
             spec.components.schemas.Big = big
 
-            -- past the budget a node is replaced by a generic object, which
-            -- is what a property that lost its title is
-            local function degraded(schema)
-                local count = 0
-                for _, property in pairs(schema.properties or {}) do
-                    if property.title == nil then
-                        count = count + 1
-                    end
-                end
-                return count
-            end
-
+            -- past the budget the $ref being expanded is replaced as a whole
             local tight = ref.resolve(spec, { max_expanded_nodes = 1000 })
-            ngx.say("under a tight budget: ",
-                    degraded(tight.paths["/pet"].get.responses["200"]) > 0)
+            local cut = tight.paths["/pet"].get.responses["200"]
+            ngx.say("under a tight budget: ", cut.type, " ", tostring(cut.properties))
 
             local roomy = ref.resolve(spec, { max_expanded_nodes = 100000 })
             local whole = roomy.paths["/pet"].get.responses["200"]
-            ngx.say("with room: ", degraded(whole), " ", whole.properties.p2000.title)
+            ngx.say("with room: ", whole.properties.p2000.title)
         }
     }
 --- response_body
-under a tight budget: true
-with room: 0 t2000
+under a tight budget: object nil
+with room: t2000
 --- error_log
 $ref expansion exceeded 1000 nodes
+
+
+
+=== TEST 22: running out of budget leaves a valid input schema
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local ref = require("apisix.plugins.openapi-to-mcp.openapi.ref")
+            local generator = require("apisix.plugins.openapi-to-mcp.tools.generator")
+            local spec = { openapi = "3.0.0", components = { schemas = {
+                               Pet = { type = "object", required = { "name" },
+                                       properties = { name = { type = "string" } } } } },
+                           paths = { ["/pet"] = { post = {
+                               operationId = "addPet",
+                               requestBody = { content = { ["application/json"] = {
+                                   schema = { ["$ref"] = "#/components/schemas/Pet" } } } },
+                               responses = { ["200"] = { description = "ok" } },
+                           } } } }
+
+            -- Pet itself is the first node its expansion produces, so with a
+            -- budget of one or two the node that runs out is its properties
+            -- map or its required array, whichever pairs() reaches first.
+            -- Neither may be replaced by a schema of its own.
+            local function invalid(schema)
+                if type(schema) ~= "table" then
+                    return "not a schema"
+                end
+                if schema.required ~= nil and (type(schema.required) ~= "table"
+                                               or schema.required.type ~= nil) then
+                    return "required is not an array"
+                end
+                for name, property in pairs(schema.properties or {}) do
+                    local err = invalid(property)
+                    if err then
+                        return name .. ": " .. err
+                    end
+                end
+            end
+
+            for _, budget in ipairs({ 1, 2, 100000 }) do
+                local resolved = ref.resolve(spec, { max_expanded_nodes = budget })
+                local tools = generator.generate(resolved, { "/pet" }, {})
+                local schema = tools[1].input_schema
+                local ok = core.schema.check(schema, { requestBody = { name = "kitty" } })
+                ngx.say(budget, ": ", invalid(schema) or "valid", ", call ",
+                        ok and "accepted" or "rejected")
+            end
+        }
+    }
+--- response_body
+1: valid, call accepted
+2: valid, call accepted
+100000: valid, call accepted
+--- error_log
+$ref expansion exceeded 1 nodes

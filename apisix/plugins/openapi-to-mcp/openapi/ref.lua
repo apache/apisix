@@ -47,8 +47,8 @@ local EXTERNAL_BUDGET = 10
 
 -- $ref expansion is inlining, so a document where every level fans out to
 -- several refs grows as the product of those widths -- MAX_DEPTH alone leaves
--- room for billions of nodes. Expansion stops at this many nodes and degrades
--- what is left to a generic object.
+-- room for billions of nodes. Expansion stops at this many nodes: every $ref
+-- still being expanded then, and every one after, degrades to a generic object.
 --
 -- Only the nodes an expansion produces are counted, never the document's own:
 -- charging those to this budget would make a large but perfectly ordinary spec
@@ -226,16 +226,19 @@ local function expand(node, root, depth, active, ctx)
     end
 
     -- depth is raised only by a $ref, so anything below zero depth is a node
-    -- the document itself holds rather than one an expansion produced
+    -- the document itself holds rather than one an expansion produced.
+    -- The node that crosses the budget may be a properties map or a required
+    -- array, where a schema would not be valid, so it is not replaced here:
+    -- every $ref still being expanded degrades as a whole instead, see below.
     if depth > 0 then
         ctx.nodes = ctx.nodes + 1
         if ctx.nodes > ctx.max_nodes then
-            if not ctx.warned then
+            if not ctx.exhausted then
                 core.log.warn("$ref expansion exceeded ", ctx.max_nodes,
                               " nodes, using generic object")
-                ctx.warned = true
+                ctx.exhausted = true
             end
-            return { type = GENERIC_OBJECT }
+            return nil
         end
     end
 
@@ -254,7 +257,7 @@ local function expand(node, root, depth, active, ctx)
         -- json-schema-ref-parser does with circular:"ignore", keeps the schema
         -- from growing many times the size of the reference.
         local key = tostring(root) .. "\0" .. tostring(ref)
-        if active[key] then
+        if active[key] or ctx.exhausted then
             return { type = GENERIC_OBJECT }
         end
 
@@ -283,6 +286,11 @@ local function expand(node, root, depth, active, ctx)
         -- $ref replaces the whole object; sibling keys are dropped per OpenAPI 3.0
         local expanded = expand(target, target_root, depth + 1, active, ctx)
         active[key] = nil
+        -- a $ref replaces a whole object, so a generic object is well-formed
+        -- here whatever node inside it ran out of budget
+        if ctx.exhausted then
+            return { type = GENERIC_OBJECT }
+        end
         return expanded
     end
 

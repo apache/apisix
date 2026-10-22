@@ -85,8 +85,8 @@ local schema = {
         },
         max_expanded_nodes = {
             description = "Maximum number of nodes one $ref expansion may " ..
-            "produce in the tool input schemas. Past it the rest degrades to " ..
-            "a generic object.",
+            "produce in the tool input schemas. Past it every $ref still being " ..
+            "expanded, and every one after it, degrades to a generic object.",
             type = "integer",
             minimum = 1000,
             default = 50000,
