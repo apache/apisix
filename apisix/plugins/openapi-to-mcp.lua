@@ -211,26 +211,8 @@ function _M.access(conf, ctx)
 end
 
 
--- MCP asks an HTTP transport to check Origin, because a page in a browser can
--- otherwise reach a server that is only listening on localhost, or one behind
--- the user's firewall, and read the answer back.
---
--- A request with no Origin is left alone: it did not come from a browser, and
--- every non-browser MCP client sends none. One that does carry an Origin is
--- accepted only against something the operator configured, never against
--- another header of the same request: under DNS rebinding the attacker owns
--- the name, so Origin and Host are both theirs and agree with each other.
---
--- Three things count as configured, in this order:
---   * allowed_origins on the Plugin, ["*"] there accepting any origin;
---   * a literal host the Route declares, which the operator wrote and the
---     attacker's name does not satisfy -- a request carrying another Host does
---     not match such a Route at all. A wildcard entry does not count, see
---     below;
---   * a loopback address at both ends, which is the case MCP is written
---     around: a page can only have http://localhost as its origin if it is
---     served from the machine itself, and no rebinding produces that.
--- A Route with none of them refuses every request that carries an Origin.
+-- Trust explicit origins, literal Route hosts, or loopback addresses. Host and
+-- Origin agreeing alone is not a trust anchor against DNS rebinding.
 local DEFAULT_PORT = { http = "80", https = "443" }
 
 local LOOPBACK_HOST = {
@@ -257,9 +239,7 @@ local function split_authority(authority)
 end
 
 
--- An Origin as its full "scheme://host:port", its host, and the port as it was
--- written. All nil for one that names no origin at all -- "null", which a
--- sandboxed frame and a file:// page both send.
+-- Return the normalized origin, host, effective port and scheme.
 local function parse_origin(value)
     if type(value) ~= "string" then
         return nil
@@ -270,11 +250,11 @@ local function parse_origin(value)
     end
     scheme = str_lower(scheme)
     local host, port = split_authority(authority)
-    if host == "" then
+    if host == "" or not DEFAULT_PORT[scheme] then
         return nil
     end
-    return scheme .. "://" .. host .. ":" .. (port or DEFAULT_PORT[scheme] or ""),
-           host, port
+    port = port or DEFAULT_PORT[scheme]
+    return scheme .. "://" .. host .. ":" .. port, host, port, scheme
 end
 
 
@@ -292,14 +272,8 @@ local function request_authority(ctx)
 end
 
 
--- The literal hosts the Route declares, which is configuration rather than
--- anything the request carries.
---
--- A "*.example.com" entry does not count. It is a routing predicate -- it says
--- which requests reach this Route, not which origins are trusted -- and
--- whoever controls any one name under it can serve a page there and rebind it
--- to the gateway, which is the attack this check exists for. A Route matched
--- on a wildcard has to name the origins it accepts in allowed_origins.
+-- Wildcards route requests but do not establish trusted origins: an attacker
+-- may control a matching subdomain. Trust only literal configured hosts.
 local function literal_route_hosts(ctx)
     local route = ctx.matched_route and ctx.matched_route.value
     if not route then
@@ -336,7 +310,7 @@ local function origin_rejected(conf, ctx)
         return true
     end
 
-    local normalised, origin_host, origin_port = parse_origin(origin)
+    local normalised, origin_host, origin_port, origin_scheme = parse_origin(origin)
     local allowed = conf.allowed_origins
 
     if allowed then
@@ -353,17 +327,13 @@ local function origin_rejected(conf, ctx)
 
     if origin_host ~= nil then
         local request_host, request_port = request_authority(ctx)
-        -- An origin is a scheme, a host and a port. The Route names hosts, so
-        -- the port has to come from the request the browser actually made:
-        -- the two agree when both spell it out the same way, or when neither
-        -- does. Nothing else, so that a page on another port of the same name
-        -- is not taken for this one.
-        local same_port = origin_port == request_port
+        local same_origin_port = origin_scheme == ctx.var.scheme
+            and origin_port == (request_port or DEFAULT_PORT[ctx.var.scheme])
 
         local hosts = literal_route_hosts(ctx)
         if hosts then
             for _, host in ipairs(hosts) do
-                if host == origin_host and same_port then
+                if host == origin_host and same_origin_port then
                     return false
                 end
             end
@@ -376,7 +346,7 @@ local function origin_rejected(conf, ctx)
         -- case that is still safe: an attacker's page cannot be served from
         -- the machine the gateway runs on.
         if LOOPBACK_HOST[origin_host] and request_host ~= nil
-           and LOOPBACK_HOST[request_host] and same_port
+           and LOOPBACK_HOST[request_host] and same_origin_port
         then
             return false
         end

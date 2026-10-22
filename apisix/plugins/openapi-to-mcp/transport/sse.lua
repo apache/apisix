@@ -110,7 +110,6 @@ local function handle_get(ctx, opts)
     -- same fetch the first tools/list would have paid for.
     local _, tools_err = cache.get_tools(opts.conf)
     if tools_err then
-        core.log.error("failed to build the MCP tool list: ", tools_err)
         return core.response.exit(500, {
             error = "Failed to create session",
             message = tools_err,

@@ -143,6 +143,8 @@ true
 --- response_body
 true
 true
+--- error_log
+failed to build the MCP tool list:
 
 
 
@@ -299,3 +301,103 @@ fetches: 2
 --- response_body_like chomp
 ^under a small ceiling: nil openapi spec exceeds 1024 bytes
 under a larger one: getP$
+
+--- error_log
+failed to build the MCP tool list: openapi spec exceeds 1024 bytes
+
+
+
+=== TEST 9: cached failures do not log per request and retry after expiry
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local loader = require("apisix.plugins.openapi-to-mcp.openapi.loader")
+            local real_new, real_fetch, real_log = core.lrucache.new, loader.fetch, core.log.error
+            local fetches, errors = 0, 0
+            core.lrucache.new = function(opts)
+                opts.neg_ttl = 0.1
+                return real_new(opts)
+            end
+            loader.fetch = function()
+                fetches = fetches + 1
+                if fetches <= 2 then
+                    return nil, nil, "connection refused"
+                end
+                return { openapi = "3.0.0", paths = {} }, {}
+            end
+            core.log.error = function(...)
+                errors = errors + 1
+            end
+            local name = "apisix.plugins.openapi-to-mcp.cache"
+            local saved = package.loaded[name]
+            package.loaded[name] = nil
+            local cache = require(name)
+            package.loaded[name] = saved
+            core.lrucache.new = real_new
+
+            local conf = { openapi_url = "http://unreachable.example/openapi.json" }
+            for attempt = 1, 2 do
+                for i = 1, 10 do
+                    local tools, err = cache.get_tools(conf)
+                    assert(tools == nil and err == "connection refused")
+                end
+                ngx.say("fetches: ", fetches, ", errors: ", errors)
+                ngx.sleep(0.15)
+            end
+            local tools, err = cache.get_tools(conf)
+            ngx.say("recovered: ", tools ~= nil and err == nil)
+            ngx.say("fetches: ", fetches, ", errors: ", errors)
+            loader.fetch, core.log.error = real_fetch, real_log
+        }
+    }
+--- response_body
+fetches: 1, errors: 1
+fetches: 2, errors: 2
+recovered: true
+fetches: 3, errors: 2
+
+
+
+=== TEST 10: both transports return cached errors without logging them again
+--- config
+    location /failed-sse {
+        content_by_lua_block {
+            require("apisix.plugins.openapi-to-mcp.transport.sse").handle({}, {
+                conf = { openapi_url = "http://127.0.0.1:11499/transports.json" },
+            })
+        }
+    }
+    location /failed-streamable {
+        content_by_lua_block {
+            require("apisix.plugins.openapi-to-mcp.transport.streamable_http").handle({}, {
+                conf = { openapi_url = "http://127.0.0.1:11499/transports.json" },
+            })
+        }
+    }
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local loader = require("apisix.plugins.openapi-to-mcp.openapi.loader")
+            local real_fetch, real_log = loader.fetch, core.log.error
+            local fetches, errors = 0, 0
+            loader.fetch = function(...)
+                fetches = fetches + 1
+                return real_fetch(...)
+            end
+            core.log.error = function() errors = errors + 1 end
+            for i = 1, 5 do
+                local sse = ngx.location.capture("/failed-sse")
+                local streamable = ngx.location.capture("/failed-streamable", {
+                    method = ngx.HTTP_POST,
+                })
+                assert(sse.status == 500 and streamable.status == 500)
+                assert(sse.body:find("failed to fetch openapi spec", 1, true))
+                assert(streamable.body:find("failed to fetch openapi spec", 1, true))
+            end
+            loader.fetch, core.log.error = real_fetch, real_log
+            ngx.say("failed requests: 10, fetches: ", fetches, ", errors: ", errors)
+        }
+    }
+--- response_body
+failed requests: 10, fetches: 1, errors: 1

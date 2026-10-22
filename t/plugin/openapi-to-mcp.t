@@ -1509,3 +1509,67 @@ print(inner['data'].get('seen_auth'))
 "
 --- response_body
 Bearer gateway-key
+
+
+
+=== TEST 85: default Origin checks normalize ports and compare schemes
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local plugin = require("apisix.plugins.openapi-to-mcp")
+            local cases = {
+                { "https", "mcp.example.com:443", "https://mcp.example.com", 200 },
+                { "https", "mcp.example.com", "https://mcp.example.com:443", 200 },
+                { "http", "mcp.example.com:80", "http://mcp.example.com", 200 },
+                { "https", "mcp.example.com", "http://mcp.example.com", 403 },
+                { "https", "mcp.example.com:443", "http://mcp.example.com:443", 403 },
+                { "https", "mcp.example.com", "https://mcp.example.com:8443", 403 },
+                { "http", "localhost:80", "http://localhost", 200 },
+                { "https", "localhost", "http://localhost", 403 },
+            }
+            local results = {}
+            local real_exit = core.response.exit
+            core.response.exit = function(status) return status end
+            for _, transport in ipairs({ "sse", "streamable_http" }) do
+                local module = require("apisix.plugins.openapi-to-mcp.transport." .. transport)
+                local real_handle = module.handle
+                module.handle = function() return 200 end
+                for i, case in ipairs(cases) do
+                    ngx.req.set_header("Host", case[2])
+                    ngx.req.set_header("Origin", case[3])
+                    local ctx = {
+                        var = { scheme = case[1] },
+                        matched_route = { value = { host = "mcp.example.com" } },
+                        mcp_inprocess_opts = { transport = transport },
+                    }
+                    if case[2]:find("localhost", 1, true) then
+                        ctx.matched_route = nil
+                    end
+                    local status = plugin.before_proxy({}, ctx)
+                    results[#results + 1] = transport .. " " .. i .. ": " ..
+                                             tostring(status == case[4])
+                end
+                module.handle = real_handle
+            end
+            core.response.exit = real_exit
+            ngx.say(table.concat(results, "\n"))
+        }
+    }
+--- response_body
+sse 1: true
+sse 2: true
+sse 3: true
+sse 4: true
+sse 5: true
+sse 6: true
+sse 7: true
+sse 8: true
+streamable_http 1: true
+streamable_http 2: true
+streamable_http 3: true
+streamable_http 4: true
+streamable_http 5: true
+streamable_http 6: true
+streamable_http 7: true
+streamable_http 8: true

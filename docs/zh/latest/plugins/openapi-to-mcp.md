@@ -55,7 +55,7 @@ MCP 服务运行在 APISIX 内部，不需要额外的进程或服务。
 | max_document_size | integer | 否 | `4194304` | >= 1024 | OpenAPI 文档，以及文档内 `http(s)` 形式 `$ref` 拉取的文档的大小上限（字节）。超出上限的文档不会读入 worker，该路由直接报错。 |
 | max_expanded_nodes | integer | 否 | `50000` | >= 1000 | 单次 `$ref` 展开在工具输入 Schema 中最多产生的节点数。超出后该次展开的剩余部分降级为通用对象；足够大的正常文档也可能触及此上限。只有 `paths` 会被展开，文档其他部分不计入。 |
 | allowed_ref_hosts | array[string] | 否 | | | 文档内 `http(s)` 形式的 `$ref` 除 `openapi_url` 自身所在来源（scheme、主机与端口）外还可以指向的主机。每项为主机名或 `*.example.com` 形式的通配符，可加 `:port`；不带端口时匹配该主机的任意端口。 |
-| allowed_origins | array[string] | 否 | | | MCP 请求中允许的 `Origin` 头取值，写成 `scheme://host[:port]`。配置后完全以列表为准；`["*"]` 表示接受任意 origin。不配置时，`Origin` 只有在其主机是路由 `host`/`hosts` 声明的字面量主机（`*.example.com` 这类通配项不算），或它与请求两端都是回环地址时才被接受。不带 `Origin` 头的请求始终放行。 |
+| allowed_origins | array[string] | 否 | | | MCP 请求中允许的 `Origin` 头取值，写成 `scheme://host[:port]`。配置后完全以列表为准；`["*"]` 表示接受任意 origin。不配置时，`Origin` 只有在其主机是路由 `host`/`hosts` 声明的字面量主机（`*.example.com` 这类通配项不算），或它与请求两端都是回环地址时才被接受。默认检查还要求协议及有效端口一致。不带 `Origin` 头的请求始终放行。 |
 
 调用 API 之前，插件会按生成的输入 Schema 校验工具参数，并按操作声明的参数过滤：文档中未声明的参数会被丢弃，不会发往 API。调用不存在的工具或参数不合法时，返回 `isError` 为 `true` 的结果。校验之前会先填入文档中声明的 `default`，因此同时带有 `required` 和 `default` 的参数或请求体属性可以由客户端省略；客户端显式传入的参数不会被默认值覆盖。
 
@@ -72,13 +72,15 @@ MCP 服务运行在 APISIX 内部，不需要额外的进程或服务。
 
 每条 SSE 事件流最长占用连接 30 分钟，客户端异常断开只有在向其写入失败时才会被发现。对可被不可信客户端访问的 SSE 路由，请配合 [`limit-conn`](limit-conn.md) 使用。
 
+工具列表构建失败会在每个 worker 中缓存五秒。命中该负缓存的请求仍返回错误，但不会重新拉取文档或重复记录构建错误日志。缓存过期后，下一个请求会重试。
+
 ## 安全注意事项
 
-* **带 `Origin` 的请求默认一律拒绝，除非有运维显式配置的依据。** MCP 要求 HTTP 传输校验 `Origin`，否则浏览器页面可以访问只监听 localhost 或位于用户防火墙内的服务并读取响应。`Origin` 不会与同一请求的其他头相比——DNS rebinding 下攻击者掌握域名，`Origin` 和 `Host` 都是他的且彼此一致。校验依据只有三处：`allowed_origins`；路由 `host`/`hosts` 声明的字面量主机；两者都没有时，只接受 origin 与请求两端均为回环地址的情况——攻击者的页面无法拥有这样的 origin。不带 `Origin` 的请求不受影响：非浏览器 MCP 客户端都不发这个头，而它们是多数。 `host`/`hosts` 中的 `*.example.com` 是路由谓词而非 origin 白名单——拿到该域名下任一名字的人都能在上面建页面——因此靠通配匹配到的路由只能通过 `allowed_origins` 接受 origin。
+* **Origin 校验用于防护浏览器访问中的 DNS rebinding。** 默认信任路由声明的字面量主机或回环地址，并要求请求与 origin 的协议及有效端口一致（省略端口时，HTTP 为 `80`，HTTPS 为 `443`）。路由通配主机不作为信任依据。其他可信 origin，包括 TLS 在 APISIX 之前终止的场景，应通过 `allowed_origins` 配置。不带 `Origin` 的请求会被接受；此检查不能替代身份认证。
 * **OpenAPI 文档是输入，不是可信配置。** 工具名称、描述和 Schema 都来自文档并会被模型读取，文档来源一旦被攻陷，就可以左右使用该路由的 Agent。`openapi_url` 应指向自己可控的来源。
 * **`base_url` 不应由客户端可控的变量拼成。** `http://${http_x_backend}` 会让调用方决定工具请求发往何处；请使用固定主机，或网关自身设置的变量。
 * **文档内 `http(s)` 形式的 `$ref` 默认只跟随文档自身的 scheme、主机与端口。** 因此从 `127.0.0.1` 提供的文档无法指向同一地址上的其他端口。需要跨来源时用 `allowed_ref_hosts` 显式声明，并避免把内部地址写进去。
-* **插件的 `headers` 会附加到文档中的每一个操作上。** 如果其中的凭据并非对所有操作都适用，请用 [`consumer-restriction`](consumer-restriction.md) 等方式限制 consumer 可调用的工具。
+* **插件的 `headers` 会附加到文档中的每一个操作上。** 只应暴露允许使用这些凭据的操作。[`consumer-restriction`](consumer-restriction.md) 控制消费者对路由的访问，不能按 MCP 工具名授权。
 * **插件的 `headers` 优先于调用方传入的同名 header**，两者大小写写法不同也一样，因此工具调用无法替换网关附加的凭据。调用方也不能设置决定请求分帧或属于连接本身的 header —— `Transfer-Encoding`、`Content-Length`、`Host`、`Connection`、`Upgrade`、`Expect` 以及其他 hop-by-hop header —— 即使文档把它们声明成了 header 参数。
 
 ## 使用示例

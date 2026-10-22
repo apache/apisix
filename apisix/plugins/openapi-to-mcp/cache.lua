@@ -81,6 +81,15 @@ local function build_tools(openapi_url, flatten_parameters, allowed_ref_hosts,
 end
 
 
+local function build_and_log(...)
+    local tools, err = build_tools(...)
+    if not tools then
+        core.log.error("failed to build the MCP tool list: ", err)
+    end
+    return tools, err
+end
+
+
 -- Returns the tool list for a plugin conf, building it on first use.
 -- base_url and headers do not take part in the key: they affect how a tool is
 -- invoked, never how it is generated.
@@ -112,7 +121,7 @@ function _M.get_tools(conf)
                 "#" .. tostring(max_document_size) ..
                 "#" .. tostring(max_expanded_nodes) ..
                 "#" .. hosts_key(allowed)
-    return lru(key, CACHE_VERSION, build_tools, conf.openapi_url, flatten_parameters,
+    return lru(key, CACHE_VERSION, build_and_log, conf.openapi_url, flatten_parameters,
                allowed, max_document_size, max_expanded_nodes)
 end
 
