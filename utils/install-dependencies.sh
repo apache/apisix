@@ -73,16 +73,12 @@ function install_dependencies_with_apt() {
     fi
     codename=$(lsb_release -sc)
     repo_url="http://openresty.org/package/${arch_path}${1}"
-    # OpenResty publishes packages for a new distribution release some time
-    # after it comes out (e.g. Ubuntu 26.04). Only openresty-zlib-dev and
-    # openresty-pcre-dev are needed from it, and they are self-contained under
-    # /usr/local/openresty, so fall back to the previous release's repository.
-    if ! wget -q --spider "${repo_url}/dists/${codename}/Release"; then
-        if [[ "${1}" == "ubuntu" ]]; then
-            codename=noble
-        else
-            codename=bookworm
-        fi
+    # OpenResty publishes packages for a new Ubuntu release some time after it
+    # comes out (e.g. 26.04). Only openresty-zlib-dev and openresty-pcre-dev are
+    # needed from it, and they are self-contained under /usr/local/openresty,
+    # so fall back to the latest LTS repository it has.
+    if [[ "${1}" == "ubuntu" ]] && ! wget -q --spider "${repo_url}/dists/${codename}/Release"; then
+        codename=noble
     fi
     component=main
     if [[ "${1}" == "debian" ]]; then
