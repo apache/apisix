@@ -1790,8 +1790,8 @@ The following example demonstrates how you can configure two [Amazon Bedrock](ht
 Save your AWS credentials to environment variables:
 
 ```shell
-export AWS_ACCESS_KEY_ID=<your-aws-access-key-id>
-export AWS_SECRET_ACCESS_KEY=<your-aws-secret-access-key>
+export AWS_ACCESS_KEY_ID='<your-aws-access-key-id>'
+export AWS_SECRET_ACCESS_KEY='<your-aws-secret-access-key>'
 ```
 
 Create a Route as such:
@@ -2135,7 +2135,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
             "weight": 0,
             "auth": {
               "header": {
-                "Authorization": "Bearer '"$AZ_OPENAI_API_KEY"'"
+                "api-key": "'"$AZ_OPENAI_API_KEY"'"
               }
             },
             "options": {
@@ -2776,7 +2776,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
         "kafka_topic": "test2",
         "key": "key1",
         "batch_max_size": 1
-        }
       }
     }
   }'

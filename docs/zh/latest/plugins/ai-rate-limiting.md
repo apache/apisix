@@ -65,6 +65,8 @@ import TabItem from '@theme/TabItem';
 
 以下示例演示了如何为不同场景配置 `ai-rate-limiting`。
 
+插件在转发请求前检查剩余配额，并在响应后扣除 LLM 报告的令牌用量。因此，一个请求可能消耗超过剩余配额的令牌；配额耗尽后，后续请求会被拒绝，直到时间窗口重置。成功响应中的配额头部显示扣除此响应的令牌用量之前的剩余配额。
+
 :::note
 
 你可以使用以下命令从 `config.yaml` 获取 `admin_key` 并保存到环境变量中：
@@ -74,6 +76,15 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 ```
 
 :::
+
+运行示例之前，请获取所用提供商的 API 密钥，并替换以下占位符：
+
+```shell
+export OPENAI_API_KEY='<your-openai-api-key>'
+export DEEPSEEK_API_KEY='<your-deepseek-api-key>'
+```
+
+请将配置中的 `your-openai-model` 替换为你的 OpenAI 账户可用的聊天补全模型。
 
 ### 与 `ai-proxy` 一起应用速率限制
 
@@ -100,7 +111,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
           }
         },
         "options": {
-          "model": "gpt-35-turbo-instruct",
+          "model": "your-openai-model",
           "max_tokens": 512,
           "temperature": 1.0
         }
@@ -133,7 +144,7 @@ services:
               header:
                 Authorization: "Bearer ${OPENAI_API_KEY}"
             options:
-              model: gpt-35-turbo-instruct
+              model: your-openai-model
               max_tokens: 512
               temperature: 1.0
           ai-rate-limiting:
@@ -169,7 +180,7 @@ spec:
           header:
             Authorization: "Bearer your-api-key"
         options:
-          model: gpt-35-turbo-instruct
+          model: your-openai-model
           max_tokens: 512
           temperature: 1.0
     - name: ai-rate-limiting
@@ -227,7 +238,7 @@ spec:
               header:
                 Authorization: "Bearer your-api-key"
             options:
-              model: gpt-35-turbo-instruct
+              model: your-openai-model
               max_tokens: 512
               temperature: 1.0
         - name: ai-rate-limiting
@@ -268,7 +279,7 @@ curl "http://127.0.0.1:9080/anything" -X POST \
 ```json
 {
   ...
-  "model": "deepseek-chat",
+  "model": "your-openai-model",
   "choices": [
     {
       "index": 0,
@@ -304,6 +315,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     "methods": ["POST"],
     "plugins": {
       "ai-proxy-multi": {
+        "fallback_strategy": ["rate_limiting"],
         "instances": [
           {
             "name": "deepseek-instance-1",
@@ -361,6 +373,7 @@ services:
           - POST
         plugins:
           ai-proxy-multi:
+            fallback_strategy: ["rate_limiting"]
             instances:
               - name: deepseek-instance-1
                 provider: deepseek
@@ -408,6 +421,7 @@ spec:
   plugins:
     - name: ai-proxy-multi
       config:
+        fallback_strategy: ["rate_limiting"]
         instances:
           - name: deepseek-instance-1
             provider: deepseek
@@ -477,6 +491,7 @@ spec:
         - name: ai-proxy-multi
           enable: true
           config:
+            fallback_strategy: ["rate_limiting"]
             instances:
               - name: deepseek-instance-1
                 provider: deepseek
@@ -554,11 +569,11 @@ curl "http://127.0.0.1:9080/anything" -X POST \
 
 ### 对所有实例应用相同配额
 
-以下示例演示了如何对 `ai-rate-limiting` 中的所有 LLM 上游实例应用相同的速率限制配额。
+以下示例在 `ai-rate-limiting` 中为所有 LLM 上游实例配置共享令牌配额。顶层的 `limit` 和 `time_window` 使用共享计数器。要为实例设置独立配额，请配置 `instances`。
 
 为了演示和更容易区分，你将配置一个 OpenAI 实例和一个 DeepSeek 实例作为上游 LLM 服务。
 
-创建一个路由，对所有实例在 60 秒窗口内应用 100 个总令牌的速率限制配额，并更新你的 LLM 提供商、模型、API 密钥和端点（如适用）：
+创建一个路由，在 60 秒窗口内为两个实例配置共享的 100 个总令牌配额，并更新你的 LLM 提供商、模型、API 密钥和端点（如适用）：
 
 <Tabs groupId="api">
 <TabItem value="admin-api" label="Admin API">
@@ -828,55 +843,9 @@ curl -i "http://127.0.0.1:9080/anything" -X POST \
 }
 ```
 
-由于 `total_tokens` 值超过了配置的 `100` 配额，预期在 60 秒窗口内的下一个请求将被转发到另一个实例。
+示例响应消耗了 279 个总令牌，超过了共享配额 100。在同一个 60 秒窗口内，无论选择哪个实例，下一个请求都会被拒绝。如果你的响应消耗的令牌较少，请重复发送请求，直到共享配额耗尽。
 
-在同一个 60 秒窗口内，向路由发送另一个 POST 请求：
-
-```shell
-curl -i "http://127.0.0.1:9080/anything" -X POST \
-  -H "Content-Type: application/json" \
-  -d '{
-    "messages": [
-      { "role": "system", "content": "You are a mathematician" },
-      { "role": "user", "content": "Explain Newtons laws" }
-    ]
-  }'
-```
-
-你应该收到来自另一个 LLM 实例的响应，类似以下内容：
-
-```json
-{
-  ...
-  "model": "deepseek-chat",
-  "choices": [
-    {
-      "index": 0,
-      "message": {
-        "role": "assistant",
-        "content": "Sure! Newton's laws of motion are three fundamental principles that describe the relationship between the motion of an object and the forces acting on it. They were formulated by Sir Isaac Newton in the late 17th century and are foundational to classical mechanics. Here's an explanation of each law:\n\n---\n\n### **1. Newton's First Law (Law of Inertia)**\n- **Statement**: An object will remain at rest or in uniform motion in a straight line unless acted upon by an external force.\n- **What it means**: This law introduces the concept of **inertia**, which is the tendency of an object to resist changes in its state of motion. If no net force acts on an object, its velocity (speed and direction) will not change.\n- **Example**: A book lying on a table will stay at rest unless you push it. Similarly, a hockey puck sliding on ice will keep moving at a constant speed unless friction or another force slows it down.\n\n---\n\n### **2. Newton's Second Law (Law of Acceleration)**\n- **Statement**: The acceleration of an object is directly proportional to the net force acting on it and inversely proportional to its mass. Mathematically, this is expressed as:\n  \\[\n  F = ma\n  \\]\n"
-      },
-      "logprobs": null,
-      "finish_reason": "length"
-    }
-  ],
-  "usage": {
-    "prompt_tokens": 13,
-    "completion_tokens": 256,
-    "total_tokens": 269,
-    "prompt_tokens_details": {
-      "cached_tokens": 0
-    },
-    "prompt_cache_hit_tokens": 0,
-    "prompt_cache_miss_tokens": 13
-  },
-  "system_fingerprint": "fp_3a5770e1b4_prod0225"
-}
-```
-
-由于 `total_tokens` 值超过了配置的 `100` 配额，预期在 60 秒窗口内的下一个请求将被拒绝。
-
-在同一个 60 秒窗口内，向路由发送第三个 POST 请求：
+在同一个时间窗口内，向路由发送另一个 POST 请求：
 
 ```shell
 curl -i "http://127.0.0.1:9080/anything" -X POST \
@@ -889,16 +858,14 @@ curl -i "http://127.0.0.1:9080/anything" -X POST \
   }'
 ```
 
-你应该收到 `HTTP 429 Too Many Requests` 响应并观察到以下头部：
+你应该收到 `HTTP/1.1 429 Too Many Requests` 响应。配额头部使用所选实例的名称，但剩余配额是共享的。例如，选择 `openai-instance` 时：
 
 ```text
 X-AI-RateLimit-Limit-openai-instance: 100
 X-AI-RateLimit-Remaining-openai-instance: 0
-X-AI-RateLimit-Reset-openai-instance: 0
-X-AI-RateLimit-Limit-deepseek-instance: 100
-X-AI-RateLimit-Remaining-deepseek-instance: 0
-X-AI-RateLimit-Reset-deepseek-instance: 0
 ```
+
+重置头部表示距离时间窗口重置的剩余时间。选择 `deepseek-instance` 不会获得新的配额。
 
 ### 配置实例优先级和速率限制
 
@@ -2033,7 +2000,7 @@ curl "http://127.0.0.1:9080/anything" -i -X POST \
 HTTP/1.1 200 OK
 ...
 X-AI-1-RateLimit-Limit: 500
-X-AI-1-RateLimit-Remaining: 499
+X-AI-1-RateLimit-Remaining: 500
 X-AI-1-RateLimit-Reset: 60
 
 HTTP/1.1 429 Too Many Requests
@@ -2064,7 +2031,7 @@ curl "http://127.0.0.1:9080/anything" -i -X POST \
 HTTP/1.1 200 OK
 ...
 X-AI-1-RateLimit-Limit: 10
-X-AI-1-RateLimit-Remaining: 9
+X-AI-1-RateLimit-Remaining: 10
 X-AI-1-RateLimit-Reset: 60
 
 HTTP/1.1 429 Too Many Requests
@@ -2094,7 +2061,7 @@ curl "http://127.0.0.1:9080/anything" -i -X POST \
 HTTP/1.1 200 OK
 ...
 X-AI-2-RateLimit-Limit: 50
-X-AI-2-RateLimit-Remaining: 49
+X-AI-2-RateLimit-Remaining: 50
 X-AI-2-RateLimit-Reset: 60
 
 HTTP/1.1 429 Too Many Requests

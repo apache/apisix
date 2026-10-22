@@ -68,7 +68,7 @@ import TabItem from '@theme/TabItem';
 示例使用 OpenAI 作为 LLM 服务。请先获取 OpenAI [API 密钥](https://openai.com/blog/openai-api)并将其保存到环境变量：
 
 ```shell
-export OPENAI_API_KEY=<your-api-key>
+export OPENAI_API_KEY='<your-api-key>'
 ```
 
 :::note

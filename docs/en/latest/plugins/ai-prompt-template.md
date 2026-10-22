@@ -53,10 +53,10 @@ The `ai-prompt-template` Plugin supports pre-configuring prompt templates that o
 
 ## Examples
 
-The following examples use OpenAI as the Upstream service provider. Before proceeding, create an [OpenAI account](https://openai.com) and an [API key](https://openai.com/blog/openai-api). You can optionally save the key to an environment variable:
+The following examples use OpenAI as the Upstream service provider. Before proceeding, create an [OpenAI account](https://openai.com) and an [API key](https://openai.com/blog/openai-api). Save the key to an environment variable, replacing the placeholder with your API key:
 
 ```shell
-export OPENAI_API_KEY=<YOUR_OPENAI_API_KEY>
+export OPENAI_API_KEY='<YOUR_OPENAI_API_KEY>'
 ```
 
 If you are working with other LLM providers, please refer to the provider's documentation to obtain an API key.
