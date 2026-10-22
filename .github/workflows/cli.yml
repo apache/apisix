@@ -41,13 +41,17 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Get runner image
+        id: runner_image
+        run: echo "os=${ImageOS}" >> "$GITHUB_OUTPUT"
+
       - name: Cache deps
         uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5
         env:
           cache-name: cache-deps
         with:
           path: deps
-          key: ${{ runner.os }}-${{ env.cache-name }}-${{ matrix.job_name }}-${{ hashFiles('apisix-master-0.rockspec') }}
+          key: ${{ runner.os }}-${{ steps.runner_image.outputs.os }}-${{ env.cache-name }}-${{ matrix.job_name }}-${{ hashFiles('apisix-master-0.rockspec') }}
 
       - name: Linux launch common services
         run: |
