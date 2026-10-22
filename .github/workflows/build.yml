@@ -97,11 +97,17 @@ jobs:
         run: |
           # Docker 29 (Ubuntu 26.04 image) rejects API versions below 1.44 by default,
           # and openwhisk/standalone drives the host daemon with an older client
+          min_api=$(docker version --format '{{.Server.MinAPIVersion}}')
+          echo "docker minimum API version: $min_api"
+          if [ "$min_api" = "1.24" ]; then
+              exit 0
+          fi
           sudo mkdir -p /etc/systemd/system/docker.service.d
           printf '[Service]\nEnvironment=DOCKER_MIN_API_VERSION=1.24\n' \
             | sudo tee /etc/systemd/system/docker.service.d/min-api-version.conf
           sudo systemctl daemon-reload
           sudo systemctl restart docker
+          docker version --format '{{.Server.MinAPIVersion}}'
 
       - name: Linux launch common services
         run: |
