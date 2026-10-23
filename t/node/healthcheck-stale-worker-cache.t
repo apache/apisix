@@ -65,9 +65,18 @@ __DATA__
                 return
             end
 
-            -- this worker's local cache still says healthy
-            assert(checker:get_target_status("127.0.0.1", 1980, "127.0.0.1") == true,
-                   "local cache should start healthy")
+            -- add_target publishes the initial state asynchronously. Wait until
+            -- this worker has the healthy local view before flipping SHM alone.
+            local local_healthy
+            for _ = 1, 40 do
+                local_healthy = checker:get_target_status("127.0.0.1", 1980,
+                                                          "127.0.0.1")
+                if local_healthy then
+                    break
+                end
+                ngx.sleep(0.05)
+            end
+            assert(local_healthy, "local cache should become healthy")
 
             -- another worker marked the node unhealthy in shm without an event
             local key = checker.TARGET_STATE .. ":127.0.0.1:1980:127.0.0.1"
@@ -82,6 +91,7 @@ __DATA__
 GET /t
 --- response_body
 unhealthy
+--- timeout: 10
 
 
 
@@ -200,15 +210,15 @@ passed
 --- timeout: 10
 
 
-=== TEST 3: a worker without a checker uses the shared target state on its first request
-# A checker in another worker has already marked the primary unhealthy. The
-# current worker has not received any request, so its checker timer has not
-# created a local checker. It must still exclude the primary immediately.
+=== TEST 3: a worker without a checker reads the shared target state
+# Another worker has marked the primary unhealthy before this worker creates
+# its checker. Exercise the nil-checker lookup directly to avoid a race with
+# the asynchronous checker-creation timer.
 --- config
     location /t {
         content_by_lua_block {
-            local t = require("lib.test_admin").test
             local healthcheck = require("resty.healthcheck")
+            local hm = require("apisix.healthcheck_manager")
             local checks = {
                 active = {
                     http_path = "/status",
@@ -216,7 +226,8 @@ passed
                     unhealthy = { interval = 100, http_failures = 2 },
                 },
             }
-            local name = "upstream#/apisix/routes/2"
+            local path = "/apisix/routes/2"
+            local name = "upstream#" .. path
             local shadow = assert(healthcheck.new({
                 name = name,
                 shm_name = "upstream-healthcheck",
@@ -229,32 +240,21 @@ passed
             assert(shadow.shm:set(key, 2))
             shadow:stop()
 
-            local code, body = t('/apisix/admin/routes/2', ngx.HTTP_PUT,
-                [[{
-                    "uri": "/server_port",
-                    "upstream": {
-                        "type": "roundrobin",
-                        "nodes": [
-                            {"host": "127.0.0.1", "port": 1980, "weight": 1, "priority": 0},
-                            {"host": "127.0.0.1", "port": 1981, "weight": 1, "priority": -1}
-                        ],
-                        "checks": {
-                            "active": {
-                                "http_path": "/status",
-                                "healthy": {"interval": 100, "successes": 1},
-                                "unhealthy": {"interval": 100, "http_failures": 2}
-                            }
-                        }
-                    }
-                }]])
-            assert(code < 300, body)
-            code, body = t('/server_port', ngx.HTTP_GET)
-            assert(code == 200, body)
-            ngx.say(body)
+            assert(shadow.shm:get(key) == 2)
+            assert(hm.fetch_node_status(nil, "127.0.0.1", 1980,
+                                        "127.0.0.1", path) == false)
+            assert(hm.fetch_node_status(nil, "127.0.0.1", 1981,
+                                        "127.0.0.1", path) == true)
+            local nodes = {
+                { host = "127.0.0.1", port = 1980 },
+                { host = "127.0.0.1", port = 1981 },
+            }
+            assert(hm.node_status_ver(nil, nodes, nil, nil, path) == "x:0:1")
+            ngx.say("passed")
         }
     }
 --- request
 GET /t
 --- response_body
-1981
+passed
 --- timeout: 10

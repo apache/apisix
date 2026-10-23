@@ -180,7 +180,7 @@ __DATA__
             end
 
             local function send_ai()
-                local code, body = t("/ai",
+                local code, _, body = t("/ai",
                     ngx.HTTP_POST,
                     json.encode({messages = {{role = "user", content = "hi"}}}),
                     nil,
@@ -194,7 +194,7 @@ __DATA__
             send_ai() -- queue checker creation
             ngx.sleep(2)
             local seen_dead, seen_ok
-            for i = 1, 8 do
+            for i = 1, 20 do
                 local code, body = send_ai()
                 assert(code == 200, body)
                 seen_dead = seen_dead or body:find('"dead"', 1, true)
@@ -209,7 +209,7 @@ __DATA__
             assert(shm:get(key) == 1, "dead instance should begin healthy")
             assert(shm:set(key, 2)) -- unhealthy, deliberately no event
 
-            for i = 1, 8 do
+            for i = 1, 20 do
                 local code, body = send_ai()
                 assert(code == 200 and body:find('"ok"', 1, true),
                        "request " .. i .. " still selected the unhealthy AI instance: "
