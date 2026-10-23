@@ -525,6 +525,30 @@ local function build_match_uri_keep_encoded_slash(path, current_uri)
 end
 
 
+-- whether nginx did more than decode the path or merge slashes in $uri,
+-- e.g. resolved a dot segment or cut the path at "#"
+local function uri_normalized_by_nginx(request_uri, uri)
+    if request_uri == uri then
+        return false
+    end
+    if core.string.has_prefix(request_uri, uri)
+       and str_byte(request_uri, #uri + 1) == str_byte("?") then
+        return false
+    end
+
+    local path = request_uri
+    local args_pos = core.string.find(path, "?")
+    if args_pos then
+        path = str_sub(path, 1, args_pos - 1)
+    end
+    local decoded = percent_decode(path, false)
+    if decoded == uri then
+        return false
+    end
+    return re_gsub(decoded, [[//+]], "/", "jo") ~= uri
+end
+
+
 local function common_phase(phase_name)
     local api_ctx = ngx.ctx.api_ctx
     if not api_ctx then
@@ -802,6 +826,13 @@ function _M.http_access_phase()
             -- CR/LF in the decoded uri cannot inject into the upstream request line.
             api_ctx.var.upstream_uri = core.utils.escape_uri_control_chars(uri)
         end
+    end
+
+    -- forward the path the route was matched on; binary allows decoded
+    -- control chars, proxy_pass escapes them
+    if not (local_conf.apisix and local_conf.apisix.normalize_uri_like_servlet)
+       and uri_normalized_by_nginx(api_ctx.var.request_uri, uri) then
+        ngx.req.set_uri(uri, false, true)
     end
 
     -- To prevent being hacked by untrusted request_uri, here we
