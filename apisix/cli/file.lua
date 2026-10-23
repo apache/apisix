@@ -57,7 +57,7 @@ local function tab_is_array(t)
 end
 
 
-local function var_sub(val)
+local function var_sub(val, on_value)
     local err
     local var_used = false
     -- we use '${{var}}' because '$var' and '${var}' are taken
@@ -79,7 +79,7 @@ local function var_sub(val)
 
             exported_vars[var] = v
             var_used = true
-            return v
+            return on_value and on_value(v) or v
         end
 
         err = "failed to handle configuration: " ..
@@ -158,6 +158,15 @@ end
 
 _M.resolve_conf_var = resolve_conf_var
 _M.resolve_conf_var_in_text = resolve_conf_var_in_text
+
+
+-- CLI validation and runtime reload must use the same SSL substitution rules.
+local function load_yaml_with_env(text)
+    return require("apisix.cli.ssl_yaml").load(text, var_sub)
+end
+
+
+_M.load_yaml_with_env = load_yaml_with_env
 
 
 local function replace_by_reserved_env_vars(conf)
@@ -322,12 +331,10 @@ function _M.read_yaml_conf(apisix_home)
         local apisix_conf_path = profile:yaml_path("apisix")
         local apisix_conf_yaml, _ = util.read_file(apisix_conf_path)
         if apisix_conf_yaml then
-            -- Pre-parse substitution: `"${{VAR}}"` stays string, `${{VAR}}` infers type from value.
-            local resolved, err = resolve_conf_var_in_text(apisix_conf_yaml)
-            if not resolved then
+            local apisix_conf, err = load_yaml_with_env(apisix_conf_yaml)
+            if err then
                 return nil, err
             end
-            local apisix_conf = yaml.load(resolved)
             if not apisix_conf then
                 return nil, "invalid apisix.yaml file"
             end
