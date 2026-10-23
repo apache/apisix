@@ -34,11 +34,12 @@ The `wolf-rbac` Plugin provides a [role-based access control](https://en.wikiped
 
 ## Attributes
 
-| Name          | Type   | Required | Default                  | Description                                                                                                                                                                                                                 |
-|---------------|--------|----------|--------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| server        | string | False    | "http://127.0.0.1:12180" | Service address of wolf server.                                                                                                                                                                                             |
-| appid         | string | False    | "unset"                  | App id added in wolf console. This field supports saving the value in Secret Manager using the [APISIX Secret](../terminology/secret.md) resource.            |
-| header_prefix | string | False    | "X-"                     | Prefix for a custom HTTP header. After authentication is successful, three headers will be added to the request header (for backend) and response header (for frontend) namely: `X-UserId`, `X-Username`, and `X-Nickname`. |
+| Name | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| appid | string | True | N/A | Consumer application ID configured in Wolf. This field supports saving the value in Secret Manager using the [APISIX Secret](../terminology/secret.md) resource. |
+| server | string | False | "http://127.0.0.1:12180" | Route or Service address of the Wolf server. |
+| header_prefix | string | False | "X-" | Route or Service prefix for the identity headers added after successful authentication: `{prefix}UserId`, `{prefix}Username`, and `{prefix}Nickname`. |
+| ssl_verify | boolean | False | false | Whether to verify the Wolf server's TLS certificate. Configured on a Route or Service. |
 
 ## API
 
@@ -79,7 +80,6 @@ curl http://127.0.0.1:9180/apisix/admin/consumers  -H "X-API-KEY: $admin_key" -X
   "username":"wolf_rbac",
   "plugins":{
     "wolf-rbac":{
-      "server":"http://127.0.0.1:12180",
       "appid":"restful"
     }
   },
@@ -101,7 +101,10 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1  -H "X-API-KEY: $admin_key" -X 
     "methods": ["GET"],
     "uri": "/*",
     "plugins": {
-        "wolf-rbac": {}
+        "wolf-rbac": {
+            "server": "http://127.0.0.1:12180",
+            "header_prefix": "X-"
+        }
     },
     "upstream": {
         "type": "roundrobin",
@@ -113,6 +116,10 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1  -H "X-API-KEY: $admin_key" -X 
 ```
 
 You can also use the [APISIX Dashboard](/docs/dashboard/USER_GUIDE) to complete the operation through a web UI.
+
+## Upgrade
+
+Move `server`, `header_prefix`, and `ssl_verify` from each Consumer to every Route or Service that uses `wolf-rbac`. Keep only `appid` on the Consumer. If Consumers on one Route used different values, split them across Routes or Services, or standardize the values before upgrading.
 
 <!--
 ![add a consumer](https://raw.githubusercontent.com/apache/apisix/master/docs/assets/images/plugin/wolf-rbac-1.png)
@@ -129,12 +136,15 @@ curl http://127.0.0.1:9180/apisix/admin/routes/wal -H "X-API-KEY: $admin_key" -X
 {
     "uri": "/apisix/plugin/wolf-rbac/login",
     "plugins": {
-        "public-api": {}
+        "public-api": {},
+        "wolf-rbac": {
+            "server": "http://127.0.0.1:12180"
+        }
     }
 }'
 ```
 
-Similarly, you can setup the Routes for `change_pwd` and `user_info`.
+Similarly, configure both Plugins on the Routes for `change_pwd` and `user_info`.
 
 You can now login and get a wolf `rbac_token`:
 
