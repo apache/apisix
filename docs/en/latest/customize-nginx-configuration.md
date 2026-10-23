@@ -61,3 +61,19 @@ nginx_config:
 ```
 
 Pay attention to the indent of `nginx_config` and sub indent of the sub entries, the incorrect indent may cause `./bin/apisix start` to fail to generate Nginx configuration in `conf/nginx.conf`.
+
+## IPv6 Listeners
+
+When `apisix.enable_ipv6` is `true` (the default), APISIX adds IPv6 listeners
+for enabled Admin API, Control API, status, and Prometheus export servers that
+use their default IP addresses. The Admin API listens on `[::]` in addition to
+`0.0.0.0`; the other servers listen on `[::1]` in addition to `127.0.0.1`, keeping
+them restricted to loopback. Both listeners use the configured port and the
+same options, including TLS for the Admin API.
+
+Setting an IP different from the server's default keeps only that configured
+address. Setting `apisix.enable_ipv6` to `false` disables the automatically
+added IPv6 listeners; it does not remove an explicitly configured IPv6 address.
+Admin API access restrictions such as `deployment.admin.allow_admin` still
+apply to IPv6 requests. If you previously added equivalent IPv6 listeners via
+configuration snippets, remove those snippets to avoid duplicate listeners.

@@ -61,3 +61,16 @@ nginx_config:
 ```
 
 注意`nginx_config`及其子项的格式缩进，在执行`./bin/apisix start`时，错误的缩进将导致更新`conf/nginx.conf`文件失败。
+
+## IPv6 监听地址
+
+当 `apisix.enable_ipv6` 为 `true`（默认值）时，APISIX 会为使用默认 IP 地址的已启用
+Admin API、Control API、状态服务和 Prometheus 指标导出服务添加 IPv6 监听地址。
+Admin API 在 `0.0.0.0` 之外还会监听 `[::]`；其他服务在 `127.0.0.1` 之外还会监听
+`[::1]`，确保这些服务仍然只能通过回环地址访问。两种地址使用相同的配置端口和监听选项，
+包括 Admin API 的 TLS 配置。
+
+如果配置的 IP 与该服务的默认 IP 不同，则仅监听配置的地址。将 `apisix.enable_ipv6`
+设为 `false` 会禁用自动添加的 IPv6 监听地址，但不会移除显式配置的 IPv6 地址。
+`deployment.admin.allow_admin` 等 Admin API 访问限制仍然适用于 IPv6 请求。
+如果之前通过配置片段添加了相同的 IPv6 监听地址，请移除这些片段，避免重复监听。
