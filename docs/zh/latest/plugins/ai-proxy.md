@@ -165,7 +165,7 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 获取 OpenAI [API 密钥](https://openai.com/blog/openai-api)并保存到环境变量：
 
 ```shell
-export OPENAI_API_KEY=<your-api-key>
+export OPENAI_API_KEY='<your-api-key>'
 ```
 
 <Tabs
@@ -376,7 +376,7 @@ curl "http://127.0.0.1:9080/anything" -X POST \
 获取 DeepSeek API 密钥并保存到环境变量：
 
 ```shell
-export DEEPSEEK_API_KEY=<your-api-key>
+export DEEPSEEK_API_KEY='<your-api-key>'
 ```
 
 <Tabs
@@ -590,7 +590,7 @@ curl "http://127.0.0.1:9080/anything" -X POST \
 获取 Azure OpenAI API 密钥并保存到环境变量：
 
 ```shell
-export AZ_OPENAI_API_KEY=<your-api-key>
+export AZ_OPENAI_API_KEY='<your-api-key>'
 ```
 
 <Tabs
@@ -816,8 +816,8 @@ curl "http://127.0.0.1:9080/anything" -X POST \
 将您的 AWS 凭证保存到环境变量：
 
 ```shell
-export AWS_ACCESS_KEY_ID=<your-aws-access-key-id>
-export AWS_SECRET_ACCESS_KEY=<your-aws-secret-access-key>
+export AWS_ACCESS_KEY_ID='<your-aws-access-key-id>'
+export AWS_SECRET_ACCESS_KEY='<your-aws-secret-access-key>'
 ```
 
 创建路由并配置 `ai-proxy` 插件：
@@ -918,7 +918,7 @@ curl "http://127.0.0.1:9080/bedrock/converse" -X POST \
 获取 OpenAI [API 密钥](https://openai.com/blog/openai-api)并保存到环境变量：
 
 ```shell
-export OPENAI_API_KEY=<your-api-key>
+export OPENAI_API_KEY='<your-api-key>'
 ```
 
 <Tabs
@@ -1144,7 +1144,7 @@ curl "http://127.0.0.1:9080/embeddings" -X POST \
 获取 Anthropic [API 密钥](https://console.anthropic.com/settings/keys)并保存到环境变量：
 
 ```shell
-export ANTHROPIC_API_KEY=<your-api-key>
+export ANTHROPIC_API_KEY='<your-api-key>'
 ```
 
 <Tabs
@@ -1356,7 +1356,7 @@ curl "http://127.0.0.1:9080/anything" -X POST \
 获取你选择的 OpenAI 兼容后端服务的 API 密钥并保存到环境变量。此示例使用 OpenAI：
 
 ```shell
-export BACKEND_API_KEY=<your-api-key>
+export BACKEND_API_KEY='<your-api-key>'
 ```
 
 <Tabs
@@ -1571,8 +1571,8 @@ curl "http://127.0.0.1:9080/v1/messages" -X POST \
 此示例将使用 OpenAI 和 DeepSeek 作为示例 LLM 服务。获取 OpenAI 和 DeepSeek API 密钥并保存到环境变量：
 
 ```shell
-export OPENAI_API_KEY=<your-api-key>
-export DEEPSEEK_API_KEY=<your-api-key>
+export OPENAI_API_KEY='<your-api-key>'
+export DEEPSEEK_API_KEY='<your-api-key>'
 ```
 
 <Tabs

@@ -568,7 +568,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
       "checks": {
         "active": {
           "timeout": 5,
-          "http_path": "/status",
+          "http_path": "/status/200",
           "healthy": {
             "interval": 2,
             "successes": 1
@@ -605,11 +605,11 @@ curl "http://127.0.0.1:9091/apisix/prometheus/metrics"
 ```text
 # HELP apisix_upstream_status 上游健康检查的状态
 # TYPE apisix_upstream_status gauge
-apisix_upstream_status{name="/apisix/routes/1",ip="54.237.103.220",port="80"} 1
-apisix_upstream_status{name="/apisix/routes/1",ip="127.0.0.1",port="20001"} 0
+apisix_upstream_status{name="/apisix/routes/prometheus-route",ip="54.237.103.220",port="80"} 1
+apisix_upstream_status{name="/apisix/routes/prometheus-route",ip="127.0.0.1",port="20001"} 0
 ```
 
-这显示上游节点 `httpbin.org:80` 是健康的，而上游节点 `127.0.0.1:20001` 是不健康的。
+假设端口 `20001` 上没有服务监听，此输出显示上游节点 `httpbin.org:80` 是健康的，而上游节点 `127.0.0.1:20001` 是不健康的。HTTPBin 在 `/status/200` 返回 `200`。实际解析的 IP 地址可能不同，健康检查也需要时间来更新节点状态。
 
 ### 为指标添加额外标签
 

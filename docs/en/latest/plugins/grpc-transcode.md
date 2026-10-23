@@ -83,6 +83,8 @@ docker run -d \
   api7/grpc-server-example:1.0.2
 ```
 
+These examples use `127.0.0.1:50051` as the upstream address and assume APISIX runs on the Docker host. If APISIX runs in a container, connect both containers to the same [user-defined Docker network](https://docs.docker.com/engine/network/drivers/bridge/) and replace `127.0.0.1:50051` in the Route configurations with `grpc-example-server:50051`. Inside the APISIX container, `127.0.0.1` refers to APISIX itself; Docker resolves the upstream container name on the shared network.
+
 ### Transform between HTTP and gRPC Requests
 
 The following example demonstrates how to configure protobuf in APISIX and transform between HTTP and gRPC requests using the `grpc-transcode` Plugin.

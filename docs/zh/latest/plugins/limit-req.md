@@ -49,13 +49,13 @@ import TabItem from '@theme/TabItem';
 
 | 名称 | 类型 | 必选项 | 默认值 | 有效值 | 描述 |
 |------|------|----------|---------|--------------|-------------|
-| rate | number | 是 | | > 0 | 每秒允许的最大请求数。超过速率且低于突发的请求将被延迟。|
-| burst | number | 是 | | >= 0 | 每秒允许延迟的请求数，以进行节流。超过速率和突发的请求将被拒绝。|
+| rate | number | 是 | | > 0 | 允许请求通过的速率，单位为请求数/秒。超过速率但在 `burst` 容量内的请求会被延迟，除非 `nodelay` 为 `true`。|
+| burst | number | 是 | | >= 0 | 超过配置的 `rate` 时允许的最大额外请求数。这是突发容量，不是每秒配额。超过此容量的请求会被拒绝。|
 | key_type | string | 否 | var | ["var", "var_combination"] | key 的类型。如果 `key_type` 为 `var`，则 `key` 将被解释为变量。如果 `key_type` 为 `var_combination`，则 `key` 将被解释为变量的组合。|
 | key | string | 是 | | | 用于计数请求的 key。如果 `key_type` 为 `var`，则 `key` 将被解释为变量。变量不需要以美元符号（`$`）为前缀。如果 `key_type` 为 `var_combination`，则 `key` 会被解释为变量的组合。所有变量都应该以美元符号（`$`）为前缀。例如，要配置 `key` 使用两个请求头 `custom-a` 和 `custom-b` 的组合，则 `key` 应该配置为 `$http_custom_a $http_custom_b`。|
 | rejected_code | integer | 否 | 503 | [200,...,599] | 请求因超出阈值而被拒绝时返回的 HTTP 状态代码。|
 | rejected_msg | string | 否 | | 非空 | 请求因超出阈值而被拒绝时返回的响应主体。|
-| nodelay | boolean | 否 | false | | 如果为 true，则不延迟突发阈值内的请求。|
+| nodelay | boolean | 否 | false | | 如果为 `true`，则允许 `burst` 容量内的请求立即通过。额外请求仍会占用突发容量，容量耗尽时后续请求会被拒绝。|
 | allow_degradation | boolean | 否 | false | | 如果为 true，则允许 APISIX 在插件或其依赖项不可用时继续处理没有插件的请求。|
 | policy | string | 否 | local | ["local", "redis", "redis-cluster"] | 速率限制计数器的策略。如果是 `local`，则计数器存储在本地内存中。如果是 `redis`，则计数器存储在 Redis 实例上。如果是 `redis-cluster`，则计数器存储在 Redis 集群中。|
 | redis_host | string | 否 | | | Redis 节点的地址。当 `policy` 为 `redis` 时必填。|
@@ -305,7 +305,7 @@ curl -i "http://127.0.0.1:9080/get"
 
 你应该会看到一个 `HTTP/1.1 200 OK` 响应。
 
-该请求已消耗了时间窗口允许的所有配额。如果你在同一秒内再次发送请求，你应该会收到 `HTTP/1.1 429 Too Many Requests` 响应，表示请求超出了配额阈值。
+当 `rate` 为 1 且 `burst` 为 0 时，如果第二个请求在第一个请求到达后不到一秒内到达，它会被拒绝，并返回 `HTTP/1.1 429 Too Many Requests`。漏桶会持续排空，不会在每秒开始时重置。
 
 ### 实现 API 节流
 
@@ -501,22 +501,23 @@ kubectl apply -f limit-req-ic.yaml
 
 ❶ `burst`：允许 1 个超过 `rate` 的请求延迟处理。
 
-生成三个对路由的请求：
+等待之前的突发请求排空，然后并行向路由发送三个请求：
 
 ```shell
-resp=$(seq 3 | xargs -I{} curl -i "http://127.0.0.1:9080/get" -o /dev/null -s -w "%{http_code}\n") && \
+sleep 2
+resp=$(seq 3 | xargs -P 3 -I{} curl "http://127.0.0.1:9080/get" -o /dev/null -s -w "%{http_code}\n") && \
   count_200=$(echo "$resp" | grep "200" | wc -l) && \
   count_429=$(echo "$resp" | grep "429" | wc -l) && \
   echo "200 responses: $count_200 ; 429 responses: $count_429"
 ```
 
-你可能会看到所有三个请求都成功：
+当漏桶初始为空且三个请求同时到达时，一个请求立即通过，一个请求延迟约一秒，另一个请求被拒绝：
 
 ```text
-200 responses: 3 ; 429 responses: 0
+200 responses: 2 ; 429 responses: 1
 ```
 
-要查看没有 `burst` 的效果，请将 `burst` 更新为 0 或将 `nodelay` 设置为 `true`，如下所示：
+要让额外请求立即通过，请保持 `burst` 为 1，并将 `nodelay` 设置为 `true`：
 
 <Tabs
 groupId="api"
@@ -557,7 +558,7 @@ services:
         plugins:
           limit-req:
             rate: 1
-            burst: 1  # alternatively, set burst to 0
+            burst: 1
             key: remote_addr
             rejected_code: 429
             policy: local
@@ -603,7 +604,7 @@ spec:
     - name: limit-req
       config:
         rate: 1
-        burst: 1  # alternatively, set burst to 0
+        burst: 1
         key: remote_addr
         rejected_code: 429
         policy: local
@@ -635,7 +636,7 @@ spec:
         - name: limit-req
           config:
             rate: 1
-            burst: 1  # alternatively, set burst to 0
+            burst: 1
             key: remote_addr
             rejected_code: 429
             policy: local
@@ -656,20 +657,25 @@ kubectl apply -f limit-req-ic.yaml
 
 </Tabs>
 
-再次向路由生成三个请求：
+等待漏桶排空，然后再次并行发送三个请求：
 
 ```shell
-resp=$(seq 3 | xargs -I{} curl -i "http://127.0.0.1:9080/get" -o /dev/null -s -w "%{http_code}\n") && \
+sleep 2
+resp=$(seq 3 | xargs -P 3 -I{} curl "http://127.0.0.1:9080/get" -o /dev/null -s -w "%{http_code}\n") && \
   count_200=$(echo "$resp" | grep "200" | wc -l) && \
   count_429=$(echo "$resp" | grep "429" | wc -l) && \
   echo "200 responses: $count_200 ; 429 responses: $count_429"
 ```
 
-你应该会看到类似以下内容的响应，表明超出速率的请求已被拒绝：
+预期响应数量不变，但两个被接受的请求现在都不再受到节流延迟：
 
 ```text
-200 responses: 1 ; 429 responses: 2
+200 responses: 2 ; 429 responses: 1
 ```
+
+如果请求到达的间隔足以让漏桶排空，响应数量可能不同。串行发送请求可能掩盖 `burst` 的作用，因为每个延迟的请求都会让漏桶有时间在下一个请求到达之前排空。
+
+要拒绝额外请求而不允许突发，请将 `burst` 设置为 0。在 `rate: 1` 时，三个同时到达的请求中一个成功、两个被拒绝，与 `nodelay` 的值无关。
 
 ### 按远程地址和消费者名称应用速率限制
 
