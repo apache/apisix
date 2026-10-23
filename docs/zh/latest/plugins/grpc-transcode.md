@@ -43,8 +43,9 @@ description: grpc-transcode 插件在 HTTP 请求与 gRPC 请求及其对应响�
 | 名称                 | 类型                                                   | 必选项 | 默认值                                                                     | 描述                                                                                                                                                                                                                        |
 |----------------------|--------------------------------------------------------|--------|----------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | proto_id             | string/integer                                         | 是     |                                                                            | proto 资源的 ID，包含 Protocol Buffer 定义。                                                                                                                                                                                |
-| service              | string                                                 | 是     |                                                                            | gRPC 服务名称。                                                                                                                                                                                                             |
-| method               | string                                                 | 是     |                                                                            | gRPC 服务的方法名称。                                                                                                                                                                                                       |
+| service              | string                                                 | 否     |                                                                            | gRPC 服务名称。当 `use_http_annotations` 为 `true` 时不需要配置。                                                                                                                                                            |
+| method               | string                                                 | 否     |                                                                            | gRPC 服务的方法名称。当 `use_http_annotations` 为 `true` 时不需要配置。                                                                                                                                                      |
+| use_http_annotations | boolean                                                | 否     | false                                                                      | 当设置为 `true` 时，从 proto 中声明的 `google.api.http` 注解解析 gRPC 服务与方法，而不再使用 `service` 与 `method`。详见[根据 google.api.http 注解路由](#根据-googleapihttp-注解路由)。                                        |
 | deadline             | number                                                 | 否     | 0                                                                          | gRPC 服务的超时时间，单位为毫秒。即 APISIX 等待 gRPC 调用完成的时间。                                                                                                                                                      |
 | pb_option            | array[string([pb_option_def](#pb_option-的选项))]      | 否     | `["enum_as_name","int64_as_number","auto_default_values","disable_hooks"]` | 编码器和解码器[选项](https://github.com/starwing/lua-protobuf?tab=readme-ov-file#options)。                                                                                                                                 |
 | show_status_in_body  | boolean                                                | 否     | false                                                                      | 若为 `true`，则在响应体中展示解析后的 `grpc-status-details-bin`。                                                                                                                                                          |
@@ -210,6 +211,136 @@ curl "http://127.0.0.1:9080/echo?msg=Hello"
 ```text
 {"msg":"Hello"}
 ```
+
+### 根据 google.api.http 注解路由
+
+配置 `service` 与 `method` 会把一条路由绑定到一个 gRPC 方法，因此包含十个方法的服务需要十条路由。如果 proto 中已声明 [`google.api.http`](https://github.com/googleapis/googleapis/blob/master/google/api/http.proto) 注解，可改为将 `use_http_annotations` 设置为 `true`。插件会读取注解并选出与请求路径和 HTTP 方法匹配的方法，一条路由即可服务整个服务。
+
+:::note
+
+该模式要求使用 `--include_imports` 生成的 `.pb` 描述符文件，因为注解只在其中保留。直接上传到 `/apisix/admin/protos` 的纯文本 `.proto` 无法使用，因为其中的 `import "google/api/annotations.proto"` 无法被解析。
+
+:::
+
+将下面带注解的定义保存为 `item.proto`：
+
+```proto title="item.proto"
+syntax = "proto3";
+
+package item;
+
+import "google/api/annotations.proto";
+
+service ItemService {
+  rpc GetItem(GetItemRequest) returns (Item) {
+    option (google.api.http) = {
+      get: "/api/v1/items/{id}"
+    };
+  }
+
+  rpc CreateItem(CreateItemRequest) returns (Item) {
+    option (google.api.http) = {
+      post: "/api/v1/items"
+      body: "item"
+    };
+  }
+}
+
+message Item {
+  string id = 1;
+  string title = 2;
+}
+
+message GetItemRequest {
+  string id = 1;
+}
+
+message CreateItemRequest {
+  Item item = 1;
+}
+```
+
+在 `google/api/annotations.proto` 与 `google/api/http.proto` 可被 protoc 找到的前提下生成 `.pb` 文件：
+
+```shell
+protoc --include_imports --descriptor_set_out=item.pb item.proto
+```
+
+在 APISIX 中配置该文件：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/protos/item-proto" -H "X-API-KEY: $admin_key" -X PUT -d '
+{
+  "content" : "'"$(base64 -w0 /path/to/item.pb)"'"
+}'
+```
+
+创建一条覆盖该服务全部带注解方法的路由：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes/item-route" -H "X-API-KEY: $admin_key" -X PUT -d '
+{
+  "uri": "/api/v1/*",
+  "plugins": {
+    "grpc-transcode": {
+      "proto_id": "item-proto",
+      "use_http_annotations": true
+    }
+  },
+  "upstream": {
+    "scheme": "grpc",
+    "type": "roundrobin",
+    "nodes": {
+      "127.0.0.1:50051": 1
+    }
+  }
+}'
+```
+
+发送一个与 `GetItem` 注解匹配的请求：
+
+```shell
+curl "http://127.0.0.1:9080/api/v1/items/42"
+```
+
+路径中的 `{id}` 会绑定到 `GetItemRequest` 的 `id` 字段，因此你会收到：
+
+```text
+{"id":"42","title":"widget"}
+```
+
+同一条路由也会服务 `CreateItem`，因为它的注解声明了不同的方法与路径：
+
+```shell
+curl "http://127.0.0.1:9080/api/v1/items" -X POST \
+  -H "Content-Type: application/json" \
+  -d '{"id":"43","title":"gadget"}'
+```
+
+由于该注解设置了 `body: "item"`，请求体会映射到 `item` 字段，而不是整个请求消息。
+
+#### 路由的作用范围
+
+路由的 URI 模式决定了暴露面。`/api/v1/*` 会覆盖所有以 `/api/v1/` 开头的注解，包括之后才加入 proto 的注解，因此请将 URI 模式收敛到确实希望对外提供的方法集合。没有注解的方法始终不可访问。
+
+认证插件的优先级高于 `grpc-transcode`，因此 `key-auth`、`jwt-auth` 等会在读取任何注解之前拒绝未认证的请求。
+
+#### 行为与限制
+
+* 匹配使用插件执行时的请求 URI，因此先前插件（如 `proxy-rewrite`）所做的改写会参与注解匹配。
+* 从路径中提取的值优先于查询字符串或请求体中绑定到同一字段的值。
+* `body` 的取值决定请求体的读取方式：省略时完全不读取请求体，字段只来自路径与查询字符串；`body: "*"` 时整个请求体即为消息，且不再读取查询字符串；`body: "<field>"` 时请求体映射到该字段，其余字段来自查询字符串；此处仅支持顶层字段名，不支持 `body: "item.nested"` 这样的嵌套路径。
+* 当多个注解都能匹配同一请求时，字面量片段更多的优先，其次是变量更少的。仍然相同时按服务名与方法名排序，因此匹配顺序不依赖方法在描述符中出现的次序。
+* 支持 `additional_bindings`，它们会路由到同一个方法。
+* `**` 匹配零个或多个片段，因此 `/v1/{name=**}` 也能匹配 `/v1`。
+* 当路径没有匹配到任何注解时，插件返回 `404`；当路径已被绑定但请求方法不在其中时，返回 `405` 并通过 `Allow` 响应头列出被允许的方法。
+* 结尾的 `:verb` 会作为独立的部分参与匹配，因此不带 verb 的模板不会接受带 verb 的请求，反之亦然。
+* 声明了请求体但无法按 JSON 解析时，返回 `400`。
+* 忽略 `custom` 类型的 HTTP 规则，因为它没有固定的 HTTP 方法。
+* 不支持 `response_body`：响应始终是完整的消息。
+* 与插件的其余部分一样，不支持流式方法。
+* 路径参数中被转义的分隔符（`%2F`）会在插件执行前由 NGINX 解码，因此会被当作真正的路径分隔符，无法匹配单片段变量。
+* 启用该模式后，配置中的 `service` 与 `method` 会被忽略。
 
 ### 在响应体中显示错误详情
 
