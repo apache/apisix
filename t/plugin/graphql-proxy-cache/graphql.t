@@ -536,3 +536,17 @@ PURGE /apisix/plugin/graphql-proxy-cache/memory/1/abc
 --- error_code: 400
 --- error_log
 strategy mismatch: request strategy is memory but route is configured with disk
+
+
+
+=== TEST 22: invalid graphql request: json body is not an object
+--- request
+POST /graphql
+true
+--- more_headers
+Content-Type: application/json
+--- error_code: 400
+--- error_log
+invalid graphql request, json body is not an object
+--- response_body eval
+qr/invalid graphql request, json body is not an object/
