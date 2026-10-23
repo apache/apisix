@@ -30,6 +30,31 @@ local table = table
 local _M = {}
 
 
+local function cache_token_count(raw, key, alias)
+    local value = raw[key]
+    if type(value) ~= "number" then
+        value = raw[alias]
+    end
+    return type(value) == "number" and value or 0
+end
+
+
+local function normalize_usage(raw)
+    local cache_read = cache_token_count(raw, "cacheReadInputTokens", "cacheReadInputTokenCount")
+    local cache_write = cache_token_count(raw, "cacheWriteInputTokens", "cacheWriteInputTokenCount")
+    -- Bedrock inputTokens excludes cached tokens; normalized prompt usage includes them.
+    local prompt_tokens = (raw.inputTokens or 0) + cache_read + cache_write
+    local completion_tokens = raw.outputTokens or 0
+    return {
+        prompt_tokens = prompt_tokens,
+        completion_tokens = completion_tokens,
+        total_tokens = raw.totalTokens or prompt_tokens + completion_tokens,
+        cache_read_input_tokens = cache_read,
+        cache_creation_input_tokens = cache_write,
+    }
+end
+
+
 --- Detect whether the request matches the Bedrock Converse API format.
 -- Uses URI suffix (/converse) and body (valid JSON table with messages).
 function _M.matches(body, ctx)
@@ -117,12 +142,7 @@ function _M.parse_sse_event(event, ctx, state)
         local raw = data.usage
         return {
             type = "usage_and_done",
-            usage = {
-                prompt_tokens = raw.inputTokens or 0,
-                completion_tokens = raw.outputTokens or 0,
-                total_tokens = raw.totalTokens
-                    or (raw.inputTokens or 0) + (raw.outputTokens or 0),
-            },
+            usage = normalize_usage(raw),
             raw_usage = raw,
         }
     end
@@ -140,12 +160,7 @@ function _M.extract_usage(res_body)
         return nil, nil
     end
     local raw = res_body.usage
-    return {
-        prompt_tokens = raw.inputTokens or 0,
-        completion_tokens = raw.outputTokens or 0,
-        total_tokens = raw.totalTokens
-            or (raw.inputTokens or 0) + (raw.outputTokens or 0),
-    }, raw
+    return normalize_usage(raw), raw
 end
 
 

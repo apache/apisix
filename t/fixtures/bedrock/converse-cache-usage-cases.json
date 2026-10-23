@@ -1,0 +1,196 @@
+[
+  {
+    "name": "no cache",
+    "raw": {
+      "inputTokens": 10,
+      "outputTokens": 8
+    },
+    "expected": {
+      "prompt_tokens": 10,
+      "completion_tokens": 8,
+      "total_tokens": 18,
+      "cache_read_input_tokens": 0,
+      "cache_creation_input_tokens": 0
+    }
+  },
+  {
+    "name": "read",
+    "raw": {
+      "inputTokens": 10,
+      "outputTokens": 8,
+      "cacheReadInputTokens": 20
+    },
+    "expected": {
+      "prompt_tokens": 30,
+      "completion_tokens": 8,
+      "total_tokens": 38,
+      "cache_read_input_tokens": 20,
+      "cache_creation_input_tokens": 0
+    }
+  },
+  {
+    "name": "write",
+    "raw": {
+      "inputTokens": 10,
+      "outputTokens": 8,
+      "cacheWriteInputTokens": 30
+    },
+    "expected": {
+      "prompt_tokens": 40,
+      "completion_tokens": 8,
+      "total_tokens": 48,
+      "cache_read_input_tokens": 0,
+      "cache_creation_input_tokens": 30
+    }
+  },
+  {
+    "name": "both",
+    "raw": {
+      "inputTokens": 10,
+      "outputTokens": 8,
+      "cacheReadInputTokens": 20,
+      "cacheWriteInputTokens": 30
+    },
+    "expected": {
+      "prompt_tokens": 60,
+      "completion_tokens": 8,
+      "total_tokens": 68,
+      "cache_read_input_tokens": 20,
+      "cache_creation_input_tokens": 30
+    }
+  },
+  {
+    "name": "explicit total",
+    "raw": {
+      "inputTokens": 10,
+      "outputTokens": 8,
+      "cacheReadInputTokens": 20,
+      "cacheWriteInputTokens": 30,
+      "totalTokens": 68
+    },
+    "expected": {
+      "prompt_tokens": 60,
+      "completion_tokens": 8,
+      "total_tokens": 68,
+      "cache_read_input_tokens": 20,
+      "cache_creation_input_tokens": 30
+    }
+  },
+  {
+    "name": "preserve total",
+    "raw": {
+      "inputTokens": 10,
+      "outputTokens": 8,
+      "cacheReadInputTokens": 20,
+      "totalTokens": 99
+    },
+    "expected": {
+      "prompt_tokens": 30,
+      "completion_tokens": 8,
+      "total_tokens": 99,
+      "cache_read_input_tokens": 20,
+      "cache_creation_input_tokens": 0
+    }
+  },
+  {
+    "name": "zero total",
+    "raw": {
+      "inputTokens": 10,
+      "outputTokens": 8,
+      "totalTokens": 0
+    },
+    "expected": {
+      "prompt_tokens": 10,
+      "completion_tokens": 8,
+      "total_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation_input_tokens": 0
+    }
+  },
+  {
+    "name": "aliases",
+    "raw": {
+      "inputTokens": 10,
+      "outputTokens": 8,
+      "cacheReadInputTokenCount": 20,
+      "cacheWriteInputTokenCount": 30
+    },
+    "expected": {
+      "prompt_tokens": 60,
+      "completion_tokens": 8,
+      "total_tokens": 68,
+      "cache_read_input_tokens": 20,
+      "cache_creation_input_tokens": 30
+    }
+  },
+  {
+    "name": "canonical precedence",
+    "raw": {
+      "inputTokens": 10,
+      "outputTokens": 8,
+      "cacheReadInputTokens": 4,
+      "cacheReadInputTokenCount": 20,
+      "cacheWriteInputTokens": 6,
+      "cacheWriteInputTokenCount": 30
+    },
+    "expected": {
+      "prompt_tokens": 20,
+      "completion_tokens": 8,
+      "total_tokens": 28,
+      "cache_read_input_tokens": 4,
+      "cache_creation_input_tokens": 6
+    }
+  },
+  {
+    "name": "zero precedence",
+    "raw": {
+      "inputTokens": 10,
+      "outputTokens": 8,
+      "cacheReadInputTokens": 0,
+      "cacheReadInputTokenCount": 20,
+      "cacheWriteInputTokens": 0,
+      "cacheWriteInputTokenCount": 30
+    },
+    "expected": {
+      "prompt_tokens": 10,
+      "completion_tokens": 8,
+      "total_tokens": 18,
+      "cache_read_input_tokens": 0,
+      "cache_creation_input_tokens": 0
+    }
+  },
+  {
+    "name": "null cache",
+    "raw": {
+      "inputTokens": 10,
+      "outputTokens": 8,
+      "cacheReadInputTokens": null,
+      "cacheWriteInputTokens": null
+    },
+    "expected": {
+      "prompt_tokens": 10,
+      "completion_tokens": 8,
+      "total_tokens": 18,
+      "cache_read_input_tokens": 0,
+      "cache_creation_input_tokens": 0
+    }
+  },
+  {
+    "name": "null alias fallback",
+    "raw": {
+      "inputTokens": 10,
+      "outputTokens": 8,
+      "cacheReadInputTokens": null,
+      "cacheReadInputTokenCount": 20,
+      "cacheWriteInputTokens": null,
+      "cacheWriteInputTokenCount": 30
+    },
+    "expected": {
+      "prompt_tokens": 60,
+      "completion_tokens": 8,
+      "total_tokens": 68,
+      "cache_read_input_tokens": 20,
+      "cache_creation_input_tokens": 30
+    }
+  }
+]
