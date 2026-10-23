@@ -27,28 +27,13 @@ SSL_LIB_VERSION=${SSL_LIB_VERSION-openssl}
 ENABLE_FIPS=${ENABLE_FIPS:-"false"}
 
 if [ "$SSL_LIB_VERSION" == "tongsuo" ] || [ "$ENABLE_FIPS" == "true" ]; then
-    arch_path=""
-    if [[ $ARCH == "arm64" ]] || [[ $ARCH == "aarch64" ]]; then
-        arch_path="arm64/"
-    fi
-
-    wget -qO - https://openresty.org/package/pubkey.gpg | sudo apt-key add -
-    wget -qO - http://repos.apiseven.com/pubkey.gpg | sudo apt-key add -
     sudo apt-get -y update --fix-missing
-    sudo apt-get -y install software-properties-common
-    sudo add-apt-repository -y "deb https://openresty.org/package/${arch_path}ubuntu $(lsb_release -sc) main"
-    sudo add-apt-repository -y "deb http://repos.apiseven.com/packages/${arch_path}debian bullseye main"
-
-    sudo apt-get update
-    sudo apt-get install -y openresty-pcre-dev openresty-zlib-dev build-essential gcc g++ cpanminus libxml2-dev libxslt-dev
+    sudo apt-get install -y libpcre2-dev zlib1g-dev build-essential gcc g++ cpanminus libxml2-dev libxslt-dev
 
     if [ "$SSL_LIB_VERSION" == "tongsuo" ]; then
         export openssl_prefix=/usr/local/tongsuo
-        export zlib_prefix=$OPENRESTY_PREFIX/zlib
-        export pcre_prefix=$OPENRESTY_PREFIX/pcre
-
-        export cc_opt="-DNGX_LUA_ABORT_AT_PANIC -I${zlib_prefix}/include -I${pcre_prefix}/include -I${openssl_prefix}/include"
-        export ld_opt="-L${zlib_prefix}/lib -L${pcre_prefix}/lib -L${openssl_prefix}/lib64 -Wl,-rpath,${zlib_prefix}/lib:${pcre_prefix}/lib:${openssl_prefix}/lib64"
+        export cc_opt="-DNGX_LUA_ABORT_AT_PANIC -I${openssl_prefix}/include"
+        export ld_opt="-L${openssl_prefix}/lib64 -Wl,-rpath,${openssl_prefix}/lib64"
     fi
 
     install_apisix_runtime

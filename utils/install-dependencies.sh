@@ -61,27 +61,11 @@ function install_dependencies_with_yum() {
 
 # Install dependencies on ubuntu and debian
 function install_dependencies_with_apt() {
-    # add OpenResty source
+    # Build the runtime with distribution PCRE2 and zlib. This also works on
+    # releases without an OpenResty APT repository, such as Ubuntu 26.04.
     sudo apt-get update
-    sudo apt-get -y install software-properties-common wget lsb-release gnupg patch
-    wget -qO - https://openresty.org/package/pubkey.gpg | sudo apt-key add -
-    arch=$(uname -m | tr '[:upper:]' '[:lower:]')
-    arch_path=""
-    if [[ $arch == "arm64" ]] || [[ $arch == "aarch64" ]]; then
-        arch_path="arm64/"
-    fi
-    if [[ "${1}" == "ubuntu" ]]; then
-        sudo add-apt-repository -y "deb http://openresty.org/package/${arch_path}ubuntu $(lsb_release -sc) main"
-    elif [[ "${1}" == "debian" ]]; then
-        # add-apt-repository on Debian 12 writes an empty list file for a plain
-        # deb line, so the repository never makes it into apt
-        echo "deb http://openresty.org/package/${arch_path}debian $(lsb_release -sc) openresty" \
-            | sudo tee /etc/apt/sources.list.d/openresty.list
-    fi
-    sudo apt-get update
-
-    # install some compilation tools
-    sudo apt-get install -y curl make gcc g++ cpanminus libpcre3 libpcre3-dev libpcre2-dev libyaml-dev unzip openresty-zlib-dev openresty-pcre-dev libxml2-dev libxslt-dev zlib1g-dev
+    sudo apt-get install -y ca-certificates wget patch curl make gcc g++ cpanminus \
+        libpcre2-dev libyaml-dev unzip libxml2-dev libxslt-dev zlib1g-dev
 }
 
 # Identify the different distributions and call the corresponding function
@@ -112,10 +96,9 @@ function multi_distro_uninstallation() {
         sudo yum autoremove -y openresty-zlib-devel openresty-pcre-devel
     elif grep -Eqi "Fedora" /etc/issue || grep -Eq "Fedora" /etc/*-release; then
         sudo yum autoremove -y openresty-zlib-devel openresty-pcre-devel
-    elif grep -Eqi "Debian" /etc/issue || grep -Eq "Debian" /etc/*-release; then
-        sudo apt-get autoremove -y openresty-zlib-dev openresty-pcre-dev
-    elif grep -Eqi "Ubuntu" /etc/issue || grep -Eq "Ubuntu" /etc/*-release; then
-        sudo apt-get autoremove -y openresty-zlib-dev openresty-pcre-dev
+    elif grep -Eqi "Debian|Ubuntu" /etc/issue /etc/*-release; then
+        # Distribution development libraries may be used by other software.
+        return
     else
         echo "Non-supported distribution, APISIX is only supported on Linux-based systems"
         exit 1
