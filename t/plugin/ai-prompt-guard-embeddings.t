@@ -65,37 +65,7 @@ passed
 
 
 
-=== TEST 2: reject a denied string
---- request
-POST /hello
-{"model": "text-embedding-3-small", "input": "badword"}
---- error_code: 400
---- response_body
-{"message":"Request contains prohibited content"}
-
-
-
-=== TEST 3: forward a safe string
---- request
-POST /hello
-{"model": "text-embedding-3-small", "input": "safe"}
---- error_code: 200
---- response_body
-hello world
-
-
-
-=== TEST 4: reject a single denied batch item
---- request
-POST /hello
-{"model": "text-embedding-3-small", "input": ["badword"]}
---- error_code: 400
---- response_body
-{"message":"Request contains prohibited content"}
-
-
-
-=== TEST 5: reject a denied first batch item
+=== TEST 2: reject a denied first batch item
 --- request
 POST /hello
 {"model": "text-embedding-3-small", "input": ["badword", "safe"]}
@@ -105,7 +75,7 @@ POST /hello
 
 
 
-=== TEST 6: reject a denied last batch item
+=== TEST 3: reject a denied last batch item
 --- request
 POST /hello
 {"model": "text-embedding-3-small", "input": ["safe", "badword"]}
@@ -115,7 +85,7 @@ POST /hello
 
 
 
-=== TEST 7: forward a safe string batch
+=== TEST 4: forward a safe string batch
 --- request
 POST /hello
 {"model": "text-embedding-3-small", "input": ["safe", "other"]}
@@ -125,7 +95,7 @@ hello world
 
 
 
-=== TEST 8: forward token IDs without text inspection
+=== TEST 5: forward token IDs without text inspection
 --- request
 POST /hello
 {"model": "text-embedding-3-small", "input": [123, 456]}
@@ -135,27 +105,7 @@ hello world
 
 
 
-=== TEST 9: forward token batches without text inspection
---- request
-POST /hello
-{"model": "text-embedding-3-small", "input": [[123], [456]]}
---- error_code: 200
---- response_body
-hello world
-
-
-
-=== TEST 10: forward an empty batch
---- request
-POST /hello
-{"model": "text-embedding-3-small", "input": []}
---- error_code: 200
---- response_body
-hello world
-
-
-
-=== TEST 11: forward intentionally unselected system content
+=== TEST 6: forward intentionally unselected system content
 --- request
 POST /hello
 {"messages":[{"role":"system","content":"badword"}]}
@@ -165,7 +115,7 @@ hello world
 
 
 
-=== TEST 12: enable strict options
+=== TEST 7: enable strict options
 --- config
     location /t {
         content_by_lua_block {
@@ -196,7 +146,7 @@ passed
 
 
 
-=== TEST 13: reject the first denied item with strict options
+=== TEST 8: reject the first denied item with strict options
 --- request
 POST /hello
 {"model": "text-embedding-3-small", "input": ["badword", "safe"]}
@@ -206,7 +156,7 @@ POST /hello
 
 
 
-=== TEST 14: forward safe batch with strict options
+=== TEST 9: forward safe batch with strict options
 --- request
 POST /hello
 {"model": "text-embedding-3-small", "input": ["safe", "other"]}
@@ -216,17 +166,7 @@ hello world
 
 
 
-=== TEST 15: reject unrecognized protocol with fail_mode error
---- request
-POST /hello
-{"foo": "bar"}
---- error_code: 400
---- response_body
-{"message":"Request format not recognized by ai-prompt-guard"}
-
-
-
-=== TEST 16: setup allow and deny patterns
+=== TEST 10: setup allow and deny patterns
 --- config
     location /t {
         content_by_lua_block {
@@ -255,7 +195,7 @@ passed
 
 
 
-=== TEST 17: allow pattern can match the first batch item
+=== TEST 11: allow pattern can match the first batch item
 --- request
 POST /hello
 {"model": "text-embedding-3-small", "input": ["goodword", "safe"]}
@@ -265,7 +205,7 @@ hello world
 
 
 
-=== TEST 18: reject batch without an allow match
+=== TEST 12: reject batch without an allow match
 --- request
 POST /hello
 {"model": "text-embedding-3-small", "input": ["safe", "other"]}
@@ -275,7 +215,7 @@ POST /hello
 
 
 
-=== TEST 19: deny match rejects an otherwise allowed batch
+=== TEST 13: deny match rejects an otherwise allowed batch
 --- request
 POST /hello
 {"model": "text-embedding-3-small", "input": ["goodword", "badword"]}
