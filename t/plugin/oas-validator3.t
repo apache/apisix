@@ -579,13 +579,37 @@ passed
 
 
 
-=== TEST 24: changing spec_url on a route releases the previously compiled spec
+=== TEST 24: a spec_url no resource uses any more is released after spec_url_ttl
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin")
             local http = require("resty.http")
             local fetches = ngx.shared.oas_spec_fetches
+
+            -- track compiled specs that are still reachable
+            local ov = require("resty.openapi_validator")
+            local orig_compile = ov.compile
+            local compiled = setmetatable({}, {__mode = "v"})
+            local n_compiled = 0
+            ov.compile = function (...)
+                local v, err = orig_compile(...)
+                if v then
+                    n_compiled = n_compiled + 1
+                    compiled[n_compiled] = v
+                end
+                return v, err
+            end
+
+            local function live()
+                collectgarbage()
+                collectgarbage()
+                local n = 0
+                for _ in pairs(compiled) do
+                    n = n + 1
+                end
+                return n
+            end
 
             local function put_route(id, spec_url)
                 local code, body = t.test('/apisix/admin/routes/' .. id, ngx.HTTP_PUT, {
@@ -611,31 +635,35 @@ passed
                 assert(res and res.status == 200, err or (res and res.status))
             end
 
-            local function full_gc()
-                collectgarbage()
-                collectgarbage()
+            local function set_ttl(ttl)
+                local code, body = t.test('/apisix/admin/plugin_metadata/oas-validator',
+                    ngx.HTTP_PUT, {spec_url_ttl = ttl})
+                assert(code < 300, body)
             end
+
+            set_ttl(2)
             put_route(1, "http://127.0.0.1:1979/counted/a.json")
             hit(1)
             put_route(1, "http://127.0.0.1:1979/counted/b.json")
-            hit(1)
-            full_gc()
-
-            -- nothing references a.json any more, so another route declaring
-            -- it has to fetch it again
-            put_route(2, "http://127.0.0.1:1979/counted/a.json")
+            put_route(2, "http://127.0.0.1:1979/counted/c.json")
             hit(2)
-
-            ngx.say("a: ", fetches:get("/counted/a.json"))
-            ngx.say("b: ", fetches:get("/counted/b.json"))
-
-            t.test('/apisix/admin/routes/1', ngx.HTTP_DELETE)
             t.test('/apisix/admin/routes/2', ngx.HTTP_DELETE)
+            ngx.say("live before spec_url_ttl: ", live())
+
+            -- neither a.json nor c.json is asked for again
+            ngx.sleep(3.5)
+            ngx.say("live after spec_url_ttl: ", live())
+
+            t.test('/apisix/admin/plugin_metadata/oas-validator', ngx.HTTP_DELETE)
+            for id = 1, 2 do
+                t.test('/apisix/admin/routes/' .. id, ngx.HTTP_DELETE)
+            end
         }
     }
 --- response_body
-a: 2
-b: 1
+live before spec_url_ttl: 2
+live after spec_url_ttl: 0
+--- timeout: 15
 
 
 
@@ -671,10 +699,12 @@ b: 1
                 assert(res and res.status == 200, err or (res and res.status))
             end
 
-            local function full_gc()
-                collectgarbage()
-                collectgarbage()
+            local function set_ttl(ttl)
+                local code, body = t.test('/apisix/admin/plugin_metadata/oas-validator',
+                    ngx.HTTP_PUT, {spec_url_ttl = ttl})
+                assert(code < 300, body)
             end
+
             put_route(1, "http://127.0.0.1:1979/counted/c.json")
             put_route(2, "http://127.0.0.1:1979/counted/c.json")
             hit(1)
@@ -684,8 +714,10 @@ b: 1
 
             ngx.say("c: ", fetches:get("/counted/c.json"))
 
-            t.test('/apisix/admin/routes/1', ngx.HTTP_DELETE)
-            t.test('/apisix/admin/routes/2', ngx.HTTP_DELETE)
+            t.test('/apisix/admin/plugin_metadata/oas-validator', ngx.HTTP_DELETE)
+            for id = 1, 2 do
+                t.test('/apisix/admin/routes/' .. id, ngx.HTTP_DELETE)
+            end
         }
     }
 --- response_body
@@ -701,6 +733,30 @@ c: 1
             local http = require("resty.http")
             local fetches = ngx.shared.oas_spec_fetches
 
+            -- track compiled specs that are still reachable
+            local ov = require("resty.openapi_validator")
+            local orig_compile = ov.compile
+            local compiled = setmetatable({}, {__mode = "v"})
+            local n_compiled = 0
+            ov.compile = function (...)
+                local v, err = orig_compile(...)
+                if v then
+                    n_compiled = n_compiled + 1
+                    compiled[n_compiled] = v
+                end
+                return v, err
+            end
+
+            local function live()
+                collectgarbage()
+                collectgarbage()
+                local n = 0
+                for _ in pairs(compiled) do
+                    n = n + 1
+                end
+                return n
+            end
+
             local function put_route(id, spec_url)
                 local code, body = t.test('/apisix/admin/routes/' .. id, ngx.HTTP_PUT, {
                     uri = "/api/v3/pet",
@@ -725,38 +781,34 @@ c: 1
                 assert(res and res.status == 200, err or (res and res.status))
             end
 
-            local function full_gc()
-                collectgarbage()
-                collectgarbage()
+            local function set_ttl(ttl)
+                local code, body = t.test('/apisix/admin/plugin_metadata/oas-validator',
+                    ngx.HTTP_PUT, {spec_url_ttl = ttl})
+                assert(code < 300, body)
             end
+
             put_route(1, "http://127.0.0.1:1979/counted/d.json")
             hit(1)
 
-            local code, body = t.test('/apisix/admin/plugin_metadata/oas-validator',
-                ngx.HTTP_PUT, {spec_url_ttl = 7200})
-            assert(code < 300, body)
+            set_ttl(7200)
             ngx.sleep(0.5)
             -- the next request replaces the cache with one for the new ttl
             put_route(2, "http://127.0.0.1:1979/counted/e.json")
             hit(2)
-            full_gc()
-
-            -- the previous cache was the last holder of d.json, so it is
-            -- fetched again
-            hit(1)
-            ngx.say("d: ", fetches:get("/counted/d.json"))
+            ngx.say("live: ", live())
 
             t.test('/apisix/admin/plugin_metadata/oas-validator', ngx.HTTP_DELETE)
-            t.test('/apisix/admin/routes/1', ngx.HTTP_DELETE)
-            t.test('/apisix/admin/routes/2', ngx.HTTP_DELETE)
+            for id = 1, 2 do
+                t.test('/apisix/admin/routes/' .. id, ngx.HTTP_DELETE)
+            end
         }
     }
 --- response_body
-d: 2
+live: 1
 
 
 
-=== TEST 27: an expired spec is refetched even when another route shares it
+=== TEST 27: idle resources do not pin old generations of a shared spec_url
 --- config
     location /t {
         content_by_lua_block {
@@ -764,6 +816,30 @@ d: 2
             local http = require("resty.http")
             local fetches = ngx.shared.oas_spec_fetches
 
+            -- track compiled specs that are still reachable
+            local ov = require("resty.openapi_validator")
+            local orig_compile = ov.compile
+            local compiled = setmetatable({}, {__mode = "v"})
+            local n_compiled = 0
+            ov.compile = function (...)
+                local v, err = orig_compile(...)
+                if v then
+                    n_compiled = n_compiled + 1
+                    compiled[n_compiled] = v
+                end
+                return v, err
+            end
+
+            local function live()
+                collectgarbage()
+                collectgarbage()
+                local n = 0
+                for _ in pairs(compiled) do
+                    n = n + 1
+                end
+                return n
+            end
+
             local function put_route(id, spec_url)
                 local code, body = t.test('/apisix/admin/routes/' .. id, ngx.HTTP_PUT, {
                     uri = "/api/v3/pet",
@@ -788,38 +864,49 @@ d: 2
                 assert(res and res.status == 200, err or (res and res.status))
             end
 
-            local function full_gc()
-                collectgarbage()
-                collectgarbage()
+            local function set_ttl(ttl)
+                local code, body = t.test('/apisix/admin/plugin_metadata/oas-validator',
+                    ngx.HTTP_PUT, {spec_url_ttl = ttl})
+                assert(code < 300, body)
             end
-            local code, body = t.test('/apisix/admin/plugin_metadata/oas-validator',
-                ngx.HTTP_PUT, {spec_url_ttl = 2})
-            assert(code < 300, body)
-            put_route(1, "http://127.0.0.1:1979/counted/f.json")
-            put_route(2, "http://127.0.0.1:1979/counted/f.json")
-            hit(1)
-            hit(2)
-            ngx.say("f: ", fetches:get("/counted/f.json"))
 
-            ngx.sleep(2.5)
-            -- serves the stale spec and queues a background refresh; the two
-            -- refreshes may run on different ticks of the 1s refresh timer, so
-            -- the ttl must stay above that gap for the second one to reuse the
-            -- first one's fetch
+            set_ttl(2)
+            local url = "http://127.0.0.1:1979/counted/one.json"
+            for id = 0, 3 do
+                put_route(id, url)
+            end
+
+            -- route 0 keeps the spec refreshing; routes 1..3 each use one
+            -- generation and then stay idle
+            hit(0)
             hit(1)
-            hit(2)
-            ngx.sleep(1.5)
-            ngx.say("f: ", fetches:get("/counted/f.json"))
+            for gen = 2, 4 do
+                ngx.sleep(2.2)
+                hit(0)          -- stale, queues a background refresh
+                ngx.sleep(1.5)  -- the refresh compiles generation `gen`
+                if gen <= 3 then
+                    hit(gen)
+                end
+            end
+
+            ngx.say("fetches: ", fetches:get("/counted/one.json"))
+            ngx.say("live: ", live())
+
+            -- nobody asks for it any more
+            ngx.sleep(3)
+            ngx.say("live after spec_url_ttl: ", live())
 
             t.test('/apisix/admin/plugin_metadata/oas-validator', ngx.HTTP_DELETE)
-            t.test('/apisix/admin/routes/1', ngx.HTTP_DELETE)
-            t.test('/apisix/admin/routes/2', ngx.HTTP_DELETE)
+            for id = 0, 3 do
+                t.test('/apisix/admin/routes/' .. id, ngx.HTTP_DELETE)
+            end
         }
     }
 --- response_body
-f: 1
-f: 2
---- timeout: 10
+fetches: 4
+live: 1
+live after spec_url_ttl: 0
+--- timeout: 30
 
 
 
@@ -855,10 +942,12 @@ f: 2
                 assert(res and res.status == 200, err or (res and res.status))
             end
 
-            local function full_gc()
-                collectgarbage()
-                collectgarbage()
+            local function set_ttl(ttl)
+                local code, body = t.test('/apisix/admin/plugin_metadata/oas-validator',
+                    ngx.HTTP_PUT, {spec_url_ttl = ttl})
+                assert(code < 300, body)
             end
+
             local spec_url = "http://127.0.0.1:1979/counted/g.json?delay=0.3"
             put_route(1, spec_url)
             put_route(2, spec_url)
@@ -874,6 +963,7 @@ f: 2
 
             ngx.say("g: ", fetches:get("/counted/g.json"))
 
+            t.test('/apisix/admin/plugin_metadata/oas-validator', ngx.HTTP_DELETE)
             for id = 1, 3 do
                 t.test('/apisix/admin/routes/' .. id, ngx.HTTP_DELETE)
             end
@@ -881,3 +971,174 @@ f: 2
     }
 --- response_body
 g: 1
+
+
+
+=== TEST 29: the 512-spec limit counts URLs, not the resources declaring them
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin")
+            local http = require("resty.http")
+            local fetches = ngx.shared.oas_spec_fetches
+
+            -- track compiled specs that are still reachable
+            local ov = require("resty.openapi_validator")
+            local orig_compile = ov.compile
+            local compiled = setmetatable({}, {__mode = "v"})
+            local n_compiled = 0
+            ov.compile = function (...)
+                local v, err = orig_compile(...)
+                if v then
+                    n_compiled = n_compiled + 1
+                    compiled[n_compiled] = v
+                end
+                return v, err
+            end
+
+            local function live()
+                collectgarbage()
+                collectgarbage()
+                local n = 0
+                for _ in pairs(compiled) do
+                    n = n + 1
+                end
+                return n
+            end
+
+            local function put_route(id, spec_url)
+                local code, body = t.test('/apisix/admin/routes/' .. id, ngx.HTTP_PUT, {
+                    uri = "/api/v3/pet",
+                    host = "r" .. id .. ".test",
+                    plugins = {["oas-validator"] = {spec_url = spec_url}},
+                    upstream = {type = "roundrobin", nodes = {["127.0.0.1:1970"] = 1}},
+                })
+                assert(code < 300, body)
+            end
+
+            local function hit(id)
+                local res, err = http.new():request_uri(
+                    "http://127.0.0.1:" .. ngx.var.server_port .. "/api/v3/pet", {
+                    method = "POST",
+                    body = '{"id": 10, "name": "doggie", "photoUrls": ["string"]}',
+                    headers = {
+                        ["Content-Type"] = "application/json",
+                        ["Host"] = "r" .. id .. ".test",
+                    },
+                })
+                assert(res and res.status == 200, err or (res and res.status))
+            end
+
+            local function set_ttl(ttl)
+                local code, body = t.test('/apisix/admin/plugin_metadata/oas-validator',
+                    ngx.HTTP_PUT, {spec_url_ttl = ttl})
+                assert(code < 300, body)
+            end
+
+            -- 600 routes over 51 URLs: every spec stays cached
+            local N, DISTINCT = 600, 50
+            local function url_of(id)
+                if id <= DISTINCT then
+                    return "http://127.0.0.1:1979/counted/u" .. id .. ".json"
+                end
+                return "http://127.0.0.1:1979/counted/shared.json"
+            end
+            for id = 1, N do
+                put_route(id, url_of(id))
+            end
+            ngx.sleep(3)
+
+            local function total()
+                local s = 0
+                for _, k in ipairs(fetches:get_keys(0)) do
+                    s = s + fetches:get(k)
+                end
+                return s
+            end
+
+            for id = 1, N do
+                hit(id)
+            end
+            local pass1, compiled1 = total(), n_compiled
+            collectgarbage()
+            for id = 1, N do
+                hit(id)
+            end
+            ngx.say("pass1 fetches: ", pass1, ", compiles: ", compiled1)
+            ngx.say("pass2 fetches: ", total() - pass1, ", compiles: ", n_compiled - compiled1)
+            ngx.say("live: ", live())
+
+            t.test('/apisix/admin/plugin_metadata/oas-validator', ngx.HTTP_DELETE)
+            for id = 1, N do
+                t.test('/apisix/admin/routes/' .. id, ngx.HTTP_DELETE)
+            end
+        }
+    }
+--- response_body
+pass1 fetches: 51, compiles: 51
+pass2 fetches: 0, compiles: 0
+live: 51
+--- timeout: 300
+
+
+
+=== TEST 30: a spec shared by routes is refreshed once it is older than spec_url_ttl
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin")
+            local http = require("resty.http")
+            local fetches = ngx.shared.oas_spec_fetches
+
+            local function put_route(id, spec_url)
+                local code, body = t.test('/apisix/admin/routes/' .. id, ngx.HTTP_PUT, {
+                    uri = "/api/v3/pet",
+                    host = "r" .. id .. ".test",
+                    plugins = {["oas-validator"] = {spec_url = spec_url}},
+                    upstream = {type = "roundrobin", nodes = {["127.0.0.1:1970"] = 1}},
+                })
+                assert(code < 300, body)
+                ngx.sleep(0.5)
+            end
+
+            local function hit(id)
+                local res, err = http.new():request_uri(
+                    "http://127.0.0.1:" .. ngx.var.server_port .. "/api/v3/pet", {
+                    method = "POST",
+                    body = '{"id": 10, "name": "doggie", "photoUrls": ["string"]}',
+                    headers = {
+                        ["Content-Type"] = "application/json",
+                        ["Host"] = "r" .. id .. ".test",
+                    },
+                })
+                assert(res and res.status == 200, err or (res and res.status))
+            end
+
+            local function set_ttl(ttl)
+                local code, body = t.test('/apisix/admin/plugin_metadata/oas-validator',
+                    ngx.HTTP_PUT, {spec_url_ttl = ttl})
+                assert(code < 300, body)
+            end
+
+            set_ttl(2)
+            local url = "http://127.0.0.1:1979/counted/fresh.json"
+            put_route(1, url)
+            put_route(2, url)
+
+            hit(1)                 -- fetch at t0
+            ngx.sleep(1.3)
+            hit(2)                 -- reuses the t0 spec
+            ngx.sleep(1.0)         -- the spec is now older than the ttl
+            hit(2)                 -- served stale, queues a refresh
+            ngx.sleep(1.5)
+            ngx.say("fetches: ", fetches:get("/counted/fresh.json"))
+
+            t.test('/apisix/admin/plugin_metadata/oas-validator', ngx.HTTP_DELETE)
+            for id = 1, 2 do
+                t.test('/apisix/admin/routes/' .. id, ngx.HTTP_DELETE)
+            end
+        }
+    }
+--- response_body
+fetches: 2
+--- timeout: 15

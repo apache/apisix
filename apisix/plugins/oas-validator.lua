@@ -20,14 +20,11 @@ local secret = require("apisix.secret")
 local plugin = require("apisix.plugin")
 local ov   = require("resty.openapi_validator")
 local http = require("resty.http")
-local resty_lock = require("resty.lock")
 local ngx_req = ngx.req
 local ngx_md5 = ngx.md5
-local ngx_now = ngx.now
 local pairs = pairs
 local ipairs = ipairs
 local tostring = tostring
-local setmetatable = setmetatable
 local tab_sort = table.sort
 local tab_concat = table.concat
 
@@ -127,11 +124,6 @@ local metadata_schema = {
 local spec_url_lrucache
 local spec_url_lrucache_ttl
 
--- Compiled specs keyed by spec URL cache key, so resources declaring the same
--- URL share one copy. Weak values: an entry lives only while some resource's
--- slot in spec_url_lrucache still holds it.
-local shared_spec_url_entries = setmetatable({}, {__mode = "v"})
-
 local function get_spec_url_ttl()
     local metadata = plugin.plugin_metadata(plugin_name)
     if metadata and metadata.value and metadata.value.spec_url_ttl then
@@ -149,6 +141,9 @@ local function get_spec_url_lrucache()
             invalid_stale = true,
             refresh_stale = true,
             serial_creating = true,
+            -- release a spec no resource has asked for within a ttl, instead
+            -- of keeping it until 512 other specs push it out
+            inactive = ttl,
         })
         spec_url_lrucache_ttl = ttl
     end
@@ -182,45 +177,6 @@ local function fetch_and_compile(conf)
     end
 
     return validator
-end
-
-local function get_fresh_shared_entry(cache_key, ttl)
-    local entry = shared_spec_url_entries[cache_key]
-    if entry and ngx_now() - entry.fetched_at < ttl then
-        return entry
-    end
-end
-
-local function create_spec_url_entry(conf, cache_key, ttl)
-    local entry = get_fresh_shared_entry(cache_key, ttl)
-    if entry then
-        return entry
-    end
-
-    -- spec_url_lrucache only serialises per resource, so resources sharing a
-    -- cold URL would otherwise each fetch and keep their own compiled copy
-    local lock, err = resty_lock:new("lrucache-lock")
-    if not lock then
-        return nil, "failed to create lock: " .. err
-    end
-
-    local elapsed, lock_err = lock:lock(plugin_name .. "#" .. cache_key)
-    if not elapsed then
-        return nil, "failed to acquire the lock: " .. lock_err
-    end
-
-    entry = get_fresh_shared_entry(cache_key, ttl)
-    if not entry then
-        local validator
-        validator, err = fetch_and_compile(conf)
-        if validator then
-            entry = {validator = validator, fetched_at = ngx_now()}
-            shared_spec_url_entries[cache_key] = entry
-        end
-    end
-
-    lock:unlock()
-    return entry, err
 end
 
 local _M = {
@@ -281,16 +237,11 @@ local function get_validator(conf)
         end
         cache_key = cache_key .. "#" .. ngx_md5(tab_concat(parts, "&"))
     end
-
-    -- Key by the declaring resource with the URL key as version, so a changed
-    -- spec_url replaces the resource's slot instead of adding another one.
-    local entry, err = lrucache(conf._meta.parent.resource_key, cache_key,
-                                create_spec_url_entry, conf, cache_key,
-                                spec_url_lrucache_ttl)
-    if not entry then
+    local validator, err = lrucache(cache_key, nil, fetch_and_compile, conf)
+    if not validator then
         return nil, err
     end
-    return entry.validator
+    return validator
 end
 
 
