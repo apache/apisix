@@ -632,7 +632,12 @@ local function resolve_upstream_client_cert(api_ctx)
     -- avoid the per-request deepcopy done by fetch_secrets when the ssl object
     -- holds plain cert/key
     if apisix_secret.has_secret_ref(upstream_ssl) then
-        upstream_ssl = apisix_secret.fetch_secrets(upstream_ssl, true) or upstream_ssl
+        local err
+        upstream_ssl, err = apisix_secret.fetch_ssl_secrets(upstream_ssl)
+        if not upstream_ssl then
+            core.log.error("failed to get ssl cert: ", err)
+            return false
+        end
     end
 
     api_ctx.upstream_ssl = upstream_ssl
