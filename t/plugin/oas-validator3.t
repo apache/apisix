@@ -876,24 +876,31 @@ live: 1
                 put_route(id, url)
             end
 
-            -- route 0 keeps the spec refreshing; routes 1..3 each use one
-            -- generation and then stay idle
+            -- route 0 keeps using the spec, so it is refreshed every ttl and
+            -- never idle; routes 1..3 each use one generation and then stay idle
+            local function hit_0_until_generation(gen)
+                local deadline = ngx.now() + 10
+                while n_compiled < gen do
+                    assert(ngx.now() < deadline, "no refresh")
+                    ngx.sleep(0.5)
+                    hit(0)
+                end
+            end
+
             hit(0)
             hit(1)
             for gen = 2, 4 do
-                ngx.sleep(2.2)
-                hit(0)          -- stale, queues a background refresh
-                ngx.sleep(1.5)  -- the refresh compiles generation `gen`
+                hit_0_until_generation(gen)
                 if gen <= 3 then
                     hit(gen)
                 end
             end
 
-            ngx.say("fetches: ", fetches:get("/counted/one.json"))
+            ngx.say("generations: ", n_compiled)
             ngx.say("live: ", live())
 
             -- nobody asks for it any more
-            ngx.sleep(3)
+            ngx.sleep(3.5)
             ngx.say("live after spec_url_ttl: ", live())
 
             t.test('/apisix/admin/plugin_metadata/oas-validator', ngx.HTTP_DELETE)
@@ -903,7 +910,7 @@ live: 1
         }
     }
 --- response_body
-fetches: 4
+generations: 4
 live: 1
 live after spec_url_ttl: 0
 --- timeout: 30

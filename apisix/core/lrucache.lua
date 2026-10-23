@@ -286,10 +286,6 @@ local function refresh_stale_objs()
             if keys[key] == new_obj then
                 lru_obj:set(key, {val = obj, ver = ver}, ttl)
                 keys[key] = nil
-                local inactive_lru = inactive_lru_pool[lru_obj]
-                if inactive_lru then
-                    inactive_lru.access_times[key] = ngx_now()
-                end
                 log.info("successfully refresh stale obj for key ",
                             tostring(key), " to ver ", ver)
             end
