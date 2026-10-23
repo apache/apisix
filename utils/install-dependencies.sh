@@ -65,7 +65,7 @@ function install_dependencies_with_apt() {
     # releases without an OpenResty APT repository, such as Ubuntu 26.04.
     sudo apt-get update
     sudo apt-get install -y ca-certificates wget patch curl make gcc g++ cpanminus \
-        libpcre2-dev libyaml-dev unzip libxml2-dev libxslt-dev zlib1g-dev
+        libpcre2-dev libyaml-dev unzip xz-utils libxml2-dev libxslt-dev zlib1g-dev
 }
 
 # Identify the different distributions and call the corresponding function
