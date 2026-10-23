@@ -51,6 +51,8 @@ With this Plugin enabled, APISIX accepts an HTTP request from the client, transc
 | show_status_in_body  | boolean                                                | False    | false                                                                       | If `true`, display the parsed `grpc-status-details-bin` in the response body.                                                                                                                                             |
 | status_detail_type   | string                                                 | False    |                                                                             | The message type corresponding to the [details](https://github.com/googleapis/googleapis/blob/master/google/rpc/status.proto#L46) part of `grpc-status-details-bin`. If not specified, the error message will not be decoded. |
 
+Integer IDs are compared as strings: `1` and `"1"` reference the same proto resource, while `"01"` remains a distinct ID.
+
 ### Options for pb_option
 
 | Type            | Valid values                                                                              |

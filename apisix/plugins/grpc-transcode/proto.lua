@@ -20,6 +20,7 @@ local pb            = require("pb")
 local protoc        = require("protoc")
 local pcall         = pcall
 local ipairs        = ipairs
+local tostring      = tostring
 local decode_base64 = ngx.decode_base64
 
 
@@ -133,7 +134,7 @@ local function create_proto_obj(proto_id)
 
     local content
     for _, proto in config_util.iterate_values(protos.values) do
-        if proto_id == proto.value.id then
+        if proto_id == tostring(proto.value.id) then
             content = proto.value.content
             break
         end
@@ -148,6 +149,7 @@ end
 
 
 function _M.fetch(proto_id)
+    proto_id = tostring(proto_id)
     return lrucache_proto(proto_id, protos.conf_version,
                           create_proto_obj, proto_id)
 end
