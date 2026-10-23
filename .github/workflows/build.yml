@@ -205,7 +205,7 @@ jobs:
         env:
           TEST_FILE_SUB_DIR: ${{ matrix.test_dir }}
         # sudo-rs (Ubuntu 26.04) ignores -E, so pass what the script needs explicitly
-        run: sudo -E TEST_FILE_SUB_DIR="$TEST_FILE_SUB_DIR" ./ci/${{ matrix.os_name }}_runner.sh script
+        run: sudo -E env TEST_FILE_SUB_DIR="$TEST_FILE_SUB_DIR" ./ci/${{ matrix.os_name }}_runner.sh script
 
       - if: ${{ steps.cache-images.outputs.cache-hit != 'true' }}
         name: Save docker images

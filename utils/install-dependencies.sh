@@ -66,13 +66,14 @@ function install_dependencies_with_apt() {
     sudo apt-get -y install wget lsb-release gnupg patch
     sudo mkdir -p /etc/apt/keyrings
     wget -qO - https://openresty.org/package/pubkey.gpg | sudo gpg --dearmor --yes -o /etc/apt/keyrings/openresty.gpg
+    sudo chmod 0644 /etc/apt/keyrings/openresty.gpg
     arch=$(uname -m | tr '[:upper:]' '[:lower:]')
     arch_path=""
     if [[ $arch == "arm64" ]] || [[ $arch == "aarch64" ]]; then
         arch_path="arm64/"
     fi
     codename=$(lsb_release -sc)
-    repo_url="http://openresty.org/package/${arch_path}${1}"
+    repo_url="https://openresty.org/package/${arch_path}${1}"
     # OpenResty publishes packages for a new Ubuntu release some time after it
     # comes out (e.g. 26.04). Only openresty-zlib-dev and openresty-pcre-dev are
     # needed from it, and they are self-contained under /usr/local/openresty,
