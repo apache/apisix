@@ -20,7 +20,6 @@
 -- @module core.config_yaml
 
 local config_local = require("apisix.core.config_local")
-local yaml         = require("lyaml")
 local log          = require("apisix.core.log")
 local json         = require("apisix.core.json")
 local new_tab      = require("table.new")
@@ -98,13 +97,7 @@ local config_yaml = {
         local raw_config = f:read("*a")
         f:close()
 
-        -- substitute env vars in the raw YAML text before parsing so that
-        -- YAML quoting decides types (see apisix/cli/file.lua).
-        local resolved, err = file.resolve_conf_var_in_text(raw_config)
-        if not resolved then
-            return nil, err
-        end
-        return yaml.load(resolved), nil
+        return file.load_yaml_with_env(raw_config)
     end
 }
 

@@ -363,6 +363,34 @@ routes:
 
 More information about using environment variables can be found [here](./admin-api.md#using-environment-variables).
 
+For SSL resources, a complete `${{VAR}}` reference in `cert`, `key`, a `certs` or
+`keys` array item, or `client.ca` can contain a multiline PEM value:
+
+```yaml
+ssls:
+  - id: example
+    snis: ["example.com"]
+    cert: "${{SERVER_CERT}}"
+    key: "${{SERVER_KEY}}"
+#END
+```
+
+The loader preserves the original multiline value in these fields. Single-line
+values, including literal `\n` escapes inside double-quoted YAML, continue to use
+the existing substitution rules. Other fields also retain their existing YAML
+substitution behavior.
+
+This protection applies to complete scalar references, including unquoted
+references in flow-style YAML. It does not add recursive variable expansion or
+protect references embedded in larger strings or block scalars. Configurations
+that cannot be identified unambiguously use the existing loading behavior;
+for example, a variable shared through an anchor with a non-SSL field is not
+protected. A whole configuration supplied through one environment variable is
+still expanded as YAML, without special handling of PEM content inside it.
+
+For those cases, SSL fields also support environment-backed
+[Secret references](./terminology/secret.md), such as `$ENV://SERVER_CERT`.
+
 #### To `config_provider: json`
 
 All of the rules are stored in one file which named `conf/apisix.json`,
