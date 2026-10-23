@@ -451,14 +451,14 @@ local function uri_matches_skip_mtls_route_patterns(ssl, uri)
 end
 
 
-local function verify_https_client(ctx)
+function _M.verify_https_client(ctx)
     local scheme = ctx.var.scheme
     if scheme ~= "https" then
         return true
     end
 
     local matched_ssl = ngx.ctx.matched_ssl
-    if matched_ssl.value.client
+    if matched_ssl and matched_ssl.value and matched_ssl.value.client
         and matched_ssl.value.client.skip_mtls_uri_regex
         and apisix_ssl.support_client_verification()
         and (not uri_matches_skip_mtls_route_patterns(matched_ssl, ngx.var.uri)) then
@@ -856,7 +856,7 @@ function _M.http_access_phase()
 
     local span = tracer.start(ngx_ctx, "apisix.phase.access", tracer.kind.server)
 
-    local verified, status = verify_https_client(api_ctx)
+    local verified, status = _M.verify_https_client(api_ctx)
     if not verified then
         return core.response.exit(status or 400)
     end
