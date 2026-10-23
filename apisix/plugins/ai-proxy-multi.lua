@@ -427,7 +427,9 @@ local function get_checkers_status_ver(conf, checkers)
         -- without health filtering before the checker exists would share the
         -- same cache key with the post-creation state and be reused even
         -- after the shm already marks some nodes unhealthy.
-        parts[i] = checker and checker.status_ver or "x"
+        local host = ins.checks and ins.checks.active and ins.checks.active.host
+        local port = ins.checks and ins.checks.active and ins.checks.active.port
+        parts[i] = healthcheck_manager.node_status_ver(checker, ins._dns_nodes, host, port)
     end
     return table_concat(parts, "-")
 end
@@ -538,7 +540,10 @@ local function get_health_status_ver(conf, checkers)
     local parts = core.table.new(#conf.instances, 0)
     for i, ins in ipairs(conf.instances) do
         local checker = checkers[ins.name]
-        parts[i] = (ins._nodes_ver or 0) .. ":" .. (checker and checker.status_ver or "x")
+        local host = ins.checks and ins.checks.active and ins.checks.active.host
+        local port = ins.checks and ins.checks.active and ins.checks.active.port
+        parts[i] = (ins._nodes_ver or 0) .. ":" ..
+                   healthcheck_manager.node_status_ver(checker, ins._dns_nodes, host, port)
     end
 
     return table_concat(parts, "-")
