@@ -54,7 +54,9 @@ after() {
         --entity-name admin
     # prepare openwhisk env
     docker pull openwhisk/action-nodejs-v14:1.20.0
-    docker run --rm -d --name openwhisk -p 3233:3233 -p 3232:3232 -v /var/run/docker.sock:/var/run/docker.sock openwhisk/standalone:1.0.0
+    # the image bundles docker 18.06 (API 1.38), which Docker 29 refuses; pin
+    # the API version it claims so every docker call it spawns is accepted
+    docker run --rm -d --name openwhisk -e DOCKER_API_VERSION=1.40 -p 3233:3233 -p 3232:3232 -v /var/run/docker.sock:/var/run/docker.sock openwhisk/standalone:7ef091c
     docker exec -i openwhisk waitready
     docker exec -i openwhisk bash -c "wsk package create pkg"
     docker exec -i openwhisk bash -c "wsk action update /guest/pkg/testpkg <(echo 'function main(args){return {\"hello\": \"world\"}}') --kind nodejs:14"
