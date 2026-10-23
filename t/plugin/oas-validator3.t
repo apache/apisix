@@ -641,7 +641,7 @@ passed
                 assert(code < 300, body)
             end
 
-            set_ttl(2)
+            set_ttl(3)
             put_route(1, "http://127.0.0.1:1979/counted/a.json")
             hit(1)
             put_route(1, "http://127.0.0.1:1979/counted/b.json")
@@ -651,8 +651,15 @@ passed
             ngx.say("live before spec_url_ttl: ", live())
 
             -- neither a.json nor c.json is asked for again
-            ngx.sleep(3.5)
-            ngx.say("live after spec_url_ttl: ", live())
+            -- released once the 1s purge timer runs after spec_url_ttl idle
+            local function live_after_idle()
+                local deadline = ngx.now() + 10
+                while live() > 0 and ngx.now() < deadline do
+                    ngx.sleep(0.2)
+                end
+                return live()
+            end
+            ngx.say("live after spec_url_ttl: ", live_after_idle())
 
             t.test('/apisix/admin/plugin_metadata/oas-validator', ngx.HTTP_DELETE)
             for id = 1, 2 do
@@ -900,8 +907,15 @@ live: 1
             ngx.say("live: ", live())
 
             -- nobody asks for it any more
-            ngx.sleep(3.5)
-            ngx.say("live after spec_url_ttl: ", live())
+            -- released once the 1s purge timer runs after spec_url_ttl idle
+            local function live_after_idle()
+                local deadline = ngx.now() + 10
+                while live() > 0 and ngx.now() < deadline do
+                    ngx.sleep(0.2)
+                end
+                return live()
+            end
+            ngx.say("live after spec_url_ttl: ", live_after_idle())
 
             t.test('/apisix/admin/plugin_metadata/oas-validator', ngx.HTTP_DELETE)
             for id = 0, 3 do

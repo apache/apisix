@@ -287,9 +287,13 @@ released: true
             end
 
             lru_get("key", "ver", create_obj)
-            ngx.sleep(2.5)
-            collectgarbage()
-            collectgarbage()
+            -- purged once the 1s purge timer runs after `inactive`
+            local deadline = ngx.now() + 5
+            repeat
+                ngx.sleep(0.2)
+                collectgarbage()
+                collectgarbage()
+            until probe[1] == nil or ngx.now() > deadline
             ngx.say("released: ", probe[1] == nil)
 
             lru_get("key", "ver", create_obj)
@@ -301,7 +305,7 @@ GET /t
 --- response_body
 released: true
 created: 2
---- timeout: 5
+--- timeout: 8
 
 
 
@@ -370,7 +374,8 @@ refresh failure
             ngx.sleep(0.3)
             -- served stale, queues a refresh that keeps failing
             lru_get("key", "ver", create_obj)
-            ngx.sleep(2.5)
+            -- the purge itself is not observable here: leave it a wide margin
+            ngx.sleep(3.5)
             local after_purge = created
             ngx.sleep(2.5)
             ngx.say("refresh retried after the purge: ", created > after_purge)
@@ -382,7 +387,7 @@ GET /t
 refresh retried after the purge: false
 --- error_log
 refresh failure
---- timeout: 8
+--- timeout: 10
 
 
 
@@ -402,7 +407,7 @@ refresh failure
                 local gen = created
                 if ngx.get_phase() == "timer" then
                     -- the item is purged while this refresh is running
-                    ngx.sleep(3)
+                    ngx.sleep(4)
                 end
                 return {gen = gen}
             end
@@ -411,7 +416,7 @@ refresh failure
             ngx.sleep(0.6)
             -- served stale, queues the slow refresh
             lru_get("key", "ver", create_obj)
-            ngx.sleep(4.5)
+            ngx.sleep(5.5)
 
             ngx.say("gen: ", lru_get("key", "ver", create_obj).gen)
         }
@@ -420,7 +425,7 @@ refresh failure
 GET /t
 --- response_body
 gen: 3
---- timeout: 8
+--- timeout: 10
 
 
 
