@@ -160,7 +160,7 @@ function _M.access(conf, ctx)
         messages = new_messages
     end
     if #messages == 0 then --nothing to check
-        return 200
+        return
     end
     -- extract only messages
     local content = {}
