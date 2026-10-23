@@ -50,6 +50,8 @@ description: grpc-transcode 插件在 HTTP 请求与 gRPC 请求及其对应响�
 | show_status_in_body  | boolean                                                | 否     | false                                                                      | 若为 `true`，则在响应体中展示解析后的 `grpc-status-details-bin`。                                                                                                                                                          |
 | status_detail_type   | string                                                 | 否     |                                                                            | `grpc-status-details-bin` 中 [details](https://github.com/googleapis/googleapis/blob/master/google/rpc/status.proto#L46) 部分对应的消息类型。若未指定，错误消息将不会被解码。                                               |
 
+整数 ID 按字符串比较：`1` 和 `"1"` 引用同一个 proto 资源，而 `"01"` 是不同的 ID。
+
 ### pb_option 的选项
 
 | 类型            | 有效值                                                                                     |
