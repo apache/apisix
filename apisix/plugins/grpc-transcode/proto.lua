@@ -20,6 +20,7 @@ local pb            = require("pb")
 local protoc        = require("protoc")
 local pcall         = pcall
 local ipairs        = ipairs
+local tostring      = tostring
 local decode_base64 = ngx.decode_base64
 
 
@@ -29,6 +30,50 @@ local lrucache_proto = core.lrucache.new({
 })
 
 local proto_fake_file = "filename for loaded"
+
+-- Field metadata the ProtoJSON mode needs from the descriptors themselves:
+-- `json_name` (which may be customized by the .proto author) and the proto3
+-- fields without presence tracking, whose default values ProtoJSON omits.
+-- Text protos (protoc.lua) carry numeric enums, FileDescriptorSet tables
+-- decoded by lua-protobuf carry enum names.
+local function is_repeated(field)
+    return field.label == 3 or field.label == "LABEL_REPEATED"
+end
+
+local function is_message(field)
+    local t = field.type
+    return t == 11 or t == 10 or t == "TYPE_MESSAGE" or t == "TYPE_GROUP"
+end
+
+local function index_fields(files)
+    local names, implicit = {}, {}
+    local function visit(package_name, parent, message, proto3)
+        local path = parent ~= "" and (parent .. "." .. message.name) or message.name
+        local full = "." .. (package_name ~= "" and package_name .. "." or "") .. path
+        local json_names, no_presence = {}, {}
+        for _, field in ipairs(message.field or {}) do
+            if field.json_name and field.json_name ~= "" then
+                json_names[field.name] = field.json_name
+            end
+            if proto3 and field.oneof_index == nil and not field.proto3_optional
+                and not is_repeated(field) and not is_message(field) then
+                no_presence[field.name] = true
+            end
+        end
+        names[full] = json_names
+        implicit[full] = no_presence
+        for _, nested in ipairs(message.nested_type or {}) do
+            visit(package_name, path, nested, proto3)
+        end
+    end
+    for _, file in ipairs(files) do
+        local proto3 = file.syntax == "proto3"
+        for _, message in ipairs(file.message_type or {}) do
+            visit(file.package or "", "", message, proto3)
+        end
+    end
+    return names, implicit
+end
 
 local function compile_proto_text(content)
     protoc.reload()
@@ -60,7 +105,8 @@ local function compile_proto_text(content)
     end
 
     compiled[proto_fake_file].index = index
-
+    compiled.json_names, compiled.implicit_presence =
+        index_fields({compiled[proto_fake_file]})
     return compiled
 end
 
@@ -68,16 +114,19 @@ end
 local function compile_proto_bin(content)
     content = decode_base64(content)
     if not content then
-        return nil
+        return nil, "invalid base64 protobuf descriptor"
     end
 
-    -- pb.load doesn't return err
-    local ok = pb.load(content)
-    if not ok then
-        return nil
+    local loaded = pb.load(content)
+    if not loaded then
+        return nil, "failed to load FileDescriptorSet"
     end
 
-    local files = pb.decode("google.protobuf.FileDescriptorSet", content).file
+    local descriptor = pb.decode("google.protobuf.FileDescriptorSet", content)
+    if not descriptor or not descriptor.file then
+        return nil, "invalid FileDescriptorSet"
+    end
+    local files = descriptor.file
     local index = {}
     for _, f in ipairs(files) do
         for _, s in ipairs(f.service or {}) do
@@ -93,29 +142,37 @@ local function compile_proto_bin(content)
     local compiled = {}
     compiled[proto_fake_file] = {}
     compiled[proto_fake_file].index = index
+    compiled.json_names, compiled.implicit_presence = index_fields(files)
     return compiled
 end
 
 
 local function compile_proto(content)
-    -- clear pb state
     local old_pb_state = pb.state(nil)
-
-    local compiled, err = compile_proto_text(content)
-    if not compiled then
-        compiled = compile_proto_bin(content)
-        if not compiled then
-            return nil, err
+    -- The text and binary paths both modify global protobuf state. In particular
+    -- a failed text parse must not leave a partially-compiled schema behind.
+    local ok, compiled, err = pcall(function()
+        local obj, parse_err = compile_proto_text(content)
+        if not obj then
+            pb.state(nil)
+            -- Clearing pb.State also discards protoc's built-in FileDescriptorSet.
+            -- Minimal Buf descriptor sets frequently omit descriptor.proto.
+            protoc.reload()
+            obj, parse_err = compile_proto_bin(content)
         end
+        if not obj then return nil, parse_err or "invalid protobuf schema" end
+        pb.defaults("*array", core.json.array_mt)
+        return obj
+    end)
+    local compiled_state
+    if ok and compiled then
+        compiled_state = pb.state(old_pb_state)
+    else
+        pb.state(old_pb_state)
     end
-
-    -- an empty repeated field is decoded into an empty Lua table, which cjson would
-    -- encode as `{}`. Tag it as an array so that it is encoded as `[]` instead.
-    -- The default is bound to the current pb state, so it has to be set per proto.
-    pb.defaults("*array", core.json.array_mt)
-
-    -- fetch pb state
-    compiled.pb_state = pb.state(old_pb_state)
+    if not ok then return nil, tostring(compiled) end
+    if not compiled then return nil, err end
+    compiled.pb_state = compiled_state
     return compiled
 end
 
@@ -127,8 +184,8 @@ local _M = {
 }
 
 local function create_proto_obj(proto_id)
-    if protos.values == nil then
-        return nil
+    if not protos or protos.values == nil then
+        return nil, "proto resources are not initialized"
     end
 
     local content
