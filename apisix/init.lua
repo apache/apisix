@@ -1068,6 +1068,15 @@ function _M.grpc_access_phase()
     if api_ctx.enable_mirror == true and has_mod then
         apisix_ngx_client.enable_mirror()
     end
+
+    if api_ctx.client_max_body_size then
+        local ok, err = apisix_ngx_client.set_client_max_body_size(
+            api_ctx.client_max_body_size)
+        if not ok then
+            core.log.error("failed to set client max body size: ", err)
+            core.response.exit(503)
+        end
+    end
 end
 
 
