@@ -418,6 +418,12 @@ local function resolve_endpoint(instance_conf)
 end
 
 
+local function instance_resource_path(resource_key, index)
+    -- JSON path indexes are zero based.
+    return resource_key .. "#plugins['ai-proxy-multi'].instances[" .. index - 1 .. "]"
+end
+
+
 local function get_checkers_status_ver(conf, checkers)
     local parts = core.table.new(#conf.instances, 0)
     for i, ins in ipairs(conf.instances) do
@@ -429,7 +435,9 @@ local function get_checkers_status_ver(conf, checkers)
         -- after the shm already marks some nodes unhealthy.
         local host = ins.checks and ins.checks.active and ins.checks.active.host
         local port = ins.checks and ins.checks.active and ins.checks.active.port
-        parts[i] = healthcheck_manager.node_status_ver(checker, ins._dns_nodes, host, port)
+        local path = ins.checks and instance_resource_path(conf._meta.parent.resource_key, i)
+        parts[i] = healthcheck_manager.node_status_ver(checker, ins._dns_nodes,
+                                                        host, port, path)
     end
     return table_concat(parts, "-")
 end
@@ -452,16 +460,18 @@ local function create_health_status(conf, checkers)
     local healthy_dns_nodes = core.table.new(0, #instances)
     local has_healthy_instance = false
 
-    for _, ins in ipairs(instances) do
+    for i, ins in ipairs(instances) do
         local checker = checkers[ins.name]
-        if checker then
+        if ins.checks and ins._dns_nodes and #ins._dns_nodes > 0 then
             local host = ins.checks and ins.checks.active and ins.checks.active.host
             local port = ins.checks and ins.checks.active and ins.checks.active.port
+            local path = instance_resource_path(conf._meta.parent.resource_key, i)
             local healthy_nodes = {}
 
             for _, node in ipairs(ins._dns_nodes or {}) do
                 local ok, err = healthcheck_manager.fetch_node_status(checker,
-                                                     node.host, port or node.port, host)
+                                                     node.host, port or node.port,
+                                                     host, path)
                 if ok then
                     healthy_nodes[#healthy_nodes + 1] = node
                 elseif err then
@@ -542,8 +552,10 @@ local function get_health_status_ver(conf, checkers)
         local checker = checkers[ins.name]
         local host = ins.checks and ins.checks.active and ins.checks.active.host
         local port = ins.checks and ins.checks.active and ins.checks.active.port
+        local path = ins.checks and instance_resource_path(conf._meta.parent.resource_key, i)
         parts[i] = (ins._nodes_ver or 0) .. ":" ..
-                   healthcheck_manager.node_status_ver(checker, ins._dns_nodes, host, port)
+                   healthcheck_manager.node_status_ver(checker, ins._dns_nodes,
+                                                        host, port, path)
     end
 
     return table_concat(parts, "-")
@@ -606,9 +618,8 @@ local function pick_target(ctx, conf, ups_tab)
     for i, instance in ipairs(conf.instances) do
         if instance.checks then
             resolve_endpoint(instance)
-            -- json path is 0 indexed so we need to decrement i
-            local resource_path = conf._meta.parent.resource_key ..
-                                  "#plugins['ai-proxy-multi'].instances[" .. i-1 .. "]"
+            local resource_path = instance_resource_path(
+                                      conf._meta.parent.resource_key, i)
             local resource_version = conf._meta.parent.resource_version
             if instance._nodes_ver then
                 resource_version = resource_version .. instance._nodes_ver

@@ -264,9 +264,20 @@ local SHM_HEALTHY = {
 -- that missed the event (or whose checker was created after another worker
 -- already flipped the node) keeps routing to an unhealthy node
 -- (apache/apisix#13888).
-local function fetch_shm_target_status(checker, ip, port, hostname)
-    local shm = checker.shm
-    local prefix = checker.TARGET_STATE
+local function fetch_shm_target_status(checker, ip, port, hostname, resource_path)
+    local shm = checker and checker.shm
+    local prefix = checker and checker.TARGET_STATE
+    if not checker and resource_path then
+        local conf = config_local.local_conf()
+        if conf and conf.apisix and conf.apisix.disable_upstream_healthcheck then
+            return nil
+        end
+        -- The checker is created by a timer. Another worker may already have
+        -- published the target state before this worker handles its first request.
+        shm = ngx.shared[healthcheck_shdict_name]
+        prefix = "lua-resty-healthcheck:" ..
+                 get_healthchecker_name({resource_key = resource_path}) .. ":state"
+    end
     if not shm or not prefix or not ip or not port then
         return nil
     end
@@ -280,15 +291,18 @@ local function fetch_shm_target_status(checker, ip, port, hostname)
 end
 
 
-function _M.fetch_node_status(checker, ip, port, hostname)
+function _M.fetch_node_status(checker, ip, port, hostname, resource_path)
     -- check if the checker is valid
-    if not checker or checker.dead then
+    if checker and checker.dead then
         return true
     end
 
-    local shm_ok = fetch_shm_target_status(checker, ip, port, hostname)
+    local shm_ok = fetch_shm_target_status(checker, ip, port, hostname, resource_path)
     if shm_ok ~= nil then
         return shm_ok
+    end
+    if not checker then
+        return true
     end
 
     local ok, err = checker:get_target_status(ip, port, hostname)
@@ -310,16 +324,17 @@ end
 
 -- Cache-key fragment that changes when shm (or the local status_ver) changes,
 -- so a picker cached against a stale worker-local view is rebuilt.
-function _M.node_status_ver(checker, nodes, host, port)
-    if not checker or not nodes then
+function _M.node_status_ver(checker, nodes, host, port, resource_path)
+    if not nodes or (not checker and not resource_path) then
         return "x"
     end
     local n = #nodes
     local parts = core.table.new(n + 1, 0)
-    parts[1] = tostring(checker.status_ver or 0)
+    parts[1] = checker and tostring(checker.status_ver or 0) or "x"
     for i = 1, n do
         local node = nodes[i]
-        parts[i + 1] = _M.fetch_node_status(checker, node.host, port or node.port, host)
+        parts[i + 1] = _M.fetch_node_status(checker, node.host, port or node.port,
+                                            host, resource_path)
                        and "1" or "0"
     end
     return table_concat(parts, ":")

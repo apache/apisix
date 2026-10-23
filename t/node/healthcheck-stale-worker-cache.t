@@ -198,3 +198,63 @@ GET /t
 --- response_body
 passed
 --- timeout: 10
+
+
+=== TEST 3: a worker without a checker uses the shared target state on its first request
+# A checker in another worker has already marked the primary unhealthy. The
+# current worker has not received any request, so its checker timer has not
+# created a local checker. It must still exclude the primary immediately.
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local healthcheck = require("resty.healthcheck")
+            local checks = {
+                active = {
+                    http_path = "/status",
+                    healthy = { interval = 100, successes = 1 },
+                    unhealthy = { interval = 100, http_failures = 2 },
+                },
+            }
+            local name = "upstream#/apisix/routes/2"
+            local shadow = assert(healthcheck.new({
+                name = name,
+                shm_name = "upstream-healthcheck",
+                events_module = "resty.events",
+                checks = checks,
+            }))
+            assert(shadow:add_target("127.0.0.1", 1980, nil, true))
+            assert(shadow:add_target("127.0.0.1", 1981, nil, true))
+            local key = shadow.TARGET_STATE .. ":127.0.0.1:1980:127.0.0.1"
+            assert(shadow.shm:set(key, 2))
+            shadow:stop()
+
+            local code, body = t('/apisix/admin/routes/2', ngx.HTTP_PUT,
+                [[{
+                    "uri": "/server_port",
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": [
+                            {"host": "127.0.0.1", "port": 1980, "weight": 1, "priority": 0},
+                            {"host": "127.0.0.1", "port": 1981, "weight": 1, "priority": -1}
+                        ],
+                        "checks": {
+                            "active": {
+                                "http_path": "/status",
+                                "healthy": {"interval": 100, "successes": 1},
+                                "unhealthy": {"interval": 100, "http_failures": 2}
+                            }
+                        }
+                    }
+                }]])
+            assert(code < 300, body)
+            code, body = t('/server_port', ngx.HTTP_GET)
+            assert(code == 200, body)
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+1981
+--- timeout: 10

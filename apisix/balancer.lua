@@ -78,12 +78,13 @@ end
 -- worker would otherwise keep serving a picker that still contains the
 -- unhealthy node (apache/apisix#13888).
 local function health_cache_ver(upstream, checker)
-    if not checker then
+    if not checker and not upstream.checks then
         return "x"
     end
     local host = upstream.checks and upstream.checks.active and upstream.checks.active.host
     local port = upstream.checks and upstream.checks.active and upstream.checks.active.port
-    return healthcheck_manager.node_status_ver(checker, upstream.nodes, host, port)
+    return healthcheck_manager.node_status_ver(checker, upstream.nodes, host, port,
+                                                upstream.resource_key)
 end
 
 
@@ -96,7 +97,8 @@ local function create_health_status(upstream, checker)
 
     for _, node in ipairs(nodes) do
         local ok, err = healthcheck_manager.fetch_node_status(checker,
-                                             node.host, port or node.port, host)
+                                             node.host, port or node.port, host,
+                                             upstream.resource_key)
         local addr = node.host .. ":" .. node.port
         if ok then
             health_status[addr] = true
@@ -122,7 +124,7 @@ end
 -- Build the picker node set from the healthy subset, reusing create_health_status
 -- so the per-node health lookup lives in exactly one place.
 local function fetch_health_nodes(upstream, checker)
-    if not checker then
+    if not checker and not upstream.checks then
         return fetch_all_nodes(upstream)
     end
 
@@ -143,7 +145,7 @@ end
 
 
 local function fetch_health_status(upstream, checker, key, version)
-    if not checker then
+    if not checker and not upstream.checks then
         return nil
     end
 
@@ -312,11 +314,11 @@ local function pick_server(route, ctx)
     end
 
     local health_status
-    if checker and up_conf.type == "chash" then
+    if up_conf.checks and up_conf.type == "chash" then
         health_status = fetch_health_status(up_conf, checker, key, version)
     end
 
-    if checker and up_conf.type ~= "chash" then
+    if up_conf.checks and up_conf.type ~= "chash" then
         version = version .. "#" .. health_cache_ver(up_conf, checker)
     end
 
