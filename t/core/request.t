@@ -611,3 +611,53 @@ header: new
 body: nil
 err: request size 17 is greater than the maximum size 8 allowed
 kind: too_large
+
+
+
+=== TEST 20: set_body_data invalidates req_post_args and post_arg.* cache
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local ngx_ctx = ngx.ctx
+            local api_ctx = ngx_ctx.api_ctx
+            if api_ctx == nil then
+                api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
+                ngx_ctx.api_ctx = api_ctx
+            end
+
+            core.ctx.set_vars_meta(api_ctx)
+
+            -- 1. Read post args using core.request.get_post_args
+            local args1 = core.request.get_post_args(api_ctx)
+            ngx.say("args1 foo: ", args1["foo"])
+
+            -- 2. Read post_arg.foo variable via api_ctx.var (populates var._cache)
+            ngx.say("var post_arg.foo: ", api_ctx.var["post_arg.foo"])
+
+            -- 3. Rewrite body using ngx.req.set_body_data
+            ngx.req.set_body_data("foo=updated&bar=new")
+
+            -- 4. Re-read post args: should reflect updated body
+            local args2 = core.request.get_post_args(api_ctx)
+            ngx.say("args2 foo: ", args2["foo"])
+            ngx.say("args2 bar: ", args2["bar"])
+
+            -- 5. Re-read post_arg variable: should reflect updated body
+            ngx.say("updated var post_arg.foo: ", api_ctx.var["post_arg.foo"])
+            ngx.say("updated var post_arg.bar: ", api_ctx.var["post_arg.bar"])
+        }
+    }
+--- request
+POST /t
+foo=initial&bar=original
+--- more_headers
+Content-Type: application/x-www-form-urlencoded
+--- response_body
+args1 foo: initial
+var post_arg.foo: initial
+args2 foo: updated
+args2 bar: new
+updated var post_arg.foo: updated
+updated var post_arg.bar: new
+
