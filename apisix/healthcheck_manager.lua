@@ -20,6 +20,7 @@ local pcall   = pcall
 local exiting      = ngx.worker.exiting
 local pairs    = pairs
 local tostring = tostring
+local table_concat = table.concat
 local core = require("apisix.core")
 local config_local   = require("apisix.core.config_local")
 local resource = require("apisix.resource")
@@ -250,9 +251,53 @@ function _M.fetch_checker(resource_path, resource_ver)
 end
 
 
-function _M.fetch_node_status(checker, ip, port, hostname)
+-- resty.healthcheck INTERNAL_STATES: 1=healthy, 2=unhealthy,
+-- 3=mostly_healthy, 4=mostly_unhealthy. Routing treats 1 and 3 as usable.
+local SHM_HEALTHY = {
+    [1] = true,
+    [3] = true,
+}
+
+
+-- An event can be missed by a worker, or its checker can be created after
+-- another worker has already changed the target state. Read the shared state
+-- before consulting the worker-local checker cache.
+local function fetch_shm_target_status(checker, ip, port, hostname, resource_path)
+    local shm = checker and checker.shm
+    local prefix = checker and checker.TARGET_STATE
+    if not checker and resource_path then
+        local conf = config_local.local_conf()
+        if conf and conf.apisix and conf.apisix.disable_upstream_healthcheck then
+            return nil
+        end
+        shm = ngx.shared[healthcheck_shdict_name]
+        prefix = "lua-resty-healthcheck:" ..
+                 get_healthchecker_name({resource_key = resource_path}) .. ":state"
+    end
+    if not shm or not prefix or not ip or not port then
+        return nil
+    end
+    hostname = hostname or ip
+    local key = prefix .. ":" .. ip .. ":" .. tostring(port) .. ":" .. hostname
+    local state = shm:get(key)
+    if state == nil then
+        return nil
+    end
+    return SHM_HEALTHY[state] == true
+end
+
+
+function _M.fetch_node_status(checker, ip, port, hostname, resource_path)
     -- check if the checker is valid
-    if not checker or checker.dead then
+    if checker and checker.dead then
+        return true
+    end
+
+    local shm_ok = fetch_shm_target_status(checker, ip, port, hostname, resource_path)
+    if shm_ok ~= nil then
+        return shm_ok
+    end
+    if not checker then
         return true
     end
 
@@ -270,6 +315,25 @@ function _M.fetch_node_status(checker, ip, port, hostname)
     end
 
     return ok, err
+end
+
+
+-- Include node state in cache keys because status_ver changes only when this
+-- worker receives the event. A shared-state flip must invalidate old pickers.
+function _M.node_status_ver(checker, nodes, host, port, resource_path)
+    if not nodes or (not checker and not resource_path) then
+        return "x"
+    end
+    local n = #nodes
+    local parts = core.table.new(n + 1, 0)
+    parts[1] = checker and tostring(checker.status_ver or 0) or "x"
+    for i = 1, n do
+        local node = nodes[i]
+        parts[i + 1] = _M.fetch_node_status(checker, node.host, port or node.port,
+                                            host, resource_path)
+                       and "1" or "0"
+    end
+    return table_concat(parts, ":")
 end
 
 

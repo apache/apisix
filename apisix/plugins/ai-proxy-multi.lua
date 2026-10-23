@@ -433,6 +433,13 @@ local function resolve_endpoint(instance_conf)
 end
 
 
+-- Identity of the i-th instance's checker; the manager uses this JSON path.
+local function instance_resource_path(resource_key, index)
+    return resource_key .. "#plugins['" .. plugin_name .. "'].instances["
+           .. index - 1 .. "]"
+end
+
+
 local function get_checkers_status_ver(conf, checkers)
     local parts = core.table.new(#conf.instances, 0)
     for i, ins in ipairs(conf.instances) do
@@ -442,7 +449,11 @@ local function get_checkers_status_ver(conf, checkers)
         -- without health filtering before the checker exists would share the
         -- same cache key with the post-creation state and be reused even
         -- after the shm already marks some nodes unhealthy.
-        parts[i] = checker and checker.status_ver or "x"
+        local host = ins.checks and ins.checks.active and ins.checks.active.host
+        local port = ins.checks and ins.checks.active and ins.checks.active.port
+        local path = ins.checks and instance_resource_path(conf._meta.parent.resource_key, i)
+        parts[i] = healthcheck_manager.node_status_ver(checker, ins._dns_nodes,
+                                                        host, port, path)
     end
     return table_concat(parts, "-")
 end
@@ -465,16 +476,18 @@ local function create_health_status(conf, checkers)
     local healthy_dns_nodes = core.table.new(0, #instances)
     local has_healthy_instance = false
 
-    for _, ins in ipairs(instances) do
+    for i, ins in ipairs(instances) do
         local checker = checkers[ins.name]
-        if checker then
+        if ins.checks and ins._dns_nodes and #ins._dns_nodes > 0 then
             local host = ins.checks and ins.checks.active and ins.checks.active.host
             local port = ins.checks and ins.checks.active and ins.checks.active.port
+            local path = instance_resource_path(conf._meta.parent.resource_key, i)
             local healthy_nodes = {}
 
             for _, node in ipairs(ins._dns_nodes or {}) do
                 local ok, err = healthcheck_manager.fetch_node_status(checker,
-                                                     node.host, port or node.port, host)
+                                                     node.host, port or node.port,
+                                                     host, path)
                 if ok then
                     healthy_nodes[#healthy_nodes + 1] = node
                 elseif err then
@@ -553,7 +566,12 @@ local function get_health_status_ver(conf, checkers)
     local parts = core.table.new(#conf.instances, 0)
     for i, ins in ipairs(conf.instances) do
         local checker = checkers[ins.name]
-        parts[i] = (ins._nodes_ver or 0) .. ":" .. (checker and checker.status_ver or "x")
+        local host = ins.checks and ins.checks.active and ins.checks.active.host
+        local port = ins.checks and ins.checks.active and ins.checks.active.port
+        local path = ins.checks and instance_resource_path(conf._meta.parent.resource_key, i)
+        parts[i] = (ins._nodes_ver or 0) .. ":" ..
+                   healthcheck_manager.node_status_ver(checker, ins._dns_nodes,
+                                                        host, port, path)
     end
 
     return table_concat(parts, "-")
@@ -594,16 +612,6 @@ local function create_server_picker(conf, ups_tab, checkers)
     core.log.info("upstream nodes: ",
                 core.json.delay_encode(new_instances[new_instances._priority_index[1]]))
     return picker.new(new_instances[new_instances._priority_index[1]], ups_tab)
-end
-
-
--- Identity of the health checker of the i-th instance: the parent resource key
--- plus the JSON path of the instance. The health check manager parses it back
--- to reach construct_upstream(), so both ends must agree on this exact layout.
-local function instance_resource_path(resource_key, index)
-    -- json path is 0 indexed so we need to decrement the index
-    return resource_key .. "#plugins['" .. plugin_name .. "'].instances["
-           .. index - 1 .. "]"
 end
 
 
