@@ -131,6 +131,6 @@ Using Apache APISIX as an API gateway to manage all API and SSL certificates in 
 
 ## Wordfully
 
-Wordfully uses APISIX to route API requests to its grammar and rephrasing services.
-The gateway applies authentication and rate limits before forwarding requests,
-and balances traffic across the available inference instances.
+Wordfully uses APISIX to route requests to its grammar and rephrasing services.
+The gateway handles authentication and applies rate limits before forwarding requests.
+It also balances traffic across the available inference instances.
