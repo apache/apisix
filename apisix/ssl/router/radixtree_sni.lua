@@ -174,12 +174,13 @@ function _M.match_and_set(api_ctx, match_only, alt_sni)
     local sni_rev = sni:reverse()
     local ok = radixtree_router:dispatch(sni_rev, nil, api_ctx)
     if not ok then
+        -- callers that pass alt_sni decide whether a miss is a failure: the Host
+        -- re-check in verify_https_client expects misses, and ssl_client_hello_phase
+        -- logs and marks its own span when the handshake SNI has no certificate
         if not alt_sni then
-            -- it is expected that alternative SNI doesn't have a SSL certificate associated
-            -- with it sometimes
             core.log.error("failed to find any SSL certificate by SNI: ", sni)
+            span:set_status(tracer.status.ERROR, "failed match SNI")
         end
-        span:set_status(tracer.status.ERROR, "failed match SNI")
         span:finish(api_ctx.ngx_ctx)
         return false
     end
