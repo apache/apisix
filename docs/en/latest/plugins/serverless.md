@@ -421,7 +421,7 @@ adc sync -f adc.yaml
 
 </Tabs>
 
-Next, update the log format for all `syslog` instances with the new variable by configuring the [Plugin metadata](../terminology/plugin.md#plugin-metadata):
+Next, update the log format for all `syslog` instances with the new variable by configuring the [Plugin metadata](../terminology/plugin-metadata.md):
 
 <Tabs
 groupId="api"

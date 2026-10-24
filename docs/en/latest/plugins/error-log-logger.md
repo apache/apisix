@@ -84,7 +84,7 @@ There are no attributes to configure this Plugin on Routes or Services. All conf
 | retry_delay                             | integer | False    | 1                              | [0,...]                                                                                 | Time interval in seconds to retry sending the batch if the previous attempt failed.                                                                 |
 | max_retry_count                         | integer | False    | 0                              | [0,...]                                                                                 | Maximum number of unsuccessful retries before dropping the log entries.                                                                             |
 
-This Plugin supports using batch processors to aggregate and process entries (logs/data) in a batch. This avoids the need for frequently submitting the data. The batch processor submits data every `3` seconds or when the data in the queue reaches `1000`. See [Batch Processor](../batch-processor.md#configuration) for more information or setting your custom configuration.
+This Plugin supports using batch processors to aggregate and process entries (logs/data) in a batch. This avoids the need for frequently submitting the data. The batch processor submits data every `3` seconds or when the data in the queue reaches `1000`. See [Batch Processor](../batch-processor.md#configurations) for more information or setting your custom configuration.
 
 ### Example of default log format
 
