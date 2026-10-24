@@ -82,6 +82,34 @@ __DATA__
                         assert(ok and case.session and case.session.secret and case.session.secret == "test_secret_more_than_16", "user-set secret is incorrect")
                     end,
                 },
+                {
+                    name = "session.secret_fallbacks accepts an array of valid secrets",
+                    data = {client_id = "a", client_secret = "b", discovery = "c", bearer_only = false, session = {secret = "new_secret_at_least_16", secret_fallbacks = {"old_secret_at_least_16", "older_secret_at_least_16"}}},
+                    cb = function(ok, err, case)
+                        assert(ok and case.session.secret_fallbacks and case.session.secret_fallbacks[1] == "old_secret_at_least_16" and case.session.secret_fallbacks[2] == "older_secret_at_least_16", "session.secret_fallbacks should be accepted")
+                    end,
+                },
+                {
+                    name = "session.secret_fallbacks rejects an element shorter than 16 characters",
+                    data = {client_id = "a", client_secret = "b", discovery = "c", bearer_only = false, session = {secret = "new_secret_at_least_16", secret_fallbacks = {"short"}}},
+                    cb = function(ok, err, case)
+                        assert(not ok and err == "property \"session\" validation failed: property \"secret_fallbacks\" validation failed: failed to validate item 1: string too short, expected at least 16, got 5", "too short fallback should fail validation, got: " .. tostring(err))
+                    end,
+                },
+                {
+                    name = "session.secret_fallbacks rejects a non-array value",
+                    data = {client_id = "a", client_secret = "b", discovery = "c", bearer_only = false, session = {secret = "new_secret_at_least_16", secret_fallbacks = "old_secret_at_least_16"}},
+                    cb = function(ok, err, case)
+                        assert(not ok and err == "property \"session\" validation failed: property \"secret_fallbacks\" validation failed: wrong type: expected array, got string", "non-array fallbacks should fail validation, got: " .. tostring(err))
+                    end,
+                },
+                {
+                    name = "session.secret without secret_fallbacks stays valid (backward compatible)",
+                    data = {client_id = "a", client_secret = "b", discovery = "c", bearer_only = false, session = {secret = "new_secret_at_least_16"}},
+                    cb = function(ok, err, case)
+                        assert(ok and case.session.secret == "new_secret_at_least_16" and case.session.secret_fallbacks == nil, "session without fallbacks should remain valid")
+                    end,
+                },
             }
 
             local plugin = require("apisix.plugins.openid-connect")
