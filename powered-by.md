@@ -77,6 +77,7 @@ Users are encouraged to add themselves to this page, [issue](https://github.com/
 1. <a href="https://www.teamones.cn/" rel="nofollow">万思</a>
 1. <a href="https://www.willclass.com/" rel="nofollow">willclass 会课</a>
 1. <a href="https://www.wps.cn/" rel="nofollow">金山办公</a>
+1. <a href="https://wordfully.ai" rel="nofollow">Wordfully</a>
 1. <a href="https://www.xin.com/" rel="nofollow">Xin 优信二手车</a>
 1. <a href="https://xueqiu.com/" rel="nofollow">雪球</a>
 1. <a href="https://open.youtu.qq.com/" rel="nofollow">Youtu 腾讯优图</a>
@@ -127,3 +128,9 @@ Using Apache APISIX as a Web ACL gateway to deal with backend OA systems traffic
 ## HelloTalk, Inc.
 
 Using Apache APISIX as an API gateway to manage all API and SSL certificates in test\dev\CMS environment.
+
+## Wordfully
+
+Wordfully uses APISIX to route API requests to its grammar and rephrasing services.
+The gateway applies authentication and rate limits before forwarding requests,
+and balances traffic across the available inference instances.
