@@ -62,6 +62,11 @@ function _M.fetch_gcp_access_token(name, gcp_conf)
             end
             auth_conf = decoded
         end
+        -- When no service account key is provided, fall back to the metadata
+        -- server (Application Default Credentials / Workload Identity). This can
+        -- also be forced with use_metadata_server=true.
+        auth_conf.use_metadata_server = gcp_conf.use_metadata_server
+        auth_conf.metadata_host = gcp_conf.metadata_host
         local oauth = google_oauth.new(auth_conf)
         access_token = oauth:generate_access_token()
         if not access_token then
