@@ -1,5 +1,3 @@
-#!/usr/bin/env bash
-
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -16,49 +14,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+use t::APISIX 'no_plan';
 
-. ./t/cli/common.sh
+repeat_each(1);
+no_long_string();
+no_root_location();
 
-# schema validation
-echo '
-apisix:
-  node_listen: 1984
-  enable_admin: false
-deployment:
-  role: data_plane
-  role_data_plane:
-    config_provider: yaml
-plugins:
-  - mcp-bridge
-' > conf/config.yaml
+run_tests();
 
-echo '
-routes:
-  -
-    uri: /mcp/*
-    plugins:
-      mcp-bridge:
-        base_uri: /mcp
-        command: node
-        args:
-          - "t/plugin/mcp/servers/src/filesystem/dist/index.js"
-          - "/"
-#END
-' > conf/apisix.yaml
+__DATA__
 
-make init
-make stop || true
-sleep 0.5
-make run
-sleep 1
-
-# run the mcp client test
-pushd t
-if ! timeout 60 pnpm test plugin/mcp-bridge.spec.mts 2>&1; then
-    echo "failed: mcp-bridge client test failed"
-    popd
-    exit 1
-fi
-popd
-
-echo "passed: mcp-bridge client test"
+=== TEST 1: test
+--- timeout: 60
+--- max_size: 2048000
+--- exec
+cd t && pnpm test --no-color node/websocket-proxy.spec.ts 2>&1
+--- error_log
+plugin ws_handshake phase
+plugin ws_close phase
+ws request_type: websocket
+--- no_error_log
+failed to execute the script with status
+--- response_body eval
+qr/Test Files\s+1 passed \(1\)/

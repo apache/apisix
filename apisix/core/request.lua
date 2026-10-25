@@ -281,6 +281,10 @@ local function test_expect(var)
 end
 
 
+--- Read the request body.
+--
+-- On a body larger than `max_size` the third return value is `too_large`, so a
+-- caller can answer 413 rather than 500. A read failure is left unclassified.
 function _M.get_body(max_size, ctx)
     if max_size then
         local var = ctx and ctx.var or ngx.var
@@ -295,7 +299,7 @@ function _M.get_body(max_size, ctx)
                     clear_header("expect")
                 end
 
-                return nil, err
+                return nil, err, "too_large"
             end
         end
     end
@@ -306,7 +310,7 @@ function _M.get_body(max_size, ctx)
     if req_body then
         local ok, err = check_size(#req_body, max_size)
         if not ok then
-            return nil, err
+            return nil, err, "too_large"
         end
 
         return req_body
@@ -327,7 +331,7 @@ function _M.get_body(max_size, ctx)
 
         local ok, err = check_size(size, max_size)
         if not ok then
-            return nil, err
+            return nil, err, "too_large"
         end
     end
 

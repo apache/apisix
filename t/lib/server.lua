@@ -372,6 +372,26 @@ function _M.wolf_rbac_custom_headers()
 end
 
 
+-- send_close/send_pong return bytes, err; log a failure instead of silently
+-- dropping it, so a broken close/pong shows up in the fixture's error log.
+local function ws_send_close(wb, code, msg)
+    local bytes, err = wb:send_close(code, msg)
+    if not bytes then
+        ngx.log(ngx.ERR, "failed to send close frame: ", err)
+    end
+    return bytes, err
+end
+
+
+local function ws_send_pong(wb, data)
+    local bytes, err = wb:send_pong(data)
+    if not bytes then
+        ngx.log(ngx.ERR, "failed to send pong frame: ", err)
+    end
+    return bytes, err
+end
+
+
 function _M.websocket_handshake()
     local websocket = require "resty.websocket.server"
     local wb, err = websocket:new()
@@ -387,6 +407,383 @@ function _M.websocket_handshake()
     end
 end
 _M.websocket_handshake_route = _M.websocket_handshake
+
+
+-- Echoes every text/binary frame it receives back to the sender unchanged,
+-- so a fronting proxy's frame-level plugin hooks can be observed by diffing
+-- what the client sent against what it gets back. Used by the
+-- websocket-enhanced (ws/wss upstream scheme) test suite.
+function _M.websocket_echo()
+    local websocket = require "resty.websocket.server"
+    local wb, err = websocket:new()
+    if not wb then
+        ngx.log(ngx.ERR, "failed to new websocket: ", err)
+        return ngx.exit(400)
+    end
+
+    while true do
+        local data, typ, err = wb:recv_frame()
+        if not data then
+            if err and err:find("timeout", 1, true) then
+                goto continue
+            end
+            ngx.log(ngx.ERR, "failed to receive frame: ", err)
+            return
+        end
+
+        if typ == "close" then
+            ws_send_close(wb, 1000, "")
+            return
+        elseif typ == "ping" then
+            ws_send_pong(wb, data)
+        elseif typ == "text" or typ == "binary" then
+            local send = typ == "text" and wb.send_text or wb.send_binary
+            local bytes, send_err = send(wb, data)
+            if not bytes then
+                ngx.log(ngx.ERR, "failed to echo frame: ", send_err)
+                return
+            end
+        end
+
+        ::continue::
+    end
+end
+
+
+-- Like websocket_echo, but the node listening on 1981 refuses the handshake
+-- with a plain 503 instead: that node stays reachable at the TCP level, so an
+-- active tcp health check never marks it unhealthy on its own, while a
+-- websocket client sees a non-101 response and has to retry another node.
+function _M.websocket_echo_or_reject()
+    if ngx.var.server_port == "1981" then
+        return ngx.exit(503)
+    end
+
+    return _M.websocket_echo()
+end
+
+
+-- Like websocket_echo, but answers the handshake with the one subprotocol
+-- named by ?select=<name>, or with none at all for ?select=none (or no
+-- select), regardless of what the client offered. Falls into the same echo
+-- loop afterwards.
+function _M.websocket_subprotocol()
+    local select = ngx.var.arg_select
+    if select and select ~= "" and select ~= "none" then
+        ngx.req.set_header("Sec-WebSocket-Protocol", select)
+    else
+        ngx.req.clear_header("Sec-WebSocket-Protocol")
+    end
+
+    return _M.websocket_echo()
+end
+
+
+-- Like websocket_echo, but with a raised max_payload_len (and, through it,
+-- max_recv_len/max_send_len) so this fixture itself is never the bottleneck
+-- for a >64K single-frame test: whatever the test observes then comes from
+-- the proxy sitting in front of it, not from this fixture's own default.
+function _M.websocket_echo_large()
+    local websocket = require "resty.websocket.server"
+    local wb, err = websocket:new({max_payload_len = 4 * 1024 * 1024})
+    if not wb then
+        ngx.log(ngx.ERR, "failed to new websocket: ", err)
+        return ngx.exit(400)
+    end
+
+    while true do
+        local data, typ, err = wb:recv_frame()
+        if not data then
+            if err and err:find("timeout", 1, true) then
+                goto continue
+            end
+            ngx.log(ngx.ERR, "failed to receive frame: ", err)
+            return
+        end
+
+        if typ == "close" then
+            ws_send_close(wb, 1000, "")
+            return
+        elseif typ == "ping" then
+            ws_send_pong(wb, data)
+        elseif typ == "text" or typ == "binary" then
+            local send = typ == "text" and wb.send_text or wb.send_binary
+            local bytes, send_err = send(wb, data)
+            if not bytes then
+                ngx.log(ngx.ERR, "failed to echo frame: ", send_err)
+                return
+            end
+        end
+
+        ::continue::
+    end
+end
+
+
+-- Like websocket_echo_large, but replies to every text/binary frame with a
+-- short "received:<n>" ack instead of echoing the payload back, so a test
+-- can send a large frame in and only needs a large *receive* limit on the
+-- proxy in front of it, not also a large *send* limit for the reply.
+function _M.websocket_ack_large()
+    local websocket = require "resty.websocket.server"
+    local wb, err = websocket:new({max_payload_len = 4 * 1024 * 1024})
+    if not wb then
+        ngx.log(ngx.ERR, "failed to new websocket: ", err)
+        return ngx.exit(400)
+    end
+
+    while true do
+        local data, typ, err = wb:recv_frame()
+        if not data then
+            if err and err:find("timeout", 1, true) then
+                goto continue
+            end
+            ngx.log(ngx.ERR, "failed to receive frame: ", err)
+            return
+        end
+
+        if typ == "close" then
+            ws_send_close(wb, 1000, "")
+            return
+        elseif typ == "ping" then
+            ws_send_pong(wb, data)
+        elseif typ == "text" or typ == "binary" then
+            local bytes, send_err = wb:send_text("received:" .. #data)
+            if not bytes then
+                ngx.log(ngx.ERR, "failed to send ack: ", send_err)
+                return
+            end
+        end
+
+        ::continue::
+    end
+end
+
+
+-- Like websocket_echo_large, but pushes one large ("x" * 1MiB) text frame
+-- right after the handshake, unprompted, so a test can observe a large
+-- upstream-to-client message without also having to send a large one itself.
+-- Falls into the same echo loop afterwards.
+function _M.websocket_send_large()
+    local websocket = require "resty.websocket.server"
+    local wb, err = websocket:new({max_payload_len = 4 * 1024 * 1024})
+    if not wb then
+        ngx.log(ngx.ERR, "failed to new websocket: ", err)
+        return ngx.exit(400)
+    end
+
+    local bytes, send_err = wb:send_text(string.rep("x", 1024 * 1024))
+    if not bytes then
+        ngx.log(ngx.ERR, "failed to send large frame: ", send_err)
+        return
+    end
+
+    while true do
+        local data, typ, err = wb:recv_frame()
+        if not data then
+            if err and err:find("timeout", 1, true) then
+                goto continue
+            end
+            ngx.log(ngx.ERR, "failed to receive frame: ", err)
+            return
+        end
+
+        if typ == "close" then
+            ws_send_close(wb, 1000, "")
+            return
+        elseif typ == "ping" then
+            ws_send_pong(wb, data)
+        elseif typ == "text" or typ == "binary" then
+            local send = typ == "text" and wb.send_text or wb.send_binary
+            local ok, echo_err = send(wb, data)
+            if not ok then
+                ngx.log(ngx.ERR, "failed to echo frame: ", echo_err)
+                return
+            end
+        end
+
+        ::continue::
+    end
+end
+
+
+-- Like websocket_echo, but the first thing it sends back is a text frame
+-- carrying the request URI (with query string) it was actually dispatched
+-- with, so a test can confirm what path/query a fronting proxy forwarded.
+-- Falls into the same echo loop afterwards.
+function _M.websocket_echo_uri()
+    local websocket = require "resty.websocket.server"
+    local wb, err = websocket:new()
+    if not wb then
+        ngx.log(ngx.ERR, "failed to new websocket: ", err)
+        return ngx.exit(400)
+    end
+
+    local bytes, send_err = wb:send_text(ngx.var.request_uri)
+    if not bytes then
+        ngx.log(ngx.ERR, "failed to send request_uri: ", send_err)
+        return
+    end
+
+    while true do
+        local data, typ, recv_err = wb:recv_frame()
+        if not data then
+            if recv_err and recv_err:find("timeout", 1, true) then
+                goto continue
+            end
+            ngx.log(ngx.ERR, "failed to receive frame: ", recv_err)
+            return
+        end
+
+        if typ == "close" then
+            ws_send_close(wb, 1000, "")
+            return
+        elseif typ == "ping" then
+            ws_send_pong(wb, data)
+        elseif typ == "text" or typ == "binary" then
+            local send = typ == "text" and wb.send_text or wb.send_binary
+            local ok, echo_err = send(wb, data)
+            if not ok then
+                ngx.log(ngx.ERR, "failed to echo frame: ", echo_err)
+                return
+            end
+        end
+
+        ::continue::
+    end
+end
+
+
+-- Like websocket_echo, but the first thing it sends back is a text frame
+-- carrying the Host/X-Real-IP/X-Forwarded-For it actually received as JSON, so
+-- a test can confirm what a fronting proxy set them to. Falls into the same
+-- echo loop afterwards.
+function _M.websocket_echo_headers()
+    local websocket = require "resty.websocket.server"
+    local wb, err = websocket:new()
+    if not wb then
+        ngx.log(ngx.ERR, "failed to new websocket: ", err)
+        return ngx.exit(400)
+    end
+
+    local headers = ngx.req.get_headers()
+    local bytes, send_err = wb:send_text(json_encode({
+        host = headers["Host"],
+        x_real_ip = headers["X-Real-IP"],
+        x_forwarded_for = headers["X-Forwarded-For"],
+    }))
+    if not bytes then
+        ngx.log(ngx.ERR, "failed to send headers: ", send_err)
+        return
+    end
+
+    while true do
+        local data, typ, recv_err = wb:recv_frame()
+        if not data then
+            if recv_err and recv_err:find("timeout", 1, true) then
+                goto continue
+            end
+            ngx.log(ngx.ERR, "failed to receive frame: ", recv_err)
+            return
+        end
+
+        if typ == "close" then
+            ws_send_close(wb, 1000, "")
+            return
+        elseif typ == "ping" then
+            ws_send_pong(wb, data)
+        elseif typ == "text" or typ == "binary" then
+            local send = typ == "text" and wb.send_text or wb.send_binary
+            local ok, echo_err = send(wb, data)
+            if not ok then
+                ngx.log(ngx.ERR, "failed to echo frame: ", echo_err)
+                return
+            end
+        end
+
+        ::continue::
+    end
+end
+
+
+-- Sends one fragmented text message ("hello " + "world" as two continuation
+-- frames) right after the handshake, to verify a fronting proxy's
+-- aggregate_fragments option reassembles it into a single frame instead of
+-- forwarding (or invoking frame hooks on) two separate pieces.
+function _M.websocket_fragment()
+    local websocket = require "resty.websocket.server"
+    local wb, err = websocket:new()
+    if not wb then
+        ngx.log(ngx.ERR, "failed to new websocket: ", err)
+        return ngx.exit(400)
+    end
+
+    local ok, send_err = wb:send_frame(false, 0x1, "hello ")
+    if not ok then
+        ngx.log(ngx.ERR, "failed to send first fragment: ", send_err)
+        return
+    end
+
+    ok, send_err = wb:send_frame(true, 0x0, "world")
+    if not ok then
+        ngx.log(ngx.ERR, "failed to send final fragment: ", send_err)
+        return
+    end
+
+    -- drain until the client closes, so the connection doesn't just vanish
+    -- out from under the proxy mid-test
+    while true do
+        local data, typ, recv_err = wb:recv_frame()
+        if not data then
+            if recv_err and recv_err:find("timeout", 1, true) then
+                goto continue
+            end
+            return
+        end
+        if typ == "close" then
+            ws_send_close(wb, 1000, "")
+            return
+        end
+        ::continue::
+    end
+end
+
+
+-- Sends a close frame of its own right after the handshake, without waiting
+-- for the client to initiate one, to exercise an upstream-initiated close.
+function _M.websocket_close_upstream_initiated()
+    local websocket = require "resty.websocket.server"
+    local wb, err = websocket:new()
+    if not wb then
+        ngx.log(ngx.ERR, "failed to new websocket: ", err)
+        return ngx.exit(400)
+    end
+
+    ws_send_close(wb, 1000, "bye")
+end
+
+
+-- Completes the handshake, echoes exactly one frame, then vanishes without
+-- sending a close frame, to simulate an upstream that dies mid-session
+-- instead of closing cleanly.
+function _M.websocket_abrupt_close()
+    local websocket = require "resty.websocket.server"
+    local wb, err = websocket:new()
+    if not wb then
+        ngx.log(ngx.ERR, "failed to new websocket: ", err)
+        return ngx.exit(400)
+    end
+
+    local data, typ = wb:recv_frame()
+    if data and (typ == "text" or typ == "binary") then
+        local send = typ == "text" and wb.send_text or wb.send_binary
+        send(wb, data)
+    end
+
+    -- returning here, with the connection already hijacked by
+    -- resty.websocket.server, drops the raw TCP connection without a
+    -- close handshake
+end
 
 
 -- keep the session open until the peer goes away, so that the request stays in

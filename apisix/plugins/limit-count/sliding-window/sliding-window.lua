@@ -145,17 +145,18 @@ function _M.incoming(self, key, cost)
     local last_rate = last_count / self.window_size
     local estimated_last_window_count = last_rate * remaining_time
     log.debug("accepted: ", accepted, ", count: ", count, ", limit: ", self.limit)
+    local info = {now = now, count = count, last_count = last_count}
 
     if accepted == 0 then
         if count >= self.limit then
-            return nil, "rejected", round_off_decimal_places(remaining_time, 2)
+            return nil, "rejected", round_off_decimal_places(remaining_time, 2), info
         end
         local desired_delay = get_desired_delay(self, remaining_time, last_rate, count)
-        return nil, "rejected", round_off_decimal_places(desired_delay, 2)
+        return nil, "rejected", round_off_decimal_places(desired_delay, 2), info
     end
 
     local remaining = self.limit - count - estimated_last_window_count
-    return 0, math_floor(remaining), round_off_decimal_places(remaining_time, 2)
+    return 0, math_floor(remaining), round_off_decimal_places(remaining_time, 2), info
 end
 
 
@@ -212,7 +213,8 @@ function _M.commit(self, key, cost)
     -- every window start, degrading the sliding window to a fixed one
     local estimated_last_window_count = last_count / self.window_size * remaining_time
     local remaining = math_floor(self.limit - new_count - estimated_last_window_count)
-    return 0, remaining, round_off_decimal_places(remaining_time, 2)
+    return 0, remaining, round_off_decimal_places(remaining_time, 2),
+           {now = now, count = new_count, last_count = last_count}
 end
 
 return _M

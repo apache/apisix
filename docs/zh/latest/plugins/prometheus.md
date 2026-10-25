@@ -170,6 +170,11 @@ Prometheus 中有不同类型的指标。要了解它们之间的区别，请参
 | apisix_node_info        | gauge     | APISIX 节点的信息，例如主机名和当前的 APISIX 版本号。                                                                                                                                       |
 | apisix_shared_dict_capacity_bytes | gauge     | [NGINX 共享字典](https://github.com/openresty/lua-nginx-module#ngxshareddict) 的总容量。                                                                                     |
 | apisix_shared_dict_free_space_bytes | gauge     | [NGINX 共享字典](https://github.com/openresty/lua-nginx-module#ngxshareddict) 中剩余的空间。                                                                                   |
+| apisix_nginx_timers      | gauge     | 每个 NGINX 进程中运行中和等待中的 Lua 定时器数量，按子系统区分。                                                                                                     |
+| apisix_nginx_timers_max  | gauge     | 每个进程允许的运行中和等待中 Lua 定时器的上限（`nginx_config.max_running_timers` 和 `nginx_config.max_pending_timers`）。                                            |
+| apisix_nginx_process_connections | gauge | 每个 NGINX 进程已占用的连接槽位数，包括监听套接字、客户端连接和 cosocket 发起的出站连接。                                                                           |
+| apisix_nginx_process_connections_max | gauge | 每个 NGINX 进程的连接槽位总数：worker 进程为 `worker_connections`，privileged agent 为 512。                                                                |
+| apisix_nginx_lua_memory_bytes | gauge | 每个 NGINX 进程中 Lua VM 分配的内存，按子系统区分。                                                                                                                  |
 | apisix_upstream_status   | gauge     | 上游节点的健康检查状态，如果在上游配置了健康检查，则可用。值为 `1` 表示健康，`0` 表示不健康。                                                                                   |
 | apisix_stream_connection_total | counter   | 每个 Stream Route 处理的总连接数。                                                                                                                                         |
 | apisix_stream_active_connections | gauge   | 当前正在代理的 Stream 会话数，按监听地址区分。同时覆盖 TCP 连接与 UDP 会话。                                                                                                 |
@@ -202,6 +207,20 @@ Prometheus 中有不同类型的指标。要了解它们之间的区别，请参
 | llm_model          | AI 请求实际使用的目标模型。优先使用 AI 实例中配置的模型，否则使用客户端请求的模型；传统 HTTP 流量中为空字符串。 |
 | response_source    | 响应来源：`apisix` 表示由 APISIX 生成，`nginx` 表示 NGINX 代理错误，`upstream` 表示来自上游服务的响应。                              |
 
+### Stream 指标的 Service 标签
+
+四个 Stream 指标都带有 `service` 和 `service_id` 标签，取值规则与 HTTP 指标相同：`service_id` 为会话所匹配 Stream Route 所属 Service 的 ID；`service` 默认也是该 ID，当 Route 上 `prometheus` 插件的 `prefer_name` 为 `true` 时为 Service 的名称。会话未到达属于某个 Service 的 Stream Route 时（例如 TLS 握手失败或未匹配到任何 Route），两个标签均为空，这类会话只计入对应 `listen_addr` 的总量，因此按 `service` 求和的结果与此前的总量一致。
+
+`apisix_stream_active_connections` 和 `apisix_stream_bandwidth` 在会话进行中即按 Service 拆分：Stream `prometheus` 插件在会话开始时为其标记所属 Service，此后该会话的活跃计数和传输的字节都计入该 Service。
+
+### `apisix_stream_connection_total` 的标签
+
+| 名称 | 描述 |
+| --- | --- |
+| route | 匹配的 Stream Route 的 ID；`prefer_name` 为 `true` 时为其名称。 |
+| service | `prefer_name` 为 `false`（默认）时为匹配的 Stream Route 所属 Service 的 ID，为 `true` 时为该 Service 的名称。会话未到达属于某个 Service 的 Stream Route 时为空。 |
+| service_id | 匹配的 Stream Route 所属 Service 的 ID。会话未到达属于某个 Service 的 Stream Route 时为空。 |
+
 ### `apisix_stream_active_connections` 的标签
 
 接受会话时，该 gauge 会递增；会话结束时递减，因此无需等到会话结束即可反映实时并发量。
@@ -209,6 +228,8 @@ Prometheus 中有不同类型的指标。要了解它们之间的区别，请参
 | 名称 | 描述 |
 | --- | --- |
 | listen_addr | 客户端连接的监听地址，例如 `0.0.0.0:9100`。 |
+| service | `prefer_name` 为 `false`（默认）时为匹配的 Stream Route 所属 Service 的 ID，为 `true` 时为该 Service 的名称。会话未到达属于某个 Service 的 Stream Route 时为空。 |
+| service_id | 匹配的 Stream Route 所属 Service 的 ID。会话未到达属于某个 Service 的 Stream Route 时为空。 |
 
 ### `apisix_stream_status` 的标签
 
@@ -218,6 +239,8 @@ Prometheus 中有不同类型的指标。要了解它们之间的区别，请参
 | --- | --- |
 | code | 会话结束方式：`200` 表示正常关闭、worker 关闭，或终止原因缺失或无法识别；`400` 表示客户端重置或预读数据无效等客户端问题；`403` 表示被访问规则拒绝；`500` 表示内部错误；`502` 表示连接失败、重置或空闲超时等上游或传输问题；`503` 表示被连接数限制拒绝。 |
 | listen_addr | 客户端连接的监听地址，例如 `0.0.0.0:9100`。 |
+| service | `prefer_name` 为 `false`（默认）时为匹配的 Stream Route 所属 Service 的 ID，为 `true` 时为该 Service 的名称。会话未到达属于某个 Service 的 Stream Route 时为空。 |
+| service_id | 匹配的 Stream Route 所属 Service 的 ID。会话未到达属于某个 Service 的 Stream Route 时为空。 |
 | node | 使用的上游节点地址；未选择节点时为空。 |
 
 UDP 没有关闭、FIN 或重置信号，因此只会出现其中一部分状态代码。
@@ -229,6 +252,8 @@ UDP 没有关闭、FIN 或重置信号，因此只会出现其中一部分状态
 | 名称 | 描述 |
 | --- | --- |
 | listen_addr | 客户端连接的监听地址，例如 `0.0.0.0:9100`。 |
+| service | `prefer_name` 为 `false`（默认）时为匹配的 Stream Route 所属 Service 的 ID，为 `true` 时为该 Service 的名称。会话未到达属于某个 Service 的 Stream Route 时为空。 |
+| service_id | 匹配的 Stream Route 所属 Service 的 ID。会话未到达属于某个 Service 的 Stream Route 时为空。 |
 | side | 字节经过的连接侧：`downstream` 表示 APISIX 与客户端之间，`upstream` 表示 APISIX 与上游之间。 |
 | type | 相对 APISIX 的方向，与 `apisix_bandwidth` 一致：`ingress` 表示 APISIX 接收的字节，`egress` 表示 APISIX 发送的字节。 |
 
@@ -300,6 +325,8 @@ APISIX 在开始 LLM 上游尝试时递增该 gauge，并在请求的日志阶�
 | llm_model          | AI 请求实际使用的目标模型。优先使用 AI 实例中配置的模型，否则使用客户端请求的模型。 |
 
 ### `apisix_llm_prompt_tokens` 的标签
+
+prompt token 数包含从缓存读取和写入缓存的 token 数。对于 Anthropic Messages API，其值为 `input_tokens + cache_read_input_tokens + cache_creation_input_tokens`，与 OpenAI 的 `prompt_tokens` 含义一致。
 
 | 名称 | 描述 |
 | ---------- | ----------------------------------------------------------------------------------------------------------------------------- |
@@ -405,6 +432,18 @@ APISIX 延迟
 | name   | 与健康检查配置的上游对应的资源 ID，例如 `/apisix/routes/1` 和 `/apisix/upstreams/1`。                              |
 | ip     | 上游节点的 IP 地址。                                                                                                   |
 | port   | 节点的端口号。                                                                                                         |
+
+### NGINX 进程指标的标签
+
+`apisix_nginx_timers`、`apisix_nginx_timers_max`、`apisix_nginx_process_connections`、`apisix_nginx_process_connections_max` 和 `apisix_nginx_lua_memory_bytes` 描述每个 NGINX 进程的内部状态，因此单个进程（例如 privileged agent）的资源即将耗尽时，可以在它引发错误之前被发现。每个进程每隔 `refresh_interval` 写入一次自己的数值，生成指标输出的进程会先刷新自己的数值。
+
+| 名称      | 描述                                                                                                                         |
+| --------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| process   | 数值所属的进程：worker 进程为 `worker-<id>`，privileged agent 为 `privileged-agent`。                                        |
+| subsystem | `http` 或 `stream`。每个子系统有独立的 Lua VM，定时器和内存也各自独立。仅用于 `apisix_nginx_timers` 和 `apisix_nginx_lua_memory_bytes`。 |
+| state     | `running` 或 `pending`。仅用于 `apisix_nginx_timers` 和 `apisix_nginx_timers_max`。                                          |
+
+连接相关指标读取自 NGINX 内部的 cycle 结构。如果某个 worker 读到的连接槽位数与配置中的 `worker_connections` 不一致，APISIX 会记录一条警告，并在所有进程中都不导出这两个连接指标，而不是导出错误的数值。
 
 ## 示例
 
@@ -750,25 +789,25 @@ curl "http://127.0.0.1:9091/apisix/prometheus/metrics"
 ```text
 # HELP apisix_stream_connection_total APISIX 中每个 Stream Route 处理的总连接数
 # TYPE apisix_stream_connection_total counter
-apisix_stream_connection_total{route="prometheus-route"} 1
-# HELP apisix_stream_active_connections Number of stream sessions currently being proxied per listening address
+apisix_stream_connection_total{route="prometheus-route",service="",service_id=""} 1
+# HELP apisix_stream_active_connections Number of stream sessions currently being proxied per listening address and service
 # TYPE apisix_stream_active_connections gauge
-apisix_stream_active_connections{listen_addr="0.0.0.0:9100"} 0
+apisix_stream_active_connections{listen_addr="0.0.0.0:9100",service="",service_id=""} 0
 # HELP apisix_stream_status Stream sessions per termination status in APISIX
 # TYPE apisix_stream_status counter
-apisix_stream_status{code="200",listen_addr="0.0.0.0:9100",node="54.237.103.220:80"} 1
+apisix_stream_status{code="200",listen_addr="0.0.0.0:9100",service="",service_id="",node="54.237.103.220:80"} 1
 # HELP apisix_stream_bandwidth Total bandwidth in bytes proxied by the stream subsystem in APISIX
 # TYPE apisix_stream_bandwidth counter
-apisix_stream_bandwidth{listen_addr="0.0.0.0:9100",type="ingress",side="downstream"} 78
-apisix_stream_bandwidth{listen_addr="0.0.0.0:9100",type="egress",side="downstream"} 219
-apisix_stream_bandwidth{listen_addr="0.0.0.0:9100",type="egress",side="upstream"} 78
-apisix_stream_bandwidth{listen_addr="0.0.0.0:9100",type="ingress",side="upstream"} 219
+apisix_stream_bandwidth{listen_addr="0.0.0.0:9100",service="",service_id="",type="ingress",side="downstream"} 78
+apisix_stream_bandwidth{listen_addr="0.0.0.0:9100",service="",service_id="",type="egress",side="downstream"} 219
+apisix_stream_bandwidth{listen_addr="0.0.0.0:9100",service="",service_id="",type="egress",side="upstream"} 78
+apisix_stream_bandwidth{listen_addr="0.0.0.0:9100",service="",service_id="",type="ingress",side="upstream"} 219
 ```
 
-实际的上游地址和字节数取决于请求。上例中的活跃连接 gauge 为 `0`，因为抓取指标时请求已完成；如需观察正值，请在连接保持打开时抓取指标。
+本例中的 Stream Route 不属于任何 Service，因此 `service` 和 `service_id` 为空。实际的上游地址和字节数取决于请求。上例中的活跃连接 gauge 为 `0`，因为抓取指标时请求已完成；如需观察正值，请在连接保持打开时抓取指标。
 
 :::note
 
-`apisix_stream_active_connections` 和 `apisix_stream_bandwidth` 使用由 `nginx_config.stream.metrics_zone_size` 配置的 NGINX 共享内存区，默认大小为 `1m`。这两个指标依赖 APISIX-Runtime；如果运行时不提供对应模块，则不会发布这两个指标。
+`apisix_stream_active_connections` 和 `apisix_stream_bandwidth` 使用由 `nginx_config.stream.metrics_zone_size` 配置的 NGINX 共享内存区，默认大小为 `1m`。这两个指标依赖 APISIX-Runtime；如果运行时不提供对应模块，则不会发布这两个指标。该共享内存区为每个监听地址及其上出现的每个 Service 各分配一个 slot，`1m` 约可容纳 760 个 slot，其中最多四分之三分配给 Service。slot 用尽后，新 Service 的会话只计入其 `listen_addr` 的总量，并记录一条警告日志。
 
 :::
