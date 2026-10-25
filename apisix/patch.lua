@@ -414,8 +414,8 @@ function _M.patch()
     end
 
     -- Patch ngx.req.set_body_data to invalidate the parsed request body cache
-    -- in api_ctx. This ensures that body lookups, get_post_args(), and post_arg.*
-    -- variable lookups after a body rewrite always reflect the new body content.
+    -- in api_ctx. This ensures that body lookups, get_post_args(), and post_arg.* /
+    -- post_arg_* variable lookups after a body rewrite always reflect the new body content.
     local _orig_set_body_data = ngx.req.set_body_data
     ngx.req.set_body_data = function(data)
         local api_ctx = ngx.ctx.api_ctx
@@ -428,7 +428,8 @@ function _M.patch()
             if cache then
                 local keys_to_clear = {}
                 for key in pairs(cache) do
-                    if type(key) == "string" and key:sub(1, 9) == "post_arg." then
+                    if type(key) == "string" and
+                        (key:sub(1, 9) == "post_arg." or key:sub(1, 9) == "post_arg_") then
                         keys_to_clear[#keys_to_clear + 1] = key
                     end
                 end

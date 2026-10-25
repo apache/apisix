@@ -614,7 +614,7 @@ kind: too_large
 
 
 
-=== TEST 20: set_body_data invalidates req_post_args and post_arg.* cache
+=== TEST 20: set_body_data invalidates req_post_args and post_arg.* / post_arg_* cache
 --- config
     location /t {
         content_by_lua_block {
@@ -632,8 +632,9 @@ kind: too_large
             local args1 = core.request.get_post_args(api_ctx)
             ngx.say("args1 foo: ", args1["foo"])
 
-            -- 2. Read post_arg.foo variable via api_ctx.var (populates var._cache)
+            -- 2. Read post_arg.foo and post_arg_foo variables via api_ctx.var (populates var._cache)
             ngx.say("var post_arg.foo: ", api_ctx.var["post_arg.foo"])
+            ngx.say("var post_arg_foo: ", api_ctx.var["post_arg_foo"])
 
             -- 3. Rewrite body using ngx.req.set_body_data
             ngx.req.set_body_data("foo=updated&bar=new")
@@ -643,9 +644,11 @@ kind: too_large
             ngx.say("args2 foo: ", args2["foo"])
             ngx.say("args2 bar: ", args2["bar"])
 
-            -- 5. Re-read post_arg variable: should reflect updated body
+            -- 5. Re-read post_arg variables: should reflect updated body
             ngx.say("updated var post_arg.foo: ", api_ctx.var["post_arg.foo"])
             ngx.say("updated var post_arg.bar: ", api_ctx.var["post_arg.bar"])
+            ngx.say("updated var post_arg_foo: ", api_ctx.var["post_arg_foo"])
+            ngx.say("updated var post_arg_bar: ", api_ctx.var["post_arg_bar"])
         }
     }
 --- request
@@ -656,8 +659,10 @@ Content-Type: application/x-www-form-urlencoded
 --- response_body
 args1 foo: initial
 var post_arg.foo: initial
+var post_arg_foo: initial
 args2 foo: updated
 args2 bar: new
 updated var post_arg.foo: updated
 updated var post_arg.bar: new
-
+updated var post_arg_foo: updated
+updated var post_arg_bar: new
