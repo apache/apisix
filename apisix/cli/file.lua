@@ -25,6 +25,7 @@ local dkjson = require("dkjson")
 local pl_path = require("pl.path")
 
 local pairs = pairs
+local require = require
 local type = type
 local tonumber = tonumber
 local getenv = os.getenv

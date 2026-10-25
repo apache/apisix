@@ -18,6 +18,7 @@
 local yaml = require("lyaml")
 local parser = require("yaml").parser
 local pairs = pairs
+local next = next
 local ipairs = ipairs
 local type = type
 local pcall = pcall
