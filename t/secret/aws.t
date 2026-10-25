@@ -408,3 +408,42 @@ GET /t
     }
 --- response_body
 secret value: value
+
+
+
+=== TEST 12: the secret value is not logged when it is not JSON but a field is requested
+--- request
+GET /t
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/secrets/aws/mysecret',
+                ngx.HTTP_PUT,
+                [[{
+                    "endpoint_url": "http://127.0.0.1:4566",
+                    "region": "us-east-1",
+                    "access_key_id": "access",
+                    "secret_access_key": "secret",
+                    "session_token": "token"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                return ngx.say(body)
+            end
+
+            ngx.sleep(1)
+
+            local secret = require("apisix.secret")
+            local refs = secret.fetch_secrets({key = "$secret://aws/mysecret/apisix/full/path/field"})
+            ngx.say(refs.key)
+        }
+    }
+--- response_body
+$secret://aws/mysecret/apisix/full/path/field
+--- error_log
+failed to decode result, secret: apisix/full/path, field: field
+--- no_error_log
+full-value
+--- timeout: 10

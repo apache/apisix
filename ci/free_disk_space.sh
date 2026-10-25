@@ -32,8 +32,12 @@ echo "Removing large directories and runtimes..."
 sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc /usr/local/.ghcup /usr/share/swift
 
 echo "Removing large packages and performing clean-up..."
-sudo apt-get remove -y '^aspnetcore-.*' '^dotnet-.*' '^llvm-.*' 'php.*' '^mongodb-.*' '^mysql-.*' \
-azure-cli google-chrome-stable firefox powershell mono-devel libgl1-mesa-dri google-cloud-sdk google-cloud-cli --fix-missing
+# apt-get refuses the whole removal if any named package is unknown, and the
+# preinstalled set differs between runner images, so only name installed ones
+dpkg-query -W -f='${db:Status-Abbrev} ${Package}\n' \
+    | awk '$1 == "ii" { print $2 }' \
+    | grep -E '^(aspnetcore-|dotnet-|llvm-|php|mongodb-|mysql-)|^(azure-cli|google-chrome-stable|firefox|powershell|mono-devel|libgl1-mesa-dri|google-cloud-sdk|google-cloud-cli)$' \
+    | xargs -r sudo apt-get remove -y --fix-missing
 sudo apt-get autoremove -y
 sudo apt-get clean
 
