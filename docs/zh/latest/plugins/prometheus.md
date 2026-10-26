@@ -43,6 +43,8 @@ description:  本文将介绍 prometheus 插件，以及将 APISIX 与 Prometheu
 
 prompt token 和 completion token 直方图的默认桶边界为 `1`、`10`、`50`、`100`、`200`、`500`、`1000`、`2000`、`5000`、`10000`、`20000`、`50000`、`100000`、`200000`、`500000` 和 `1000000` 个 token。如果这些边界不适合实际负载，可通过 `llm_prompt_tokens_buckets` 和 `llm_completion_tokens_buckets` 自定义。
 
+`flush_expired_interval` 控制 privileged agent 回收指标共享字典中过期条目的周期，单位为秒，默认为 `21600`（6 小时）。设为 `0` 或负数会关闭自动回收，但保留各 worker 的本地索引清理。该配置同时适用于 HTTP 和 stream 指标，修改后需要 reload APISIX。回收会在扫描期间持有共享字典锁，此周期不限制单次扫描耗时。请根据指标基数和过期条目的积累量配置足够的共享内存。
+
 要自定义这些值，请将相应的配置添加到 config.yaml 中。例如：
 
 ```yaml
@@ -50,6 +52,7 @@ plugin_attr:
   prometheus:                               # 插件：prometheus 属性
     export_uri: /apisix/prometheus/metrics  # 设置 Prometheus 指标端点的 URI。
     metric_prefix: apisix_                  # 设置 APISIX 生成的 Prometheus 指标的前缀。
+    flush_expired_interval: 21600
     enable_export_server: true              # 启用 Prometheus 导出服务器。
     export_addr:                            # 设置 Prometheus 导出服务器的地址。
       ip: 127.0.0.1                         # 设置 IP。
