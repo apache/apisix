@@ -178,6 +178,12 @@ apisix:
     stream_proxy:
         tcp:
             - addr: 9100
+plugins:
+    - ip-restriction
+stream_plugins: []
+nginx_config:
+    worker_processes: 1
+    error_log_level: info
 plugin_attr:
     prometheus:
         refresh_interval: 1
@@ -192,7 +198,6 @@ fi
 
 echo "passed: the stream metrics zone does not depend on the config file plugin list"
 
-etcdctl put /apisix/plugins '[{"name":"prometheus"},{"name":"prometheus","stream":true}]'
 # proxied to the gateway's own HTTP port so the session carries real bytes both
 # ways without a second upstream process to keep alive
 etcdctl put /apisix/stream_routes/1 \
@@ -200,6 +205,9 @@ etcdctl put /apisix/stream_routes/1 \
 
 make run
 wait_for_tcp 127.0.0.1 9100
+
+# Enable only the stream plugin after both subsystems have initialized.
+etcdctl put /apisix/plugins '[{"name":"prometheus","stream":true}]'
 
 # Same retry shape as the blocks above: the exporter cache populates async.
 ok=0
@@ -221,3 +229,47 @@ if [ "$ok" -ne 1 ]; then
 fi
 
 echo "passed: the L4 zone metrics work with an etcd owned plugin list"
+
+# Disable both exporters, then restore the stream registry without reloading NGINX.
+started_before=$(grep -c 'stream .*process metrics started' logs/error.log)
+stopped_before=$(grep -c 'stream .*process metrics stopped' logs/error.log || true)
+etcdctl put /apisix/plugins '[]'
+ok=0
+deadline=$(( $(date +%s) + 20 ))
+{ set +x; } 2>/dev/null
+while [ "$(date +%s)" -lt "$deadline" ]; do
+    if curl -s --connect-timeout 1 --max-time 2 http://127.0.0.1:9091/apisix/prometheus/metrics \
+         | grep -q '^{}$' \
+         && [ "$(grep -c 'stream .*process metrics stopped' logs/error.log || true)" -gt "$stopped_before" ]; then
+        ok=1
+        break
+    fi
+    sleep 0.5
+done
+set -x
+if [ "$ok" -ne 1 ]; then
+    echo "failed: exporters did not stop after disabling prometheus"
+    exit 1
+fi
+
+etcdctl put /apisix/plugins '[{"name":"prometheus","stream":true}]'
+ok=0
+deadline=$(( $(date +%s) + 20 ))
+{ set +x; } 2>/dev/null
+while [ "$(date +%s)" -lt "$deadline" ]; do
+    curl -s --connect-timeout 1 --max-time 2 http://127.0.0.1:9100/ >/dev/null 2>&1 || true
+    if curl -s --connect-timeout 1 --max-time 2 http://127.0.0.1:9091/apisix/prometheus/metrics \
+         | grep -qE 'apisix_stream_connection_total\{route="1",service="",service_id=""\} [1-9][0-9]*' \
+         && [ "$(grep -c 'stream .*process metrics started' logs/error.log)" -gt "$started_before" ]; then
+        ok=1
+        break
+    fi
+    sleep 0.5
+done
+set -x
+if [ "$ok" -ne 1 ]; then
+    echo "failed: stream metrics did not resume after re-enabling prometheus"
+    exit 1
+fi
+
+echo "passed: stream prometheus can be disabled and re-enabled through etcd"

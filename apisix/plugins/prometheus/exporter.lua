@@ -716,7 +716,10 @@ end
 
 function _M.stream_init()
     if ngx.get_phase() ~= "init" and ngx.get_phase() ~= "init_worker"  then
-        process_metrics.start(get_refresh_interval())
+        if prometheus_bkp then
+            prometheus = prometheus_bkp
+            process_metrics.start(get_refresh_interval())
+        end
         return
     end
 
@@ -1313,7 +1316,9 @@ end
 local function init_exporter_timer()
     local refresh_interval = get_refresh_interval()
 
-    process_metrics.start(refresh_interval)
+    if prometheus then
+        process_metrics.start(refresh_interval)
+    end
 
     if process.type() ~= "privileged agent" then
         return

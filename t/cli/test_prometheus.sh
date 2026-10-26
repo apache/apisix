@@ -191,10 +191,14 @@ echo "passed: should use custom metric prefix"
 # for that: with it on, worker 0 overwrites /apisix/plugins from the local
 # config at boot (apisix/admin/init.lua).
 etcdctl del / --prefix
+rm logs/error.log || true
 
 echo '
 apisix:
   enable_admin: false
+nginx_config:
+  worker_processes: 1
+  error_log_level: info
 plugins:
   - ip-restriction
 plugin_attr:
@@ -203,6 +207,13 @@ plugin_attr:
 ' > conf/config.yaml
 
 make run
+wait_for_tcp 127.0.0.1 9091
+sleep 2
+
+if grep -q "process metrics started" logs/error.log; then
+    echo "failed: process reporting started with prometheus disabled"
+    exit 1
+fi
 
 # enabled only now, with APISIX already up
 etcdctl put /apisix/plugins '[{"name":"prometheus"}]'
