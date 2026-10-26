@@ -33,6 +33,7 @@ local str_gmatch = string.gmatch
 local str_find = string.find
 local str_sub = string.sub
 local print = print
+local stderr = io.stderr
 
 local _M = {}
 local exported_vars
@@ -162,8 +163,13 @@ _M.resolve_conf_var_in_text = resolve_conf_var_in_text
 
 
 -- CLI validation and runtime reload must use the same SSL substitution rules.
-local function load_yaml_with_env(text)
-    return require("apisix.cli.ssl_yaml").load(text, var_sub)
+local function warn_yaml_fallback(message)
+    stderr:write("WARNING: ", message, "\n")
+end
+
+
+local function load_yaml_with_env(text, warn)
+    return require("apisix.cli.ssl_yaml").load(text, var_sub, warn or warn_yaml_fallback)
 end
 
 

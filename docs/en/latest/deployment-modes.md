@@ -387,6 +387,8 @@ that cannot be identified unambiguously use the existing loading behavior;
 for example, a variable shared through an anchor with a non-SSL field is not
 protected. A whole configuration supplied through one environment variable is
 still expanded as YAML, without special handling of PEM content inside it.
+When the loader identifies a multiline SSL reference but cannot safely protect
+it, it logs a warning without including the value and retains the existing behavior.
 
 For those cases, SSL fields also support environment-backed
 [Secret references](./terminology/secret.md), such as `$ENV://SERVER_CERT`.

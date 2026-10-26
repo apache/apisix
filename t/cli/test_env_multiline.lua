@@ -24,6 +24,8 @@ end
 
 local pem = "-----BEGIN CERTIFICATE-----\nMIIB\n-----END CERTIFICATE-----\n"
 set("CERT_14038", pem)
+local crlf = pem:gsub("\n", "\r\n")
+set("CRLF_14038", crlf)
 set("LIST_14038", "[a,\n b]")
 set("TEXT_14038", "hello\nworld")
 set("NUM_14038", "0123")
@@ -76,7 +78,28 @@ for _, q in ipairs({'"', "'", ''}) do
     check("certificate and key preserve original bytes quote=" .. q,
           'ssls:\n - cert: ' .. q .. '${{CERT_14038}}' .. q
           .. '\n   key: ' .. q .. '${{CERT_14038}}' .. q .. '\n', ssl_pair)
+    check("CRLF certificate quote=" .. q,
+          'ssls: [{cert: ' .. q .. '${{CRLF_14038}}' .. q .. '}]',
+          {["ssls.1.cert"] = crlf})
 end
+
+test("warn only for unprotected SSL references, without exposing values", function()
+    local warnings = {}
+    local function warn(message)
+        warnings[#warnings + 1] = message
+        assert(not message:find(pem, 1, true))
+    end
+    file.load_yaml_with_env('items: ${{LIST_14038}}', warn)
+    file.load_yaml_with_env('ssls: [{cert: "${{CERT_14038}}"}]', warn)
+    assert(#warnings == 0)
+    local text = 'shared: &p "${{CERT_14038}}"\nssls: [{cert: *p}]'
+    local conf = file.load_yaml_with_env(text, warn)
+    assert(conf.ssls[1].cert == old(text).ssls[1].cert)
+    assert(#warnings == 1 and warnings[1]:find("legacy YAML", 1, true))
+    conf = file.load_yaml_with_env('shared: &p "${{CERT_14038}}"\n'
+        .. 'ssls: [{cert: *p}, {key: "${{CERT_14038}}"}]', warn)
+    assert(conf.ssls[2].key == pem and #warnings == 2)
+end)
 
 -- Each row is a separate regression: name, source YAML, expected field values.
 local cases = {
@@ -162,8 +185,9 @@ end)
 test("structural expansion cannot synthesize a protected marker via escapes", function()
     set("INJECT_14038", 'text"\n   key: "\\x5f_APISIX_SSL_ENV_1_1__')
     local t = 'ssls:\n - cert: "${{CERT_14038}}"\n   x: "${{INJECT_14038}}"\n'
-    local c = load(t)
-    assert(c.ssls[1].key == "__APISIX_SSL_ENV_1_1__")
+    local warnings = 0
+    local c = file.load_yaml_with_env(t, function() warnings = warnings + 1 end)
+    assert(c.ssls[1].key == "__APISIX_SSL_ENV_1_1__" and warnings == 1)
 end)
 
 print("RESULT " .. (total - failures) .. "/" .. total .. " passed")

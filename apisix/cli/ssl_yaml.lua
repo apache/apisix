@@ -105,13 +105,16 @@ end
 local function inspect_fields(text, records, prefix)
     local conf = yaml.load(text)
     local origins = scalar_origins(text, records)
-    local fields, outside = {}, {}
+    local fields, outside, ssl = {}, {}, {}
     local ok = walk(conf, {}, {}, function(value, allowed, parent, key)
         if type(value) ~= "string" then
             return
         end
         for marker in value:gmatch(prefix .. "%d+__") do
             if records[marker] then
+                if allowed then
+                    ssl[marker] = true
+                end
                 if allowed and value == marker and origins[marker] then
                     fields[marker] = fields[marker] or {}
                     local targets = fields[marker]
@@ -123,17 +126,22 @@ local function inspect_fields(text, records, prefix)
         end
     end)
     if not ok then
-        return nil
+        return nil, nil, next(ssl) ~= nil
     end
     -- A shared anchor must not change a non-SSL consumer's substitution behavior.
     for marker in pairs(outside) do
         fields[marker] = nil
     end
+    for marker in pairs(ssl) do
+        if not fields[marker] then
+            return conf, fields, true
+        end
+    end
     return conf, fields
 end
 
 
-function _M.load(text, substitute)
+function _M.load(text, substitute, warn)
     local values, multiline = {}, false
     local expanded, _, err = substitute(text, function(value)
         values[#values + 1] = {value = value}
@@ -165,6 +173,7 @@ function _M.load(text, substitute)
             records[record.marker] = record
         end
     end
+    -- Replaying substitution over the same source visits occurrences in the same order.
     local function render(selected)
         local index = 0
         return substitute(text, function()
@@ -173,19 +182,31 @@ function _M.load(text, substitute)
             return selected[record.marker] and record.marker or record.value
         end)
     end
-    local ok, _, selected = pcall(inspect_fields, render(records), records, prefix)
+    local function warn_fallback()
+        if warn then
+            warn("cannot preserve some multiline SSL environment values; "
+                 .. "using legacy YAML substitution for them (consider $ENV:// references)")
+            warn = nil
+        end
+    end
+    local ok, _, selected, unprotected = pcall(inspect_fields, render(records), records, prefix)
+    if unprotected then
+        warn_fallback()
+    end
     if not ok or not selected or not next(selected) then
         return yaml.load(expanded)
     end
 
     local parsed, conf, fields = pcall(inspect_fields, render(selected), records, prefix)
     if not parsed or not fields then
+        warn_fallback()
         return yaml.load(expanded)
     end
     -- Other substitutions can move or synthesize markers. Check every selected
     -- occurrence before restoring any value; never scan the restored PEM again.
     for marker in pairs(selected) do
         if not fields[marker] then
+            warn_fallback()
             return yaml.load(expanded)
         end
     end

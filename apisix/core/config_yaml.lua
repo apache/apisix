@@ -97,7 +97,7 @@ local config_yaml = {
         local raw_config = f:read("*a")
         f:close()
 
-        return file.load_yaml_with_env(raw_config)
+        return file.load_yaml_with_env(raw_config, log.warn)
     end
 }
 
