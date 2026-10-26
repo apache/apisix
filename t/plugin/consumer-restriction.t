@@ -196,6 +196,8 @@ GET /hello
 --- more_headers
 Authorization: Basic amFjazIwMjA6MTIzNDU2
 --- error_code: 403
+--- response_headers
+Content-Type: application/json
 --- response_body
 {"message":"The consumer_name is forbidden."}
 

@@ -524,6 +524,36 @@ framework will assemble into a complete nginx.conf file. "__t/servroot__" is the
 Nginx instance. according to the information provided by the test case, initiate the http request and check that the
 return items of HTTP include HTTP status, HTTP response header, HTTP response body and so on.
 
+## Content type of local table responses
+
+`core.response.exit(status, body)` serializes a Lua table as JSON. For a single
+successfully encoded table, it sets `Content-Type: application/json` when the
+HTTP status is numeric and at least 200 (except 204 and 304), headers have not
+been sent, and Content-Type is unset. Exit callbacks are applied first, so their
+final body and headers determine whether the type is set. Nil body arguments
+are ignored; additional strings or tables exclude automatic typing in the
+ordinary path. HEAD receives the corresponding type metadata without a body.
+
+The existing JSON body is retained regardless of Accept. This fixes the type
+label and does not add content negotiation, XML conversion or a 406 response.
+Explicit types, strings, incremental writes, already-sent headers, stream output
+and ordinary upstream responses retain their existing behavior.
+
+The changed type can affect clients that automatically parse JSON and rules
+matching `sent_http_content_type`, including for successful untyped table
+responses. Empty or cleared types and Nginx default_type do not prevent automatic
+typing. Later filters still run: when response-rewrite replaces JSON with plain
+text, configure its final type as well, for example:
+
+```json
+{
+  "response-rewrite": {
+    "body": "Access denied",
+    "headers": {"set": {"Content-Type": "text/plain"}}
+  }
+}
+```
+
 ## Additional Resource(s)
 
 - Key Concepts - [Plugins](https://apisix.apache.org/docs/apisix/terminology/plugin/)

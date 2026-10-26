@@ -477,6 +477,6 @@ GET /hello
 apikey: 123
 --- error_code: 401
 --- response_headers
-content-type: text/plain
+content-type: application/json
 --- response_body
 {"message":"Invalid API key in request"}

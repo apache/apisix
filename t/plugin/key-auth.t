@@ -171,6 +171,8 @@ GET /hello
 --- more_headers
 apikey: 123
 --- error_code: 401
+--- response_headers
+Content-Type: application/json
 --- response_body
 {"message":"Invalid API key in request"}
 --- no_error_log
@@ -182,6 +184,8 @@ auth-one
 --- request
 GET /hello
 --- error_code: 401
+--- response_headers
+Content-Type: application/json
 --- response_body
 {"message":"Missing API key in request"}
 

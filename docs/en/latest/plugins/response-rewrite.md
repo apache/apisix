@@ -66,6 +66,11 @@ You can also use the [redirect](./redirect.md) Plugin to set up redirects.
 | filters.replace | string  | True     |         |                                                                                                               |   Content to substitute with.             |
 | filters.options | string  | False    | "jo"    |                                                                                                               | RegEx options to control how the match operation should be performed. See [Lua NGINX module](https://github.com/openresty/lua-nginx-module#ngxrematch) for the available options.                                                                                                                                                                                     |
 
+Replacing only `body` retains the existing `Content-Type`. When changing the
+body's format, also configure `headers.set.Content-Type` to match. For example,
+set it to `text/plain` when replacing a JSON response with plain text, so clients
+do not attempt to parse the replacement as JSON.
+
 ## Examples
 
 The examples below demonstrate how you can configure `response-rewrite` on a Route in different scenarios.

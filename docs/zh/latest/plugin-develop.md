@@ -474,6 +474,25 @@ done
 __t/servroot__ 会被当成 Nginx 的工作目录，启动 Nginx 实例。根据测试用例提供的信息，发起 http 请求并检查 http 的返回项，
 包括 http status，http response header，http response body 等。
 
+## 本地 table 响应的类型
+
+`core.response.exit(status, body)` 会将 Lua table 序列化为 JSON。当正文为单个成功编码的 table、HTTP 状态码为不低于 200 的数字（204 和 304 除外）、响应头尚未发送且未设置 `Content-Type` 时，该函数会设置 `Content-Type: application/json`。
+
+退出回调会先执行，因此以回调最终返回的正文和响应头为准。普通调用路径会忽略 nil 正文参数；如果还包含其他字符串或 table，则不自动设置类型。HEAD 响应携带相应的类型信息，但不发送正文。
+
+无论 Accept 为何值，原有 JSON 正文都会保留。此行为只修正类型标签，不增加内容协商、XML 转换或 406 响应。已设置的类型、字符串、增量输出、已发送响应头的响应、stream 输出以及普通上游响应沿用原有行为。
+
+类型变化可能影响客户端的 JSON 自动解析，以及匹配 `sent_http_content_type` 的规则，包括成功返回但未指定类型的 table 响应。空类型、已清除的类型和 Nginx default_type 不会阻止自动设置类型。后续过滤器仍会执行：如果 response-rewrite 将 JSON 替换为纯文本，应同时配置最终类型，例如：
+
+```json
+{
+  "response-rewrite": {
+    "body": "Access denied",
+    "headers": {"set": {"Content-Type": "text/plain"}}
+  }
+}
+```
+
 ## 相关资源
 
 - 核心概念 - [插件](https://apisix.apache.org/docs/apisix/terminology/plugin/)

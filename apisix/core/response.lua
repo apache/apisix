@@ -62,6 +62,15 @@ function _M.exit_insert_callback(func, conf)
 end
 
 
+local function set_json_content_type(code)
+    if ngx.config.subsystem == "http" and type(code) == "number"
+       and code >= 200 and code ~= 204 and code ~= 304
+       and not ngx.headers_sent and ngx_header["Content-Type"] == nil then
+        ngx_header["Content-Type"] = "application/json"
+    end
+end
+
+
 local resp_exit
 do
     local t = {}
@@ -118,6 +127,7 @@ function resp_exit(code, ...)
                 if err then
                     error("failed to encode data: " .. err, -2)
                 end
+                set_json_content_type(code)
                 ngx_print(encoded, "\n")
             else
                 ngx_print(body)
@@ -140,6 +150,7 @@ function resp_exit(code, ...)
         ngx.status = code
     end
 
+    local encoded_table = false
     for i = 1, select('#', ...) do
         local v = select(i, ...)
         if type(v) == "table" then
@@ -149,6 +160,7 @@ function resp_exit(code, ...)
             else
                 idx = idx + 1
                 t[idx] = body
+                encoded_table = true
                 idx = idx + 1
                 t[idx] = "\n"
             end
@@ -160,6 +172,9 @@ function resp_exit(code, ...)
     end
 
     if idx > 0 then
+        if encoded_table and idx == 2 then
+            set_json_content_type(code)
+        end
         ngx_print(t)
     end
 

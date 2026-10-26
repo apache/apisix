@@ -65,6 +65,8 @@ description: response-rewrite 插件提供了重写 APISIX 及其上游服务返
 | filters.replace | string | True | | | 要替换的内容。 |
 | filters.options | string | 否 | "jo" | | 用于控制如何执行匹配操作的 RegEx 选项。请参阅 [Lua NGINX 模块](https://github.com/openresty/lua-nginx-module#ngxrematch)以了解可用选项。|
 
+只替换 `body` 会保留原有的 `Content-Type`。改变正文格式时，应同时通过 `headers.set.Content-Type` 设置匹配的类型。例如，将 JSON 响应替换为纯文本时，应设置为 `text/plain`，避免客户端将替换后的正文作为 JSON 解析。
+
 ## 示例
 
 以下示例演示了如何在不同场景中在路由上配置 `response-rewrite`。
