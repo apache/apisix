@@ -675,4 +675,3 @@ done
 error occurred while encoding the data: mocked encoding error
 --- no_error_log
 bad argument #1 to 'send'
-
