@@ -151,8 +151,8 @@ local function fetch_health_status(upstream, checker, key, version)
     end
 
     local health_status = lrucache_health_status(key,
-                                                 version .. "#" .. health_cache_ver(upstream, checker),
-                                                 create_health_status, upstream, checker)
+                                             version .. "#" .. health_cache_ver(upstream, checker),
+                                             create_health_status, upstream, checker)
     if not health_status or health_status.all_unhealthy then
         return nil
     end
