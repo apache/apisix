@@ -89,7 +89,7 @@ local function list(httpc, apiserver, informer)
         if informer.stop then
             return true
         end
-        list(httpc, apiserver, informer)
+        return list(httpc, apiserver, informer)
     end
 
     return true
