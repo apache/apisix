@@ -407,7 +407,7 @@ qr/CONNECTED/
 echo -n "Q" | $OPENSSL_BIN s_client -connect localhost:1994 -servername ocsp.test.com -status -tls1_2 -cipher ECDHE-ECDSA-AES128-GCM-SHA256 2>&1 | cat
 --- max_size: 16096
 --- response_body eval
-qr/Peer signature type: ECDSA/
+qr/Peer signature type: (?i:ecdsa)/
 
 
 
@@ -434,7 +434,7 @@ qr/CONNECTED/
 echo -n "Q" | $OPENSSL_BIN s_client -connect localhost:1994 -servername ocsp.test.com -status -tls1_2 -cipher ECDHE-RSA-AES128-GCM-SHA256 2>&1 | cat
 --- max_size: 16096
 --- response_body eval
-qr/Peer signature type: RSA/
+qr/Peer signature type: (?i:rsa)/
 
 
 
