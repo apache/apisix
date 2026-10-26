@@ -660,5 +660,90 @@ fi
 
 echo "passed: missing env var produces clear startup error"
 
+# test: unset env vars referenced only in commented-out lines must be ignored
+echo '
+apisix:
+  enable_admin: false
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
+' > conf/config.yaml
+
+echo '
+# ${{COMMENTED_UNSET_VAR}}
+routes:
+  -
+    uri: /test-commented-var
+    # indented comment: ${{ANOTHER_COMMENTED_UNSET_VAR}}
+    plugins:
+      response-rewrite:
+        body: "${{COMMENT_BODY:=commented-ok}}"
+        status_code: 200
+    upstream:
+      nodes:
+        "127.0.0.1:9091": 1
+      type: roundrobin
+#END
+' > conf/apisix.yaml
+
+unset COMMENTED_UNSET_VAR
+unset ANOTHER_COMMENTED_UNSET_VAR
+export COMMENT_BODY=commented-ok
+make init
+
+if ! make run > output.log 2>&1; then
+    cat output.log
+    echo "failed: make run should ignore env vars in commented-out lines"
+    exit 1
+fi
+
+wait_for_commented_body() {
+    local expected="$1"
+    for ((i = 0; i < 100; i++)); do
+        code=$(curl -o /tmp/response_body -s -m 1 -w '%{http_code}' \
+            http://127.0.0.1:9080/test-commented-var) || true
+        body=$(cat /tmp/response_body)
+        if [ "$code" = 200 ] && [ "$body" = "$expected" ]; then
+            return 0
+        fi
+        sleep 0.1
+    done
+    echo "failed: expected 200/$expected, got $code/$body"
+    cat logs/error.log
+    return 1
+}
+
+wait_for_commented_body "commented-ok"
+master_pid=$(cat logs/nginx.pid)
+
+# Change the file while the SAME instance runs. Allow the seconds-resolution
+# mtime to advance, then atomically publish a complete file with its #END marker.
+sleep 1.1
+cat > conf/apisix.yaml.next <<'YAML'
+# ${{COMMENTED_UNSET_VAR}}
+routes:
+  - uri: /test-commented-var # ${{ANOTHER_COMMENTED_UNSET_VAR}}
+    plugins:
+      response-rewrite:
+        body: |- # ${{ANOTHER_COMMENTED_UNSET_VAR}}
+          # ${{COMMENT_BODY
+          }}
+        status_code: 200
+    upstream:
+      nodes: {"127.0.0.1:9091": 1}
+      type: roundrobin
+#END
+YAML
+mv conf/apisix.yaml.next conf/apisix.yaml
+wait_for_commented_body "# commented-ok"
+
+test "$(cat logs/nginx.pid)" = "$master_pid"
+
+make stop
+sleep 0.5
+
+echo "passed: YAML comments, block scalars, cross-line references and runtime reload"
+
 git checkout conf/config.yaml
 git checkout conf/apisix.yaml

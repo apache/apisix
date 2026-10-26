@@ -17,6 +17,7 @@
 
 local ngx = ngx
 local yaml = require("lyaml")
+local yaml_scan = require("yaml").scanner
 local profile = require("apisix.core.profile")
 local util = require("apisix.cli.util")
 local schema = require("apisix.cli.schema")
@@ -32,9 +33,11 @@ local str_gmatch = string.gmatch
 local str_find = string.find
 local str_sub = string.sub
 local print = print
+local pcall = pcall
 
 local _M = {}
 local exported_vars
+local var_pattern = "%$%{%{%s*([%w_]+[%:%=]?.-)%s*%}%}"
 
 
 function _M.get_exported_vars()
@@ -62,7 +65,7 @@ local function var_sub(val)
     local var_used = false
     -- we use '${{var}}' because '$var' and '${var}' are taken
     -- by Nginx
-    local new_val = val:gsub("%$%{%{%s*([%w_]+[%:%=]?.-)%s*%}%}", function(var)
+    local new_val = val:gsub(var_pattern, function(var)
         local i, j = var:find("%:%=")
         local default
         if i and j then
@@ -93,11 +96,52 @@ end
 -- Substitute env vars in raw text before parsing. YAML parser then infers
 -- types naturally: `"${{VAR}}"` stays string, `${{VAR}}` infers from value.
 local function resolve_conf_var_in_text(text)
-    local new_text, _, err = var_sub(text)
-    if err then
-        return nil, err
+    local prefix = ""
+    local previous = 1
+    for first, reference, _, last in str_gmatch(text, "()(" .. var_pattern .. ")()") do
+        prefix = prefix .. str_sub(text, previous, first - 1)
+        previous = last
+
+        local in_data = true
+        if str_find(prefix, "#", 1, true) then
+            -- Scan only the already expanded prefix. The rest of the template
+            -- need not be valid YAML yet: this reference may supply a directive
+            -- argument, a quote, or a block-scalar header. libyaml discards real
+            -- comments but retains # in scalar data.
+            local marker = "APISIXENV"
+            local pos = #prefix:gsub("[\128-\191]", "")
+            -- Keep the borrowed scanner input alive throughout iteration.
+            local input = prefix .. marker
+            in_data = false
+            local ok = pcall(function()
+                for token in yaml_scan(input) do
+                    if token.end_mark.index > pos then
+                        for _, value in pairs(token) do
+                            if type(value) == "string" and str_find(value, marker, 1, true) then
+                                in_data = true
+                            end
+                        end
+                    end
+                end
+            end)
+            -- An incomplete data token (e.g. an open quote or YAML escape)
+            -- cannot yet be scanned. Resolve it and let the final YAML parse
+            -- validate the completed document, as before.
+            in_data = in_data or not ok
+        end
+
+        if in_data then
+            local resolved, _, err = var_sub(reference)
+            if err then
+                return nil, err
+            end
+            prefix = prefix .. resolved
+        else
+            prefix = prefix .. reference
+        end
     end
-    return new_text
+    -- Iterate references in the original input only, never in inserted values.
+    return prefix .. str_sub(text, previous)
 end
 
 
