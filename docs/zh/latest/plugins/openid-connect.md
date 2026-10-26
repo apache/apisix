@@ -75,7 +75,7 @@ import TabItem from '@theme/TabItem';
 | set_id_token_header | boolean | 否 | true | | 如果为 true 并且 ID 令牌可用，则在 `X-ID-Token` 请求标头中设置值。 |
 | set_userinfo_header | boolean | 否 | true | | 如果为 true 并且用户信息数据可用，则在 `X-Userinfo` 请求标头中设置值。 |
 | set_refresh_token_header | boolean | 否 | false | | 如果为 true 并且刷新令牌可用，则在 `X-Refresh-Token` 请求标头中设置值。 |
-| upstream_headers | array[object] | 否 | | | 以请求头形式转发给上游的 claim。插件会先清除所有声明的请求头，再只用已校验的 claim 设置，因此客户端无法自行提供这些值，包括 `unauth_action` 为 `pass` 时放行的请求。使用 `bearer_only`、`public_key`、`use_jwks` 或令牌自省时，claim 来自已校验的访问令牌负载或自省响应。授权码流程中，claim 先从 ID 令牌读取，ID 令牌中没有的再从用户信息读取。 |
+| upstream_headers | array[object] | 否 | | | 以请求头形式转发给上游的 claim。插件会先清除所有声明的请求头，再只用已校验的 claim 设置，因此客户端无法自行提供这些值，包括 `unauth_action` 为 `pass` 时放行的请求。使用 `bearer_only`、`public_key`、`use_jwks` 或令牌自省时，claim 来自已校验的访问令牌负载或自省响应。授权码流程中，claim 先从 ID 令牌读取，ID 令牌中没有的再从用户信息读取。值为 `null` 或 `false` 的 claim 视为不存在，会继续从下一个来源读取。 |
 | upstream_headers.header | string | 是 | | | 上游请求头名称。 |
 | upstream_headers.path | array[string] | 是 | | | 定位 claim 的键，每层嵌套一个键，例如 `["org", "id"]`。键按字面匹配，因此包含 `://`、`/` 或 `.` 的 claim 名称是一个键。字符串原样转发，数字和 `true` 转为文本，数组和对象（包括空数组和空对象）以 base64 编码的 JSON 转发。claim 不存在、为 `null`、`false` 或空字符串时不设置该请求头。 |
 | session | object | 否 | | | 当 `bearer_only` 为 `false` 且插件使用 Authorization Code 流程时使用的 Session 配置。 |

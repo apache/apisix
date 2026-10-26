@@ -151,29 +151,50 @@ X-Scp: WyJyZWFkIiwid3JpdGUiXQ==
 
 
 
-=== TEST 3: the first claim source holding the claim wins
+=== TEST 3: the first claim source holding the claim wins, null and false count as missing
 --- config
     location /t {
         content_by_lua_block {
+            local core = require("apisix.core")
             local plugin = require("apisix.plugins.openid-connect")
-            local id_token = {email = "old@example.com"}
-            local userinfo = {email = "new@example.com", phone = "123"}
+            local id_token = core.json.decode([[{
+                "email": "old@example.com",
+                "admin": false,
+                "role": null,
+                "verified": false
+            }]])
+            local userinfo = core.json.decode([[{
+                "email": "new@example.com",
+                "phone": "123",
+                "admin": true,
+                "role": "editor",
+                "verified": false
+            }]])
 
             local values = plugin._upstream_header_values({
                 {header = "X-Email", path = {"email"}},
                 {header = "X-Phone", path = {"phone"}},
                 {header = "X-Missing", path = {"missing"}},
+                {header = "X-Admin", path = {"admin"}},
+                {header = "X-Role", path = {"role"}},
+                {header = "X-Verified", path = {"verified"}},
             }, {id_token, userinfo})
 
             ngx.say("email: ", values["X-Email"])
             ngx.say("phone: ", values["X-Phone"])
             ngx.say("missing: ", values["X-Missing"])
+            ngx.say("admin: ", values["X-Admin"])
+            ngx.say("role: ", values["X-Role"])
+            ngx.say("verified: ", values["X-Verified"])
         }
     }
 --- response_body
 email: old@example.com
 phone: 123
 missing: nil
+admin: true
+role: editor
+verified: nil
 
 
 
