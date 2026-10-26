@@ -2732,9 +2732,9 @@ curl "http://127.0.0.1:9080/anything" -X POST \
 * `request_type`：请求类型，值可能是 `traditional_http`、`ai_chat` 或 `ai_stream`。
 * `llm_time_to_first_token`：从发送请求到从 LLM 服务接收第一个令牌的持续时间（毫秒）。当 LLM 服务返回错误响应时，该值为收到错误响应为止的持续时间；当完全无法连接到 LLM 服务时，该值保持为 `0`。
 * `llm_model`：LLM 模型。
-* `llm_prompt_tokens`：提示中的令牌数量。
+* `llm_prompt_tokens`：提示中的令牌数量，包含从缓存读取和写入缓存的令牌。对于 Anthropic Messages API，其值为 `input_tokens + cache_read_input_tokens + cache_creation_input_tokens`，与 OpenAI 的 `prompt_tokens` 含义一致。
 * `llm_completion_tokens`：响应中的聊天完成令牌数量。
-* `llm_total_tokens`：使用的总令牌数（提示加完成）。
+* `llm_total_tokens`：使用的总令牌数（提示加完成，包含缓存令牌）。
 * `llm_cache_read_input_tokens`：从缓存读取的输入令牌数量。
 * `llm_cache_creation_input_tokens`：写入缓存的输入令牌数量。
 * `llm_reasoning_tokens`：生成的推理令牌数量。

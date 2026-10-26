@@ -15,7 +15,7 @@
 -- limitations under the License.
 --
 local core       = require("apisix.core")
-local http       = require("resty.http")
+local fetch      = require("apisix.plugins.openapi-to-mcp.fetch")
 local lyaml      = require("lyaml")
 local pcall      = pcall
 local type       = type
@@ -32,6 +32,12 @@ local re_find    = ngx.re.find
 local _M = {}
 
 local DEFAULT_TIMEOUT = 5000
+
+-- A document is read into memory and expanded from there, and up to
+-- MAX_EXTERNAL_DOCS of them are pulled in by $ref, so the host that serves one
+-- does not get to decide how much of the worker it uses. A route whose
+-- document is legitimately larger raises the ceiling with max_document_size.
+local MAX_DOCUMENT_SIZE = 4 * 1024 * 1024
 
 -- A JSON key is quoted and may escape the solidus as "\/" -- cjson does this by
 -- default, and several other encoders offer it -- so the key cannot be matched
@@ -143,16 +149,51 @@ function _M.parse(body)
 end
 
 
-function _M.fetch(url, timeout)
-    local httpc, err = http.new()
-    if not httpc then
-        return nil, nil, "failed to create http client: " .. tostring(err)
+-- Whether a parsed document is an OpenAPI document at all. Any JSON or YAML
+-- parses, so without this a route pointed at the wrong URL -- an error page, an
+-- index document, a spec that failed to render -- comes up as a healthy MCP
+-- server with an empty tool list, and nothing anywhere says why. A document
+-- with no `paths` is rejected for the same reason: there is nothing to serve
+-- from it.
+--
+-- Only the route's own document is held to this. A document pulled in by an
+-- external `$ref` is usually a fragment -- components, a single schema -- and
+-- has neither key.
+function _M.validate(spec)
+    if type(spec) ~= "table" then
+        return nil, "openapi spec is not an object"
     end
-    httpc:set_timeout(timeout or DEFAULT_TIMEOUT)
+    -- YAML leaves an unquoted version as a number: "swagger: 2.0" and
+    -- "openapi: 3.1" both parse that way, and only a two-dot version such as
+    -- "3.0.0" comes back as a string. JSON documents always quote it.
+    local version = spec.openapi or spec.swagger
+    if type(version) ~= "string" and type(version) ~= "number" then
+        return nil, "not an openapi document: no openapi or swagger version"
+    end
+    -- OpenAPI 3.1 lets a document carry webhooks or components alone, so the
+    -- absence of paths is not proof that this is not an OpenAPI document. It
+    -- does mean there is nothing to turn into tools, which the caller reports
+    -- as its own error rather than as "this is not an OpenAPI document".
+    if type(spec.paths) ~= "table" then
+        if type(spec.webhooks) == "table" or type(spec.components) == "table" then
+            return nil, "openapi document declares no paths"
+        end
+        return nil, "not an openapi document: no paths object"
+    end
+    return true
+end
 
-    local res, req_err = httpc:request_uri(url, { method = "GET" })
+
+function _M.fetch(url, timeout, max_body_size)
+    local res, err = fetch.request(url, {
+        timeout = timeout or DEFAULT_TIMEOUT,
+        max_body_size = max_body_size or MAX_DOCUMENT_SIZE,
+    })
     if not res then
-        return nil, nil, "failed to fetch openapi spec: " .. tostring(req_err)
+        return nil, nil, "failed to fetch openapi spec: " .. tostring(err)
+    end
+    if res.truncated then
+        return nil, nil, "openapi spec exceeds " .. (max_body_size or MAX_DOCUMENT_SIZE) .. " bytes"
     end
     if res.status ~= 200 then
         return nil, nil, "unexpected status " .. res.status .. " while fetching openapi spec"

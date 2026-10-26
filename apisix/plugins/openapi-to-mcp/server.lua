@@ -20,8 +20,10 @@ local protocol = require("apisix.plugins.openapi-to-mcp.protocol")
 local cache    = require("apisix.plugins.openapi-to-mcp.cache")
 local handler  = require("apisix.plugins.openapi-to-mcp.tools.handler")
 local ipairs   = ipairs
+local pairs    = pairs
 local type     = type
 local tostring = tostring
+local next     = next
 local setmetatable = setmetatable
 
 local _M = {}
@@ -62,6 +64,104 @@ local function tool_error(id, message)
 end
 
 
+-- A default is copied, never shared: the schema is cached for the lifetime of
+-- the tool list, and handing the same table to every call would let one call's
+-- mutation leak into the next.
+local function clone(value)
+    if type(value) ~= "table" then
+        return value
+    end
+    local out = {}
+    for key, item in pairs(value) do
+        out[key] = clone(item)
+    end
+    return out
+end
+
+
+-- Fill in `default`s the way a client is entitled to expect, before the
+-- arguments are validated: a parameter that is `required` and carries a
+-- `default` must not be reported as missing. Only objects the caller actually
+-- sent are descended into, so an absent `queryParameters` is still a missing
+-- required property rather than one this pass invents.
+-- Builds the value a required object property would have if the caller had
+-- sent it empty: only when every member the schema requires can be filled
+-- from a default, recursively. Returns nil when one of them cannot, because
+-- inventing a half-filled container would turn "you left this out" into a
+-- request the API rejects for a reason further away.
+local function from_defaults(schema)
+    if type(schema) ~= "table" or type(schema.properties) ~= "table" then
+        return nil
+    end
+
+    local out = {}
+    for _, name in ipairs(schema.required or {}) do
+        local property = schema.properties[name]
+        if type(property) ~= "table" then
+            return nil
+        end
+        if property.default ~= nil then
+            out[name] = clone(property.default)
+        else
+            local nested = from_defaults(property)
+            if nested == nil then
+                return nil
+            end
+            out[name] = nested
+        end
+    end
+
+    -- non-required members with a default are worth filling in too
+    for name, property in pairs(schema.properties) do
+        if out[name] == nil and type(property) == "table" and property.default ~= nil then
+            out[name] = clone(property.default)
+        end
+    end
+
+    if next(out) == nil then
+        return nil
+    end
+    return out
+end
+
+
+-- An operation may declare a member required and give it a default in the same
+-- breath; the generated schema reproduces both, and validation would reject a
+-- call that left it out even though the document says what to send. Defaults
+-- are filled in before validation, into the objects the caller sent and into a
+-- required object the caller left out entirely -- the nested parameter
+-- containers are exactly that shape.
+local function apply_defaults(schema, value)
+    if type(schema) ~= "table" or type(value) ~= "table" then
+        return
+    end
+
+    local properties = schema.properties
+    if type(properties) ~= "table" then
+        return
+    end
+
+    local required = {}
+    for _, name in ipairs(schema.required or {}) do
+        required[name] = true
+    end
+
+    for name, property in pairs(properties) do
+        if type(property) == "table" then
+            if value[name] == nil then
+                if property.default ~= nil then
+                    value[name] = clone(property.default)
+                elseif required[name] then
+                    value[name] = from_defaults(property)
+                end
+            else
+                apply_defaults(property, value[name])
+            end
+        end
+    end
+end
+
+
 local function handle_tools_call(request, opts, tools)
     local params = request.params or {}
     local name = params.name
@@ -76,6 +176,7 @@ local function handle_tools_call(request, opts, tools)
     end
 
     local arguments = type(params.arguments) == "table" and params.arguments or {}
+    apply_defaults(tool.input_schema, arguments)
 
     local ok, err = core.schema.check(tool.input_schema, arguments)
     if not ok then

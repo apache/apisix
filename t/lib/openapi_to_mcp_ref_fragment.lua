@@ -14,30 +14,28 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+
+-- ref.resolve() expands the paths subtree of a document, because that is the
+-- only part tools are generated from. The reference tests hand it a fragment
+-- instead -- the shape under test, beside whatever its internal pointers
+-- resolve against -- so this wraps the fragment in a document, keeping those
+-- keys at the root where a "#/..." pointer looks for them, and hands back the
+-- expansion of the fragment itself.
+local ref   = require("apisix.plugins.openapi-to-mcp.openapi.ref")
+local pairs = pairs
 local setmetatable = setmetatable
-local type         = type
-local ngx          = ngx
-local ngx_print    = ngx.print
-local ngx_flush    = ngx.flush
-local core         = require("apisix.core")
 
-local _M = {}
-local mt = { __index = _M }
+local _M = setmetatable({}, { __index = ref })
 
 
-function _M.new()
-    return setmetatable({}, mt)
-end
-
-
-function _M.send(self, message, event_type)
-    local data = type(message) == "table" and core.json.encode(message) or message
-    local ok, err = ngx_print("event: " .. (event_type or "message") ..
-                                "\ndata: " .. data .. "\n\n")
-    if not ok then
-        return ok, "failed to write buffer: " .. err
+function _M.resolve(fragment, opts)
+    local spec = { paths = fragment }
+    for key, value in pairs(fragment) do
+        if key ~= "paths" then
+            spec[key] = value
+        end
     end
-    return ngx_flush(true)
+    return ref.resolve(spec, opts).paths
 end
 
 

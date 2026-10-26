@@ -24,6 +24,7 @@ local core_str       = require("apisix.core.string")
 local rfind_char     = core_str.rfind_char
 local table          = require("apisix.core.table")
 local log            = require("apisix.core.log")
+local json           = require("apisix.core.json")
 local string         = require("apisix.core.string")
 local dns_client     = require("apisix.core.dns.client")
 local ngx_re         = require("ngx.re")
@@ -494,19 +495,99 @@ function _M.check_tls_bool(fields, conf, plugin_name)
 end
 
 
-function _M.set_var_rate_limiting_info(ctx, key, limit, remaining, reset)
+local function to_ms(seconds)
+    if seconds == nil then
+        return json.null
+    end
+    return math_floor(seconds * 1000 + 0.5)
+end
+
+
+local function round(value, scale)
+    return math_floor(value * scale + 0.5) / scale
+end
+
+
+local function or_null(value)
+    if value == nil then
+        return json.null
+    end
+    return value
+end
+
+
+local function current_window_info(detail)
+    local window_size = detail.window_size
+    if detail.window_type ~= "sliding" then
+        local window_end = detail.window_end
+        return {
+            start_ms = to_ms(window_end and window_end - window_size),
+            end_ms = to_ms(window_end),
+            count = or_null(detail.count),
+            created = or_null(detail.created),
+        }
+    end
+
+    -- sliding windows are aligned to the clock: the window containing
+    -- `window_now` is the id-th one since the epoch, and the previous window's
+    -- count is weighted by the share of it still inside the sliding range
+    local window_now = detail.window_now
+    local last_count = detail.last_count
+    local id, window_start, weight
+    if window_now then
+        id = math_floor(window_now / window_size)
+        window_start = id * window_size
+        weight = (window_size - window_now % window_size) / window_size
+    end
+
+    return {
+        id = or_null(id),
+        start_ms = to_ms(window_start),
+        end_ms = to_ms(window_start and window_start + window_size),
+        count = or_null(detail.count),
+    }, {
+        count = or_null(last_count),
+        weight = weight and round(weight, 1e6) or json.null,
+        weighted_count = (weight and last_count) and round(last_count * weight, 1e3)
+                         or json.null,
+    }
+end
+
+
+-- `detail` (optional) describes the window the request was counted in, see
+-- the $rate_limiting_info section of the limit-count plugin docs
+function _M.set_var_rate_limiting_info(ctx, key, limit, remaining, reset, detail)
     if not ctx then
         return
     end
-    key = key or ""
-    limit = limit or 0
-    remaining = tonumber(remaining) or 0
-    reset = reset or 0
 
-    ctx.var.rate_limiting_info = str_format(
-        '{"rate_limiting_key":"%s","rate_limiting_limit":%d,'
-        .. '"rate_limiting_remaining":%d,"rate_limiting_reset":%d}',
-            key, limit, remaining, reset)
+    local info = {
+        rate_limiting_key = tostring(key or ""),
+        rate_limiting_limit = math_floor(limit or 0),
+        rate_limiting_remaining = math_floor(tonumber(remaining) or 0),
+        rate_limiting_reset = math_floor(reset or 0),
+    }
+
+    if detail then
+        info.window_type = detail.window_type
+        info.window_size_ms = to_ms(detail.window_size)
+        info.decision = detail.decision
+        if detail.decision ~= "error" then
+            info.cost = detail.cost
+            info.evaluated_at_ms = to_ms(detail.now)
+            local delayed = detail.delayed_sync
+            if delayed then
+                info.delayed_sync = {
+                    synced_at_ms = to_ms(delayed.synced_at),
+                    synced_count = or_null(delayed.synced_count),
+                    local_delta = or_null(delayed.local_delta),
+                }
+            end
+            info.current_window, info.previous_window = current_window_info(detail)
+        end
+    end
+
+    ctx.var.rate_limiting_info = json.encode(info)
 end
 
 

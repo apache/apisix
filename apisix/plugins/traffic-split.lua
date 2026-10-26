@@ -183,7 +183,9 @@ local function set_upstream(upstream_info, ctx)
         key = upstream_info.key,
         nodes = new_nodes,
         timeout = upstream_info.timeout,
-        scheme = upstream_info.scheme
+        scheme = upstream_info.scheme,
+        tls = upstream_info.tls,
+        keepalive_pool = upstream_info.keepalive_pool,
     }
 
     local ok, err = upstream.check_schema(up_conf)
@@ -201,7 +203,9 @@ local function set_upstream(upstream_info, ctx)
     end
     core.log.info("upstream_key: ", upstream_key)
     upstream.set(ctx, upstream_key, ctx.conf_version, up_conf)
-    if upstream_info.scheme == "https" then
+    -- the schemes handle_upstream() dispatches on ctx.upstream_scheme for
+    local scheme = upstream_info.scheme
+    if scheme == "https" or scheme == "ws" or scheme == "wss" then
         upstream.set_scheme(ctx, up_conf)
     end
     return

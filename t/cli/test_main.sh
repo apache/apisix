@@ -1001,6 +1001,7 @@ nginx_config:
       balancer-ewma-locks: 20m
       balancer-ewma-last-touched-at: 20m
       plugin-limit-count-redis-cluster-slot-lock: 2m
+      plugin-saml-auth-replay: 20m
       tracing_buffer: 20m
       plugin-api-breaker: 20m
       etcd-cluster-health-check: 20m
@@ -1069,6 +1070,11 @@ fi
 
 if ! grep "plugin-limit-count-redis-cluster-slot-lock 2m;" conf/nginx.conf > /dev/null; then
     echo "failed: 'plugin-limit-count-redis-cluster-slot-lock 2m;' not in nginx.conf"
+    exit 1
+fi
+
+if ! grep "plugin-saml-auth-replay 20m;" conf/nginx.conf > /dev/null; then
+    echo "failed: 'plugin-saml-auth-replay 20m;' not in nginx.conf"
     exit 1
 fi
 

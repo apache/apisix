@@ -18,11 +18,7 @@
 
 . ./t/cli/common.sh
 
-# openapi-to-mcp keeps its SSE sessions in the mcp-session shared dict, which
-# is also what mcp-bridge uses. It is declared whatever the config file plugin
-# list says: that list is only the boot-time default, /apisix/plugins in etcd
-# can enable either plugin later, and a shared dict cannot be added without a
-# reload.
+# openapi-to-mcp needs mcp-session even when enabled through etcd after startup.
 
 echo '
 plugins:
