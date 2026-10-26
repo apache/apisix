@@ -23,6 +23,7 @@ local plugin_name = "authz-keycloak"
 
 local log = core.log
 local pairs = pairs
+local ipairs = ipairs
 
 local schema = {
     type = "object",
@@ -555,6 +556,52 @@ local function authz_keycloak_resolve_resource(conf, uri, sa_access_token)
 end
 
 
+-- Split "resource#scope1, scope2" into the resource and its scopes.
+local function parse_permission(permission)
+    local resource, scopes = permission:match("^([^#]*)#?(.*)$")
+    local list = {}
+    for scope in scopes:gmatch("[^,]+") do
+        scope = scope:match("^%s*(.-)%s*$")
+        if scope ~= "" then
+            core.table.insert(list, scope)
+        end
+    end
+
+    return resource:match("^%s*(.-)%s*$"), list
+end
+
+
+-- Check that a granted permission covers the resource and all its scopes.
+local function is_permission_granted(granted, resource, scopes)
+    for _, perm in ipairs(granted) do
+        if type(perm) == "table"
+            and (resource == "" or perm.rsname == resource or perm.rsid == resource)
+        then
+            local granted_scopes = {}
+            if type(perm.scopes) == "table" then
+                for _, scope in ipairs(perm.scopes) do
+                    granted_scopes[scope] = true
+                end
+            end
+
+            local all_granted = true
+            for _, scope in ipairs(scopes) do
+                if not granted_scopes[scope] then
+                    all_granted = false
+                    break
+                end
+            end
+
+            if all_granted then
+                return true
+            end
+        end
+    end
+
+    return false
+end
+
+
 local function evaluate_permissions(conf, ctx, token)
     -- Ensure discovered data.
     local err = authz_keycloak_ensure_discovered_data(conf)
@@ -639,7 +686,7 @@ local function evaluate_permissions(conf, ctx, token)
         body = ngx.encode_args({
             grant_type = conf.grant_type,
             audience = conf.client_id,
-            response_mode = "decision",
+            response_mode = "permissions",
             permission = permission
         }),
         headers = {
@@ -678,6 +725,29 @@ local function evaluate_permissions(conf, ctx, token)
         log.error('Request denied: Token endpoint returned an error (status: ',
                   res.status, ', body: ', res.body, ').')
         return res.status, res.body
+    end
+
+    local granted
+    granted, err = authz_keycloak_parse_json_response(res)
+    if type(granted) ~= "table" then
+        err = "Could not decode JSON from token endpoint"
+              .. (err and (": " .. err) or ".")
+        log.error(err)
+        return 503, err
+    end
+
+    -- Every requested permission must be granted.
+    for _, perm in ipairs(permission) do
+        local resource, scopes = parse_permission(perm)
+        if not is_permission_granted(granted, resource, scopes) then
+            log.debug("Request denied: permission not granted: ", perm)
+            if conf.access_denied_redirect_uri then
+                core.response.set_header("Location", conf.access_denied_redirect_uri)
+                return 307
+            end
+
+            return 403, '{"error":"access_denied","error_description":"not_authorized"}'
+        end
     end
 
     -- Request accepted.

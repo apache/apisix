@@ -47,7 +47,7 @@ __DATA__
                 d:set("perm_" .. n, perm)
 
                 ngx.status = 200
-                ngx.say('{"result":true}')
+                ngx.say('[{"rsname":"course_resource","scopes":["GET"]}]')
             }
         }
 
