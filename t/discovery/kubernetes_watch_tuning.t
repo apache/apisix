@@ -27,25 +27,6 @@ run_tests();
 __DATA__
 
 === TEST 1: schema accepts new watch tuning fields (single mode)
---- yaml_config
-apisix:
-  node_listen: 1984
-deployment:
-  role: data_plane
-  role_data_plane:
-    config_provider: yaml
-discovery:
-  kubernetes:
-    service:
-      schema: "https"
-      host: "127.0.0.1"
-      port: "6443"
-    client:
-      token: "fake-token"
-    watch_timeout_seconds: 60
-    watch_jitter_seconds: 0
-    watch_retry_interval_seconds: 5
-    watch_retry_max_seconds: 60
 --- config
     location /t {
         content_by_lua_block {
@@ -253,3 +234,151 @@ GET /t
 --- response_body
 retry_interval=40
 retry_max=40
+
+
+
+=== TEST 9: schema rejects zero retry interval and accepts one second in both modes
+--- config
+    location /t {
+        content_by_lua_block {
+            local schema = require("apisix.discovery.kubernetes.schema")
+            local jsonschema = require("jsonschema")
+            local validator = jsonschema.generate_validator(schema)
+
+            for _, interval in ipairs({0, 1}) do
+                local conf = {
+                    id = "release",
+                    service = { schema = "https", host = "127.0.0.1", port = "6443" },
+                    client = { token = "fake-token" },
+                    watch_retry_interval_seconds = interval,
+                    watch_retry_max_seconds = 60,
+                }
+                local ok = validator(conf)
+                ngx.say("single ", interval, ": ", ok and "accepted" or "rejected")
+                ok = validator({conf})
+                ngx.say("multi ", interval, ": ", ok and "accepted" or "rejected")
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+single 0: rejected
+multi 0: rejected
+single 1: accepted
+multi 1: accepted
+
+
+
+=== TEST 10: start_fetch backs off on failures and exceptions, caps delays, and resets on success
+--- config
+    location /t {
+        content_by_lua_block {
+            local k8s_core = require("apisix.discovery.kubernetes.core")
+            local original_timer_at = ngx.timer.at
+            local delays = {}
+            local pending
+            local outcomes = {
+                "failure", "exception", "failure", "exception", "failure",
+                "success", "failure", "exception",
+            }
+            local calls = 0
+            local handle = {
+                kind = "Endpoints",
+                apiserver = {},
+                watch_retry_interval_seconds = 5,
+                watch_retry_max_seconds = 30,
+                list_watch = function()
+                    calls = calls + 1
+                    local outcome = outcomes[calls]
+                    if outcome == "exception" then
+                        error("watch retry test exception", 0)
+                    end
+                    return outcome == "success"
+                end,
+            }
+
+            -- Capture scheduled callbacks so retries can run without real delays.
+            ngx.timer.at = function(delay, callback)
+                delays[#delays + 1] = delay
+                pending = callback
+                return true
+            end
+            local ok, err = pcall(function()
+                k8s_core.start_fetch(handle)
+                for _ = 1, #outcomes do
+                    local callback = assert(pending, "retry callback was not scheduled")
+                    pending = nil
+                    callback(false)
+                end
+            end)
+            ngx.timer.at = original_timer_at
+            assert(ok, err)
+
+            ngx.say("delays: ", table.concat(delays, ","))
+            ngx.say("calls: ", calls)
+        }
+    }
+--- request
+GET /t
+--- response_body
+delays: 0,5,10,20,30,30,0,5,10
+calls: 8
+--- error_log
+list_watch failed, kind: Endpoints, reason: RuntimeException, message : watch retry test exception
+--- no_error_log
+[alert]
+
+
+
+=== TEST 11: start_fetch preserves fixed default retries and clamps a cap below the initial interval
+--- config
+    location /t {
+        content_by_lua_block {
+            local k8s_core = require("apisix.discovery.kubernetes.core")
+            local original_timer_at = ngx.timer.at
+            local cases = {
+                { name = "defaults" },
+                { name = "lower cap", interval = 5, maximum = 1 },
+                { name = "zero cap", interval = 5, maximum = 0 },
+            }
+            local ok, err = pcall(function()
+                for _, case in ipairs(cases) do
+                    local delays = {}
+                    local pending
+                    ngx.timer.at = function(delay, callback)
+                        delays[#delays + 1] = delay
+                        pending = callback
+                        return true
+                    end
+                    local handle = {
+                        kind = "Endpoints",
+                        apiserver = {},
+                        watch_retry_interval_seconds = case.interval,
+                        watch_retry_max_seconds = case.maximum,
+                        list_watch = function()
+                            return false
+                        end,
+                    }
+                    k8s_core.start_fetch(handle)
+                    for _ = 1, 3 do
+                        local callback = assert(pending, "retry callback was not scheduled")
+                        pending = nil
+                        callback(false)
+                    end
+                    ngx.say(case.name, ": ", table.concat(delays, ","))
+                end
+            end)
+            ngx.timer.at = original_timer_at
+            assert(ok, err)
+        }
+    }
+--- request
+GET /t
+--- response_body
+defaults: 0,40,40,40
+lower cap: 0,5,5,5
+zero cap: 0,5,5,5
+--- no_error_log
+[error]
+[alert]

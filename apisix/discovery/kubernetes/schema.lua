@@ -130,7 +130,7 @@ local watch_jitter_seconds_schema = {
 local watch_retry_interval_seconds_schema = {
     type = "integer",
     default = 40,
-    minimum = 0,
+    minimum = 1,
     maximum = 3600,
 }
 
