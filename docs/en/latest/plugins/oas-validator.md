@@ -124,7 +124,7 @@ You should receive a `400` response with a validation error message.
 
 ### Validate Requests with a Remote Specification URL
 
-The following example demonstrates how to fetch the OpenAPI specification from a remote URL. The spec is fetched once and cached for the duration specified by `spec_url_ttl` in the plugin metadata.
+The following example demonstrates how to fetch the OpenAPI specification from a remote URL. The spec is fetched once and cached for the duration specified by `spec_url_ttl` in the plugin metadata. Resources that declare the same `spec_url` with the same `ssl_verify` and `spec_url_request_headers` share one cached copy. A cached spec that no request has used for `spec_url_ttl` seconds is released, so a spec that is no longer in use, for example after its Route changes `spec_url` or is deleted, does not stay in memory.
 
 Configure the plugin metadata to set the cache TTL for the remote spec:
 

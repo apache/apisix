@@ -553,6 +553,19 @@ local function normalize_uri_like_servlet(uri)
 end
 
 
+-- Forward the original path so servlet upstreams can consume params after ';'.
+-- URI-encode it before proxying to keep delimiters as path data.
+--
+-- Setting $upstream_uri at all turns off the "empty proxy_pass URI" passthrough
+-- that otherwise hands the client's request line -- query string included -- to
+-- the upstream unchanged, so the query string has to be re-appended here.
+local function set_servlet_upstream_uri(api_ctx, uri)
+    api_ctx.var.upstream_uri = core.utils.uri_safe_encode(uri)
+                               .. (api_ctx.var.is_args or "")
+                               .. (api_ctx.var.args or "")
+end
+
+
 -- Percent-decode every %XX in the path. When keep_slash is true, an encoded
 -- slash (%2F/%2f) is left as the literal text "%2F" instead of being turned
 -- into a real path separator -- Nginx decodes it into '/' in $uri, which makes
@@ -611,12 +624,13 @@ end
 -- into `api_ctx.upstream_ssl`. Shared by the http and stream subsystems.
 -- Returns false on error (invalid/missing referenced ssl object).
 local function resolve_upstream_client_cert(api_ctx)
-    if not (api_ctx.matched_upstream and api_ctx.matched_upstream.tls and
-            api_ctx.matched_upstream.tls.client_cert_id) then
+    -- upstream_conf is already set here only when traffic-split picked an inline upstream
+    local up_conf = api_ctx.upstream_conf or api_ctx.matched_upstream
+    if not (up_conf and up_conf.tls and up_conf.tls.client_cert_id) then
         return true
     end
 
-    local cert_id = api_ctx.matched_upstream.tls.client_cert_id
+    local cert_id = up_conf.tls.client_cert_id
     local upstream_ssl = router.router_ssl.get_by_id(cert_id)
     if not upstream_ssl or upstream_ssl.type ~= "client" then
         local err = upstream_ssl and
@@ -880,9 +894,7 @@ function _M.http_access_phase()
             end
 
             api_ctx.var.uri = new_uri
-            -- Forward the original path so servlet upstreams can consume params
-            -- after ';'. URI-encode it before proxying to keep delimiters as path data.
-            api_ctx.var.upstream_uri = core.utils.uri_safe_encode(uri)
+            set_servlet_upstream_uri(api_ctx, uri)
         end
     end
 
