@@ -422,6 +422,8 @@ The introspection flow is defined in [RFC 7662](https://datatracker.ietf.org/doc
 
 In this flow, when a client presents an access token to the resource server, the resource server sends a request to the authorization server's introspection endpoint, which responds with token details if the token is active, including information like token expiration, associated scopes, and the user or client it belongs to.
 
+When introspection confirms that a token is inactive, the Plugin returns `401 Unauthorized` with an `invalid_token` challenge. If introspection cannot be completed because the endpoint is unavailable, times out, or returns an invalid response, the Plugin returns `503 Service Unavailable` without an `invalid_token` challenge. Concurrent cache misses for the same token are coalesced while introspection caching is enabled; if coordination times out, the request falls back to direct introspection.
+
 The following diagram illustrates the interaction between different entities when you implement the authorization code flow with token introspection:
 
 ![Client credential with introspection diagram](https://static.api7.ai/uploads/2026/04/21/LWQa6pFl_4-introspection-flow.webp)

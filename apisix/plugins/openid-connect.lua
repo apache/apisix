@@ -1075,13 +1075,17 @@ local function introspect(ctx, conf)
             end
         end
 
-        local res, err = openidc.introspect(conf)
+        local res, err, _, failure = openidc.introspect(conf)
         conf.http_request_decorator = nil
 
         if err then
-            ngx.header["WWW-Authenticate"] = 'Bearer realm="' .. conf.realm ..
-                '", error="invalid_token", error_description="' .. err .. '"'
-            return ngx.HTTP_UNAUTHORIZED, err, nil, nil
+            local status = failure and failure.http_status or
+                           ngx.HTTP_INTERNAL_SERVER_ERROR
+            if failure and failure.kind == "invalid_token" then
+                ngx.header["WWW-Authenticate"] = 'Bearer realm="' .. conf.realm ..
+                    '", error="invalid_token", error_description="' .. err .. '"'
+            end
+            return status, err, nil, nil
         end
 
         local valid_issuers = core.table.try_read_attr(conf, "claim_validator",
