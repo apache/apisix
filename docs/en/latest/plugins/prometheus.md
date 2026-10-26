@@ -170,6 +170,11 @@ The following table lists the core metrics registered directly by the `prometheu
 | apisix_node_info                      | gauge     | Information of the APISIX node, such as host name and the current APISIX version.                                                                                                                                                         |
 | apisix_shared_dict_capacity_bytes     | gauge     | The total capacity of an [NGINX shared dictionary](https://github.com/openresty/lua-nginx-module#ngxshareddict).                                                                                                                     |
 | apisix_shared_dict_free_space_bytes   | gauge     | The remaining space in an [NGINX shared dictionary](https://github.com/openresty/lua-nginx-module#ngxshareddict).                                                                                                                   |
+| apisix_nginx_timers                   | gauge     | Number of running and pending Lua timers of each NGINX process, per subsystem.                                                                                                                                                   |
+| apisix_nginx_timers_max               | gauge     | Configured maximum number of running and pending Lua timers per process (`nginx_config.max_running_timers` and `nginx_config.max_pending_timers`).                                                                               |
+| apisix_nginx_process_connections      | gauge     | Number of connection slots in use by each NGINX process, including listening sockets, client connections and outgoing cosocket connections.                                                                                       |
+| apisix_nginx_process_connections_max  | gauge     | Number of connection slots of each NGINX process: `worker_connections` for workers, and 512 for the privileged agent.                                                                                                  |
+| apisix_nginx_lua_memory_bytes         | gauge     | Memory allocated by the Lua VM of each NGINX process, per subsystem.                                                                                                                                                             |
 | apisix_upstream_status                | gauge     | Health check status of upstream nodes, available if health checks are configured on the upstream. A value of `1` represents healthy and `0` represents unhealthy.                                                                 |
 | apisix_stream_connection_total        | counter   | Total number of connections handled per Stream Route.                                                                                                               |
 | apisix_stream_active_connections      | gauge     | Number of Stream sessions currently being proxied, per listening address. Covers TCP connections and UDP sessions alike.                                             |
@@ -439,6 +444,18 @@ The following labels are used to differentiate `apisix_upstream_status` metrics.
 | name       | Resource ID corresponding to the upstream configured with health checks, such as `/apisix/routes/1` and `/apisix/upstreams/1`. |
 | ip         | IP address of the upstream node.                                                                         |
 | port       | Port number of the node.                                                                            |
+
+### Labels for the NGINX process metrics
+
+`apisix_nginx_timers`, `apisix_nginx_timers_max`, `apisix_nginx_process_connections`, `apisix_nginx_process_connections_max` and `apisix_nginx_lua_memory_bytes` describe the internals of each NGINX process, so a resource running out in a single process, such as the privileged agent, shows up before it causes errors. Every process writes its own values every `refresh_interval`, and the process building the exposition refreshes its own values first.
+
+| Name      | Description                                                                                                                                                                                  |
+| --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| process   | The process the value belongs to: `worker-<id>` for a worker process, or `privileged-agent`.                                                                                                |
+| subsystem | `http` or `stream`. Each subsystem has a Lua VM of its own, with its own timers and memory. Only on `apisix_nginx_timers` and `apisix_nginx_lua_memory_bytes`.                              |
+| state     | `running` or `pending`. Only on `apisix_nginx_timers` and `apisix_nginx_timers_max`.                                                                                                         |
+
+The connection metrics are read from NGINX's internal cycle structure. When a worker finds that the number of connection slots it reads does not match `worker_connections` in the configuration, APISIX logs a warning and leaves both connection metrics out for every process instead of exporting wrong numbers.
 
 ## Examples
 

@@ -170,6 +170,11 @@ Prometheus 中有不同类型的指标。要了解它们之间的区别，请参
 | apisix_node_info        | gauge     | APISIX 节点的信息，例如主机名和当前的 APISIX 版本号。                                                                                                                                       |
 | apisix_shared_dict_capacity_bytes | gauge     | [NGINX 共享字典](https://github.com/openresty/lua-nginx-module#ngxshareddict) 的总容量。                                                                                     |
 | apisix_shared_dict_free_space_bytes | gauge     | [NGINX 共享字典](https://github.com/openresty/lua-nginx-module#ngxshareddict) 中剩余的空间。                                                                                   |
+| apisix_nginx_timers      | gauge     | 每个 NGINX 进程中运行中和等待中的 Lua 定时器数量，按子系统区分。                                                                                                     |
+| apisix_nginx_timers_max  | gauge     | 每个进程允许的运行中和等待中 Lua 定时器的上限（`nginx_config.max_running_timers` 和 `nginx_config.max_pending_timers`）。                                            |
+| apisix_nginx_process_connections | gauge | 每个 NGINX 进程已占用的连接槽位数，包括监听套接字、客户端连接和 cosocket 发起的出站连接。                                                                           |
+| apisix_nginx_process_connections_max | gauge | 每个 NGINX 进程的连接槽位总数：worker 进程为 `worker_connections`，privileged agent 为 512。                                                                |
+| apisix_nginx_lua_memory_bytes | gauge | 每个 NGINX 进程中 Lua VM 分配的内存，按子系统区分。                                                                                                                  |
 | apisix_upstream_status   | gauge     | 上游节点的健康检查状态，如果在上游配置了健康检查，则可用。值为 `1` 表示健康，`0` 表示不健康。                                                                                   |
 | apisix_stream_connection_total | counter   | 每个 Stream Route 处理的总连接数。                                                                                                                                         |
 | apisix_stream_active_connections | gauge   | 当前正在代理的 Stream 会话数，按监听地址区分。同时覆盖 TCP 连接与 UDP 会话。                                                                                                 |
@@ -427,6 +432,18 @@ APISIX 延迟
 | name   | 与健康检查配置的上游对应的资源 ID，例如 `/apisix/routes/1` 和 `/apisix/upstreams/1`。                              |
 | ip     | 上游节点的 IP 地址。                                                                                                   |
 | port   | 节点的端口号。                                                                                                         |
+
+### NGINX 进程指标的标签
+
+`apisix_nginx_timers`、`apisix_nginx_timers_max`、`apisix_nginx_process_connections`、`apisix_nginx_process_connections_max` 和 `apisix_nginx_lua_memory_bytes` 描述每个 NGINX 进程的内部状态，因此单个进程（例如 privileged agent）的资源即将耗尽时，可以在它引发错误之前被发现。每个进程每隔 `refresh_interval` 写入一次自己的数值，生成指标输出的进程会先刷新自己的数值。
+
+| 名称      | 描述                                                                                                                         |
+| --------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| process   | 数值所属的进程：worker 进程为 `worker-<id>`，privileged agent 为 `privileged-agent`。                                        |
+| subsystem | `http` 或 `stream`。每个子系统有独立的 Lua VM，定时器和内存也各自独立。仅用于 `apisix_nginx_timers` 和 `apisix_nginx_lua_memory_bytes`。 |
+| state     | `running` 或 `pending`。仅用于 `apisix_nginx_timers` 和 `apisix_nginx_timers_max`。                                          |
+
+连接相关指标读取自 NGINX 内部的 cycle 结构。如果某个 worker 读到的连接槽位数与配置中的 `worker_connections` 不一致，APISIX 会记录一条警告，并在所有进程中都不导出这两个连接指标，而不是导出错误的数值。
 
 ## 示例
 

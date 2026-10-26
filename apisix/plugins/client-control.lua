@@ -69,6 +69,7 @@ function _M.rewrite(conf, ctx)
             core.log.error("failed to set client max body size: ", err)
             return 503
         end
+        ctx.client_max_body_size = conf.max_body_size
     end
 end
 

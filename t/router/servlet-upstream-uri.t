@@ -215,13 +215,13 @@ qr/^path-handler\nroute-marker=[a-f]{6}\nrequest-uri=\/anything%3Fprobe;jsession
 
 
 
-=== TEST 4: query string is preserved when normalize_uri_like_servlet is on
+=== TEST 4: query string is forwarded alongside the servlet path
 --- request
-GET /anything/sub;jsessionid=x?foo=1&bar=2
+GET /anything/sub;jsessionid=x?foo=bar&baz=1
 --- more_headers
 Host: servlet-uri.test
 --- response_body_like eval
-qr/^path-handler\nroute-marker=[a-f]{6}\nrequest-uri=\/anything\/sub;jsessionid=x\?foo=1&bar=2\n$/
+qr/^path-handler\nroute-marker=[a-f]{6}\nrequest-uri=\/anything\/sub;jsessionid=x\?foo=bar&baz=1\n$/
 --- no_error_log
 [error]
 

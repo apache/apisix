@@ -482,6 +482,15 @@ local function verify_https_client(ctx)
 
     local matched_ssl = ctx.matched_ssl
     if matched_ssl.value.client and apisix_ssl.support_client_verification() then
+        local sni = apisix_ssl.server_name()
+        if sni ~= host then
+            -- A reused connection cannot negotiate the target host's client certificate.
+            -- Reject it before checking the certificate so clients can retry with its SNI.
+            core.log.error("request SNI ", sni, " does not match host ", host,
+                           " for an mTLS-enabled SSL configuration")
+            return false, 421
+        end
+
         local verified = apisix_base_flags.client_cert_verified_in_handshake
         if not verified then
             -- vanilla OpenResty requires to check the verification result
@@ -495,17 +504,6 @@ local function verify_https_client(ctx)
 
                 return false
             end
-        end
-
-        local sni = apisix_ssl.server_name()
-        if sni ~= host then
-            -- There is a case that the user configures a SSL object with `*.domain`,
-            -- and the client accesses with SNI `a.domain` but uses Host `b.domain`.
-            -- This case is complex and we choose to restrict the access until there
-            -- is a stronge demand in real world.
-            core.log.error("client certificate verified with SNI ", sni,
-                           ", but the host is ", host)
-            return false
         end
 
         if not verify_tls_session_resumption() then
@@ -555,6 +553,19 @@ local function normalize_uri_like_servlet(uri)
 end
 
 
+-- Forward the original path so servlet upstreams can consume params after ';'.
+-- URI-encode it before proxying to keep delimiters as path data.
+--
+-- We set api_ctx.var.upstream_uri early so early plugins (like ext-plugin,
+-- graphql-limit-count) observe the servlet path parameters.
+-- Query arguments are appended after rewrite and access plugin phases complete.
+local function set_servlet_upstream_uri(api_ctx, uri)
+    local servlet_uri = core.utils.uri_safe_encode(uri)
+    api_ctx.var.upstream_uri = servlet_uri
+    api_ctx.servlet_upstream_uri = servlet_uri
+end
+
+
 -- Percent-decode every %XX in the path. When keep_slash is true, an encoded
 -- slash (%2F/%2f) is left as the literal text "%2F" instead of being turned
 -- into a real path separator -- Nginx decodes it into '/' in $uri, which makes
@@ -591,6 +602,30 @@ local function build_match_uri_keep_encoded_slash(path, current_uri)
 end
 
 
+-- whether nginx did more than decode the path or merge slashes in $uri,
+-- e.g. resolved a dot segment or cut the path at "#"
+local function uri_normalized_by_nginx(request_uri, uri)
+    if request_uri == uri then
+        return false
+    end
+    if core.string.has_prefix(request_uri, uri)
+       and str_byte(request_uri, #uri + 1) == str_byte("?") then
+        return false
+    end
+
+    local path = request_uri
+    local args_pos = core.string.find(path, "?")
+    if args_pos then
+        path = str_sub(path, 1, args_pos - 1)
+    end
+    local decoded = percent_decode(path, false)
+    if decoded == uri then
+        return false
+    end
+    return re_gsub(decoded, [[//+]], "/", "jo") ~= uri
+end
+
+
 local function common_phase(phase_name)
     local api_ctx = ngx.ctx.api_ctx
     if not api_ctx then
@@ -613,12 +648,13 @@ end
 -- into `api_ctx.upstream_ssl`. Shared by the http and stream subsystems.
 -- Returns false on error (invalid/missing referenced ssl object).
 local function resolve_upstream_client_cert(api_ctx)
-    if not (api_ctx.matched_upstream and api_ctx.matched_upstream.tls and
-            api_ctx.matched_upstream.tls.client_cert_id) then
+    -- upstream_conf is already set here only when traffic-split picked an inline upstream
+    local up_conf = api_ctx.upstream_conf or api_ctx.matched_upstream
+    if not (up_conf and up_conf.tls and up_conf.tls.client_cert_id) then
         return true
     end
 
-    local cert_id = api_ctx.matched_upstream.tls.client_cert_id
+    local cert_id = up_conf.tls.client_cert_id
     local upstream_ssl = router.router_ssl.get_by_id(cert_id)
     if not upstream_ssl or upstream_ssl.type ~= "client" then
         local err = upstream_ssl and
@@ -858,8 +894,9 @@ function _M.http_access_phase()
 
     local span = tracer.start(ngx_ctx, "apisix.phase.access", tracer.kind.server)
 
-    if not verify_https_client(api_ctx) then
-        return core.response.exit(400)
+    local verified, status = verify_https_client(api_ctx)
+    if not verified then
+        return core.response.exit(status or 400)
     end
 
     debug.dynamic_debug(api_ctx)
@@ -881,14 +918,15 @@ function _M.http_access_phase()
             end
 
             api_ctx.var.uri = new_uri
-            -- Forward the original path so servlet upstreams can consume params
-            -- after ';'. URI-encode it before proxying to keep delimiters as path data.
-            -- We set api_ctx.var.upstream_uri early so early plugins (like ext-plugin,
-            -- graphql-limit-count) observe the servlet path parameters.
-            local servlet_uri = core.utils.uri_safe_encode(uri)
-            api_ctx.var.upstream_uri = servlet_uri
-            api_ctx.servlet_upstream_uri = servlet_uri
+            set_servlet_upstream_uri(api_ctx, uri)
         end
+    end
+
+    -- forward the path the route was matched on; binary allows decoded
+    -- control chars, proxy_pass escapes them
+    if not (local_conf.apisix and local_conf.apisix.normalize_uri_like_servlet)
+       and uri_normalized_by_nginx(api_ctx.var.request_uri, uri) then
+        ngx.req.set_uri(uri, false, true)
     end
 
     -- To prevent being hacked by untrusted request_uri, here we
@@ -1081,6 +1119,15 @@ function _M.grpc_access_phase()
 
     if api_ctx.enable_mirror == true and has_mod then
         apisix_ngx_client.enable_mirror()
+    end
+
+    if api_ctx.client_max_body_size then
+        local ok, err = apisix_ngx_client.set_client_max_body_size(
+            api_ctx.client_max_body_size)
+        if not ok then
+            core.log.error("failed to set client max body size: ", err)
+            core.response.exit(503)
+        end
     end
 end
 
