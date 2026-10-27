@@ -13,7 +13,7 @@ jobs:
     permissions:
       issues: write  # for actions/stale to close stale issues
     name: Prune Unresponded
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
 
     steps:

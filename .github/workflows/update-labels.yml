@@ -12,7 +12,7 @@ on:
 jobs:
   issue_commented:
     if: github.event.issue && !github.event.issue.pull_request && github.event.comment.user.login == github.event.issue.user.login && contains(github.event.issue.labels.*.name, 'wait for update') && !contains(github.event.issue.labels.*.name, 'user responded')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: update labels when user responds
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
@@ -33,7 +33,7 @@ jobs:
 
   pr_commented:
     if: github.event.issue && github.event.issue.pull_request && github.event.comment.user.login == github.event.issue.user.login && (contains(github.event.issue.labels.*.name, 'wait for update') || contains(github.event.issue.labels.*.name, 'discuss') || contains(github.event.issue.labels.*.name, 'need test cases')) && !contains(github.event.issue.labels.*.name, 'user responded')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: update label when user responds
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
@@ -48,7 +48,7 @@ jobs:
 
   pr_review_commented:
     if: github.event.pull_request && github.event.comment.user.login == github.event.pull_request.user.login && (contains(github.event.pull_request.labels.*.name, 'wait for update') || contains(github.event.pull_request.labels.*.name, 'discuss') || contains(github.event.issue.labels.*.name, 'need test cases')) && !contains(github.event.pull_request.labels.*.name, 'user responded')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: update label when user responds
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
