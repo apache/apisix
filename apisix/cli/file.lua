@@ -93,6 +93,38 @@ local function var_sub(val)
 end
 
 
+local function is_in_yaml_data(prefix)
+    if not str_find(prefix, "#", 1, true) then
+        return true
+    end
+
+    -- Scan only the already expanded prefix. The rest of the template
+    -- need not be valid YAML yet: this reference may supply a directive
+    -- argument, a quote, or a block-scalar header. libyaml discards real
+    -- comments but retains # in scalar data.
+    local marker = "APISIXENV"
+    local pos = #prefix:gsub("[\128-\191]", "")
+    -- Keep the borrowed scanner input alive throughout iteration.
+    local input = prefix .. marker
+    local in_data = false
+    local ok = pcall(function()
+        for token in yaml_scan(input) do
+            if token.end_mark.index > pos then
+                for _, value in pairs(token) do
+                    if type(value) == "string" and str_find(value, marker, 1, true) then
+                        in_data = true
+                    end
+                end
+            end
+        end
+    end)
+    -- An incomplete data token (e.g. an open quote or YAML escape)
+    -- cannot yet be scanned. Resolve it and let the final YAML parse
+    -- validate the completed document, as before.
+    return in_data or not ok
+end
+
+
 -- Substitute env vars in raw text before parsing. YAML parser then infers
 -- types naturally: `"${{VAR}}"` stays string, `${{VAR}}` infers from value.
 local function resolve_conf_var_in_text(text)
@@ -102,35 +134,7 @@ local function resolve_conf_var_in_text(text)
         prefix = prefix .. str_sub(text, previous, first - 1)
         previous = last
 
-        local in_data = true
-        if str_find(prefix, "#", 1, true) then
-            -- Scan only the already expanded prefix. The rest of the template
-            -- need not be valid YAML yet: this reference may supply a directive
-            -- argument, a quote, or a block-scalar header. libyaml discards real
-            -- comments but retains # in scalar data.
-            local marker = "APISIXENV"
-            local pos = #prefix:gsub("[\128-\191]", "")
-            -- Keep the borrowed scanner input alive throughout iteration.
-            local input = prefix .. marker
-            in_data = false
-            local ok = pcall(function()
-                for token in yaml_scan(input) do
-                    if token.end_mark.index > pos then
-                        for _, value in pairs(token) do
-                            if type(value) == "string" and str_find(value, marker, 1, true) then
-                                in_data = true
-                            end
-                        end
-                    end
-                end
-            end)
-            -- An incomplete data token (e.g. an open quote or YAML escape)
-            -- cannot yet be scanned. Resolve it and let the final YAML parse
-            -- validate the completed document, as before.
-            in_data = in_data or not ok
-        end
-
-        if in_data then
+        if is_in_yaml_data(prefix) then
             local resolved, _, err = var_sub(reference)
             if err then
                 return nil, err
