@@ -224,9 +224,9 @@ __DATA__
 
 === TEST 2: a live session is split out under its service_id
 The session is labelled in preread, so the service series carries it and the
-unlabelled series of the same listen_addr does not. Like any zone slot, the
-service's slot only takes a baseline the first time it is read, so its bytes
-are counted from its second session on.
+unlabelled series of the same listen_addr does not. The service's slot is
+created by this session, after the zone was first read, so its first session
+is counted in full.
 --- config
     location /probe {
         content_by_lua_block {
@@ -261,7 +261,7 @@ GET /probe
 --- stream_enable
 --- timeout: 20
 --- response_body
-first session bandwidth=no-series
+first session bandwidth=5
 service live=1
 unlabelled live=0
 service bandwidth=counted
@@ -384,7 +384,7 @@ the id label by the earlier cases stays, at 0.
 
             ngx.sleep(1.5)
 
-            -- the first session under the name only baselines its new slot
+            -- the name gets a new slot, counted from its first session
             local body, err = scrape_live_session()
             if not body then
                 ngx.say(err)
@@ -430,11 +430,10 @@ qr/apisix_stream_status\{code="200",listen_addr="0\.0\.0\.0:1985",service="Order
 
 
 
-=== TEST 9: a slot that lost its baseline rebaselines instead of replaying
-A baseline can go missing while the rest of the dict stays, when it is
-evicted or could not be written. Counting that slot from zero would land its
-whole lifetime total in one interval; it has to take a new baseline instead,
-and later traffic is counted as usual.
+=== TEST 9: a slot that lost its baseline is counted from zero
+Once the zone has been read, a slot without a baseline is taken to be new, as
+there is no telling it from one whose baseline was evicted. Such a slot
+replays its total once, and later traffic is counted as usual.
 --- config
     location /probe {
         content_by_lua_block {
@@ -476,7 +475,9 @@ and later traffic is counted as usual.
                 ngx.say(err)
                 return
             end
-            ngx.say("after the lost baseline: ", tonumber(svc_a_ingress(body)) == before)
+            local replayed = tonumber(svc_a_ingress(body))
+            ngx.say("after the lost baseline: ", replayed == 2 * before)
+            before = replayed
 
             body, err = scrape_live_session()
             if not body then

@@ -314,6 +314,10 @@ local STREAM_BANDWIDTH_DIRECTIONS = {
 -- it describes whenever that dict is flushed.
 local STREAM_PUBLISHED_PREFIX = "stream_bytes_published:"
 
+-- Set once a read has gone through the zone, and kept in the same dict so that
+-- a flush drops it together with the baselines.
+local STREAM_PUBLISHED_MARKER = "stream_bytes_published_once"
+
 -- Advancing a baseline is a read-modify-write and shdict has no
 -- compare-and-set, so only one reader converts totals to deltas at a time.
 -- Whoever loses the race leaves the baselines alone and the delta it skipped
@@ -406,15 +410,23 @@ local function publish_stream_bytes(dict, listen_addr, service, service_id, dire
 
     local published = dict:get(key)
     if not published then
-        -- The zone counts from when nginx started while the counter outlives a
-        -- reload, so the first sight of a slot only takes a baseline;
-        -- replaying the whole total into a counter that survived would double
-        -- it. The cost is that traffic before the first read is not counted.
-        local ok, err = dict:set(key, total)
-        if not ok then
-            core.log.error("failed to baseline stream bandwidth for ", key, ": ", err)
+        if not dict:get(STREAM_PUBLISHED_MARKER) then
+            -- The zone counts from when nginx started while the counter outlives a
+            -- reload, so the first read of the zone only takes baselines;
+            -- replaying the whole total into a counter that survived would double
+            -- it. The cost is that traffic before the first read is not counted.
+            local ok, err = dict:set(key, total)
+            if not ok then
+                core.log.error("failed to baseline stream bandwidth for ", key, ": ", err)
+            end
+            return
         end
-        return
+
+        -- A slot is created by the first session that carries its labels, so
+        -- one that is new since the first read holds no traffic that was
+        -- counted. The cost is that a baseline evicted from a full dict
+        -- replays the total of its slot.
+        published = 0
     end
 
     if total == published then
@@ -496,6 +508,7 @@ local function collect_stream_zone_metrics()
     end
 
     if publishing then
+        dict:set(STREAM_PUBLISHED_MARKER, true)
         dict:delete(STREAM_PUBLISH_LOCK)
     end
 end

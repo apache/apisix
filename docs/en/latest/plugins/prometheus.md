@@ -271,6 +271,9 @@ Under plain forwarding `downstream`/`ingress` tracks `upstream`/`egress`, and
 `upstream`/`ingress` tracks `downstream`/`egress`; a lasting mismatch is itself
 a signal that one side stopped reading.
 
+A Service is counted from its first session, including sessions that end
+before the next `refresh_interval`.
+
 ### Labels for `apisix_bandwidth`
 
 The following labels are used to differentiate `apisix_bandwidth` metrics.
