@@ -19,6 +19,53 @@
 
 . ./t/cli/common.sh
 
+# Reuse a scan for ordinary values, including after a leading comment.
+unset YAML_SCAN_VALUE YAML_SCAN_MISSING YAML_SCAN_PREFIX
+resty -I . -I deps/share/lua/5.1 -I deps/lib/lua/5.1 /dev/stdin <<'LUA'
+local yaml = require("yaml")
+local scanner = yaml.scanner
+local scans = 0
+yaml.scanner = function(text)
+    scans = scans + 1
+    return scanner(text)
+end
+local file = require("apisix.cli.file")
+local lyaml = require("lyaml")
+local parts = {"# header\nx:\n"}
+for i = 1, 256 do
+    parts[#parts + 1] = '  - "${{YAML_SCAN_VALUE:=127.0.0.1}}" # ${{YAML_SCAN_MISSING}}\n'
+end
+local resolved = assert(file.resolve_conf_var_in_text(table.concat(parts)))
+local result = lyaml.load(resolved)
+assert(#result.x == 256)
+for _, value in ipairs(result.x) do
+    assert(value == "127.0.0.1")
+end
+assert(scans <= 2, "ordinary values must not rescan every prefix: " .. scans)
+assert(not (file.get_exported_vars() or {}).YAML_SCAN_MISSING)
+
+-- A replacement can change whether later references belong to comments.
+local cases = {
+    {"a: ${{YAML_SCAN_VALUE:=ok}}\n${{YAML_SCAN_PREFIX:=#}} ${{YAML_SCAN_MISSING}}\nx: ok",
+     "ok"},
+    {"${{YAML_SCAN_PREFIX:=# }}${{YAML_SCAN_MISSING}}\nx: ok", "ok"},
+    {"${{YAML_SCAN_PREFIX:=# header\nx:}} ${{YAML_SCAN_VALUE:=ok}}", "ok"},
+    {"x: ${{YAML_SCAN_PREFIX:=|-}}\n  # ${{YAML_SCAN_VALUE:=ok}}", "# ok"},
+    {'# header\nx: "${{YAML_SCAN_PREFIX:="}} # ${{YAML_SCAN_MISSING}}', ""},
+    {'# header\nx: "${{YAML_SCAN_VALUE:=ok\n}}"', "ok"},
+}
+for _, case in ipairs(cases) do
+    resolved = assert(file.resolve_conf_var_in_text(case[1]))
+    assert(lyaml.load(resolved).x == case[2])
+end
+for _, newline in ipairs({"\194\133", "\226\128\168", "\226\128\169"}) do
+    resolved = assert(file.resolve_conf_var_in_text(
+        '# ${{YAML_SCAN_MISSING:=ignored' .. newline .. 'x}}: "${{YAML_SCAN_VALUE:=ok}}"'))
+    assert(lyaml.load(resolved)["x}}"] == "ok")
+end
+print("passed: YAML scan reuse and syntax-changing substitutions")
+LUA
+
 standalone() {
     rm -f conf/apisix.yaml.link
     clean_up

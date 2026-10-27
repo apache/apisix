@@ -32,6 +32,7 @@ local getenv = os.getenv
 local str_gmatch = string.gmatch
 local str_find = string.find
 local str_sub = string.sub
+local concat = table.concat
 local print = print
 local pcall = pcall
 
@@ -125,27 +126,89 @@ local function is_in_yaml_data(prefix)
 end
 
 
+-- Classify single-line ASCII references together. Only lexically inert scalar values
+-- can reuse these positions; everything else uses the sequential resolver.
+local function scan_reference_contexts(text)
+    local references, parts, contexts = {}, {}, {}
+    local previous, pos = 1, 0
+    local marker = "APISIXENV"
+    for first, reference, _, last in str_gmatch(text, "()(" .. var_pattern .. ")()") do
+        -- Non-ASCII references may contain YAML line breaks (NEL, LS or PS).
+        if str_find(reference, "[\r\n\128-\255]") then
+            return nil
+        end
+        local gap = str_sub(text, previous, first - 1)
+        parts[#parts + 1] = gap
+        parts[#parts + 1] = marker
+        pos = pos + #gap:gsub("[\128-\191]", "")
+        references[#references + 1] = {first = pos, last = pos + #marker, source = first}
+        contexts[first] = false
+        pos = pos + #marker
+        previous = last
+    end
+    parts[#parts + 1] = str_sub(text, previous)
+    if #references == 0 then
+        return contexts
+    end
+
+    -- Retain the scanner's borrowed input and use source spans, not decoded
+    -- marker values: an existing scalar may contain the same text or an escape.
+    local input = concat(parts)
+    local ok, supported = pcall(function()
+        local i = 1
+        for token in yaml_scan(input) do
+            while references[i] and references[i].first < token.end_mark.index do
+                local ref = references[i]
+                if ref.last > token.start_mark.index then
+                    if token.type ~= "SCALAR" or ref.first < token.start_mark.index
+                       or ref.last > token.end_mark.index
+                       -- Block token spans also include comments in their headers.
+                       or token.style == "LITERAL" or token.style == "FOLDED" then
+                        return false
+                    end
+                    contexts[ref.source] = true
+                end
+                i = i + 1
+            end
+        end
+        return true
+    end)
+    return ok and supported and contexts or nil
+end
+
+
 -- Substitute env vars in raw text before parsing. YAML parser then infers
 -- types naturally: `"${{VAR}}"` stays string, `${{VAR}}` infers from value.
 local function resolve_conf_var_in_text(text)
-    local prefix = ""
+    local contexts = scan_reference_contexts(text)
+    local parts = {}
     local previous = 1
     for first, reference, _, last in str_gmatch(text, "()(" .. var_pattern .. ")()") do
-        prefix = prefix .. str_sub(text, previous, first - 1)
+        parts[#parts + 1] = str_sub(text, previous, first - 1)
         previous = last
 
-        if is_in_yaml_data(prefix) then
+        local in_data = contexts and contexts[first]
+        if in_data == nil then
+            in_data = is_in_yaml_data(concat(parts))
+        end
+        local value = reference
+        if in_data then
             local resolved, _, err = var_sub(reference)
             if err then
                 return nil, err
             end
-            prefix = prefix .. resolved
-        else
-            prefix = prefix .. reference
+            value = resolved
+            -- Only nonempty words/addresses preserve the remaining contexts.
+            -- Syntax-changing values invalidate the batch, without restarting.
+            if contexts and not str_find(value, "^[A-Za-z0-9_][A-Za-z0-9_./%-]*$") then
+                contexts = nil
+            end
         end
+        parts[#parts + 1] = value
     end
     -- Iterate references in the original input only, never in inserted values.
-    return prefix .. str_sub(text, previous)
+    parts[#parts + 1] = str_sub(text, previous)
+    return concat(parts)
 end
 
 
