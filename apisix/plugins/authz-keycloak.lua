@@ -650,21 +650,24 @@ local function evaluate_permissions(conf, ctx, token)
         scope = ctx.var.request_method
     end
 
-    if scope then
-        -- Copy the permissions before appending the method scope, so the
-        -- derived scope is not written back into the reused plugin config.
-        permission = core.table.clone(permission)
-        -- Loop over permissions and add scope.
-        for k, v in pairs(permission) do
-            if v:find("#", 1, true) then
-                -- Already contains scope.
-                permission[k] = v .. ", " .. scope
-            else
-                -- Doesn't contain scope yet.
-                permission[k] = v .. "#" .. scope
-            end
+    -- Rebuild as "resource#scope1,scope2" plus the method scope, without
+    -- spaces since Keycloak doesn't trim scopes. New tables keep conf intact.
+    local requested = core.table.new(#permission, 0)
+    local encoded = core.table.new(#permission, 0)
+    for i, v in ipairs(permission) do
+        local resource, scopes = parse_permission(v)
+        if scope then
+            core.table.insert(scopes, scope)
+        end
+
+        requested[i] = {resource = resource, scopes = scopes}
+        if #scopes > 0 then
+            encoded[i] = resource .. "#" .. core.table.concat(scopes, ",")
+        else
+            encoded[i] = resource
         end
     end
+    permission = encoded
 
     for k, v in pairs(permission) do
         log.debug("Requesting permission ", v, ".")
@@ -737,10 +740,9 @@ local function evaluate_permissions(conf, ctx, token)
     end
 
     -- Every requested permission must be granted.
-    for _, perm in ipairs(permission) do
-        local resource, scopes = parse_permission(perm)
-        if not is_permission_granted(granted, resource, scopes) then
-            log.debug("Request denied: permission not granted: ", perm)
+    for i, req in ipairs(requested) do
+        if not is_permission_granted(granted, req.resource, req.scopes) then
+            log.debug("Request denied: permission not granted: ", permission[i])
             if conf.access_denied_redirect_uri then
                 core.response.set_header("Location", conf.access_denied_redirect_uri)
                 return 307
