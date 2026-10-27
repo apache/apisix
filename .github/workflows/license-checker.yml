@@ -29,7 +29,7 @@ permissions:
 
 jobs:
   check-license:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 3
 
     steps:
