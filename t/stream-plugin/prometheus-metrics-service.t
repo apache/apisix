@@ -106,8 +106,8 @@ _EOC_
     end
 
     -- Opens a session on 1985 and scrapes while it is live. A scrape runs
-    -- first so that the bandwidth baselines are taken before the session
-    -- exists: the first read of the zone only baselines what it finds.
+    -- first so that the totals already in the zone are published before the
+    -- session exists.
     function _G.scrape_live_session()
         local body, err = scrape()
         if not body then
@@ -153,6 +153,14 @@ _EOC_
         return series_value(body, "apisix_stream_bandwidth",
             'listen_addr="0.0.0.0:1985",service="svc-a",service_id="svc-a",'
             .. 'type="ingress",side="downstream"')
+    end
+    -- what the zone holds for that series, nil when the slot does not exist
+    function _G.svc_a_zone_ingress()
+        for _, entry in ipairs(require("resty.apisix.stream.metrics").dump()) do
+            if entry.listen_addr == "0.0.0.0:1985" and entry.labels[1] == "svc-a" then
+                return entry.downstream_ingress
+            end
+        end
     end
 
     function _G.active_on(body, service, service_id)
@@ -224,9 +232,9 @@ __DATA__
 
 === TEST 2: a live session is split out under its service_id
 The session is labelled in preread, so the service series carries it and the
-unlabelled series of the same listen_addr does not. The service's slot is
-created by this session, after the zone was first read, so its first session
-is counted in full.
+unlabelled series of the same listen_addr does not. A slot without a
+baseline is counted from zero, so the service's first session is counted in
+full even though it ends before its slot is first read.
 --- config
     location /probe {
         content_by_lua_block {
@@ -431,8 +439,7 @@ qr/apisix_stream_status\{code="200",listen_addr="0\.0\.0\.0:1985",service="Order
 
 
 === TEST 9: a slot that lost its baseline is counted from zero
-Once the zone has been read, a slot without a baseline is taken to be new, as
-there is no telling it from one whose baseline was evicted. Such a slot
+There is no telling a slot whose baseline was evicted from a new one, so it
 replays its total once, and later traffic is counted as usual.
 --- config
     location /probe {
@@ -467,20 +474,20 @@ replays its total once, and later traffic is counted as usual.
             end
             local before = tonumber(svc_a_ingress(body))
 
-            ngx.shared["prometheus-metrics"]:delete(
-                "stream_bytes_published:0.0.0.0:1985\31svc-a\31svc-a\31downstream_ingress")
+            local dict = ngx.shared["prometheus-metrics"]
+            local key = "stream_bytes_published:0.0.0.0:1985\31svc-a\31svc-a"
+                        .. "\31downstream_ingress"
+            ngx.say("baseline dropped: ", dict:get(key) ~= nil)
+            dict:delete(key)
 
             body, err = scrape()
             if not body then
                 ngx.say(err)
                 return
             end
-            local replayed
-            for _, entry in ipairs(require("resty.apisix.stream.metrics").dump()) do
-                if entry.listen_addr == "0.0.0.0:1985" and entry.labels[1] == "svc-a" then
-                    replayed = before + entry.downstream_ingress
-                end
-            end
+            local zone = svc_a_zone_ingress()
+            ngx.say("zone holds traffic: ", (zone or 0) > 0)
+            local replayed = before + (zone or 0)
             before = tonumber(svc_a_ingress(body))
             ngx.say("after the lost baseline: ", before == replayed)
 
@@ -499,6 +506,8 @@ GET /probe
 --- stream_enable
 --- timeout: 20
 --- response_body
+baseline dropped: true
+zone holds traffic: true
 after the lost baseline: true
 after one more session: +5
 
@@ -596,3 +605,63 @@ GET /probe
 --- response_body
 status under the first name: 1
 status under the new name: no-series
+
+
+
+=== TEST 11: an emptied metric dict counts the zone in full
+Flushing the dict leaves no counter and no baseline, the state the dict starts
+from. A slot then has had nothing counted, so the next read counts its whole
+total, sessions that ended before it included.
+--- config
+    location /probe {
+        content_by_lua_block {
+            -- the previous case moved the route to another service
+            local t = require("lib.test_admin").test
+            local code = t("/apisix/admin/stream_routes/1", ngx.HTTP_PUT, [[{
+                "plugins": {
+                    "prometheus": {}
+                },
+                "service_id": "svc-a"
+            }]])
+            if code > 300 then
+                ngx.say("stream route: ", code)
+                return
+            end
+            ngx.sleep(1.5)
+
+            local body, err = scrape_live_session()
+            if not body then
+                ngx.say(err)
+                return
+            end
+
+            ngx.shared["prometheus-metrics"]:flush_all()
+
+            body, err = scrape()
+            if not body then
+                ngx.say(err)
+                return
+            end
+            local zone = svc_a_zone_ingress()
+            ngx.say("zone holds traffic: ", (zone or 0) > 0)
+            ngx.say("first read: ", tonumber(svc_a_ingress(body)) == zone)
+
+            local before = tonumber(svc_a_ingress(body))
+            body, err = scrape_live_session()
+            if not body then
+                ngx.say(err)
+                return
+            end
+            ngx.say("after one more session: +", tonumber(svc_a_ingress(body)) - before)
+
+            ngx.sleep(1.5)
+        }
+    }
+--- request
+GET /probe
+--- stream_enable
+--- timeout: 20
+--- response_body
+zone holds traffic: true
+first read: true
+after one more session: +5
