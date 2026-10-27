@@ -89,7 +89,6 @@ local function model_to_label(val)
 end
 -- Default refresh interval
 local DEFAULT_REFRESH_INTERVAL = 15
-local DEFAULT_FLUSH_EXPIRED_INTERVAL = 21600
 
 local CACHED_METRICS_KEY = "cached_metrics_text"
 
@@ -100,7 +99,6 @@ local inner_tab_arr = {}
 local exporter_timer_running = false
 
 local exporter_timer_created = false
-local flush_expired_timer_created = false
 
 local function gen_arr(...)
     clear_tab(inner_tab_arr)
@@ -567,10 +565,7 @@ function _M.http_init(prometheus_enabled_in_stream)
     local ai_cache_embedding_latency_exptime = core.table.try_read_attr(attr, "metrics",
                                                             "ai_cache_embedding_latency", "expire")
 
-    prometheus = base_prometheus.init("prometheus-metrics", {
-        prefix = metric_prefix,
-        auto_flush_expired = false,
-    })
+    prometheus = base_prometheus.init("prometheus-metrics", metric_prefix)
 
     metrics.connections = prometheus:gauge("nginx_http_current_connections",
             "Number of HTTP connections",
@@ -738,10 +733,7 @@ function _M.stream_init()
         metric_prefix = attr.metric_prefix
     end
 
-    prometheus = base_prometheus.init("prometheus-metrics", {
-        prefix = metric_prefix,
-        auto_flush_expired = false,
-    })
+    prometheus = base_prometheus.init("prometheus-metrics", metric_prefix)
 
     init_stream_metrics()
 
@@ -1318,36 +1310,6 @@ local function exporter_timer(premature, yieldable, cache_exptime)
 end
 
 
-local function flush_expired_timer(premature)
-    if premature then
-        return
-    end
-
-    ngx.shared["prometheus-metrics"]:flush_expired()
-end
-
-
-local function init_flush_expired_timer()
-    if flush_expired_timer_created then
-        return
-    end
-
-    local attr = plugin.plugin_attr("prometheus")
-    local interval = attr and attr.flush_expired_interval or DEFAULT_FLUSH_EXPIRED_INTERVAL
-    if interval <= 0 then
-        return
-    end
-
-    local ok, err = ngx_timer_every(interval, flush_expired_timer)
-    if not ok then
-        core.log.error("Failed to start the metrics flush timer: ", err)
-        return
-    end
-
-    flush_expired_timer_created = true
-end
-
-
 local function init_exporter_timer()
     local refresh_interval = get_refresh_interval()
 
@@ -1356,8 +1318,6 @@ local function init_exporter_timer()
     if process.type() ~= "privileged agent" then
         return
     end
-
-    init_flush_expired_timer()
 
     local cache_exptime = refresh_interval * 2
 
