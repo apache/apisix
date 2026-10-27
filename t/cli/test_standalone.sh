@@ -31,17 +31,33 @@ yaml.scanner = function(text)
 end
 local file = require("apisix.cli.file")
 local lyaml = require("lyaml")
-local parts = {"# header\nx:\n"}
-for i = 1, 256 do
-    parts[#parts + 1] = '  - "${{YAML_SCAN_VALUE:=127.0.0.1}}" # ${{YAML_SCAN_MISSING}}\n'
+local resolved
+for _, case in ipairs({
+    {'"', "127.0.0.1"},
+    {'"', "127.0.0.1:9091"},
+    {"'", "127.0.0.1:9091"},
+    {'"', "http://127.0.0.1:8080/path?q=1&x=2#fragment"},
+    {"'", "http://127.0.0.1:8080/path?q=1&x=2#fragment"},
+    {'"', "it's data: [one, two] # text"},
+    {"'", 'a "quote" and C:\\path'},
+    {'"', ""},
+}) do
+    for _, n in ipairs({32, 256, 1024}) do
+        local parts = {"# header\nx:\n"}
+        for i = 1, n do
+            parts[#parts + 1] = '  - ' .. case[1] .. '${{YAML_SCAN_VALUE:=' .. case[2]
+                .. '}}' .. case[1] .. ' # ${{YAML_SCAN_MISSING}}\n'
+        end
+        scans = 0
+        resolved = assert(file.resolve_conf_var_in_text(table.concat(parts)))
+        local result = lyaml.load(resolved)
+        assert(#result.x == n)
+        for _, value in ipairs(result.x) do
+            assert(value == case[2])
+        end
+        assert(scans <= 2, "ordinary values must not rescan every prefix: " .. scans)
+    end
 end
-local resolved = assert(file.resolve_conf_var_in_text(table.concat(parts)))
-local result = lyaml.load(resolved)
-assert(#result.x == 256)
-for _, value in ipairs(result.x) do
-    assert(value == "127.0.0.1")
-end
-assert(scans <= 2, "ordinary values must not rescan every prefix: " .. scans)
 assert(not (file.get_exported_vars() or {}).YAML_SCAN_MISSING)
 
 -- A replacement can change whether later references belong to comments.

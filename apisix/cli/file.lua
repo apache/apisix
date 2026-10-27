@@ -166,7 +166,7 @@ local function scan_reference_contexts(text)
                        or token.style == "LITERAL" or token.style == "FOLDED" then
                         return false
                     end
-                    contexts[ref.source] = true
+                    contexts[ref.source] = token.style
                 end
                 i = i + 1
             end
@@ -198,10 +198,18 @@ local function resolve_conf_var_in_text(text)
                 return nil, err
             end
             value = resolved
-            -- Only nonempty words/addresses preserve the remaining contexts.
-            -- Syntax-changing values invalidate the batch, without restarting.
-            if contexts and not str_find(value, "^[A-Za-z0-9_][A-Za-z0-9_./%-]*$") then
-                contexts = nil
+            if contexts then
+                -- Quoted punctuation stays data unless it closes the scalar or
+                -- introduces an escape. Keep line breaks/non-ASCII conservative.
+                local safe = str_find(value, "^[A-Za-z0-9_][A-Za-z0-9_./%-]*$")
+                if in_data == "SINGLE_QUOTED" then
+                    safe = not str_find(value, "[^ -~]") and not str_find(value, "'", 1, true)
+                elseif in_data == "DOUBLE_QUOTED" then
+                    safe = not str_find(value, "[^ -~]") and not str_find(value, '["\\]')
+                end
+                if not safe then
+                    contexts = nil
+                end
             end
         end
         parts[#parts + 1] = value
