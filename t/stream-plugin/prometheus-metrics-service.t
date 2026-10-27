@@ -475,9 +475,14 @@ replays its total once, and later traffic is counted as usual.
                 ngx.say(err)
                 return
             end
-            local replayed = tonumber(svc_a_ingress(body))
-            ngx.say("after the lost baseline: ", replayed == 2 * before)
-            before = replayed
+            local replayed
+            for _, entry in ipairs(require("resty.apisix.stream.metrics").dump()) do
+                if entry.listen_addr == "0.0.0.0:1985" and entry.labels[1] == "svc-a" then
+                    replayed = before + entry.downstream_ingress
+                end
+            end
+            before = tonumber(svc_a_ingress(body))
+            ngx.say("after the lost baseline: ", before == replayed)
 
             body, err = scrape_live_session()
             if not body then
