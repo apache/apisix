@@ -75,6 +75,7 @@ plugin_attr:
 passed
 
 
+
 === TEST 2: zero disables automatic reclamation
 --- extra_yaml_config
 plugin_attr:
@@ -96,6 +97,7 @@ plugin_attr:
     }
 --- response_body
 passed
+
 
 
 === TEST 3: a negative interval disables automatic reclamation
@@ -121,6 +123,7 @@ plugin_attr:
 passed
 
 
+
 === TEST 4: the default interval does not reclaim immediately
 --- config
     location /t {
@@ -140,6 +143,7 @@ passed
     }
 --- response_body
 passed
+
 
 
 === TEST 5: disabling reclamation preserves local index cleanup
