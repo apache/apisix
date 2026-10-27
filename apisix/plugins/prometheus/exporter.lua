@@ -419,7 +419,7 @@ local function publish_stream_bytes(dict, listen_addr, service, service_id, dire
             if not ok then
                 core.log.error("failed to baseline stream bandwidth for ", key, ": ", err)
             end
-            return
+            return ok
         end
 
         -- A slot is created by the first session that carries its labels, so
@@ -490,6 +490,8 @@ local function collect_stream_zone_metrics()
     end
     stream_zone_unavailable = false
 
+    local baselined = true
+
     for _, entry in ipairs(entries) do
         local listen_addr = entry.listen_addr
         local service, service_id = stream_zone_labels(entry)
@@ -501,14 +503,20 @@ local function collect_stream_zone_metrics()
 
         if publishing then
             for _, direction in ipairs(STREAM_BANDWIDTH_DIRECTIONS) do
-                publish_stream_bytes(dict, listen_addr, service, service_id, direction,
-                                     entry[direction[1]])
+                if publish_stream_bytes(dict, listen_addr, service, service_id, direction,
+                                         entry[direction[1]]) == false then
+                    baselined = false
+                end
             end
         end
     end
 
     if publishing then
-        dict:set(STREAM_PUBLISHED_MARKER, true)
+        -- a baseline that could not be written is retried by the next read
+        -- rather than counted from zero
+        if baselined then
+            dict:set(STREAM_PUBLISHED_MARKER, true)
+        end
         dict:delete(STREAM_PUBLISH_LOCK)
     end
 end
