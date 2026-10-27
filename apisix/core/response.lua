@@ -63,11 +63,21 @@ end
 
 
 local function set_json_content_type(code)
-    if ngx.config.subsystem == "http" and type(code) == "number"
-       and code >= 200 and code ~= 204 and code ~= 304
-       and not ngx.headers_sent and ngx_header["Content-Type"] == nil then
-        ngx_header["Content-Type"] = "application/json"
+    -- Only terminal HTTP responses receive an automatic content type.
+    if ngx.config.subsystem ~= "http" or type(code) ~= "number" then
+        return
     end
+
+    if code < 200 or code == 204 or code == 304 then
+        return
+    end
+
+    -- Preserve explicit types and headers that have already been sent.
+    if ngx.headers_sent or ngx_header["Content-Type"] ~= nil then
+        return
+    end
+
+    ngx_header["Content-Type"] = "application/json"
 end
 
 
@@ -172,6 +182,8 @@ function resp_exit(code, ...)
     end
 
     if idx > 0 then
+        -- One encoded table occupies two chunks: JSON and its trailing newline.
+        -- Additional non-nil body arguments make the output ineligible for JSON typing.
         if encoded_table and idx == 2 then
             set_json_content_type(code)
         end
