@@ -108,7 +108,10 @@ install_nodejs () {
     export PNPM_HOME="/pnpm"
     export PATH="$PNPM_HOME:$PATH"
     corepack enable pnpm
-    pnpm setup
+    # Pin the pnpm used outside t/, which has its own packageManager pin.
+    # pnpm 12 rejects setup under sudo, while these maintenance branches run
+    # this installer through sudo in CI. Keep the last version known to work.
+    corepack prepare pnpm@11.25.0 --activate
 }
 
 install_brotli () {
