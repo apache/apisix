@@ -144,21 +144,18 @@ function _M.access(conf, ctx)
 
     local messages
     if proto_name == "openai-embeddings" then
-        -- A batch contains independent inputs, not conversation history. Keep
-        -- all its text in one user message so the last-message filter below
-        -- cannot discard earlier inputs.
         local contents = protocols.get(proto_name).extract_request_content(json_body)
         messages = {}
-        if #contents > 0 then
-            messages[1] = {role = "user", content = table.concat(contents, " ")}
+        for i, content in ipairs(contents) do
+            messages[i] = {role = "user", content = content}
         end
     else
         messages = protocols.get_messages(json_body, ctx)
     end
 
-    -- Responses API: instructions + input are parallel fields, not conversation history,
-    -- so skip the "last message only" filtering of get_content_to_check.
-    if proto_name ~= "openai-responses" then
+    -- Responses fields and Embeddings batch items are not conversation history,
+    -- so check all of them instead of keeping only the last message.
+    if proto_name ~= "openai-responses" and proto_name ~= "openai-embeddings" then
         messages = get_content_to_check(conf, messages)
     end
     if not conf.match_all_roles then
