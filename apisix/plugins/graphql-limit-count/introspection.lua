@@ -161,13 +161,15 @@ local function first_node(nodes, scheme)
 
     if core.table.isarray(nodes) then
         for _, node in ipairs(nodes) do
-            if node.host then
+            if node.host and node.weight > 0 then
                 core.table.insert(candidates, node.host .. ":" .. (node.port or default_port))
             end
         end
     else
-        for addr in pairs(nodes) do
-            core.table.insert(candidates, addr)
+        for addr, weight in pairs(nodes) do
+            if weight > 0 then
+                core.table.insert(candidates, addr)
+            end
         end
     end
 

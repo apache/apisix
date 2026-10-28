@@ -2613,3 +2613,49 @@ colliding decoration: 201
 service with a checker: 201
 route: 201
 healthcheck: 200 names the service
+
+
+
+=== TEST 68: introspection skips zero-weight upstream nodes
+--- config
+    location /t {
+        content_by_lua_block {
+            local introspection =
+                require("apisix.plugins.graphql-limit-count.introspection")
+
+            local function upvalue(fn, wanted)
+                local i = 1
+                while true do
+                    local name, value = debug.getupvalue(fn, i)
+                    if not name then
+                        return nil
+                    end
+                    if name == wanted then
+                        return value
+                    end
+                    i = i + 1
+                end
+            end
+
+            local resolve_endpoint = upvalue(introspection.get, "resolve_endpoint")
+            local first_node = upvalue(resolve_endpoint, "first_node")
+
+            ngx.say("map: ", first_node({
+                ["127.0.0.1:1000"] = 0,
+                ["127.0.0.1:2000"] = 1,
+            }, "http"))
+
+            ngx.say("array: ", first_node({
+                {host = "127.0.0.1", port = 1000, weight = 0},
+                {host = "127.0.0.1", port = 2000, weight = 1},
+            }, "http"))
+
+            ngx.say("all disabled: ", tostring(first_node({
+                ["127.0.0.1:1000"] = 0,
+            }, "http")))
+        }
+    }
+--- response_body
+map: 127.0.0.1:2000
+array: 127.0.0.1:2000
+all disabled: nil
