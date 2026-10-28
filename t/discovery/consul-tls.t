@@ -82,10 +82,18 @@ $ssl_verify_conf
 _EOC_
 }
 
+# the privileged agent fetches from consul in a timer after startup, so a
+# request sent right away can race the first fetch; the route waits until the
+# shared dict has the service, or up to 5 seconds when the fetch should fail
 our $apisix_yaml = <<_EOC_;
 routes:
   -
     uri: /hello
+    plugins:
+      serverless-pre-function:
+        phase: rewrite
+        functions:
+          - "return function() for _ = 1, 50 do if ngx.shared.consul:get('default/service_tls') then return end ngx.sleep(0.1) end end"
     upstream:
       service_name: service_tls
       discovery_type: consul
@@ -157,6 +165,7 @@ GET /hello
     qr/connect consul: https:\/\/localhost:18501\/v1 .* with error: \d+: unable to (get local issuer|verify the first) certificate/,
     qr/consul service not found: default\/service_tls/,
 ]
+--- timeout: 10
 
 
 
