@@ -209,3 +209,66 @@ sleep 0.1
 make stop
 
 echo "passed: connection to upstream with mTLS success"
+
+# test tls.verify alone with proxy_ssl_verify off
+git checkout conf/config.yaml
+
+for trusted_cert in apisix.crt apisix_ecc.crt; do
+echo "
+apisix:
+  ssl:
+    ssl_trusted_certificate: t/certs/$trusted_cert
+nginx_config:
+  http_configuration_snippet: |
+    server {
+        listen 1983 ssl;
+        server_name test.com;
+        ssl_certificate             ../t/certs/apisix.crt;
+        ssl_certificate_key         ../t/certs/apisix.key;
+        location /hello {
+            return 200 \"hello world\";
+        }
+    }
+" > conf/config.yaml
+
+rm logs/error.log || true
+make init
+make run
+sleep 0.1
+
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+curl -k -i http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
+{
+    "uri": "/hello",
+    "upstream": {
+        "pass_host": "rewrite",
+        "nodes": {
+            "127.0.0.1:1983": 1
+        },
+        "scheme": "https",
+        "upstream_host": "test.com",
+        "type": "roundrobin",
+        "tls": {
+            "verify": true
+        }
+    }
+}'
+
+sleep 1
+
+code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9080/hello)
+
+make stop
+
+if [ "$trusted_cert" = "apisix.crt" ] && [ ! $code -eq 200 ]; then
+    echo "failed: tls.verify should verify against ssl_trusted_certificate, got $code"
+    exit 1
+fi
+
+if [ "$trusted_cert" = "apisix_ecc.crt" ] && [ ! $code -eq 502 ]; then
+    echo "failed: tls.verify should reject a certificate ssl_trusted_certificate does not cover, got $code"
+    exit 1
+fi
+done
+
+echo "passed: tls.verify uses ssl_trusted_certificate with proxy_ssl_verify off"

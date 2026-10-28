@@ -90,6 +90,38 @@ local function create_trusted_store(ca_certs)
 end
 
 
+local default_trusted_store
+
+-- nginx loads `proxy_ssl_trusted_certificate` into the upstream SSL context only
+-- when `proxy_ssl_verify` is on, so an upstream that enables verification
+-- without its own `ca_certs` has to be given the configured trusted CAs here.
+local function get_default_trusted_store()
+    if default_trusted_store then
+        return default_trusted_store
+    end
+
+    local local_conf = core.config.local_conf()
+    local ssl_conf = local_conf.apisix and local_conf.apisix.ssl
+    local path = ssl_conf and ssl_conf.ssl_trusted_certificate
+    if not path then
+        return nil
+    end
+
+    local store, err = openssl_x509_store.new()
+    if not store then
+        return nil, err
+    end
+
+    local ok, err = store:load_file(path)
+    if not ok then
+        return nil, "failed to load trusted certificates from " .. path .. ": " .. err
+    end
+
+    default_trusted_store = store
+    return store
+end
+
+
 -- Apply upstream.tls.verify / upstream.tls.ca_certs to the current request.
 -- Both settings live in the apisix-nginx-module request context, which is wiped
 -- by the internal redirect to @grpc_pass, so grpcs has to apply them again from
@@ -107,13 +139,19 @@ local function set_upstream_ssl_opts(up_conf)
         end
     end
 
+    local store, err
     if tls.ca_certs then
-        local store, err = trusted_store_cache(tls.ca_certs, up_conf.resource_version,
-                                               create_trusted_store, tls.ca_certs)
-        if not store then
-            return nil, err
-        end
+        store, err = trusted_store_cache(tls.ca_certs, up_conf.resource_version,
+                                         create_trusted_store, tls.ca_certs)
+    elseif tls.verify then
+        store, err = get_default_trusted_store()
+    end
 
+    if err then
+        return nil, err
+    end
+
+    if store then
         local ok, err = set_upstream_ssl_trusted_store(store)
         if not ok then
             return nil, err

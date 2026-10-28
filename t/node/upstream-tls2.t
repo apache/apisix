@@ -64,6 +64,18 @@ _EOC_
         $block->set_value("http_config", $http_config);
     }
 
+    # nginx.conf renders proxy_ssl_trusted_certificate from
+    # apisix.ssl.ssl_trusted_certificate, keep both pointing at the same CA
+    if (!defined $block->yaml_config && !$block->apisix_yaml) {
+        my $yaml_config = <<_EOC_;
+apisix:
+  node_listen: 1984
+  ssl:
+    ssl_trusted_certificate: t/certs/mtls_ca.crt
+_EOC_
+        $block->set_value("yaml_config", $yaml_config);
+    }
+
     if (!$block->request) {
         $block->set_value("request", "GET /t");
     }
@@ -431,3 +443,110 @@ grpcurl -import-path ./t/grpc_server_example/proto -proto helloworld.proto -plai
 {
   "message": "Hello apisix"
 }
+
+
+
+=== TEST 14: tls.verify alone, with proxy_ssl_verify off in nginx
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "upstream": {
+                        "scheme": "https",
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:8767": 1
+                        },
+                        "pass_host": "rewrite",
+                        "upstream_host": "admin.apisix.dev",
+                        "tls": {
+                            "verify": true
+                        }
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 15: hit, the upstream is verified against apisix.ssl.ssl_trusted_certificate
+--- http_config
+server {
+    listen 8767 ssl;
+    ssl_certificate ../../certs/mtls_server.crt;
+    ssl_certificate_key ../../certs/mtls_server.key;
+
+    location /hello {
+        return 200 'ok\n';
+    }
+}
+--- request
+GET /hello
+--- response_body
+ok
+
+
+
+=== TEST 16: tls.verify alone, upstream certificate not signed by a trusted CA
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "upstream": {
+                        "scheme": "https",
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:8768": 1
+                        },
+                        "pass_host": "rewrite",
+                        "upstream_host": "test.com",
+                        "tls": {
+                            "verify": true
+                        }
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 17: hit, verification still rejects it with proxy_ssl_verify off in nginx
+--- http_config
+server {
+    listen 8768 ssl;
+    ssl_certificate ../../certs/apisix.crt;
+    ssl_certificate_key ../../certs/apisix.key;
+
+    location /hello {
+        return 200 'ok\n';
+    }
+}
+--- request
+GET /hello
+--- error_code: 502
+--- error_log
+upstream SSL certificate verify error: (18:self-signed certificate)
