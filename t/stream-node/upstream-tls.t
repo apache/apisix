@@ -140,3 +140,54 @@ mmm
 --- stream_sni: test.com
 --- response_body
 hello test.com
+
+
+=== TEST 5: set stream route with traffic-split plugin (inline upstream with scheme: tls)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/stream_routes/1',
+                ngx.HTTP_PUT,
+                [=[{
+                    "remote_addr": "127.0.0.1",
+                    "plugins": {
+                        "traffic-split": {
+                            "rules": [{
+                                "weighted_upstreams": [
+                                    {
+                                        "upstream": {
+                                            "name": "stream-tls-inline",
+                                            "type": "roundrobin",
+                                            "scheme": "tls",
+                                            "nodes": {
+                                                "localhost:8765": 1
+                                            }
+                                        },
+                                        "weight": 1
+                                    }
+                                ]
+                            }]
+                        }
+                    }
+                }]=]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 6: hit route with traffic-split inline tls upstream
+--- stream_request
+mmm
+--- stream_response
+hello apisix_backend
+
