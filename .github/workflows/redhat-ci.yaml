@@ -18,7 +18,7 @@ permissions:
 jobs:
   test_apisix:
     name: run ci on redhat ubi
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 90
     strategy:
       fail-fast: false

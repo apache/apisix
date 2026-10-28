@@ -1384,9 +1384,10 @@ x-userinfo: ey.*
                             "openid-connect": {
                                 "client_id": "kbyuFDidLLm280LIwVFiazOqjO3ty8KH",
                                 "client_secret": "60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa",
-                                "discovery": "https://samples.auth0.com/.well-known/openid-configuration",
+                                "discovery": "http://127.0.0.1:1980/.well-known/openid-configuration",
                                 "redirect_uri": "https://iresty.com",
                                 "post_logout_redirect_uri": "https://iresty.com",
+                                "ssl_verify": false,
                                 "scope": "openid profile",
                                 "session": {
                                     "secret": "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK"
@@ -1414,8 +1415,7 @@ passed
 
 
 
-=== TEST 36: Check whether auth0 can redirect normally using post_logout_redirect_uri configuration
---- custom_trusted_cert: /etc/ssl/certs/ca-certificates.crt
+=== TEST 36: Redirect to post_logout_redirect_uri when provider has no end_session_endpoint
 --- config
     location /t {
         content_by_lua_block {
@@ -1424,9 +1424,9 @@ passed
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/logout"
             local res, err = httpc:request_uri(uri, {method = "GET"})
             ngx.status = res.status
-            local location = res.headers['Location']
-            if location and string.find(location, 'https://iresty.com') ~= -1 and
-                string.find(location, 'post_logout_redirect_uri=https://iresty.com') ~= -1 then
+            local location = ngx.unescape_uri(res.headers['Location'] or "")
+            if location:find('https://iresty.com', 1, true) and
+                location:find('post_logout_redirect_uri=https://iresty.com', 1, true) then
                 ngx.say(true)
             end
         }
@@ -1447,11 +1447,12 @@ true
                  ngx.HTTP_PUT,
                  [[{ "plugins": {
                             "openid-connect": {
-                                "client_id": "942299072001-vhduu1uljmdhhbbp7g22m3qsmo246a75.apps.googleusercontent.com",
-                                "client_secret": "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",
-                                "discovery": "https://accounts.google.com/.well-known/openid-configuration",
+                                "client_id": "kbyuFDidLLm280LIwVFiazOqjO3ty8KH",
+                                "client_secret": "60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa",
+                                "discovery": "http://127.0.0.1:1980/.well-known/openid-configuration-with-end-session",
                                 "redirect_uri": "https://iresty.com",
                                 "post_logout_redirect_uri": "https://iresty.com",
+                                "ssl_verify": false,
                                 "scope": "openid profile",
                                 "session": {
                                     "secret": "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK"
@@ -1479,8 +1480,7 @@ passed
 
 
 
-=== TEST 38: Check whether google can redirect normally using post_logout_redirect_uri configuration
---- custom_trusted_cert: /etc/ssl/certs/ca-certificates.crt
+=== TEST 38: Redirect to end_session_endpoint with post_logout_redirect_uri when provider exposes it
 --- config
     location /t {
         content_by_lua_block {
@@ -1489,9 +1489,9 @@ passed
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/logout"
             local res, err = httpc:request_uri(uri, {method = "GET"})
             ngx.status = res.status
-            local location = res.headers['Location']
-            if location and string.find(location, 'https://iresty.com') ~= -1 and
-                string.find(location, 'post_logout_redirect_uri=https://iresty.com') ~= -1 then
+            local location = ngx.unescape_uri(res.headers['Location'] or "")
+            if location:find('https://samples.auth0.com/v2/logout', 1, true) and
+                location:find('post_logout_redirect_uri=https://iresty.com', 1, true) then
                 ngx.say(true)
             end
         }
