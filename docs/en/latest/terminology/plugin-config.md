@@ -121,11 +121,11 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
         "nodes": {
             "127.0.0.1:1980": 1
         }
-    }
+    },
     "plugins": {
         "proxy-rewrite": {
             "uri": "/test/add",
-            "host": "apisix.iresty.com"
+            "host": "example.com"
         },
         "limit-count": {
             "count": 20,
@@ -149,7 +149,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
         "nodes": {
             "127.0.0.1:1980": 1
         }
-    }
+    },
     "plugins": {
         "ip-restriction": {
             "whitelist": [
@@ -159,7 +159,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
         },
         "proxy-rewrite": {
             "uri": "/test/add",
-            "host": "apisix.iresty.com"
+            "host": "example.com"
         },
         "limit-count": {
             "count": 20,
