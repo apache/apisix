@@ -176,3 +176,96 @@ apisix:
 --- response_body
 d1ec69e9-55d2-4109-a3ea-befa071579d5
 Fz1juZEEvh9PPXOmWFdMMJkREt3ZSzEVWcUZPxNP6achk3fosEvn37oN0qH4YgKB
+
+
+
+=== TEST 4: every requested permission and scope must be granted
+--- config
+    location /t {
+        content_by_lua_block {
+            local json_decode = require("toolkit.json").decode
+            local t = require("lib.test_admin").test
+            local http = require("resty.http")
+
+            local function get_token(user)
+                local httpc = http.new()
+                local res = httpc:request_uri("http://127.0.0.1:8080/realms/University/protocol/openid-connect/token", {
+                    method = "POST",
+                    body = "grant_type=password&client_id=course_management&client_secret=d1ec69e9-55d2-4109-a3ea-befa071579d5&username="
+                           .. user .. "&password=123456",
+                    headers = {
+                        ["Content-Type"] = "application/x-www-form-urlencoded"
+                    }
+                })
+                return json_decode(res.body).access_token
+            end
+
+            local function set_route(permissions, http_method_as_scope)
+                local code, body = t('/apisix/admin/routes/1',
+                    ngx.HTTP_PUT,
+                    {
+                        plugins = {
+                            ["authz-keycloak"] = {
+                                token_endpoint = "http://127.0.0.1:8080/realms/University/protocol/openid-connect/token",
+                                permissions = permissions,
+                                http_method_as_scope = http_method_as_scope,
+                                client_id = "course_management",
+                                grant_type = "urn:ietf:params:oauth:grant-type:uma-ticket",
+                                timeout = 3000
+                            }
+                        },
+                        upstream = {
+                            nodes = {
+                                ["127.0.0.1:1982"] = 1
+                            },
+                            type = "roundrobin"
+                        },
+                        uri = "/hello1"
+                    }
+                )
+                if code >= 300 then
+                    ngx.say("set route failed: ", body)
+                end
+                ngx.sleep(0.5)
+            end
+
+            local function hit(method, token)
+                local httpc = http.new()
+                local res = httpc:request_uri("http://127.0.0.1:" .. ngx.var.server_port .. "/hello1", {
+                    method = method,
+                    headers = {
+                        ["Authorization"] = "Bearer " .. token
+                    }
+                })
+                return res.status
+            end
+
+            local student = get_token("student@gmail.com")
+            local teacher = get_token("teacher@gmail.com")
+
+            set_route({"course_resource#view", "course_resource#delete"}, false)
+            ngx.say("multi, student: ", hit("GET", student))
+            ngx.say("multi, teacher: ", hit("GET", teacher))
+
+            set_route({"course_resource#delete", "course_resource#view"}, false)
+            ngx.say("multi reversed, student: ", hit("GET", student))
+
+            set_route({"course_resource#view, delete"}, false)
+            ngx.say("multi scope, student: ", hit("GET", student))
+            ngx.say("multi scope, teacher: ", hit("GET", teacher))
+
+            set_route({"course_resource#view"}, true)
+            ngx.say("method scope GET, student: ", hit("GET", student))
+            ngx.say("method scope DELETE, student: ", hit("DELETE", student))
+            ngx.say("method scope DELETE, teacher: ", hit("DELETE", teacher))
+        }
+    }
+--- response_body
+multi, student: 403
+multi, teacher: 200
+multi reversed, student: 403
+multi scope, student: 403
+multi scope, teacher: 200
+method scope GET, student: 200
+method scope DELETE, student: 403
+method scope DELETE, teacher: 200

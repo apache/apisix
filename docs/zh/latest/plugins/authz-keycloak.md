@@ -118,6 +118,8 @@ import TabItem from '@theme/TabItem';
 
 :::
 
+只有当 Keycloak 授予所有待核对的权限（包括每个权限中列出的所有作用域）时，插件才会转发请求。若任一权限或作用域未被授予，请求将被拒绝。
+
 ### 自动将 HTTP 方法映射到作用域
 
 `http_method_as_scope` 通常与 `lazy_load_paths` 一起使用，但也可以与静态权限列表配合使用。
