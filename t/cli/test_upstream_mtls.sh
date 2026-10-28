@@ -239,6 +239,12 @@ nginx_config:
 
 rm logs/error.log || true
 make init
+
+if ! grep -q "grpc_ssl_trusted_certificate " conf/nginx.conf; then
+    echo "failed: grpc_ssl_trusted_certificate is not rendered from ssl_trusted_certificate"
+    exit 1
+fi
+
 make run
 sleep 1
 

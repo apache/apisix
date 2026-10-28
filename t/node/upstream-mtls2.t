@@ -56,18 +56,6 @@ _EOC_
         $block->set_value("http_config", $http_config);
     }
 
-    # nginx.conf renders proxy_ssl_trusted_certificate from
-    # apisix.ssl.ssl_trusted_certificate, keep both pointing at the same CA
-    if (!defined $block->yaml_config && !$block->apisix_yaml) {
-        my $yaml_config = <<_EOC_;
-apisix:
-  node_listen: 1984
-  ssl:
-    ssl_trusted_certificate: t/certs/mtls_ca.crt
-_EOC_
-        $block->set_value("yaml_config", $yaml_config);
-    }
-
     if (!$block->request) {
         $block->set_value("request", "GET /t");
     }

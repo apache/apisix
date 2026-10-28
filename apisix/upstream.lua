@@ -90,35 +90,6 @@ local function create_trusted_store(ca_certs)
 end
 
 
-local default_trusted_store
-
--- nginx loads `proxy_ssl_trusted_certificate` into the upstream SSL context only
--- when `proxy_ssl_verify` is on, so an upstream that enables verification
--- without its own `ca_certs` has to be given the configured trusted CAs here.
--- Loaded in the master process so workers running as another user inherit it.
-local function load_default_trusted_store()
-    local local_conf = core.config.local_conf()
-    local ssl_conf = local_conf.apisix and local_conf.apisix.ssl
-    local path = ssl_conf and ssl_conf.ssl_trusted_certificate
-    if not path then
-        return true
-    end
-
-    local store, err = openssl_x509_store.new()
-    if not store then
-        return nil, err
-    end
-
-    local ok, err = store:load_file(path)
-    if not ok then
-        return nil, "failed to load trusted certificates from " .. path .. ": " .. err
-    end
-
-    default_trusted_store = store
-    return true
-end
-
-
 -- Apply upstream.tls.verify / upstream.tls.ca_certs to the current request.
 -- Both settings live in the apisix-nginx-module request context, which is wiped
 -- by the internal redirect to @grpc_pass, so grpcs has to apply them again from
@@ -136,19 +107,13 @@ local function set_upstream_ssl_opts(up_conf)
         end
     end
 
-    local store, err
     if tls.ca_certs then
-        store, err = trusted_store_cache(tls.ca_certs, up_conf.resource_version,
-                                         create_trusted_store, tls.ca_certs)
-    elseif tls.verify then
-        store = default_trusted_store
-    end
+        local store, err = trusted_store_cache(tls.ca_certs, up_conf.resource_version,
+                                               create_trusted_store, tls.ca_certs)
+        if not store then
+            return nil, err
+        end
 
-    if err then
-        return nil, err
-    end
-
-    if store then
         local ok, err = set_upstream_ssl_trusted_store(store)
         if not ok then
             return nil, err
@@ -836,14 +801,6 @@ local function filter_upstream(value, parent)
     end
 end
 _M.filter_upstream = filter_upstream
-
-
-function _M.init()
-    local ok, err = load_default_trusted_store()
-    if not ok then
-        error(err)
-    end
-end
 
 
 function _M.init_worker()
