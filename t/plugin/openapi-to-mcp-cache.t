@@ -143,6 +143,8 @@ true
 --- response_body
 true
 true
+--- error_log
+failed to build the MCP tool list:
 
 
 
@@ -226,3 +228,176 @@ v1
 v2
 v2
 fetches: 2
+
+
+
+=== TEST 7: allowed_ref_hosts is part of the cache key, whatever order it is in
+--- http_config
+    server {
+        listen 11457;
+        location /openapi.json {
+            content_by_lua_block {
+                local n = (package.loaded._mcp_hosts_hits or 0) + 1
+                package.loaded._mcp_hosts_hits = n
+                ngx.header["Content-Type"] = "application/json"
+                ngx.say('{"openapi":"3.0.0","paths":{"/p":{"get":{"operationId":"v' .. n .. '"}}}}')
+            }
+        }
+    }
+--- config
+    location /t {
+        content_by_lua_block {
+            local cache = require("apisix.plugins.openapi-to-mcp.cache")
+            local url = "http://127.0.0.1:11457/openapi.json"
+
+            local first = cache.get_tools({ openapi_url = url,
+                                            allowed_ref_hosts = { "a.com", "b.com" } })
+            -- the same set in the other order is the same configuration
+            local same = cache.get_tools({ openapi_url = url,
+                                           allowed_ref_hosts = { "b.com", "a.com" } })
+            -- one entry that happens to contain a comma allows nothing, and
+            -- must not be handed the entry those two built
+            local comma = cache.get_tools({ openapi_url = url,
+                                            allowed_ref_hosts = { "a.com,b.com" } })
+
+            ngx.say("reordered: ", same[1].name == first[1].name)
+            ngx.say("comma: ", comma[1].name ~= first[1].name)
+            ngx.say("fetches: ", package.loaded._mcp_hosts_hits)
+        }
+    }
+--- response_body
+reordered: true
+comma: true
+fetches: 2
+
+
+
+=== TEST 8: max_document_size is a route option and is part of the key
+--- http_config
+    server {
+        listen 11458;
+        location /openapi.json {
+            content_by_lua_block {
+                ngx.header["Content-Type"] = "application/json"
+                ngx.say('{"openapi":"3.0.0","info":{"title":"' .. string.rep("t", 4096) ..
+                        '","version":"1"},"paths":{"/p":{"get":{"operationId":"getP"}}}}')
+            }
+        }
+    }
+--- config
+    location /t {
+        content_by_lua_block {
+            local cache = require("apisix.plugins.openapi-to-mcp.cache")
+            local url = "http://127.0.0.1:11458/openapi.json"
+
+            local small, small_err = cache.get_tools({ openapi_url = url,
+                                                       max_document_size = 1024 })
+            ngx.say("under a small ceiling: ", tostring(small), " ", tostring(small_err))
+
+            local big = cache.get_tools({ openapi_url = url, max_document_size = 65536 })
+            ngx.say("under a larger one: ", big[1].name)
+        }
+    }
+--- response_body_like chomp
+^under a small ceiling: nil openapi spec exceeds 1024 bytes
+under a larger one: getP$
+
+--- error_log
+failed to build the MCP tool list: openapi spec exceeds 1024 bytes
+
+
+
+=== TEST 9: cached failures do not log per request and retry after expiry
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local loader = require("apisix.plugins.openapi-to-mcp.openapi.loader")
+            local real_new, real_fetch, real_log = core.lrucache.new, loader.fetch, core.log.error
+            local fetches, errors = 0, 0
+            core.lrucache.new = function(opts)
+                opts.neg_ttl = 0.1
+                return real_new(opts)
+            end
+            loader.fetch = function()
+                fetches = fetches + 1
+                if fetches <= 2 then
+                    return nil, nil, "connection refused"
+                end
+                return { openapi = "3.0.0", paths = {} }, {}
+            end
+            core.log.error = function(...)
+                errors = errors + 1
+            end
+            local name = "apisix.plugins.openapi-to-mcp.cache"
+            local saved = package.loaded[name]
+            package.loaded[name] = nil
+            local cache = require(name)
+            package.loaded[name] = saved
+            core.lrucache.new = real_new
+
+            local conf = { openapi_url = "http://unreachable.example/openapi.json" }
+            for attempt = 1, 2 do
+                for i = 1, 10 do
+                    local tools, err = cache.get_tools(conf)
+                    assert(tools == nil and err == "connection refused")
+                end
+                ngx.say("fetches: ", fetches, ", errors: ", errors)
+                ngx.sleep(0.15)
+            end
+            local tools, err = cache.get_tools(conf)
+            ngx.say("recovered: ", tools ~= nil and err == nil)
+            ngx.say("fetches: ", fetches, ", errors: ", errors)
+            loader.fetch, core.log.error = real_fetch, real_log
+        }
+    }
+--- response_body
+fetches: 1, errors: 1
+fetches: 2, errors: 2
+recovered: true
+fetches: 3, errors: 2
+
+
+
+=== TEST 10: both transports return cached errors without logging them again
+--- config
+    location /failed-sse {
+        content_by_lua_block {
+            require("apisix.plugins.openapi-to-mcp.transport.sse").handle({}, {
+                conf = { openapi_url = "http://127.0.0.1:11499/transports.json" },
+            })
+        }
+    }
+    location /failed-streamable {
+        content_by_lua_block {
+            require("apisix.plugins.openapi-to-mcp.transport.streamable_http").handle({}, {
+                conf = { openapi_url = "http://127.0.0.1:11499/transports.json" },
+            })
+        }
+    }
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local loader = require("apisix.plugins.openapi-to-mcp.openapi.loader")
+            local real_fetch, real_log = loader.fetch, core.log.error
+            local fetches, errors = 0, 0
+            loader.fetch = function(...)
+                fetches = fetches + 1
+                return real_fetch(...)
+            end
+            core.log.error = function() errors = errors + 1 end
+            for i = 1, 5 do
+                local sse = ngx.location.capture("/failed-sse")
+                local streamable = ngx.location.capture("/failed-streamable", {
+                    method = ngx.HTTP_POST,
+                })
+                assert(sse.status == 500 and streamable.status == 500)
+                assert(sse.body:find("failed to fetch openapi spec", 1, true))
+                assert(streamable.body:find("failed to fetch openapi spec", 1, true))
+            end
+            loader.fetch, core.log.error = real_fetch, real_log
+            ngx.say("failed requests: 10, fetches: ", fetches, ", errors: ", errors)
+        }
+    }
+--- response_body
+failed requests: 10, fetches: 1, errors: 1
