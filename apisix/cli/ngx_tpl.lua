@@ -80,9 +80,11 @@ lua {
     {% end %}
     lua_shared_dict nacos 64m;
     lua_shared_dict upstream-healthcheck {* meta.lua_shared_dict["upstream-healthcheck"] *};
+    # business TLS session ticket keys, shared by the HTTP and the Stream subsystems
+    lua_shared_dict tls-session-ticket {* meta.lua_shared_dict["tls-session-ticket"] *};
 }
 
-{% if enabled_stream_plugins["prometheus"] and not enable_http then %}
+{% if (enabled_stream_plugins["prometheus"] or enable_control) and not enable_http then %}
 http {
     lua_package_path  "{*extra_lua_path*}$prefix/deps/share/lua/5.1/?.lua;$prefix/deps/share/lua/5.1/?/init.lua;]=]
                        .. [=[{*apisix_lua_home*}/?.lua;{*apisix_lua_home*}/?/init.lua;;{*lua_path*};";
@@ -132,6 +134,22 @@ http {
             allow 127.0.0.0/24;
             deny all;
             stub_status;
+        }
+    }
+    {% end %}
+
+    {% if enable_control then %}
+    # without the HTTP subsystem, the Control API only reports the business
+    # TLS session ticket keys of the Stream subsystem
+    server {
+        listen {* control_server_addr *};
+
+        access_log off;
+
+        location = /v1/tls_session_ticket {
+            content_by_lua_block {
+                require("apisix.session_ticket.status").http_handler()
+            }
         }
     }
     {% end %}

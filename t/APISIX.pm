@@ -345,6 +345,7 @@ lua {
     lua_shared_dict nacos 10m;
     lua_shared_dict consul 10m;
     lua_shared_dict upstream-healthcheck 10m;
+    lua_shared_dict tls-session-ticket 1m;
 }
 _EOC_
     }

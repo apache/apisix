@@ -30,9 +30,28 @@ apisix:
 
 make init
 
+# besides the stream block, only a minimal http block serving the Control API
+count=$(grep -c "lua_package_path" conf/nginx.conf)
+if [ "$count" -ne 2 ] || ! grep "location = /v1/tls_session_ticket" conf/nginx.conf > /dev/null; then
+    echo "failed: failed to enable stream proxy only by default"
+    exit 1
+fi
+
+echo "
+apisix:
+    enable_admin: false
+    enable_control: false
+    proxy_mode: stream
+    stream_proxy:
+        tcp:
+            - addr: 9100
+" > conf/config.yaml
+
+make init
+
 count=$(grep -c "lua_package_path" conf/nginx.conf)
 if [ "$count" -ne 1 ]; then
-    echo "failed: failed to enable stream proxy only by default"
+    echo "failed: failed to enable stream proxy only without the Control API"
     exit 1
 fi
 

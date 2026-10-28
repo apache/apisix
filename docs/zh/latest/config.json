@@ -90,7 +90,8 @@
             "plugins/ext-plugin-pre-req",
             "plugins/ext-plugin-post-req",
             "plugins/ext-plugin-post-resp",
-            "plugins/ocsp-stapling"
+            "plugins/ocsp-stapling",
+            "plugins/ssl-session-ticket"
           ]
         },
         {

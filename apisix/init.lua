@@ -48,6 +48,7 @@ local debug           = require("apisix.debug")
 local pubsub_kafka    = require("apisix.pubsub.kafka")
 local resource        = require("apisix.resource")
 local trusted_addresses_util = require("apisix.utils.trusted-addresses")
+local session_ticket_state = require("apisix.session_ticket.state")
 local tracer          = require("apisix.tracer")
 
 local discovery = require("apisix.discovery.init").discovery
@@ -113,6 +114,9 @@ function _M.http_init(args)
         end
     end
 
+    -- best effort, init_worker retries and reports a failure
+    session_ticket_state.init()
+
     xrpc.init()
 end
 
@@ -147,6 +151,8 @@ function _M.http_init_worker()
     require("apisix.timers").init_worker()
 
     require("apisix.debug").init_worker()
+
+    session_ticket_state.init_worker()
 
     if core.config.init_worker then
         local ok, err = core.config.init_worker()
@@ -1719,6 +1725,9 @@ function _M.stream_init(args)
         end
     end
 
+    -- best effort, init_worker retries and reports a failure
+    session_ticket_state.init()
+
     xrpc.init()
 end
 
@@ -1745,6 +1754,12 @@ function _M.stream_init_worker()
     -- admin.init.init_worker() registers an events callback, so events must
     -- already be initialized here
     require("apisix.events").init_worker()
+
+    -- the background timers of the plugins, e.g. the reconciliation of
+    -- ssl-session-ticket
+    require("apisix.timers").init_worker()
+
+    session_ticket_state.init_worker()
 
     -- must run before core.config.init_worker() and router.stream_init_worker():
     -- it patches the resource schemas (e.g. allowing modifiedIndex) that

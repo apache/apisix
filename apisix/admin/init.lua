@@ -231,6 +231,11 @@ local function run()
     if req_body then
         local data, err = core.json.decode(req_body)
         if err then
+            if resource.sensitive_body and resource.sensitive_body(seg_id) then
+                core.log.error("invalid request body of ", seg_res, "/", seg_id, ", err: ", err)
+                core.response.exit(400, {error_msg = "invalid request body: " .. err})
+            end
+
             core.log.error("invalid request body: ", req_body, " err: ", err)
             core.response.exit(400, {error_msg = "invalid request body: " .. err,
                                      req_body = req_body})

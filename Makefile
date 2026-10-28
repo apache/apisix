@@ -345,6 +345,9 @@ install: runtime
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/serverless
 	$(ENV_INSTALL) apisix/plugins/serverless/*.lua $(ENV_INST_LUADIR)/apisix/plugins/serverless/
 
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/ssl-session-ticket
+	$(ENV_INSTALL) apisix/plugins/ssl-session-ticket/*.lua $(ENV_INST_LUADIR)/apisix/plugins/ssl-session-ticket/
+
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/syslog
 	$(ENV_INSTALL) apisix/plugins/syslog/*.lua $(ENV_INST_LUADIR)/apisix/plugins/syslog/
 
@@ -356,6 +359,9 @@ install: runtime
 
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/secret
 	$(ENV_INSTALL) apisix/secret/*.lua $(ENV_INST_LUADIR)/apisix/secret/
+
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/session_ticket
+	$(ENV_INSTALL) apisix/session_ticket/*.lua $(ENV_INST_LUADIR)/apisix/session_ticket/
 
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/zipkin
 	$(ENV_INSTALL) apisix/plugins/zipkin/*.lua $(ENV_INST_LUADIR)/apisix/plugins/zipkin/

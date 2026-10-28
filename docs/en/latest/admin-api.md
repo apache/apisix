@@ -1467,6 +1467,12 @@ Plugin Metadata resource request address: /apisix/admin/plugin_metadata/{plugin_
 
 A JSON object defined according to the `metadata_schema` of the Plugin ({plugin_name}).
 
+:::note
+
+The metadata of [ssl-session-ticket](./plugins/ssl-session-ticket.md) carries TLS session ticket keys and follows its own rules. The request body only accepts the complete `keys` array, and the local `plugin_attr.ssl-session-ticket` decides whether the Admin API may write it at all (`409` otherwise). A write fails with `409` when the metadata has changed since the request read it, and the same keys in the same order write nothing. No response contains the keys.
+
+:::
+
 Example Configuration:
 
 ```shell

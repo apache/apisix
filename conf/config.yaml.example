@@ -253,6 +253,8 @@ nginx_config:                     # Config for render the template to generate n
                                   # NOTE: Restart APISIX to take effect.
       standalone-config: 10m
       upstream-healthcheck: 10m
+      tls-session-ticket: 1m      # The business TLS session ticket keys and the progress of
+                                  # every process applying them; about 8k per process.
 
   stream:
     # real_ip_from:                          # https://nginx.org/en/docs/stream/ngx_stream_realip_module.html#set_real_ip_from
@@ -587,6 +589,7 @@ plugins:                           # plugin list (sorted by priority)
   - opa                            # priority: 2001
   - authz-keycloak                 # priority: 2000
   - data-mask                      # priority: 1500
+  - ssl-session-ticket             # priority: 1095
   #- error-log-logger              # priority: 1091
   - proxy-cache                    # priority: 1085
   - body-transformer               # priority: 1080
@@ -665,6 +668,7 @@ plugins:                           # plugin list (sorted by priority)
 
 stream_plugins:                    # stream plugin list (sorted by priority)
   - ip-restriction                 # priority: 3000
+  - ssl-session-ticket             # priority: 1095
   - limit-conn                     # priority: 1003
   - mqtt-proxy                     # priority: 1000
   #- prometheus                    # priority: 500
@@ -772,6 +776,13 @@ plugin_attr:          # Plugin attributes
       send: 60s
   # redirect:                         # Plugin: redirect
   #   https_port: 8443                # Set the default port used to redirect HTTP to HTTPS.
+  ssl-session-ticket:                 # Plugin: ssl-session-ticket. The local policy of the business TLS
+                                      # session ticket keys, executed by the traditional and control_plane
+                                      # nodes; data_plane nodes ignore it. Keep it the same on all of them.
+    enabled: false                    # Publish the shared keys to the business TLS listeners.
+    key_source: generated             # generated: APISIX maintains the keys itself, the Admin API rejects
+                                      # writes with 409. external: you PUT the complete set of keys to
+                                      # /apisix/admin/plugin_metadata/ssl-session-ticket.
   inspect:                            # Plugin: inspect
     delay: 3                          # Set the delay in seconds for the frequency of checking the hooks file.
     hooks_file: "/usr/local/apisix/plugin_inspect_hooks.lua"  # Set the path to the Lua file that defines

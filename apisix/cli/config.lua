@@ -109,6 +109,16 @@ local _M = {
         ["standalone-status"] = "1m",
         ["status-report"] = "1m",
         ["upstream-healthcheck"] = "10m",
+        -- business TLS session ticket keys (apisix/session_ticket/state.lua):
+        --   the snapshot of at most 256 keys, base64 in JSON         32k
+        --   room for replacing it (fragmentation, growth)            32k
+        --   the control record, the lock and the counters            < 1k
+        --   one 2k record per process for each subsystem and for
+        --   the current and one draining config generation           8k per process
+        -- so 1m holds the records of about 110 processes (worker
+        -- processes plus the privileged agent); a record that does not fit
+        -- is reported by the Control API and never evicts the snapshot
+        ["tls-session-ticket"] = "1m",
       }
     },
     stream = {
@@ -243,6 +253,7 @@ local _M = {
     "opa",
     "authz-keycloak",
     "data-mask",
+    "ssl-session-ticket",
     "proxy-cache",
     "body-transformer",
     "ai-prompt-template",
@@ -312,7 +323,14 @@ local _M = {
     "ext-plugin-post-resp",
     "ai-request-rewrite",
   },
-  stream_plugins = { "ip-restriction", "limit-conn", "mqtt-proxy", "syslog", "traffic-split" },
+  stream_plugins = {
+    "ip-restriction",
+    "ssl-session-ticket",
+    "limit-conn",
+    "mqtt-proxy",
+    "syslog",
+    "traffic-split"
+  },
   plugin_attr = {
     ["ai-proxy"] = {
       http_client = "ngx_http_ffi_client"
@@ -378,6 +396,10 @@ local _M = {
     inspect = {
       delay = 3,
       hooks_file = "/usr/local/apisix/plugin_inspect_hooks.lua"
+    },
+    ["ssl-session-ticket"] = {
+      enabled = false,
+      key_source = "generated"
     },
     zipkin = {
       set_ngx_var = false

@@ -292,3 +292,63 @@ APISIX 中一些插件添加了自己的 control API。如果你对他们感兴�
     "id": "file-logger"
 }
 ```
+
+这两个接口都会把 [ssl-session-ticket](./plugins/ssl-session-ticket.md) 元数据中的密钥替换为 `<redacted>`。
+
+### GET /v1/tls_session_ticket
+
+报告本节点业务 TLS 监听所用的 TLS session ticket 密钥，参见 [ssl-session-ticket](./plugins/ssl-session-ticket.md)。无论插件是否启用，该接口都存在。它只读取本节点的状态，不做任何修改，并且总是返回 `200`：请查看 `status` 与 `reason`。它从不返回密钥、密钥名或任何由密钥派生的内容。
+
+```shell
+curl http://127.0.0.1:9090/v1/tls_session_ticket
+```
+
+```json
+{
+    "status": "degraded",
+    "reason": "module_not_active",
+    "enabled": true,
+    "key_count": 2,
+    "effective_key_count": null,
+    "fully_applied": false,
+    "version": "b0181944:2",
+    "source": "external",
+    "source_version": "222",
+    "updated_at": "2026-10-28T06:53:04Z",
+    "updated_at_sec_ago": 1,
+    "workers": {"total": 0, "applied": 0, "pending": 0, "failed": 0},
+    "subsystems": {
+        "http": {"applicable": false, "status": "degraded", "reason": "module_not_active",
+                 "contexts": 0, "workers": {"total": 0, "applied": 0, "pending": 0, "failed": 0}},
+        "stream": {"applicable": false, "status": "degraded", "reason": "module_not_active",
+                   "contexts": 0, "workers": {"total": 0, "applied": 0, "pending": 0, "failed": 0}}
+    },
+    "generator": null,
+    "warnings": ["default_keyring"],
+    "last_apply_error": "the SSL layer does not consume the keys"
+}
+```
+
+| 字段                | 描述 |
+|---------------------|------|
+| status、reason      | 本节点的结论，见下表。 |
+| enabled             | 本节点是否允许业务 TLS 监听使用共享密钥（`apisix.ssl.ssl_session_tickets`），不表示实际已在使用。 |
+| key_count           | 本节点应当使用的密钥数量：本地开关关闭、密钥停用、为空或不可用时为 0。 |
+| effective_key_count | 本节点所有业务 TLS context 收敛后实际使用的密钥数量；未收敛时为 `null`。 |
+| fully_applied       | 本节点所有业务 TLS context（包括仍在退出中的 worker 的 context）是否都已使用当前目标。 |
+| version             | 本节点发布的目标的本地版本，不要跨节点比较。 |
+| source、source_version | 密钥的来源及其元数据的 revision（etcd revision，standalone 模式下为配置版本），同一 etcd 集群内的节点可以据此比较。没有可读的密钥时为 `null`。 |
+| updated_at、updated_at_sec_ago | 本节点发布该目标的时间（UTC）及距今的秒数，不作为健康指标。 |
+| workers、subsystems | 各 worker 进程的进度，按子系统（`http`、`stream`）分项。 |
+| generator           | 运行内置生成器的节点上为生成器的状态，其他节点为 `null`。 |
+| warnings            | 不影响 status 的安全告警：`encryption_disabled` 或 `default_keyring`。 |
+| last_apply_error    | 最近一次失败的原因，从不包含密钥。 |
+
+| status / reason | 条件 |
+|-----------------|------|
+| `degraded` / `invalid_state`、`module_not_active` 或 `apply_failed` | 保存、加载或应用密钥失败，无论目标是什么。`module_not_active` 表示本节点没有任何模块把密钥应用到 TLS 监听。 |
+| `degraded` / `worker_lag` | 有 worker 进程尚未应用当前目标。 |
+| `off` / `local_switch_off`、`disabled_by_policy` 或 `empty_keys` | 所有 TLS 监听都已收敛为不使用共享密钥。 |
+| `ok` / `null` | 所有 TLS 监听都在使用当前密钥。 |
+
+没有 HTTP 子系统时（`proxy_mode: stream`），Control API 服务只提供这一个接口。

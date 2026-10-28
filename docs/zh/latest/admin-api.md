@@ -1466,6 +1466,12 @@ Plugin Config 资源请求地址：/apisix/admin/plugin_metadata/{plugin_name}
 
 根据插件 (`{plugin_name}`) 的 `metadata_schema` 定义的数据结构的  JSON 对象。
 
+:::note
+
+[ssl-session-ticket](./plugins/ssl-session-ticket.md) 的元数据携带 TLS session ticket 密钥，遵循专门的规则。请求体只接受完整的 `keys` 数组，是否允许通过 Admin API 写入由本地的 `plugin_attr.ssl-session-ticket` 决定（否则返回 `409`）。如果元数据在请求读取之后被修改，写入返回 `409`；内容和顺序都相同的密钥不会写入。任何响应都不包含密钥。
+
+:::
+
 ### 使用示例 {#plugin-metadata-example}
 
 ```shell

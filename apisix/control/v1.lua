@@ -23,6 +23,8 @@ local get_service_mod = require("apisix.http.service")
 local get_services = get_service_mod.services
 local upstream_mod = require("apisix.upstream")
 local healthcheck_manager = require("apisix.healthcheck_manager")
+local ticket_record = require("apisix.plugins.ssl-session-ticket.record")
+local session_ticket_status = require("apisix.session_ticket.status")
 local get_upstreams = upstream_mod.upstreams
 local collectgarbage = collectgarbage
 local ipairs = ipairs
@@ -500,13 +502,22 @@ function _M.dump_service_info()
     return 200, info
 end
 
+-- the ssl-session-ticket metadata carries key material, never dump it
+local function metadata_value(name, metadata)
+    if name == ticket_record.name then
+        return ticket_record.redact(metadata.value)
+    end
+
+    return metadata.value
+end
+
 function _M.dump_all_plugin_metadata()
     local names = core.config.local_conf().plugins
     local metadatas = core.table.new(0, #names)
     for _, name in ipairs(names) do
         local metadata = plugin.plugin_metadata(name)
         if metadata then
-            core.table.insert(metadatas, metadata.value)
+            core.table.insert(metadatas, metadata_value(name, metadata))
         end
     end
     return 200, metadatas
@@ -519,7 +530,11 @@ function _M.dump_plugin_metadata()
     if not metadata then
         return 404, {error_msg = str_format("plugin metadata[%s] not found", name)}
     end
-    return 200, metadata.value
+    return 200, metadata_value(name, metadata)
+end
+
+function _M.get_tls_session_ticket()
+    return session_ticket_status.get()
 end
 
 function _M.post_reload_plugins()
@@ -616,6 +631,12 @@ return {
         methods = {"GET"},
         uris = {"/plugin_metadata/*"},
         handler = _M.dump_plugin_metadata,
+    },
+    -- /v1/tls_session_ticket
+    {
+        methods = {"GET"},
+        uris = {"/tls_session_ticket"},
+        handler = _M.get_tls_session_ticket,
     },
     -- /v1/plugins/reload
     {

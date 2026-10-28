@@ -532,6 +532,66 @@ Dumps the metadata with the specified `plugin_name`:
 }
 ```
 
+Both dumps replace the keys of the [ssl-session-ticket](./plugins/ssl-session-ticket.md) metadata with `<redacted>`.
+
+### GET /v1/tls_session_ticket
+
+Reports the TLS session ticket keys of the business TLS listeners on this node, see [ssl-session-ticket](./plugins/ssl-session-ticket.md). The endpoint is there whether the Plugin is enabled or not. It only reads the state of the node, changes nothing, and always responds `200`: check `status` and `reason`. It never returns the keys, their names, or anything derived from them.
+
+```shell
+curl http://127.0.0.1:9090/v1/tls_session_ticket
+```
+
+```json
+{
+    "status": "degraded",
+    "reason": "module_not_active",
+    "enabled": true,
+    "key_count": 2,
+    "effective_key_count": null,
+    "fully_applied": false,
+    "version": "b0181944:2",
+    "source": "external",
+    "source_version": "222",
+    "updated_at": "2026-10-28T06:53:04Z",
+    "updated_at_sec_ago": 1,
+    "workers": {"total": 0, "applied": 0, "pending": 0, "failed": 0},
+    "subsystems": {
+        "http": {"applicable": false, "status": "degraded", "reason": "module_not_active",
+                 "contexts": 0, "workers": {"total": 0, "applied": 0, "pending": 0, "failed": 0}},
+        "stream": {"applicable": false, "status": "degraded", "reason": "module_not_active",
+                   "contexts": 0, "workers": {"total": 0, "applied": 0, "pending": 0, "failed": 0}}
+    },
+    "generator": null,
+    "warnings": ["default_keyring"],
+    "last_apply_error": "the SSL layer does not consume the keys"
+}
+```
+
+| Field               | Description |
+|---------------------|-------------|
+| status, reason      | The conclusion for the node, see below. |
+| enabled             | Whether this node allows its business TLS listeners to use the shared keys (`apisix.ssl.ssl_session_tickets`). It does not tell whether they do. |
+| key_count           | The number of keys this node should use: 0 when the local switch is off, the keys are disabled, empty or unavailable. |
+| effective_key_count | The number of keys every business TLS context of the node uses, once they all have converged; `null` otherwise. |
+| fully_applied       | Whether every business TLS context of the node, including the ones of the workers still shutting down, uses the current target. |
+| version             | The local version of the target published on this node. Do not compare it across nodes. |
+| source, source_version | The source of the keys and the revision of their metadata (the etcd revision, or the configuration version in standalone mode). Nodes of the same etcd cluster can be compared with it. `null` when there are no keys to read. |
+| updated_at, updated_at_sec_ago | When this node published the target (UTC) and how long ago. They are no health indicator. |
+| workers, subsystems | The progress of the worker processes, per subsystem (`http`, `stream`). |
+| generator           | The state of the built-in generator on the nodes running it; `null` otherwise. |
+| warnings            | Security warnings that do not change the status: `encryption_disabled` or `default_keyring`. |
+| last_apply_error    | The reason of the latest failure, never containing any key. |
+
+| status / reason | When |
+|-----------------|------|
+| `degraded` / `invalid_state`, `module_not_active` or `apply_failed` | Storing, loading or applying the keys failed, whatever the target. `module_not_active` means that nothing applies the keys to the TLS listeners of this node. |
+| `degraded` / `worker_lag` | Some worker process has not applied the current target yet. |
+| `off` / `local_switch_off`, `disabled_by_policy` or `empty_keys` | Every TLS listener has converged to not using shared keys. |
+| `ok` / `null` | Every TLS listener uses the current keys. |
+
+Without the HTTP subsystem (`proxy_mode: stream`), the Control API server only serves this endpoint.
+
 ### PUT /v1/plugins/reload
 
 Introduced in [v3.9.0](https://github.com/apache/apisix/releases/tag/3.9.0)

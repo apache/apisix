@@ -34,6 +34,7 @@ local setmetatable      = setmetatable
 local string            = string
 local tonumber          = tonumber
 local ngx_get_phase     = ngx.get_phase
+local encode_base64     = ngx.encode_base64
 
 
 local _M = {}
@@ -559,6 +560,62 @@ function _M.atomic_set(key, value, ttl, mod_revision)
     return res, nil
 end
 
+
+
+-- Delete the key only if its mod_revision is still the given one.
+function _M.atomic_delete(key, mod_revision)
+    local disable, err = disable_write_if_data_plane()
+    if disable then
+        return nil, err
+    end
+
+    local etcd_cli, prefix, err = get_etcd_cli()
+    if not etcd_cli then
+        return nil, err
+    end
+
+    key = prefix .. key
+
+    local compare = {
+        {
+            key = key,
+            target = "MOD",
+            result = "EQUAL",
+            mod_revision = mod_revision,
+        }
+    }
+
+    -- unlike requestPut, the client passes a delete request through as is
+    local success = {
+        {
+            requestDeleteRange = {
+                key = encode_base64(key),
+            }
+        }
+    }
+
+    local res, err = etcd_cli:txn(compare, success)
+    if not res then
+        return nil, err
+    end
+
+    if not res.body.succeeded then
+        return nil, "value changed before deleted"
+    end
+
+    local revision, rev_err = get_header_revision(res)
+    if not revision then
+        return nil, rev_err
+    end
+    res.headers["X-Etcd-Index"] = revision
+
+    v3_adapter.to_v3(res.body, "delete")
+    res.body.node = {}
+    res.body.key = key
+    res.body.deleted = 1
+
+    return res, nil
+end
 
 
 function _M.push(key, value, ttl)

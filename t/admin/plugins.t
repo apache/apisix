@@ -100,6 +100,7 @@ forward-auth
 opa
 authz-keycloak
 data-mask
+ssl-session-ticket
 proxy-cache
 body-transformer
 ai-request-rewrite
