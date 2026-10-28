@@ -81,11 +81,12 @@ More examples can be found in [test cases](https://github.com/apache/apisix/blob
 
 ## More stream route filtering options
 
-Currently there are three attributes in stream routes that can be used for filtering requests:
+Stream routes can filter connections with the following attributes:
 
 - `server_addr`: The address of the APISIX server that accepts the L4 stream connection.
 - `server_port`: The port of the APISIX server that accepts the L4 stream connection.
 - `remote_addr`: The address of client from which the request has been made.
+- `sni`: The TLS Server Name Indication value. This field applies to TLS-enabled stream listeners.
 
 Here is an example:
 
