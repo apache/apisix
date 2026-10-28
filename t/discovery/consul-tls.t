@@ -298,12 +298,20 @@ routes: []
             ssl_verify = true,
         })
         consul.start_registry(reg)
+        ngx.shared.consul:set("test/verify_started", true)
     end)
 --- config
     location /t {
         content_by_lua_block {
-            ngx.sleep(2)
             local dict = ngx.shared.consul
+            for _ = 1, 50 do
+                if dict:get("test/verify_started") then
+                    break
+                end
+                ngx.sleep(0.1)
+            end
+            -- leave time for the first round of the verifying registry
+            ngx.sleep(1.5)
             ngx.say("default: ", dict:get("default/service_tls") ~= nil)
             ngx.say("verify: ", dict:get("verify/service_tls") ~= nil)
         }
@@ -315,7 +323,7 @@ default: true
 verify: false
 --- error_log eval
 qr/connect consul: https:\/\/localhost:18502\/v1 .* with error: \d+: unable to (get local issuer|verify the first) certificate/
---- timeout: 10
+--- timeout: 15
 
 
 
