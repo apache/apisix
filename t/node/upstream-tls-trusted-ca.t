@@ -45,11 +45,22 @@ grpc_ssl_verify on;
 _EOC_
     }
 
-    my $http_config = <<_EOC_;
+    # the CRL only covers crl_ca.crt, so the chain_root.crt cases go without it
+    my $trusted = <<_EOC_;
 proxy_ssl_trusted_certificate ../../certs/crl_ca.crt;
 grpc_ssl_trusted_certificate ../../certs/crl_ca.crt;
 proxy_ssl_crl ../../certs/crl_ca.crl;
 grpc_ssl_crl ../../certs/crl_ca.crl;
+_EOC_
+    if ($block->chain) {
+        $trusted = <<_EOC_;
+proxy_ssl_trusted_certificate ../../certs/chain_root.crt;
+grpc_ssl_trusted_certificate ../../certs/chain_root.crt;
+_EOC_
+    }
+
+    my $http_config = <<_EOC_;
+$trusted
 $static_verify
 
 server {
@@ -84,18 +95,34 @@ server {
         return 200 'ok\\n';
     }
 }
+
+server {
+    listen 8773 ssl;
+    http2 on;
+    # leaf and two intermediates
+    ssl_certificate ../../certs/chain_server.crt;
+    ssl_certificate_key ../../certs/chain_server.key;
+
+    location / {
+        return 200 'ok\\n';
+    }
+}
 _EOC_
 
     $block->set_value("http_config", $http_config);
 
     my $routes = "routes:\n";
-    my %ports = (good => 8770, revoked => 8771, untrusted => 8772);
+    my %ports = (good => 8770, revoked => 8771, untrusted => 8772, chain => 8773);
     my $id = 0;
     for my $scheme ("https", "grpcs") {
         for my $name (sort keys %ports) {
-            for my $verify ("verify", "default") {
+            for my $verify ("verify", "noverify", "default") {
                 $id++;
-                my $tls = $verify eq "verify" ? "      tls:\n        verify: true\n" : "";
+                my $tls = "";
+                if ($verify ne "default") {
+                    my $on = $verify eq "verify" ? "true" : "false";
+                    $tls = "      tls:\n        verify: $on\n";
+                }
                 $routes .= <<_EOC_;
   - id: $id
     uri: /$scheme/$verify/$name
@@ -237,3 +264,109 @@ GET /grpcs/verify/revoked
 --- error_code: 502
 --- error_log
 upstream SSL certificate verify error: (23:certificate revoked)
+
+
+
+=== TEST 14: https, tls.verify false, no verification
+--- request
+GET /https/noverify/untrusted
+--- response_body
+ok
+
+
+
+=== TEST 15: https, static verify, tls.verify false, no verification
+--- static_verify: true
+--- request
+GET /https/noverify/untrusted
+--- response_body
+ok
+
+
+
+=== TEST 16: https, tls.verify, two intermediates, no depth limit
+--- chain: true
+--- request
+GET /https/verify/chain
+--- response_body
+ok
+
+
+
+=== TEST 17: https, static verify, tls.verify, default verify depth
+--- static_verify: true
+--- chain: true
+--- request
+GET /https/verify/chain
+--- error_code: 502
+--- error_log eval
+qr/upstream SSL certificate verify error: \((20:unable to get local issuer certificate|22:certificate chain too long)\)/
+
+
+
+=== TEST 18: https, static verify, tls.verify unset, default verify depth
+--- static_verify: true
+--- chain: true
+--- request
+GET /https/default/chain
+--- error_code: 502
+--- error_log eval
+qr/upstream SSL certificate verify error: \((20:unable to get local issuer certificate|22:certificate chain too long)\)/
+
+
+
+=== TEST 19: grpcs, tls.verify false, no verification
+--- request
+GET /grpcs/noverify/untrusted
+--- response_body
+ok
+
+
+
+=== TEST 20: grpcs, static verify, tls.verify false, no verification
+--- static_verify: true
+--- request
+GET /grpcs/noverify/untrusted
+--- response_body
+ok
+
+
+
+=== TEST 21: grpcs, static verify, tls.verify unset, revoked certificate
+--- static_verify: true
+--- request
+GET /grpcs/default/revoked
+--- error_code: 502
+--- error_log
+upstream SSL certificate verify error: (23:certificate revoked)
+
+
+
+=== TEST 22: grpcs, tls.verify, two intermediates, no depth limit
+--- chain: true
+--- request
+GET /grpcs/verify/chain
+--- response_body
+ok
+
+
+
+=== TEST 23: grpcs, static verify, tls.verify, default verify depth
+--- static_verify: true
+--- chain: true
+--- request
+GET /grpcs/verify/chain
+--- error_code: 502
+--- error_log eval
+qr/upstream SSL certificate verify error: \((20:unable to get local issuer certificate|22:certificate chain too long)\)/
+
+
+
+=== TEST 24: grpcs, static verify, tls.verify unset, default verify depth
+--- static_verify: true
+--- chain: true
+--- request
+GET /grpcs/default/chain
+--- error_code: 502
+--- error_log eval
+qr/upstream SSL certificate verify error: \((20:unable to get local issuer certificate|22:certificate chain too long)\)/
