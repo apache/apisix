@@ -29,7 +29,7 @@ description: 本文介绍了全局规则的概念以及如何启用全局规则�
 
 ## 描述
 
-[Plugin](plugin.md) 配置可直接绑定在 [Route](route.md) 上，也可以被绑定在 [Service](service.md) 或 [Consumer](consumer.md) 上。
+[Global Rule](../admin-api.md#global-rule) 为传入请求配置 [Plugin](plugin.md)，不依赖于绑定到 [Route](route.md)、[Service](service.md)、[Consumer](consumer.md) 或 [Plugin Config](plugin-config.md) 的插件配置。限流和可观测性插件通常会全局启用，以便为所有 API 提供一致的行为。
 
 如果你需要一个能作用于所有请求的 Plugin，可以通过 Global Rules 启用一个全局的插件配置。
 
