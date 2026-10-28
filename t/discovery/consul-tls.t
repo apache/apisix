@@ -234,7 +234,92 @@ invalid consul server address: bad uri: tcp://127.0.0.1:8500, the valid format: 
 
 
 
-=== TEST 7: clean nodes
+=== TEST 7: a verifying registry does not reuse a connection another registry opened without verification
+--- http_config
+    # the certificate of this endpoint is not signed by the trusted CA
+    lua_ssl_trusted_certificate ../../certs/mtls_ca.crt;
+
+    server {
+        listen 18502 ssl;
+        ssl_certificate             ../../certs/localhost_slapd_cert.pem;
+        ssl_certificate_key         ../../certs/localhost_slapd_key.pem;
+
+        location /v1/catalog/services {
+            content_by_lua_block {
+                ngx.header["Content-Type"] = "application/json"
+                ngx.header["X-Consul-Index"] = "1"
+                ngx.say('{"service_tls": []}')
+            }
+        }
+
+        location /v1/health/state/any {
+            content_by_lua_block {
+                ngx.header["Content-Type"] = "application/json"
+                ngx.header["X-Consul-Index"] = "1"
+                ngx.say('[]')
+            }
+        }
+
+        location /v1/health/service/service_tls {
+            content_by_lua_block {
+                ngx.header["Content-Type"] = "application/json"
+                ngx.header["X-Consul-Index"] = "1"
+                ngx.say('[{"Service": {"Address": "127.0.0.1", "Port": 30511}}]')
+            }
+        }
+    }
+--- yaml_config eval: main::yaml_config("https://localhost:18502", "false", "false")
+--- apisix_yaml
+routes: []
+#END
+--- extra_init_worker_by_lua
+    if require("ngx.process").type() ~= "privileged agent" then
+        return
+    end
+
+    -- runs in the privileged agent beside the default registry, which skips
+    -- verification and keeps its connections to localhost:18502 alive
+    ngx.timer.at(0, function()
+        local consul = require("apisix.discovery.consul")
+        for _ = 1, 30 do
+            if ngx.shared.consul:get("default/service_tls") then
+                break
+            end
+            ngx.sleep(0.1)
+        end
+
+        local reg = consul.create_registry({
+            id = "verify",
+            servers = {"https://localhost:18502"},
+            timeout = {connect = 1000, read = 1000, wait = 60},
+            weight = 1,
+            fetch_interval = 1,
+            keepalive = false,
+            ssl_verify = true,
+        })
+        consul.start_registry(reg)
+    end)
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.sleep(2)
+            local dict = ngx.shared.consul
+            ngx.say("default: ", dict:get("default/service_tls") ~= nil)
+            ngx.say("verify: ", dict:get("verify/service_tls") ~= nil)
+        }
+    }
+--- request
+GET /t
+--- response_body
+default: true
+verify: false
+--- error_log eval
+qr/connect consul: https:\/\/localhost:18502\/v1 .* with error: \d+: unable to (get local issuer|verify the first) certificate/
+--- timeout: 10
+
+
+
+=== TEST 8: clean nodes
 --- config
 location /v1/agent {
     proxy_pass http://127.0.0.1:8500;
