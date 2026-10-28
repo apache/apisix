@@ -126,22 +126,22 @@ local function is_in_yaml_data(prefix)
 end
 
 
--- Classify single-line ASCII references together. Only lexically inert scalar values
+-- Classify references using single-line markers. Only lexically inert scalar values
 -- can reuse these positions; everything else uses the sequential resolver.
 local function scan_reference_contexts(text)
     local references, parts, contexts = {}, {}, {}
-    local previous, pos = 1, 0
+    local previous, pos, line = 1, 0, 0
     local marker = "APISIXENV"
     for first, reference, _, last in str_gmatch(text, "()(" .. var_pattern .. ")()") do
-        -- Non-ASCII references may contain YAML line breaks (NEL, LS or PS).
-        if str_find(reference, "[\r\n\128-\255]") then
-            return nil
-        end
         local gap = str_sub(text, previous, first - 1)
         parts[#parts + 1] = gap
         parts[#parts + 1] = marker
         pos = pos + #gap:gsub("[\128-\191]", "")
-        references[#references + 1] = {first = pos, last = pos + #marker, source = first}
+        local _, breaks = gap:gsub("\r\n", "\n"):gsub("\194\133", "\n")
+                             :gsub("\226\128[\168\169]", "\n"):gsub("[\r\n]", "")
+        line = line + breaks
+        references[#references + 1] = {first = pos, last = pos + #marker,
+                                      source = first, line = line}
         contexts[first] = false
         pos = pos + #marker
         previous = last
@@ -161,12 +161,13 @@ local function scan_reference_contexts(text)
                 local ref = references[i]
                 if ref.last > token.start_mark.index then
                     if token.type ~= "SCALAR" or ref.first < token.start_mark.index
-                       or ref.last > token.end_mark.index
-                       -- Block token spans also include comments in their headers.
-                       or token.style == "LITERAL" or token.style == "FOLDED" then
+                       or ref.last > token.end_mark.index then
                         return false
                     end
-                    contexts[ref.source] = token.style
+                    -- Block headers may contain comments; their indented body is data.
+                    local header = (token.style == "LITERAL" or token.style == "FOLDED")
+                                   and ref.line == token.start_mark.line
+                    contexts[ref.source] = not header and token.style or false
                 end
                 i = i + 1
             end
@@ -174,6 +175,36 @@ local function scan_reference_contexts(text)
         return true
     end)
     return ok and supported and contexts or nil
+end
+
+
+local function is_single_line_yaml_text(value)
+    if not str_find(value, "[^ -~]") then
+        return true
+    end
+
+    local length = 0
+    for char in str_gmatch(value, "[%z\1-\127\194-\244][\128-\191]*") do
+        local first = char:byte()
+        local size = first < 128 and 1 or first < 224 and 2 or first < 240 and 3 or 4
+        if #char ~= size then
+            return false
+        end
+        local code = size == 1 and first or first % (2 ^ (7 - size))
+        for i = 2, size do
+            code = code * 64 + char:byte(i) - 128
+        end
+        if (size == 2 and code < 128) or (size == 3 and code < 2048)
+           or (size == 4 and code < 65536) or code > 0x10ffff
+           or (code >= 0xd800 and code <= 0xdfff)
+           or code < 32 or (code >= 127 and code <= 159)
+           or code == 0x2028 or code == 0x2029 or code == 0xfeff
+           or code == 0xfffe or code == 0xffff then
+            return false
+        end
+        length = length + size
+    end
+    return length == #value
 end
 
 
@@ -199,18 +230,29 @@ local function resolve_conf_var_in_text(text)
             end
             value = resolved
             if contexts then
-                -- Quoted punctuation stays data unless it closes the scalar or
-                -- introduces an escape. Keep line breaks/non-ASCII conservative.
-                local safe = str_find(value, "^[A-Za-z0-9_][A-Za-z0-9_./%-]*$")
+                -- Validate UTF-8 and exclude controls, YAML line breaks and BOMs.
+                local safe = is_single_line_yaml_text(value)
                 if in_data == "SINGLE_QUOTED" then
-                    safe = not str_find(value, "[^ -~]") and not str_find(value, "'", 1, true)
+                    safe = safe and not str_find(value, "'", 1, true)
                 elseif in_data == "DOUBLE_QUOTED" then
-                    safe = not str_find(value, "[^ -~]") and not str_find(value, '["\\]')
+                    safe = safe and not str_find(value, '["\\]')
+                else
+                    -- Keep plain scalar boundaries, including adjacent template text.
+                    -- A colon before '?' also fails scanning in libyaml flow scalars.
+                    safe = safe and value ~= ""
+                           and not str_find(value, "^[ %-%?:,.&*!%%@`]")
+                           and not str_find(value, "[#%[%]{}\"'\\|>,]")
+                           and not str_find(value, ":[ ?]")
+                           and not str_find(value, "[ :]$")
                 end
                 if not safe then
                     contexts = nil
                 end
             end
+        end
+        -- A skipped comment keeps the line breaks removed by the scan marker.
+        if not in_data and str_find(reference, "[\r\n\128-\255]") then
+            contexts = nil
         end
         parts[#parts + 1] = value
     end

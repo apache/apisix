@@ -29,10 +29,22 @@ yaml.scanner = function(text)
     scans = scans + 1
     return scanner(text)
 end
+local ffi = require("ffi")
+ffi.cdef[[int setenv(const char *name, const char *value, int overwrite);
+          int unsetenv(const char *name);]]
 local file = require("apisix.cli.file")
 local lyaml = require("lyaml")
 local resolved
 for _, case in ipairs({
+    {'', "127.0.0.1"},
+    {'', "127.0.0.1:9091"},
+    {'', "apisix.example:9091"},
+    {'', "http://h:8080/p?q=1&x=2"},
+    {'', "hello world"},
+    {'', "中文"},
+    {'', "hello 世界 😀"},
+    {'"', "中文"},
+    {"'", "中文"},
     {'"', "127.0.0.1"},
     {'"', "127.0.0.1:9091"},
     {"'", "127.0.0.1:9091"},
@@ -41,12 +53,17 @@ for _, case in ipairs({
     {'"', "it's data: [one, two] # text"},
     {"'", 'a "quote" and C:\\path'},
     {'"', ""},
+    {'', "127.0.0.1:9091", '${{YAML_SCAN_VALUE\n}}'},
+    {'"', "hello world", '${{YAML_SCAN_VALUE\r\n}}'},
+    {"'", "中文", '${{YAML_SCAN_VALUE\n}}'},
+    {'', "127.0.0.1:9091", '${{YAML_SCAN_VALUE:=中文\n}}'},
 }) do
+    assert(ffi.C.setenv("YAML_SCAN_VALUE", case[2], 1) == 0)
     for _, n in ipairs({32, 256, 1024}) do
         local parts = {"# header\nx:\n"}
         for i = 1, n do
-            parts[#parts + 1] = '  - ' .. case[1] .. '${{YAML_SCAN_VALUE:=' .. case[2]
-                .. '}}' .. case[1] .. ' # ${{YAML_SCAN_MISSING}}\n'
+            parts[#parts + 1] = '  - ' .. case[1] .. (case[3] or '${{YAML_SCAN_VALUE}}')
+                .. case[1] .. ' # ${{YAML_SCAN_MISSING}}\n'
         end
         scans = 0
         resolved = assert(file.resolve_conf_var_in_text(table.concat(parts)))
@@ -58,7 +75,56 @@ for _, case in ipairs({
         assert(scans <= 2, "ordinary values must not rescan every prefix: " .. scans)
     end
 end
+assert(ffi.C.unsetenv("YAML_SCAN_VALUE") == 0)
 assert(not (file.get_exported_vars() or {}).YAML_SCAN_MISSING)
+
+-- Block headers contain comments, but hashes in their bodies are data.
+for _, header in ipairs({"|", ">", "|-", ">+2"}) do
+    for _, newline in ipairs({"\n", "\r\n", "\r", "\194\133", "\226\128\168", "\226\128\169"}) do
+        scans = 0
+        resolved = assert(file.resolve_conf_var_in_text(
+            '# header' .. newline .. 'x: ' .. header .. ' # ${{YAML_SCAN_MISSING}}' .. newline
+            .. string.rep('  # ${{YAML_SCAN_VALUE:=ok\n}}' .. newline, 256)))
+        local value = lyaml.load(resolved).x
+        assert(value:find('# ok', 1, true) and not value:find('${{YAML_SCAN_VALUE', 1, true))
+        assert(scans == 1, "block references must share a scan: " .. scans)
+    end
+end
+-- A skipped multiline comment must retain its original line boundaries.
+for _, newline in ipairs({"\n", "\r\n", "\r", "\194\133", "\226\128\168", "\226\128\169"}) do
+    resolved = assert(file.resolve_conf_var_in_text(
+        '# ${{YAML_SCAN_MISSING:=ignored' .. newline .. 'x}}: "${{YAML_SCAN_VALUE:=ok}}"'))
+    assert(lyaml.load(resolved)["x}}"] == "ok")
+end
+
+-- Whitespace at a replacement boundary can turn a literal hash into a comment.
+for _, value in ipairs({"hello ", ""}) do
+    assert(ffi.C.setenv("YAML_SCAN_VALUE", value, 1) == 0)
+    resolved = assert(file.resolve_conf_var_in_text(
+        '# header\nx: ${{YAML_SCAN_VALUE}}# ${{YAML_SCAN_MISSING}}'))
+    assert(lyaml.load(resolved).x == (value == "" and lyaml.null or "hello"))
+end
+assert(ffi.C.setenv("YAML_SCAN_VALUE", " ", 1) == 0)
+resolved = assert(file.resolve_conf_var_in_text(
+    '# header\nx:${{YAML_SCAN_VALUE}}"# ${{YAML_SCAN_PREFIX:=kept}}"'))
+assert(lyaml.load(resolved).x == "# kept")
+for _, newline in ipairs({"\n", "\r\n", "\194\133", "\226\128\168", "\226\128\169"}) do
+    assert(ffi.C.setenv("YAML_SCAN_VALUE", "ok" .. newline .. "# ", 1) == 0)
+    resolved = assert(file.resolve_conf_var_in_text(
+        '# header\nx: ${{YAML_SCAN_VALUE}}${{YAML_SCAN_MISSING}}'))
+    assert(lyaml.load(resolved).x == "ok")
+end
+assert(ffi.C.unsetenv("YAML_SCAN_VALUE") == 0)
+
+-- Invalid UTF-8 must not let batch reuse hide a scanner failure.
+for _, value in ipairs({"\255", "\128", "\192\175", "\224\128\175",
+                       "\237\160\128", "\244\144\128\128", "\226\128"}) do
+    assert(ffi.C.setenv("YAML_SCAN_VALUE", value, 1) == 0)
+    local _, err = file.resolve_conf_var_in_text(
+        '# header\nx: ${{YAML_SCAN_VALUE}}\n# ${{YAML_SCAN_MISSING}}')
+    assert(err and err:find("YAML_SCAN_MISSING", 1, true))
+end
+assert(ffi.C.unsetenv("YAML_SCAN_VALUE") == 0)
 
 -- A replacement can change whether later references belong to comments.
 local cases = {
@@ -69,6 +135,10 @@ local cases = {
     {"x: ${{YAML_SCAN_PREFIX:=|-}}\n  # ${{YAML_SCAN_VALUE:=ok}}", "# ok"},
     {'# header\nx: "${{YAML_SCAN_PREFIX:="}} # ${{YAML_SCAN_MISSING}}', ""},
     {'# header\nx: "${{YAML_SCAN_VALUE:=ok\n}}"', "ok"},
+    {'# header\n${{YAML_SCAN_PREFIX:=x:}} "${{YAML_SCAN_VALUE:=ok}}'
+        .. ' # ${{YAML_SCAN_MISSING:=kept}}"', "ok # kept"},
+    {'# header\n${{YAML_SCAN_PREFIX:=x: "}}${{YAML_SCAN_VALUE:=ok}}'
+        .. ' # ${{YAML_SCAN_MISSING:=kept}}"', "ok # kept"},
 }
 for _, case in ipairs(cases) do
     resolved = assert(file.resolve_conf_var_in_text(case[1]))
