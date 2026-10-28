@@ -99,6 +99,7 @@ function _M.http_init(args)
     core.id.init()
     core.env.init()
     require("apisix.slow_start").init()
+    apisix_upstream.init()
 
     local process = require("ngx.process")
     local ok, err = process.enable_privileged_agent()

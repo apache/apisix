@@ -95,16 +95,13 @@ local default_trusted_store
 -- nginx loads `proxy_ssl_trusted_certificate` into the upstream SSL context only
 -- when `proxy_ssl_verify` is on, so an upstream that enables verification
 -- without its own `ca_certs` has to be given the configured trusted CAs here.
-local function get_default_trusted_store()
-    if default_trusted_store then
-        return default_trusted_store
-    end
-
+-- Loaded in the master process so workers running as another user inherit it.
+local function load_default_trusted_store()
     local local_conf = core.config.local_conf()
     local ssl_conf = local_conf.apisix and local_conf.apisix.ssl
     local path = ssl_conf and ssl_conf.ssl_trusted_certificate
     if not path then
-        return nil
+        return true
     end
 
     local store, err = openssl_x509_store.new()
@@ -118,7 +115,7 @@ local function get_default_trusted_store()
     end
 
     default_trusted_store = store
-    return store
+    return true
 end
 
 
@@ -144,7 +141,7 @@ local function set_upstream_ssl_opts(up_conf)
         store, err = trusted_store_cache(tls.ca_certs, up_conf.resource_version,
                                          create_trusted_store, tls.ca_certs)
     elseif tls.verify then
-        store, err = get_default_trusted_store()
+        store = default_trusted_store
     end
 
     if err then
@@ -839,6 +836,14 @@ local function filter_upstream(value, parent)
     end
 end
 _M.filter_upstream = filter_upstream
+
+
+function _M.init()
+    local ok, err = load_default_trusted_store()
+    if not ok then
+        error(err)
+    end
+end
 
 
 function _M.init_worker()
