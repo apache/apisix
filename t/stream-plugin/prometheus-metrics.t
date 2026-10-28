@@ -71,9 +71,54 @@ _EOC_
     # while the exposition is built, so a block generated without a stream
     # block has nothing to read -- and the reload into it drops the zone, which
     # takes the running totals with it.
-    if ($block->request =~ m{/apisix/prometheus/metrics}) {
+    if ($block->request =~ m{/apisix/prometheus/metrics|/scrape}) {
         $block->set_value("stream_enable", 1);
     }
+
+    # Session metrics reach the exposition asynchronously: workers first flush
+    # them to the shared dictionary, then the privileged agent refreshes its
+    # cache. Poll the exposition instead of assuming the next block sees them.
+    my $extra_init_by_lua = <<_EOC_;
+    function _G.scrape_until(pattern)
+        local body
+        local deadline = ngx.now() + 5
+        repeat
+            local sock = ngx.socket.tcp()
+            local ok, err = sock:connect("127.0.0.1", 1984)
+            if not ok then
+                ngx.say("scrape connect: ", err)
+                return
+            end
+
+            ok, err = sock:send("GET /apisix/prometheus/metrics HTTP/1.0\\r\\n"
+                                .. "Host: 127.0.0.1\\r\\n\\r\\n")
+            if not ok then
+                ngx.say("scrape send: ", err)
+                return
+            end
+
+            local rerr, partial
+            body, rerr, partial = sock:receive("*a")
+            sock:close()
+            body = body or partial
+            if not body then
+                ngx.say("scrape: ", rerr)
+                return
+            end
+
+            if ngx.re.find(body, pattern, "jom") then
+                ngx.say("matched")
+                return
+            end
+
+            ngx.sleep(0.1)
+        until ngx.now() > deadline
+
+        ngx.print(body)
+    end
+_EOC_
+
+    $block->set_value("extra_init_by_lua", $extra_init_by_lua);
 });
 
 run_tests;
@@ -136,10 +181,17 @@ hello world
 
 
 === TEST 3: the session is counted as a normal close, not as an error
+--- config
+    location /scrape {
+        content_by_lua_block {
+            scrape_until([[apisix_stream_status\{code="200",listen_addr="[^"]+",node="127\.0\.0\.1:1995"\} 1$]])
+        }
+    }
 --- request
-GET /apisix/prometheus/metrics
---- response_body eval
-qr/apisix_stream_status\{code="200",listen_addr="[^"]+",node="127.0.0.1:1995"\} 1$/m
+GET /scrape
+--- timeout: 10
+--- response_body
+matched
 
 
 
@@ -360,10 +412,17 @@ connect() failed
 
 
 === TEST 12: the failing node is still reported on a 502
+--- config
+    location /scrape {
+        content_by_lua_block {
+            scrape_until([[apisix_stream_status\{code="502",listen_addr="[^"]+",node="127\.0\.0\.1:1979"\} 1$]])
+        }
+    }
 --- request
-GET /apisix/prometheus/metrics
---- response_body eval
-qr/apisix_stream_status\{code="502",listen_addr="[^"]+",node="127.0.0.1:1979"\} 1$/m
+GET /scrape
+--- timeout: 10
+--- response_body
+matched
 
 
 
