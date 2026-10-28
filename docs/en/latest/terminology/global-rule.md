@@ -28,9 +28,9 @@ description: This article describes how to use global rules.
 
 ## Description
 
-A [Plugin](./plugin.md) configuration can be bound directly to a [Route](./route.md), a [Service](./service.md) or a [Consumer](./consumer.md). But what if we want a Plugin to work on all requests? This is where we register a global Plugin with Global Rule.
+A [Global Rule](../admin-api.md#global-rule) configures [Plugins](./plugin.md) for incoming requests independently of Plugins bound to a [Route](./route.md), [Service](./service.md), [Consumer](./consumer.md), or [Plugin Config](./plugin-config.md). Rate-limiting and observability Plugins are often enabled globally to apply consistent behavior across APIs.
 
-A global-rule plugin runs before a locally bound plugin in the same phase. However, locally bound `rewrite` handlers run before global-rule `access` handlers. See [Plugins execution order](./plugin.md#plugins-execution-order) for the complete order.
+Global Rule Plugins run before locally bound Plugins within the same phase. The complete order is global `rewrite`, local `rewrite`, global `access`, then local `access`. A global `access` handler therefore does not run before a local `rewrite` handler. Priorities order Plugins within each phase and scope, and an early response prevents later handlers from running. See [Plugins execution order](./plugin.md#plugins-execution-order) for details.
 
 ## Example
 
