@@ -47,16 +47,48 @@ plugin_attr:
   ssl-session-ticket:
     enabled: false
     key_source: generated
+    generated:
+      rotation_interval: 3600
+      max_keys: 19
 ```
 
-| 名称       | 类型    | 必选项 | 默认值    | 有效值              | 描述 |
-|------------|---------|--------|-----------|---------------------|------|
-| enabled    | boolean | 否     | false     |                     | 为 true 时，为业务 TLS 监听发布密钥。通过 Admin API 提交的密钥本身不会启用该功能。 |
-| key_source | string  | 否     | generated | generated、external | `generated`：由 APISIX 维护密钥，Admin API 拒绝对密钥的任何写入。`external`：由你通过 Admin API 提交完整的密钥集合。 |
+| 名称                        | 类型    | 必选项 | 默认值    | 有效值              | 描述 |
+|-----------------------------|---------|--------|-----------|---------------------|------|
+| enabled                     | boolean | 否     | false     |                     | 为 true 时，为业务 TLS 监听发布密钥。通过 Admin API 提交的密钥本身不会启用该功能。 |
+| key_source                  | string  | 否     | generated | generated、external | `generated`：由 APISIX 生成并轮转密钥（参见[内置生成](#内置生成)），Admin API 拒绝对密钥的任何写入。`external`：由你通过 Admin API 提交完整的密钥集合。 |
+| generated.rotation_interval | integer | 否     | 3600      | >= 60               | 两把签发 ticket 的新密钥之间相隔的秒数。仅用于 `generated`。 |
+| generated.max_keys          | integer | 否     | 19        | [1, 256]            | 保留的密钥数量，包括正在签发 ticket 的那一把。仅用于 `generated`。 |
 
-`traditional` 与 `control_plane` 节点执行该策略，`data_plane` 节点忽略它。请在所有执行策略的节点上保持相同的配置。与 `config.yaml` 的其他修改一样，本地配置的修改在 reload 后生效。
+APISIX 启动时会校验这些属性。请在所有执行策略的节点上保持相同的配置，参见[策略一致性](#策略一致性)。与 `config.yaml` 的其他修改一样，本地配置的修改在 reload 后生效。
 
-standalone 模式（YAML、JSON 或 API 驱动）只支持 `external` 密钥，参见 [standalone 模式](#standalone-模式)。
+| 部署形态                                       | 本地策略 | 密钥 |
+|------------------------------------------------|----------|------|
+| 使用 etcd 的 `traditional` 与 `control_plane` | 执行：生成密钥，或通过 Admin API 接收外部密钥，并让元数据与 `enabled`、`key_source` 保持一致。 | 本节点使用。 |
+| `data_plane`                                   | 忽略。 | 使用执行策略的节点发布的密钥。 |
+| standalone（YAML、JSON 或 API 驱动）           | 只支持 `external` 密钥，是否使用由 `enabled` 决定。`enabled: true` 且 `key_source: generated` 时启动失败。 | 取自配置，参见 [standalone 模式](#standalone-模式)。 |
+| 纯 Stream（`proxy_mode: stream`）              | 不执行：生成器运行在 HTTP 子系统的特权进程中。 | 使用其他节点发布的密钥。 |
+
+## 内置生成
+
+`enabled: true` 且 `key_source: generated` 时，每个执行本地策略的节点的特权进程每隔几秒检查一次密钥：
+
+* 没有密钥时，用密码学安全的随机数生成第一把密钥。
+* 距上次生成已过 `rotation_interval` 秒时，在最前面加入一把新密钥（此后由它签发 ticket），并移除超出 `max_keys` 的最旧的密钥。按默认值，一把密钥签发 ticket 1 小时，之后再解密 18 小时。
+* 上次生成的时间与密钥一同保存：重启节点不会重新计时；长时间停机后恢复的节点只轮转一次，不会为错过的每个周期各轮转一次。
+* 调低 `max_keys` 会立即移除超出的密钥。
+
+节点以读到的 revision 用 etcd 事务写入密钥：多个节点同时到期时，只有一个节点写入，其他节点读取它写入的密钥。节点生成或加密密钥失败时不写入任何内容，正在使用的密钥保持不变。
+
+执行本地策略的节点还会让元数据与策略保持一致：
+
+* `enabled: false` 时，密钥被标记为停用并保留在元数据中，TLS 监听停止使用它们。重新启用后继续使用这些密钥，之后的轮转会逐步替换它们。
+* 切换到 `external` 时，生成的密钥被替换为空集合，等待你提交密钥。切换到 `generated` 时，外部密钥被替换为一把新生成的密钥。一种来源的密钥不会被当作另一种来源的密钥使用。
+
+无法读取当前密钥的节点（例如它的 `apisix.data_encryption.keyring` 与其他节点不同）不会覆盖这些密钥，Control API 会报告该错误。
+
+### 策略一致性
+
+每个执行本地策略的节点都会在 etcd 的 `/apisix/ssl_session_ticket/policy/` 下登记其策略的指纹，所用租约在节点停止约 30 秒后结束。只要已登记的节点的策略不完全相同，它们都会停止生成密钥和改写元数据，Admin API 对元数据的写入返回 `409`。Control API 在 `generator.state` 中报告 `conflict`，错误日志会说明原因。所有节点的配置一致后会自动恢复。因此，滚动修改策略期间轮转会暂停一段时间，已发布的密钥继续有效。
 
 ## 插件元数据
 
@@ -78,17 +110,38 @@ Admin API 对 `ssl-session-ticket` 元数据执行以下规则：
 |-------------------------------------------|---------------|------|
 | `enabled: false`、`key_source: external`  | 允许          | 保存密钥并标记为停用，不会使用。 |
 | `enabled: true`、`key_source: external`   | 允许          | 按提交的内容原样使用：APISIX 不会增加、过期、轮转或移除任何密钥。 |
-| `key_source: generated`                   | `409`         | 由 APISIX 维护密钥。改为 `external` 后才能通过 Admin API 管理。 |
+| `key_source: generated`                   | `409`         | 由 APISIX 生成密钥。改为 `external` 后才能通过 Admin API 管理。 |
 
 * `PUT` 整体替换密钥集合。内容和顺序都相同的密钥不会写入，也不会产生新的 revision，因此 ADC 等声明式工具可以反复提交同一组密钥。
 * 请求体只接受 `keys`。其他字段一律拒绝，例如 `enabled`、`key_source`、`origin`、`id`、引用或单把密钥的时间字段。同样拒绝：不是合法 base64 的密钥、解码后不是 80 字节的密钥、重复的密钥、16 字节密钥名相同的两把密钥，以及超过 256 把密钥。非法请求整体拒绝：不写入任何内容，已保存的密钥保持不变。
 * 密钥没有 TTL，拒绝 `ttl` 参数。
 * 每次写入都以请求读到的 revision 原子提交。如果期间其他写入者修改了密钥，请求返回 `409` 且不写入任何内容，请重试。
+* 只要执行本地策略的节点的策略不完全相同，写入就会返回 `409`，参见[策略一致性](#策略一致性)。
 * APISIX 会在保存的元数据中加入 `origin` 对象：密钥的来源、是否被本地策略停用，以及该策略的指纹。你不能设置它。
 * 任何响应都不包含密钥，无论明文还是密文：它们被替换为 `<redacted>`。请自行保管密钥，`GET` 的结果不能再次提交。
 * `apisix.data_encryption.enable_encrypt_fields` 为 true 时，密钥在写入 etcd 前用 `apisix.data_encryption.keyring` 加密。加密失败时请求失败，不写入任何内容。
 
 ## 使用示例
+
+### 使用内置生成的密钥
+
+在执行本地策略的节点上启用内置生成，然后 reload APISIX：
+
+```yaml title="./conf/config.yaml"
+plugin_attr:
+  ssl-session-ticket:
+    enabled: true
+```
+
+在任意节点上确认密钥已就绪：
+
+```shell
+curl http://127.0.0.1:9090/v1/tls_session_ticket
+```
+
+响应中报告 `"source": "generated"` 与密钥数量；在生成密钥的节点上，还有 `generator` 对象，其中 `"state": "ok"`。
+
+### 使用外部密钥
 
 :::note
 
@@ -173,7 +226,7 @@ plugin_metadata:
 
 ## 状态
 
-元数据只表示已保存的内容，不代表各节点正在使用的内容。每个节点的 Control API 在 [`GET /v1/tls_session_ticket`](../control-api.md#get-v1tls_session_ticket) 中报告本节点的状态：密钥的来源与 revision、密钥数量、本地版本与发布时间，以及安全告警。它从不返回密钥。
+元数据只表示已保存的内容，不代表各节点正在使用的内容。每个节点的 Control API 在 [`GET /v1/tls_session_ticket`](../control-api.md#get-v1tls_session_ticket) 中报告本节点的状态：密钥的来源与 revision、密钥数量、本地版本与发布时间、执行本地策略的节点上生成器的状态，以及安全告警。它从不返回密钥。
 
 ## 安全
 

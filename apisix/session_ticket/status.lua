@@ -36,6 +36,9 @@ local os_date = os.date
 local get_method = ngx.req.get_method
 
 
+-- the status that the built-in generator saves in the state
+local GENERATOR = "generator"
+
 -- the public example keyring of conf/config.yaml.example and the defaults
 local DEFAULT_KEYRING = {
     qeddd145sfvddff3 = true,
@@ -115,6 +118,35 @@ local function zero_workers()
 end
 
 
+-- the built-in generator runs in the privileged agent of the traditional and
+-- control_plane nodes backed by etcd, which only the HTTP subsystem has
+local function generator_status(local_conf, subsystems)
+    local role = core.table.try_read_attr(local_conf, "deployment", "role")
+    if (role ~= "traditional" and role ~= "control_plane") or core.config.type ~= "etcd"
+       or not subsystems.http
+    then
+        return core.json.null
+    end
+
+    local st = state.get_status(GENERATOR)
+    if type(st) ~= "table" then
+        local attr = core.table.try_read_attr(local_conf, "plugin_attr", "ssl-session-ticket")
+        local executes = type(attr) == "table" and attr.enabled == true
+                         and (attr.key_source or "generated") == "generated"
+        return {executes = executes, state = "idle", last_generated_at = core.json.null,
+                error = core.json.null}
+    end
+
+    return {
+        executes = st.executes == true,
+        state = st.state,
+        last_generated_at = type(st.last_generated_at) == "number"
+                            and iso_time(st.last_generated_at) or core.json.null,
+        error = type(st.error) == "string" and st.error or core.json.null,
+    }
+end
+
+
 --- Build the status.
 --
 -- @treturn number 200
@@ -135,7 +167,6 @@ function _M.get()
         updated_at_sec_ago = core.json.null,
         workers = zero_workers(),
         subsystems = {},
-        -- filled by the nodes running the built-in generator
         generator = core.json.null,
         warnings = setmetatable(_M.keyring_warnings(), core.json.array_mt),
         last_apply_error = core.json.null,
@@ -197,6 +228,7 @@ function _M.get()
     -- business context is known to have applied anything: never report ok or
     -- off for an enabled subsystem.
     local subsystems = enabled_subsystems()
+    body.generator = generator_status(core.config.local_conf(), subsystems)
     for _, name in ipairs(state.SUBSYSTEMS) do
         local sub = {
             applicable = false,

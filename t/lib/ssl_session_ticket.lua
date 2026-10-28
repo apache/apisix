@@ -87,6 +87,40 @@ function _M.record()
 end
 
 
+-- a complete local policy: enabled generated keys, 1h / 19 unless overridden
+function _M.policy(over)
+    over = over or {}
+    local gen = over.generated or {}
+    return {
+        enabled = over.enabled == nil and true or over.enabled,
+        key_source = over.key_source or "generated",
+        generated = {
+            rotation_interval = gen.rotation_interval or 3600,
+            max_keys = gen.max_keys or 19,
+        },
+    }
+end
+
+
+-- the stored record parsed (keys decrypted) and its revision
+function _M.parsed()
+    local value, rev = _M.record()
+    if not value then
+        return nil, rev
+    end
+    local rec, err = require("apisix.plugins.ssl-session-ticket.record").parse(value)
+    if not rec then
+        return nil, err
+    end
+    return rec, rev
+end
+
+
+function _M.delete_record()
+    return core.etcd.delete(_M.etcd_key)
+end
+
+
 -- wait until the state satisfies f, returns the last state read
 function _M.wait_state(f, timeout)
     local deadline = ngx.now() + (timeout or 5)
@@ -100,6 +134,40 @@ function _M.wait_state(f, timeout)
         ngx.update_time()
     until ngx.now() > deadline
     return snap
+end
+
+
+-- wait until the generator status of this node satisfies f (by default: it
+-- has run once and is not in conflict), returns the last status read
+function _M.wait_generator(f, timeout)
+    f = f or function(st) return st.state ~= "conflict" end
+    local deadline = ngx.now() + (timeout or 10)
+    local st
+    repeat
+        st = state.get_status("generator")
+        if st and f(st) then
+            return st
+        end
+        ngx.sleep(0.2)
+        ngx.update_time()
+    until ngx.now() > deadline
+    return st
+end
+
+
+-- wait until the stored record satisfies f, returns it and its revision
+function _M.wait_record(f, timeout)
+    local deadline = ngx.now() + (timeout or 10)
+    local value, rev
+    repeat
+        value, rev = _M.record()
+        if f(value, rev) then
+            return value, rev
+        end
+        ngx.sleep(0.2)
+        ngx.update_time()
+    until ngx.now() > deadline
+    return value, rev
 end
 
 

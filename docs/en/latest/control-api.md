@@ -562,7 +562,7 @@ curl http://127.0.0.1:9090/v1/tls_session_ticket
         "stream": {"applicable": false, "status": "degraded", "reason": "module_not_active",
                    "contexts": 0, "workers": {"total": 0, "applied": 0, "pending": 0, "failed": 0}}
     },
-    "generator": null,
+    "generator": {"executes": false, "state": "idle", "last_generated_at": null, "error": null},
     "warnings": ["default_keyring"],
     "last_apply_error": "the SSL layer does not consume the keys"
 }
@@ -579,7 +579,7 @@ curl http://127.0.0.1:9090/v1/tls_session_ticket
 | source, source_version | The source of the keys and the revision of their metadata (the etcd revision, or the configuration version in standalone mode). Nodes of the same etcd cluster can be compared with it. `null` when there are no keys to read. |
 | updated_at, updated_at_sec_ago | When this node published the target (UTC) and how long ago. They are no health indicator. |
 | workers, subsystems | The progress of the worker processes, per subsystem (`http`, `stream`). |
-| generator           | The state of the built-in generator on the nodes running it; `null` otherwise. |
+| generator           | On the `traditional` and `control_plane` nodes with etcd, which apply the local policy: `executes` (whether this node generates the keys), `state` (`idle` when it does not generate them, `ok`, `conflict` when the nodes do not have the same policy, or `failed`), `last_generated_at` (when the keys were last generated, UTC) and `error`. `null` on the other nodes. |
 | warnings            | Security warnings that do not change the status: `encryption_disabled` or `default_keyring`. |
 | last_apply_error    | The reason of the latest failure, never containing any key. |
 

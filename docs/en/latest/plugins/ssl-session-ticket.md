@@ -47,16 +47,48 @@ plugin_attr:
   ssl-session-ticket:
     enabled: false
     key_source: generated
+    generated:
+      rotation_interval: 3600
+      max_keys: 19
 ```
 
-| Name       | Type    | Required | Default   | Valid values          | Description |
-|------------|---------|----------|-----------|-----------------------|-------------|
-| enabled    | boolean | False    | false     |                       | If true, the keys are published for the business TLS listeners. The keys submitted through the Admin API do not enable the feature by themselves. |
-| key_source | string  | False    | generated | generated, external   | `generated`: APISIX maintains the keys and the Admin API rejects any write to them. `external`: you submit the complete set of keys through the Admin API. |
+| Name                        | Type    | Required | Default   | Valid values        | Description |
+|-----------------------------|---------|----------|-----------|---------------------|-------------|
+| enabled                     | boolean | False    | false     |                     | If true, the keys are published for the business TLS listeners. The keys submitted through the Admin API do not enable the feature by themselves. |
+| key_source                  | string  | False    | generated | generated, external | `generated`: APISIX generates and rotates the keys, see [Generated Keys](#generated-keys), and the Admin API rejects any write to them. `external`: you submit the complete set of keys through the Admin API. |
+| generated.rotation_interval | integer | False    | 3600      | >= 60               | Seconds between two new keys issuing tickets. Only used with `generated`. |
+| generated.max_keys          | integer | False    | 19        | [1, 256]            | Number of keys kept, including the one issuing tickets. Only used with `generated`. |
 
-The `traditional` and `control_plane` nodes apply this policy, and `data_plane` nodes ignore it. Configure it the same way on all the nodes that apply it. A change of the local configuration takes effect after a reload, like any other change of `config.yaml`.
+APISIX checks these attributes when it starts. Configure them the same way on all the nodes that apply them, see [Policy Consistency](#policy-consistency). A change of the local configuration takes effect after a reload, like any other change of `config.yaml`.
 
-In standalone mode (YAML, JSON or API-driven), only `external` keys are supported, see [Standalone Mode](#standalone-mode).
+| Deployment                                 | Local policy | Keys |
+|--------------------------------------------|--------------|------|
+| `traditional` and `control_plane` with etcd | Applied: generate the keys, or accept the external ones through the Admin API, and keep the metadata in line with `enabled` and `key_source`. | Used by the node. |
+| `data_plane`                               | Ignored. | Used as the nodes applying the policy publish them. |
+| Standalone (YAML, JSON or API-driven)      | Only `external` keys, and `enabled` decides whether they are used. `enabled: true` with `key_source: generated` fails on startup. | Taken from the configuration, see [Standalone Mode](#standalone-mode). |
+| Stream only (`proxy_mode: stream`)         | Not applied: the generator runs in the privileged agent of the HTTP subsystem. | Used as the other nodes publish them. |
+
+## Generated Keys
+
+With `enabled: true` and `key_source: generated`, the privileged agent of every node applying the local policy checks the keys every few seconds:
+
+* Without keys, it generates the first one, from a cryptographically secure random generator.
+* When `rotation_interval` seconds have passed since the keys were last generated, it adds a new key in front, which issues the tickets from then on, and removes the oldest keys beyond `max_keys`. With the defaults, a key issues tickets for an hour and then decrypts them for 18 more hours.
+* The time of the last generation is saved with the keys: restarting a node does not restart the period, and a node that comes back after a long stop rotates the keys once, not once per missed period.
+* Lowering `max_keys` removes the keys beyond it at once.
+
+The nodes write the keys with an etcd transaction against the revision they have read: when several nodes are due at the same time, only one of them writes and the others read its keys. If a node fails to generate or to encrypt a key, it writes nothing and the keys in use stay as they are.
+
+The nodes applying the local policy also keep the metadata in line with it:
+
+* With `enabled: false`, the keys are marked disabled and stay in the metadata: the TLS listeners stop using them. Enabling again resumes with them, and the next rotation replaces them over time.
+* Switching to `external` replaces the generated keys with an empty set, waiting for yours. Switching to `generated` replaces the external keys with a new generated one. Keys of one source are never used as keys of the other.
+
+A node that cannot read the current keys, for example because its `apisix.data_encryption.keyring` differs, never overwrites them; the Control API reports the error.
+
+### Policy Consistency
+
+Each node applying the local policy registers a fingerprint of it in etcd, under `/apisix/ssl_session_ticket/policy/`, with a lease that ends about 30 seconds after the node stops. As long as the registered nodes do not all have the same policy, they all stop generating keys and rewriting the metadata, and the Admin API rejects writes to the metadata with `409`. The Control API reports `conflict` in `generator.state`, and the error log tells why. Everything resumes once all the nodes have the same configuration. Changing the policy with a rolling restart therefore pauses the rotation for a while; the published keys stay in use.
 
 ## Plugin Metadata
 
@@ -78,17 +110,38 @@ The Admin API applies these rules to the `ssl-session-ticket` metadata:
 |-------------------------------------------|----------------|--------|
 | `enabled: false`, `key_source: external`  | Allowed        | The keys are saved, marked disabled, and not used. |
 | `enabled: true`, `key_source: external`   | Allowed        | The keys are used exactly as given: APISIX does not add, expire, rotate or remove any of them. |
-| `key_source: generated`                   | `409`          | APISIX maintains the keys. Switch to `external` to manage them through the Admin API. |
+| `key_source: generated`                   | `409`          | APISIX generates the keys. Switch to `external` to manage them through the Admin API. |
 
 * `PUT` replaces the whole set. The same keys in the same order write nothing and do not create a new revision, so a declarative tool such as ADC may submit the same set again and again.
 * The request body only accepts `keys`. Any other field, such as `enabled`, `key_source`, `origin`, `id`, a reference or a per-key time, is rejected. So are a key that is not valid base64, a key that does not decode to 80 bytes, a duplicated key, two keys with the same 16-byte name and more than 256 keys. An invalid request is rejected as a whole: nothing is written and the saved keys stay as they are.
 * The keys have no TTL, the `ttl` argument is rejected.
 * Each write is atomic against the revision that the request has read. When another writer changes the keys in between, the request fails with `409` and nothing is written; retry it.
+* Writes fail with `409` as long as the nodes applying the local policy do not all have the same one, see [Policy Consistency](#policy-consistency).
 * APISIX adds an `origin` object to the stored metadata: the source of the keys, whether they are disabled by the local policy, and a fingerprint of that policy. You cannot set it.
 * No response contains the keys, neither in clear text nor encrypted: they are replaced with `<redacted>`. Keep the keys yourself, a `GET` result cannot be submitted again.
 * When `apisix.data_encryption.enable_encrypt_fields` is true, the keys are encrypted with `apisix.data_encryption.keyring` before they are saved to etcd. If the encryption fails, the request fails and nothing is written.
 
 ## Example Usage
+
+### Use Generated Keys
+
+Enable the generated keys in the local configuration of the nodes that apply the local policy, then reload APISIX:
+
+```yaml title="./conf/config.yaml"
+plugin_attr:
+  ssl-session-ticket:
+    enabled: true
+```
+
+Check that the keys are there, on any node:
+
+```shell
+curl http://127.0.0.1:9090/v1/tls_session_ticket
+```
+
+The response reports `"source": "generated"` and the number of keys, and on the nodes generating them, a `generator` object with `"state": "ok"`.
+
+### Use External Keys
 
 :::note
 You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
@@ -172,7 +225,7 @@ The keys are external keys and the local `enabled` attribute decides whether the
 
 ## Status
 
-The metadata only shows what is saved, not what the nodes use. The Control API of each node reports its own state in [`GET /v1/tls_session_ticket`](../control-api.md#get-v1tls_session_ticket): the source and the revision of the keys, the number of keys, the local version and the time it was published, and the security warnings. It never returns the keys.
+The metadata only shows what is saved, not what the nodes use. The Control API of each node reports its own state in [`GET /v1/tls_session_ticket`](../control-api.md#get-v1tls_session_ticket): the source and the revision of the keys, the number of keys, the local version and the time it was published, the state of the generator on the nodes applying the local policy, and the security warnings. It never returns the keys.
 
 ## Security
 

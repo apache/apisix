@@ -19,6 +19,7 @@ local jsonschema = require("jsonschema")
 local pairs = pairs
 local pcall = pcall
 local require = require
+local type = type
 local schema_def = require("apisix.schema_def")
 
 
@@ -479,6 +480,28 @@ function _M.validate(yaml_conf)
     local ok, err = validator(yaml_conf.deployment)
     if not ok then
         return false, "invalid deployment " .. role .. " configuration: " .. err
+    end
+
+    -- the local policy of ssl-session-ticket: the traditional and
+    -- control_plane nodes execute it, the standalone ones apply it, the
+    -- data_plane ones backed by etcd ignore it
+    local ticket_attr = yaml_conf.plugin_attr and yaml_conf.plugin_attr["ssl-session-ticket"]
+    local provider = yaml_conf.deployment.config_provider
+    local standalone = provider == "yaml" or provider == "json"
+    if type(ticket_attr) == "table" and (role ~= "data_plane" or standalone) then
+        local ticket_schema = require("apisix.plugins.ssl-session-ticket.schema")
+        local ok, err = jsonschema.generate_validator(ticket_schema.attr)(ticket_attr)
+        if not ok then
+            return false, "invalid plugin_attr.ssl-session-ticket: " .. err
+        end
+
+        if standalone and ticket_attr.enabled == true
+           and (ticket_attr.key_source or "generated") == "generated"
+        then
+            return false, "invalid plugin_attr.ssl-session-ticket: generated keys need "
+                          .. "etcd, set key_source to external in standalone mode "
+                          .. "(config_provider " .. provider .. ")"
+        end
     end
 
     return true

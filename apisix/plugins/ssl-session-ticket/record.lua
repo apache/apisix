@@ -40,6 +40,7 @@
 local core            = require("apisix.core")
 local plugin          = require("apisix.plugin")
 local state           = require("apisix.session_ticket.state")
+local schema          = require("apisix.plugins.ssl-session-ticket.schema")
 local data_encryption = require("apisix.core.data_encryption")
 local str_util        = require("resty.string")
 local ngx             = ngx
@@ -66,34 +67,9 @@ local _M = {
 
 
 -- the body of PUT /apisix/admin/plugin_metadata/ssl-session-ticket
-_M.metadata_schema = {
-    type = "object",
-    properties = {
-        keys = {
-            description = "the complete ordered set of keys, each the base64 of 80 "
-                          .. "random bytes; the first one issues tickets",
-            type = "array",
-            maxItems = MAX_KEYS,
-            items = {type = "string"},
-        },
-    },
-    required = {"keys"},
-    additionalProperties = false,
-}
-
-
+_M.metadata_schema = schema.metadata
 -- plugin_attr.ssl-session-ticket, the local policy of the nodes executing it
-_M.attr_schema = {
-    type = "object",
-    properties = {
-        enabled = {type = "boolean", default = false},
-        key_source = {
-            type = "string",
-            enum = {"generated", "external"},
-            default = "generated",
-        },
-    },
-}
+_M.attr_schema = schema.attr
 
 
 local origin_schema = {
@@ -110,7 +86,8 @@ local origin_schema = {
 
 --- The local policy, with the defaults filled in.
 --
--- @treturn table|nil `{enabled = bool, key_source = "generated"|"external"}`
+-- @treturn table|nil `{enabled = bool, key_source = "generated"|"external",
+-- generated = {rotation_interval = n, max_keys = n}}`
 -- @treturn string|nil the error
 function _M.policy()
     local attr = plugin.plugin_attr(NAME)
@@ -126,7 +103,11 @@ end
 
 --- Fingerprint of a local policy: the same on every node configured alike.
 function _M.policy_fingerprint(policy)
-    local s = "enabled=" .. tostring(policy.enabled) .. ";key_source=" .. policy.key_source
+    local gen = policy.generated or {}
+    local s = "enabled=" .. tostring(policy.enabled)
+              .. ";key_source=" .. policy.key_source
+              .. ";rotation_interval=" .. tostring(gen.rotation_interval)
+              .. ";max_keys=" .. tostring(gen.max_keys)
     return str_sub(str_util.to_hex(ngx.sha1_bin(s)), 1, 8)
 end
 

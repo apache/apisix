@@ -22,6 +22,7 @@ local core    = require("apisix.core")
 local resource = require("apisix.admin.resource")
 local plugin_encrypt_conf = require("apisix.plugin").encrypt_conf
 local ticket_record = require("apisix.plugins.ssl-session-ticket.record")
+local ticket_generator = require("apisix.plugins.ssl-session-ticket.generator")
 
 local injected_mark = "injected metadata_schema"
 local ticket_name = ticket_record.name
@@ -188,6 +189,17 @@ local function external_policy()
                         .. ".key_source is " .. policy.key_source .. "; set it to external "
                         .. "to manage the keys through the Admin API"
         }
+    end
+
+    -- the nodes must agree on the policy before anything is written
+    local conflict, desc = ticket_generator.policy_conflict(
+                                ticket_record.policy_fingerprint(policy))
+    if conflict == nil then
+        return nil, 503, {error_msg = desc}
+    end
+
+    if conflict then
+        return nil, 409, {error_msg = "writes are paused: " .. desc}
     end
 
     return policy

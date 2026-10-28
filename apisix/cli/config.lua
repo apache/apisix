@@ -399,7 +399,11 @@ local _M = {
     },
     ["ssl-session-ticket"] = {
       enabled = false,
-      key_source = "generated"
+      key_source = "generated",
+      generated = {
+        rotation_interval = 3600,
+        max_keys = 19
+      }
     },
     zipkin = {
       set_ngx_var = false

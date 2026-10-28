@@ -37,6 +37,26 @@ add_block_preprocessor(sub {
         $block->set_value("request", "GET /t");
     }
 
+    # the same node id in every test, as a restarted node keeps it
+    if (!defined $block->yaml_config) {
+        $block->set_value("yaml_config", <<_EOC_);
+apisix:
+  id: ssl-session-ticket-test
+  node_listen: 1984
+  proxy_mode: http&stream
+  stream_proxy:
+    tcp:
+      - 9100
+  enable_resolv_search_opt: false
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  admin:
+    admin_key: null
+_EOC_
+    }
+
     if (!defined $block->extra_yaml_config) {
         # only the tests drive the state
         $block->set_value("extra_yaml_config", <<_EOC_);

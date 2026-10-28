@@ -27,6 +27,27 @@ add_block_preprocessor(sub {
         $block->set_value("request", "GET /t");
     }
 
+    # the same node id in every test, as a restarted node keeps it: the policy
+    # registered by the previous test is then replaced, not left in conflict
+    if (!defined $block->yaml_config) {
+        $block->set_value("yaml_config", <<_EOC_);
+apisix:
+  id: ssl-session-ticket-test
+  node_listen: 1984
+  proxy_mode: http&stream
+  stream_proxy:
+    tcp:
+      - 9100
+  enable_resolv_search_opt: false
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  admin:
+    admin_key: null
+_EOC_
+    }
+
     if (!defined $block->extra_yaml_config) {
         $block->set_value("extra_yaml_config", <<_EOC_);
 plugin_attr:
@@ -45,7 +66,7 @@ __DATA__
 --- extra_yaml_config
 plugin_attr:
   ssl-session-ticket:
-    enabled: true
+    enabled: false
 --- config
     location /t {
         content_by_lua_block {
@@ -266,7 +287,7 @@ dGlja2V0LW5hbWUtMDAwNUZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZG
 
 
 
-=== TEST 8: the record is disabled when the local policy is
+=== TEST 8: the record is disabled with the local policy, then the same keys write nothing
 --- extra_yaml_config
 plugin_attr:
   ssl-session-ticket:
@@ -276,30 +297,39 @@ plugin_attr:
     location /t {
         content_by_lua_block {
             local h = require("lib.ssl_session_ticket")
-            local _, rev1 = h.record()
+            -- the policy executor of this node disables the record
+            local value, rev = h.wait_record(function(v) return v and v.origin.disabled end)
+            ngx.say("disabled: ", value.origin.disabled, " keys kept: ", #value.keys)
+            h.wait_generator()
             local code = h.put_keys(2, 1)
-            local value, rev2 = h.record()
-            ngx.say(code, " disabled: ", value.origin.disabled, " new revision: ", rev2 > rev1)
+            local _, rev2 = h.record()
+            ngx.say(code, " unchanged: ", rev2 == rev)
         }
     }
 --- response_body
-200 disabled: true new revision: true
+disabled: true keys kept: 2
+200 unchanged: true
 
 
 
-=== TEST 9: the same keys under another local policy are written again
+=== TEST 9: the record is enabled again with the local policy
 --- config
     location /t {
         content_by_lua_block {
             local h = require("lib.ssl_session_ticket")
-            local _, rev1 = h.record()
+            local value, rev = h.wait_record(function(v)
+                return v and not v.origin.disabled
+            end)
+            ngx.say("disabled: ", value.origin.disabled, " keys kept: ", #value.keys)
+            h.wait_generator()
             local code = h.put_keys(2, 1)
-            local value, rev2 = h.record()
-            ngx.say(code, " disabled: ", value.origin.disabled, " new revision: ", rev2 > rev1)
+            local _, rev2 = h.record()
+            ngx.say(code, " unchanged: ", rev2 == rev)
         }
     }
 --- response_body
-200 disabled: false new revision: true
+disabled: false keys kept: 2
+200 unchanged: true
 
 
 
@@ -315,7 +345,9 @@ plugin_attr:
             local get = core.etcd.get
             core.etcd.get = function(key, ...)
                 local res, err = get(key, ...)
-                core.etcd.set(h.etcd_key, res.body.node.value)
+                if key == h.etcd_key then
+                    core.etcd.set(h.etcd_key, res.body.node.value)
+                end
                 return res, err
             end
 
@@ -377,6 +409,7 @@ keys: 2
 === TEST 13: without data encryption the keys are stored as given and it is reported
 --- extra_yaml_config
 apisix:
+  id: ssl-session-ticket-test
   data_encryption:
     enable_encrypt_fields: false
 plugin_attr:
@@ -436,6 +469,7 @@ dGlja2V0LW5hbWUtMDAwOE
 === TEST 15: a private keyring is not
 --- extra_yaml_config
 apisix:
+  id: ssl-session-ticket-test
   data_encryption:
     keyring:
       - 0123456789abcdef

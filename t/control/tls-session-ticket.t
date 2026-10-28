@@ -36,6 +36,26 @@ add_block_preprocessor(sub {
         $block->set_value("request", "GET /t");
     }
 
+    # the same node id in every test, as a restarted node keeps it
+    if (!defined $block->yaml_config) {
+        $block->set_value("yaml_config", <<_EOC_);
+apisix:
+  id: ssl-session-ticket-test
+  node_listen: 1984
+  proxy_mode: http&stream
+  stream_proxy:
+    tcp:
+      - 9100
+  enable_resolv_search_opt: false
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  admin:
+    admin_key: null
+_EOC_
+    }
+
     if (!defined $block->extra_yaml_config) {
         $block->set_value("extra_yaml_config", <<_EOC_);
 plugin_attr:
@@ -60,18 +80,18 @@ __DATA__
             local code, body = h.req("/v1/tls_session_ticket", ngx.HTTP_GET)
             body = json.decode(body)
             ngx.say(code, " ", body.status, " ", body.reason, " ", body.key_count, " ",
-                    body.fully_applied, " ", body.source, " ", body.source_version, " ",
-                    body.generator)
+                    body.fully_applied, " ", body.source, " ", body.source_version)
         }
     }
 --- response_body
-200 degraded module_not_active 0 false nil nil nil
+200 degraded module_not_active 0 false nil nil
 
 
 
 === TEST 2: the fields of a published target
 --- yaml_config
 apisix:
+  id: ssl-session-ticket-test
   node_listen: 1984
   proxy_mode: http&stream
   stream_proxy:
@@ -116,7 +136,8 @@ plugin_attr:
                         sub.contexts, " ", json.encode(sub.workers))
             end
             ngx.say("warnings: ", json.encode(body.warnings))
-            ngx.say("generator: ", body.generator)
+            ngx.say("generator: ", body.generator.executes, " ", body.generator.state, " ",
+                    body.generator.last_generated_at, " ", body.generator.error)
         }
     }
 --- response_body
@@ -130,7 +151,7 @@ workers: {"applied":0,"failed":0,"pending":0,"total":0}
 http: false degraded module_not_active 0 {"applied":0,"failed":0,"pending":0,"total":0}
 stream: false degraded module_not_active 0 {"applied":0,"failed":0,"pending":0,"total":0}
 warnings: ["default_keyring"]
-generator: nil
+generator: false idle nil nil
 --- timeout: 15
 
 
@@ -223,6 +244,7 @@ stream_plugins:
 === TEST 7: a subsystem that is not enabled is off and not applicable
 --- yaml_config
 apisix:
+  id: ssl-session-ticket-test
   node_listen: 1984
   proxy_mode: http
 deployment:

@@ -323,7 +323,7 @@ curl http://127.0.0.1:9090/v1/tls_session_ticket
         "stream": {"applicable": false, "status": "degraded", "reason": "module_not_active",
                    "contexts": 0, "workers": {"total": 0, "applied": 0, "pending": 0, "failed": 0}}
     },
-    "generator": null,
+    "generator": {"executes": false, "state": "idle", "last_generated_at": null, "error": null},
     "warnings": ["default_keyring"],
     "last_apply_error": "the SSL layer does not consume the keys"
 }
@@ -340,7 +340,7 @@ curl http://127.0.0.1:9090/v1/tls_session_ticket
 | source、source_version | 密钥的来源及其元数据的 revision（etcd revision，standalone 模式下为配置版本），同一 etcd 集群内的节点可以据此比较。没有可读的密钥时为 `null`。 |
 | updated_at、updated_at_sec_ago | 本节点发布该目标的时间（UTC）及距今的秒数，不作为健康指标。 |
 | workers、subsystems | 各 worker 进程的进度，按子系统（`http`、`stream`）分项。 |
-| generator           | 运行内置生成器的节点上为生成器的状态，其他节点为 `null`。 |
+| generator           | 在执行本地策略的使用 etcd 的 `traditional`、`control_plane` 节点上，包括 `executes`（本节点是否生成密钥）、`state`（不生成时为 `idle`，以及 `ok`、节点策略不一致时的 `conflict` 或 `failed`）、`last_generated_at`（上次生成密钥的时间，UTC）和 `error`。其他节点为 `null`。 |
 | warnings            | 不影响 status 的安全告警：`encryption_disabled` 或 `default_keyring`。 |
 | last_apply_error    | 最近一次失败的原因，从不包含密钥。 |
 

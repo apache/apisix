@@ -28,6 +28,7 @@ local timers = require("apisix.timers")
 local state  = require("apisix.session_ticket.state")
 local status = require("apisix.session_ticket.status")
 local record = require("apisix.plugins.ssl-session-ticket.record")
+local generator = require("apisix.plugins.ssl-session-ticket.generator")
 local ngx    = ngx
 local type   = type
 local ipairs = ipairs
@@ -36,6 +37,7 @@ local tonumber = tonumber
 
 local plugin_name = record.name
 local timer_name = "plugin#" .. plugin_name
+local generator_timer_name = "plugin#" .. plugin_name .. "#generator"
 -- how often an unchanged publishing failure is logged again
 local FAILURE_LOG_INTERVAL = 60
 
@@ -220,12 +222,17 @@ end
 function _M.init()
     timers.register_timer(timer_name, sync)
 
-    if ngx.worker.id() ~= 0 then
+    if not generator.executes_policy() then
         return
     end
 
-    local role = core.table.try_read_attr(core.config.local_conf(), "deployment", "role")
-    if role ~= "traditional" and role ~= "control_plane" then
+    -- the HTTP subsystem of the privileged agent only: the agent process runs
+    -- the init_worker of the Stream subsystem too
+    if ngx.config.subsystem == "http" then
+        timers.register_timer(generator_timer_name, generator.tick, true)
+    end
+
+    if ngx.worker.id() ~= 0 then
         return
     end
 
@@ -243,6 +250,7 @@ end
 
 function _M.destroy()
     timers.unregister_timer(timer_name)
+    timers.unregister_timer(generator_timer_name, true)
 end
 
 

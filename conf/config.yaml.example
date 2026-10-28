@@ -780,9 +780,15 @@ plugin_attr:          # Plugin attributes
                                       # session ticket keys, executed by the traditional and control_plane
                                       # nodes; data_plane nodes ignore it. Keep it the same on all of them.
     enabled: false                    # Publish the shared keys to the business TLS listeners.
-    key_source: generated             # generated: APISIX maintains the keys itself, the Admin API rejects
-                                      # writes with 409. external: you PUT the complete set of keys to
-                                      # /apisix/admin/plugin_metadata/ssl-session-ticket.
+    key_source: generated             # generated: APISIX generates and rotates the keys, the Admin API
+                                      # rejects writes with 409. external: you PUT the complete set of
+                                      # keys to /apisix/admin/plugin_metadata/ssl-session-ticket.
+                                      # Standalone mode only supports external.
+    generated:                        # Only for key_source: generated.
+      rotation_interval: 3600         # Seconds between two new keys issuing tickets. Minimum: 60.
+      max_keys: 19                    # Keys kept, including the one issuing tickets: a key stops
+                                      # decrypting tickets about (max_keys - 1) * rotation_interval
+                                      # seconds after it stopped issuing them. Maximum: 256.
   inspect:                            # Plugin: inspect
     delay: 3                          # Set the delay in seconds for the frequency of checking the hooks file.
     hooks_file: "/usr/local/apisix/plugin_inspect_hooks.lua"  # Set the path to the Lua file that defines

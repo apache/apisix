@@ -961,6 +961,48 @@ function _M.worker_records()
 end
 
 
+local STATUS_PREFIX = "s:"
+local MAX_STATUS_LEN = 1024
+
+
+--- Save the status of a producer (e.g. the built-in generator), so that the
+-- Control API of any process can report it. It must not contain key material.
+--
+-- @tparam string name the producer
+-- @tparam table status a small table, at most MAX_STATUS_LEN bytes as JSON
+-- @treturn boolean|nil true on success
+-- @treturn string|nil the error
+function _M.set_status(name, status)
+    local dict = get_dict()
+    if not dict then
+        return nil, "shared dict '" .. _M.DICT_NAME .. "' not found"
+    end
+
+    local s, err = core.json.encode(status)
+    if not s then
+        return nil, err
+    end
+
+    if #s > MAX_STATUS_LEN then
+        return nil, "status too large"
+    end
+
+    return dict:safe_set(STATUS_PREFIX .. name, s)
+end
+
+
+--- The status saved by set_status, nil if none.
+function _M.get_status(name)
+    local dict = get_dict()
+    if not dict then
+        return nil
+    end
+
+    local s = dict:get(STATUS_PREFIX .. name)
+    return s and core.json.decode(s)
+end
+
+
 --- Called in init_worker of both subsystems.
 --
 -- Pre-creates the control records if the init phase could not, then lets the
