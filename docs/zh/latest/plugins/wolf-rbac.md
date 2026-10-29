@@ -34,12 +34,19 @@ description: 本文介绍了关于 Apache APISIX `wolf-rbac` 插件的基本信�
 
 ## 属性
 
+### Consumer
+
 | 名称 | 类型 | 必选项 | 默认值 | 描述 |
 | --- | --- | --- | --- | --- |
-| appid | string | 是 | 无 | Consumer 在 Wolf 中配置的应用 ID。该字段支持使用 [APISIX Secret](../terminology/secret.md) 资源，将值保存在 Secret Manager 中。 |
-| server | string | 否 | "http://127.0.0.1:12180" | Route 或 Service 使用的 Wolf 服务地址。 |
-| header_prefix | string | 否 | "X-" | Route 或 Service 的身份 HTTP 头前缀。鉴权成功后添加 `{prefix}UserId`、`{prefix}Username` 和 `{prefix}Nickname`。 |
-| ssl_verify | boolean | 否 | false | 是否验证 Wolf 服务的 TLS 证书。在 Route 或 Service 上配置。 |
+| appid | string | 是 | | 在 `wolf-console` 中已经添加的应用 id。该字段支持使用 [APISIX Secret](../terminology/secret.md) 资源，将值保存在 Secret Manager 中。 |
+| server | string | 否 | "http://127.0.0.1:12180" | `wolf-server` 的服务地址。 |
+| ssl_verify | boolean | 否 | false | 为 true 时，验证 `wolf-server` 的 TLS 证书。 |
+
+### Route 或 Service
+
+| 名称 | 类型 | 必选项 | 默认值 | 描述 |
+| --- | --- | --- | --- | --- |
+| header_prefix | string | 否 | "X-" | 身份 HTTP 头的前缀。`wolf-rbac` 在鉴权成功后，会在请求头 (用于传给后端) 及响应头 (用于传给前端) 中添加 3 个 header：`{prefix}UserId`、`{prefix}Username`、`{prefix}Nickname`。客户端传入的同名请求头会在鉴权前被移除。 |
 
 ## 接口
 
@@ -82,6 +89,7 @@ curl http://127.0.0.1:9180/apisix/admin/consumers  \
   "username":"wolf_rbac",
   "plugins":{
     "wolf-rbac":{
+      "server":"http://127.0.0.1:12180",
       "appid":"restful"
     }
   },
@@ -104,10 +112,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1  \
     "methods": ["GET"],
     "uri": "/*",
     "plugins": {
-        "wolf-rbac": {
-            "server": "http://127.0.0.1:12180",
-            "header_prefix": "X-"
-        }
+        "wolf-rbac": {}
     },
     "upstream": {
         "type": "roundrobin",
@@ -122,7 +127,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1  \
 
 ## 升级
 
-将 `server`、`header_prefix` 和 `ssl_verify` 从 Consumer 移至每个使用 `wolf-rbac` 的 Route 或 Service。Consumer 仅保留 `appid`。如果同一 Route 下的 Consumer 使用不同配置，请在升级前拆分 Route 或 Service，或统一这些配置。
+`header_prefix` 需要配置在 Route 或 Service 上，Consumer 不再支持该字段。升级前，请将 Consumer 上自定义的 `header_prefix` 移至每个使用 `wolf-rbac` 的 Route 或 Service（包括 `multi-auth` 中的 `wolf-rbac`），并从 Consumer 中删除。如果 Consumer 仍设置了默认值 `"X-"` 以外的值，校验将失败。`appid`、`server` 和 `ssl_verify` 仍配置在 Consumer 上。
 
 <!--
 ![add a consumer](https://raw.githubusercontent.com/apache/apisix/master/docs/assets/images/plugin/wolf-rbac-1.png)
@@ -140,15 +145,12 @@ curl http://127.0.0.1:9180/apisix/admin/routes/wal \
 {
     "uri": "/apisix/plugin/wolf-rbac/login",
     "plugins": {
-        "public-api": {},
-        "wolf-rbac": {
-            "server": "http://127.0.0.1:12180"
-        }
+        "public-api": {}
     }
 }'
 ```
 
-同样，你需要在 `change_pwd` 和 `user_info` 的 Route 上配置这两个插件。
+同样，你需要参考上述命令为 `change_pwd` 和 `user_info` 两个 API 配置路由。
 
 现在你可以登录并获取 wolf `rbac_token`：
 

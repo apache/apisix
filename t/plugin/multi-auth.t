@@ -669,7 +669,8 @@ code: 401
                     "username": "wolf-client",
                     "plugins": {
                         "wolf-rbac": {
-                            "appid": "multi-auth-wolf-app"
+                            "appid": "multi-auth-wolf-app",
+                            "server": "http://127.0.0.1:1982"
                         }
                     }
                 }]]
@@ -688,7 +689,6 @@ code: 401
                             "auth_plugins": [
                                 {
                                     "wolf-rbac": {
-                                        "server": "http://127.0.0.1:1982",
                                         "header_prefix": "X-Wolf-"
                                     }
                                 },
@@ -740,7 +740,7 @@ X-Wolf-Nickname: administrator
 
 
 
-=== TEST 25b: malformed Wolf token does not preserve Route identity headers
+=== TEST 25: malformed Wolf token does not preserve Route identity headers
 --- request
 GET /hello
 --- more_headers
@@ -770,7 +770,6 @@ X-Wolf-Nickname: forged
                                 },
                                 {
                                     "wolf-rbac": {
-                                        "server": "http://127.0.0.1:1982",
                                         "header_prefix": "X-Wolf-"
                                     }
                                 }
