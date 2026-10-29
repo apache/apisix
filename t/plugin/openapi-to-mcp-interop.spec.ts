@@ -135,3 +135,41 @@ describe.each([
     expect((await second.listTools()).tools).toHaveLength(before);
   });
 });
+
+describe('MCP interop with an output schema', () => {
+  // The SDK validates structuredContent against the advertised outputSchema
+  // and throws when a non-error result of such a tool carries none.
+  let client: Client | undefined;
+
+  afterEach(async () => {
+    await client?.close();
+    client = undefined;
+  });
+
+  const connected = async () => {
+    client = newClient();
+    await client.connect(
+      new StreamableHTTPClientTransport(new URL('http://localhost:1984/mcp-interop-output')),
+    );
+    return client;
+  };
+
+  it('accepts the structured content of a matching answer', async () => {
+    const c = await connected();
+    const { tools } = await c.listTools();
+    expect(tools.find((t) => t.name === 'echoOp')?.outputSchema?.type).toBe('object');
+
+    const result = await c.callTool({ name: 'echoOp', arguments: {} });
+    expect(result.isError).toBeFalsy();
+    expect(result.structuredContent).toMatchObject({ seen_method: 'GET' });
+  });
+
+  it('gets an error result when the answer cannot satisfy the schema', async () => {
+    const c = await connected();
+    await c.listTools();
+
+    const result = await c.callTool({ name: 'goneOp', arguments: {} });
+    expect(result.isError).toBe(true);
+    expect(result.structuredContent).toBeUndefined();
+  });
+});
