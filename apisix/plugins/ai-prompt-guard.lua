@@ -142,16 +142,7 @@ function _M.access(conf, ctx)
         return
     end
 
-    local messages
-    if proto_name == "openai-embeddings" then
-        local contents = protocols.get(proto_name).extract_request_content(json_body)
-        messages = {}
-        for i, content in ipairs(contents) do
-            messages[i] = {role = "user", content = content}
-        end
-    else
-        messages = protocols.get_messages(json_body, ctx)
-    end
+    local messages = protocols.get_messages(json_body, ctx)
 
     -- Responses fields and Embeddings batch items are not conversation history,
     -- so check all of them instead of keeping only the last message.

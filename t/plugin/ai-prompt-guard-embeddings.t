@@ -222,3 +222,37 @@ POST /hello
 --- error_code: 400
 --- response_body
 {"message":"Request contains prohibited content"}
+
+
+
+=== TEST 14: embeddings adapter normalizes text inputs without changing the request
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local proto = require("apisix.plugins.ai-protocols.openai-embeddings")
+            local cases = {
+                {input = "hello", expected = {"hello"}},
+                {input = {"first", "last"}, expected = {"first", "last"}},
+                {input = {"", "last"}, expected = {"", "last"}},
+                {input = {123, 456}, expected = {}},
+                {input = {{123}, {456}}, expected = {}},
+                {input = {}, expected = {}},
+            }
+            for _, case in ipairs(cases) do
+                local body = {input = case.input}
+                local before = core.json.encode(body)
+                local messages = proto.get_messages(body)
+                assert(#messages == #case.expected)
+                for i, text in ipairs(case.expected) do
+                    assert(messages[i].role == "user")
+                    assert(messages[i].content == text)
+                end
+                assert(core.json.encode(body) == before)
+            end
+            assert(#proto.get_messages(nil) == 0)
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
