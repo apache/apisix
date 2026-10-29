@@ -20,40 +20,41 @@ repeat_each(1);
 no_long_string();
 no_root_location();
 
-add_block_preprocessor(sub {
-    my ($block) = @_;
-
-    if (!defined $block->request) {
-        $block->set_value("request", "GET /t");
-    }
-});
-
 run_tests();
 
 __DATA__
 
-=== TEST 1: sanity
+=== TEST 1: nginx is 1.31.1 or newer
 --- config
     location /t {
         content_by_lua_block {
-            local test_cases = {
-                {command = "npx"},
-                {},
-                {command = 123},
-                {command = "npx", args = { "-y", "test" }},
-                {command = "npx", args = "test"},
-            }
-            local plugin = require("apisix.plugins.mcp-bridge")
-
-            for _, case in ipairs(test_cases) do
-                local ok, err = plugin.check_schema(case)
-                ngx.say(ok and "done" or err)
+            if ngx.config.nginx_version >= 1031001 then
+                ngx.say("OK")
+            else
+                ngx.say("BAD: nginx ", ngx.config.nginx_version)
             end
         }
     }
+--- request
+GET /t
 --- response_body
-done
-property "command" is required
-property "command" validation failed: wrong type: expected string, got number
-done
-property "args" validation failed: wrong type: expected array, got string
+OK
+
+
+
+=== TEST 2: OpenSSL is 3.5.9 or newer
+--- config
+    location /t {
+        content_by_lua_block {
+            local version = require("resty.openssl.version")
+            if version.version_num >= 0x30500090 then
+                ngx.say("OK")
+            else
+                ngx.say("BAD: ", version.version_text)
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+OK

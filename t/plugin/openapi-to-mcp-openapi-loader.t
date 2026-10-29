@@ -247,7 +247,7 @@ nil not an openapi document: no openapi or swagger version
 
 
 
-=== TEST 12: validate rejects a document that carries no paths
+=== TEST 12: validate rejects a document that declares no paths
 --- config
     location /t {
         content_by_lua_block {
@@ -258,7 +258,7 @@ nil not an openapi document: no openapi or swagger version
         }
     }
 --- response_body
-nil not an openapi document: no paths object
+nil openapi document declares no paths
 
 
 
@@ -320,4 +320,27 @@ string true nil
         }
     }
 --- response_body
+nil not an openapi document: no openapi or swagger version
+
+
+
+=== TEST 16: a 3.1 document with webhooks and no paths is an openapi document
+--- config
+    location /t {
+        content_by_lua_block {
+            local loader = require("apisix.plugins.openapi-to-mcp.openapi.loader")
+            local cases = {
+                '{"openapi":"3.1.0","webhooks":{"newItem":{"post":{}}}}',
+                '{"openapi":"3.1.0","components":{"schemas":{}}}',
+                '{"this":"is not an openapi document"}',
+            }
+            for _, body in ipairs(cases) do
+                local ok, err = loader.validate(loader.parse(body))
+                ngx.say(tostring(ok), " ", tostring(err))
+            end
+        }
+    }
+--- response_body
+nil openapi document declares no paths
+nil openapi document declares no paths
 nil not an openapi document: no openapi or swagger version

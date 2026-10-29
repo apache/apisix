@@ -666,3 +666,29 @@ true
 true
 true
 true
+
+
+
+=== TEST 29: the check schema drops format keywords but keeps a property named format
+--- config
+    location /t {
+        content_by_lua_block {
+            local g = require("apisix.plugins.openapi-to-mcp.tools.generator")
+            local object = { type = "object", properties = {
+                at = { type = "string", format = "date-time" },
+                format = { type = "string" },
+            }, required = { "format" } }
+            local spec = { paths = { ["/a"] = { get = { operationId = "a", responses = {
+                ["200"] = { content = { ["application/json"] = { schema = object } } },
+            } } } } }
+            local tool = g.generate(spec, { ["/a"] = 1 }, {})[1]
+            local check = tool.output_check_schema
+            ngx.say(tool.output_schema.properties.at.format)
+            ngx.say(check.properties.at.format == nil)
+            ngx.say(check.properties.format.type)
+        }
+    }
+--- response_body
+date-time
+true
+string

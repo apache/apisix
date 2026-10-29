@@ -212,6 +212,25 @@ local function success_response(responses)
 end
 
 
+-- Validate the body the way the client will: the MCP SDKs check
+-- `structuredContent` against the advertised schema with a validator that does
+-- not assert `format`, so asserting it here would reject bodies the client
+-- would have accepted. The keyword is a string; a table under that key is a
+-- property named "format" and is kept.
+local function without_formats(schema)
+    if type(schema) ~= "table" then
+        return schema
+    end
+    local out = {}
+    for key, value in pairs(schema) do
+        if key ~= "format" or type(value) ~= "string" then
+            out[key] = without_formats(value)
+        end
+    end
+    return out
+end
+
+
 -- The JSON object a successful call returns, when the document describes one.
 -- Only a plain object with properties qualifies: an array, a composition the
 -- document leaves unmerged (`allOf`, `oneOf`) and a bare `type: object` carry
@@ -467,6 +486,7 @@ function _M.generate(spec, path_order, opts)
             annotations = nil
         end
 
+        local output_schema = build_output_schema(operation)
         tools[#tools + 1] = {
             name = name,
             description = description,
@@ -476,7 +496,8 @@ function _M.generate(spec, path_order, opts)
             parameters = params,
             execution_parameters = execution_parameters,
             request_body_content_type = content_type,
-            output_schema = build_output_schema(operation),
+            output_schema = output_schema,
+            output_check_schema = output_schema and without_formats(output_schema),
             annotations = annotations,
         }
     end

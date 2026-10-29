@@ -90,6 +90,15 @@ http {
                       .. [=[$prefix/deps/lib/lua/5.1/?.so;;]=]
                       .. [=[{*lua_cpath*};";
 
+    # the same limits as the stream subsystem, which nginx_timers_max
+    # reports for every Lua VM
+    {% if max_pending_timers then %}
+    lua_max_pending_timers {* max_pending_timers *};
+    {% end %}
+    {% if max_running_timers then %}
+    lua_max_running_timers {* max_running_timers *};
+    {% end %}
+
     {% if enabled_stream_plugins["prometheus"] then %}
 
     init_by_lua_block {
@@ -408,6 +417,7 @@ http {
     lua_shared_dict internal-status {* http.lua_shared_dict["internal-status"] *};
     lua_shared_dict worker-events {* http.lua_shared_dict["worker-events"] *};
     lua_shared_dict lrucache-lock {* http.lua_shared_dict["lrucache-lock"] *};
+    lua_shared_dict upstream-slow-start {* http.lua_shared_dict["upstream-slow-start"] *};
     lua_shared_dict balancer-ewma {* http.lua_shared_dict["balancer-ewma"] *};
     lua_shared_dict balancer-ewma-locks {* http.lua_shared_dict["balancer-ewma-locks"] *};
     lua_shared_dict balancer-ewma-last-touched-at {* http.lua_shared_dict["balancer-ewma-last-touched-at"] *};
@@ -459,6 +469,10 @@ http {
     lua_shared_dict redis_cluster_health 10m;
     {% end %}
 
+    {% if enabled_plugins["saml-auth"] then %}
+    lua_shared_dict plugin-saml-auth-replay {* http.lua_shared_dict["plugin-saml-auth-replay"] *};
+    {% end %}
+
     {% if enabled_plugins["graphql-limit-count"] then %}
     lua_shared_dict plugin-graphql-limit-count {* http.lua_shared_dict["plugin-graphql-limit-count"] *};
     lua_shared_dict plugin-graphql-limit-count-reset-header {* http.lua_shared_dict["plugin-graphql-limit-count-reset-header"] *};
@@ -507,7 +521,7 @@ http {
     lua_shared_dict ext-plugin {* http.lua_shared_dict["ext-plugin"] *}; # cache for ext-plugin
     {% end %}
 
-    {% if enabled_plugins["mcp-bridge"] or enabled_plugins["openapi-to-mcp"] then %}
+    {% if enabled_plugins["openapi-to-mcp"] then %}
     lua_shared_dict mcp-session {* http.lua_shared_dict["mcp-session"] *}; # cache for mcp-session
     {% end %}
 
@@ -1178,6 +1192,16 @@ http {
             proxy_buffering off;
         }
         {% end %}
+
+        location @websocket_pass {
+            content_by_lua_block {
+                apisix.websocket_content_phase()
+            }
+
+            log_by_lua_block {
+                apisix.websocket_log_phase()
+            }
+        }
 
         {% if enabled_plugins["proxy-mirror"] then %}
         location = /proxy_mirror {

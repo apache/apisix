@@ -42,8 +42,26 @@ The `forward-auth` Plugin supports the integration with an external authorizatio
 - `X-Forwarded-Proto`: scheme
 - `X-Forwarded-Method`: HTTP method
 - `X-Forwarded-Host`: host
-- `X-Forwarded-Uri`: URI
+- `X-Forwarded-Uri`: normalized URI, including the query string
 - `X-Forwarded-For`: source IP
+
+:::note
+
+These headers describe the request as the client sent it. If the Route also rewrites the request with [proxy-rewrite](./proxy-rewrite.md), the Upstream service receives the rewritten scheme, method, host, and URI, while the headers above keep carrying the client values.
+
+If your authorization service decides based on the URI that the Upstream service receives, forward it explicitly with `extra_headers` and the `$upstream_uri` variable:
+
+```json
+{
+  "extra_headers": {
+    "X-Forwarded-Upstream-Uri": "$upstream_uri"
+  }
+}
+```
+
+`$upstream_uri` is set by the Plugins that rewrite the forwarded path, such as `proxy-rewrite`. It is empty when nothing rewrites the request, in which case the Upstream service receives the URI in `X-Forwarded-Uri`.
+
+:::
 
 ## Attributes
 
@@ -54,7 +72,7 @@ The `forward-auth` Plugin supports the integration with an external authorizatio
 | request_method    | string        | False    | GET     | `GET` or `POST`           | HTTP method APISIX uses to send requests to the external authorization service. When set to `POST`, APISIX will send POST requests along with the request body to the external authorization service. If the authorization decision depends on request parameters from a POST body, it is recommended to extract the necessary fields using `$post_arg.*` and pass them via the `extra_headers` field instead. |
 | max_req_body_size | integer       | False    | 67108864 | >= 1                     | Maximum request body size in bytes buffered and forwarded to the external authorization service when `request_method` is `POST`. Requests whose body exceeds this limit are rejected with `413`. Prevents unbounded memory buffering of large request bodies.                                  |
 | request_headers   | array         | False    |         |                           | Client request headers that should be forwarded to the external authorization service. If not configured, only headers added by APISIX are forwarded, such as `X-Forwarded-*`.                                                                                                              |
-| upstream_headers  | array         | False    |         |                           | External authorization service response headers that should be forwarded to the Upstream service. If not configured, no headers are forwarded to the Upstream service.                                                                                                                      |
+| upstream_headers  | array         | False    |         |                           | External authorization service response headers that should be forwarded to the Upstream service. If not configured, no headers are forwarded to the Upstream service. Client-supplied values of these headers are always removed.                                                         |
 | client_headers    | array         | False    |         |                           | External authorization service response headers that should be forwarded to the client when authentication fails. If not configured, no headers are forwarded to the client.                                                                                                                |
 | extra_headers     | object        | False    |         |                           | Additional headers to send to the authorization service. Support [NGINX variables](https://nginx.org/en/docs/http/ngx_http_core_module.html) in values.                                                                                                                                     |
 | timeout           | integer       | False    | 3000    | between 1 and 60000 inclusive | Timeout for the external authorization service HTTP call in milliseconds.                                                                                                                                                                                                               |

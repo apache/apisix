@@ -20,6 +20,7 @@ local session        = require("apisix.plugins.openapi-to-mcp.session")
 local server         = require("apisix.plugins.openapi-to-mcp.server")
 local jsonrpc        = require("apisix.plugins.openapi-to-mcp.jsonrpc")
 local ngx            = ngx
+local re_find        = ngx.re.find
 local str_find       = string.find
 local ngx_print      = ngx.print
 local ngx_flush      = ngx.flush
@@ -27,6 +28,7 @@ local ngx_exit       = ngx.exit
 local ngx_sleep      = ngx.sleep
 local ngx_now        = ngx.now
 local worker_exiting = ngx.worker.exiting
+local pairs          = pairs
 local type           = type
 local tostring       = tostring
 
@@ -63,6 +65,42 @@ end
 -- The session id is what authorises a POST to this session's message endpoint,
 -- so it is a bearer credential and stays out of the logs. Stream lifecycle
 -- lines carry the reason, not the identifier.
+-- A session belongs to the route that issued it, and to the consumer that was
+-- authenticated on it. The message endpoint refuses anything else, so a
+-- session id seen elsewhere cannot be used to push a result into this stream.
+local function session_owner(ctx)
+    local route_id = ctx.matched_route and ctx.matched_route.value
+                     and ctx.matched_route.value.id or ""
+    return tostring(route_id) .. "\0" .. tostring(ctx.consumer_name or "")
+end
+
+
+-- A variable anywhere in base_url or a header value means the values depend on
+-- the request they were resolved from. The pattern is the one
+-- core.utils.resolve_var substitutes with, braces included or left out --
+-- "$http_x_token" resolves exactly like "${http_x_token}", and a backslash
+-- escapes the dollar.
+local VARIABLE_PATTERN = [[(?<!\\)\$(\{\s*[^}]+?\s*\}|[\w\.]+)]]
+
+
+local function has_variable(value)
+    return type(value) == "string" and re_find(value, VARIABLE_PATTERN, "jo") ~= nil
+end
+
+
+local function uses_variables(conf)
+    if has_variable(conf.base_url) then
+        return true
+    end
+    for _, value in pairs(conf.headers or {}) do
+        if has_variable(value) then
+            return true
+        end
+    end
+    return false
+end
+
+
 local function handle_get(ctx, opts)
     -- Build the tool list -- which means fetching and parsing the document --
     -- before opening the stream, and answer 500 when that fails. Opening the
@@ -72,20 +110,24 @@ local function handle_get(ctx, opts)
     -- same fetch the first tools/list would have paid for.
     local _, tools_err = cache.get_tools(opts.conf)
     if tools_err then
-        core.log.error("failed to build the MCP tool list: ", tools_err)
         return core.response.exit(500, {
             error = "Failed to create session",
             message = tools_err,
         })
     end
 
-    -- Freeze what the stream resolved from this request; every message POST on
-    -- this session then reaches the upstream with the same base_url and the
-    -- same headers.
-    local session_id, err = session.create({
-        base_url = opts.base_url,
-        headers = opts.headers,
-    })
+    -- Freeze what the stream resolved from this request, so every message POST
+    -- on this session reaches the upstream with the same base_url and headers.
+    -- Only when the configuration holds a variable: otherwise every POST
+    -- resolves to the same values anyway, and the record would keep a copy of
+    -- whatever those headers carry -- a caller's token among them -- in the
+    -- shared dict for as long as the session lives.
+    local context
+    if uses_variables(opts.conf) then
+        context = { base_url = opts.base_url, headers = opts.headers }
+    end
+
+    local session_id, err = session.create(session_owner(ctx), context)
     if not session_id then
         core.log.error("failed to create MCP session: ", err)
         return core.response.exit(500)
@@ -213,7 +255,7 @@ local function handle_post(ctx, opts)
     if type(session_id) ~= "string" or session_id == "" then
         return session_error(400, "Missing or invalid sessionId parameter")
     end
-    if not session.exists(session_id) then
+    if not session.exists(session_id, session_owner(ctx)) then
         return session_error(404, "Session not found for sessionId")
     end
 

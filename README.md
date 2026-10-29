@@ -65,8 +65,6 @@ APISIX can serve as an **[AI Gateway](https://apisix.apache.org/ai-gateway/)** t
 - **Token-based rate limiting** to control cost and protect upstream models.
 - **Robust security** for authentication, authorization, and traffic control on AI workloads.
 
-APISIX also provides the [`mcp-bridge`](https://apisix.apache.org/blog/2025/04/21/host-mcp-server-with-api-gateway/) plugin to seamlessly convert stdio-based MCP servers to scalable HTTP SSE services.
-
 ## Get Started
 
 Install and run APISIX with a single command using the quickstart script (requires [Docker](https://docs.docker.com/get-docker/)):
