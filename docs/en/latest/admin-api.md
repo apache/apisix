@@ -1059,7 +1059,7 @@ To use mTLS to communicate with Upstream, you can use the `tls.client_cert/key` 
 
 Or you can reference SSL object by `tls.client_cert_id` to set SSL cert and key. The SSL object can be referenced only if the `type` field is `client`, otherwise the request will be rejected by APISIX. In addition, only `cert` and `key` will be used in the SSL object.
 
-To verify the certificate presented by the Upstream, set `tls.verify` to `true`. Leaving it unset keeps the behaviour configured in nginx, which is off unless `proxy_ssl_verify` is turned on. The certificate is checked against the CA certificates in `tls.ca_certs`, or against `ssl_trusted_certificate` from `config.yaml` when `tls.ca_certs` is not set:
+To verify the certificate presented by the Upstream, set `tls.verify` to `true`. Leaving it unset keeps the behaviour configured in nginx, which is off unless `proxy_ssl_verify` is turned on. The certificate is checked against the CA certificates in `tls.ca_certs`, or against `ssl_trusted_certificate` from `config.yaml` when `tls.ca_certs` is not set. In the latter case, a CRL configured in nginx with `proxy_ssl_crl` (`grpc_ssl_crl` for gRPC) is also checked:
 
 ```json
 {

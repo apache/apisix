@@ -1063,7 +1063,7 @@ APISIX 支持两种不同的方式来代理 WebSocket 连接，二者不能混�
 - `scheme` 可以设置成 `tls`，表示 `TLS over TCP`。
 - `tls.client_cert/key` 可以用来跟上游进行 mTLS 通信。他们的格式和 SSL 对象的 `cert` 和 `key` 一样。
 - `tls.client_cert_id` 可以用来指定引用的 SSL 对象。只有当 SSL 对象的 `type` 字段为 client 时才能被引用，否则请求会被 APISIX 拒绝。另外，SSL 对象中只有 `cert` 和 `key` 会被使用。
-- `tls.verify` 设置为 `true` 时校验上游返回的证书；不设置时沿用 nginx 的行为，即只有开启了 `proxy_ssl_verify` 才会校验。校验使用 `tls.ca_certs` 中的 CA 证书，未设置 `tls.ca_certs` 时使用 `config.yaml` 中的 `ssl_trusted_certificate`：
+- `tls.verify` 设置为 `true` 时校验上游返回的证书；不设置时沿用 nginx 的行为，即只有开启了 `proxy_ssl_verify` 才会校验。校验使用 `tls.ca_certs` 中的 CA 证书，未设置 `tls.ca_certs` 时使用 `config.yaml` 中的 `ssl_trusted_certificate`，此时 nginx 中通过 `proxy_ssl_crl`（gRPC 为 `grpc_ssl_crl`）配置的 CRL 同样生效：
 
   ```json
   {
