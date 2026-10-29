@@ -17,6 +17,7 @@
 
 local core = require("apisix.core")
 local str_fmt = string.format
+local ngx_escape_uri = ngx.escape_uri
 
 local host_template_fmt =
         "%s-aiplatform.googleapis.com"
@@ -36,7 +37,7 @@ end
 
 
 local function get_embeddings_path(project_id, region, model)
-    return str_fmt(embeddings_path_template_fmt, project_id, region, model)
+    return str_fmt(embeddings_path_template_fmt, project_id, region, ngx_escape_uri(model))
 end
 
 

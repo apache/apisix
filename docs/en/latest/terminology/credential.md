@@ -29,11 +29,9 @@ description: This article describes what the Apache APISIX Credential object doe
 
 ## Description
 
-Credential is the object that holds the [Consumer](./consumer.md) credential configuration.
-A Consumer can use multiple credentials of different types.
-Credentials are used when you need to configure multiple credentials for a Consumer.
+A Credential stores authentication plugin configuration for a [Consumer](./consumer.md). Each Credential contains at most one enabled authentication plugin, such as `basic-auth`, `hmac-auth`, `jwt-auth`, or `key-auth`.
 
-Currently, Credential can be configured with the authentication plugins `basic-auth`, `hmac-auth`, `jwt-auth`, and `key-auth`.
+A Consumer can have Credentials for different authentication plugins. It can also have multiple Credentials for the same authentication plugin when their identifying values differ. For example, a Consumer can rotate a key by creating a second `key-auth` Credential, switching clients to the new key, and then deleting the old Credential. Credential details are stored separately and are not included when you retrieve the Consumer resource.
 
 ### Configuration options
 
@@ -43,7 +41,7 @@ The fields for defining a Credential are defined as below.
 |---------|----------|---------------------------------------------------------------------------------------------------------|
 | desc    | False    | Description of the Credential.                                                                          |
 | labels  | False    | Labels of the Credential.                                                                               |
-| plugins | False    | The plugin configuration corresponding to Credential. For more information, see [Plugins](./plugin.md). |
+| plugins | False    | At most one authentication plugin configuration. For more information, see [Plugins](./plugin.md). |
 
 :::note
 

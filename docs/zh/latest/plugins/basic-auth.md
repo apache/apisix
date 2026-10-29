@@ -48,7 +48,7 @@ import TabItem from '@theme/TabItem';
 | 名称 | 类型 | 必选项 | 默认值 | 有效值 | 描述 |
 |------|------|--------|--------|--------|------|
 | username | string | 是 | | | 消费者的唯一基本认证用户名。 |
-| password | string | 是 | | | 消费者的基本认证密码。密码在存储到 etcd 之前会使用 AES 加密。你也可以将其存储在环境变量中并使用 `env://` 前缀引用，或存储在 HashiCorp Vault 等密钥管理器中并使用 `secret://` 前缀引用。 |
+| password | string | 是 | | 非空字符串 | 消费者的基本认证密码。密码在存储到 etcd 之前会使用 AES 加密。你也可以将其存储在环境变量中并使用 `env://` 前缀引用，或存储在 HashiCorp Vault 等密钥管理器中并使用 `secret://` 前缀引用。 |
 
 Route 端：
 

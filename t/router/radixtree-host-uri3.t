@@ -353,3 +353,67 @@ Host: foo.com
 qr/func\(\): matched host: [^,]+/
 --- grep_error_log_out
 func(): matched host: *.com
+
+
+
+=== TEST 10: hosts in services are matched case-insensitively
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+                        .. "/hello"
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/services/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "hosts": ["MixedCase.com"]
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "service_id": "1",
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            ngx.sleep(0.1)
+
+            for _, h in ipairs({"MixedCase.com", "mixedcase.com", "other.com"}) do
+                local httpc = http.new()
+                local res, err = httpc:request_uri(uri, {headers = {Host = h}})
+                if not res then
+                    ngx.say(err)
+                    return
+                end
+                if res.status == 404 then
+                    ngx.say(res.status)
+                else
+                    ngx.print(res.body)
+                end
+            end
+        }
+    }
+--- response_body
+hello world
+hello world
+404

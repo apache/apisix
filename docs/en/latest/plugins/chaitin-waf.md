@@ -57,6 +57,7 @@ The Plugin can add the following response headers, depending on the configuratio
 | match.vars               | array[array]  | false    |         |                          | An array of one or more matching conditions in the form of [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list) to conditionally execute the plugin. |
 | append_waf_resp_header   | boolean       | false    | true    |                          | If true, add response headers `X-APISIX-CHAITIN-WAF`, `X-APISIX-CHAITIN-WAF-TIME`, `X-APISIX-CHAITIN-WAF-ACTION`, and `X-APISIX-CHAITIN-WAF-STATUS`. |
 | append_waf_debug_header  | boolean       | false    | false   |                          | If true, add debugging headers `X-APISIX-CHAITIN-WAF-ERROR` and `X-APISIX-CHAITIN-WAF-SERVER` to the response. Effective only when `append_waf_resp_header` is `true`. |
+| allow_degradation        | boolean       | false    |         |                          | If true, allow requests to continue when the WAF integration fails. Overrides Plugin Metadata when explicitly set, including `false`. If omitted, inherits Plugin Metadata and falls back to `false`. |
 | config                   | object        | false    |         |                          | Chaitin WAF service configurations. These settings override the corresponding metadata defaults when specified. |
 | config.connect_timeout   | integer       | false    | 1000    |                          | The connection timeout to the WAF service, in milliseconds. |
 | config.send_timeout      | integer       | false    | 1000    |                          | The sending timeout for transmitting data to the WAF service, in milliseconds. |
@@ -65,6 +66,11 @@ The Plugin can add the following response headers, depending on the configuratio
 | config.keepalive_size    | integer       | false    | 256     |                          | The maximum number of idle connections to the WAF detection service that can be maintained concurrently. |
 | config.keepalive_timeout | integer       | false    | 60000   |                          | The idle connection timeout for the WAF service, in milliseconds. |
 | config.real_client_ip    | boolean       | false    | true    |                          | If true, the Plugin sends APISIX's resolved client IP to the WAF service (the same value used elsewhere in APISIX, derived from the connection and `apisix.trusted_addresses`). If false, the Plugin sends the IP of the peer directly connected to APISIX. |
+| config.log_resp          | boolean       | false    | false   |                          | If true, the Plugin also reports the response to the WAF service. See [Response Logging](#response-logging). |
+| config.resp_body_size    | integer       | false    | 4       | >= 0                     | The amount of the response body to report, in KB. Set to `0` to report only the status line and response headers. Effective only when `config.log_resp` is `true`. |
+| config.extra_ignored_content_types | string | false  |         |                          | A comma separated list of response `Content-Type` values to skip, in addition to the built-in ignored list. Effective only when `config.log_resp` is `true`. |
+
+When `allow_degradation` is `true`, requests continue if Plugin Metadata or `nodes` are missing, WAF node selection fails, or the WAF detection call fails (including timeouts). Successful WAF verdicts still follow `mode`. Requests can still wait for the configured WAF timeout before being allowed to continue.
 
 ## Plugin Metadata
 
@@ -74,6 +80,7 @@ The Plugin can add the following response headers, depending on the configuratio
 | nodes.host               | string        | True     |         |              | Address of Chaitin WAF service. Supports IPv4, IPv6, Unix Socket, etc. |
 | nodes.port               | integer       | False    | 80      |              | Port of Chaitin WAF service. |
 | mode                     | string        | False    |         |    block     | Mode to determine how the Plugin behaves for matched requests. In `off` mode, WAF checks are skipped. In `monitor` mode, requests with potential threats are logged but not blocked. In `block` mode, requests with threats are blocked as determined by the WAF service. |
+| allow_degradation        | boolean       | False    | false   |              | Default value for `allow_degradation` when the Plugin configuration does not set it. |
 | config                   | object        | False    |         |              | Chaitin WAF service configurations. |
 | config.connect_timeout   | integer       | False    | 1000    |              | The connection timeout to the WAF service, in milliseconds. |
 | config.send_timeout      | integer       | False    | 1000    |              | The sending timeout for transmitting data to the WAF service, in milliseconds. |
@@ -82,6 +89,19 @@ The Plugin can add the following response headers, depending on the configuratio
 | config.keepalive_size    | integer       | False    | 256     |              | The maximum number of idle connections to the WAF detection service that can be maintained concurrently. |
 | config.keepalive_timeout | integer       | False    | 60000   |              | The idle connection timeout for the WAF service, in milliseconds. |
 | config.real_client_ip    | boolean       | False    | true    |              | If true, the Plugin sends APISIX's resolved client IP to the WAF service (the same value used elsewhere in APISIX, derived from the connection and `apisix.trusted_addresses`). If false, the Plugin sends the IP of the peer directly connected to APISIX. |
+| config.log_resp          | boolean       | False    | false   |              | If true, the Plugin also reports the response to the WAF service. See [Response Logging](#response-logging). |
+| config.resp_body_size    | integer       | False    | 4       | >= 0         | The amount of the response body to report, in KB. Set to `0` to report only the status line and response headers. Effective only when `config.log_resp` is `true`. |
+| config.extra_ignored_content_types | string | False  |         |              | A comma separated list of response `Content-Type` values to skip, in addition to the built-in ignored list. Effective only when `config.log_resp` is `true`. |
+
+## Response Logging
+
+By default the Plugin only reports the request to the WAF service. Setting `config.log_resp` to `true` makes it report the response as well: the status line, the response headers, and up to `config.resp_body_size` KB of the response body.
+
+The report is sent from an `ngx.timer` during the log phase, after the response has been handed back to the client, so it does not block the response or add latency to it. Detection results are visible in the SafeLine WAF console rather than acted on by APISIX, meaning a response is never blocked or modified based on this report.
+
+Responses are not reported when the request itself was already blocked, or when the response `Content-Type` matches an ignored type. Audio, video, font, image and other binary media types are ignored out of the box; use `config.extra_ignored_content_types` to skip more, for example `text/csv,application/pdf`.
+
+Note that buffering the response body costs memory per in-flight request, so raise `config.resp_body_size` with care on routes serving large responses.
 
 ## Examples
 

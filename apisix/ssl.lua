@@ -23,6 +23,7 @@ local ngx_ssl_client = require("ngx.ssl.clienthello")
 local str_lower = string.lower
 local str_byte = string.byte
 local ngx_sub = ngx.re.sub
+local ngx_var = ngx.var
 
 local cert_cache = core.lrucache.new {
     ttl = 3600, count = 1024,
@@ -36,10 +37,19 @@ local pkey_cache = core.lrucache.new {
 local _M = {}
 
 
-function _M.server_name(clienthello)
+-- `preread` takes the SNI from ngx_stream_ssl_preread_module: under TLS passthrough
+-- this worker never performs the handshake, so ngx_ssl.server_name() has nothing.
+function _M.server_name(clienthello, preread)
     local sni, err
     if clienthello then
         sni, err = ngx_ssl_client.get_client_hello_server_name()
+    elseif preread then
+        sni = ngx_var.ssl_preread_server_name
+        if sni == "" then
+            -- defined but empty when the ClientHello carried no SNI; "" is truthy
+            -- and would skip the fallback below
+            sni = nil
+        end
     else
         sni, err = ngx_ssl.server_name()
     end

@@ -27,11 +27,20 @@ local ngx = ngx
 local get_method = ngx.req.get_method
 local ngx_time = ngx.time
 local ngx_timer_at = ngx.timer.at
+local ngx_timer_every = ngx.timer.every
 local ngx_worker_id = ngx.worker.id
 local tonumber = tonumber
 local tostring = tostring
 local str_lower = string.lower
 local reload_event = "/apisix/admin/plugins/reload"
+local is_http = ngx.config.subsystem == "http"
+-- declared unconditionally for the http subsystem in ngx_tpl.lua, and already a
+-- hard dependency of the server-info plugin; absent in the stream subsystem
+local plugins_conf_ver_dict = is_http and ngx.shared["internal-status"]
+local PLUGINS_CONF_VERSION_KEY = "plugins_conf_version"
+-- plugins conf version this process has applied, compared against the shared
+-- dict by the reconciliation timer registered in init_worker()
+local applied_plugins_conf_version = 0
 local ipairs = ipairs
 local error = error
 local type = type
@@ -62,6 +71,7 @@ local resources = {
     plugin_configs  = require("apisix.admin.plugin_config"),
     consumer_groups = require("apisix.admin.consumer_group"),
     secrets         = require("apisix.admin.secrets"),
+    graphql_cost_decorations = require("apisix.admin.graphql_cost_decorations"),
 }
 
 
@@ -72,8 +82,10 @@ local router
 local function check_token(ctx)
     local local_conf = core.config.local_conf()
 
-    -- check if admin_key is required
-    if local_conf.deployment.admin.admin_key_required == false then
+    -- check if admin_key is required; `admin:` written as YAML null makes
+    -- merge_conf drop the default table, so it cannot be indexed blindly
+    if core.table.try_read_attr(local_conf, "deployment", "admin",
+                                "admin_key_required") == false then
         return true
     end
 
@@ -193,6 +205,13 @@ local function run()
         seg_id = uri_segs[7]
     end
 
+    if seg_res == "services" and #uri_segs >= 6
+       and uri_segs[6] == "graphql_cost_decorations" then
+        seg_sub_path = seg_id .. "/" .. seg_sub_path
+        seg_res = uri_segs[6]
+        seg_id = uri_segs[7]
+    end
+
     local resource = resources[seg_res]
     if not resource then
         core.response.exit(404, {error_msg = "Unsupported resource type: ".. seg_res})
@@ -288,6 +307,21 @@ end
 local function post_reload_plugins()
     set_ctx_and_check_token()
 
+    if plugins_conf_ver_dict then
+        -- bump the version before broadcasting, so that a process which never
+        -- receives the event (e.g. the privileged agent while it is
+        -- reconnecting to the events broker) still converges through the
+        -- periodic reconciliation below
+        local _, err = plugins_conf_ver_dict:incr(PLUGINS_CONF_VERSION_KEY, 1, 0)
+        if err then
+            -- if the version cannot be bumped the reconciliation timer will
+            -- never notice a change, so a worker that misses the broadcast
+            -- would stay stale forever; fail loud instead of pretending success
+            core.log.error("failed to increase plugins conf version: ", err)
+            core.response.exit(503, {error_msg = "failed to record plugins reload"})
+        end
+    end
+
     local success, err = events:post(reload_event, get_method(), ngx_time())
     if not success then
         core.response.exit(503, err)
@@ -314,6 +348,13 @@ end
 
 local function sync_local_conf_to_etcd(reset)
     local local_conf = core.config.local_conf()
+
+    if local_conf.deployment.config_provider == "yaml" then
+        -- standalone keeps its configuration in the shared dict, there is no
+        -- etcd to sync to. Guarded here rather than at the call sites so a new
+        -- caller cannot reintroduce the write.
+        return
+    end
 
     local plugins = {}
     for _, name in ipairs(local_conf.plugins) do
@@ -373,9 +414,32 @@ local function sync_local_conf_to_etcd(reset)
 end
 
 
+-- /v1/plugins/reload bumps the shared version and control/router.lua loads the
+-- plugins in its own handler for that event. Record the version it applied, or
+-- the reconciliation timer below sees a mismatch and loads them a second time.
+local function ack_plugins_reload()
+    if plugins_conf_ver_dict then
+        applied_plugins_conf_version = plugins_conf_ver_dict:get(PLUGINS_CONF_VERSION_KEY)
+    end
+end
+
+
 local function reload_plugins(data, event, source, pid)
     core.log.info("start to hot reload plugins")
+
+    -- sample the version before loading: if another reload is accepted while
+    -- plugin.load() runs, the versions stay unequal and the reconciliation
+    -- timer applies one more round
+    local ver
+    if plugins_conf_ver_dict then
+        ver = plugins_conf_ver_dict:get(PLUGINS_CONF_VERSION_KEY)
+    end
+
     plugin.load()
+
+    if ver then
+        applied_plugins_conf_version = ver
+    end
 
     if ngx_worker_id() == 0 then
         sync_local_conf_to_etcd()
@@ -508,10 +572,40 @@ function _M.init_worker()
     -- register reload plugin handler
     events = require("apisix.events")
     events:register(reload_plugins, reload_event, "PUT")
+    events:register(ack_plugins_reload, require("apisix.control.v1").RELOAD_EVENT, "PUT")
+
+    if plugins_conf_ver_dict then
+        -- The events broadcast has no delivery guarantee: a process that is
+        -- (re)connecting to the events broker loses the event for good, which
+        -- leaves it running e.g. the timers of plugins that were removed.
+        -- Reconcile against the version in the shared dict, the same pattern
+        -- admin/standalone.lua uses for the same reason.
+        --
+        -- This is not gated on the config provider: /v1/plugins/reload bumps
+        -- the same version and stays reachable in standalone mode, so a worker
+        -- that missed its broadcast has to be able to converge there too.
+        applied_plugins_conf_version =
+            plugins_conf_ver_dict:get(PLUGINS_CONF_VERSION_KEY) or 0
+
+        local ok, err = ngx_timer_every(1, function (premature)
+            if premature then
+                return
+            end
+
+            local ver = plugins_conf_ver_dict:get(PLUGINS_CONF_VERSION_KEY) or 0
+            if ver ~= applied_plugins_conf_version then
+                reload_plugins()
+            end
+        end)
+        if not ok then
+            core.log.error("failed to create plugins reconciliation timer: ", err)
+        end
+    end
 
     if ngx_worker_id() == 0 then
-        -- check if admin_key is required
-        if local_conf.deployment.admin.admin_key_required == false then
+        -- see check_token for why this is not indexed blindly
+        if core.table.try_read_attr(local_conf, "deployment", "admin",
+                                    "admin_key_required") == false then
             core.log.warn("Admin key is bypassed! ",
                 "If you are deploying APISIX in a production environment, ",
                 "please enable `admin_key_required` and set a secure admin key!")

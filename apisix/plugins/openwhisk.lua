@@ -25,6 +25,13 @@ local name_pattern = [[\A([\w]|[\w][\w@ .-]*[\w@.-]+)\z]]
 local schema = {
     type = "object",
     properties = {
+        max_req_body_size = {
+            type = "integer",
+            minimum = 1,
+            default = 67108864,
+            description = "maximum request body size in bytes buffered into "
+                       .. "memory; larger request bodies are rejected",
+        },
         api_host = {type = "string"},
         ssl_verify = {
             type = "boolean",
@@ -77,9 +84,14 @@ end
 
 
 function _M.access(conf, ctx)
+    local body, err = core.request.get_body(conf.max_req_body_size)
+    if err then
+        core.log.error("failed to get request body: ", err)
+        return 413
+    end
     local params = {
         method = "POST",
-        body = core.request.get_body(),
+        body = body,
         query = {
             blocking = "true",
             result = tostring(conf.result),

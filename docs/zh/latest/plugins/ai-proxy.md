@@ -100,7 +100,7 @@ import TabItem from '@theme/TabItem';
 | keepalive_timeout | integer | 否 | 60000  | ≥ 1000                                   | 连接到 LLM 服务时的保活超时时间（毫秒）。 |
 | keepalive_pool | integer | 否    | 30       | ≥ 1                                      | LLM 服务连接的保活池大小。 |
 | ssl_verify     | boolean | 否    | true   |                                          | 如果为 true，验证 LLM 服务的证书。 |
-| streaming_flush_interval_ms | integer | 否 | 10 | ≥ 0 | 后台刷新线程的间隔时间（毫秒）。`> 0`（默认值：`10`）时，后台定时器每隔 N 毫秒调用一次 `ngx.flush(false)`，适合上游批量发送 token 的场景。设为 `0` 时禁用后台线程，改为每个 chunk 同步调用 `ngx.flush(true)` 立即刷新。 |
+| streaming_flush_interval_ms | integer | 否 | 10 | ≥ 0 | 后台刷新线程的间隔时间（毫秒）。`> 0`（默认值：`10`）时，后台定时器每隔 N 毫秒调用一次 `ngx.flush(false)`，适合上游批量发送 token 的场景。对于 SSE 流，只有已排队发给客户端的完整帧或转换后的事件才会触发刷新；不完整的帧会等待后续上游数据。定时刷新若返回 `nothing to flush`，会继续处理流式响应。设为 `0` 时禁用后台线程，改为每个 chunk 同步调用 `ngx.flush(true)` 立即刷新。 |
 
 ## Provider-aware `max_tokens` mapping
 
@@ -2076,13 +2076,13 @@ curl "http://127.0.0.1:9080/anything" -X POST \
 以下示例演示了如何在网关的访问日志中记录 LLM 请求相关信息，以改进分析和审计。以下变量可用：
 
 * `request_llm_model`：请求中指定的 LLM 模型名称。
-* `apisix_upstream_response_time`：APISIX 向上游服务发送请求并接收完整响应所花费的时间
+* `apisix_upstream_response_time`：APISIX 向上游服务发送请求并接收完整响应所花费的时间（毫秒）。LLM 服务返回的错误响应（如 429 或 5xx）同样以毫秒记录。
 * `request_type`：请求类型，值可能是 `traditional_http`、`ai_chat` 或 `ai_stream`。
-* `llm_time_to_first_token`：从发送请求到从 LLM 服务接收第一个令牌的持续时间（毫秒）。
+* `llm_time_to_first_token`：从发送请求到从 LLM 服务接收第一个令牌的持续时间（毫秒）。当 LLM 服务返回错误响应时，该值为收到错误响应为止的持续时间；当完全无法连接到 LLM 服务时，该值保持为 `0`。
 * `llm_model`：LLM 模型。
-* `llm_prompt_tokens`：提示中的令牌数量。
+* `llm_prompt_tokens`：提示中的令牌数量，包含从缓存读取和写入缓存的令牌。对于 Anthropic Messages API，其值为 `input_tokens + cache_read_input_tokens + cache_creation_input_tokens`，与 OpenAI 的 `prompt_tokens` 含义一致。
 * `llm_completion_tokens`：响应中的聊天完成令牌数量。
-* `llm_total_tokens`：使用的总令牌数（提示加完成）。
+* `llm_total_tokens`：使用的总令牌数（提示加完成，包含缓存令牌）。
 * `llm_cache_read_input_tokens`：从缓存读取的输入令牌数量。
 * `llm_cache_creation_input_tokens`：写入缓存的输入令牌数量。
 * `llm_reasoning_tokens`：生成的推理令牌数量。

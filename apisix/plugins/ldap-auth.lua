@@ -31,6 +31,7 @@ local schema = {
         use_tls = { type = "boolean", default = false },
         tls_verify = { type = "boolean", default = false },
         uid = { type = "string", default = "cn" },
+        hide_credentials = { type = "boolean", default = false },
         realm = schema_def.get_realm_schema("ldap"),
     },
     required = {"base_dn","ldap_uri"},
@@ -138,14 +139,14 @@ function _M.rewrite(conf, ctx)
         attribute = conf.uid,
         keepalive = 60000,
     }
-    local res, err = ldap.ldap_authenticate(user.username, user.password, ldapconf)
+    -- the third return value is the bind DN the client assembled, with the
+    -- username escaped per RFC 4514. Rebuilding it here would drop that escaping.
+    local res, err, user_dn = ldap.ldap_authenticate(user.username, user.password, ldapconf)
     if not res then
         core.log.warn("ldap-auth failed: ", err)
         core.response.set_header("WWW-Authenticate", "Basic realm=\"" .. conf.realm .. "\"")
         return 401, { message = "Invalid user authorization" }
     end
-
-    local user_dn =  conf.uid .. "=" .. user.username .. "," .. conf.base_dn
 
     -- 3. Retrieve consumer for authorization plugin
     local consumer_conf = consumer_mod.plugin(plugin_name)
@@ -162,7 +163,13 @@ function _M.rewrite(conf, ctx)
     end
     consumer_mod.attach_consumer(ctx, consumer, consumer_conf)
 
-    core.log.info("hit basic-auth access")
+    -- the header carries the directory password, which is usually reusable
+    -- beyond this API, so it should not reach the upstream unless asked for
+    if conf.hide_credentials then
+        core.request.set_header(ctx, "Authorization", nil)
+    end
+
+    core.log.info("hit ldap-auth access")
 end
 
 return _M

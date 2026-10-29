@@ -44,6 +44,9 @@ local policy_to_additional_properties = {
             redis_ssl_verify = {
                 type = "boolean", default = false,
             },
+            redis_server_name = {
+                type = "string", minLength = 1,
+            },
             redis_keepalive_timeout = {
                 type = "integer", minimum = 1000, default = 10000
             },

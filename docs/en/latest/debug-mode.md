@@ -47,7 +47,7 @@ For APISIX releases prior to v2.10, basic debug mode is enabled by setting `apis
 
 :::
 
-If you have configured two Plugins `limit-conn` and `limit-count` on the Route `/hello`, you will receive a response with the header `Apisix-Plugins: limit-conn, limit-count` when you enable the basic debug mode.
+If you have configured two Plugins `limit-conn` and `limit-count` on the Route `/hello`, you will receive a response with the header `Apisix-Plugins: limit-conn#access, limit-count#access, limit-conn#log` when you enable the basic debug mode. Each entry in the header is in the form `plugin-name#phase`, and the entries are listed in the runtime execution order of the plugin phase functions (for the phases running after the response header is generated, the expected execution order — see the note below).
 
 ```shell
 curl http://127.0.0.1:1984/hello -i
@@ -58,7 +58,7 @@ HTTP/1.1 200 OK
 Content-Type: text/plain
 Transfer-Encoding: chunked
 Connection: keep-alive
-Apisix-Plugins: limit-conn, limit-count
+Apisix-Plugins: limit-conn#access, limit-count#access, limit-conn#log
 X-RateLimit-Limit: 2
 X-RateLimit-Remaining: 1
 Server: openresty
@@ -68,7 +68,9 @@ hello world
 
 :::info IMPORTANT
 
-If the debug information cannot be included in a response header (for example, when the Plugin is in a stream subsystem), the debug information will be logged as an error log at a `warn` level.
+Restricted by the HTTP protocol, the phase functions executed after the response header is generated (such as `body_filter` and `log`) can not be traced into the response header at execution time. Instead, their entries are inferred right before the response header is generated: a matched plugin carrying such a phase function is reported as if it would execute it. The inferred entries may not fully reflect the real execution — for example, a plugin skipped at runtime by its `_meta.filter` is still reported.
+
+The phase functions that can be neither traced nor inferred this way (for example, the ones of the plugins in global rules running after the response header is sent) are logged as an error log at a `warn` level instead, for example `Apisix-Plugins: response-rewrite#body_filter`.
 
 :::
 

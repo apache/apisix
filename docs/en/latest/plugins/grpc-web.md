@@ -42,6 +42,7 @@ The `grpc-web` Plugin translates gRPC-Web requests into native gRPC calls and fo
 
 | Name                 | Type    | Required | Default                                   | Description                                                                                             |
 |----------------------|---------|----------|-------------------------------------------|---------------------------------------------------------------------------------------------------------|
+| max_req_body_size | integer | False | 67108864 | >= 1 | Maximum request body size in bytes buffered into memory. Requests with a larger body are rejected. |
 | cors_allow_headers   | string  | False    | `content-type,x-grpc-web,x-user-agent`   | Comma-separated list of request headers allowed for cross-origin requests.                              |
 
 ## Request Handling

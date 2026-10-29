@@ -39,6 +39,7 @@ The `degraphql` Plugin supports communicating with upstream GraphQL services ove
 
 | Name             | Type         | Required | Description                                                                                        |
 | ---------------- | ------------ | -------- | -------------------------------------------------------------------------------------------------- |
+| max_req_body_size | integer | False | 67108864 | >= 1 | Maximum request body size in bytes buffered into memory. Requests with a larger body are rejected. |
 | `query`          | string       | True     | The GraphQL query sent to the Upstream.                                                            |
 | `operation_name` | string       | False    | The name of the operation, only required if multiple operations are present in the query.          |
 | `variables`      | array[string]| False    | The names of variables used in the GraphQL query, extracted from the request body or query string. |
