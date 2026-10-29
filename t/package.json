@@ -18,7 +18,7 @@
     "graphql-request": "^7.1.2",
     "grpc-web": "^1.5.0",
     "lago-javascript-client": "^1.26.0",
-    "simple-git": "^3.27.0",
+    "simple-git": "^4.0.1",
     "vitest": "^5.0.2",
     "ws": "^8.21.3",
     "xhr2": "^0.2.1",
