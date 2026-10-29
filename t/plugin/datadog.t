@@ -671,3 +671,59 @@ datagram carried 1 metric line
 message received: apisix\.egress\.size
 datagram carried 1 metric line
 /
+
+
+
+=== TEST 14: testing behaviour with service without name (falls back to service id)
+--- apisix_yaml
+services:
+  - id: s1
+    upstream:
+      nodes:
+        "127.0.0.1:1982": 1
+routes:
+  - uri: /opentracing
+    service_id: s1
+    plugins:
+      datadog:
+        batch_max_size: 1
+        max_retry_count: 0
+#END
+--- request
+GET /opentracing
+--- response_body
+opentracing
+--- wait: 0.5
+--- grep_error_log eval
+qr/message received: apisix\.request\.counter\|.+/
+--- grep_error_log_out eval
+qr/message received: apisix\.request\.counter:1\|c\|#source:apisix,service_name:s1,balancer_ip:[\d.]+,response_status:200,response_status_class:2xx,scheme:http/
+
+
+
+=== TEST 15: testing behaviour with service with name
+--- apisix_yaml
+services:
+  - id: s2
+    name: my_service
+    upstream:
+      nodes:
+        "127.0.0.1:1982": 1
+routes:
+  - uri: /opentracing
+    service_id: s2
+    plugins:
+      datadog:
+        batch_max_size: 1
+        max_retry_count: 0
+#END
+--- request
+GET /opentracing
+--- response_body
+opentracing
+--- wait: 0.5
+--- grep_error_log eval
+qr/message received: apisix\.request\.counter\|.+/
+--- grep_error_log_out eval
+qr/message received: apisix\.request\.counter:1\|c\|#source:apisix,service_name:my_service,balancer_ip:[\d.]+,response_status:200,response_status_class:2xx,scheme:http/
+
