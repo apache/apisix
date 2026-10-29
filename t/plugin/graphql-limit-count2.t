@@ -2616,46 +2616,65 @@ healthcheck: 200 names the service
 
 
 
-=== TEST 68: introspection skips zero-weight upstream nodes
+=== TEST 68: set a service whose first upstream node has zero weight
 --- config
     location /t {
         content_by_lua_block {
-            local introspection =
-                require("apisix.plugins.graphql-limit-count.introspection")
+            local t = require("lib.test_admin").test
 
-            local function upvalue(fn, wanted)
-                local i = 1
-                while true do
-                    local name, value = debug.getupvalue(fn, i)
-                    if not name then
-                        return nil
-                    end
-                    if name == wanted then
-                        return value
-                    end
-                    i = i + 1
-                end
+            local code = t('/apisix/admin/services/zero-weight-graphql',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1979": 0,
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "plugins": {
+                        "graphql-limit-count": {
+                            "count": 100000,
+                            "time_window": 60,
+                            "rejected_code": 429,
+                            "key": "remote_addr",
+                            "cost_strategy": "node_quantifier"
+                        }
+                    }
+                }]])
+            if code >= 300 then
+                ngx.status = code
+                return
             end
 
-            local resolve_endpoint = upvalue(introspection.get, "resolve_endpoint")
-            local first_node = upvalue(resolve_endpoint, "first_node")
+            code = t('/apisix/admin/services/zero-weight-graphql/'
+                     .. 'graphql_cost_decorations/d1', ngx.HTTP_PUT,
+                     [[{"field_path": "Query.products", "mul_arguments": ["first"]}]])
+            if code >= 300 then
+                ngx.status = code
+                return
+            end
 
-            ngx.say("map: ", first_node({
-                ["127.0.0.1:1000"] = 0,
-                ["127.0.0.1:2000"] = 1,
-            }, "http"))
-
-            ngx.say("array: ", first_node({
-                {host = "127.0.0.1", port = 1000, weight = 0},
-                {host = "127.0.0.1", port = 2000, weight = 1},
-            }, "http"))
-
-            ngx.say("all disabled: ", tostring(first_node({
-                ["127.0.0.1:1000"] = 0,
-            }, "http")))
+            local body
+            code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT,
+                           [[{"service_id": "zero-weight-graphql", "uri": "/graphql"}]])
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
         }
     }
 --- response_body
-map: 127.0.0.1:2000
-array: 127.0.0.1:2000
-all disabled: nil
+passed
+
+
+
+=== TEST 69: introspection skips the zero-weight node and uses the enabled one
+--- request
+POST /graphql
+{"query":"query { products(first: 50) { nodes { name } } }"}
+--- more_headers
+Content-Type: application/json
+--- error_code: 200
+--- response_headers
+X-Graphql-Query-Cost: 52
