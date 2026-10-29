@@ -1009,6 +1009,43 @@ describe('Validate API - Standalone', () => {
       expect(resp.data).toEqual('hello world\n');
     });
 
+    it('resolves ${{VAR}} in a YAML body before parsing, so quoting decides the type', async () => {
+      mockDigest += 1;
+      // An unquoted reference becomes the integer retries requires, while a
+      // quoted one stays a string even though its value looks like a number.
+      const body = [
+        'routes:',
+        '  - id: r_var_yaml',
+        '    uri: /r_var_yaml',
+        '    desc: "${{STANDALONE_ENV_DESC:=123}}"',
+        '    upstream:',
+        '      nodes:',
+        '        "127.0.0.1:1980": 1',
+        '      type: roundrobin',
+        '      retries: ${{STANDALONE_ENV_RETRIES:=2}}',
+        '    plugins:',
+        '      proxy-rewrite:',
+        '        uri: ${{STANDALONE_ENV_TEST:=/hello}}',
+        '',
+      ].join('\n');
+      const putResp = await client.put(ENDPOINT, body, {
+        headers: {
+          'Content-Type': 'application/yaml',
+          [HEADER_DIGEST]: mockDigest,
+        },
+      });
+      expect(putResp.status).toEqual(202);
+
+      const dump = await client.get(ENDPOINT);
+      const route = dump.data.routes.find((r) => r.id === 'r_var_yaml');
+      expect(route.desc).toEqual('123');
+      expect(route.upstream.retries).toEqual(2);
+
+      const resp = await client.get('/r_var_yaml');
+      expect(resp.status).toEqual(200);
+      expect(resp.data).toEqual('hello world\n');
+    });
+
     it('rejects config with an unresolvable ${{VAR}} reference', async () => {
       mockDigest += 1;
       const config = {

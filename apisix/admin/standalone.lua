@@ -276,8 +276,18 @@ local function update(ctx)
     end
 
     -- parse the request body
-    local data
-    if core.string.has_prefix(content_type, "application/yaml") then
+    -- ${{VAR}} references are resolved the way the config file resolves them:
+    -- in the raw text for YAML, so that quoting decides the type, and after
+    -- decoding for JSON, whose types are explicit.
+    local is_yaml = core.string.has_prefix(content_type, "application/yaml")
+    local data, resolve_err
+    if is_yaml then
+        req_body, resolve_err = file.resolve_conf_var_in_text(req_body)
+        if not req_body then
+            return core.response.exit(400, {
+                error_msg = "failed to resolve variables in config: " .. resolve_err
+            })
+        end
         local ok, result = pcall(yaml.load, req_body, { all = false })
         -- a null document (`~`) loads as lyaml's sentinel table, which would
         -- otherwise pass as an empty object and clear every resource
@@ -294,6 +304,15 @@ local function update(ctx)
         core.log.error("invalid request body, err: ", err)
         return core.response.exit(400, {error_msg = "invalid request body: " .. err})
     end
+    if not is_yaml and type(data) == "table" then
+        local ok
+        ok, resolve_err = file.resolve_conf_var(data)
+        if not ok then
+            return core.response.exit(400, {
+                error_msg = "failed to resolve variables in config: " .. resolve_err
+            })
+        end
+    end
     req_body = data
 
     local config, err = get_config()
@@ -309,18 +328,6 @@ local function update(ctx)
         -- accepted but not modified because digest is the same
         core.log.info("config not changed: same digest")
         return core.response.exit(204)
-    end
-
-    -- resolve ${{VAR}} / $ENV:// references before validation, so that the
-    -- schema check and the stored config both see the resolved values. The
-    -- file-based standalone path resolves these in config_yaml.parse(); the
-    -- Admin API path decodes JSON straight into the config and would otherwise
-    -- validate and store the literal "${{...}}" string.
-    local resolved, resolve_err = file.resolve_conf_var(req_body)
-    if not resolved then
-        return core.response.exit(400, {
-            error_msg = "failed to resolve variables in config: " .. resolve_err
-        })
     end
 
     local valid, error_msg = validate_configuration(req_body, false)
