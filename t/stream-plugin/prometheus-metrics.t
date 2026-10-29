@@ -71,9 +71,59 @@ _EOC_
     # while the exposition is built, so a block generated without a stream
     # block has nothing to read -- and the reload into it drops the zone, which
     # takes the running totals with it.
-    if ($block->request =~ m{/apisix/prometheus/metrics}) {
+    if ($block->request =~ m{/apisix/prometheus/metrics|/scrape}) {
         $block->set_value("stream_enable", 1);
     }
+
+    # A session's status and connection count reach the exposition only after
+    # its worker has synced them into the shared dict -- every second, or when
+    # the worker exits on the reload into the next block -- and the privileged
+    # agent has refilled the cache after that. On a reload the new privileged
+    # agent fills the cache as soon as it starts, racing the flush of the old
+    # workers, and the next refill is a whole refresh_interval later. So a
+    # scrape right after the block that ran the session can still miss it, and
+    # has to wait for the series to show up.
+    my $extra_init_by_lua = <<_EOC_;
+    function _G.scrape_until(pattern)
+        local body
+        local deadline = ngx.now() + 5
+        repeat
+            local sock = ngx.socket.tcp()
+            local ok, err = sock:connect("127.0.0.1", 1984)
+            if not ok then
+                ngx.say("scrape connect: ", err)
+                return
+            end
+
+            ok, err = sock:send("GET /apisix/prometheus/metrics HTTP/1.0\\r\\n"
+                                .. "Host: 127.0.0.1\\r\\n\\r\\n")
+            if not ok then
+                ngx.say("scrape send: ", err)
+                return
+            end
+
+            local rerr, partial
+            body, rerr, partial = sock:receive("*a")
+            sock:close()
+            body = body or partial
+            if not body then
+                ngx.say("scrape: ", rerr)
+                return
+            end
+
+            if ngx.re.find(body, pattern, "jom") then
+                ngx.say("matched")
+                return
+            end
+
+            ngx.sleep(0.1)
+        until ngx.now() > deadline
+
+        ngx.print(body)
+    end
+_EOC_
+
+    $block->set_value("extra_init_by_lua", $extra_init_by_lua);
 });
 
 run_tests;
@@ -136,10 +186,17 @@ hello world
 
 
 === TEST 3: the session is counted as a normal close, not as an error
+--- config
+    location /scrape {
+        content_by_lua_block {
+            scrape_until([[apisix_stream_status\{code="200",listen_addr="[^"]+",service="",service_id="",node="127\.0\.0\.1:1995"\} 1$]])
+        }
+    }
 --- request
-GET /apisix/prometheus/metrics
---- response_body eval
-qr/apisix_stream_status\{code="200",listen_addr="[^"]+",node="127.0.0.1:1995"\} 1$/m
+GET /scrape
+--- timeout: 10
+--- response_body
+matched
 
 
 
@@ -269,7 +326,7 @@ own rather than in one order-dependent pattern.
 --- request
 GET /apisix/prometheus/metrics
 --- response_body_like eval
-qr/apisix_stream_bandwidth\{listen_addr="0\.0\.0\.0:1985",type="ingress",side="downstream"\} [1-9]\d*/
+qr/apisix_stream_bandwidth\{listen_addr="0\.0\.0\.0:1985",service="",service_id="",type="ingress",side="downstream"\} [1-9]\d*/
 --- no_error_log
 [error]
 
@@ -281,7 +338,7 @@ own rather than in one order-dependent pattern.
 --- request
 GET /apisix/prometheus/metrics
 --- response_body_like eval
-qr/apisix_stream_bandwidth\{listen_addr="0\.0\.0\.0:1985",type="egress",side="downstream"\} [1-9]\d*/
+qr/apisix_stream_bandwidth\{listen_addr="0\.0\.0\.0:1985",service="",service_id="",type="egress",side="downstream"\} [1-9]\d*/
 --- no_error_log
 [error]
 
@@ -293,7 +350,7 @@ own rather than in one order-dependent pattern.
 --- request
 GET /apisix/prometheus/metrics
 --- response_body_like eval
-qr/apisix_stream_bandwidth\{listen_addr="0\.0\.0\.0:1985",type="egress",side="upstream"\} [1-9]\d*/
+qr/apisix_stream_bandwidth\{listen_addr="0\.0\.0\.0:1985",service="",service_id="",type="egress",side="upstream"\} [1-9]\d*/
 --- no_error_log
 [error]
 
@@ -305,7 +362,7 @@ own rather than in one order-dependent pattern.
 --- request
 GET /apisix/prometheus/metrics
 --- response_body_like eval
-qr/apisix_stream_bandwidth\{listen_addr="0\.0\.0\.0:1985",type="ingress",side="upstream"\} [1-9]\d*/
+qr/apisix_stream_bandwidth\{listen_addr="0\.0\.0\.0:1985",service="",service_id="",type="ingress",side="upstream"\} [1-9]\d*/
 --- no_error_log
 [error]
 
@@ -317,7 +374,7 @@ and outlived another tick, so the published value has to be 0 by now.
 --- request
 GET /apisix/prometheus/metrics
 --- response_body_like eval
-qr/apisix_stream_active_connections\{listen_addr="0\.0\.0\.0:1985"\} 0$/m
+qr/apisix_stream_active_connections\{listen_addr="0\.0\.0\.0:1985",service="",service_id=""\} 0$/m
 --- no_error_log
 [error]
 
@@ -360,10 +417,17 @@ connect() failed
 
 
 === TEST 12: the failing node is still reported on a 502
+--- config
+    location /scrape {
+        content_by_lua_block {
+            scrape_until([[apisix_stream_status\{code="502",listen_addr="[^"]+",service="",service_id="",node="127\.0\.0\.1:1979"\} 1$]])
+        }
+    }
 --- request
-GET /apisix/prometheus/metrics
---- response_body eval
-qr/apisix_stream_status\{code="502",listen_addr="[^"]+",node="127.0.0.1:1979"\} 1$/m
+GET /scrape
+--- timeout: 10
+--- response_body
+matched
 
 
 
@@ -428,9 +492,233 @@ This is the point of the feature. nginx reports $status 200 for every failure
 after the upstream connection is up -- apisix-nginx-module's t/stream/metrics.t
 pins that for the same case -- so an idle timeout has to reach the metric as
 502 through $stream_session_reason, not as a success.
+--- config
+    location /scrape {
+        content_by_lua_block {
+            scrape_until([[apisix_stream_status\{code="502",listen_addr="0\.0\.0\.0:1985",service="",service_id="",node="127\.0\.0\.1:1993"\}]])
+        }
+    }
+--- request
+GET /scrape
+--- timeout: 10
+--- response_body
+matched
+--- no_error_log
+[error]
+
+
+
+=== TEST 16: move the route under a service
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t("/apisix/admin/services/svc-a", ngx.HTTP_PUT, [[{
+                "upstream": {
+                    "type": "roundrobin",
+                    "nodes": [{
+                        "host": "127.0.0.1",
+                        "port": 1995,
+                        "weight": 1
+                    }]
+                }
+            }]])
+            if code > 300 then
+                ngx.say(body)
+                return
+            end
+
+            code, body = t("/apisix/admin/stream_routes/1", ngx.HTTP_PUT, [[{
+                "plugins": {
+                    "prometheus": {}
+                },
+                "service_id": "svc-a"
+            }]])
+            if code > 300 then
+                ngx.say(body)
+                return
+            end
+        }
+    }
+--- response_body
+
+
+
+=== TEST 17: proxy a session through the service
+--- stream_request
+hello
+--- stream_response
+hello world
+
+
+
+=== TEST 18: the termination status carries the service
+--- config
+    location /scrape {
+        content_by_lua_block {
+            scrape_until([[apisix_stream_status\{code="200",listen_addr="0\.0\.0\.0:1985",service="svc-a",service_id="svc-a",node="127\.0\.0\.1:1995"\} 1$]])
+        }
+    }
+--- request
+GET /scrape
+--- timeout: 10
+--- response_body
+matched
+
+
+
+=== TEST 19: and so does the connection count
 --- request
 GET /apisix/prometheus/metrics
 --- response_body_like eval
-qr/apisix_stream_status\{code="502",listen_addr="0\.0\.0\.0:1985",node="127\.0\.0\.1:1993"\}/
---- no_error_log
-[error]
+qr/apisix_stream_connection_total\{route="1",service="svc-a",service_id="svc-a"\} 1$/m
+
+
+
+=== TEST 20: name the service and ask for names on the route
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t("/apisix/admin/services/svc-a", ngx.HTTP_PUT, [[{
+                "name": "Order TCP",
+                "upstream": {
+                    "type": "roundrobin",
+                    "nodes": [{
+                        "host": "127.0.0.1",
+                        "port": 1995,
+                        "weight": 1
+                    }]
+                }
+            }]])
+            if code > 300 then
+                ngx.say(body)
+                return
+            end
+
+            code, body = t("/apisix/admin/stream_routes/1", ngx.HTTP_PUT, [[{
+                "plugins": {
+                    "prometheus": {
+                        "prefer_name": true
+                    }
+                },
+                "service_id": "svc-a"
+            }]])
+            if code > 300 then
+                ngx.say(body)
+                return
+            end
+        }
+    }
+--- response_body
+
+
+
+=== TEST 21: proxy a session through the named service
+--- stream_request
+hello
+--- stream_response
+hello world
+
+
+
+=== TEST 22: with prefer_name, service carries the name and service_id the id
+The same rule as the http metrics.
+--- config
+    location /scrape {
+        content_by_lua_block {
+            scrape_until([[apisix_stream_status\{code="200",listen_addr="0\.0\.0\.0:1985",service="Order TCP",service_id="svc-a",node="127\.0\.0\.1:1995"\} 1$]])
+        }
+    }
+--- request
+GET /scrape
+--- timeout: 10
+--- response_body
+matched
+
+
+
+=== TEST 23: a route with both an upstream_id and a service_id
+The service is not merged into such a route, so it is only named on the
+route itself; the http metrics still label it, and so must the stream ones.
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t("/apisix/admin/services/svc-b", ngx.HTTP_PUT, [[{
+                "name": "Billing",
+                "upstream": {
+                    "type": "roundrobin",
+                    "nodes": [{
+                        "host": "127.0.0.1",
+                        "port": 1995,
+                        "weight": 1
+                    }]
+                }
+            }]])
+            if code > 300 then
+                ngx.say(body)
+                return
+            end
+
+            code, body = t("/apisix/admin/upstreams/up-1", ngx.HTTP_PUT, [[{
+                "type": "roundrobin",
+                "nodes": [{
+                    "host": "127.0.0.1",
+                    "port": 1995,
+                    "weight": 1
+                }]
+            }]])
+            if code > 300 then
+                ngx.say(body)
+                return
+            end
+
+            code, body = t("/apisix/admin/stream_routes/1", ngx.HTTP_PUT, [[{
+                "plugins": {
+                    "prometheus": {
+                        "prefer_name": true
+                    }
+                },
+                "upstream_id": "up-1",
+                "service_id": "svc-b"
+            }]])
+            if code > 300 then
+                ngx.say(body)
+                return
+            end
+        }
+    }
+--- response_body
+
+
+
+=== TEST 24: proxy a session through that route
+--- stream_request
+hello
+--- stream_response
+hello world
+
+
+
+=== TEST 25: the session carries the service of the route
+--- config
+    location /scrape {
+        content_by_lua_block {
+            scrape_until([[apisix_stream_status\{code="200",listen_addr="0\.0\.0\.0:1985",service="Billing",service_id="svc-b",node="127\.0\.0\.1:1995"\} 1$]])
+        }
+    }
+--- request
+GET /scrape
+--- timeout: 10
+--- response_body
+matched
+
+
+
+=== TEST 26: the connection count carries it too
+The route has no name, so prefer_name leaves route on its id.
+--- request
+GET /apisix/prometheus/metrics
+--- response_body_like eval
+qr/apisix_stream_connection_total\{route="1",service="Billing",service_id="svc-b"\} 1$/m

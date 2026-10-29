@@ -128,6 +128,34 @@ function _M.log(conf, ctx)
 end
 
 
+function _M.ws_handshake(conf, ctx)
+    core.log.warn("plugin ws_handshake phase, conf: ", core.json.encode(conf))
+end
+
+
+function _M.ws_client_frame(conf, ctx)
+    local frame = core.websocket.client.get_frame()
+    core.log.warn("plugin ws_client_frame phase, type: ", frame.type)
+    if frame.type == "text" and frame.payload then
+        core.websocket.client.set_frame_data(frame.payload .. "-client")
+    end
+end
+
+
+function _M.ws_upstream_frame(conf, ctx)
+    local frame = core.websocket.upstream.get_frame()
+    core.log.warn("plugin ws_upstream_frame phase, type: ", frame.type)
+    if frame.type == "text" and frame.payload then
+        core.websocket.upstream.set_frame_data(frame.payload .. "-upstream")
+    end
+end
+
+
+function _M.ws_close(conf, ctx)
+    core.log.warn("plugin ws_close phase, conf: ", core.json.encode(conf))
+end
+
+
 local function hello()
     local args = ngx.req.get_uri_args()
     if args["json"] then

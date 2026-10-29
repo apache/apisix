@@ -65,6 +65,10 @@ local plugin_schema = {
             type = "boolean",
             default = false
         },
+        allow_degradation = {
+            -- Leave unset to inherit the plugin metadata value.
+            type = "boolean"
+        },
         config = {
             type = "object",
             properties = {
@@ -110,6 +114,10 @@ local metadata_schema = {
         mode = {
             type = "string",
             enum = { "off", "monitor", "block" }
+        },
+        allow_degradation = {
+            type = "boolean",
+            default = false
         },
         nodes = {
             type = "array",
@@ -343,9 +351,21 @@ local function do_access(conf, ctx)
     local extra_headers = {}
 
     local metadata = plugin.plugin_metadata(plugin_name)
+    local allow_degradation = conf.allow_degradation
+    if allow_degradation == nil then
+        allow_degradation = core.table.try_read_attr(metadata, "value", "allow_degradation")
+                            or false
+    end
+
     if not core.table.try_read_attr(metadata, "value", "nodes") then
         extra_headers[HEADER_CHAITIN_WAF] = "err"
         extra_headers[HEADER_CHAITIN_WAF_ERROR] = "missing metadata"
+
+        if allow_degradation then
+            core.log.warn("chaitin-waf: missing metadata, degradation enabled, passing request")
+            return nil, nil, extra_headers
+        end
+
         return 500, nil, extra_headers
     end
 
@@ -353,6 +373,11 @@ local function do_access(conf, ctx)
     if err then
         extra_headers[HEADER_CHAITIN_WAF] = "unhealthy"
         extra_headers[HEADER_CHAITIN_WAF_ERROR] = tostring(err)
+
+        if allow_degradation then
+            core.log.warn("chaitin-waf: no healthy nodes, degradation enabled, passing request")
+            return nil, nil, extra_headers
+        end
 
         return 500, nil, extra_headers
     end
@@ -401,6 +426,12 @@ local function do_access(conf, ctx)
             extra_headers[HEADER_CHAITIN_WAF] = "timeout"
         end
         extra_headers[HEADER_CHAITIN_WAF_ERROR] = tostring(err)
+
+        if allow_degradation then
+            core.log.warn("chaitin-waf: WAF error (", err_msg,
+                          "), degradation enabled, passing request")
+            return nil, nil, extra_headers
+        end
 
         if mode == "monitor" then
             core.log.warn("chaitin-waf monitor mode: detected waf error - ", err_msg)
