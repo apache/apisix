@@ -316,6 +316,9 @@ GET /t
 
 
 === TEST 8: request localhost and save tls session to reuse
+The session cache of the Stream listener, see TEST 10 for the shared
+session ticket keys.
+--- legacy_ssl_session_tickets
 --- stream_enable
 --- max_size: 1048576
 --- exec
@@ -326,10 +329,66 @@ echo "" | timeout 1 openssl s_client -ign_eof -connect 127.0.0.1:2005 \
 
 
 === TEST 9: request test.com with saved tls session
+--- legacy_ssl_session_tickets
 --- stream_enable
 --- max_size: 1048576
 --- exec
 echo "" | openssl s_client -connect 127.0.0.1:2005 -servername test.com \
+    -sess_in session.dat
+--- error_log
+sni in client hello mismatch hostname of ssl session, sni: test.com, hostname: localhost
+
+
+
+=== TEST 10: share the session ticket keys
+--- extra_yaml_config
+plugin_attr:
+  ssl-session-ticket:
+    enabled: true
+    key_source: external
+--- config
+    location /t {
+        content_by_lua_block {
+            local h = require("lib.ssl_session_ticket")
+            local code = h.put_keys(1)
+            h.wait_state(function(s) return s.keys[1] == h.key(1) end)
+            ngx.say(code < 300)
+        }
+    }
+--- request
+GET /t
+--- response_body
+true
+
+
+
+=== TEST 11: request localhost and save the tls session, a ticket of the shared keys
+With a runtime that takes over the keys, the Stream listener resumes sessions
+with them only.
+--- extra_yaml_config
+plugin_attr:
+  ssl-session-ticket:
+    enabled: true
+    key_source: external
+--- stream_enable
+--- max_size: 1048576
+--- exec
+sleep 2; echo "" | timeout 1 openssl s_client -ign_eof -connect 127.0.0.1:2005 \
+    -servername localhost -cert t/certs/mtls_client.crt -key t/certs/mtls_client.key \
+    -sess_out session.dat
+
+
+
+=== TEST 12: a shared ticket of another SNI does not bypass the client verification
+--- extra_yaml_config
+plugin_attr:
+  ssl-session-ticket:
+    enabled: true
+    key_source: external
+--- stream_enable
+--- max_size: 1048576
+--- exec
+sleep 2; echo "" | openssl s_client -connect 127.0.0.1:2005 -servername test.com \
     -sess_in session.dat
 --- error_log
 sni in client hello mismatch hostname of ssl session, sni: test.com, hostname: localhost

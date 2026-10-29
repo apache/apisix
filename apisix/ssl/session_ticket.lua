@@ -316,10 +316,22 @@ function _M.init_worker()
         return
     end
 
-    tick()
+    -- Apply at once. Writing the record takes the lock of the state, which
+    -- may have to wait for the other processes, e.g. all of them during a
+    -- reload: init_worker cannot sleep, so in a timer.
+    _M.reconcile()
+    local ok, err = ngx.timer.at(0, function(premature)
+        if not premature then
+            tick()
+        end
+    end)
+    if not ok then
+        core.log.error("failed to create the first round of the TLS session ticket keys: ",
+                       err)
+    end
     timers.register_timer(TIMER_NAME, tick)
 
-    local ok, err = ngx.timer.every(EXIT_HOOK_INTERVAL, on_exit_hook)
+    ok, err = ngx.timer.every(EXIT_HOOK_INTERVAL, on_exit_hook)
     if not ok then
         core.log.error("failed to create the exit hook of the TLS session ticket keys: ", err)
     end
