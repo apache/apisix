@@ -811,10 +811,12 @@ local function encode_worker_record(identity, record)
         generation = identity.generation or 0,
         target_version = record.target_version,
         applied_version = record.applied_version,
+        applied_gate = record.applied_gate,
         contexts = setmetatable(ctxs, core.json.array_mt),
         applied_at = record.applied_at,
         seen_at = now(),
         error = truncate(record.error),
+        exiting = record.exiting and true or nil,
     })
 
     if #s > _M.WORKER_RECORD_SIZE then
@@ -839,11 +841,17 @@ local function do_put_worker_record(dict, identity, record)
     local old = dict:get(key)
     if old then
         old = core.json.decode(old)
+        local generation = identity.generation or 0
+        -- In the same generation, another pid in the slot is a process that
+        -- has died and been replaced. A process that shuts down has turned
+        -- its contexts off for good: a newer generation takes its slot.
+        -- Another generation that is still alive and serving, e.g. a third
+        -- overlapping one, keeps its record.
         if type(old) == "table" and old.pid ~= identity.pid
+           and old.generation ~= generation
+           and not (old.exiting and (tonumber(old.generation) or 0) < generation)
            and type(old.seen_at) == "number" and now() - old.seen_at < _M.WORKER_LIVE_TTL
         then
-            -- the slot is held by another live process, e.g. a third
-            -- overlapping generation: never take over its record
             note_worker_failure(dict, WFAIL_SLOT_BUSY)
             return nil, "worker record slot is in use"
         end
@@ -873,8 +881,11 @@ end
 -- slot and lane, a lane holding a config generation (the current one and one
 -- draining), MAX_CONTEXTS contexts and MAX_ERROR_LEN bytes of error each.
 --
--- `record` holds `target_version`, `applied_version`, `contexts` (array of
--- `{id = n, ok = bool, error = string}`), `applied_at` and `error`.
+-- `record` holds `target_version`, `applied_version` and `applied_gate` (the
+-- target that every context has applied: a version goes through the "pending"
+-- gate before the "ready" one), `contexts` (array of `{id = n, ok = bool,
+-- error = string}`), `applied_at`, `error` and `exiting` (the process shuts
+-- down and has turned every context off).
 --
 -- A failure never evicts anything; it is remembered so that the Control API
 -- reports it, and the process has no record, so it never counts as applied.

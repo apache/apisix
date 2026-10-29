@@ -285,6 +285,11 @@ stream {
         {% if server_group.tcp_enable_ssl then %}
         ssl_certificate      {* ssl.ssl_cert *};
         ssl_certificate_key  {* ssl.ssl_cert_key *};
+        {% if ssl_session_ticket_takeover and not server_group.tls_mixed then %}
+        # session tickets only with the shared keys, see the ssl-session-ticket plugin
+        ssl_session_tickets off;
+        apisix_ssl_session_ticket_takeover on;
+        {% end %}
 
         ssl_client_hello_by_lua_block {
             apisix.ssl_client_hello_phase()
@@ -317,6 +322,11 @@ stream {
 
         ssl_certificate      {* ssl.ssl_cert *};
         ssl_certificate_key  {* ssl.ssl_cert_key *};
+        {% if ssl_session_ticket_takeover then %}
+        # session tickets only with the shared keys, see the ssl-session-ticket plugin
+        ssl_session_tickets off;
+        apisix_ssl_session_ticket_takeover on;
+        {% end %}
 
         ssl_client_hello_by_lua_block {
             apisix.ssl_client_hello_phase()
@@ -906,7 +916,11 @@ http {
         ssl_protocols {* ssl.ssl_protocols *};
         ssl_ciphers {* ssl.ssl_ciphers *};
         ssl_prefer_server_ciphers on;
-        {% if ssl.ssl_session_tickets then %}
+        {% if ssl_session_ticket_takeover then %}
+        # session tickets only with the shared keys, see the ssl-session-ticket plugin
+        ssl_session_tickets off;
+        apisix_ssl_session_ticket_takeover on;
+        {% elseif ssl.ssl_session_tickets then %}
         ssl_session_tickets on;
         {% else %}
         ssl_session_tickets off;

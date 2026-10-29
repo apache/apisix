@@ -754,10 +754,25 @@ apisix:
 
 make init
 
-count=`grep -c "ssl_session_tickets on;" conf/nginx.conf || true `
-if [ $count -eq 0 ]; then
-    echo "failed: ssl_session_tickets is on when ssl.ssl_session_tickets is true."
-    exit 1
+if ssl_session_ticket_takeover; then
+    # the business listener only issues tickets with the shared keys
+    count=`grep -c "ssl_session_tickets on;" conf/nginx.conf || true `
+    if [ $count -ne 0 ]; then
+        echo "failed: the business listener uses the native session tickets."
+        exit 1
+    fi
+
+    count=`grep -c "apisix_ssl_session_ticket_takeover on;" conf/nginx.conf || true `
+    if [ $count -eq 0 ]; then
+        echo "failed: the business listener does not take over the session ticket keys."
+        exit 1
+    fi
+else
+    count=`grep -c "ssl_session_tickets on;" conf/nginx.conf || true `
+    if [ $count -eq 0 ]; then
+        echo "failed: ssl_session_tickets is on when ssl.ssl_session_tickets is true."
+        exit 1
+    fi
 fi
 
 echo "passed: disable ssl_session_tickets by default"

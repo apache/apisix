@@ -831,6 +831,7 @@ Please modify "admin_key" in conf/config.yaml .
         apisix_lua_home = env.apisix_home,
         deployment_role = env.deployment_role,
         use_apisix_base = env.use_apisix_base,
+        ssl_session_ticket_takeover = env.ssl_session_ticket_takeover,
         error_log = {level = "warn"},
         enable_http = enable_http,
         enable_stream = enable_stream,

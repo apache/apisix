@@ -55,6 +55,43 @@ function _M.raws(...)
 end
 
 
+-- publish a candidate as a producer of the configuration generation of this
+-- process does: with a runtime that has one, a candidate without it is stale
+function _M.publish(cand)
+    if cand.generation == nil then
+        cand.generation = state.process_generation()
+    end
+    return state.publish(cand)
+end
+
+
+-- wait until every worker has started and written its first record, when the
+-- runtime has them do so, and until the timers that their init_worker starts
+-- at once have run: a test that breaks the dict must not make a late worker
+-- fail
+function _M.wait_workers(timeout)
+    if not state.process_identity(ngx.config.subsystem) then
+        return
+    end
+
+    local deadline = ngx.now() + (timeout or 5)
+    repeat
+        local n = 0
+        for _, rec in ipairs(state.worker_records() or {}) do
+            if rec.subsystem == ngx.config.subsystem then
+                n = n + 1
+            end
+        end
+        if n >= ngx.worker.count() then
+            ngx.sleep(0.5)
+            return
+        end
+        ngx.sleep(0.1)
+        ngx.update_time()
+    until ngx.now() > deadline
+end
+
+
 -- the status and the body, without the new line ending it
 function _M.req(uri, method, body)
     -- loaded here: it only works in the HTTP subsystem
@@ -70,7 +107,9 @@ end
 
 
 function _M.put_keys(...)
-    return _M.req(_M.uri, ngx.HTTP_PUT, {keys = _M.b64s(...)})
+    -- an array even without any key
+    local keys = setmetatable(_M.b64s(...), core.json.array_mt)
+    return _M.req(_M.uri, ngx.HTTP_PUT, {keys = keys})
 end
 
 
@@ -137,6 +176,45 @@ function _M.wait_state(f, timeout)
 end
 
 
+-- wait until the Control API status satisfies f (by default: no worker lags
+-- behind), returns the last status read, decoded
+function _M.wait_status(f, timeout)
+    f = f or function(st) return st.reason ~= "worker_lag" end
+    local deadline = ngx.now() + (timeout or 5)
+    local st
+    repeat
+        local _, body = _M.req("/v1/tls_session_ticket", ngx.HTTP_GET)
+        st = require("toolkit.json").decode(body)
+        if st and f(st) then
+            return st
+        end
+        ngx.sleep(0.1)
+        ngx.update_time()
+    until ngx.now() > deadline
+    return st
+end
+
+
+-- wait until this node has published the stored record, or the lack of one,
+-- and every worker has applied it; returns the status
+function _M.wait_applied(timeout)
+    local value, rev = _M.record()
+    local snap = _M.wait_state(function(s)
+        if s.state == "pending" then
+            return false
+        end
+        if value then
+            return s.origin ~= nil and s.origin.revision == rev
+        end
+        return s.origin == nil
+    end, timeout)
+
+    return _M.wait_status(function(st)
+        return snap and st.version == snap.version and st.reason ~= "worker_lag"
+    end, timeout)
+end
+
+
 -- wait until the generator status of this node satisfies f (by default: it
 -- has run once and is not in conflict), returns the last status read
 function _M.wait_generator(f, timeout)
@@ -168,6 +246,159 @@ function _M.wait_record(f, timeout)
         ngx.update_time()
     until ngx.now() > deadline
     return value, rev
+end
+
+
+-- the SSL object of the TLS listeners of the tests
+function _M.set_ssl()
+    local t = require("lib.test_admin")
+    return (t.test("/apisix/admin/ssls/1", ngx.HTTP_PUT, core.json.encode({
+        cert = t.read_file("t/certs/apisix.crt"),
+        key = t.read_file("t/certs/apisix.key"),
+        sni = "test.com",
+    })))
+end
+
+
+local ffi
+local ticket_ptr, ticket_len
+
+
+-- what the ticket of a client session is: nil without any, "stateful" for
+-- the session id that TLSv1.3 sends when the stateless tickets are off, or
+-- the name of the key that encrypted it; and the ticket itself
+local function ticket_of(sess)
+    if not ffi then
+        ffi = require("ffi")
+        pcall(ffi.cdef, [[
+            int SSL_SESSION_has_ticket(const void *s);
+            void SSL_SESSION_get0_ticket(const void *s, const unsigned char **tick,
+                                         size_t *len);
+        ]])
+        ticket_ptr = ffi.new("const unsigned char *[1]")
+        ticket_len = ffi.new("size_t[1]")
+    end
+
+    if sess == nil or ffi.C.SSL_SESSION_has_ticket(sess) == 0 then
+        return nil
+    end
+
+    ffi.C.SSL_SESSION_get0_ticket(sess, ticket_ptr, ticket_len)
+    local bytes = ffi.string(ticket_ptr[0], tonumber(ticket_len[0]))
+    -- key name, IV, encrypted session and HMAC: well above 64 bytes
+    if #bytes <= 64 then
+        return "stateful", bytes
+    end
+
+    return bytes:sub(1, 16), bytes
+end
+
+
+-- the name of the key n, as connect() reports the key of a ticket
+function _M.name(n)
+    return _M.key(n):sub(1, 16)
+end
+
+
+-- Completes a TLS handshake with the listener on the port, offering
+-- opts.session to resume, and reads what the server reports about the
+-- connection: "<$ssl_session_reused> <$ssl_protocol> <stateless tickets>".
+-- The HTTPS listener answers GET /reused (opts.http), the Stream one a line.
+-- Returns {reused, protocol, tickets, ticket, ticket_bytes, session}, or nil
+-- and the error. The client protocol is the lua_ssl_protocols of the caller.
+function _M.connect(port, opts)
+    opts = opts or {}
+    local sock = ngx.socket.tcp()
+    sock:settimeout(5000)
+
+    local ok, err = sock:connect("127.0.0.1", port)
+    if not ok then
+        return nil, "connect: " .. err
+    end
+
+    ok, err = sock:sslhandshake(opts.session, "test.com", false)
+    if not ok then
+        sock:close()
+        return nil, "handshake: " .. err
+    end
+
+    ok, err = sock:send(opts.http and "GET /reused HTTP/1.0\r\nHost: test.com\r\n\r\n" or "\n")
+    if not ok then
+        sock:close()
+        return nil, "send: " .. err
+    end
+
+    local data
+    data, err = sock:receive("*a")
+    if not data then
+        sock:close()
+        return nil, "receive: " .. err
+    end
+
+    local reused, protocol, tickets = data:match("(%S+) (%S+) (%S+)\n$")
+    if not reused then
+        sock:close()
+        return nil, "unexpected response: " .. data
+    end
+
+    -- the session after the response: TLSv1.3 sends its tickets late
+    local session = sock:getsslsession()
+    sock:close()
+
+    local name, bytes = ticket_of(session)
+    return {
+        reused = reused == "r",
+        protocol = protocol,
+        tickets = tickets,
+        ticket = name,
+        ticket_bytes = bytes,
+        session = session,
+    }
+end
+
+
+-- the handshakes held in the ClientHello phase, see client_hello_hook()
+_M.held = 0
+local holding = false
+
+
+-- hold the next handshakes in the ClientHello phase, or release them
+function _M.hold(on)
+    holding = on
+end
+
+
+-- for the ClientHello phase of an HTTPS listener, before APISIX's own
+function _M.client_hello_hook()
+    if not holding then
+        return
+    end
+
+    _M.held = _M.held + 1
+    while holding do
+        ngx.sleep(0.01)
+    end
+    _M.held = _M.held - 1
+end
+
+
+-- wait until a handshake is held
+function _M.wait_held()
+    for _ = 1, 500 do
+        if _M.held > 0 then
+            return true
+        end
+        ngx.sleep(0.01)
+    end
+    return false
+end
+
+
+-- for the TLS servers of the tests: what connect() reads
+function _M.respond()
+    local on, err = require("resty.apisix.ssl_session_ticket").connection_tickets()
+    ngx.say(ngx.var.ssl_session_reused, " ", ngx.var.ssl_protocol, " ",
+            on == nil and err or (on and "on" or "off"))
 end
 
 

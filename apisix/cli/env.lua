@@ -99,6 +99,17 @@ return function (apisix_home, pkg_cpath_org, pkg_path_org)
         use_apisix_base = false
     end
 
+    -- the runtime takes over the session ticket keys of the business TLS
+    -- listeners when its apisix-nginx-module ships the Lua API for it
+    local ssl_session_ticket_takeover = false
+    if use_apisix_base then
+        local or_prefix = or_info:match("%-%-prefix=(%S+)/nginx")
+        if or_prefix then
+            ssl_session_ticket_takeover = util.file_exists(
+                or_prefix .. "/lualib/resty/apisix/ssl_session_ticket.lua")
+        end
+    end
+
     local min_etcd_version = "3.4.0"
 
     return {
@@ -107,6 +118,7 @@ return function (apisix_home, pkg_cpath_org, pkg_path_org)
         openresty_args = openresty_args,
         openresty_info = or_info,
         use_apisix_base = use_apisix_base,
+        ssl_session_ticket_takeover = ssl_session_ticket_takeover,
         pkg_cpath_org = pkg_cpath_org,
         pkg_path_org = pkg_path_org,
         min_etcd_version = min_etcd_version,

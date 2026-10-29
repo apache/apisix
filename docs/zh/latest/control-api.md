@@ -305,27 +305,29 @@ curl http://127.0.0.1:9090/v1/tls_session_ticket
 
 ```json
 {
-    "status": "degraded",
-    "reason": "module_not_active",
+    "status": "ok",
+    "reason": null,
     "enabled": true,
     "key_count": 2,
-    "effective_key_count": null,
-    "fully_applied": false,
-    "version": "b0181944:2",
+    "effective_key_count": 2,
+    "fully_applied": true,
+    "version": "b0181944:3",
     "source": "external",
     "source_version": "222",
     "updated_at": "2026-10-28T06:53:04Z",
-    "updated_at_sec_ago": 1,
-    "workers": {"total": 0, "applied": 0, "pending": 0, "failed": 0},
+    "updated_at_sec_ago": 12,
+    "workers": {"total": 4, "applied": 4, "pending": 0, "failed": 0},
     "subsystems": {
-        "http": {"applicable": false, "status": "degraded", "reason": "module_not_active",
-                 "contexts": 0, "workers": {"total": 0, "applied": 0, "pending": 0, "failed": 0}},
-        "stream": {"applicable": false, "status": "degraded", "reason": "module_not_active",
-                   "contexts": 0, "workers": {"total": 0, "applied": 0, "pending": 0, "failed": 0}}
+        "http": {"applicable": true, "status": "ok", "reason": null, "contexts": 1,
+                 "workers": {"total": 4, "applied": 4, "pending": 0, "failed": 0},
+                 "draining": {"total": 0, "applied": 0, "pending": 0, "failed": 0}},
+        "stream": {"applicable": true, "status": "ok", "reason": null, "contexts": 2,
+                   "workers": {"total": 4, "applied": 4, "pending": 0, "failed": 0},
+                   "draining": {"total": 0, "applied": 0, "pending": 0, "failed": 0}}
     },
     "generator": {"executes": false, "state": "idle", "last_generated_at": null, "error": null},
-    "warnings": ["default_keyring"],
-    "last_apply_error": "the SSL layer does not consume the keys"
+    "warnings": [],
+    "last_apply_error": null
 }
 ```
 
@@ -339,16 +341,19 @@ curl http://127.0.0.1:9090/v1/tls_session_ticket
 | version             | 本节点发布的目标的本地版本，不要跨节点比较。 |
 | source、source_version | 密钥的来源及其元数据的 revision（etcd revision，standalone 模式下为配置版本），同一 etcd 集群内的节点可以据此比较。没有可读的密钥时为 `null`。 |
 | updated_at、updated_at_sec_ago | 本节点发布该目标的时间（UTC）及距今的秒数，不作为健康指标。 |
-| workers、subsystems | 各 worker 进程的进度，按子系统（`http`、`stream`）分项。 |
+| workers             | 本节点的 worker 进程，无论服务几个子系统，每个进程只计一次，仍在退出中的进程也计入：其所有业务 TLS context 都使用当前目标时为 `applied`，其中一个失败时为 `failed`，否则为 `pending`。 |
+| subsystems          | 按子系统（`http`、`stream`）分项：`applicable`（是否有业务 TLS context）、`status` 与 `reason`、`contexts`（一个 worker 的业务 TLS context 数量）、`workers`（当前配置的 worker 进程，包括尚未报告的进程）以及 `draining`（仍在运行的旧配置的 worker 进程）。未启用的子系统为 `off` 且不适用。 |
 | generator           | 在执行本地策略的使用 etcd 的 `traditional`、`control_plane` 节点上，包括 `executes`（本节点是否生成密钥）、`state`（不生成时为 `idle`，以及 `ok`、节点策略不一致时的 `conflict` 或 `failed`）、`last_generated_at`（上次生成密钥的时间，UTC）和 `error`。其他节点为 `null`。 |
 | warnings            | 不影响 status 的安全告警：`encryption_disabled` 或 `default_keyring`。 |
 | last_apply_error    | 最近一次失败的原因，从不包含密钥。 |
 
 | status / reason | 条件 |
 |-----------------|------|
-| `degraded` / `invalid_state`、`module_not_active` 或 `apply_failed` | 保存、加载或应用密钥失败，无论目标是什么。`module_not_active` 表示本节点没有任何模块把密钥应用到 TLS 监听。 |
-| `degraded` / `worker_lag` | 有 worker 进程尚未应用当前目标。 |
-| `off` / `local_switch_off`、`disabled_by_policy` 或 `empty_keys` | 所有 TLS 监听都已收敛为不使用共享密钥。 |
+| `degraded` / `invalid_state`、`module_not_active` 或 `apply_failed` | 保存、加载或应用密钥失败，无论目标是什么。`module_not_active` 表示本节点没有任何模块把密钥应用到 TLS 监听：APISIX Runtime 不接管密钥，或无法为某个监听注册。失败的监听不使用任何共享密钥。 |
+| `degraded` / `worker_lag` | 有 worker 进程尚未应用当前目标，例如密钥停用后仍持有密钥的 worker。 |
+| `off` / `local_switch_off`、`disabled_by_policy` 或 `empty_keys` | 所有 TLS 监听都已收敛为不使用共享密钥。`empty_keys` 也包括插件未启用的节点。没有任何业务 TLS 监听的节点同样为 `off`。 |
 | `ok` / `null` | 所有 TLS 监听都在使用当前密钥。 |
+
+该接口只以有限次数读取本节点的状态：读取期间状态持续变化时，报告 `worker_lag`，而不是拼凑出的结果。查询本身不会促使 worker 应用任何内容。
 
 没有 HTTP 子系统时（`proxy_mode: stream`），Control API 服务只提供这一个接口。

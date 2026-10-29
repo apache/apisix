@@ -49,6 +49,7 @@ local pubsub_kafka    = require("apisix.pubsub.kafka")
 local resource        = require("apisix.resource")
 local trusted_addresses_util = require("apisix.utils.trusted-addresses")
 local session_ticket_state = require("apisix.session_ticket.state")
+local session_ticket_consumer = require("apisix.ssl.session_ticket")
 local tracer          = require("apisix.tracer")
 
 local discovery = require("apisix.discovery.init").discovery
@@ -163,6 +164,7 @@ function _M.http_init_worker()
     end
 
     plugin.init_worker()
+    session_ticket_consumer.init_worker()
     router.http_init_worker()
     require("apisix.http.service").init_worker()
     plugin_config.init_worker()
@@ -197,6 +199,7 @@ end
 
 
 function _M.http_exit_worker()
+    session_ticket_consumer.exit_worker()
     -- TODO: we can support stream plugin later - currently there is not `destroy` method
     -- in stream plugins
     plugin.exit_worker()
@@ -216,6 +219,9 @@ end
 
 
 function _M.ssl_client_hello_phase()
+    -- the session ticket keys of this connection follow its context
+    session_ticket_consumer.client_hello()
+
     local sni, err = apisix_ssl.server_name(true)
     if not sni or type(sni) ~= "string" then
         local advise = "please check if the client requests via IP or uses an outdated " ..
@@ -1776,6 +1782,7 @@ function _M.stream_init_worker()
     end
 
     plugin.init_worker()
+    session_ticket_consumer.init_worker()
     xrpc.init_worker()
     apisix_secret.init_worker()
     router.stream_init_worker()

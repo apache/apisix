@@ -36,7 +36,7 @@ The keys are meant for the TLS listeners that carry the business traffic: HTTPS,
 
 The Plugin is a global system Plugin. It is configured only through its plugin metadata, has no request phase, and cannot be bound to a Route, a Service or a Consumer. It is enabled by default in both `plugins` and `stream_plugins`, so that a Stream-only deployment receives the keys too.
 
-APISIX needs [APISIX Runtime](../FAQ.md#how-do-i-build-the-apisix-runtime-environment) for this Plugin: the keys are kept in a shared memory zone of the main-level `lua {}` block, which is common to the HTTP and the Stream subsystems.
+APISIX needs [APISIX Runtime](../FAQ.md#how-do-i-build-the-apisix-runtime-environment) for this Plugin: the keys are kept in a shared memory zone of the main-level `lua {}` block, which is common to the HTTP and the Stream subsystems. The business TLS listeners only use them with an APISIX Runtime that takes over their session ticket keys, see [Business TLS Listeners](#business-tls-listeners).
 
 ## Local Policy
 
@@ -67,6 +67,24 @@ APISIX checks these attributes when it starts. Configure them the same way on al
 | `data_plane`                               | Ignored. | Used as the nodes applying the policy publish them. |
 | Standalone (YAML, JSON or API-driven)      | Only `external` keys, and `enabled` decides whether they are used. `enabled: true` with `key_source: generated` fails on startup. | Taken from the configuration, see [Standalone Mode](#standalone-mode). |
 | Stream only (`proxy_mode: stream`)         | Not applied: the generator runs in the privileged agent of the HTTP subsystem. | Used as the other nodes publish them. |
+
+## Business TLS Listeners
+
+Every worker process applies the published keys to the TLS listeners of the business traffic, independently in the HTTP and the Stream subsystems:
+
+* the HTTPS listeners of `apisix.ssl.listen`, HTTP/3 included,
+* the Stream listeners of `apisix.stream_proxy.tcp` with `tls: true`, including the internal server that terminates TLS on a listen that also has `tls_passthrough: true`.
+
+The Admin API, the Control API, the Status API, the Prometheus export server, the TLS passthrough of Stream, plain TCP and UDP, and the TLS connections to the upstreams keep their own configuration.
+
+A worker applies a new set of keys within a second, then aligns each new connection with it when the connection reaches its ClientHello, without waiting for handshakes to happen. A listener issues stateless tickets only once the complete set of keys is in place, and stops issuing and accepting them before the keys are removed. Changing the keys closes no connection.
+
+The local switch `apisix.ssl.ssl_session_tickets` decides whether the business listeners of a node use the shared keys. It is true unless it is set to false. When it is false, or when there is no key to use (the Plugin is not enabled, the keys are disabled, empty or cannot be loaded), the business listeners issue no stateless ticket:
+
+* With TLS 1.2, a client then only resumes a session through the session cache of the node, which the HTTPS listeners have (`shared:SSL:20m`, 10 minutes) and the Stream listeners do not.
+* With TLS 1.3, an HTTPS listener still sends the stateful tickets of its session cache, which only resume on the same node.
+
+This takeover needs an APISIX Runtime whose `apisix-nginx-module` provides it. With an older APISIX Runtime, the listeners keep the behavior of the previous versions: the keys are published, but the TLS listeners do not use them and the Control API reports `module_not_active`.
 
 ## Generated Keys
 
@@ -225,11 +243,28 @@ The keys are external keys and the local `enabled` attribute decides whether the
 
 ## Status
 
-The metadata only shows what is saved, not what the nodes use. The Control API of each node reports its own state in [`GET /v1/tls_session_ticket`](../control-api.md#get-v1tls_session_ticket): the source and the revision of the keys, the number of keys, the local version and the time it was published, the state of the generator on the nodes applying the local policy, and the security warnings. It never returns the keys.
+The metadata only shows what is saved, not what the nodes use. The Control API of each node reports its own state in [`GET /v1/tls_session_ticket`](../control-api.md#get-v1tls_session_ticket): the source and the revision of the keys, the number of keys, the local version and the time it was published, how many worker processes of each subsystem have applied it, the state of the generator on the nodes applying the local policy, and the security warnings. It never returns the keys.
+
+* `ok`: every business TLS listener of the node uses the current keys.
+* `off`: every business TLS listener of the node has stopped using shared keys, because of the local switch (`local_switch_off`), the local policy (`disabled_by_policy`), or because there is no key (`empty_keys`, also when the Plugin is not enabled). A node without any business TLS listener is `off` as well.
+* `degraded`: some worker has not applied the current keys yet (`worker_lag`), or something failed (`invalid_state`, `module_not_active`, `apply_failed`). A listener that failed to apply the keys uses no shared key, and the node stays `degraded` until the failure is gone: `last_apply_error` tells why.
+
+To check that new keys are in use, or that disabled ones no longer are, query every node and compare `source_version` with the revision of the metadata, then check `status` and `fully_applied`. A worker of a previous configuration generation that is still running counts too, in `draining`.
+
+A node that cannot reach etcd keeps the keys it has, without any time limit: nothing revokes the keys of a node that stops receiving updates. To withdraw keys urgently, disable or replace them, check that every node reports it, and stop or isolate the nodes that do not.
+
+## Upgrade Notes
+
+With an APISIX Runtime that takes over the session ticket keys:
+
+* `apisix.ssl.ssl_session_tickets` changes meaning for the business HTTPS listeners. `true` used to turn on the native session tickets of NGINX, with random keys of each node; it now allows the shared keys, and without them these listeners issue no stateless ticket. Unset, it now means true: with no published keys, the HTTPS listeners still issue no stateless ticket, as with the previous default.
+* The Stream TLS listeners used the native session tickets of NGINX, with random keys of each worker process. They now only issue tickets with the shared keys: without keys, Stream TLS sessions are not resumed.
+* The Admin API is not affected: it still uses the native session tickets of NGINX only when `apisix.ssl.ssl_session_tickets` is explicitly true.
+* A configuration that had the session tickets on does not get them back by itself: enable the Plugin and provide keys, see [Example Usage](#example-usage).
 
 ## Security
 
 * A key decrypts every ticket that it has issued. With TLS 1.2, whoever obtains a key can also decrypt the recorded traffic of the sessions resumed with its tickets. Generate the keys with a secure random generator, rotate them, and restrict the access to the Admin API and to etcd.
-* The same keys on all the nodes widen the impact of a single compromised node. This is why `enabled` defaults to false.
+* The same keys on all the nodes widen the impact of a single compromised node. This is why `enabled` defaults to false. A node keeps using the keys it has until it receives other ones, see [Status](#status).
 * When `apisix.data_encryption.enable_encrypt_fields` is false, or `apisix.data_encryption.keyring` still contains the public example keys of the default configuration, APISIX logs a warning and the Control API reports `encryption_disabled` or `default_keyring` in `warnings`. The keys still work, but configure a private keyring to protect them in etcd.
 * The keys never appear in the responses of the Admin API, in the plugin metadata dumps of the Control API, or in the error log, even when a request is invalid or is not valid JSON.

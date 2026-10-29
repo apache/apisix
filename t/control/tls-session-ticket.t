@@ -25,6 +25,14 @@ if ($version !~ m/\/apisix-nginx-module/) {
     plan('no_plan');
 }
 
+# Whether the runtime takes over the session ticket keys of the business TLS
+# listeners. Without it, nothing applies the keys and the status says so:
+# `--- response_body_takeover` is what the status says with it.
+my $takeover = 0;
+if ($version =~ m/--prefix=(\S+)\/nginx/) {
+    $takeover = -f "$1/lualib/resty/apisix/ssl_session_ticket.lua";
+}
+
 repeat_each(1);
 no_long_string();
 no_root_location();
@@ -36,16 +44,16 @@ add_block_preprocessor(sub {
         $block->set_value("request", "GET /t");
     }
 
+    if ($takeover && defined $block->response_body_takeover) {
+        $block->set_value("response_body", $block->response_body_takeover);
+    }
+
     # the same node id in every test, as a restarted node keeps it
     if (!defined $block->yaml_config) {
         $block->set_value("yaml_config", <<_EOC_);
 apisix:
   id: ssl-session-ticket-test
   node_listen: 1984
-  proxy_mode: http&stream
-  stream_proxy:
-    tcp:
-      - 9100
   enable_resolv_search_opt: false
 deployment:
   role: traditional
@@ -77,6 +85,7 @@ __DATA__
             local h = require("lib.ssl_session_ticket")
             local json = require("toolkit.json")
             h.wait_state(function(s) return s.state ~= "pending" end)
+            h.wait_status()
             local code, body = h.req("/v1/tls_session_ticket", ngx.HTTP_GET)
             body = json.decode(body)
             ngx.say(code, " ", body.status, " ", body.reason, " ", body.key_count, " ",
@@ -85,6 +94,9 @@ __DATA__
     }
 --- response_body
 200 degraded module_not_active 0 false nil nil
+--- response_body_takeover
+200 off empty_keys 0 true nil nil
+--- timeout: 15
 
 
 
@@ -93,10 +105,6 @@ __DATA__
 apisix:
   id: ssl-session-ticket-test
   node_listen: 1984
-  proxy_mode: http&stream
-  stream_proxy:
-    tcp:
-      - 9100
   ssl:
     ssl_session_tickets: true
 deployment:
@@ -118,6 +126,7 @@ plugin_attr:
             h.put_keys(1, 2, 3)
             local _, rev = h.record()
             h.wait_state(function(s) return s.origin and s.origin.revision == rev end)
+            h.wait_status()
 
             local code, body = h.req("/v1/tls_session_ticket", ngx.HTTP_GET)
             ngx.say("leak: ", h.leaks(body, 1, 2, 3))
@@ -149,7 +158,19 @@ version: true
 updated_at: true true
 workers: {"applied":0,"failed":0,"pending":0,"total":0}
 http: false degraded module_not_active 0 {"applied":0,"failed":0,"pending":0,"total":0}
-stream: false degraded module_not_active 0 {"applied":0,"failed":0,"pending":0,"total":0}
+stream: false off nil 0 {"applied":0,"failed":0,"pending":0,"total":0}
+warnings: ["default_keyring"]
+generator: false idle nil nil
+--- response_body_takeover
+leak: false
+200 ok nil true
+key_count: 3 effective: 3 fully_applied: true
+source: external true
+version: true
+updated_at: true true
+workers: {"applied":1,"failed":0,"pending":0,"total":1}
+http: true ok nil 1 {"applied":1,"failed":0,"pending":0,"total":1}
+stream: false off nil 0 {"applied":0,"failed":0,"pending":0,"total":0}
 warnings: ["default_keyring"]
 generator: false idle nil nil
 --- timeout: 15
@@ -157,6 +178,18 @@ generator: false idle nil nil
 
 
 === TEST 3: the target count is 0 when the local switch is off
+--- yaml_config
+apisix:
+  id: ssl-session-ticket-test
+  node_listen: 1984
+  ssl:
+    ssl_session_tickets: false
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  admin:
+    admin_key: null
 --- config
     location /t {
         content_by_lua_block {
@@ -164,13 +197,17 @@ generator: false idle nil nil
             local json = require("toolkit.json")
             local _, rev = h.record()
             h.wait_state(function(s) return s.origin and s.origin.revision == rev end)
+            h.wait_status()
             local _, body = h.req("/v1/tls_session_ticket", ngx.HTTP_GET)
             body = json.decode(body)
-            ngx.say(body.enabled, " ", body.key_count)
+            ngx.say(body.enabled, " ", body.key_count, " ", body.status, " ", body.reason, " ",
+                    body.effective_key_count)
         }
     }
 --- response_body
-false 0
+false 0 degraded module_not_active nil
+--- response_body_takeover
+false 0 off local_switch_off 0
 --- timeout: 15
 
 
@@ -230,6 +267,7 @@ stream_plugins:
             local h = require("lib.ssl_session_ticket")
             local json = require("toolkit.json")
             ngx.sleep(1.5)
+            h.wait_status()
             local code, body = h.req("/v1/tls_session_ticket", ngx.HTTP_GET)
             body = json.decode(body)
             ngx.say(code, " ", body.status, " ", body.reason, " ", body.key_count, " ",
@@ -238,6 +276,9 @@ stream_plugins:
     }
 --- response_body
 200 degraded module_not_active 0 nil
+--- response_body_takeover
+200 off empty_keys 0 nil
+--- timeout: 15
 
 
 
@@ -258,8 +299,9 @@ deployment:
         content_by_lua_block {
             local h = require("lib.ssl_session_ticket")
             local json = require("toolkit.json")
-            local _, body = h.req("/v1/tls_session_ticket", ngx.HTTP_GET)
-            body = json.decode(body)
+            local _, rev = h.record()
+            h.wait_state(function(s) return s.origin and s.origin.revision == rev end)
+            local body = h.wait_status()
             for _, name in ipairs({"http", "stream"}) do
                 local sub = body.subsystems[name]
                 ngx.say(name, ": ", sub.applicable, " ", sub.status, " ", sub.reason)
@@ -269,6 +311,10 @@ deployment:
 --- response_body
 http: false degraded module_not_active
 stream: false off nil
+--- response_body_takeover
+http: true ok nil
+stream: false off nil
+--- timeout: 15
 
 
 

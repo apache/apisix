@@ -309,6 +309,7 @@ plugin_attr:
 --- response_body
 disabled: true keys kept: 2
 200 unchanged: true
+--- timeout: 15
 
 
 
@@ -330,6 +331,7 @@ disabled: true keys kept: 2
 --- response_body
 disabled: false keys kept: 2
 200 unchanged: true
+--- timeout: 15
 
 
 
@@ -463,6 +465,7 @@ is unavailable: keys[1] can not be decrypted with the data_encryption keyring
 the TLS session ticket keys are encrypted with the default public apisix.data_encryption.keyring
 --- no_error_log
 dGlja2V0LW5hbWUtMDAwOE
+--- timeout: 15
 
 
 

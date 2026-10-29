@@ -544,27 +544,29 @@ curl http://127.0.0.1:9090/v1/tls_session_ticket
 
 ```json
 {
-    "status": "degraded",
-    "reason": "module_not_active",
+    "status": "ok",
+    "reason": null,
     "enabled": true,
     "key_count": 2,
-    "effective_key_count": null,
-    "fully_applied": false,
-    "version": "b0181944:2",
+    "effective_key_count": 2,
+    "fully_applied": true,
+    "version": "b0181944:3",
     "source": "external",
     "source_version": "222",
     "updated_at": "2026-10-28T06:53:04Z",
-    "updated_at_sec_ago": 1,
-    "workers": {"total": 0, "applied": 0, "pending": 0, "failed": 0},
+    "updated_at_sec_ago": 12,
+    "workers": {"total": 4, "applied": 4, "pending": 0, "failed": 0},
     "subsystems": {
-        "http": {"applicable": false, "status": "degraded", "reason": "module_not_active",
-                 "contexts": 0, "workers": {"total": 0, "applied": 0, "pending": 0, "failed": 0}},
-        "stream": {"applicable": false, "status": "degraded", "reason": "module_not_active",
-                   "contexts": 0, "workers": {"total": 0, "applied": 0, "pending": 0, "failed": 0}}
+        "http": {"applicable": true, "status": "ok", "reason": null, "contexts": 1,
+                 "workers": {"total": 4, "applied": 4, "pending": 0, "failed": 0},
+                 "draining": {"total": 0, "applied": 0, "pending": 0, "failed": 0}},
+        "stream": {"applicable": true, "status": "ok", "reason": null, "contexts": 2,
+                   "workers": {"total": 4, "applied": 4, "pending": 0, "failed": 0},
+                   "draining": {"total": 0, "applied": 0, "pending": 0, "failed": 0}}
     },
     "generator": {"executes": false, "state": "idle", "last_generated_at": null, "error": null},
-    "warnings": ["default_keyring"],
-    "last_apply_error": "the SSL layer does not consume the keys"
+    "warnings": [],
+    "last_apply_error": null
 }
 ```
 
@@ -578,17 +580,20 @@ curl http://127.0.0.1:9090/v1/tls_session_ticket
 | version             | The local version of the target published on this node. Do not compare it across nodes. |
 | source, source_version | The source of the keys and the revision of their metadata (the etcd revision, or the configuration version in standalone mode). Nodes of the same etcd cluster can be compared with it. `null` when there are no keys to read. |
 | updated_at, updated_at_sec_ago | When this node published the target (UTC) and how long ago. They are no health indicator. |
-| workers, subsystems | The progress of the worker processes, per subsystem (`http`, `stream`). |
+| workers             | The worker processes of the node, each counted once whatever the subsystems it serves, the ones still shutting down included: `applied` when all its business TLS contexts use the current target, `failed` when one of them failed, `pending` otherwise. |
+| subsystems          | Per subsystem (`http`, `stream`): `applicable` (whether it has business TLS contexts), `status` and `reason`, `contexts` (the number of business TLS contexts of a worker), `workers` (the worker processes of the current configuration, the ones that have not reported yet included) and `draining` (the worker processes of a previous configuration that still run). A subsystem that is not enabled is `off` and not applicable. |
 | generator           | On the `traditional` and `control_plane` nodes with etcd, which apply the local policy: `executes` (whether this node generates the keys), `state` (`idle` when it does not generate them, `ok`, `conflict` when the nodes do not have the same policy, or `failed`), `last_generated_at` (when the keys were last generated, UTC) and `error`. `null` on the other nodes. |
 | warnings            | Security warnings that do not change the status: `encryption_disabled` or `default_keyring`. |
 | last_apply_error    | The reason of the latest failure, never containing any key. |
 
 | status / reason | When |
 |-----------------|------|
-| `degraded` / `invalid_state`, `module_not_active` or `apply_failed` | Storing, loading or applying the keys failed, whatever the target. `module_not_active` means that nothing applies the keys to the TLS listeners of this node. |
-| `degraded` / `worker_lag` | Some worker process has not applied the current target yet. |
-| `off` / `local_switch_off`, `disabled_by_policy` or `empty_keys` | Every TLS listener has converged to not using shared keys. |
+| `degraded` / `invalid_state`, `module_not_active` or `apply_failed` | Storing, loading or applying the keys failed, whatever the target. `module_not_active` means that nothing applies the keys to the TLS listeners of this node: the APISIX Runtime does not take them over, or could not register a listener. A listener that failed uses no shared key. |
+| `degraded` / `worker_lag` | Some worker process has not applied the current target yet, for example a worker that still holds keys after they were disabled. |
+| `off` / `local_switch_off`, `disabled_by_policy` or `empty_keys` | Every TLS listener has converged to not using shared keys. `empty_keys` also covers a node where the Plugin is not enabled. A node without any business TLS listener is `off` as well. |
 | `ok` / `null` | Every TLS listener uses the current keys. |
+
+The status only reads the state of the node, a bounded number of times: when the state keeps changing while it is read, it reports `worker_lag` rather than a mixed result. Querying it does not make the workers apply anything.
 
 Without the HTTP subsystem (`proxy_mode: stream`), the Control API server only serves this endpoint.
 

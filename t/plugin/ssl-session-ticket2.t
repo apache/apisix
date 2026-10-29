@@ -83,10 +83,10 @@ __DATA__
         local line = sock:receive()
         local cmd, rev, n = line:match("^(%w+) ?(%d*) ?(%d*)$")
         if cmd == "publish" then
-            local res, err = state.publish({state = "ready", record = true,
-                                            source = "external", disabled = false,
-                                            revision = tonumber(rev),
-                                            keys = h.raws(tonumber(n))})
+            local res, err = h.publish({state = "ready", record = true,
+                                        source = "external", disabled = false,
+                                        revision = tonumber(rev),
+                                        keys = h.raws(tonumber(n))})
             ngx.say(res or err)
             return
         end
@@ -116,8 +116,8 @@ __DATA__
                 return (data:gsub("\n$", ""))
             end
 
-            ngx.say((state.publish({state = "ready", record = true, source = "external",
-                                   revision = 10, keys = h.raws(1, 2)})))
+            ngx.say((h.publish({state = "ready", record = true, source = "external",
+                                revision = 10, keys = h.raws(1, 2)})))
             local snap = state.read()
             local http_view = snap.version .. " " .. snap.state .. " "
                               .. table.concat(h.b64s(1, 2), ",")
@@ -151,11 +151,11 @@ duplicate
             local state = require("apisix.session_ticket.state")
             local cand = {state = "ready", record = true, source = "external",
                           revision = 20, keys = h.raws(1)}
-            ngx.say((state.publish(cand)))
+            ngx.say((h.publish(cand)))
             local snap = state.read()
             ngx.sleep(1.1)
-            ngx.say((state.publish(cand)))
-            ngx.say((state.publish(cand)))
+            ngx.say((h.publish(cand)))
+            ngx.say((h.publish(cand)))
             local again = state.read()
             ngx.say(again.version == snap.version, " ", again.updated_at == snap.updated_at)
         }
@@ -175,11 +175,13 @@ true true
             local h = require("lib.ssl_session_ticket")
             local state = require("apisix.session_ticket.state")
             local now = ngx.now
+            -- a new configuration generation may have taken a version already
+            local base = state.read_control().seq
             local function publish(at, revision, n)
                 ngx.now = function() return at end
-                local res, err = state.publish({state = "ready", record = true,
-                                                source = "external", revision = revision,
-                                                keys = h.raws(n)})
+                local res, err = h.publish({state = "ready", record = true,
+                                            source = "external", revision = revision,
+                                            keys = h.raws(n)})
                 ngx.now = now
                 local snap = state.read()
                 local key = "?"
@@ -188,7 +190,8 @@ true true
                         key = i
                     end
                 end
-                ngx.say(res or err, " seq=", snap.seq, " at=", snap.updated_at, " key=", key)
+                ngx.say(res or err, " seq=", snap.seq - base, " at=", snap.updated_at,
+                        " key=", key)
             end
 
             publish(1000, 10, 1)
@@ -214,28 +217,29 @@ stale seq=3 at=900 key=3
         content_by_lua_block {
             local h = require("lib.ssl_session_ticket")
             local state = require("apisix.session_ticket.state")
+            local base = state.read_control().seq
             local function show(res, err)
                 local snap = state.read()
-                ngx.say(res or err, " ", snap.seq, " ", snap.state, " ", #snap.keys, " ",
+                ngx.say(res or err, " ", snap.seq - base, " ", snap.state, " ", #snap.keys, " ",
                         snap.origin and snap.origin.revision or "no record")
             end
 
-            show(state.publish({state = "ready", record = true, source = "external",
-                                revision = 20, keys = h.raws(1)}))
+            show(h.publish({state = "ready", record = true, source = "external",
+                            revision = 20, keys = h.raws(1)}))
             -- deleted at revision 30
-            show(state.publish({state = "empty", record = false, revision = 30}))
+            show(h.publish({state = "empty", record = false, revision = 30}))
             -- late events of the deleted record
-            show(state.publish({state = "ready", record = true, source = "external",
-                                revision = 20, keys = h.raws(1)}))
-            show(state.publish({state = "ready", record = true, source = "external",
-                                revision = 25, keys = h.raws(2)}))
+            show(h.publish({state = "ready", record = true, source = "external",
+                            revision = 20, keys = h.raws(1)}))
+            show(h.publish({state = "ready", record = true, source = "external",
+                            revision = 25, keys = h.raws(2)}))
             -- still no record, later: only the watermark moves
-            show(state.publish({state = "empty", record = false, revision = 35}))
-            show(state.publish({state = "ready", record = true, source = "external",
-                                revision = 33, keys = h.raws(2)}))
+            show(h.publish({state = "empty", record = false, revision = 35}))
+            show(h.publish({state = "ready", record = true, source = "external",
+                            revision = 33, keys = h.raws(2)}))
             -- created again
-            show(state.publish({state = "ready", record = true, source = "external",
-                                revision = 40, keys = h.raws(3)}))
+            show(h.publish({state = "ready", record = true, source = "external",
+                            revision = 40, keys = h.raws(3)}))
         }
     }
 --- response_body
@@ -257,9 +261,10 @@ published 3 ready 1 40
             local state = require("apisix.session_ticket.state")
             local json = require("toolkit.json")
             local dict = ngx.shared["tls-session-ticket"]
+            h.wait_workers()
 
-            ngx.say((state.publish({state = "ready", record = true, source = "external",
-                                   revision = 50, keys = h.raws(1)})))
+            ngx.say((h.publish({state = "ready", record = true, source = "external",
+                                revision = 50, keys = h.raws(1)})))
 
             -- no memory left
             local n = 0
@@ -271,9 +276,9 @@ published 3 ready 1 40
             for i = 1, 200 do
                 many[i] = i
             end
-            local res, err = state.publish({state = "ready", record = true,
-                                            source = "external", revision = 51,
-                                            keys = h.raws(unpack(many))})
+            local res, err = h.publish({state = "ready", record = true,
+                                        source = "external", revision = 51,
+                                        keys = h.raws(unpack(many))})
             ngx.say(res, " ", err)
 
             local snap = state.read()
@@ -288,8 +293,8 @@ published 3 ready 1 40
                 dict:delete("junk" .. i)
             end
             local failed_seq = snap.seq
-            ngx.say((state.publish({state = "ready", record = true, source = "external",
-                                   revision = 51, keys = h.raws(unpack(many))})))
+            ngx.say((h.publish({state = "ready", record = true, source = "external",
+                                revision = 51, keys = h.raws(unpack(many))})))
             snap = state.read()
             ngx.say(snap.gate, " ", snap.state, " ", #snap.keys, " ",
                     snap.seq == failed_seq + 1)
@@ -302,10 +307,14 @@ unavailable unavailable 0 failed to store the snapshot
 degraded invalid_state 0 failed to store the snapshot
 published
 ready ready 200 true
+--- timeout: 15
 
 
 
 === TEST 6: when the control records cannot be created, nothing is usable and it shows
+--- extra_init_worker_by_lua
+    -- the consumers of the other worker would create the control records again
+    require("apisix.timers").unregister_timer("ssl#session_ticket")
 --- config
     location /t {
         content_by_lua_block {
@@ -313,9 +322,10 @@ ready ready 200 true
             local state = require("apisix.session_ticket.state")
             local json = require("toolkit.json")
             local dict = ngx.shared["tls-session-ticket"]
+            h.wait_workers()
 
-            ngx.say((state.publish({state = "ready", record = true, source = "external",
-                                   revision = 60, keys = h.raws(1)})))
+            ngx.say((h.publish({state = "ready", record = true, source = "external",
+                                revision = 60, keys = h.raws(1)})))
 
             -- as if the dictionary was full at startup
             dict:flush_all()
@@ -329,8 +339,8 @@ ready ready 200 true
 
             ngx.say(state.init())
             ngx.say(state.read())
-            ngx.say(state.publish({state = "ready", record = true, source = "external",
-                                   revision = 61, keys = h.raws(1)}))
+            ngx.say(h.publish({state = "ready", record = true, source = "external",
+                               revision = 61, keys = h.raws(1)}))
             local _, body = h.req("/v1/tls_session_ticket", ngx.HTTP_GET)
             body = json.decode(body)
             ngx.say(body.status, " ", body.reason, " ", body.key_count, " ",
@@ -351,6 +361,7 @@ nilfailed to pre-create the control records of shared dict 'tls-session-ticket'
 degraded invalid_state 0 control record unavailable
 true
 none pending 0
+--- timeout: 15
 
 
 
@@ -362,34 +373,47 @@ none pending 0
             local state = require("apisix.session_ticket.state")
             local json = require("toolkit.json")
             local dict = ngx.shared["tls-session-ticket"]
+            h.wait_workers()
 
-            ngx.say((state.publish({state = "ready", record = true, source = "external",
-                                   revision = 70, keys = h.raws(1, 2)})))
+            ngx.say((h.publish({state = "ready", record = true, source = "external",
+                                revision = 70, keys = h.raws(1, 2)})))
             local snap = state.read()
             local rec = {target_version = snap.version, applied_version = snap.version,
                          contexts = {{id = 1, ok = true}}}
 
-            ngx.say((state.put_worker_record({subsystem = "http", slot = 0, pid = 1001,
-                                              generation = 1}, rec)))
+            -- far from the slots and the lane of the real workers, which may
+            -- write their own records meanwhile
+            local function mine()
+                local n = 0
+                for _, r in ipairs(state.worker_records()) do
+                    if r.pid >= 1001 and r.pid <= 1003 then
+                        n = n + 1
+                    end
+                end
+                return n
+            end
+
+            ngx.say((state.put_worker_record({subsystem = "http", slot = 500, pid = 1001,
+                                              generation = 2}, rec)))
             -- a third generation lands on the lane of a live one
-            ngx.say(state.put_worker_record({subsystem = "http", slot = 0, pid = 1002,
-                                             generation = 3}, rec))
+            ngx.say(state.put_worker_record({subsystem = "http", slot = 500, pid = 1002,
+                                             generation = 4}, rec))
             ngx.say((state.worker_record_failure()))
 
             local too_many = {contexts = {}}
             for i = 1, state.MAX_CONTEXTS + 1 do
                 too_many.contexts[i] = {id = i, ok = true}
             end
-            ngx.say(state.put_worker_record({subsystem = "stream", slot = 0, pid = 1001,
-                                             generation = 1}, too_many))
+            ngx.say(state.put_worker_record({subsystem = "stream", slot = 500, pid = 1001,
+                                             generation = 2}, too_many))
 
             -- no memory left for another record
             local n = 0
             while dict:safe_set("junk" .. n, string.rep("x", 1000)) do
                 n = n + 1
             end
-            ngx.say(state.put_worker_record({subsystem = "http", slot = 1, pid = 1003,
-                                             generation = 1}, rec))
+            ngx.say(state.put_worker_record({subsystem = "http", slot = 501, pid = 1003,
+                                             generation = 2}, rec))
             ngx.say((state.worker_record_failure()))
 
             -- the snapshot is still complete
@@ -401,12 +425,12 @@ none pending 0
             ngx.say(body.status, " ", body.reason, " ", body.last_apply_error)
 
             -- only the owner removes its record
-            ngx.say((state.delete_worker_record({subsystem = "http", slot = 0, pid = 1002,
-                                                 generation = 1})))
-            ngx.say(#state.worker_records())
-            ngx.say((state.delete_worker_record({subsystem = "http", slot = 0, pid = 1001,
-                                                 generation = 1})))
-            ngx.say(#state.worker_records())
+            ngx.say((state.delete_worker_record({subsystem = "http", slot = 500, pid = 1002,
+                                                 generation = 2})))
+            ngx.say(mine())
+            ngx.say((state.delete_worker_record({subsystem = "http", slot = 500, pid = 1001,
+                                                 generation = 2})))
+            ngx.say(mine())
         }
     }
 --- response_body
@@ -423,6 +447,7 @@ false
 1
 true
 0
+--- timeout: 15
 
 
 
@@ -434,9 +459,10 @@ true
             local state = require("apisix.session_ticket.state")
             local json = require("toolkit.json")
             local dict = ngx.shared["tls-session-ticket"]
+            h.wait_workers()
 
-            ngx.say((state.publish({state = "ready", record = true, source = "external",
-                                   revision = 80, keys = h.raws(1)})))
+            ngx.say((h.publish({state = "ready", record = true, source = "external",
+                                revision = 80, keys = h.raws(1)})))
 
             -- the control record moved on but the snapshot did not follow
             local ctl = dict:get("ctl")
@@ -457,8 +483,9 @@ true
 --- response_body
 published
 nilinconsistent
-degraded module_not_active 0 nil the SSL layer does not consume the keys
+degraded worker_lag 0 nil the state kept changing while being read
 ready
+--- timeout: 15
 
 
 
@@ -473,8 +500,8 @@ ready
         while ngx.now() < deadline do
             rev = rev + 1
             local keys = rev % 2 == 1 and h.raws(1, 2) or h.raws(3)
-            state.publish({state = "ready", record = true, source = "external",
-                           revision = rev, keys = keys})
+            h.publish({state = "ready", record = true, source = "external",
+                       revision = rev, keys = keys})
             ngx.sleep(0)
             ngx.update_time()
         end
@@ -504,8 +531,12 @@ ready
                     end
                     seqs[snap.seq] = rev
                 end
+                -- the target always has keys: never off, and ok only once
+                -- every worker uses them
                 local _, body = status.get()
-                if body.status == "ok" or body.status == "off" then
+                if body.status == "off" or body.status == "ok"
+                   and body.effective_key_count ~= body.key_count
+                then
                     bad = bad + 1
                 end
                 ngx.sleep(0)
@@ -615,8 +646,8 @@ plugin_attr:
             ngx.say(code, " ", snap.state, " ", #snap.keys)
 
             -- a late event of the deleted record
-            ngx.say((state.publish({state = "ready", record = true, source = "external",
-                                   revision = rev, keys = h.raws(1, 2)})))
+            ngx.say((h.publish({state = "ready", record = true, source = "external",
+                                revision = rev, keys = h.raws(1, 2)})))
         }
     }
 --- response_body
@@ -705,3 +736,38 @@ plugin_attr:
 --- response_body
 201 empty 0 true
 --- timeout: 15
+
+
+
+=== TEST 15: a process that shuts down gives its slot to a newer configuration generation
+--- config
+    location /t {
+        content_by_lua_block {
+            local state = require("apisix.session_ticket.state")
+            local rec = {contexts = {{id = 1, ok = true}}}
+            -- far from the slots of the real workers, on the same lane
+            local old = {subsystem = "http", slot = 600, pid = 2001, generation = 2}
+            local new = {subsystem = "http", slot = 600, pid = 2002, generation = 4}
+            local function show(ok, err)
+                ngx.say(ok, " ", err)
+            end
+            show(state.put_worker_record(old, rec))
+            -- still serving: the third generation waits
+            show(state.put_worker_record(new, rec))
+            -- shutting down, with its contexts off for good
+            show(state.put_worker_record(old, {contexts = rec.contexts, exiting = true}))
+            show(state.put_worker_record(new, rec))
+            -- an older process never takes the slot back, nor removes the record
+            show(state.put_worker_record(old, {contexts = rec.contexts, exiting = true}))
+            show(state.delete_worker_record(old))
+            show(state.delete_worker_record(new))
+        }
+    }
+--- response_body
+true nil
+nil worker record slot is in use
+true nil
+true nil
+nil worker record slot is in use
+false nil
+true nil

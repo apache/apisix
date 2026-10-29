@@ -144,6 +144,13 @@ if ($profile) {
 my $dubbo_upstream = "";
 my $dubbo_location = "";
 my $version = eval { `$nginx_binary -V 2>&1` };
+
+# the runtime takes over the session ticket keys of the business TLS listeners,
+# the same check as apisix/cli/env.lua
+my $ssl_session_ticket_takeover = 0;
+if ($version =~ m/\/apisix-nginx-module/ && $version =~ m/--prefix=(\S+)\/nginx/) {
+    $ssl_session_ticket_takeover = -f "$1/lualib/resty/apisix/ssl_session_ticket.lua";
+}
 if ($version =~ m/\/mod_dubbo/) {
     $dubbo_upstream = <<_EOC_;
     upstream apisix_dubbo_backend {
@@ -552,15 +559,26 @@ _EOC_
 
     my $custom_trusted_cert = $block->custom_trusted_cert // 'cert/apisix.crt';
 
+    # Like apisix/cli/ngx_tpl.lua, the business TLS listeners issue session
+    # tickets only with the shared keys; `--- legacy_ssl_session_tickets` keeps
+    # what they did before, for the tests of that behavior.
+    my $legacy_ssl_session_tickets = defined $block->legacy_ssl_session_tickets;
+    my $takeover = $ssl_session_ticket_takeover && !$legacy_ssl_session_tickets;
+    my $http_ssl_session_tickets = $takeover
+        ? "ssl_session_tickets off;\n        apisix_ssl_session_ticket_takeover on;"
+        : "ssl_session_tickets off;";
+    my $stream_ssl_session_tickets = $takeover
+        ? "ssl_session_tickets off;\n    apisix_ssl_session_ticket_takeover on;"
+        : "ssl_session_cache    shared:STREAM_SSL:20m;\n"
+          . "    ssl_session_timeout 10m;\n    ssl_session_tickets off;";
+
     my $stream_server_config = $block->stream_server_config // <<_EOC_;
     listen 2005 ssl;
     ssl_certificate             cert/apisix.crt;
     ssl_certificate_key         cert/apisix.key;
     lua_ssl_trusted_certificate cert/apisix.crt;
 
-    ssl_session_cache    shared:STREAM_SSL:20m;
-    ssl_session_timeout 10m;
-    ssl_session_tickets off;
+    $stream_ssl_session_tickets
 
     ssl_client_hello_by_lua_block {
         apisix.ssl_client_hello_phase()
@@ -903,7 +921,7 @@ _EOC_
 
         ssl_session_cache    shared:SSL:20m;
         ssl_session_timeout 10m;
-        ssl_session_tickets off;
+        $http_ssl_session_tickets
 
         ssl_client_hello_by_lua_block {
             apisix.ssl_client_hello_phase()

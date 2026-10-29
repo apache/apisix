@@ -366,6 +366,9 @@ install: runtime
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/zipkin
 	$(ENV_INSTALL) apisix/plugins/zipkin/*.lua $(ENV_INST_LUADIR)/apisix/plugins/zipkin/
 
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/ssl
+	$(ENV_INSTALL) apisix/ssl/*.lua $(ENV_INST_LUADIR)/apisix/ssl/
+
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/ssl/router
 	$(ENV_INSTALL) apisix/ssl/router/*.lua $(ENV_INST_LUADIR)/apisix/ssl/router/
 

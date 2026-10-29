@@ -36,7 +36,7 @@ description: ssl-session-ticket 插件让各个 APISIX 节点的业务 TLS 监�
 
 该插件是全局系统插件：只能通过插件元数据配置，没有请求阶段逻辑，不能绑定到路由、服务或消费者。它默认同时启用在 `plugins` 和 `stream_plugins` 中，因此纯 Stream 部署也能取得密钥。
 
-该插件需要 [APISIX Runtime](../FAQ.md#如何构建-apisix-runtime-环境)：密钥保存在主级 `lua {}` 块的共享内存中，由 HTTP 与 Stream 子系统共用。
+该插件需要 [APISIX Runtime](../FAQ.md#如何构建-apisix-runtime-环境)：密钥保存在主级 `lua {}` 块的共享内存中，由 HTTP 与 Stream 子系统共用。业务 TLS 监听只有在 APISIX Runtime 接管其 session ticket 密钥时才会使用这些密钥，参见[业务 TLS 监听](#业务-tls-监听)。
 
 ## 本地策略
 
@@ -67,6 +67,24 @@ APISIX 启动时会校验这些属性。请在所有执行策略的节点上保�
 | `data_plane`                                   | 忽略。 | 使用执行策略的节点发布的密钥。 |
 | standalone（YAML、JSON 或 API 驱动）           | 只支持 `external` 密钥，是否使用由 `enabled` 决定。`enabled: true` 且 `key_source: generated` 时启动失败。 | 取自配置，参见 [standalone 模式](#standalone-模式)。 |
 | 纯 Stream（`proxy_mode: stream`）              | 不执行：生成器运行在 HTTP 子系统的特权进程中。 | 使用其他节点发布的密钥。 |
+
+## 业务 TLS 监听
+
+每个 worker 进程把已发布的密钥应用到承载业务流量的 TLS 监听上，HTTP 与 Stream 子系统各自独立进行：
+
+* `apisix.ssl.listen` 的 HTTPS 监听，包括 HTTP/3；
+* `apisix.stream_proxy.tcp` 中 `tls: true` 的 Stream 监听，包括同时设置了 `tls_passthrough: true` 的监听上负责终止 TLS 的内部 server。
+
+Admin API、Control API、Status API、Prometheus 导出服务、Stream 的 TLS 透传、普通 TCP 与 UDP，以及到上游的 TLS 连接都保持各自的配置。
+
+worker 会在一秒内应用新的密钥集合，并在每个新连接到达 ClientHello 时让该连接与之对齐，不需要等待握手发生。监听只有在完整的密钥集合安装好之后才签发无状态 ticket，移除密钥之前先停止签发和接受 ticket。更换密钥不会关闭任何连接。
+
+本地开关 `apisix.ssl.ssl_session_tickets` 决定本节点的业务监听是否使用共享密钥，未设置为 false 时即为 true。开关为 false，或者没有可用的密钥（插件未启用，密钥被停用、为空或无法加载）时，业务监听不签发无状态 ticket：
+
+* TLS 1.2 下，客户端只能通过节点的会话缓存恢复会话。HTTPS 监听有会话缓存（`shared:SSL:20m`，10 分钟），Stream 监听没有。
+* TLS 1.3 下，HTTPS 监听仍会发送其会话缓存的有状态 ticket，它只能在同一节点上恢复。
+
+该接管需要 `apisix-nginx-module` 提供这一能力的 APISIX Runtime。使用较早的 APISIX Runtime 时，监听保持之前版本的行为：密钥照常发布，但 TLS 监听不使用它们，Control API 报告 `module_not_active`。
 
 ## 内置生成
 
@@ -226,11 +244,28 @@ plugin_metadata:
 
 ## 状态
 
-元数据只表示已保存的内容，不代表各节点正在使用的内容。每个节点的 Control API 在 [`GET /v1/tls_session_ticket`](../control-api.md#get-v1tls_session_ticket) 中报告本节点的状态：密钥的来源与 revision、密钥数量、本地版本与发布时间、执行本地策略的节点上生成器的状态，以及安全告警。它从不返回密钥。
+元数据只表示已保存的内容，不代表各节点正在使用的内容。每个节点的 Control API 在 [`GET /v1/tls_session_ticket`](../control-api.md#get-v1tls_session_ticket) 中报告本节点的状态：密钥的来源与 revision、密钥数量、本地版本与发布时间、各子系统已应用该版本的 worker 进程数、执行本地策略的节点上生成器的状态，以及安全告警。它从不返回密钥。
+
+* `ok`：本节点所有业务 TLS 监听都在使用当前密钥。
+* `off`：本节点所有业务 TLS 监听都已停止使用共享密钥，原因是本地开关（`local_switch_off`）、本地策略（`disabled_by_policy`），或者没有密钥（`empty_keys`，插件未启用时也是如此）。没有任何业务 TLS 监听的节点同样为 `off`。
+* `degraded`：有 worker 尚未应用当前密钥（`worker_lag`），或者发生了故障（`invalid_state`、`module_not_active`、`apply_failed`）。应用失败的监听不使用任何共享密钥，节点在故障消除前一直为 `degraded`，原因见 `last_apply_error`。
+
+要确认新密钥已经生效，或已停用的密钥不再使用，请逐个查询节点：把 `source_version` 与元数据的 revision 对比，再检查 `status` 与 `fully_applied`。仍在运行的旧配置代 worker 也计入其中，见 `draining`。
+
+无法访问 etcd 的节点会一直保留已有的密钥，没有时间限制：没有任何机制会撤销收不到更新的节点上的密钥。需要紧急撤回密钥时，请停用或替换密钥，确认每个节点都已报告该结果，并停止或隔离没有报告的节点。
+
+## 升级说明
+
+使用接管 session ticket 密钥的 APISIX Runtime 时：
+
+* `apisix.ssl.ssl_session_tickets` 对业务 HTTPS 监听的含义改变了。以前 `true` 打开 NGINX 原生的 session ticket，使用每个节点各自的随机密钥；现在它表示允许使用共享密钥，没有共享密钥时这些监听不签发无状态 ticket。未设置时现在等同于 true：没有发布密钥时，HTTPS 监听与以前的默认值一样不签发无状态 ticket。
+* Stream TLS 监听以前使用 NGINX 原生的 session ticket，每个 worker 进程各自使用随机密钥；现在只用共享密钥签发 ticket，没有密钥时 Stream TLS 会话不能恢复。
+* Admin API 不受影响：仍然只在 `apisix.ssl.ssl_session_tickets` 显式为 true 时使用 NGINX 原生的 session ticket。
+* 以前打开了 session ticket 的配置不会自动恢复 ticket：请启用插件并提供密钥，参见[使用示例](#使用示例)。
 
 ## 安全
 
 * 一把密钥能解密它签发的所有 ticket。使用 TLS 1.2 时，取得密钥的人还能解密用这些 ticket 恢复的会话的录制流量。请用安全的随机数生成密钥、定期轮转，并限制对 Admin API 和 etcd 的访问。
-* 所有节点使用同一组密钥，会扩大单个节点失陷的影响范围，因此 `enabled` 默认为 false。
+* 所有节点使用同一组密钥，会扩大单个节点失陷的影响范围，因此 `enabled` 默认为 false。节点会一直使用已有的密钥，直到收到新的密钥，参见[状态](#状态)。
 * `apisix.data_encryption.enable_encrypt_fields` 为 false，或 `apisix.data_encryption.keyring` 仍包含默认配置中公开的示例密钥时，APISIX 会在日志中告警，Control API 的 `warnings` 中报告 `encryption_disabled` 或 `default_keyring`。密钥仍然可用，但请配置私有的 keyring，以保护 etcd 中的密钥。
 * 密钥不会出现在 Admin API 的响应、Control API 的插件元数据导出或错误日志中，即使请求非法或不是合法的 JSON 也是如此。

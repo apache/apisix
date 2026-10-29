@@ -39,6 +39,15 @@ exit_if_not_customed_nginx() {
     openresty -V 2>&1 | grep apisix-nginx-module || exit 0
 }
 
+# whether the runtime takes over the session ticket keys of the business TLS
+# listeners, the same check as apisix/cli/env.lua
+ssl_session_ticket_takeover() {
+    local prefix
+    prefix=$(openresty -V 2>&1 | grep -o -- '--prefix=[^ ]*/nginx' | head -n 1 \
+             | sed -e 's/^--prefix=//' -e 's/\/nginx$//')
+    [ -n "$prefix" ] && [ -f "$prefix/lualib/resty/apisix/ssl_session_ticket.lua" ]
+}
+
 # wait_for_pidfile <path> [timeout_secs]
 # Poll until the pid file exists and is non-empty; default timeout 10s.
 # `apisix start` returns once nginx has daemonized, which is before the master
