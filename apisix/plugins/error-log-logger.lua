@@ -108,6 +108,16 @@ local metadata_schema = {
                     },
                     uniqueItems = true,
                 },
+                tls = {
+                    type = "object",
+                    description = "tls config for connecting to kafka brokers",
+                    properties = {
+                        verify = {
+                            type = "boolean",
+                            default = false,
+                        },
+                    },
+                },
                 kafka_topic = {type = "string"},
                 producer_type = {
                     type = "string",
@@ -185,7 +195,12 @@ local _M = {
 
 function _M.check_schema(conf, schema_type)
     if schema_type == core.schema.TYPE_METADATA then
-        return core.schema.check(metadata_schema, conf)
+        local ok, err = core.schema.check(metadata_schema, conf)
+        if not ok then
+            return nil, err
+        end
+        core.utils.check_tls_bool({"kafka.tls.verify"}, conf, plugin_name)
+        return true
     end
 
     local check = {"skywalking.endpoint_addr", "clickhouse.endpoint_addr"}
@@ -363,6 +378,17 @@ local function create_producer(broker_list, broker_config, cluster_name)
 end
 
 
+-- redact_brokers returns a copy of the kafka broker list carrying only host and
+-- port, so the sasl_config credentials are never written to logs.
+local function redact_brokers(brokers)
+    local safe = {}
+    for i, b in ipairs(brokers or {}) do
+        safe[i] = {host = b.host, port = b.port}
+    end
+    return safe
+end
+
+
 local function send_to_kafka(log_message)
     -- avoid race of the global config
     local metadata = plugin.plugin_metadata(plugin_name)
@@ -375,13 +401,17 @@ local function send_to_kafka(log_message)
     end
 
     core.log.info("sending a batch logs to kafka brokers: ",
-                  core.json.delay_encode(config.kafka.brokers))
+                  core.json.delay_encode(redact_brokers(config.kafka.brokers)))
 
     local broker_config = {}
     broker_config["request_timeout"] = config.timeout * 1000
     broker_config["producer_type"] = config.kafka.producer_type
     broker_config["required_acks"] = config.kafka.required_acks
     broker_config["refresh_interval"] = config.kafka.meta_refresh_interval * 1000
+    if config.kafka.tls then
+        broker_config["ssl"] = true
+        broker_config["ssl_verify"] = config.kafka.tls.verify
+    end
 
     -- reuse producer via kafka_prod_lrucache to avoid unbalanced partitions of messages in kafka
     local prod, err = kafka_prod_lrucache(plugin_name, metadata.modifiedIndex,
@@ -399,7 +429,7 @@ local function send_to_kafka(log_message)
                             config.kafka.key, core.json.encode(log_message[i]))
         if not ok then
             return false, "failed to send data to Kafka topic: " .. err ..
-                          ", brokers: " .. core.json.encode(config.kafka.brokers)
+                          ", brokers: " .. core.json.encode(redact_brokers(config.kafka.brokers))
         end
         core.log.info("send data to kafka: ", core.json.delay_encode(log_message[i]))
     end

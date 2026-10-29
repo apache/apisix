@@ -149,3 +149,40 @@ qr/proxy request to \S+ while connecting to upstream/
 --- grep_error_log_out
 proxy request to 127.0.0.1:1999 while connecting to upstream
 proxy request to 0.0.0.0:1999 while connecting to upstream
+
+
+
+=== TEST 5: more retries than nodes, the request ends up holding no server
+--- apisix_yaml
+upstreams:
+  - id: 1
+    type: least_conn
+    retries: 3
+    nodes:
+        "127.0.0.1:1999": 2
+        "0.0.0.0:1999": 1
+--- error_code: 502
+--- error_log
+failed to find valid upstream server, all upstream servers tried
+--- no_error_log
+table index is nil
+
+
+
+=== TEST 6: a single node is retried, it is the only one there is
+--- apisix_yaml
+upstreams:
+  - id: 1
+    type: least_conn
+    retries: 2
+    nodes:
+        "127.0.0.1:1999": 1
+--- error_code: 502
+--- error_log
+connect() failed
+--- grep_error_log eval
+qr/proxy request to \S+ while connecting to upstream/
+--- grep_error_log_out
+proxy request to 127.0.0.1:1999 while connecting to upstream
+proxy request to 127.0.0.1:1999 while connecting to upstream
+proxy request to 127.0.0.1:1999 while connecting to upstream

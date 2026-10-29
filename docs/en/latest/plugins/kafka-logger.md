@@ -49,6 +49,8 @@ It might take some time to receive the log data. It will be automatically sent a
 | brokers.sasl_config.mechanism    | string  | False    | "PLAIN"        | ["PLAIN", "SCRAM-SHA-256", "SCRAM-SHA-512"]       | The mechanism of SASL config.                                                                                                                                                                                                                                                                                                                    |
 | brokers.sasl_config.user         | string  | True     |                |                                                   | The user of `sasl_config`. Required if `sasl_config` is configured.                                                                                                                                                                                                                                                                              |
 | brokers.sasl_config.password     | string  | True     |                |                                                   | The password of `sasl_config`. Required if `sasl_config` is configured.                                                                                                                                                                                                                                                                          |
+| tls                              | object  | False    |                |                                                   | TLS configuration for connecting to Kafka brokers.                                                                                                                                                                                                                                                                                               |
+| tls.verify                       | boolean | False    | false          |                                                   | If true, verify the Kafka broker TLS certificate.                                                                                                                                                                                                                                                                                                |
 | kafka_topic                      | string  | True     |                |                                                   | Target topic to push the logs.                                                                                                                                                                                                                                                                                                                   |
 | producer_type                    | string  | False    | async          | ["async", "sync"]                                 | Message sending mode of the producer.                                                                                                                                                                                                                                                                                                            |
 | required_acks                    | integer | False    | 1              | [1, -1]                                           | Number of acknowledgements the leader needs to receive for the producer to consider the request complete. This controls the durability of the sent records. The attribute follows the same configuration as the Kafka `acks` attribute. `required_acks` cannot be 0. See [Apache Kafka documentation](https://kafka.apache.org/documentation/#producerconfigs_acks) for more. |
@@ -146,8 +148,7 @@ You can also set the format of the logs by configuring the Plugin metadata. The 
 | ------------------- | ------- | -------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | log_format          | object  | False    |         | Log format declared as key-value pairs in JSON. Values support strings and nested objects (up to five levels deep; deeper fields are truncated). Within strings, [APISIX](../apisix-variable.md) or [NGINX](http://nginx.org/en/docs/varindex.html) variables can be referenced by prefixing with `$`. |
 | log_format_extra          | object  | False    |         | Extra log fields **added on top of** the default log entry, keeping every default field instead of replacing them (unlike `log_format`). Same value syntax as `log_format`. Ignored when `log_format` is set. |
-| max_pending_entries | integer | False    |         | Maximum number of pending entries that can be buffered in the batch processor before it starts dropping them.                                                                                                                                           |
-
+| max_pending_entries | integer | False | 8192 | Maximum number of entries waiting to be processed. New entries are discarded while the backlog exceeds this, which stops a slow or unreachable log server from growing the worker's memory without bound. See [Batch Processor](../batch-processor.md#limiting-the-backlog) for the memory a backlog of this size costs. |
 :::info IMPORTANT
 
 Configuring the Plugin metadata is global in scope. This means that it will take effect on all Routes and Services which use the `kafka-logger` Plugin.
@@ -487,3 +488,50 @@ If you have customized the `log_format` in addition to setting `include_req_body
 ```
 
 :::
+
+### Log to TLS-Enabled Kafka Brokers
+
+The following example demonstrates how to connect to TLS-enabled Kafka brokers, such as AWS MSK.
+
+Create a Route with `kafka-logger` and configure the `tls` attribute to connect to the TLS-enabled Kafka broker:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "kafka-logger-tls-route",
+    "uri": "/get",
+    "plugins": {
+      "kafka-logger": {
+        "brokers": [
+          {
+            "host": "kafka.example.com",
+            "port": 9093
+          }
+        ],
+        "kafka_topic": "test2",
+        "key": "key1",
+        "batch_max_size": 1,
+        "tls": {
+          "verify": true
+        }
+      }
+    },
+    "upstream": {
+      "nodes": {
+        "httpbin.org:80": 1
+      },
+      "type": "roundrobin"
+    }
+  }'
+```
+
+When using self-signed certificates, set `tls.verify` to `false` to skip certificate verification:
+
+```json
+{
+  "tls": {
+    "verify": false
+  }
+}
+```

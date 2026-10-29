@@ -979,3 +979,39 @@ opentracing
 tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
 --- response_body eval
 qr/"traceId"\s*:\s*"(?!550e8400e29b41d4a716446655440000)[0-9a-f]{32}"/
+
+
+
+=== TEST 49: metadata_schema rejects non-scalar resource and collector.request_headers values
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local cases = {
+                {name = "object resource value",
+                 body = [[{"resource":{"service.name":{"nested":"table"}}}]]},
+                {name = "array resource value",
+                 body = [[{"resource":{"service.name":["a","b"]}}]]},
+                {name = "object request_headers value",
+                 body = [[{"collector":{"address":"127.0.0.1:4318","request_headers":{"Authorization":{"a":1}}}}]]},
+            }
+            for _, case in ipairs(cases) do
+                local code = t('/apisix/admin/plugin_metadata/opentelemetry',
+                               ngx.HTTP_PUT, case.body)
+                if code ~= 400 then
+                    ngx.say(case.name, ": expected 400, got ", code)
+                    return
+                end
+            end
+
+            -- scalars stay valid
+            local code = t('/apisix/admin/plugin_metadata/opentelemetry', ngx.HTTP_PUT,
+                [[{"resource":{"service.name":"APISIX","weight":1.5,"debug":true},]] ..
+                [["collector":{"address":"127.0.0.1:4318","request_headers":{"Authorization":"token"}}}]])
+            if code >= 300 then
+                ngx.say("valid metadata rejected, got ", code)
+                return
+            end
+            ngx.say("passed")
+        }
+    }

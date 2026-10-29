@@ -33,7 +33,8 @@ basic:
 
 注意：在 APISIX 2.10 之前，开启基本调试模式曾经是设置 `conf/config.yaml` 中的 `apisix.enable_debug` 为 `true`。
 
-比如对 `/hello` 开启了 `limit-conn` 和 `limit-count` 插件，这时候应答头中会有 `Apisix-Plugins: limit-conn, limit-count`。
+比如对 `/hello` 开启了 `limit-conn` 和 `limit-count` 插件，这时候应答头中会有 `Apisix-Plugins: limit-conn#access, limit-count#access, limit-conn#log`。
+应答头中的每一项都是 `插件名#执行阶段` 的形式，按照插件阶段函数在运行时的执行顺序排列（应答头生成之后才执行的阶段按预期执行顺序给出，见下方说明）。
 
 ```shell
 $ curl http://127.0.0.1:1984/hello -i
@@ -41,7 +42,7 @@ HTTP/1.1 200 OK
 Content-Type: text/plain
 Transfer-Encoding: chunked
 Connection: keep-alive
-Apisix-Plugins: limit-conn, limit-count
+Apisix-Plugins: limit-conn#access, limit-count#access, limit-conn#log
 X-RateLimit-Limit: 2
 X-RateLimit-Remaining: 1
 Server: openresty
@@ -49,8 +50,9 @@ Server: openresty
 hello world
 ```
 
-如果这个信息无法通过 HTTP 应答头传递，比如插件在 stream 子系统里面执行，
-那么这个信息会以 warn 等级日志写入到错误日志中。
+受限于 HTTP 协议，在应答头生成之后才执行的插件阶段函数（如 `body_filter`、`log`）无法在执行时被记录到应答头中。应答头中的这类条目是在应答头生成前**推算**出来的：只要匹配到的插件带有对应的阶段函数，就会被记录。因此这些条目不完全代表真实的执行情况——例如某插件在运行时被 `_meta.filter` 跳过，它仍会出现在应答头中。
+
+无法通过执行记录或推算体现的阶段函数（例如 global rule 中的插件在应答头发送之后执行的阶段），会以 warn 等级日志写入到错误日志中，例如 `Apisix-Plugins: response-rewrite#body_filter`。
 
 ### 高级调试模式
 

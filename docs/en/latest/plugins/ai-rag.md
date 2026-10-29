@@ -7,7 +7,7 @@ keywords:
   - ai-rag
   - AI
   - LLM
-description: The ai-rag Plugin enhances LLM outputs with Retrieval-Augmented Generation (RAG), efficiently retrieving relevant documents to improve accuracy and contextual relevance in responses.
+description: The ai-rag Plugin retrieves context with Azure OpenAI embeddings and Azure AI Search before an LLM request is proxied.
 ---
 
 <!--
@@ -38,9 +38,9 @@ import TabItem from '@theme/TabItem';
 
 ## Description
 
-The `ai-rag` Plugin provides Retrieval-Augmented Generation (RAG) capabilities with LLMs. It facilitates the efficient retrieval of relevant documents or information from external data sources, which are used to enhance the LLM responses, thereby improving the accuracy and contextual relevance of the generated outputs.
+The `ai-rag` Plugin implements the retrieval step of a Retrieval-Augmented Generation (RAG) request flow. It generates an embedding from the request, performs a vector search, adds the retrieved content to the protocol-specific LLM request input, and removes the `ai_rag` request object before the request is proxied.
 
-The Plugin supports using [Azure OpenAI](https://azure.microsoft.com/en-us/products/ai-services/openai-service) and [Azure AI Search](https://azure.microsoft.com/en-us/products/ai-services/ai-search) services for generating embeddings and performing vector search. PRs for introducing support for other service providers are welcomed.
+The current implementation supports [Azure OpenAI](https://azure.microsoft.com/en-us/products/ai-services/openai-service) for embeddings and [Azure AI Search](https://azure.microsoft.com/en-us/products/ai-services/ai-search) for vector search. Use the [`ai-proxy`](./ai-proxy.md) Plugin in the same request flow to proxy the augmented request to the LLM provider. The Plugin does not create or populate a search index; prepare the index and its content before sending requests through APISIX.
 
 ## Plugin Attributes
 
@@ -115,14 +115,14 @@ Save the API keys and endpoints to environment variables:
 ```shell
 # replace with your values
 
-AZ_OPENAI_DOMAIN=https://ai-plugin-developer.openai.azure.com
-AZ_OPENAI_API_KEY=9m7VYroxITMDEqKKEnpOknn1rV7QNQT7DrIBApcwMLYJQQJ99ALACYeBjFXJ3w3AAABACOGXGcd
+AZ_OPENAI_DOMAIN=https://your-openai-resource.openai.azure.com
+AZ_OPENAI_API_KEY=your-azure-openai-api-key
 AZ_CHAT_ENDPOINT=${AZ_OPENAI_DOMAIN}/openai/deployments/gpt-4o/chat/completions?api-version=2024-02-15-preview
 AZ_EMBEDDING_MODEL=text-embedding-3-large
 AZ_EMBEDDINGS_ENDPOINT=${AZ_OPENAI_DOMAIN}/openai/deployments/${AZ_EMBEDDING_MODEL}/embeddings?api-version=2023-05-15
 
-AZ_AI_SEARCH_SVC_DOMAIN=https://ai-plugin-developer.search.windows.net
-AZ_AI_SEARCH_KEY=IFZBp3fKVdq7loEVe9LdwMvVdZrad9A4lPH90AzSeC06SlR
+AZ_AI_SEARCH_SVC_DOMAIN=https://your-search-service.search.windows.net
+AZ_AI_SEARCH_KEY=your-azure-ai-search-api-key
 AZ_AI_SEARCH_INDEX=vectest
 AZ_AI_SEARCH_ENDPOINT=${AZ_AI_SEARCH_SVC_DOMAIN}/indexes/${AZ_AI_SEARCH_INDEX}/docs/search?api-version=2024-07-01
 ```
@@ -243,17 +243,17 @@ spec:
         embeddings_provider:
           azure_openai:
             endpoint: "https://your-openai-resource.openai.azure.com/openai/deployments/text-embedding-3-large/embeddings?api-version=2023-05-15"
-            api_key: "Bearer your-api-key"
+            api_key: "your-azure-openai-api-key"
         vector_search_provider:
           azure_ai_search:
             endpoint: "https://your-search-service.search.windows.net/indexes/vectest/docs/search?api-version=2024-07-01"
-            api_key: "Bearer your-api-key"
+            api_key: "your-azure-ai-search-api-key"
     - name: ai-proxy
       config:
         provider: openai
         auth:
           header:
-            api-key: "Bearer your-api-key"
+            api-key: "your-azure-openai-api-key"
         model: gpt-4o
         override:
           endpoint: "https://your-openai-resource.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-02-15-preview"
@@ -307,18 +307,18 @@ spec:
             embeddings_provider:
               azure_openai:
                 endpoint: "https://your-openai-resource.openai.azure.com/openai/deployments/text-embedding-3-large/embeddings?api-version=2023-05-15"
-                api_key: "Bearer your-api-key"
+                api_key: "your-azure-openai-api-key"
             vector_search_provider:
               azure_ai_search:
                 endpoint: "https://your-search-service.search.windows.net/indexes/vectest/docs/search?api-version=2024-07-01"
-                api_key: "Bearer your-api-key"
+                api_key: "your-azure-ai-search-api-key"
         - name: ai-proxy
           enable: true
           config:
             provider: openai
             auth:
               header:
-                api-key: "Bearer your-api-key"
+                api-key: "your-azure-openai-api-key"
             model: gpt-4o
             override:
               endpoint: "https://your-openai-resource.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-02-15-preview"

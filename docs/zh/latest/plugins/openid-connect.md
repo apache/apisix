@@ -46,7 +46,7 @@ import TabItem from '@theme/TabItem';
 | client_secret | string | 是 | | | OAuth 客户端密钥。 |
 | discovery | string | 是 | | | OpenID 提供商的 well-known 发现文档 URL，包含 OP API 端点列表。插件可直接使用发现文档中的端点。你也可以单独配置这些端点，单独配置的值优先于发现文档中提供的端点。 |
 | scope | string | 否 | openid | | 与认证用户相关信息对应的 OIDC 范围，也称为 [claims](https://openid.net/specs/openid-connect-core-1_0.html#StandardClaims)。用于授权具有适当权限的用户。默认值为 `openid`，这是 OIDC 返回唯一标识认证用户的 `sub` claim 所需的范围。可以附加额外的范围并以空格分隔，例如 `openid email profile`。 |
-| required_scopes | array[string] | 否 | | | 访问令牌中必须存在的范围。在 `bearer_only` 为 `true` 时与 introspection 端点结合使用。如果缺少任何必需范围，插件将以 403 forbidden 错误拒绝请求。 |
+| required_scopes | array[string] | 否 | | | 访问令牌中必须存在的范围。如果缺少任何必需范围，插件将以 403 forbidden 错误拒绝请求。在授权码流程中，已授予的范围取自访问令牌的 `scope` 声明；当访问令牌中没有该声明时，回退到 ID 令牌的同名声明。两者都无法确定已授予范围的会话会被拒绝。 |
 | realm | string | 否 | apisix | | 由于无效 bearer token 导致 401 未授权请求时，[`WWW-Authenticate`](https://www.rfc-editor.org/rfc/rfc6750#section-3) 响应头中的 Realm 值。 |
 | bearer_only | boolean | 否 | false | | 如果为 true，则严格要求请求中携带 bearer 访问令牌进行身份验证。 |
 | logout_path | string | 否 | /logout | | 触发注销的路径。 |
@@ -60,12 +60,24 @@ import TabItem from '@theme/TabItem';
 | public_key | string | 否 | | | 使用非对称算法时用于验证 JWT 签名的公钥。提供此值进行令牌验证将跳过客户端凭证流中的令牌内省。可以以 `-----BEGIN PUBLIC KEY-----\n……\n-----END PUBLIC KEY-----` 格式传递公钥。 |
 | use_jwks | boolean | 否 | false | | 如果为 true 且未设置 `public_key`，则使用 JWKS 验证 JWT 签名并跳过客户端凭证流中的令牌内省。JWKS 端点从发现文档中解析。 |
 | use_pkce | boolean | 否 | false | | 如果为 true，则按照 [RFC 7636](https://datatracker.ietf.org/doc/html/rfc7636) 定义，在授权码流程中使用 PKCE（Proof Key for Code Exchange）。 |
+| par | object | 否 | | | Pushed Authorization Requests (PAR) 配置。 |
+| par.enabled | boolean | 否 | false | | 如果为 true，则按照 [RFC 9126](https://datatracker.ietf.org/doc/html/rfc9126) 使用 OAuth 2.0 Pushed Authorization Requests (PAR)。授权请求参数会发送到 PAR 端点，浏览器将使用返回的 `request_uri` 重定向。 |
+| par.endpoint | string | 否 | | | PAR 端点 URL。未设置时使用发现文档中的端点。 |
+| par.endpoint_auth_method | string | 否 | | ["client_secret_basic", "client_secret_post", "private_key_jwt", "client_secret_jwt"] | PAR 端点的认证方法。未设置时使用 `token_endpoint_auth_method`。`private_key_jwt` 需要 `client_rsa_private_key`，`client_secret_jwt` 需要 `client_secret`；与令牌端点不同，PAR 请求在认证方法不可用时会直接失败。 |
+| dpop | object | 否 | | | Demonstrating Proof of Possession (DPoP) 配置。 |
+| dpop.enabled | boolean | 否 | false | | 如果为 true，则按照 [RFC 9449](https://datatracker.ietf.org/doc/html/rfc9449) 使用 OAuth 2.0 DPoP。插件会向令牌端点发送 DPoP proof JWT，并在用户信息请求中使用 DPoP 绑定的访问令牌。 |
+| dpop.signing_alg | string | 否 | ES256 | ["ES256", "RS256", "PS256"] | DPoP proof JWT 的签名算法。 |
+| dpop.private_key | string | 否 | | | 用于签署 DPoP proof JWT 的 PEM 编码私钥。当 `dpop.enabled` 为 true 时必填。 |
+| dpop.public_jwk | object | 否 | | | 与 `dpop.private_key` 匹配的公钥 JWK。当 `dpop.enabled` 为 true 时必填。该 JWK 不得包含私钥材料。 |
 | token_signing_alg_values_expected | string | 否 | | | 用于签署 JWT 的算法，例如 `RS256`。 |
 | set_access_token_header | boolean | 否 | true | | 如果为 true，则在请求标头中设置访问令牌。默认情况下，使用 `X-Access-Token` 标头。|
 | access_token_in_authorization_header | boolean | 否 | false | | 如果为 true 并且 `set_access_token_header` 也为 true，则在 `Authorization` 标头中设置访问令牌。 |
 | set_id_token_header | boolean | 否 | true | | 如果为 true 并且 ID 令牌可用，则在 `X-ID-Token` 请求标头中设置值。 |
 | set_userinfo_header | boolean | 否 | true | | 如果为 true 并且用户信息数据可用，则在 `X-Userinfo` 请求标头中设置值。 |
 | set_refresh_token_header | boolean | 否 | false | | 如果为 true 并且刷新令牌可用，则在 `X-Refresh-Token` 请求标头中设置值。 |
+| upstream_headers | array[object] | 否 | | | 以请求头形式转发给上游的 claim。插件会先清除所有声明的请求头，再只用已校验的 claim 设置，因此客户端无法自行提供这些值，包括 `unauth_action` 为 `pass` 时放行的请求。使用 `bearer_only`、`public_key`、`use_jwks` 或令牌自省时，claim 来自已校验的访问令牌负载或自省响应。授权码流程中，claim 先从 ID 令牌读取，ID 令牌中没有的再从用户信息读取。值为 `null` 或 `false` 的 claim 视为不存在，会继续从下一个来源读取。 |
+| upstream_headers.header | string | 是 | | | 上游请求头名称。 |
+| upstream_headers.path | array[string] | 是 | | | 定位 claim 的键，每层嵌套一个键，例如 `["org", "id"]`。键按字面匹配，因此包含 `://`、`/` 或 `.` 的 claim 名称是一个键。字符串原样转发，数字和 `true` 转为文本，数组和对象（包括空数组和空对象）以 base64 编码的 JSON 转发。claim 不存在、为 `null`、`false` 或空字符串时不设置该请求头。 |
 | session | object | 否 | | | 当 `bearer_only` 为 `false` 且插件使用 Authorization Code 流程时使用的 Session 配置。 |
 | session.secret | string | 是 | | 16 个字符以上 | 当 `bearer_only` 为 `false` 时，用于 session 加密和 HMAC 运算的密钥。|
 | session.cookie_name | string | 否 | | | 会话 Cookie 名称。作为 `cookie_name` 透传到 [lua-resty-session](https://github.com/bungle/lua-resty-session#configuration) 4.x。 |
@@ -106,9 +118,11 @@ import TabItem from '@theme/TabItem';
 | proxy_opts.https_proxy_authorization | string | 否 | | Basic [base64 username:password] | 与 `https_proxy` 一起使用的默认 `Proxy-Authorization` 头值。由于 HTTPS 连接时已完成授权，不能用自定义 `Proxy-Authorization` 请求头覆盖。 |
 | proxy_opts.no_proxy | string | 否 | | | 不需要代理的主机列表，以逗号分隔。 |
 | authorization_params | object | 否 | | | 发送到授权端点请求中的额外参数。 |
-| client_rsa_private_key | string | 否 | | | 用于向 OP 签署 JWT 进行身份验证的客户端 RSA 私钥。当 `token_endpoint_auth_method` 为 `private_key_jwt` 时必填。 |
-| client_rsa_private_key_id | string | 否 | | | 用于计算已签名 JWT 的客户端 RSA 私钥 ID。当 `token_endpoint_auth_method` 为 `private_key_jwt` 时可选。 |
-| client_jwt_assertion_expires_in | integer | 否 | 60 | | 向 OP 进行身份验证的已签名 JWT 的有效期，单位为秒。在 `token_endpoint_auth_method` 为 `private_key_jwt` 或 `client_secret_jwt` 时使用。 |
+| client_rsa_private_key | string | 否 | | | 用于签署客户端断言 JWT 的客户端私钥。只要 `token_endpoint_auth_method`、`introspection_endpoint_auth_method` 或 `par.endpoint_auth_method` 中任一选择了 `private_key_jwt` 就必填。密钥类型必须与 `client_jwt_assertion_alg` 匹配：`RS*` 算法用 RSA 密钥，`ES*` 算法用对应曲线的 EC 密钥。 |
+| client_rsa_private_key_id | string | 否 | | | 用于计算已签名客户端断言 JWT 的客户端私钥 ID。任一端点选择 `private_key_jwt` 时可选。 |
+| client_jwt_assertion_expires_in | integer | 否 | 60 | | 向 OP 进行身份验证的已签名 JWT 的有效期，单位为秒。令牌、内省或 PAR 端点中任一选择 `private_key_jwt` 或 `client_secret_jwt` 时使用。 |
+| client_jwt_assertion_alg | string | 否 | | ["HS256", "HS512", "RS256", "RS512", "ES256", "ES512"] | 客户端断言 JWT 的签名算法。`private_key_jwt` 默认使用 `RS256`，`client_secret_jwt` 默认使用 `HS256`。`client_secret_jwt` 需使用 `HS*` 算法，`private_key_jwt` 需使用非对称算法。当发现文档声明 `token_endpoint_auth_signing_alg_values_supported` 时，配置值还必须受 OP 支持。 |
+| client_jwt_assertion_audience | string | 否 | | | 客户端断言 JWT 的 audience。未设置时使用被调用的端点 URL。当 APISIX 通过内部 URL 访问令牌端点，但 OP 期望外部令牌端点 URL 作为 audience 时，请配置此项。 |
 | renew_access_token_on_expiry | boolean | 否 | true | | 如果为 true，则在访问令牌过期或刷新令牌可用时尝试静默续期。如果令牌续期失败，则重定向用户重新认证。 |
 | access_token_expires_in | integer | 否 | | | 当令牌端点响应中没有 `expires_in` 属性时，访问令牌的有效期，单位为秒。 |
 | refresh_session_interval | integer | 否 | | | 无需重新认证即可刷新用户 ID 令牌的时间间隔，单位为秒。未设置时不检查网关向客户端签发的会话的过期时间。 |
@@ -126,14 +140,18 @@ import TabItem from '@theme/TabItem';
 | introspection_expiry_claim | string | 否 | exp | | 过期 claim 的名称，用于控制缓存和内省的访问令牌的 TTL。 |
 | introspection_addon_headers | array[string] | 否 | | | 用于向内省 HTTP 请求追加额外头值。如果指定的头在原始请求中不存在，则不会追加该值。 |
 | claim_validator | object | 否 | | | JWT claim 验证配置。 |
-| claim_validator.issuer.valid_issuers | array[string] | 否 | | | 受信任的 JWT 颁发者数组。如果未配置，将使用发现端点返回的颁发者。如果两者均不可用，则不验证颁发者。 |
+| claim_validator.issuer.valid_issuers | array[string] | 否 | | | 受信任的 JWT 颁发者数组。如果未配置，将使用发现端点返回的颁发者；在发现文档无法获取期间令牌会被拒绝，因为此时没有已知的受信任颁发者。 |
 | claim_validator.audience | object | 否 | | | [受众 claim](https://openid.net/specs/openid-connect-core-1_0.html) 验证配置。 |
 | claim_validator.audience.claim | string | 否 | aud | | 包含受众的 claim 名称。 |
 | claim_validator.audience.required | boolean | 否 | false | | 如果为 true，则受众 claim 为必填项，claim 名称为 `claim` 中定义的名称。 |
-| claim_validator.audience.match_with_client_id | boolean | 否 | false | | 如果为 true，则要求受众与客户端 ID 匹配。如果受众是字符串，则必须与客户端 ID 完全匹配。如果受众是字符串数组，则至少一个值必须与客户端 ID 匹配。如果未找到匹配，将收到 `mismatched audience` 错误。OpenID Connect 规范规定了此要求，以确保令牌是为特定客户端颁发的。 |
+| claim_validator.audience.match_with_client_id | boolean | 否 | false | | 如果为 true，则要求受众与客户端 ID 匹配。如果受众是字符串，则必须与客户端 ID 完全匹配。如果受众是字符串数组，则至少一个值必须与客户端 ID 匹配。如果未找到匹配，将收到 `mismatched audience` 错误。不含受众声明的令牌同样会被拒绝，因为它无法与客户端 ID 匹配。OpenID Connect 规范规定了此要求，以确保令牌是为特定客户端颁发的。 |
 | claim_schema | object | 否 | | | OIDC 响应 claim 的 JSON schema。示例：`{"type":"object","properties":{"access_token":{"type":"string"}},"required":["access_token"]}` - 验证响应包含必填的字符串字段 `access_token`。 |
 
-注意：schema 中还定义了 `encrypt_fields = {"client_secret", "client_rsa_private_key"}`，这意味着这些字段将在 etcd 中加密存储。详见[加密存储字段](../plugin-develop.md#加密存储字段)。
+注意：`par` 和 `dpop` 所对应的 `lua-resty-openidc` 扁平选项名（`use_par`、`pushed_authorization_request_endpoint`、`pushed_authorization_request_endpoint_auth_method`、`use_dpop`、`dpop_signing_alg`、`dpop_private_key`、`dpop_public_jwk`）会被拒绝。直接设置它们会绕过嵌套对象提供的校验以及 `dpop.private_key` 的加密存储，请改用嵌套属性。
+
+注意：升级到此版本会改变向令牌内省端点发送客户端凭证的方式，即使插件配置没有变更。`lua-resty-openidc` 1.9.0 仅在 `introspection_endpoint_auth_method` 未设置时才将 `client_id` 和 `client_secret` 放入内省请求体，而本插件将该属性默认设置为 `client_secret_basic`，因此凭证现在只通过 `Authorization` 标头发送。如果你的 OP 从请求体中验证内省调用，请将 `introspection_endpoint_auth_method` 设置为 `client_secret_post`。
+
+注意：schema 中还定义了 `encrypt_fields = {"client_secret", "client_rsa_private_key", "dpop.private_key"}`，这意味着这些字段将在 etcd 中加密存储。详见[加密存储字段](../plugin-develop.md#加密存储字段)。
 
 此外，你可以使用环境变量或 APISIX Secret 来存储和引用插件属性。APISIX 目前支持两种存储密钥的方式——[环境变量和 HashiCorp Vault](../terminology/secret.md)。
 
@@ -338,6 +356,46 @@ spec:
 
 详见[实现授权码授权](../tutorials/keycloak-oidc.md#实现-authorization-code-grant)，获取使用 `openid-connect` 插件与 Keycloak 集成并使用授权码流程的完整示例。
 
+### 使用 PAR 和 DPoP 的授权码流程
+
+如需使用 Pushed Authorization Requests (PAR)，请将 `par.enabled` 设置为 `true`。如果未配置 `par.endpoint`，插件将使用 well-known 发现文档中的 PAR 端点。
+
+如需使用 DPoP 绑定的访问令牌，请将 `dpop.enabled` 设置为 `true`，并配置 DPoP 签名密钥材料。`dpop.public_jwk` 应只包含公钥 JWK 字段。
+
+以下示例配置了使用 PAR、DPoP、PKCE 和 `private_key_jwt` 客户端认证的授权码流程：
+
+```json
+{
+  "openid-connect": {
+    "client_id": "apisix",
+    "discovery": "https://idp.example.com/realms/master/.well-known/openid-configuration",
+    "scope": "openid email profile",
+    "redirect_uri": "https://gateway.example.com/api/v1/redirect",
+    "use_pkce": true,
+    "token_endpoint_auth_method": "private_key_jwt",
+    "client_rsa_private_key": "-----BEGIN RSA PRIVATE KEY-----\n...\n-----END RSA PRIVATE KEY-----",
+    "client_jwt_assertion_alg": "RS512",
+    "par": {
+      "enabled": true,
+      "endpoint_auth_method": "private_key_jwt"
+    },
+    "dpop": {
+      "enabled": true,
+      "signing_alg": "PS256",
+      "private_key": "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----",
+      "public_jwk": {
+        "kty": "RSA",
+        "e": "AQAB",
+        "n": "..."
+      }
+    },
+    "session": {
+      "secret": "your-session-secret-min-16-chars"
+    }
+  }
+}
+```
+
 ### PKCE (Proof Key for Code Exchange)
 
 PKCE 在 [RFC 7636](https://datatracker.ietf.org/doc/html/rfc7636) 中定义。PKCE 通过添加代码挑战和验证器来增强授权码流程，防止授权码截取攻击。
@@ -404,6 +462,38 @@ OpenID Connect (OIDC) 中的 UserInfo 端点在 [OpenID Connect Core 1.0 第 5.3
 
 当 `set_userinfo_header` 为 `true`（默认值）时，插件在 `X-Userinfo` 请求头中设置用户信息数据，上游服务可使用该数据进行进一步处理。
 
+### 将 claim 转发给上游
+
+以下示例将已校验 bearer 令牌中的部分 claim 以请求头形式转发给上游，上游无需解析令牌。
+
+在插件中配置 `upstream_headers`，每一项指定请求头名称和定位 claim 的键路径 `path`：
+
+```json
+"openid-connect": {
+  "client_id": "api",
+  "discovery": "https://idp.example.com/.well-known/openid-configuration",
+  "bearer_only": true,
+  "use_jwks": true,
+  "upstream_headers": [
+    { "header": "X-Profile-Id", "path": ["https://example.com/claims/profile/id"] },
+    { "header": "X-Org-Id", "path": ["org", "id"] },
+    { "header": "X-Client-Scopes", "path": ["scope"] }
+  ]
+}
+```
+
+对于负载为 `{"https://example.com/claims/profile/id": "profile-1", "org": {"id": 42}, "scope": ["read", "write"]}` 的令牌，上游收到以下请求头：
+
+```text
+X-Profile-Id: profile-1
+X-Org-Id: 42
+X-Client-Scopes: WyJyZWFkIiwid3JpdGUiXQ==
+```
+
+数组 `scope` 以 base64 编码的 JSON 转发，解码后为 `["read","write"]`。
+
+令牌中不存在的 claim 不会产生对应请求头，即使客户端自带该请求头。
+
 ## 故障排除
 
 本节涵盖使用此插件时常见的一些问题，以帮助你进行故障排查。
@@ -411,6 +501,16 @@ OpenID Connect (OIDC) 中的 UserInfo 端点在 [OpenID Connect Core 1.0 第 5.3
 ### APISIX 无法连接到 OpenID 提供商
 
 如果 APISIX 无法解析或连接到 OpenID 提供商，请检查配置文件 `config.yaml` 中的 DNS 设置并根据需要进行修改。
+
+### 授权回调中的 state 不匹配
+
+会话中只保存一次登录流程的 state。如果同一浏览器在前一次流程完成之前又发起了新的流程（例如在另一个标签页中打开受保护页面），新流程会覆盖 state，此时第一个标签页的回调携带的 state 已不再匹配：
+
+```text
+state from argument does not match state restored from session
+```
+
+对于 `GET` 回调，插件会返回 `302` 重定向回用户最初访问的地址，从那里重新发起一次认证流程。当身份提供商仍保有 SSO 会话时，整个过程对用户无感。使用其他请求方法的回调，以及完全不携带会话的回调，仍然返回 `500`。
 
 ### 未找到会话状态
 

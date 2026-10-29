@@ -43,6 +43,7 @@ See [JSON schema specification](https://json-schema.org/specification) to learn 
 
 | Name          | Type    | Required | Default | Valid values  | Description                                       |
 |---------------|---------|----------|---------|---------------|---------------------------------------------------|
+| max_req_body_size | integer | False | 67108864 | >= 1 | Maximum request body size in bytes buffered into memory. Requests with a larger body are rejected. |
 | header_schema | object  | False    |         |               | Schema for the request header data.               |
 | body_schema   | object  | False    |         |               | Schema for the request body data.                 |
 | rejected_code | integer | False    | 400     | [200,...,599] | Status code to return when rejecting requests. |

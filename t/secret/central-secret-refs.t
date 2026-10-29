@@ -374,3 +374,135 @@ openid-connect has required field client_secret that must be a string.
     }
 --- response_body
 success
+
+
+
+=== TEST 13: unresolvable $secret:// ref keeps the literal and logs an error
+--- config
+    location /t {
+        content_by_lua_block {
+            local secret = require("apisix.secret")
+
+            local conf = {
+                client_secret = "$secret://vault/not-exist/foo/bar"
+            }
+            local resolved = secret.fetch_secrets(conf, true)
+            ngx.say("resolved: ", resolved.client_secret)
+        }
+    }
+--- response_body
+resolved: $secret://vault/not-exist/foo/bar
+--- error_log
+failed to resolve secret reference: $secret://vault/not-exist/foo/bar, field: client_secret
+
+
+
+=== TEST 14: unset $env:// ref keeps the literal and logs an error
+--- config
+    location /t {
+        content_by_lua_block {
+            local secret = require("apisix.secret")
+
+            local conf = {
+                nested = {
+                    password = "$env://TEST_ENV_NOT_SET"
+                }
+            }
+            local resolved = secret.fetch_secrets(conf, true)
+            ngx.say("resolved: ", resolved.nested.password)
+        }
+    }
+--- response_body
+resolved: $env://TEST_ENV_NOT_SET
+--- error_log
+failed to resolve secret reference: $env://TEST_ENV_NOT_SET, field: password
+
+
+
+=== TEST 15: resolvable refs do not log a resolution error
+--- config
+    location /t {
+        content_by_lua_block {
+            local secret = require("apisix.secret")
+
+            local conf = {
+                host = "$env://TEST_HOST",
+                plain = "not-a-ref"
+            }
+            local resolved = secret.fetch_secrets(conf, true)
+            ngx.say("resolved: ", resolved.host)
+        }
+    }
+--- response_body
+resolved: test.example.com
+--- no_error_log
+failed to resolve secret reference
+
+
+
+=== TEST 16: unresolvable ref on the uncached path keeps the literal and logs
+--- config
+    location /t {
+        content_by_lua_block {
+            local secret = require("apisix.secret")
+
+            local conf = {
+                token = "$secret://vault/not-exist/foo/bar"
+            }
+            -- use_cache = false exercises the direct fetch_by_uri path
+            local resolved = secret.fetch_secrets(conf, false)
+            ngx.say("resolved: ", resolved.token)
+        }
+    }
+--- response_body
+resolved: $secret://vault/not-exist/foo/bar
+--- error_log
+failed to resolve secret reference: $secret://vault/not-exist/foo/bar, field: token, err: no secret conf
+
+
+
+=== TEST 17: route with a plugin referencing an unresolvable secret
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "plugins": {
+                        "proxy-rewrite": {
+                            "headers": {
+                                "set": {
+                                    "X-Secret-Token": "$env://SECRET_REF_UNRESOLVABLE"
+                                }
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                return ngx.say(body)
+            end
+            ngx.say("success")
+        }
+    }
+--- response_body
+success
+
+
+
+=== TEST 18: request still succeeds, the literal is forwarded and the failure logged
+--- request
+GET /hello
+--- error_code: 200
+--- error_log
+failed to resolve secret reference: $env://SECRET_REF_UNRESOLVABLE, field: X-Secret-Token

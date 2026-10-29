@@ -102,11 +102,12 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X P
 The authentication flow proceeds as follows:
 
 1. A user visits a Route protected by `feishu-auth`.
-2. If no valid session cookie exists and no authorization `code` is present, the plugin redirects the user to `redirect_uri` with HTTP 302. Your application should then redirect the user to the Feishu OAuth authorization page.
+2. If no valid session cookie exists and no authorization `code` is present, the plugin generates a random `state`, stores it in the session cookie, and redirects the user to `redirect_uri` with HTTP 302, appending `state` to the query string. Your application should then redirect the user to the Feishu OAuth authorization page, passing `state` through so that Feishu returns it on the callback.
 3. After the user authorizes, Feishu redirects back to `auth_redirect_uri` with an authorization `code`. The plugin extracts the code either from the `code_query` query parameter or the `code_header` HTTP header.
-4. The plugin exchanges the code for an access token at `access_token_url`, then fetches user information from `userinfo_url`.
-5. User information is stored in an encrypted session cookie (`feishu_session`). Subsequent requests with a valid cookie bypass the OAuth flow.
-6. If `set_userinfo_header` is `true`, the plugin encodes the user information as Base64 JSON and sets it in the `X-Userinfo` request header before forwarding to the upstream.
+4. A code taken from the query string must arrive with the `state` bound to the session, otherwise the plugin responds with HTTP 401. This ties the code to the browser that started the flow. A code taken from the `code_header` HTTP header is exempt, since such requests come from non-browser clients.
+5. The plugin exchanges the code for an access token at `access_token_url`, then fetches user information from `userinfo_url`.
+6. User information is stored in an encrypted session cookie (`feishu_session`). Subsequent requests with a valid cookie bypass the OAuth flow.
+7. If `set_userinfo_header` is `true`, the plugin encodes the user information as Base64 JSON and sets it in the `X-Userinfo` request header before forwarding to the upstream.
 
 ## Delete Plugin
 

@@ -47,6 +47,13 @@ local pb_option_def = {
 local schema = {
     type = "object",
     properties = {
+        max_resp_body_size = {
+            type = "integer",
+            minimum = 1,
+            default = 67108864,
+            description = "maximum response body size in bytes buffered into "
+                       .. "memory for transcoding; larger responses are truncated",
+        },
         proto_id  = schema_def.id_schema,
         service = {
             description = "the grpc service name",
@@ -200,7 +207,8 @@ function _M.body_filter(conf, ctx)
     end
 
     local err = response(ctx, proto_obj, conf.service, conf.method, conf.pb_option,
-                         conf.show_status_in_body, conf.status_detail_type)
+                         conf.show_status_in_body, conf.status_detail_type,
+                         conf.max_resp_body_size)
     if err then
         core.log.error("transform response error: ", err)
         return
