@@ -144,9 +144,9 @@ function _M.access(conf, ctx)
 
     local messages = protocols.get_messages(json_body, ctx)
 
-    -- Responses API: instructions + input are parallel fields, not conversation history,
-    -- so skip the "last message only" filtering of get_content_to_check.
-    if proto_name ~= "openai-responses" then
+    -- Responses fields and Embeddings batch items are not conversation history,
+    -- so check all of them instead of keeping only the last message.
+    if proto_name ~= "openai-responses" and proto_name ~= "openai-embeddings" then
         messages = get_content_to_check(conf, messages)
     end
     if not conf.match_all_roles then
@@ -160,7 +160,7 @@ function _M.access(conf, ctx)
         messages = new_messages
     end
     if #messages == 0 then --nothing to check
-        return 200
+        return
     end
     -- extract only messages
     local content = {}
