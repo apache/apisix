@@ -129,6 +129,7 @@ traffic-split
 redirect
 response-rewrite
 openapi-to-mcp
+mcp-tools-acl
 oas-validator
 websocket-proxy
 degraphql

@@ -620,6 +620,7 @@ plugins:                           # plugin list (sorted by priority)
   - redirect                       # priority: 900
   - response-rewrite               # priority: 899
   - openapi-to-mcp                 # priority: 540
+  - mcp-tools-acl                  # priority: 539
   - oas-validator                  # priority: 512
   - degraphql                      # priority: 509
   - kafka-proxy                    # priority: 508
