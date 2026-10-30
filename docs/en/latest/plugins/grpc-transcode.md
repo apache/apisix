@@ -38,11 +38,12 @@ The `grpc-transcode` Plugin transforms between HTTP requests and gRPC requests, 
 
 With this Plugin enabled, APISIX accepts an HTTP request from the client, transcodes and forwards it to an upstream gRPC service. When APISIX receives the gRPC response, it will transform the response back to an HTTP response and send it to the client.
 
+By default, the Plugin keeps its original JSON mapping: field names as written in the `.proto` file and values as decoded by [lua-protobuf](https://github.com/starwing/lua-protobuf). Set `protojson` to `true` to map requests and responses with the [ProtoJSON](https://protobuf.dev/programming-guides/json/) rules that other gRPC transcoders use. See [ProtoJSON mapping](#protojson-mapping).
+
 ## Attributes
 
 | Name                 | Type                                                   | Required | Default                                                                     | Description                                                                                                                                                                                                               |
 |----------------------|--------------------------------------------------------|----------|-----------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| max_resp_body_size | integer | False | 67108864 | >= 1 | Maximum response body size in bytes buffered into memory for transcoding. Larger responses are truncated. |
 | proto_id             | string/integer                                         | True     |                                                                             | ID of the proto resource, which contains the protocol buffer definitions.                                                                                                                                                 |
 | service              | string                                                 | True     |                                                                             | Name of the gRPC service.                                                                                                                                                                                                 |
 | method               | string                                                 | True     |                                                                             | Method name of the gRPC service.                                                                                                                                                                                          |
@@ -50,6 +51,11 @@ With this Plugin enabled, APISIX accepts an HTTP request from the client, transc
 | pb_option            | array[string([pb_option_def](#options-for-pb_option))] | False    | `["enum_as_name","int64_as_number","auto_default_values","disable_hooks"]`  | Encoder and decoder [options](https://github.com/starwing/lua-protobuf?tab=readme-ov-file#options).                                                                                                                       |
 | show_status_in_body  | boolean                                                | False    | false                                                                       | If `true`, display the parsed `grpc-status-details-bin` in the response body.                                                                                                                                             |
 | status_detail_type   | string                                                 | False    |                                                                             | The message type corresponding to the [details](https://github.com/googleapis/googleapis/blob/master/google/rpc/status.proto#L46) part of `grpc-status-details-bin`. If not specified, the error message will not be decoded. |
+| protojson | boolean | False | false | If `true`, map requests and responses with the ProtoJSON rules. See [ProtoJSON mapping](#protojson-mapping). |
+| any_empty_format | string | False | `spec` | Output for a `google.protobuf.Any` that holds `google.protobuf.Empty` when `protojson` is `true`: `spec` omits `value`, `go` writes `"value": {}` as Go `protojson` does. Requests accept both forms. |
+| error_response_format | string | False | `legacy` | Shape of the error body when `show_status_in_body` is `true`: `legacy` is `{"error": {"code": ..., "message": ...}}`, `flat` is `{"code": ..., "message": ...}`. |
+| max_req_body_size | integer | False | | Maximum request body size in bytes read for transcoding. Larger bodies are rejected with `413`. Unlimited if not set. |
+| max_resp_body_size | integer | False | 67108864 | Maximum response body size in bytes buffered into memory for transcoding. Larger responses are rejected with `502` when the upstream sends `Content-Length`, otherwise the response is aborted. |
 
 ### Options for pb_option
 
@@ -59,6 +65,52 @@ With this Plugin enabled, APISIX accepts an HTTP request from the client, transc
 | int64 as result | `int64_as_number`, `int64_as_string`, `int64_as_hexstring`                                |
 | default values  | `auto_default_values`, `no_default_values`, `use_default_values`, `use_default_metatable` |
 | hooks           | `enable_hooks`, `disable_hooks`                                                           |
+
+## ProtoJSON mapping
+
+When `protojson` is `true`, the Plugin follows the [ProtoJSON](https://protobuf.dev/programming-guides/json/) mapping in both directions:
+
+* Responses use the `json_name` of each field (lowerCamelCase unless the `.proto` file sets another name). Requests accept both the `json_name` and the original field name, and ignore unknown fields. A field set under both names is rejected.
+* 64-bit integers are strings in responses. Requests accept strings, and numbers up to 2^53.
+* 32-bit integers are numbers. Requests also accept numbers written as strings.
+* Enums are names in responses. Requests accept names and numbers.
+* `bytes` are base64 strings.
+* `float` and `double` special values are `"NaN"`, `"Infinity"` and `"-Infinity"`. Requests also accept numbers written as strings.
+* Request values must match the field type. A fraction or an out-of-range value for a 32-bit integer, enum or `float` field, a value of another JSON type, and more than one member of a `oneof` are rejected with `400`.
+* Well-known types use their JSON forms: `Timestamp` as an RFC 3339 string, `Duration` as `"1.5s"`, `FieldMask` as `"fieldA,fieldB.subField"`, wrappers as the wrapped value, `Struct`, `Value` and `ListValue` as plain JSON, and `Any` as the embedded message with an `@type` field (a well-known type goes into a `value` field).
+* Proto3 fields without presence tracking are omitted when they hold their default value, as are empty repeated and map fields. Fields with presence (`optional`, `oneof` members, message fields and proto2 fields) are kept even when they hold a default value.
+* The 64-bit integer, enum and default value options of `pb_option` do not apply.
+
+Requests with `Content-Type: application/json` are read from the JSON body for every method except `GET` and `HEAD`, and invalid JSON is rejected with `400`. Other requests are read from form arguments (`POST` with `application/x-www-form-urlencoded`) or from the query string, where `bool` fields and enum numbers also accept their string forms.
+
+The following table compares the two modes:
+
+| Value | `protojson: false` | `protojson: true` |
+|-------|--------------------|-------------------|
+| Field `user_id` | `"user_id"` | `"userId"`, requests accept both |
+| `int64` value `9007199254740993` | a number that loses precision, or `"#9007199254740993"` with `int64_as_string` | `"9007199254740993"` |
+| `bytes` | raw string | base64 string |
+| `google.protobuf.Timestamp` | `{"seconds": 1700000000, "nanos": 0}` | `"2023-11-14T22:13:20Z"` |
+| `google.protobuf.Int32Value` | `{"value": 5}` | `5` |
+| `int32` value `1.5` or `3000000000` | truncated or wrapped around | rejected with `400` |
+| Empty repeated field | `[]` | omitted |
+| Proto3 field with its default value | included, with the default `auto_default_values` | omitted |
+| Invalid JSON request body | read from form arguments or the query string instead | rejected with `400` |
+
+## Error responses
+
+When the upstream returns a gRPC status other than `OK` in the response headers, the Plugin maps it to an HTTP status code. If `show_status_in_body` is `true`, the response body describes the error:
+
+* With `protojson` set to `false`, the body contains the decoded `grpc-status-details-bin`. If it cannot be decoded, the body contains the error message and the error is logged.
+* With `protojson` set to `true`, the body is always JSON. Status details of `status_detail_type` follow the ProtoJSON mapping, other details keep their `@type` and a base64 `value`. If the status details are missing or cannot be decoded, the body contains the `grpc-status` code and the decoded `grpc-message`.
+
+Set `error_response_format` to `flat` to return `{"code": ..., "message": ...}` instead of wrapping it in `error`.
+
+## Limitations
+
+* The upstream response must consist of exactly one uncompressed gRPC message. Streaming RPCs are transcoded when they produce a single response message. A response with more messages, or with a compressed message, is aborted instead of being returned as broken JSON.
+* Response headers are sent before the response body is transcoded, so a gRPC status that the upstream sends only in the trailers cannot change the HTTP status. If such a response carries no message, it is aborted.
+* For gRPC-Web clients, use the [grpc-web](./grpc-web.md) Plugin.
 
 ## Examples
 
@@ -451,4 +503,48 @@ You should see a response showing a sum of the two numbers with full precision:
 
 ```text
 {"result":"#2475056748394982"}
+```
+
+### Use ProtoJSON Mapping
+
+The following example demonstrates how ProtoJSON mapping changes the response of the method from the previous example.
+
+Update the Route to set `protojson` to `true`:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes/grpc-transcode-route" -H "X-API-KEY: $admin_key" -X PUT -d '
+{
+  "uri": "/plus",
+  "plugins": {
+    "grpc-transcode": {
+      "proto_id": "plus-proto",
+      "service": "helloworld.Greeter",
+      "method": "Plus",
+      "protojson": true
+    }
+  },
+  "upstream": {
+    "scheme": "grpc",
+    "type": "roundrobin",
+    "nodes": {
+      "127.0.0.1:50051": 1
+    }
+  }
+}'
+```
+
+Send a request with a JSON body:
+
+```shell
+curl "http://127.0.0.1:9080/plus" -H "Content-Type: application/json" -d '
+{
+  "a": "1237528374197491",
+  "b": 1237528374197491
+}'
+```
+
+You should see the sum as a decimal string with full precision:
+
+```text
+{"result":"2475056748394982"}
 ```
