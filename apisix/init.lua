@@ -442,12 +442,83 @@ local function verify_tls_client(ctx)
 end
 
 
+-- Percent-decode every %XX in the path. When keep_slash is true, an encoded
+-- slash (%2F/%2f) is left as the literal text "%2F" instead of being turned
+-- into a real path separator -- Nginx decodes it into '/' in $uri, which makes
+-- it indistinguishable from a real separator and breaks path parameter
+-- matching (see issue #11810). The kept slash is always emitted upper-case so
+-- an exact route written with %2F matches regardless of the client's casing.
+local function percent_decode(path, keep_slash)
+    local decoded = re_gsub(path, [[%([0-9a-fA-F][0-9a-fA-F])]], function(m)
+        local hex = m[1]
+        if keep_slash and (hex == "2f" or hex == "2F") then
+            return "%2F"
+        end
+        return str_char(tonumber(hex, 16))
+    end, "jo")
+    return decoded
+end
+
+
+-- Build the route matching uri that keeps the encoded slash (%2F) encoded,
+-- using Nginx's already normalized $uri as an oracle instead of re-doing its
+-- normalization in Lua. If a plain full decode of the raw path reproduces
+-- current_uri ($uri) exactly, Nginx only decoded the request -- it applied no
+-- dot-segment resolution, no slash merging, no fragment stripping and it was
+-- not an absolute-form request line. Only then is it safe to keep %2F encoded,
+-- and the result provably differs from $uri solely by showing some '/' as
+-- "%2F". Anything else (path traversal, consecutive slashes, %00, exotic
+-- request lines) fails the equivalence check and returns nil so the caller
+-- keeps matching on $uri -- no bypass is possible even if the decode is wrong.
+local function build_match_uri_keep_encoded_slash(path, current_uri)
+    if percent_decode(path, false) ~= current_uri then
+        return nil
+    end
+    return percent_decode(path, true)
+end
+
+
+-- route match uri that keeps %2F, or nil when it does not apply
+local function encoded_slash_match_uri(request_uri, uri)
+    if not (local_conf.apisix and local_conf.apisix.match_uri_encoded_slash) then
+        return nil
+    end
+
+    local path = request_uri
+    local args_pos = core.string.find(path, "?")
+    if args_pos then
+        path = str_sub(path, 1, args_pos - 1)
+    end
+    if not (core.string.find(path, "%2f") or core.string.find(path, "%2F")) then
+        return nil
+    end
+
+    return build_match_uri_keep_encoded_slash(path, uri)
+end
+
+
 local function uri_matches_skip_mtls_route_patterns(ssl, uri)
     for _, pat in ipairs(ssl.value.client.skip_mtls_uri_regex) do
         if ngx_re_match(uri, pat,  "jo") then
             return true
         end
     end
+end
+
+
+local function skip_mtls(ssl, ctx)
+    local uri = ngx.var.uri
+    if not uri_matches_skip_mtls_route_patterns(ssl, uri) then
+        return false
+    end
+
+    -- the router sees %2F as part of a segment, check that form too
+    local match_uri = encoded_slash_match_uri(ctx.var.request_uri, uri)
+    if match_uri and not uri_matches_skip_mtls_route_patterns(ssl, match_uri) then
+        return false
+    end
+
+    return true
 end
 
 
@@ -461,7 +532,7 @@ local function verify_https_client(ctx)
     if matched_ssl.value.client
         and matched_ssl.value.client.skip_mtls_uri_regex
         and apisix_ssl.support_client_verification()
-        and (not uri_matches_skip_mtls_route_patterns(matched_ssl, ngx.var.uri)) then
+        and (not skip_mtls(matched_ssl, ctx)) then
         local res = ctx.var.ssl_client_verify
         if res ~= "SUCCESS" then
             if res == "NONE" then
@@ -563,42 +634,6 @@ local function set_servlet_upstream_uri(api_ctx, uri)
     api_ctx.var.upstream_uri = core.utils.uri_safe_encode(uri)
                                .. (api_ctx.var.is_args or "")
                                .. (api_ctx.var.args or "")
-end
-
-
--- Percent-decode every %XX in the path. When keep_slash is true, an encoded
--- slash (%2F/%2f) is left as the literal text "%2F" instead of being turned
--- into a real path separator -- Nginx decodes it into '/' in $uri, which makes
--- it indistinguishable from a real separator and breaks path parameter
--- matching (see issue #11810). The kept slash is always emitted upper-case so
--- an exact route written with %2F matches regardless of the client's casing.
-local function percent_decode(path, keep_slash)
-    local decoded = re_gsub(path, [[%([0-9a-fA-F][0-9a-fA-F])]], function(m)
-        local hex = m[1]
-        if keep_slash and (hex == "2f" or hex == "2F") then
-            return "%2F"
-        end
-        return str_char(tonumber(hex, 16))
-    end, "jo")
-    return decoded
-end
-
-
--- Build the route matching uri that keeps the encoded slash (%2F) encoded,
--- using Nginx's already normalized $uri as an oracle instead of re-doing its
--- normalization in Lua. If a plain full decode of the raw path reproduces
--- current_uri ($uri) exactly, Nginx only decoded the request -- it applied no
--- dot-segment resolution, no slash merging, no fragment stripping and it was
--- not an absolute-form request line. Only then is it safe to keep %2F encoded,
--- and the result provably differs from $uri solely by showing some '/' as
--- "%2F". Anything else (path traversal, consecutive slashes, %00, exotic
--- request lines) fails the equivalence check and returns nil so the caller
--- keeps matching on $uri -- no bypass is possible even if the decode is wrong.
-local function build_match_uri_keep_encoded_slash(path, current_uri)
-    if percent_decode(path, false) ~= current_uri then
-        return nil
-    end
-    return percent_decode(path, true)
 end
 
 
@@ -946,17 +981,8 @@ function _M.http_access_phase()
     -- dispatch and restored right after, so the rewrite/access phases, plugins
     -- and the upstream keep seeing the normalized ctx.var.uri. Only the matched
     -- route and its captured params (uri_param_*) retain the encoded slash.
-    local match_uri
-    if local_conf.apisix and local_conf.apisix.match_uri_encoded_slash then
-        local path = api_ctx.var.real_request_uri
-        local args_pos = core.string.find(path, "?")
-        if args_pos then
-            path = str_sub(path, 1, args_pos - 1)
-        end
-        if core.string.find(path, "%2f") or core.string.find(path, "%2F") then
-            match_uri = build_match_uri_keep_encoded_slash(path, api_ctx.var.uri)
-        end
-    end
+    local match_uri = encoded_slash_match_uri(api_ctx.var.real_request_uri,
+                                              api_ctx.var.uri)
 
     local match_span = tracer.start(ngx_ctx, "http_router_match", tracer.kind.internal)
     if match_uri then
