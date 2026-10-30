@@ -556,13 +556,13 @@ end
 -- Forward the original path so servlet upstreams can consume params after ';'.
 -- URI-encode it before proxying to keep delimiters as path data.
 --
--- Setting $upstream_uri at all turns off the "empty proxy_pass URI" passthrough
--- that otherwise hands the client's request line -- query string included -- to
--- the upstream unchanged, so the query string has to be re-appended here.
+-- We set api_ctx.var.upstream_uri early so early plugins (like ext-plugin,
+-- graphql-limit-count) observe the servlet path parameters.
+-- Query arguments are appended after rewrite and access plugin phases complete.
 local function set_servlet_upstream_uri(api_ctx, uri)
-    api_ctx.var.upstream_uri = core.utils.uri_safe_encode(uri)
-                               .. (api_ctx.var.is_args or "")
-                               .. (api_ctx.var.args or "")
+    local servlet_uri = core.utils.uri_safe_encode(uri)
+    api_ctx.var.upstream_uri = servlet_uri
+    api_ctx.servlet_upstream_uri = servlet_uri
 end
 
 
@@ -1079,6 +1079,15 @@ function _M.http_access_phase()
         plugin.run_plugin("access", plugins, api_ctx)
     end
     span:finish(ngx_ctx)
+
+    if api_ctx.servlet_upstream_uri then
+        if api_ctx.var.upstream_uri == api_ctx.servlet_upstream_uri or
+           not api_ctx.var.upstream_uri or api_ctx.var.upstream_uri == "" then
+            api_ctx.var.upstream_uri = api_ctx.servlet_upstream_uri
+                                       .. (api_ctx.var.is_args or "")
+                                       .. (api_ctx.var.args or "")
+        end
+    end
 
     _M.handle_upstream(api_ctx, route, enable_websocket)
 end
