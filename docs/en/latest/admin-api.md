@@ -917,17 +917,17 @@ Credential resource request address：/apisix/admin/consumers/{username}/credent
 
 | Method | Request URI                        | Request Body | Description                                    |
 | ------ |----------------------------------------------------------------|--------------|------------------------------------------------|
-| GET    | /apisix/admin/consumers/{username}/credentials                 | NUll         | Fetches list of all credentials of the Consumer |
-| GET    | /apisix/admin/consumers/{username}/credentials/{credential_id} | NUll         | Fetches the Credential by `credential_id`      |
-| PUT    | /apisix/admin/consumers/{username}/credentials/{credential_id} | {...}        | Create or update a Creddential                 |
-| DELETE | /apisix/admin/consumers/{username}/credentials/{credential_id} | NUll         | Delete the Credential                          |
+| GET    | /apisix/admin/consumers/{username}/credentials                 | NULL         | Fetches list of all credentials of the Consumer |
+| GET    | /apisix/admin/consumers/{username}/credentials/{credential_id} | NULL         | Fetches the Credential by `credential_id`      |
+| PUT    | /apisix/admin/consumers/{username}/credentials/{credential_id} | {...}        | Create or update a Credential                  |
+| DELETE | /apisix/admin/consumers/{username}/credentials/{credential_id} | NULL         | Delete the Credential                          |
 
 ### Request Body Parameters
 
 | Parameter   | Required | Type        | Description                                                | Example                                         |
 | ----------- |-----| ------- |------------------------------------------------------------|-------------------------------------------------|
 | plugins     | False    | Plugin      | Auth plugins configuration.                                |                                                 |
-| name        | False    | Auxiliary   | Identifier for the Credential.                             | credential_primary                              |
+| name        | False    | Auxiliary   | Name of the Consumer Credential.                           | credential_primary                              |
 | desc        | False    | Auxiliary   | Description of usage scenarios.                            | credential xxxx                                 |
 | labels      | False    | Match Rules | Attributes of the Credential specified as key-value pairs. | {"version":"v2","build":"16","env":"production"} |
 
