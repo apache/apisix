@@ -861,3 +861,34 @@ curl --cert t/certs/mtls_client.crt --key t/certs/mtls_client.key -k https://tes
 hello world
 --- error_log
 fetching data from env uri
+
+
+
+=== TEST 29: verify_https_client does not crash when ngx.ctx.matched_ssl is nil
+--- config
+    location /t {
+        content_by_lua_block {
+            local apisix = require("apisix")
+
+            -- simulate an HTTPS request context where ngx.ctx.matched_ssl is nil
+            ngx.ctx.matched_ssl = nil
+
+            local ctx = {
+                var = {
+                    scheme = "https",
+                    uri = "/hello",
+                    host = "localhost",
+                }
+            }
+
+            local verified, status = apisix.verify_https_client(ctx)
+            ngx.say("verified: ", verified)
+        }
+    }
+--- request
+GET /t
+--- response_body
+verified: true
+--- no_error_log
+[error]
+attempt to index local 'matched_ssl' (a nil value)
