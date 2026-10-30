@@ -23,6 +23,8 @@ apisix:
   node_listen:                 # APISIX listening ports.
     - 9080
   #   - port: 9081
+  #     backlog: 8192          # Set the `backlog` parameter of the listen directive,
+  #                            # which caps the pending connections queue. Default is 511.
   #   - ip: 127.0.0.2          # If not set, default to `0.0.0.0`
   #     port: 9082
   enable_admin: true           # Admin API
@@ -303,6 +305,12 @@ nginx_config:                     # Config for render the template to generate n
     enable_access_log: true             # Enable HTTP proxy access logging.
     access_log: logs/access.log         # Location of the access log.
     access_log_buffer: 16384            # buffer size of access log.
+  # access_log_if: $loggable            # If set, append an `if=<condition>` parameter to the
+                                        # access_log directive, so requests are logged only when
+                                        # the condition is met (e.g. log sampling or excluding
+                                        # specific status codes / endpoints). The referenced
+                                        # variable must be declared via http_configuration_snippet
+                                        # (e.g. `map` or `split_clients`).
     # available variables:
     # request_type: traditional_http / ai_chat / ai_stream
     # llm_time_to_first_token: duration from the start send request to ai server to the first token received
