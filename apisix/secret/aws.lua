@@ -21,6 +21,7 @@ require("resty.aws.config") -- to read env vars before initing aws module
 local core = require("apisix.core")
 local http = require("resty.http")
 local aws = require("resty.aws")
+local secret = require("apisix.secret")
 local aws_instance
 
 local sub = core.string.sub
@@ -54,6 +55,8 @@ local schema = {
 local _M = {
     schema = schema
 }
+
+local container_cache = secret.new_container_cache()
 
 local function make_request_to_aws(conf, key)
     if not aws_instance then
@@ -128,7 +131,9 @@ function _M.get(conf, key)
     while true do
         core.log.info("main: ", main_key, sub_key and ", sub: " .. sub_key or "")
 
-        local res, err, not_found = make_request_to_aws(conf, main_key)
+        -- 60s is the request timeout of lua-resty-aws
+        local res, err, not_found = container_cache(main_key, conf, 60, make_request_to_aws,
+                                                    conf, main_key)
         if res then
             if not sub_key then
                 return res
