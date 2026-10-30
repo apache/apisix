@@ -2677,4 +2677,4 @@ POST /graphql
 Content-Type: application/json
 --- error_code: 200
 --- response_headers
-X-Graphql-Query-Cost: 52
+X-Graphql-Query-Cost: 2
