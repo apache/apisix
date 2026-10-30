@@ -51,10 +51,18 @@ __DATA__
             end
 
             ngx.say(require("toolkit.json").encode(conf))
+
+            local consumer_conf = {appid = "wolf-rbac-app"}
+            ok, err = plugin.check_schema(consumer_conf,
+                require("apisix.core").schema.TYPE_CONSUMER)
+            if not ok then
+                ngx.say(err)
+            end
+            ngx.say(require("toolkit.json").encode(consumer_conf))
         }
     }
 --- response_body_like eval
-qr/\{"appid":"unset","header_prefix":"X-","server":"http:\/\/127\.0\.0\.1:12180"\}/
+qr/\{"header_prefix":"X-"\}\n\{"appid":"wolf-rbac-app","server":"http:\/\/127\.0\.0\.1:12180"\}/
 
 
 
@@ -63,7 +71,8 @@ qr/\{"appid":"unset","header_prefix":"X-","server":"http:\/\/127\.0\.0\.1:12180"
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.wolf-rbac")
-            local ok, err = plugin.check_schema({appid = 123})
+            local ok, err = plugin.check_schema({appid = 123},
+                require("apisix.core").schema.TYPE_CONSUMER)
             if not ok then
                 ngx.say(err)
             end
@@ -847,8 +856,9 @@ ssl_verify: true
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.wolf-rbac")
-            local conf = {ssl_verify = "true"}
-            local ok, err = plugin.check_schema(conf)
+            local conf = {appid = "wolf-rbac-app", ssl_verify = "true"}
+            local ok, err = plugin.check_schema(conf,
+                require("apisix.core").schema.TYPE_CONSUMER)
             if not ok then
                 ngx.say(err)
                 return
@@ -961,3 +971,180 @@ X-Username: spoofadmin
 qr/(?s)^(?!.*spoofid007)(?!.*spoofadmin).*authorization/
 --- no_error_log
 [error]
+
+
+
+=== TEST 45: appid is required in Consumer configuration
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.wolf-rbac")
+            local ok, err = plugin.check_schema({},
+                require("apisix.core").schema.TYPE_CONSUMER)
+            if not ok then
+                ngx.say(err)
+            end
+        }
+    }
+--- response_body_like eval
+qr/property "appid" is required/
+
+
+
+=== TEST 46: custom header_prefix is rejected in Consumer configuration
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "wolf_rbac_custom_prefix",
+                    "plugins": {
+                        "wolf-rbac": {
+                            "appid": "wolf-rbac-app-prefix",
+                            "header_prefix": "X-Wolf-"
+                        }
+                    }
+                }]]
+                )
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- error_code: 400
+--- response_body_like eval
+qr/header_prefix is no longer supported in consumer configuration/
+
+
+
+=== TEST 47: legacy default header_prefix in Consumer configuration is dropped
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.wolf-rbac")
+            local conf = {appid = "wolf-rbac-app", header_prefix = "X-"}
+            local ok, err = plugin.check_schema(conf,
+                require("apisix.core").schema.TYPE_CONSUMER)
+            if not ok then
+                ngx.say(err)
+            end
+            ngx.say(require("toolkit.json").encode(conf))
+        }
+    }
+--- response_body
+{"appid":"wolf-rbac-app","server":"http://127.0.0.1:12180"}
+
+
+
+=== TEST 48: route with a custom header_prefix
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "wolf_rbac_route_prefix",
+                    "plugins": {
+                        "wolf-rbac": {
+                            "appid": "wolf-rbac-app-prefix",
+                            "server": "http://127.0.0.1:1982"
+                        }
+                    }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "wolf-rbac": {
+                            "header_prefix": "X-Wolf-"
+                        },
+                        "serverless-post-function": {
+                            "phase": "access",
+                            "functions": [
+                                "return function(conf, ctx) local core = require(\"apisix.core\"); local names = {\"X-Wolf-UserId\", \"X-Wolf-Username\", \"X-Wolf-Nickname\"}; local values = {}; for i, name in ipairs(names) do values[i] = core.request.header(ctx, name) or \"nil\"; end; core.response.exit(200, table.concat(values, \",\")); end"
+                            ]
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 49: route header_prefix replaces client-supplied identity headers
+--- request
+GET /hello
+--- more_headers
+Authorization: V1#wolf-rbac-app-prefix#wolf-rbac-token
+X-Wolf-UserId: forged
+X-Wolf-Username: forged
+X-Wolf-Nickname: forged
+--- response_headers
+X-Wolf-UserId: 100
+X-Wolf-Username: admin
+X-Wolf-Nickname: administrator
+--- response_body chomp
+100,admin,administrator
+
+
+
+=== TEST 50: public API uses the server of the matched Consumer
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "wolf_rbac_other_server",
+                    "plugins": {
+                        "wolf-rbac": {
+                            "appid": "wolf-rbac-app-other",
+                            "server": "http://127.0.0.1:1983"
+                        }
+                    }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            code, body = t('/apisix/plugin/wolf-rbac/login',
+                ngx.HTTP_POST,
+                [[{"appid": "wolf-rbac-app-other", "username": "admin", "password": "123456"}]],
+                nil,
+                {["Content-Type"] = "application/json"}
+                )
+            ngx.say(code)
+        }
+    }
+--- response_body
+500
+--- error_log eval
+qr/request \[.*127\.0\.0\.1:1983.*login\.rest.*\] failed/

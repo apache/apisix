@@ -34,11 +34,19 @@ The `wolf-rbac` Plugin provides a [role-based access control](https://en.wikiped
 
 ## Attributes
 
-| Name          | Type   | Required | Default                  | Description                                                                                                                                                                                                                 |
-|---------------|--------|----------|--------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| server        | string | False    | "http://127.0.0.1:12180" | Service address of wolf server.                                                                                                                                                                                             |
-| appid         | string | False    | "unset"                  | App id added in wolf console. This field supports saving the value in Secret Manager using the [APISIX Secret](../terminology/secret.md) resource.            |
-| header_prefix | string | False    | "X-"                     | Prefix for a custom HTTP header. After authentication is successful, three headers will be added to the request header (for backend) and response header (for frontend) namely: `X-UserId`, `X-Username`, and `X-Nickname`. |
+### Consumer
+
+| Name | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| appid | string | True | | App id added in wolf console. This field supports saving the value in Secret Manager using the [APISIX Secret](../terminology/secret.md) resource. |
+| server | string | False | "http://127.0.0.1:12180" | Service address of wolf server. |
+| ssl_verify | boolean | False | false | If true, verify the TLS certificate of the wolf server. |
+
+### Route or Service
+
+| Name | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| header_prefix | string | False | "X-" | Prefix for the identity headers. After authentication is successful, three headers will be added to the request header (for backend) and response header (for frontend) namely: `{prefix}UserId`, `{prefix}Username`, and `{prefix}Nickname`. Client-supplied headers with these names are removed before authentication. |
 
 ## API
 
@@ -113,6 +121,10 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1  -H "X-API-KEY: $admin_key" -X 
 ```
 
 You can also use the [APISIX Dashboard](/docs/dashboard/USER_GUIDE) to complete the operation through a web UI.
+
+## Upgrade
+
+`header_prefix` is configured on the Route or Service and is no longer accepted on the Consumer. Before upgrading, move a custom `header_prefix` from each Consumer to every Route or Service that uses `wolf-rbac`, including `wolf-rbac` configured inside `multi-auth`, and remove it from the Consumer. A Consumer that still sets a value other than the default `"X-"` fails validation. `appid`, `server`, and `ssl_verify` stay on the Consumer.
 
 <!--
 ![add a consumer](https://raw.githubusercontent.com/apache/apisix/master/docs/assets/images/plugin/wolf-rbac-1.png)
