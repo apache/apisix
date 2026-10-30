@@ -99,6 +99,12 @@ import TabItem from '@theme/TabItem';
 - `var` 包含请求连接的基本信息（IP、端口、请求时间戳等）。
 - `route`、`service` 和 `consumer` 包含与 APISIX 中存储的相同数据，仅在这些对象上配置了 `opa` 插件时才会发送。
 
+:::note
+
+`request.headers` 仅包含前 100 个请求头，这是 [`ngx.req.get_headers()`](https://github.com/openresty/lua-nginx-module#ngxreqget_headers) 的默认上限。第 100 个之后的请求头不会发送给 OPA，但仍会被转发到上游。如需阻止某个请求头到达上游，请使用 [`proxy-rewrite`](./proxy-rewrite.md) 插件的 `headers.remove` 属性将其移除。
+
+:::
+
 ### OPA 向 APISIX 返回数据
 
 下述示例展示了 OPA 服务对 APISIX 的响应数据格式：

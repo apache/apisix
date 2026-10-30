@@ -99,6 +99,12 @@ Each of these keys are explained below:
 - `var` contains the basic information about the requested connection (IP, port, request timestamp etc).
 - `route`, `service` and `consumer` contains the same data as stored in APISIX and are only sent if the `opa` Plugin is configured on these objects.
 
+:::note
+
+`request.headers` contains the first 100 request headers, the default limit of [`ngx.req.get_headers()`](https://github.com/openresty/lua-nginx-module#ngxreqget_headers). Headers after the 100th are not sent to OPA and are still forwarded to the Upstream. To keep a header from reaching the Upstream, remove it with the `headers.remove` attribute of the [`proxy-rewrite`](./proxy-rewrite.md) Plugin.
+
+:::
+
 ### OPA Service to APISIX
 
 The JSON below shows the response from the OPA service to APISIX:
