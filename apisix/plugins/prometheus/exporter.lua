@@ -565,7 +565,10 @@ function _M.http_init(prometheus_enabled_in_stream)
     local ai_cache_embedding_latency_exptime = core.table.try_read_attr(attr, "metrics",
                                                             "ai_cache_embedding_latency", "expire")
 
-    prometheus = base_prometheus.init("prometheus-metrics", metric_prefix)
+    prometheus = base_prometheus.init("prometheus-metrics", {
+        prefix = metric_prefix,
+        remove_expired_keys_interval = attr and attr.remove_expired_keys_interval,
+    })
 
     metrics.connections = prometheus:gauge("nginx_http_current_connections",
             "Number of HTTP connections",
@@ -733,7 +736,10 @@ function _M.stream_init()
         metric_prefix = attr.metric_prefix
     end
 
-    prometheus = base_prometheus.init("prometheus-metrics", metric_prefix)
+    prometheus = base_prometheus.init("prometheus-metrics", {
+        prefix = metric_prefix,
+        remove_expired_keys_interval = attr and attr.remove_expired_keys_interval,
+    })
 
     init_stream_metrics()
 

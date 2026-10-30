@@ -68,7 +68,7 @@ The decrypted plaintext is forwarded in a request header. For sensitive plaintex
 | Name           | Type    | Required | Default       | Valid values | Description                                                                                                                       |
 | -------------- | ------- | -------- | ------------- | ------------ | --------------------------------------------------------------------------------------------------------------------------------- |
 | header         | string  | True     | Authorization |              | The header to get the token from.                                                                                                 |
-| forward_header | string  | True     | Authorization |              | Name of the header that passes the plaintext to the Upstream.                                                                     |
+| forward_header | string  | True     | Authorization |              | Name of the header that passes the plaintext to the Upstream. Any client-supplied value of this header is removed.                |
 | strict         | boolean | False    | true          |              | If true, return a 403 error when the JWE token is missing. If false, continue when the token is not found.                        |
 
 ## Examples

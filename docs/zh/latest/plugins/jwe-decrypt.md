@@ -56,7 +56,7 @@ import TabItem from '@theme/TabItem';
 | 名称           | 类型    | 必选项 | 默认值        | 有效值 | 描述                                                                                           |
 | -------------- | ------- | ------ | ------------- | ------ | ---------------------------------------------------------------------------------------------- |
 | header         | string  | 是     | Authorization |        | 用于获取令牌的请求头。                                                                         |
-| forward_header | string  | 是     | Authorization |        | 传递明文给上游的请求头名称。                                                                   |
+| forward_header | string  | 是     | Authorization |        | 传递明文给上游的请求头名称。客户端传入的同名请求头会被移除。                                   |
 | strict         | boolean | 否     | true          |        | 如果为 true，当请求中缺少 JWE 令牌时抛出 403 错误。如果为 false，当找不到 JWE 令牌时不抛出错误。 |
 
 ## 使用示例
