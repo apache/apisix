@@ -944,4 +944,133 @@ describe('Validate API - Standalone', () => {
       });
     });
   });
+
+  describe('Variable resolution', () => {
+    it('resolves ${{VAR}} references in config pushed via the Admin API', async () => {
+      mockDigest += 1;
+      const config = {
+        routes: [
+          {
+            id: 'r_var',
+            uri: '/r_var',
+            upstream: {
+              nodes: { '127.0.0.1:1980': 1 },
+              type: 'roundrobin',
+            },
+            // The proxy-rewrite uri uses a ${{VAR:=default}} reference. The
+            // gateway must resolve it to the default ("/hello"); if it were
+            // left literal, the upstream would receive "${{...}}" instead of
+            // "/hello" and would not return the hello body.
+            plugins: {
+              'proxy-rewrite': { uri: '${{STANDALONE_ENV_TEST:=/hello}}' },
+            },
+          },
+        ],
+      };
+      const putResp = await client.put(ENDPOINT, config, {
+        headers: { [HEADER_DIGEST]: mockDigest },
+      });
+      expect(putResp.status).toEqual(202);
+
+      const resp = await client.get('/r_var');
+      expect(resp.status).toEqual(200);
+      expect(resp.data).toEqual('hello world\n');
+    });
+
+    it('coerces a resolved ${{VAR}} to its native type before validation', async () => {
+      mockDigest += 1;
+      const config = {
+        routes: [
+          {
+            id: 'r_var_typed',
+            uri: '/r_var_typed',
+            upstream: {
+              nodes: { '127.0.0.1:1980': 1 },
+              type: 'roundrobin',
+              // retries is an integer field. The reference resolves to the
+              // default "2", which resolve_conf_var coerces to the number 2;
+              // a literal string "2" would fail integer schema validation
+              // with 400, so a 202 proves the value was coerced.
+              retries: '${{STANDALONE_ENV_RETRIES:=2}}',
+            },
+            plugins: {
+              'proxy-rewrite': { uri: '/hello' },
+            },
+          },
+        ],
+      };
+      const putResp = await client.put(ENDPOINT, config, {
+        headers: { [HEADER_DIGEST]: mockDigest },
+      });
+      expect(putResp.status).toEqual(202);
+
+      const resp = await client.get('/r_var_typed');
+      expect(resp.status).toEqual(200);
+      expect(resp.data).toEqual('hello world\n');
+    });
+
+    it('resolves ${{VAR}} in a YAML body before parsing, so quoting decides the type', async () => {
+      mockDigest += 1;
+      // An unquoted reference becomes the integer retries requires, while a
+      // quoted one stays a string even though its value looks like a number.
+      const body = [
+        'routes:',
+        '  - id: r_var_yaml',
+        '    uri: /r_var_yaml',
+        '    desc: "${{STANDALONE_ENV_DESC:=123}}"',
+        '    upstream:',
+        '      nodes:',
+        '        "127.0.0.1:1980": 1',
+        '      type: roundrobin',
+        '      retries: ${{STANDALONE_ENV_RETRIES:=2}}',
+        '    plugins:',
+        '      proxy-rewrite:',
+        '        uri: ${{STANDALONE_ENV_TEST:=/hello}}',
+        '',
+      ].join('\n');
+      const putResp = await client.put(ENDPOINT, body, {
+        headers: {
+          'Content-Type': 'application/yaml',
+          [HEADER_DIGEST]: mockDigest,
+        },
+      });
+      expect(putResp.status).toEqual(202);
+
+      const dump = await client.get(ENDPOINT);
+      const route = dump.data.routes.find((r) => r.id === 'r_var_yaml');
+      expect(route.desc).toEqual('123');
+      expect(route.upstream.retries).toEqual(2);
+
+      const resp = await client.get('/r_var_yaml');
+      expect(resp.status).toEqual(200);
+      expect(resp.data).toEqual('hello world\n');
+    });
+
+    it('rejects config with an unresolvable ${{VAR}} reference', async () => {
+      mockDigest += 1;
+      const config = {
+        routes: [
+          {
+            id: 'r_var_bad',
+            uri: '/r_var_bad',
+            upstream: {
+              nodes: { '127.0.0.1:1980': 1 },
+              type: 'roundrobin',
+            },
+            // No matching environment variable and no ":=default", so
+            // resolution fails and the push is rejected with 400 rather than
+            // storing a literal "${{...}}".
+            plugins: {
+              'proxy-rewrite': { uri: '${{STANDALONE_ENV_UNDEFINED}}' },
+            },
+          },
+        ],
+      };
+      const resp = await client
+        .put(ENDPOINT, config, { headers: { [HEADER_DIGEST]: mockDigest } })
+        .catch((err) => err.response);
+      expect(resp.status).toEqual(400);
+      expect(resp.data.error_msg).toContain('failed to resolve variables in config');
+    });
+  });
 });

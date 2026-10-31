@@ -39,6 +39,7 @@ local core         = require("apisix.core")
 local config_local = require("apisix.core.config_local")
 local config_yaml  = require("apisix.core.config_yaml")
 local config_validate = require("apisix.admin.config_validate")
+local file         = require("apisix.cli.file")
 
 local shared_dict        = ngx.shared["standalone-config"]
 local status_shared_dict = ngx.shared["standalone-status"]
@@ -275,8 +276,18 @@ local function update(ctx)
     end
 
     -- parse the request body
-    local data
-    if core.string.has_prefix(content_type, "application/yaml") then
+    -- ${{VAR}} references are resolved the way the config file resolves them:
+    -- in the raw text for YAML, so that quoting decides the type, and after
+    -- decoding for JSON, whose types are explicit.
+    local is_yaml = core.string.has_prefix(content_type, "application/yaml")
+    local data, resolve_err
+    if is_yaml then
+        req_body, resolve_err = file.resolve_conf_var_in_text(req_body)
+        if not req_body then
+            return core.response.exit(400, {
+                error_msg = "failed to resolve variables in config: " .. resolve_err
+            })
+        end
         local ok, result = pcall(yaml.load, req_body, { all = false })
         -- a null document (`~`) loads as lyaml's sentinel table, which would
         -- otherwise pass as an empty object and clear every resource
@@ -292,6 +303,15 @@ local function update(ctx)
         -- same reason as above: the body is the configuration itself
         core.log.error("invalid request body, err: ", err)
         return core.response.exit(400, {error_msg = "invalid request body: " .. err})
+    end
+    if not is_yaml and type(data) == "table" then
+        local ok
+        ok, resolve_err = file.resolve_conf_var(data)
+        if not ok then
+            return core.response.exit(400, {
+                error_msg = "failed to resolve variables in config: " .. resolve_err
+            })
+        end
     end
     req_body = data
 
