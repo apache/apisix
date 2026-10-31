@@ -152,6 +152,9 @@ local function entry_matches(entry, host, port)
 end
 
 
+_M.host_entry_matches = entry_matches
+
+
 local function host_allowed(url, ctx)
     local origin, host, port = origin_of(url)
     if not origin then
