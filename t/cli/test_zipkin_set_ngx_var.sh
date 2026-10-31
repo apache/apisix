@@ -19,9 +19,12 @@
 
 . ./t/cli/common.sh
 
+# zipkin is deliberately absent from the plugin list: the variables follow
+# plugin_attr alone, because /apisix/plugins in etcd can enable the plugin
+# after nginx.conf has been rendered.
 echo '
 plugins:
-    - zipkin
+    - ip-restriction
 plugin_attr:
   zipkin:
     set_ngx_var: true

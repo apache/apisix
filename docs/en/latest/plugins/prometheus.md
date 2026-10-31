@@ -826,8 +826,11 @@ The Stream Route in this example does not belong to a Service, so `service` and 
 
 `apisix_stream_active_connections` and `apisix_stream_bandwidth` are backed by
 an NGINX shared memory zone, sized by `nginx_config.stream.metrics_zone_size`
-(default `1m`). They require APISIX-Runtime; on a runtime without it the two
-metrics are simply not published. The zone holds one slot per listening address
+(default `1m`). The zone is allocated whenever the stream subsystem runs, not
+only when `stream_plugins` in `config.yaml` lists `prometheus`, so the plugin
+also works when it is enabled through `/apisix/plugins` in etcd. They require
+APISIX-Runtime; on a runtime without it the two metrics are simply not
+published. The zone holds one slot per listening address
 plus one per Service seen on it, about 760 slots for `1m`; at most three
 quarters of them go to Services. When they run out, sessions of a new Service
 are only counted in their `listen_addr` total and a warning is logged.

@@ -811,6 +811,6 @@ apisix_stream_bandwidth{listen_addr="0.0.0.0:9100",service="",service_id="",type
 
 :::note
 
-`apisix_stream_active_connections` 和 `apisix_stream_bandwidth` 使用由 `nginx_config.stream.metrics_zone_size` 配置的 NGINX 共享内存区，默认大小为 `1m`。这两个指标依赖 APISIX-Runtime；如果运行时不提供对应模块，则不会发布这两个指标。该共享内存区为每个监听地址及其上出现的每个 Service 各分配一个 slot，`1m` 约可容纳 760 个 slot，其中最多四分之三分配给 Service。slot 用尽后，新 Service 的会话只计入其 `listen_addr` 的总量，并记录一条警告日志。
+`apisix_stream_active_connections` 和 `apisix_stream_bandwidth` 使用由 `nginx_config.stream.metrics_zone_size` 配置的 NGINX 共享内存区，默认大小为 `1m`。只要启用了 stream 子系统就会分配该内存区，不要求 `config.yaml` 的 `stream_plugins` 中列出 `prometheus`，因此通过 etcd 的 `/apisix/plugins` 动态启用该插件时同样有效。这两个指标依赖 APISIX-Runtime；如果运行时不提供对应模块，则不会发布这两个指标。该共享内存区为每个监听地址及其上出现的每个 Service 各分配一个 slot，`1m` 约可容纳 760 个 slot，其中最多四分之三分配给 Service。slot 用尽后，新 Service 的会话只计入其 `listen_addr` 的总量，并记录一条警告日志。
 
 :::
