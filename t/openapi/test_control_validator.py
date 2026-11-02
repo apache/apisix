@@ -143,6 +143,13 @@ class ControlContractValidationTest(unittest.TestCase):
         mutations.append(document)
 
         document = deepcopy(self.document)
+        plugin_schema = document['paths']['/v1/schema']['get']['responses'][
+            '200']['content']['application/json']['examples']['successful']['value'][
+                'plugins']['example-plugin']['schema']
+        del plugin_schema['properties']['i']
+        mutations.append(document)
+
+        document = deepcopy(self.document)
         document['paths']['/v1/healthcheck']['get']['responses']['503'][
             'content']['application/json']['schema']['properties']['error_msg'] = {
                 'type': 'string', 'example': 'HTML template rendering failed.'}
@@ -152,6 +159,13 @@ class ControlContractValidationTest(unittest.TestCase):
         document['paths']['/v1/plugins/reload']['put']['responses']['503'][
             'content']['text/plain']['examples']['recordFailure']['value'] = (
                 'failed to reload plugins')
+        mutations.append(document)
+
+        document = deepcopy(self.document)
+        health_example = document['paths']['/v1/healthcheck']['get']['responses'][
+            '200']['content']['application/json']['examples']['1']['value'][0]
+        del health_example['nodes'][0]['hostname']
+        del health_example['nodes'][1]['hostname']
         mutations.append(document)
 
         for document in mutations:

@@ -111,9 +111,32 @@ def validate_response_contract(document):
                       .get('example-plugin', {}))
     if set(example_plugin) != {'version', 'priority', 'schema', 'metadata_schema'}:
         errors.append('schema example must match example-plugin source fields')
+    plugin_schema = example_plugin.get('schema', {})
+    plugin_properties = plugin_schema.get('properties', {})
+    if (set(plugin_properties) != {'_meta', 'i', 's', 't', 'ip', 'port'} or
+            plugin_schema.get('required') != ['i'] or
+            plugin_schema.get('$comment') !=
+            'this is a mark for our injected plugin schema'):
+        errors.append('schema example must include the loaded example-plugin schema')
+    plugin_meta = plugin_properties.get('_meta', {})
+    if (plugin_meta.get('additionalProperties') is not False or
+            set(plugin_meta.get('properties', {})) != {
+                'disable', 'error_response', 'priority', 'filter', 'pre_function'}):
+        errors.append('schema example must include the injected plugin _meta schema')
+    metadata_schema = example_plugin.get('metadata_schema', {})
+    if (set(metadata_schema.get('properties', {})) != {'ikey', 'skey'} or
+            metadata_schema.get('required') != ['ikey', 'skey']):
+        errors.append('schema example must include example-plugin metadata fields')
     mqtt_proxy = schema_example.get('stream_plugins', {}).get('mqtt-proxy', {})
     if set(mqtt_proxy) != {'schema', 'priority'}:
         errors.append('schema example must match mqtt-proxy source fields')
+    mqtt_schema = mqtt_proxy.get('schema', {})
+    mqtt_properties = mqtt_schema.get('properties', {})
+    if (set(mqtt_properties) != {'_meta', 'protocol_name', 'protocol_level'} or
+            mqtt_schema.get('required') != ['protocol_level'] or
+            mqtt_schema.get('$comment') !=
+            'this is a mark for our injected plugin schema'):
+        errors.append('schema example must include the loaded mqtt-proxy schema')
 
     for path in ('/v1/healthcheck',
                  '/v1/healthcheck/{src_type}/{src_id}',
@@ -187,6 +210,16 @@ def validate_response_contract(document):
                        '200', 'content', 'application/json', 'examples', '1', 'summary')
     if dump_summary != 'Consul Example':
         errors.append('service discovery dump example must identify its Consul shape')
+    dump_description = get('paths', '/v1/discovery/{service}/dump', 'get',
+                           'description') or ''
+    if 'Response shape varies by module' not in dump_description or 'Consul' not in dump_description:
+        errors.append('service discovery dump must qualify module-specific response shapes')
+
+    for path in ('/v1/healthcheck', '/v1/healthcheck/{src_type}/{src_id}'):
+        examples = get('paths', path, 'get', 'responses', '200', 'content',
+                       'application/json', 'examples') or {}
+        if '"hostname"' not in json.dumps(examples):
+            errors.append(f'GET {path}: checker node examples must include hostname')
 
     expected_errors = {
         ('/v1/healthcheck/{src_type}/{src_id}', '400'): 'invalid src type route',
