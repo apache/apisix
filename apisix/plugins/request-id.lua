@@ -20,6 +20,7 @@ local core = require("apisix.core")
 local resty_random = require("resty.random")
 local ksuid = require("resty.ksuid")
 local math_random = math.random
+local type = type
 local str_byte = string.byte
 local str_sub = string.sub
 local table_concat = table.concat
