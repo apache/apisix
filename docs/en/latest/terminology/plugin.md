@@ -122,7 +122,7 @@ To reset the priority of this plugin instance to the default, simply remove the 
 
 ## Plugins merging precedence
 
-When the same plugin is configured both globally in a global rule and locally in an object (e.g. a route), both plugin instances are executed sequentially.
+When the same plugin is configured both globally in a global rule and locally in an object (e.g. a route), both plugin instances are executed sequentially. To run only the route's instance, set [`_meta.run_policy`](#let-the-route-take-over-a-global-plugin) to `prefer_route`.
 
 However, if the same plugin is configured locally on multiple objects, such as on [Route](./route.md), [Service](./service.md), [Consumer](./consumer.md), [Consumer Group](./consumer-group.md), or [Plugin Config](./plugin-config.md), only one copy of configuration is used as each non-global plugin is only executed once. This is because during execution, plugins configured in these objects are merged with respect to a specific order of precedence:
 
@@ -140,6 +140,7 @@ Some common configurations can be applied to plugins through the `_meta` configu
 | error_response | string/object  | Custom error response. |
 | priority       | integer        | Custom plugin priority. |
 | filter         | array          | Depending on the requested parameters, it is decided at runtime whether the plugin should be executed. Something like this: `{{var, operator, val}, {var, operator, val}, ...}}`. For example: `{"arg_version", "==", "v2"}`, indicating that the current request parameter `version` is `v2`. The variables here are consistent with NGINX internal variables. See [APISIX expressions](../router-radixtree.md#how-to-filter-route-by-nginx-built-in-variable) for the supported condition format and operators. |
+| run_policy     | string         | When set to `prefer_route`, the global rule's instance of the plugin is skipped if the matched route also configures the plugin. Valid value: `prefer_route`. |
 
 ### Disable the plugin
 
@@ -310,6 +311,52 @@ curl -v /dev/null http://127.0.0.1:9080/get?version=v2 -H"host:httpbin.org"
   "url": "http://httpbin.org/anything?version=v2"
 }
 ```
+
+### Let the route take over a global plugin
+
+By default, a plugin configured in both a global rule and a route runs twice. With `_meta.run_policy` set to `prefer_route` on either of the two configurations, the global rule's instance is skipped for routes that configure the same plugin, and only the route's instance runs. Requests to other routes, or requests that match no route, still run the global rule's instance.
+
+For example, allow any origin with a global `cors`, but only `https://example.com` on one route:
+
+```shell
+curl http://127.0.0.1:9180/apisix/admin/global_rules/1 \
+-H "X-API-KEY: $admin_key" -X PUT -d '
+{
+    "plugins": {
+        "cors": {
+            "allow_origins": "*"
+        }
+    }
+}'
+```
+
+```shell
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H "X-API-KEY: $admin_key" -X PUT -d '
+{
+    "uri": "/anything",
+    "plugins": {
+        "cors": {
+            "_meta": {
+                "run_policy": "prefer_route"
+            },
+            "allow_origins": "https://example.com"
+        }
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "httpbin.org:80": 1
+        }
+    }
+}'
+```
+
+Without `run_policy`, a request to this route from `https://evil.com` would still get `Access-Control-Allow-Origin: *` from the global rule. With it, only the route's `cors` runs and the request gets no `Access-Control-Allow-Origin` header.
+
+If the route's instance is disabled with `_meta.disable`, the global rule's instance runs. If the route's instance is skipped by its `_meta.filter`, neither instance runs, as the route has taken over the plugin.
+
+Some plugins, such as `prometheus` and `skywalking`, always behave this way, as they set `run_policy` in their code.
 
 ## Hot reload
 

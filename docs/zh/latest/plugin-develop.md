@@ -268,7 +268,7 @@ local _M = {
 }
 ```
 
-`run_policy` 字段可以用来控制插件执行。当这个字段设置成 `prefer_route` 时，且该插件同时配置在全局和路由级别，那么只有路由级别的配置生效。
+`run_policy` 字段可以用来控制插件执行。当这个字段设置成 `prefer_route` 时，且该插件同时配置在全局和路由级别，那么只有路由级别的配置生效。用户也可以通过 [`_meta.run_policy`](./terminology/plugin.md#由路由接管全局插件) 为单个插件配置设置该字段。
 
 如果你的插件需要跟 `consumer` 一起使用，需要把 `type` 设置成 `auth`。
 

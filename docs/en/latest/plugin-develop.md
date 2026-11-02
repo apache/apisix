@@ -304,6 +304,8 @@ local _M = {
 `run_policy` field can be used to control the behavior of the plugin execution.
 When this field set to `prefer_route`, and the plugin has been configured both
 in the global and at the route level, only the route level one will take effect.
+Users can also set it for a single plugin configuration through
+[`_meta.run_policy`](./terminology/plugin.md#let-the-route-take-over-a-global-plugin).
 
 `type` field is required to be set to `auth` if your plugin needs to work with consumer.
 
