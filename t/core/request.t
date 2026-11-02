@@ -545,7 +545,36 @@ decode_count: 2
 
 
 
-=== TEST 18: set_header with a different case should not leave a stale entry in the cached headers
+=== TEST 18: cached request body still respects each caller's size limit
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            ngx.ctx.api_ctx = {}
+
+            local first = core.request.get_json_request_body_table()
+            local accepted = core.request.get_json_request_body_table(100)
+            local rejected, err = core.request.get_json_request_body_table(5)
+            local accepted_again = core.request.get_json_request_body_table(100)
+
+            ngx.say("same table: ", first == accepted and first == accepted_again)
+            ngx.say("rejected: ", rejected == nil)
+            ngx.say("size error: ", err and err.message:find("greater than the maximum size", 1, true) ~= nil)
+        }
+    }
+--- request
+POST /t
+{"model":"gpt-4"}
+--- more_headers
+Content-Type: application/json
+--- response_body
+same table: true
+rejected: true
+size error: true
+
+
+
+=== TEST 19: set_header with a different case should not leave a stale entry in the cached headers
 --- config
     location /t {
         content_by_lua_block {
@@ -580,7 +609,7 @@ header: new
 
 
 
-=== TEST 19: get_body marks a body over max_size as too_large
+=== TEST 20: get_body marks a body over max_size as too_large
 --- config
     location /read {
         content_by_lua_block {
@@ -611,3 +640,33 @@ header: new
 body: nil
 err: request size 17 is greater than the maximum size 8 allowed
 kind: too_large
+
+
+
+=== TEST 21: replacing the request body with a file invalidates the parsed body cache
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            ngx.ctx.api_ctx = {}
+
+            local original = core.request.get_json_request_body_table()
+            local path = ngx.config.prefix() .. "logs/request-body-cache-test.json"
+            local file = assert(io.open(path, "w"))
+            file:write('{"model":"claude"}')
+            file:close()
+            ngx.req.set_body_file(path, true)
+
+            local updated = core.request.get_json_request_body_table()
+            ngx.say("original: ", original.model)
+            ngx.say("updated: ", updated.model)
+        }
+    }
+--- request
+POST /t
+{"model":"gpt-4"}
+--- more_headers
+Content-Type: application/json
+--- response_body
+original: gpt-4
+updated: claude

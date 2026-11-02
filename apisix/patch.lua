@@ -413,11 +413,8 @@ function _M.patch()
         return patch_udp_socket(original_udp())
     end
 
-    -- Patch ngx.req.set_body_data to invalidate the parsed request body cache
-    -- in api_ctx. This ensures that body lookups and post_arg.* variable
-    -- lookups after a body rewrite always reflect the new body content.
-    local _orig_set_body_data = ngx.req.set_body_data
-    ngx.req.set_body_data = function(data)
+    -- Invalidate parsed bodies and post_arg.* variables after a body rewrite.
+    local function clear_request_body_cache()
         local api_ctx = ngx.ctx.api_ctx
         if api_ctx and api_ctx._request_body_table then
             api_ctx._request_body_table = nil
@@ -437,7 +434,18 @@ function _M.patch()
                 end
             end
         end
+    end
+
+    local _orig_set_body_data = ngx.req.set_body_data
+    ngx.req.set_body_data = function(data)
+        clear_request_body_cache()
         return _orig_set_body_data(data)
+    end
+
+    local _orig_set_body_file = ngx.req.set_body_file
+    ngx.req.set_body_file = function(...)
+        clear_request_body_cache()
+        return _orig_set_body_file(...)
     end
 end
 

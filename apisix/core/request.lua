@@ -358,6 +358,14 @@ local function get_request_body_table(ctx, content_type, max_size)
                         (ctx._request_body_type or "unknown") ..
                         ", expected " .. content_type
         end
+        -- A previous caller may have used a larger limit or no limit at all.
+        -- Enforce this caller's limit even when the parsed body is cached.
+        if max_size then
+            local body, err = _M.get_body(max_size, ctx)
+            if not body then
+                return nil, "could not get body: " .. (err or "request body is empty")
+            end
+        end
         log.debug("reuse parsed request body from ctx cache")
         return ctx._request_body_table
     end
