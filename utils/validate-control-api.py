@@ -105,6 +105,15 @@ def validate_response_contract(document):
     schema_example = get('paths', '/v1/schema', 'get', 'responses', '200',
                          'content', 'application/json', 'examples', 'successful',
                          'value') or {}
+    schema_example_description = get(
+        'paths', '/v1/schema', 'get', 'responses', '200', 'content',
+        'application/json', 'examples', 'successful', 'description') or ''
+    if 'Representative fields' not in schema_example_description:
+        errors.append('schema example must identify its abbreviated main schemas')
+    for resource in ('route', 'upstream'):
+        properties = schema_example.get('main', {}).get(resource, {}).get('properties', {})
+        if not properties:
+            errors.append(f'schema example main.{resource} must show representative fields')
     if 'stream_plugins' not in schema_example or 'stream-plugins' in schema_example:
         errors.append('schema example must use the runtime stream_plugins response key')
     example_plugin = (schema_example.get('plugins', {})
@@ -128,7 +137,7 @@ def validate_response_contract(document):
             metadata_schema.get('required') != ['ikey', 'skey']):
         errors.append('schema example must include example-plugin metadata fields')
     mqtt_proxy = schema_example.get('stream_plugins', {}).get('mqtt-proxy', {})
-    if set(mqtt_proxy) != {'schema', 'priority'}:
+    if set(mqtt_proxy) != {'version', 'schema', 'priority'} or mqtt_proxy.get('version') != 0.1:
         errors.append('schema example must match mqtt-proxy source fields')
     mqtt_schema = mqtt_proxy.get('schema', {})
     mqtt_properties = mqtt_schema.get('properties', {})

@@ -150,6 +150,19 @@ class ControlContractValidationTest(unittest.TestCase):
         mutations.append(document)
 
         document = deepcopy(self.document)
+        mqtt_proxy = document['paths']['/v1/schema']['get']['responses'][
+            '200']['content']['application/json']['examples']['successful']['value'][
+                'stream_plugins']['mqtt-proxy']
+        del mqtt_proxy['version']
+        mutations.append(document)
+
+        document = deepcopy(self.document)
+        document['paths']['/v1/schema']['get']['responses']['200']['content'][
+            'application/json']['examples']['successful']['value']['main'][
+                'route']['properties'] = {}
+        mutations.append(document)
+
+        document = deepcopy(self.document)
         document['paths']['/v1/healthcheck']['get']['responses']['503'][
             'content']['application/json']['schema']['properties']['error_msg'] = {
                 'type': 'string', 'example': 'HTML template rendering failed.'}
