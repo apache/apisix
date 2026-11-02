@@ -304,6 +304,32 @@ function _M.ensure_checker(resource_path)
         core.log.warn("ensure_checker: resource has no checks configured: ", resource_path)
         return false, "no checks configured"
     end
+
+    -- Domain-name nodes are otherwise only resolved by apisix.upstream's
+    -- get_by_id -> parse_domain_in_up, which runs exclusively on the live
+    -- request path (apisix/init.lua). Without this, a checker seeded here
+    -- would start probing under the unresolved domain-string identity, then
+    -- get rebuilt -- wiping its accumulated shm state, including the probe
+    -- count is_resource_probed relies on -- the moment real traffic first
+    -- resolves the domain and bumps _nodes_ver. res_conf is the same shared
+    -- config object get_by_id operates on (both come from
+    -- core.config.fetch_created_obj), so has_domain/dns_nodes are already
+    -- populated by the config watcher's filter callback regardless of
+    -- traffic; resolve here so the checker is built once, under its final
+    -- identity, from the start.
+    if res_conf.has_domain then
+        local resolved, err = upstream_utils.parse_domain_in_up(res_conf)
+        if not resolved then
+            core.log.error("ensure_checker: failed to resolve domain nodes for ",
+                          resource_path, ": ", err)
+            -- fall through with the unresolved config -- a subsequent real
+            -- request or ensure_checker call will retry the resolution
+        else
+            res_conf = resolved
+            upstream = res_conf.value.upstream or res_conf.value
+        end
+    end
+
     if not upstream.nodes or #upstream.nodes == 0 then
         return false, "no nodes"
     end
@@ -318,21 +344,58 @@ function _M.ensure_checker(resource_path)
 end
 
 
+-- A single active-check attempt does not guarantee a target's real state is
+-- known: with e.g. unhealthy.http_failures = 2 configured, internal_health
+-- only converges after two consecutive failed attempts. Returns the
+-- worst-case number of consecutive attempts needed to guarantee the real
+-- state has been reached in either direction (healthy or unhealthy), or nil
+-- if the resource has no active check configured at all -- in which case
+-- there is nothing for a readiness gate to wait on.
+local function required_probe_attempts(checks)
+    local active = checks and checks.active
+    if not active then
+        return nil
+    end
+    local unhealthy = active.unhealthy or {}
+    local healthy = active.healthy or {}
+    local max_attempts = 1
+    for _, threshold in ipairs({
+        unhealthy.http_failures,
+        unhealthy.tcp_failures,
+        unhealthy.timeouts,
+        healthy.successes,
+    }) do
+        if threshold and threshold > max_attempts then
+            max_attempts = threshold
+        end
+    end
+    return max_attempts
+end
+
+
 -- Cold-start readiness gate support (PS-12691): true only once every target
--- of the resource's checker has had at least one real active-check attempt
--- (see resty.healthcheck's all_targets_probed -- "probed" means attempted,
--- not "healthy"). false if there is no live checker yet (ensure_checker not
--- called, or timer_create_checker hasn't run its next tick yet).
+-- of the resource's checker has had enough real active-check attempts for
+-- its state to have actually converged (see resty.healthcheck's
+-- all_targets_probed -- "probed" means attempted, not "healthy", and one
+-- attempt is not always enough, see required_probe_attempts above). false
+-- if there is no live checker yet (ensure_checker not called, or
+-- timer_create_checker hasn't run its next tick yet).
 function _M.is_resource_probed(resource_path)
     local item = working_pool[resource_path]
     if not item or not item.checker or item.checker.dead then
         return false
     end
 
+    local min_attempts = required_probe_attempts(item.checks)
+    if min_attempts == nil then
+        -- no active check configured: nothing for this gate to wait on.
+        return true
+    end
+
     if not healthcheck then
         healthcheck = require("resty.healthcheck")
     end
-    local ok, err = healthcheck.all_targets_probed(item.checker.name, healthcheck_shdict_name)
+    local ok, err = healthcheck.all_targets_probed(item.checker.name, healthcheck_shdict_name, min_attempts)
     if ok == nil then
         core.log.error("is_resource_probed: ", err)
         return false
