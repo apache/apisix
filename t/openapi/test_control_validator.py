@@ -136,6 +136,24 @@ class ControlContractValidationTest(unittest.TestCase):
                 'type': 'string'}
         mutations.append(document)
 
+        document = deepcopy(self.document)
+        schema_example = document['paths']['/v1/schema']['get']['responses'][
+            '200']['content']['application/json']['examples']['successful']['value']
+        schema_example['stream-plugins'] = schema_example.pop('stream_plugins')
+        mutations.append(document)
+
+        document = deepcopy(self.document)
+        document['paths']['/v1/healthcheck']['get']['responses']['503'][
+            'content']['application/json']['schema']['properties']['error_msg'] = {
+                'type': 'string', 'example': 'HTML template rendering failed.'}
+        mutations.append(document)
+
+        document = deepcopy(self.document)
+        document['paths']['/v1/plugins/reload']['put']['responses']['503'][
+            'content']['text/plain']['examples']['recordFailure']['value'] = (
+                'failed to reload plugins')
+        mutations.append(document)
+
         for document in mutations:
             self.assertTrue(validator.validate_response_contract(document))
 

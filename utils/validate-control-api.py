@@ -102,6 +102,27 @@ def validate_response_contract(document):
             value = value[part]
         return value
 
+    schema_example = get('paths', '/v1/schema', 'get', 'responses', '200',
+                         'content', 'application/json', 'examples', 'successful',
+                         'value') or {}
+    if 'stream_plugins' not in schema_example or 'stream-plugins' in schema_example:
+        errors.append('schema example must use the runtime stream_plugins response key')
+    example_plugin = (schema_example.get('plugins', {})
+                      .get('example-plugin', {}))
+    if set(example_plugin) != {'version', 'priority', 'schema', 'metadata_schema'}:
+        errors.append('schema example must match example-plugin source fields')
+    mqtt_proxy = schema_example.get('stream_plugins', {}).get('mqtt-proxy', {})
+    if set(mqtt_proxy) != {'schema', 'priority'}:
+        errors.append('schema example must match mqtt-proxy source fields')
+
+    for path in ('/v1/healthcheck',
+                 '/v1/healthcheck/{src_type}/{src_id}',
+                 '/v1/healthcheck/{src_type}/{src_id}/checkers'):
+        error_schema = get('paths', path, 'get', 'responses', '503', 'content',
+                           'application/json', 'schema', 'properties', 'error_msg') or {}
+        if error_schema.get('pattern') != r'^HTML template rendering: .+$':
+            errors.append(f'GET {path}: HTML error must preserve the runtime prefix')
+
     for path in ('/v1/route/{route_id}', '/v1/upstream/{upstream_id}'):
         example = get('paths', path, 'get', 'responses', '200', 'content',
                       'application/json', 'examples', '1', 'value')
@@ -153,6 +174,19 @@ def validate_response_contract(document):
     if (set(reload_content) != {'text/plain'} or
             'recorded' not in reload_description or 'published' not in reload_description):
         errors.append('plugin reload 503 must cover both failure paths as text/plain')
+    reload_media = reload_content.get('text/plain', {})
+    record_example = (reload_media.get('examples', {})
+                      .get('recordFailure', {}).get('value'))
+    if record_example != '{"error_msg":"failed to record plugins reload"}':
+        errors.append('plugin reload 503 must preserve the exact recording-failure body')
+    reload_schema_description = reload_media.get('schema', {}).get('description', '')
+    if 'raw event-system error string' not in reload_schema_description:
+        errors.append('plugin reload 503 must distinguish the raw publication error body')
+
+    dump_summary = get('paths', '/v1/discovery/{service}/dump', 'get', 'responses',
+                       '200', 'content', 'application/json', 'examples', '1', 'summary')
+    if dump_summary != 'Consul Example':
+        errors.append('service discovery dump example must identify its Consul shape')
 
     expected_errors = {
         ('/v1/healthcheck/{src_type}/{src_id}', '400'): 'invalid src type route',

@@ -85,16 +85,41 @@
                       },
                       "plugins": {
                         "example-plugin": {
-                          "consumer_schema": {},
-                          "metadata_schema": {},
-                          "schema": {},
-                          "type": "object",
+                          "version": 0.1,
                           "priority": 0,
-                          "version": 0.1
+                          "schema": {
+                            "type": "object",
+                            "properties": {
+                              "_meta": {
+                                "properties": {
+                                  "disable": {
+                                    "type": "boolean"
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "metadata_schema": {
+                            "type": "object"
+                          }
                         }
                       },
-                      "stream-plugins": {
-                        "mqtt-proxy": {}
+                      "stream_plugins": {
+                        "mqtt-proxy": {
+                          "schema": {
+                            "type": "object",
+                            "properties": {
+                              "_meta": {
+                                "properties": {
+                                  "disable": {
+                                    "type": "boolean"
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "priority": 1000
+                        }
                       }
                     }
                   }
@@ -128,7 +153,7 @@
                 },
                 "examples": {
                   "1": {
-                    "summary": "Successful Example",
+                    "summary": "etcd Provider Example",
                     "value": [
                       {
                         "nodes": [
@@ -182,7 +207,8 @@
                   "properties": {
                     "error_msg": {
                       "type": "string",
-                      "example": "HTML template rendering failed."
+                      "pattern": "^HTML template rendering: .+$",
+                      "description": "Lua template rendering error prefixed with `HTML template rendering: `."
                     }
                   }
                 }
@@ -250,7 +276,8 @@
                         "type": "http",
                         "nodes": []
                       }
-                    ]
+                    ],
+                    "summary": "etcd Provider Example"
                   }
                 }
               },
@@ -311,7 +338,8 @@
                   "properties": {
                     "error_msg": {
                       "type": "string",
-                      "example": "HTML template rendering failed."
+                      "pattern": "^HTML template rendering: .+$",
+                      "description": "Lua template rendering error prefixed with `HTML template rendering: `."
                     }
                   }
                 }
@@ -368,7 +396,7 @@
                 },
                 "examples": {
                   "1": {
-                    "summary": "Successful Example",
+                    "summary": "etcd Provider Example",
                     "value": {
                       "nodes": [
                         {
@@ -458,7 +486,8 @@
                   "properties": {
                     "error_msg": {
                       "type": "string",
-                      "example": "HTML template rendering failed."
+                      "pattern": "^HTML template rendering: .+$",
+                      "description": "Lua template rendering error prefixed with `HTML template rendering: `."
                     }
                   }
                 }
@@ -517,7 +546,7 @@
                 },
                 "examples": {
                   "1": {
-                    "summary": "Successful Example",
+                    "summary": "YAML Provider Example",
                     "value": [
                       {
                         "value": {
@@ -589,7 +618,7 @@
                 },
                 "examples": {
                   "1": {
-                    "summary": "Successful Example",
+                    "summary": "YAML Provider Example",
                     "value": {
                       "value": {
                         "priority": 0,
@@ -676,7 +705,7 @@
                 },
                 "examples": {
                   "1": {
-                    "summary": "Successful Example",
+                    "summary": "etcd Provider Example",
                     "value": [
                       {
                         "has_domain": false,
@@ -757,7 +786,7 @@
                 },
                 "examples": {
                   "1": {
-                    "summary": "Successful Example",
+                    "summary": "etcd Provider Example",
                     "value": {
                       "has_domain": false,
                       "modifiedIndex": 728,
@@ -841,7 +870,7 @@
                 },
                 "examples": {
                   "1": {
-                    "summary": "Successful Example",
+                    "summary": "etcd Provider Example",
                     "value": [
                       {
                         "value": {
@@ -914,7 +943,7 @@
                 },
                 "examples": {
                   "1": {
-                    "summary": "Successful Example",
+                    "summary": "etcd Provider Example",
                     "value": {
                       "value": {
                         "scheme": "http",
@@ -1120,9 +1149,15 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "type": "string"
+                  "type": "string",
+                  "description": "On reload-state recording failure, the body is a JSON-encoded error object. On event-publication failure, it is the raw event-system error string."
                 },
-                "example": "{\"error_msg\":\"failed to record plugins reload\"}"
+                "examples": {
+                  "recordFailure": {
+                    "summary": "Reload State Recording Failure",
+                    "value": "{\"error_msg\":\"failed to record plugins reload\"}"
+                  }
+                }
               }
             }
           }
@@ -1160,7 +1195,7 @@
                 },
                 "examples": {
                   "1": {
-                    "summary": "Successful Example",
+                    "summary": "Consul Example",
                     "value": {
                       "services": {
                         "svc-a": [
@@ -1283,17 +1318,17 @@
                       "type": "string",
                       "description": "Instance hostname."
                     },
-                  "id": {
-                    "oneOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "integer"
-                      }
-                    ],
-                    "description": "Configured APISIX instance ID."
-                  },
+                    "id": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "integer"
+                        }
+                      ],
+                      "description": "Configured APISIX instance ID."
+                    },
                     "version": {
                       "type": "string",
                       "description": "APISIX version."
