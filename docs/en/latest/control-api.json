@@ -90,16 +90,74 @@
                             "type": "object",
                             "properties": {
                               "_meta": {
+                                "type": "object",
                                 "properties": {
                                   "disable": {
                                     "type": "boolean"
+                                  },
+                                  "error_response": {
+                                    "oneOf": [
+                                      {
+                                        "type": "string"
+                                      },
+                                      {
+                                        "type": "object"
+                                      }
+                                    ]
+                                  },
+                                  "priority": {
+                                    "description": "priority of plugins by customized order",
+                                    "type": "integer"
+                                  },
+                                  "filter": {
+                                    "description": "filter determines whether the plugin needs to be executed at runtime",
+                                    "type": "array"
+                                  },
+                                  "pre_function": {
+                                    "description": "function to be executed in each phase before execution of plugins. The pre_function will have access to two arguments: `conf` and `ctx`.",
+                                    "type": "string"
                                   }
-                                }
+                                },
+                                "additionalProperties": false
+                              },
+                              "i": {
+                                "type": "number",
+                                "minimum": 0
+                              },
+                              "s": {
+                                "type": "string"
+                              },
+                              "t": {
+                                "type": "array",
+                                "minItems": 1
+                              },
+                              "ip": {
+                                "type": "string"
+                              },
+                              "port": {
+                                "type": "integer"
                               }
-                            }
+                            },
+                            "required": [
+                              "i"
+                            ],
+                            "$comment": "this is a mark for our injected plugin schema"
                           },
                           "metadata_schema": {
-                            "type": "object"
+                            "type": "object",
+                            "properties": {
+                              "ikey": {
+                                "type": "number",
+                                "minimum": 0
+                              },
+                              "skey": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "ikey",
+                              "skey"
+                            ]
                           }
                         }
                       },
@@ -109,13 +167,48 @@
                             "type": "object",
                             "properties": {
                               "_meta": {
+                                "type": "object",
                                 "properties": {
                                   "disable": {
                                     "type": "boolean"
+                                  },
+                                  "error_response": {
+                                    "oneOf": [
+                                      {
+                                        "type": "string"
+                                      },
+                                      {
+                                        "type": "object"
+                                      }
+                                    ]
+                                  },
+                                  "priority": {
+                                    "description": "priority of plugins by customized order",
+                                    "type": "integer"
+                                  },
+                                  "filter": {
+                                    "description": "filter determines whether the plugin needs to be executed at runtime",
+                                    "type": "array"
+                                  },
+                                  "pre_function": {
+                                    "description": "function to be executed in each phase before execution of plugins. The pre_function will have access to two arguments: `conf` and `ctx`.",
+                                    "type": "string"
                                   }
-                                }
+                                },
+                                "additionalProperties": false
+                              },
+                              "protocol_name": {
+                                "type": "string",
+                                "default": "MQTT"
+                              },
+                              "protocol_level": {
+                                "type": "integer"
                               }
-                            }
+                            },
+                            "required": [
+                              "protocol_level"
+                            ],
+                            "$comment": "this is a mark for our injected plugin schema"
                           },
                           "priority": 1000
                         }
@@ -165,7 +258,8 @@
                               "tcp_failure": 0
                             },
                             "port": 80,
-                            "status": "healthy"
+                            "status": "healthy",
+                            "hostname": "52.86.68.46"
                           },
                           {
                             "ip": "100.24.156.8",
@@ -176,7 +270,8 @@
                               "tcp_failure": 0
                             },
                             "port": 80,
-                            "status": "unhealthy"
+                            "status": "unhealthy",
+                            "hostname": "100.24.156.8"
                           }
                         ],
                         "name": "/apisix/routes/1",
@@ -407,7 +502,8 @@
                             "tcp_failure": 0
                           },
                           "port": 80,
-                          "status": "healthy"
+                          "status": "healthy",
+                          "hostname": "52.86.68.46"
                         },
                         {
                           "ip": "100.24.156.8",
@@ -418,7 +514,8 @@
                             "tcp_failure": 0
                           },
                           "port": 80,
-                          "status": "unhealthy"
+                          "status": "unhealthy",
+                          "hostname": "100.24.156.8"
                         }
                       ],
                       "type": "http",
@@ -1168,7 +1265,7 @@
       "get": {
         "summary": "Get Memory Dump",
         "deprecated": false,
-        "description": "Get the in-memory service and configuration data for a configured service discovery module. This endpoint exists only when the module implements runtime data dumping.",
+        "description": "Get module-defined in-memory data for a configured service discovery module. Response shape varies by module; the example shows Consul's `config` and `services` object. This endpoint exists only when the module implements runtime data dumping.",
         "tags": [
           "Service Discovery"
         ],
