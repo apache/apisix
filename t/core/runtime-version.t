@@ -24,11 +24,11 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: nginx is 1.31.1 or newer
+=== TEST 1: nginx is 1.31.8 or newer
 --- config
     location /t {
         content_by_lua_block {
-            if ngx.config.nginx_version >= 1031001 then
+            if ngx.config.nginx_version >= 1031008 then
                 ngx.say("OK")
             else
                 ngx.say("BAD: nginx ", ngx.config.nginx_version)
