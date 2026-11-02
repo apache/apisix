@@ -42,14 +42,18 @@ import TabItem from '@theme/TabItem';
 
 | 名称 | 类型 | 必选项 | 默认值 | 有效值 | 描述 |
 | --- | --- | --- | --- | --- | --- |
-| `prepend` | array | 条件必选\* | | | 要前置的提示对象数组。 |
+| `max_req_body_size` | integer | 否 | 67108864 | >= 1 | 缓存在内存中的最大请求体大小（字节）。超过该大小的请求将被拒绝。 |
+| `prepend` | array | 条件必选\* | | 长度 >= 1 | 要前置的提示对象数组。 |
 | `prepend.role` | string | 是 | | [`system`, `user`, `assistant`] | 消息的角色。 |
 | `prepend.content` | string | 是 | | 长度 >= 1 | 消息的内容（提示）。 |
-| `append` | array | 条件必选\* | | | 要追加的提示对象数组。 |
+| `append` | array | 条件必选\* | | 长度 >= 1 | 要追加的提示对象数组。 |
 | `append.role` | string | 是 | | [`system`, `user`, `assistant`] | 消息的角色。 |
 | `append.content` | string | 是 | | 长度 >= 1 | 消息的内容（提示）。 |
+| `fail_mode` | string | 否 | `skip` | [`skip`, `warn`, `error`] | 请求与支持的聊天协议不匹配时的处理方式。`skip` 表示直接放行，`warn` 表示放行并记录警告，`error` 表示拒绝请求。 |
 
 \* **条件必选**：必须提供 `prepend` 或 `append` 中的至少一个。
+
+该插件可识别 OpenAI Chat Completions、OpenAI Responses、Anthropic Messages 和 Amazon Bedrock Converse 请求格式。系统提示会写入各协议原生的系统或指令字段，用户和助手角色则会保留在对话中。
 
 ## 示例
 

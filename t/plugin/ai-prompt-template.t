@@ -88,7 +88,195 @@ passed
 
 
 
-=== TEST 2: no templates
+=== TEST 2: reject non-object prompt items
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/100',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/prompt-template-safe",
+                    "plugins": {
+                        "ai-prompt-template": {
+                            "templates": [{
+                                "name": "invalid",
+                                "template": {"messages": ["not-an-object"]}
+                            }]
+                        }
+                    }
+                }]]
+            )
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- error_code: 400
+--- response_body eval
+qr/.*property \\"messages\\" validation failed.*/
+
+
+
+=== TEST 3: configure JSON-safe structured rendering
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/100',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/template-safe",
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {"127.0.0.1:1980": 1}
+                    },
+                    "plugins": {
+                        "ai-prompt-template": {
+                            "templates": [{
+                                "name": "safe",
+                                "template": {
+                                    "model": "{{ model }}",
+                                    "messages": [{
+                                        "role": "user",
+                                        "content": "Value: {{ value }}; nested: {{ nested.name }}"
+                                    }]
+                                }
+                            }]
+                        },
+                        "proxy-rewrite": {
+                            "uri": "/echo"
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 4: render quotes, tags, and newlines without corrupting JSON
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local setup_code = t('/apisix/admin/routes/100',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/prompt-template-safe",
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {"127.0.0.1:1980": 1}
+                    },
+                    "plugins": {
+                        "ai-prompt-template": {
+                            "templates": [{
+                                "name": "safe",
+                                "template": {
+                                    "model": "{{ model }}",
+                                    "messages": [{
+                                        "role": "user",
+                                        "content": "Value: {{ value }}; nested: {{ nested.name }}"
+                                    }]
+                                }
+                            }]
+                        },
+                        "proxy-rewrite": {"uri": "/echo"}
+                    }
+                }]]
+            )
+            if setup_code >= 300 then
+                ngx.status = setup_code
+                return
+            end
+            ngx.sleep(0.2)
+            local code, body = t('/prompt-template-safe',
+                ngx.HTTP_POST,
+                [=[{
+                    "template_name": "safe",
+                    "model": "model-1",
+                    "value": "say \"hi\"\n<tag>",
+                    "nested": {"name": "quoted & exact"}
+                }]=],
+                [=[{
+                    "model": "model-1",
+                    "messages": [{
+                        "role": "user",
+                        "content": "Value: say \"hi\"\n<tag>; nested: quoted & exact"
+                    }]
+                }]=]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+--- no_error_log
+say &quot;hi&quot;
+body transform output
+
+
+
+=== TEST 5: reject oversized request body with 413
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/101',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/prompt-template-small",
+                    "plugins": {
+                        "ai-prompt-template": {
+                            "max_req_body_size": 10,
+                            "templates": [{
+                                "name": "small",
+                                "template": {
+                                    "messages": [{"role": "user", "content": "{{ value }}"}]
+                                }
+                            }]
+                        },
+                        "proxy-rewrite": {
+                            "uri": "/echo"
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                return
+            end
+
+            local http = require("resty.http").new()
+            local res = assert(http:request_uri(
+                "http://127.0.0.1:" .. ngx.var.server_port .. "/prompt-template-small",
+                {
+                    method = "POST",
+                    body = '{"template_name":"small","value":"too large"}',
+                    headers = {['Content-Type'] = 'application/json'},
+                }
+            ))
+            ngx.status = res.status
+            ngx.say(res.body)
+        }
+    }
+--- error_code: 413
+--- response_body eval
+qr/greater than the maximum size/
+
+
+
+=== TEST 6: no templates
 --- config
     location /t {
         content_by_lua_block {
@@ -123,7 +311,7 @@ qr/.*property \\"templates\\" validation failed: expect array to have at least 1
 
 
 
-=== TEST 3: test template insertion
+=== TEST 7: test template insertion
 --- config
     location /t {
         content_by_lua_block {
@@ -157,7 +345,7 @@ passed
 
 
 
-=== TEST 4: multiple templates
+=== TEST 8: multiple templates
 --- config
     location /t {
         content_by_lua_block {
@@ -211,7 +399,7 @@ passed
 
 
 
-=== TEST 5: test second template
+=== TEST 9: test second template
 --- config
     location /t {
         content_by_lua_block {
@@ -244,7 +432,7 @@ passed
 
 
 
-=== TEST 6: missing template items
+=== TEST 10: missing template items
 --- config
     location /t {
         content_by_lua_block {
@@ -277,7 +465,7 @@ passed
 
 
 
-=== TEST 7: request body contains non-existent template
+=== TEST 11: request body contains non-existent template
 --- config
     location /t {
         content_by_lua_block {
@@ -304,7 +492,7 @@ qr/.*template: random not configured.*/
 
 
 
-=== TEST 8: request body contains non-existent template
+=== TEST 12: request body contains non-existent template
 --- config
     location /t {
         content_by_lua_block {
@@ -330,7 +518,7 @@ qr/.*template name is missing in request.*/
 
 
 
-=== TEST 9: (cache test) same template name in different routes
+=== TEST 13: (cache test) same template name in different routes
 --- config
     location /t {
         content_by_lua_block {
