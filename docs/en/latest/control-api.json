@@ -72,14 +72,49 @@
                 },
                 "examples": {
                   "successful": {
-                    "summary": "Successful response",
+                    "summary": "Abbreviated Successful Response",
                     "value": {
                       "main": {
                         "route": {
-                          "properties": {}
+                          "type": "object",
+                          "properties": {
+                            "uri": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 4096
+                            },
+                            "uris": {
+                              "type": "array",
+                              "items": {
+                                "description": "HTTP uri",
+                                "type": "string"
+                              },
+                              "minItems": 1,
+                              "uniqueItems": true
+                            },
+                            "priority": {
+                              "type": "integer",
+                              "default": 0
+                            }
+                          }
                         },
                         "upstream": {
-                          "properties": {}
+                          "type": "object",
+                          "properties": {
+                            "retries": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "retry_timeout": {
+                              "type": "number",
+                              "minimum": 0
+                            },
+                            "type": {
+                              "description": "algorithms of load balancing",
+                              "type": "string",
+                              "default": "roundrobin"
+                            }
+                          }
                         }
                       },
                       "plugins": {
@@ -210,10 +245,12 @@
                             ],
                             "$comment": "this is a mark for our injected plugin schema"
                           },
-                          "priority": 1000
+                          "priority": 1000,
+                          "version": 0.1
                         }
                       }
-                    }
+                    },
+                    "description": "Representative fields are shown for the large Route and Upstream schemas. The endpoint returns their complete runtime schemas."
                   }
                 }
               }
