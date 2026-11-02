@@ -108,6 +108,18 @@ def validate_response_contract(document):
         if not isinstance(example, dict) or not isinstance(example.get('value'), dict):
             errors.append(f'GET {path}: example must preserve the config-entry value envelope')
 
+    for path in ('/v1/routes', '/v1/services', '/v1/upstreams',
+                 '/v1/plugin_metadatas'):
+        schema = get('paths', path, 'get', 'responses', '200', 'content',
+                     'application/json', 'schema') or {}
+        choices = schema.get('oneOf', []) if isinstance(schema, dict) else []
+        types = {choice.get('type') for choice in choices if isinstance(choice, dict)}
+        empty_object = any(choice.get('type') == 'object' and
+                           choice.get('maxProperties') == 0 for choice in choices
+                           if isinstance(choice, dict))
+        if types != {'array', 'object'} or not empty_object:
+            errors.append(f'GET {path}: schema must include the runtime empty-object response')
+
     dump_content = get('paths', '/v1/discovery/{service}/show_dump_file',
                        'get', 'responses', '200', 'content')
     if not isinstance(dump_content, dict) or set(dump_content) != {'text/plain'}:
@@ -127,6 +139,13 @@ def validate_response_contract(document):
                            if parameter.get('name') == 'plugin_name'), None)
     if plugin_example != 'file-logger':
         errors.append('plugin_name must use a non-empty source-backed example')
+
+    server_id = get('paths', '/v1/server_info', 'get', 'responses', '200',
+                    'content', 'application/json', 'schema', 'properties', 'id') or {}
+    id_choices = server_id.get('oneOf', []) if isinstance(server_id, dict) else []
+    if {choice.get('type') for choice in id_choices if isinstance(choice, dict)} != {
+            'string', 'integer'}:
+        errors.append('server_info.id must allow generated strings and configured integers')
 
     reload_response = get('paths', '/v1/plugins/reload', 'put', 'responses', '503') or {}
     reload_content = reload_response.get('content', {})

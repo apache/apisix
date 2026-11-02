@@ -501,10 +501,19 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "type": "object"
-                  }
+                  "oneOf": [
+                    {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "maxProperties": 0,
+                      "description": "Empty collection before any matching runtime configuration exists."
+                    }
+                  ]
                 },
                 "examples": {
                   "1": {
@@ -538,6 +547,10 @@
                         "key": "/routes/1"
                       }
                     ]
+                  },
+                  "empty": {
+                    "summary": "Empty Collection",
+                    "value": {}
                   }
                 }
               }
@@ -647,10 +660,19 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "type": "object"
-                  }
+                  "oneOf": [
+                    {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "maxProperties": 0,
+                      "description": "Empty collection before any matching runtime configuration exists."
+                    }
+                  ]
                 },
                 "examples": {
                   "1": {
@@ -693,6 +715,10 @@
                         }
                       }
                     ]
+                  },
+                  "empty": {
+                    "summary": "Empty Collection",
+                    "value": {}
                   }
                 }
               }
@@ -799,10 +825,19 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "type": "object"
-                  }
+                  "oneOf": [
+                    {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "maxProperties": 0,
+                      "description": "Empty collection before any matching runtime configuration exists."
+                    }
+                  ]
                 },
                 "examples": {
                   "1": {
@@ -837,6 +872,10 @@
                         "modifiedIndex": 1225
                       }
                     ]
+                  },
+                  "empty": {
+                    "summary": "Empty Collection",
+                    "value": {}
                   }
                 }
               }
@@ -947,10 +986,19 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "type": "object"
-                  }
+                  "oneOf": [
+                    {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "maxProperties": 0,
+                      "description": "Empty collection before any matching runtime configuration exists."
+                    }
+                  ]
                 },
                 "examples": {
                   "1": {
@@ -968,6 +1016,10 @@
                         "id": "example-plugin"
                       }
                     ]
+                  },
+                  "empty": {
+                    "summary": "Empty Collection",
+                    "value": {}
                   }
                 }
               }
@@ -1231,10 +1283,17 @@
                       "type": "string",
                       "description": "Instance hostname."
                     },
-                    "id": {
-                      "type": "string",
-                      "description": "Instance ID."
-                    },
+                  "id": {
+                    "oneOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "integer"
+                      }
+                    ],
+                    "description": "Configured APISIX instance ID."
+                  },
                     "version": {
                       "type": "string",
                       "description": "APISIX version."

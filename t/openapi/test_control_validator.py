@@ -125,6 +125,17 @@ class ControlContractValidationTest(unittest.TestCase):
                 'example'] = 'Resource not found.'
         mutations.append(document)
 
+        document = deepcopy(self.document)
+        document['paths']['/v1/routes']['get']['responses']['200'][
+            'content']['application/json']['schema'] = {'type': 'array'}
+        mutations.append(document)
+
+        document = deepcopy(self.document)
+        document['paths']['/v1/server_info']['get']['responses']['200'][
+            'content']['application/json']['schema']['properties']['id'] = {
+                'type': 'string'}
+        mutations.append(document)
+
         for document in mutations:
             self.assertTrue(validator.validate_response_contract(document))
 
