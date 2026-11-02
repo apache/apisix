@@ -77,6 +77,9 @@ apisix:
                                       # original request line, so the upstream receives %2F unchanged.
   max_post_args_readable_size: 64     # Cap (in MB) on the request body read when matching `post_arg.*`
                                       # route predicates for JSON and multipart requests. Set to 0 to disable the limit.
+  max_request_headers_readable: 100   # Max number of request headers plugins can read. Headers past this
+                                      # count are invisible to plugins but still forwarded to the upstream.
+                                      # Set to 0 to disable the limit.
 
   router:
     http: radixtree_host_uri    # radixtree_host_uri: match route by host and URI
