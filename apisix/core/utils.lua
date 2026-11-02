@@ -591,6 +591,37 @@ function _M.set_var_rate_limiting_info(ctx, key, limit, remaining, reset, detail
 end
 
 
+local hex_byte = {}
+for i = 0, 255 do
+    hex_byte[i] = str_format("%02x", i)
+end
+
+
+local function random_hex_byte()
+    return hex_byte[math_random(0, 255)]
+end
+
+
+---
+-- Generate a random UUID v4 string.
+--
+-- Draws the same bytes in the same order as resty.jit-uuid's generate_v4, so
+-- a given seed yields the same id, but encodes them through a lookup table.
+--
+-- @function core.utils.generate_uuid_v4
+-- @treturn string UUID v4 string, e.g. "1f3a9c2e-7b4d-4e8f-9a6b-2c1d0e5f7a3b"
+function _M.generate_uuid_v4()
+    return random_hex_byte() .. random_hex_byte() .. random_hex_byte()
+           .. random_hex_byte() .. "-" .. random_hex_byte() .. random_hex_byte() .. "-"
+           .. hex_byte[bit.bor(bit.band(math_random(0, 255), 0x0F), 0x40)]
+           .. random_hex_byte() .. "-"
+           .. hex_byte[bit.bor(bit.band(math_random(0, 255), 0x3F), 0x80)]
+           .. random_hex_byte() .. "-" .. random_hex_byte() .. random_hex_byte()
+           .. random_hex_byte() .. random_hex_byte() .. random_hex_byte()
+           .. random_hex_byte()
+end
+
+
 -- worker-local monotonic state for UUID v7 (no shared dict needed)
 -- Each nginx worker has its own copy; no locking required.
 local _v7_last_ms = 0
