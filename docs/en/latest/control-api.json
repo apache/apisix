@@ -84,16 +84,41 @@
                       },
                       "plugins": {
                         "example-plugin": {
-                          "consumer_schema": {},
-                          "metadata_schema": {},
-                          "schema": {},
-                          "type": "object",
+                          "version": 0.1,
                           "priority": 0,
-                          "version": 0.1
+                          "schema": {
+                            "type": "object",
+                            "properties": {
+                              "_meta": {
+                                "properties": {
+                                  "disable": {
+                                    "type": "boolean"
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "metadata_schema": {
+                            "type": "object"
+                          }
                         }
                       },
-                      "stream-plugins": {
-                        "mqtt-proxy": {}
+                      "stream_plugins": {
+                        "mqtt-proxy": {
+                          "schema": {
+                            "type": "object",
+                            "properties": {
+                              "_meta": {
+                                "properties": {
+                                  "disable": {
+                                    "type": "boolean"
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "priority": 1000
+                        }
                       }
                     }
                   }
@@ -109,7 +134,7 @@
       "get": {
         "summary": "Get Health Check Information",
         "deprecated": false,
-        "description": "Get health check information of the APISIX instance. You need to initiate a request to the route to generate Control API health check information.",
+        "description": "Get health-check information for this APISIX instance. Configuring checks creates checker entries; send traffic through an upstream to initialize its target nodes. On this release line, an empty collection is encoded as `{}`.",
         "tags": [
           "Health Check"
         ],
@@ -136,7 +161,7 @@
                 },
                 "examples": {
                   "1": {
-                    "summary": "Successful Example",
+                    "summary": "etcd Provider Example",
                     "value": [
                       {
                         "nodes": [
@@ -194,7 +219,8 @@
                   "properties": {
                     "error_msg": {
                       "type": "string",
-                      "example": "HTML template rendering failed."
+                      "pattern": "^HTML template rendering: .+$",
+                      "description": "Lua template rendering error prefixed with `HTML template rendering: `."
                     }
                   }
                 }
@@ -251,7 +277,7 @@
                 },
                 "examples": {
                   "1": {
-                    "summary": "Successful Example",
+                    "summary": "etcd Provider Example",
                     "value": {
                       "nodes": [
                         {
@@ -341,7 +367,8 @@
                   "properties": {
                     "error_msg": {
                       "type": "string",
-                      "example": "HTML template rendering failed."
+                      "pattern": "^HTML template rendering: .+$",
+                      "description": "Lua template rendering error prefixed with `HTML template rendering: `."
                     }
                   }
                 }
@@ -400,7 +427,7 @@
                 },
                 "examples": {
                   "1": {
-                    "summary": "Successful Example",
+                    "summary": "YAML Provider Example",
                     "value": [
                       {
                         "value": {
@@ -472,7 +499,7 @@
                 },
                 "examples": {
                   "1": {
-                    "summary": "Successful Example",
+                    "summary": "YAML Provider Example",
                     "value": {
                       "value": {
                         "priority": 0,
@@ -559,7 +586,7 @@
                 },
                 "examples": {
                   "1": {
-                    "summary": "Successful Example",
+                    "summary": "etcd Provider Example",
                     "value": [
                       {
                         "has_domain": false,
@@ -640,7 +667,7 @@
                 },
                 "examples": {
                   "1": {
-                    "summary": "Successful Example",
+                    "summary": "etcd Provider Example",
                     "value": {
                       "has_domain": false,
                       "modifiedIndex": 728,
@@ -724,7 +751,7 @@
                 },
                 "examples": {
                   "1": {
-                    "summary": "Successful Example",
+                    "summary": "etcd Provider Example",
                     "value": [
                       {
                         "value": {
@@ -797,7 +824,7 @@
                 },
                 "examples": {
                   "1": {
-                    "summary": "Successful Example",
+                    "summary": "etcd Provider Example",
                     "value": {
                       "value": {
                         "scheme": "http",
@@ -1003,7 +1030,8 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "type": "string"
+                  "type": "string",
+                  "description": "Raw error string returned when the reload event cannot be published."
                 }
               }
             }
@@ -1042,7 +1070,7 @@
                 },
                 "examples": {
                   "1": {
-                    "summary": "Successful Example",
+                    "summary": "Consul Example",
                     "value": {
                       "services": {
                         "svc-a": [
@@ -1165,17 +1193,17 @@
                       "type": "string",
                       "description": "Instance hostname."
                     },
-                  "id": {
-                    "oneOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "integer"
-                      }
-                    ],
-                    "description": "Configured APISIX instance ID."
-                  },
+                    "id": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "integer"
+                        }
+                      ],
+                      "description": "Configured APISIX instance ID."
+                    },
                     "version": {
                       "type": "string",
                       "description": "APISIX version."
