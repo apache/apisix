@@ -1,0 +1,1381 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Apache APISIX Control API",
+    "description": "Use the Apache APISIX Control API to inspect or control the runtime state of one APISIX instance. It is enabled by default at `http://127.0.0.1:9090`; configure `apisix.enable_control` and `apisix.control` in `conf/config.yaml`. The API does not provide authentication, so keep it on a loopback or otherwise trusted internal interface and never expose it to public traffic.\n\nCore endpoints are always registered. Enabled plugins and configured service discovery modules can register the additional endpoints identified in their operation descriptions.",
+    "version": "3.18.0",
+    "license": {
+      "name": "Apache 2.0",
+      "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
+    }
+  },
+  "security": [],
+  "tags": [
+    {
+      "name": "Schema",
+      "description": "The schema defines the available parameters as well as their data types, properties, default values, valid values, and so on."
+    },
+    {
+      "name": "Health Check",
+      "description": "Health checking is a mechanism that determines whether upstream services are healthy or unhealthy based on their responsiveness."
+    },
+    {
+      "name": "Garbage Collection",
+      "description": "Garbage collection is a form of automatic memory management. The garbage collector attempts to reclaim memory which was allocated by the program, but is no longer referenced."
+    },
+    {
+      "name": "Route",
+      "description": "A route defines a path to one or more upstream services.  \n\nSee [Routes](https://apisix.apache.org/docs/apisix/3.18/terminology/route/) for more information."
+    },
+    {
+      "name": "Upstream",
+      "description": "An upstream is a logical abstraction of one or more upstream addresses.  \n\nSee [Upstreams](https://apisix.apache.org/docs/apisix/3.18/terminology/upstream/) for more information."
+    },
+    {
+      "name": "Service",
+      "description": "A service is a backend application providing a set of functionalities.  \n\nSee [Services](https://apisix.apache.org/docs/apisix/3.18/terminology/service/) for more information."
+    },
+    {
+      "name": "Plugin Metadata",
+      "description": "Plugin metadata is used to configure the common metadata field(s) of all plugin instances sharing the same plugin name.  \nSee [Plugin Metadata](https://apisix.apache.org/docs/apisix/3.18/terminology/plugin-metadata/) for more information."
+    },
+    {
+      "name": "Plugin",
+      "description": "Plugins extend base functionalities of APISIX to meet user-specific requirements.  \n  \nSee [Plugins](https://apisix.apache.org/docs/apisix/3.18/terminology/plugin/) for more information."
+    },
+    {
+      "name": "Service Discovery",
+      "description": "Service discovery automatically resolves upstream service addresses. This group documents stable endpoint patterns that exist only when a compatible service discovery module is configured.\n\nSee [Service Discovery](https://apisix.apache.org/docs/apisix/3.18/discovery/#embedded-control-api-for-debugging) for more information."
+    },
+    {
+      "name": "Server Information",
+      "description": "The `server-info` plugin adds an endpoint that reports information about the local APISIX instance. This plugin is deprecated in APISIX 3.13.0."
+    }
+  ],
+  "paths": {
+    "/v1/schema": {
+      "get": {
+        "summary": "Get JSON Schema",
+        "deprecated": false,
+        "description": "Get the JSON schema used by the gateway instance. Only loaded plugins are included.",
+        "tags": [
+          "Schema"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "examples": {
+                  "successful": {
+                    "summary": "Abbreviated Successful Response",
+                    "value": {
+                      "main": {
+                        "route": {
+                          "type": "object",
+                          "properties": {
+                            "uri": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 4096
+                            },
+                            "uris": {
+                              "type": "array",
+                              "items": {
+                                "description": "HTTP uri",
+                                "type": "string"
+                              },
+                              "minItems": 1,
+                              "uniqueItems": true
+                            },
+                            "priority": {
+                              "type": "integer",
+                              "default": 0
+                            }
+                          }
+                        },
+                        "upstream": {
+                          "type": "object",
+                          "properties": {
+                            "retries": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "retry_timeout": {
+                              "type": "number",
+                              "minimum": 0
+                            },
+                            "type": {
+                              "description": "algorithms of load balancing",
+                              "type": "string",
+                              "default": "roundrobin"
+                            }
+                          }
+                        }
+                      },
+                      "plugins": {
+                        "example-plugin": {
+                          "version": 0.1,
+                          "priority": 0,
+                          "schema": {
+                            "type": "object",
+                            "properties": {
+                              "_meta": {
+                                "type": "object",
+                                "properties": {
+                                  "disable": {
+                                    "type": "boolean"
+                                  },
+                                  "error_response": {
+                                    "oneOf": [
+                                      {
+                                        "type": "string"
+                                      },
+                                      {
+                                        "type": "object"
+                                      }
+                                    ]
+                                  },
+                                  "priority": {
+                                    "description": "priority of plugins by customized order",
+                                    "type": "integer"
+                                  },
+                                  "filter": {
+                                    "description": "filter determines whether the plugin needs to be executed at runtime",
+                                    "type": "array"
+                                  },
+                                  "pre_function": {
+                                    "description": "function to be executed in each phase before execution of plugins. The pre_function will have access to two arguments: `conf` and `ctx`.",
+                                    "type": "string"
+                                  }
+                                },
+                                "additionalProperties": false
+                              },
+                              "i": {
+                                "type": "number",
+                                "minimum": 0
+                              },
+                              "s": {
+                                "type": "string"
+                              },
+                              "t": {
+                                "type": "array",
+                                "minItems": 1
+                              },
+                              "ip": {
+                                "type": "string"
+                              },
+                              "port": {
+                                "type": "integer"
+                              }
+                            },
+                            "required": [
+                              "i"
+                            ],
+                            "$comment": "this is a mark for our injected plugin schema"
+                          },
+                          "metadata_schema": {
+                            "type": "object",
+                            "properties": {
+                              "ikey": {
+                                "type": "number",
+                                "minimum": 0
+                              },
+                              "skey": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "ikey",
+                              "skey"
+                            ]
+                          }
+                        }
+                      },
+                      "stream_plugins": {
+                        "mqtt-proxy": {
+                          "schema": {
+                            "type": "object",
+                            "properties": {
+                              "_meta": {
+                                "type": "object",
+                                "properties": {
+                                  "disable": {
+                                    "type": "boolean"
+                                  },
+                                  "error_response": {
+                                    "oneOf": [
+                                      {
+                                        "type": "string"
+                                      },
+                                      {
+                                        "type": "object"
+                                      }
+                                    ]
+                                  },
+                                  "priority": {
+                                    "description": "priority of plugins by customized order",
+                                    "type": "integer"
+                                  },
+                                  "filter": {
+                                    "description": "filter determines whether the plugin needs to be executed at runtime",
+                                    "type": "array"
+                                  },
+                                  "pre_function": {
+                                    "description": "function to be executed in each phase before execution of plugins. The pre_function will have access to two arguments: `conf` and `ctx`.",
+                                    "type": "string"
+                                  }
+                                },
+                                "additionalProperties": false
+                              },
+                              "protocol_name": {
+                                "type": "string",
+                                "default": "MQTT"
+                              },
+                              "protocol_level": {
+                                "type": "integer"
+                              }
+                            },
+                            "required": [
+                              "protocol_level"
+                            ],
+                            "$comment": "this is a mark for our injected plugin schema"
+                          },
+                          "priority": 1000,
+                          "version": 0.1
+                        }
+                      }
+                    },
+                    "description": "Representative fields are shown for the large Route and Upstream schemas. The endpoint returns their complete runtime schemas."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operationId": "getSchema"
+      }
+    },
+    "/v1/healthcheck": {
+      "get": {
+        "summary": "Get Health Check Information",
+        "deprecated": false,
+        "description": "Get health-check information for this APISIX instance. Configuring checks creates checker entries; send traffic through an upstream to initialize its target nodes. On this release line, an empty collection is encoded as `{}`.",
+        "tags": [
+          "Health Check"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "maxProperties": 0,
+                      "description": "Empty collection before any matching runtime state or configuration exists."
+                    }
+                  ]
+                },
+                "examples": {
+                  "1": {
+                    "summary": "etcd Provider Example",
+                    "value": [
+                      {
+                        "nodes": [
+                          {
+                            "ip": "52.86.68.46",
+                            "counter": {
+                              "http_failure": 0,
+                              "success": 0,
+                              "timeout_failure": 0,
+                              "tcp_failure": 0
+                            },
+                            "port": 80,
+                            "status": "healthy",
+                            "hostname": "52.86.68.46"
+                          },
+                          {
+                            "ip": "100.24.156.8",
+                            "counter": {
+                              "http_failure": 5,
+                              "success": 0,
+                              "timeout_failure": 0,
+                              "tcp_failure": 0
+                            },
+                            "port": 80,
+                            "status": "unhealthy",
+                            "hostname": "100.24.156.8"
+                          }
+                        ],
+                        "name": "/apisix/routes/1",
+                        "type": "http"
+                      }
+                    ]
+                  },
+                  "empty": {
+                    "summary": "Empty Collection",
+                    "value": {}
+                  }
+                }
+              },
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "<html><body><table>...</table></body></html>"
+              }
+            }
+          },
+          "503": {
+            "description": "Failed to render the HTML health-check response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error_msg"
+                  ],
+                  "properties": {
+                    "error_msg": {
+                      "type": "string",
+                      "pattern": "^HTML template rendering: .+$",
+                      "description": "Lua template rendering error prefixed with `HTML template rendering: `."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operationId": "listHealthCheckers"
+      }
+    },
+    "/v1/healthcheck/{src_type}/{src_id}": {
+      "get": {
+        "summary": "Get Health Status By Type and ID",
+        "deprecated": false,
+        "description": "Get health status of a specified resource.",
+        "tags": [
+          "Health Check"
+        ],
+        "parameters": [
+          {
+            "name": "src_type",
+            "in": "path",
+            "description": "The specified resource type.",
+            "required": true,
+            "example": "routes",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "routes",
+                "services",
+                "upstreams",
+                "stream_routes"
+              ]
+            }
+          },
+          {
+            "name": "src_id",
+            "in": "path",
+            "description": "The specified node ID.",
+            "required": true,
+            "example": "1",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "examples": {
+                  "1": {
+                    "summary": "etcd Provider Example",
+                    "value": {
+                      "nodes": [
+                        {
+                          "ip": "52.86.68.46",
+                          "counter": {
+                            "http_failure": 0,
+                            "success": 2,
+                            "timeout_failure": 0,
+                            "tcp_failure": 0
+                          },
+                          "port": 80,
+                          "status": "healthy",
+                          "hostname": "52.86.68.46"
+                        },
+                        {
+                          "ip": "100.24.156.8",
+                          "counter": {
+                            "http_failure": 5,
+                            "success": 0,
+                            "timeout_failure": 0,
+                            "tcp_failure": 0
+                          },
+                          "port": 80,
+                          "status": "unhealthy",
+                          "hostname": "100.24.156.8"
+                        }
+                      ],
+                      "type": "http",
+                      "name": "/apisix/routes/1"
+                    }
+                  }
+                }
+              },
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "<html><body><table>...</table></body></html>"
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid src type",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error_msg"
+                  ],
+                  "properties": {
+                    "error_msg": {
+                      "type": "string",
+                      "example": "invalid src type route"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource or health checker not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error_msg"
+                  ],
+                  "properties": {
+                    "error_msg": {
+                      "type": "string",
+                      "example": "routes[1] not found"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Failed to render the HTML health-check response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error_msg"
+                  ],
+                  "properties": {
+                    "error_msg": {
+                      "type": "string",
+                      "pattern": "^HTML template rendering: .+$",
+                      "description": "Lua template rendering error prefixed with `HTML template rendering: `."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operationId": "getResourceHealthChecker"
+      }
+    },
+    "/v1/gc": {
+      "post": {
+        "summary": "Trigger Garbage Collection",
+        "deprecated": false,
+        "description": "Trigger a full garbage collection (GC) in the HTTP subsystem. Note that a request to this endpoint would not trigger a garbage collection in the stream subsystem because the subsystems are run in the separate Lua VM.",
+        "tags": [
+          "Garbage Collection"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Garbage collection triggered."
+          }
+        },
+        "operationId": "triggerGarbageCollection"
+      }
+    },
+    "/v1/routes": {
+      "get": {
+        "summary": "Get All Routes",
+        "deprecated": false,
+        "description": "Get all configured routes.",
+        "tags": [
+          "Route"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "maxProperties": 0,
+                      "description": "Empty collection before any matching runtime state or configuration exists."
+                    }
+                  ]
+                },
+                "examples": {
+                  "1": {
+                    "summary": "YAML Provider Example",
+                    "value": [
+                      {
+                        "value": {
+                          "priority": 0,
+                          "uris": [
+                            "/hello"
+                          ],
+                          "id": "1",
+                          "upstream": {
+                            "scheme": "http",
+                            "pass_host": "pass",
+                            "nodes": [
+                              {
+                                "port": 1980,
+                                "host": "127.0.0.1",
+                                "weight": 1
+                              }
+                            ],
+                            "type": "roundrobin",
+                            "hash_on": "vars"
+                          },
+                          "status": 1
+                        },
+                        "has_domain": false,
+                        "orig_modifiedIndex": 1631193445,
+                        "modifiedIndex": 1631193445,
+                        "key": "/routes/1"
+                      }
+                    ]
+                  },
+                  "empty": {
+                    "summary": "Empty Collection",
+                    "value": {}
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operationId": "listRoutes"
+      }
+    },
+    "/v1/route/{route_id}": {
+      "get": {
+        "summary": "Get Route by ID",
+        "deprecated": false,
+        "description": "Get a route by ID.",
+        "tags": [
+          "Route"
+        ],
+        "parameters": [
+          {
+            "name": "route_id",
+            "in": "path",
+            "description": "Route ID.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "examples": {
+                  "1": {
+                    "summary": "YAML Provider Example",
+                    "value": {
+                      "value": {
+                        "priority": 0,
+                        "uris": [
+                          "/hello"
+                        ],
+                        "id": "1",
+                        "upstream": {
+                          "scheme": "http",
+                          "pass_host": "pass",
+                          "nodes": [
+                            {
+                              "port": 1980,
+                              "host": "127.0.0.1",
+                              "weight": 1
+                            }
+                          ],
+                          "type": "roundrobin",
+                          "hash_on": "vars"
+                        },
+                        "status": 1
+                      },
+                      "has_domain": false,
+                      "orig_modifiedIndex": 1631193445,
+                      "modifiedIndex": 1631193445,
+                      "key": "/routes/1"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Route not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error_msg"
+                  ],
+                  "properties": {
+                    "error_msg": {
+                      "type": "string",
+                      "example": "route[2] not found"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operationId": "getRoute"
+      }
+    },
+    "/v1/services": {
+      "get": {
+        "summary": "Get All Services",
+        "deprecated": false,
+        "description": "Get all configured services.",
+        "tags": [
+          "Service"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "maxProperties": 0,
+                      "description": "Empty collection before any matching runtime state or configuration exists."
+                    }
+                  ]
+                },
+                "examples": {
+                  "1": {
+                    "summary": "etcd Provider Example",
+                    "value": [
+                      {
+                        "has_domain": false,
+                        "modifiedIndex": 671,
+                        "key": "/apisix/services/200",
+                        "createdIndex": 671,
+                        "value": {
+                          "upstream": {
+                            "scheme": "http",
+                            "hash_on": "vars",
+                            "pass_host": "pass",
+                            "type": "roundrobin",
+                            "nodes": [
+                              {
+                                "port": 1980,
+                                "weight": 1,
+                                "host": "127.0.0.1"
+                              }
+                            ]
+                          },
+                          "create_time": 1634552648,
+                          "id": "200",
+                          "plugins": {
+                            "limit-count": {
+                              "key": "remote_addr",
+                              "time_window": 60,
+                              "redis_timeout": 1000,
+                              "allow_degradation": false,
+                              "show_limit_quota_header": true,
+                              "policy": "local",
+                              "count": 2,
+                              "rejected_code": 503
+                            }
+                          },
+                          "update_time": 1634552648
+                        }
+                      }
+                    ]
+                  },
+                  "empty": {
+                    "summary": "Empty Collection",
+                    "value": {}
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operationId": "listServices"
+      }
+    },
+    "/v1/service/{service_id}": {
+      "get": {
+        "summary": "Get Service by ID",
+        "deprecated": false,
+        "description": "Get a service by ID.",
+        "tags": [
+          "Service"
+        ],
+        "parameters": [
+          {
+            "name": "service_id",
+            "in": "path",
+            "description": "Service ID.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "examples": {
+                  "1": {
+                    "summary": "etcd Provider Example",
+                    "value": {
+                      "has_domain": false,
+                      "modifiedIndex": 728,
+                      "key": "/apisix/services/5",
+                      "createdIndex": 728,
+                      "value": {
+                        "create_time": 1634554563,
+                        "id": "5",
+                        "upstream": {
+                          "scheme": "http",
+                          "hash_on": "vars",
+                          "pass_host": "pass",
+                          "type": "roundrobin",
+                          "nodes": [
+                            {
+                              "port": 1980,
+                              "weight": 1,
+                              "host": "127.0.0.1"
+                            }
+                          ]
+                        },
+                        "update_time": 1634554563
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Service not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error_msg"
+                  ],
+                  "properties": {
+                    "error_msg": {
+                      "type": "string",
+                      "example": "service[2] not found"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operationId": "getService"
+      }
+    },
+    "/v1/upstreams": {
+      "get": {
+        "summary": "Get All Upstreams",
+        "deprecated": false,
+        "description": "Get all configured upstreams.",
+        "tags": [
+          "Upstream"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "maxProperties": 0,
+                      "description": "Empty collection before any matching runtime state or configuration exists."
+                    }
+                  ]
+                },
+                "examples": {
+                  "1": {
+                    "summary": "etcd Provider Example",
+                    "value": [
+                      {
+                        "value": {
+                          "scheme": "http",
+                          "pass_host": "pass",
+                          "nodes": [
+                            {
+                              "host": "127.0.0.1",
+                              "port": 80,
+                              "weight": 1
+                            },
+                            {
+                              "host": "foo.com",
+                              "port": 80,
+                              "weight": 2
+                            }
+                          ],
+                          "hash_on": "vars",
+                          "update_time": 1634543819,
+                          "key": "remote_addr",
+                          "create_time": 1634539759,
+                          "id": "1",
+                          "type": "chash"
+                        },
+                        "has_domain": true,
+                        "key": "/apisix/upstreams/1",
+                        "createdIndex": 938,
+                        "modifiedIndex": 1225
+                      }
+                    ]
+                  },
+                  "empty": {
+                    "summary": "Empty Collection",
+                    "value": {}
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operationId": "listUpstreams"
+      }
+    },
+    "/v1/upstream/{upstream_id}": {
+      "get": {
+        "summary": "Get Upstream by ID",
+        "deprecated": false,
+        "description": "Get an upstream by ID.",
+        "tags": [
+          "Upstream"
+        ],
+        "parameters": [
+          {
+            "name": "upstream_id",
+            "in": "path",
+            "description": "Upstream ID.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "examples": {
+                  "1": {
+                    "summary": "etcd Provider Example",
+                    "value": {
+                      "value": {
+                        "scheme": "http",
+                        "pass_host": "pass",
+                        "nodes": [
+                          {
+                            "host": "127.0.0.1",
+                            "port": 80,
+                            "weight": 1
+                          },
+                          {
+                            "host": "foo.com",
+                            "port": 80,
+                            "weight": 2
+                          }
+                        ],
+                        "hash_on": "vars",
+                        "update_time": 1634543819,
+                        "key": "remote_addr",
+                        "create_time": 1634539759,
+                        "id": "1",
+                        "type": "chash"
+                      },
+                      "has_domain": true,
+                      "key": "/apisix/upstreams/1",
+                      "createdIndex": 938,
+                      "modifiedIndex": 1225
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Upstream not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error_msg"
+                  ],
+                  "properties": {
+                    "error_msg": {
+                      "type": "string",
+                      "example": "upstream[3] not found"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operationId": "getUpstream"
+      }
+    },
+    "/v1/plugin_metadatas": {
+      "get": {
+        "summary": "Get All Plugin Metadata",
+        "deprecated": false,
+        "description": "Get all plugin metadata.",
+        "tags": [
+          "Plugin Metadata"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "maxProperties": 0,
+                      "description": "Empty collection before any matching runtime state or configuration exists."
+                    }
+                  ]
+                },
+                "examples": {
+                  "1": {
+                    "summary": "Successful Example",
+                    "value": [
+                      {
+                        "log_format": {
+                          "upstream_response_time": "$upstream_response_time"
+                        },
+                        "id": "file-logger"
+                      },
+                      {
+                        "ikey": 1,
+                        "skey": "val",
+                        "id": "example-plugin"
+                      }
+                    ]
+                  },
+                  "empty": {
+                    "summary": "Empty Collection",
+                    "value": {}
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operationId": "listPluginMetadata"
+      }
+    },
+    "/v1/plugin_metadata/{plugin_name}": {
+      "get": {
+        "summary": "Get Plugin Metadata by Name",
+        "deprecated": false,
+        "description": "Get plugin metadata by the plugin name.",
+        "tags": [
+          "Plugin Metadata"
+        ],
+        "parameters": [
+          {
+            "name": "plugin_name",
+            "in": "path",
+            "description": "The specified plugin name.",
+            "required": true,
+            "example": "file-logger",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "examples": {
+                  "1": {
+                    "summary": "Successful Example",
+                    "value": {
+                      "log_format": {
+                        "upstream_response_time": "$upstream_response_time"
+                      },
+                      "id": "file-logger"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Plugin metadata not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error_msg"
+                  ],
+                  "properties": {
+                    "error_msg": {
+                      "type": "string",
+                      "example": "plugin metadata[missing-plugin] not found"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operationId": "getPluginMetadata"
+      }
+    },
+    "/v1/plugins/reload": {
+      "put": {
+        "summary": "Reload All Plugins",
+        "deprecated": false,
+        "description": "Hot reload plugins so changes to the plugin list in `conf/config.yaml` or to plugin source files take effect.",
+        "tags": [
+          "Plugin"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Plugins reloaded.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "done"
+              }
+            }
+          },
+          "503": {
+            "description": "Reload state could not be recorded or the reload event could not be published.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string",
+                  "description": "On reload-state recording failure, the body is a JSON-encoded error object. On event-publication failure, it is the raw event-system error string."
+                },
+                "examples": {
+                  "recordFailure": {
+                    "summary": "Reload State Recording Failure",
+                    "value": "{\"error_msg\":\"failed to record plugins reload\"}"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operationId": "reloadPlugins"
+      }
+    },
+    "/v1/discovery/{service}/dump": {
+      "get": {
+        "summary": "Get Memory Dump",
+        "deprecated": false,
+        "description": "Get module-defined in-memory data for a configured service discovery module. Response shape varies by module; the example shows Consul's `config` and `services` object. This endpoint exists only when the module implements runtime data dumping.",
+        "tags": [
+          "Service Discovery"
+        ],
+        "parameters": [
+          {
+            "name": "service",
+            "in": "path",
+            "required": true,
+            "description": "Configured service discovery module name.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "consul"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "examples": {
+                  "1": {
+                    "summary": "Consul Example",
+                    "value": {
+                      "services": {
+                        "svc-a": [
+                          {
+                            "host": "192.168.42.145",
+                            "weight": 1,
+                            "port": 9081
+                          },
+                          {
+                            "host": "192.168.42.145",
+                            "weight": 1,
+                            "port": 9082
+                          }
+                        ]
+                      },
+                      "config": {
+                        "dump": {
+                          "load_on_init": true,
+                          "expire": 2592000,
+                          "path": "logs/consul.dump"
+                        },
+                        "timeout": {
+                          "wait": 60,
+                          "read": 2000,
+                          "connect": 2000
+                        },
+                        "fetch_interval": 3,
+                        "keepalive": true,
+                        "weight": 1,
+                        "servers": [
+                          "http://consul:8500"
+                        ],
+                        "token": ""
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operationId": "getDiscoveryMemoryDump"
+      }
+    },
+    "/v1/discovery/{service}/show_dump_file": {
+      "get": {
+        "summary": "Get Dump File",
+        "deprecated": false,
+        "description": "Read the persisted service discovery dump. This endpoint is currently provided by compatible service discovery modules such as Consul and exists only when the module is configured.",
+        "tags": [
+          "Service Discovery"
+        ],
+        "parameters": [
+          {
+            "name": "service",
+            "in": "path",
+            "required": true,
+            "description": "Configured service discovery module name.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "consul"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string",
+                  "description": "Persisted service discovery dump encoded as JSON text."
+                },
+                "example": "{\"last_update\":1703594980,\"services\":{\"svc-a\":[{\"host\":\"192.168.42.145\",\"weight\":1,\"port\":9081},{\"host\":\"192.168.42.145\",\"weight\":1,\"port\":9082}]},\"expire\":2592000}"
+              }
+            }
+          },
+          "503": {
+            "description": "The dump file is not configured or could not be read.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "dump params is nil"
+              }
+            }
+          }
+        },
+        "operationId": "getDiscoveryDumpFile"
+      }
+    },
+    "/v1/server_info": {
+      "get": {
+        "summary": "Get Server Information",
+        "description": "Get information about the local APISIX instance. This endpoint is available only when the `server-info` plugin is enabled. The plugin is deprecated in APISIX 3.13.0.",
+        "tags": [
+          "Server Information"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "boot_time",
+                    "hostname",
+                    "id",
+                    "version",
+                    "etcd_version"
+                  ],
+                  "properties": {
+                    "boot_time": {
+                      "type": "integer",
+                      "description": "Instance boot time as a Unix timestamp."
+                    },
+                    "hostname": {
+                      "type": "string",
+                      "description": "Instance hostname."
+                    },
+                    "id": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "integer"
+                        }
+                      ],
+                      "description": "Configured APISIX instance ID."
+                    },
+                    "version": {
+                      "type": "string",
+                      "description": "APISIX version."
+                    },
+                    "etcd_version": {
+                      "type": "string",
+                      "description": "etcd version, or `unknown` when unavailable."
+                    }
+                  }
+                },
+                "example": {
+                  "boot_time": 1608522102,
+                  "hostname": "gateway-1",
+                  "id": "b7ce1c5c-b1aa-4df7-888a-cbe403f3e948",
+                  "version": "3.18.0",
+                  "etcd_version": "3.5.0"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server information could not be read."
+          }
+        },
+        "operationId": "getServerInformation"
+      }
+    }
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:9090",
+      "description": "Local APISIX instance"
+    }
+  ]
+}
