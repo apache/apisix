@@ -273,6 +273,74 @@ function _M.fetch_node_status(checker, ip, port, hostname)
 end
 
 
+-- Cold-start readiness gate support (PS-12691): checker creation is
+-- otherwise entirely lazy -- waiting_pool is only ever seeded by
+-- fetch_checker(), which is only called from the live request path. An
+-- upstream that receives zero traffic before a readiness probe fires would
+-- never get a checker built at all, so a "has this been probed" gate would
+-- hang forever for an idle-but-critical upstream on a fresh pod. This lets a
+-- caller (the readiness plugin) force that seeding proactively.
+--
+-- Scoped to plain, non-plugin-constructed resource paths (e.g.
+-- "/upstreams/<id>", "/routes/<id>") -- unlike timer_create_checker, this
+-- does not resolve the get_plugin_name()/construct_upstream branch used by
+-- plugins like ai-proxy-multi. Critical upstreams for readiness gating are
+-- configured as standalone apisixUpstreams entries, not inline plugin
+-- config, so this scope is sufficient.
+function _M.ensure_checker(resource_path)
+    if working_pool[resource_path] then
+        -- already created, by traffic or a previous ensure_checker call
+        return true
+    end
+
+    local res_conf = resource.fetch_latest_conf(resource_path)
+    if not res_conf then
+        core.log.error("ensure_checker: resource not found: ", resource_path)
+        return false, "resource not found"
+    end
+
+    local upstream = res_conf.value.upstream or res_conf.value
+    if not upstream.checks then
+        core.log.warn("ensure_checker: resource has no checks configured: ", resource_path)
+        return false, "no checks configured"
+    end
+    if not upstream.nodes or #upstream.nodes == 0 then
+        return false, "no nodes"
+    end
+
+    local new_version = upstream_utils.version(res_conf.modifiedIndex, upstream._nodes_ver)
+    if waiting_pool[resource_path] ~= new_version then
+        core.log.info("ensure_checker: seeding waiting pool for ", resource_path,
+                      " with version: ", new_version)
+        waiting_pool[resource_path] = new_version
+    end
+    return true
+end
+
+
+-- Cold-start readiness gate support (PS-12691): true only once every target
+-- of the resource's checker has had at least one real active-check attempt
+-- (see resty.healthcheck's all_targets_probed -- "probed" means attempted,
+-- not "healthy"). false if there is no live checker yet (ensure_checker not
+-- called, or timer_create_checker hasn't run its next tick yet).
+function _M.is_resource_probed(resource_path)
+    local item = working_pool[resource_path]
+    if not item or not item.checker or item.checker.dead then
+        return false
+    end
+
+    if not healthcheck then
+        healthcheck = require("resty.healthcheck")
+    end
+    local ok, err = healthcheck.all_targets_probed(item.checker.name, healthcheck_shdict_name)
+    if ok == nil then
+        core.log.error("is_resource_probed: ", err)
+        return false
+    end
+    return ok
+end
+
+
 local function add_working_pool(resource_path, resource_ver, checker, checks)
     working_pool[resource_path] = {
         version = resource_ver,
