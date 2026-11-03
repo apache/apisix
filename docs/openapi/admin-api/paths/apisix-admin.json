@@ -1,0 +1,17 @@
+{
+  "head": {
+    "tags": [
+      "Health"
+    ],
+    "operationId": "ping",
+    "summary": "Liveness probe",
+    "description": "Returns `200 OK` if the Admin API is reachable. Useful as a Kubernetes liveness probe target. This endpoint does not require authentication.",
+    "security": [],
+    "responses": {
+      "200": {
+        "description": "APISIX Admin API is alive."
+      }
+    },
+    "parameters": []
+  }
+}

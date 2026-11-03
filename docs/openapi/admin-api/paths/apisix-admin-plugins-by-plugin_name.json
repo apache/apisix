@@ -1,0 +1,342 @@
+{
+  "get": {
+    "summary": "Get Plugin JSON Schema",
+    "description": "Retrieve the JSON Schema definition for a specific plugin. This is useful for validating plugin configurations before applying them.",
+    "tags": [
+      "Plugins"
+    ],
+    "parameters": [
+      {
+        "$ref": "../components/parameters/PluginNameInPath.json"
+      },
+      {
+        "$ref": "../components/parameters/Subsystem.json"
+      }
+    ],
+    "responses": {
+      "200": {
+        "description": "Successful response.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "if": {
+                  "description": "Condition for when a specific policy or configuration is selected.",
+                  "type": "object",
+                  "properties": {
+                    "properties": {
+                      "description": "Properties to validate in the conditional check.",
+                      "type": "object"
+                    }
+                  }
+                },
+                "else": {
+                  "description": "Alternative condition for other policies or configurations.",
+                  "type": "object",
+                  "properties": {
+                    "then": {
+                      "description": "Schema to apply when the alternative condition is met.",
+                      "type": "object",
+                      "properties": {
+                        "required": {
+                          "description": "Required fields for the configuration when this condition is met.",
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "properties": {
+                          "description": "Properties for the configuration when this condition is met.",
+                          "type": "object"
+                        }
+                      }
+                    },
+                    "if": {
+                      "description": "Condition for when another specific policy or configuration is selected.",
+                      "type": "object",
+                      "properties": {
+                        "properties": {
+                          "description": "Properties to validate in this alternative condition.",
+                          "type": "object"
+                        }
+                      }
+                    }
+                  }
+                },
+                "required": {
+                  "type": "array",
+                  "description": "List of required property names for the plugin configuration.",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "then": {
+                  "description": "Schema to apply when the primary condition is met.",
+                  "type": "object",
+                  "properties": {
+                    "required": {
+                      "description": "Required fields for the configuration when this condition is met.",
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "properties": {
+                      "description": "Properties for the configuration when this condition is met.",
+                      "type": "object"
+                    }
+                  }
+                },
+                "type": {
+                  "description": "JSON Schema type definition.",
+                  "type": "string"
+                },
+                "$comment": {
+                  "description": "Comment metadata for the schema.",
+                  "type": "string"
+                },
+                "properties": {
+                  "description": "Properties of the plugin.",
+                  "type": "object"
+                }
+              }
+            },
+            "examples": {
+              "1": {
+                "summary": "Successful Example",
+                "value": {
+                  "$comment": "this is a mark for our injected plugin schema.",
+                  "type": "object",
+                  "required": [
+                    "count",
+                    "time_window"
+                  ],
+                  "properties": {
+                    "_meta": {
+                      "description": "Metadata configuration for the plugin.",
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "disable": {
+                          "description": "If set to true, disables the plugin execution.",
+                          "type": "boolean"
+                        },
+                        "error_response": {
+                          "description": "Custom error response when the plugin rejects a request.",
+                          "oneOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "object"
+                            }
+                          ]
+                        },
+                        "filter": {
+                          "description": "Filter determines whether the plugin needs to be executed at runtime.",
+                          "type": "array",
+                          "items": {}
+                        },
+                        "pre_function": {
+                          "description": "Function to be executed before plugin execution with access to conf and ctx parameters.",
+                          "type": "string"
+                        },
+                        "priority": {
+                          "description": "Priority of plugins by customized order.",
+                          "type": "integer"
+                        }
+                      }
+                    },
+                    "allow_degradation": {
+                      "description": "If set to true, enables degradation when the rate limiting backend is unavailable.",
+                      "type": "boolean",
+                      "default": false
+                    },
+                    "count": {
+                      "description": "Maximum number of requests allowed within the time window.",
+                      "type": "integer",
+                      "exclusiveMinimum": 0
+                    },
+                    "group": {
+                      "description": "Group identifier for the rate limiting configuration.",
+                      "type": "string"
+                    },
+                    "key": {
+                      "description": "Key to use for rate limiting identification.",
+                      "type": "string",
+                      "default": "remote_addr"
+                    },
+                    "key_type": {
+                      "description": "Type of the key used for rate limiting.",
+                      "type": "string",
+                      "enum": [
+                        "var",
+                        "var_combination",
+                        "constant"
+                      ],
+                      "default": "var"
+                    },
+                    "policy": {
+                      "description": "Policy for rate limiting behavior.",
+                      "type": "string",
+                      "enum": [
+                        "local",
+                        "redis",
+                        "redis-cluster"
+                      ],
+                      "default": "local"
+                    },
+                    "rejected_code": {
+                      "description": "HTTP status code returned when requests exceed the limit.",
+                      "type": "integer",
+                      "default": 503,
+                      "minimum": 200,
+                      "maximum": 599
+                    },
+                    "rejected_msg": {
+                      "description": "Custom message returned when requests exceed the limit.",
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "show_limit_quota_header": {
+                      "description": "If set to true, adds X-RateLimit-Limit and X-RateLimit-Remaining headers to responses.",
+                      "type": "boolean",
+                      "default": true
+                    },
+                    "time_window": {
+                      "description": "Time window in seconds for rate limiting.",
+                      "type": "integer",
+                      "exclusiveMinimum": 0
+                    }
+                  },
+                  "if": {
+                    "properties": {
+                      "policy": {
+                        "enum": [
+                          "redis"
+                        ]
+                      }
+                    }
+                  },
+                  "then": {
+                    "properties": {
+                      "redis_database": {
+                        "description": "Redis database index.",
+                        "type": "integer",
+                        "default": 0,
+                        "minimum": 0
+                      },
+                      "redis_host": {
+                        "description": "Redis server host address.",
+                        "type": "string",
+                        "minLength": 2
+                      },
+                      "redis_password": {
+                        "description": "Password for Redis authentication.",
+                        "type": "string",
+                        "minLength": 0
+                      },
+                      "redis_port": {
+                        "description": "Redis server port.",
+                        "type": "integer",
+                        "default": 6379,
+                        "minimum": 1
+                      },
+                      "redis_ssl": {
+                        "description": "If set to true, enables SSL encryption for Redis connections.",
+                        "type": "boolean",
+                        "default": false
+                      },
+                      "redis_ssl_verify": {
+                        "description": "If set to true, verifies SSL certificates for Redis connections.",
+                        "type": "boolean",
+                        "default": false
+                      },
+                      "redis_timeout": {
+                        "description": "Timeout in milliseconds for Redis operations.",
+                        "type": "integer",
+                        "default": 1000,
+                        "minimum": 1
+                      },
+                      "redis_username": {
+                        "description": "Username for Redis authentication.",
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "required": [
+                      "redis_host"
+                    ]
+                  },
+                  "else": {
+                    "if": {
+                      "properties": {
+                        "policy": {
+                          "enum": [
+                            "redis-cluster"
+                          ]
+                        }
+                      }
+                    },
+                    "then": {
+                      "properties": {
+                        "redis_cluster_name": {
+                          "description": "Name of the Redis cluster.",
+                          "type": "string"
+                        },
+                        "redis_cluster_nodes": {
+                          "description": "List of Redis cluster node addresses.",
+                          "type": "array",
+                          "minItems": 1,
+                          "items": {
+                            "type": "string",
+                            "minLength": 2,
+                            "maxLength": 100
+                          }
+                        },
+                        "redis_cluster_ssl": {
+                          "description": "If set to true, enables SSL encryption for Redis cluster connections.",
+                          "type": "boolean",
+                          "default": false
+                        },
+                        "redis_cluster_ssl_verify": {
+                          "description": "If set to true, verifies SSL certificates for Redis cluster connections.",
+                          "type": "boolean",
+                          "default": false
+                        },
+                        "redis_password": {
+                          "description": "Password for Redis cluster authentication.",
+                          "type": "string",
+                          "minLength": 0
+                        },
+                        "redis_timeout": {
+                          "description": "Timeout in milliseconds for Redis cluster operations.",
+                          "type": "integer",
+                          "default": 1000,
+                          "minimum": 1
+                        }
+                      },
+                      "required": [
+                        "redis_cluster_nodes",
+                        "redis_cluster_name"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "401": {
+        "$ref": "../components/responses/Unauthorized.json"
+      },
+      "404": {
+        "$ref": "../components/responses/NotFound.json",
+        "description": "Key not found"
+      }
+    },
+    "operationId": "getPluginSchema"
+  }
+}

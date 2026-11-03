@@ -1,0 +1,21 @@
+{
+  "type": "object",
+  "properties": {
+    "key": {
+      "type": "string"
+    },
+    "value": {
+      "$ref": "./GraphQLCostDecoration.json"
+    },
+    "createdIndex": {
+      "type": "integer"
+    },
+    "modifiedIndex": {
+      "type": "integer"
+    }
+  },
+  "required": [
+    "key",
+    "value"
+  ]
+}

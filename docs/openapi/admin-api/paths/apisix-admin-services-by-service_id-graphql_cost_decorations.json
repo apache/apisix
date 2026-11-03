@@ -1,0 +1,142 @@
+{
+  "parameters": [
+    {
+      "name": "service_id",
+      "in": "path",
+      "required": true,
+      "description": "ID of the owning service.",
+      "schema": {
+        "$ref": "../components/schemas/ResourceId.json"
+      }
+    }
+  ],
+  "get": {
+    "tags": [
+      "Services"
+    ],
+    "summary": "List GraphQL Cost Decorations",
+    "description": "List decorations owned by this service. A service with no decorations returns 404 rather than an empty list.",
+    "operationId": "listGraphQLCostDecorations",
+    "parameters": [
+      {
+        "$ref": "../components/parameters/NameFilter.json"
+      },
+      {
+        "$ref": "../components/parameters/LabelFilter.json"
+      },
+      {
+        "$ref": "../components/parameters/Page.json"
+      },
+      {
+        "$ref": "../components/parameters/PageSize.json"
+      }
+    ],
+    "responses": {
+      "200": {
+        "description": "Decoration list scoped to a service.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "../components/schemas/GraphQLCostDecorationListEnvelope.json"
+            }
+          }
+        }
+      },
+      "401": {
+        "$ref": "../components/responses/Unauthorized.json"
+      },
+      "404": {
+        "description": "No decorations were found.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "../components/schemas/ErrorResponse.json"
+            }
+          }
+        }
+      },
+      "503": {
+        "description": "The configuration store is unavailable.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "../components/schemas/ErrorResponse.json"
+            }
+          }
+        }
+      }
+    }
+  },
+  "post": {
+    "tags": [
+      "Services"
+    ],
+    "summary": "Create a GraphQL Cost Decoration",
+    "description": "Create a decoration with an automatically generated ID. The service must exist. Ownership is taken from the URL; omit `service_id` in the body. Keep `field_path` unique within a service, and serialize concurrent writes for the service.",
+    "operationId": "createGraphQLCostDecoration",
+    "parameters": [],
+    "requestBody": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": {
+            "$ref": "../components/schemas/GraphQLCostDecorationCreate.json"
+          },
+          "example": {
+            "field_path": "Query.products",
+            "add_value": 1,
+            "mul_value": 1,
+            "mul_arguments": [
+              "first"
+            ]
+          }
+        }
+      }
+    },
+    "responses": {
+      "201": {
+        "description": "Decoration created.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "../components/schemas/GraphQLCostDecorationEnvelope.json"
+            }
+          }
+        }
+      },
+      "400": {
+        "description": "Invalid configuration, conflicting service ID, or duplicate `field_path`.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "../components/schemas/ErrorResponse.json"
+            }
+          }
+        }
+      },
+      "401": {
+        "$ref": "../components/responses/Unauthorized.json"
+      },
+      "404": {
+        "description": "The owning service does not exist.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "../components/schemas/ErrorResponse.json"
+            }
+          }
+        }
+      },
+      "503": {
+        "description": "The configuration store is unavailable.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "../components/schemas/ErrorResponse.json"
+            }
+          }
+        }
+      }
+    }
+  }
+}

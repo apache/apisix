@@ -1,0 +1,45 @@
+{
+  "description": "`Upstream` configuration body for create / replace / patch.",
+  "required": true,
+  "content": {
+    "application/json": {
+      "schema": {
+        "$ref": "../schemas/Upstream.json"
+      },
+      "example": {
+        "name": "backend-cluster",
+        "desc": "Primary backend service cluster",
+        "type": "roundrobin",
+        "nodes": {
+          "10.0.0.1:8080": 3,
+          "10.0.0.2:8080": 2,
+          "10.0.0.3:8080": 1
+        },
+        "retries": 3,
+        "retry_timeout": 5,
+        "timeout": {
+          "connect": 6,
+          "send": 6,
+          "read": 6
+        },
+        "checks": {
+          "active": {
+            "type": "http",
+            "http_path": "/health",
+            "healthy": {
+              "interval": 5,
+              "successes": 2
+            },
+            "unhealthy": {
+              "interval": 3,
+              "http_failures": 3,
+              "tcp_failures": 2
+            }
+          }
+        },
+        "scheme": "http",
+        "pass_host": "pass"
+      }
+    }
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "type": "object",
+  "description": "`GlobalRule` wrapped in the etcd-style envelope.",
+  "properties": {
+    "key": {
+      "type": "string"
+    },
+    "value": {
+      "$ref": "./GlobalRule.json"
+    },
+    "createdIndex": {
+      "type": "integer"
+    },
+    "modifiedIndex": {
+      "type": "integer"
+    }
+  },
+  "required": [
+    "key",
+    "value"
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "name": "id",
+  "in": "path",
+  "required": true,
+  "schema": {
+    "$ref": "../schemas/ResourceId.json"
+  },
+  "description": "Resource identifier.",
+  "example": "r1"
+}

@@ -1,0 +1,44 @@
+{
+  "type": "object",
+  "description": "Thresholds for considering a target healthy based on real traffic responses.",
+  "properties": {
+    "http_statuses": {
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "minimum": 200,
+        "maximum": 599
+      },
+      "uniqueItems": true,
+      "default": [
+        200,
+        201,
+        202,
+        203,
+        204,
+        205,
+        206,
+        207,
+        208,
+        226,
+        300,
+        301,
+        302,
+        303,
+        304,
+        305,
+        306,
+        307,
+        308
+      ],
+      "description": "HTTP status codes from real traffic that indicate a healthy target."
+    },
+    "successes": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 254,
+      "default": 5,
+      "description": "Number of consecutive successful requests to restore a target to healthy status."
+    }
+  }
+}

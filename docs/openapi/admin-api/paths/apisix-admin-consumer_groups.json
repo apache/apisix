@@ -1,0 +1,73 @@
+{
+  "get": {
+    "summary": "List All Consumer Groups",
+    "description": "Retrieve all configured consumer groups.",
+    "tags": [
+      "Consumer Groups"
+    ],
+    "parameters": [
+      {
+        "$ref": "../components/parameters/NameFilter.json"
+      },
+      {
+        "$ref": "../components/parameters/LabelFilter.json"
+      },
+      {
+        "$ref": "../components/parameters/Page.json"
+      },
+      {
+        "$ref": "../components/parameters/PageSize.json"
+      }
+    ],
+    "responses": {
+      "200": {
+        "description": "Successful response.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "../components/schemas/ConsumerGroupListEnvelope.json"
+            },
+            "examples": {
+              "1": {
+                "summary": "Successful Example",
+                "value": {
+                  "list": [
+                    {
+                      "value": {
+                        "plugins": {
+                          "limit-count": {
+                            "allow_degradation": false,
+                            "count": 2,
+                            "group": "consumer_group_name",
+                            "time_window": 60,
+                            "show_limit_quota_header": true,
+                            "key": "remote_addr",
+                            "rejected_code": 503,
+                            "key_type": "var",
+                            "policy": "local"
+                          }
+                        },
+                        "desc": "desc",
+                        "id": "company_a",
+                        "create_time": 1684377809,
+                        "update_time": 1684378459
+                      },
+                      "key": "/apisix/consumer_groups/company_a",
+                      "modifiedIndex": 144,
+                      "createdIndex": 143
+                    }
+                  ],
+                  "total": 1
+                }
+              }
+            }
+          }
+        }
+      },
+      "401": {
+        "$ref": "../components/responses/Unauthorized.json"
+      }
+    },
+    "operationId": "listConsumerGroups"
+  }
+}

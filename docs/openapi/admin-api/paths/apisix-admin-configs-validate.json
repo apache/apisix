@@ -1,0 +1,88 @@
+{
+  "post": {
+    "tags": [
+      "Schema Validation"
+    ],
+    "operationId": "validateConfiguration",
+    "summary": "Validate a Configuration Without Applying It",
+    "description": "Validates a declarative APISIX configuration when the deployment uses either the `etcd` or `yaml` configuration provider. The endpoint accepts JSON and YAML request bodies up to 1.5 MiB and uses the normal Admin API authentication.\n\nValidation covers known resource arrays, numeric `*_conf_version` fields, duplicate resource identifiers, resource JSON Schemas, and plugin `check_schema` functions. All detected errors are returned together. Cross-resource existence is not checked, so a reference such as an `upstream_id` can pass even when the referenced resource is absent. The operation does not persist or apply any configuration.",
+    "requestBody": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": {
+            "$ref": "../components/schemas/ConfigValidationDocument.json"
+          }
+        },
+        "application/yaml": {
+          "schema": {
+            "$ref": "../components/schemas/ConfigValidationDocument.json"
+          }
+        }
+      }
+    },
+    "responses": {
+      "200": {
+        "description": "The supplied configuration passed all applicable checks.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "maxProperties": 0
+            },
+            "example": {}
+          }
+        }
+      },
+      "400": {
+        "description": "The request body could not be parsed, exceeded 1.5 MiB, or failed one or more configuration checks.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "../components/schemas/ErrorResponse.json"
+                },
+                {
+                  "$ref": "../components/schemas/ConfigValidationErrorResponse.json"
+                }
+              ]
+            },
+            "examples": {
+              "invalidBody": {
+                "summary": "Malformed or empty request body",
+                "value": {
+                  "error_msg": "invalid request body: empty request body"
+                }
+              },
+              "configurationErrors": {
+                "summary": "Multiple configuration errors",
+                "value": {
+                  "error_msg": "Configuration validation failed",
+                  "errors": [
+                    {
+                      "resource_type": "routes",
+                      "resource_id": "route-a",
+                      "index": 0,
+                      "error": "property \"uri\" validation failed: wrong type"
+                    },
+                    {
+                      "resource_type": "upstreams",
+                      "resource_id": "upstream-a",
+                      "index": 0,
+                      "error": "missing key"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "401": {
+        "$ref": "../components/responses/Unauthorized.json"
+      }
+    },
+    "parameters": []
+  }
+}

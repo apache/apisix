@@ -1,0 +1,14 @@
+{
+  "description": "`Proto` configuration body for create / replace / patch.",
+  "required": true,
+  "content": {
+    "application/json": {
+      "schema": {
+        "$ref": "../schemas/Proto.json"
+      },
+      "example": {
+        "content": "syntax = \"proto3\";\n\npackage helloworld;\n\nservice Greeter {\n  rpc SayHello (HelloRequest) returns (HelloReply) {}\n}\n\nmessage HelloRequest {\n  string name = 1;\n}\n\nmessage HelloReply {\n  string message = 1;\n}"
+      }
+    }
+  }
+}

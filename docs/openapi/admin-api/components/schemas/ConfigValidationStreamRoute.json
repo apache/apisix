@@ -1,0 +1,92 @@
+{
+  "type": "object",
+  "description": "Stream Route for TCP/UDP (L4) proxying. Matches transport-layer connections by client IP, server address/port, or SNI.\n\nDeclarative stream route configuration. The optional `modifiedIndex` controls resource-level change detection with the YAML configuration provider.",
+  "properties": {
+    "id": {
+      "$ref": "./ResourceId.json"
+    },
+    "name": {
+      "type": "string",
+      "maxLength": 256,
+      "minLength": 1,
+      "description": "Human-readable name."
+    },
+    "desc": {
+      "type": "string",
+      "maxLength": 256,
+      "description": "Description."
+    },
+    "labels": {
+      "$ref": "./Labels.json"
+    },
+    "create_time": {
+      "type": "integer",
+      "readOnly": true,
+      "description": "Unix timestamp of creation. Read-only."
+    },
+    "update_time": {
+      "type": "integer",
+      "readOnly": true,
+      "description": "Unix timestamp of last update. Read-only."
+    },
+    "remote_addr": {
+      "type": "string",
+      "description": "Client IP address or CIDR range to match."
+    },
+    "server_addr": {
+      "type": "string",
+      "description": "Server IP address to match."
+    },
+    "server_port": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 65535,
+      "description": "Server port to match."
+    },
+    "sni": {
+      "type": "string",
+      "description": "SNI hostname to match. Supports wildcard hostnames. Mutually exclusive with `snis`.",
+      "pattern": "^\\*$|^\\*?[0-9a-zA-Z-._\\[\\]:]+$"
+    },
+    "upstream": {
+      "$ref": "./Upstream.json"
+    },
+    "upstream_id": {
+      "$ref": "./ResourceId.json",
+      "description": "Reference to an existing Upstream."
+    },
+    "service_id": {
+      "$ref": "./ResourceId.json",
+      "description": "Reference to an existing Service."
+    },
+    "plugins": {
+      "$ref": "./Plugins.json"
+    },
+    "modifiedIndex": {
+      "type": "integer",
+      "description": "Optional resource version used for change detection by the YAML configuration provider."
+    },
+    "snis": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^\\*$|^\\*?[0-9a-zA-Z-._\\[\\]:]+$"
+      },
+      "description": "Alternative SNI hostnames to match, including wildcard hostnames. Mutually exclusive with `sni`."
+    },
+    "tls_passthrough": {
+      "type": "boolean",
+      "default": false,
+      "description": "On a listener configured with both `tls` and `tls_passthrough`, `true` forwards encrypted TLS bytes to the upstream; `false` terminates TLS at APISIX. Ignored on dedicated listeners. Passthrough requires a TCP upstream, not scheme `tls`."
+    }
+  },
+  "additionalProperties": false,
+  "not": {
+    "required": [
+      "sni",
+      "snis"
+    ]
+  }
+}

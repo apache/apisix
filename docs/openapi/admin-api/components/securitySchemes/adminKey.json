@@ -1,0 +1,6 @@
+{
+  "type": "apiKey",
+  "in": "header",
+  "name": "X-API-KEY",
+  "description": "Admin API key configured in `config.yaml` under `deployment.admin.admin_key`. You can also pass the key as a query parameter `api_key` or cookie `x_api_key`."
+}

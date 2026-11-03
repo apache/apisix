@@ -1,0 +1,118 @@
+{
+  "get": {
+    "summary": "List All SSL Certificates",
+    "description": "Retrieve all configured SSL certificates. Private keys are **not** included in the response for security.",
+    "tags": [
+      "SSL Certificates"
+    ],
+    "parameters": [
+      {
+        "$ref": "../components/parameters/LabelFilter.json"
+      },
+      {
+        "$ref": "../components/parameters/Page.json"
+      },
+      {
+        "$ref": "../components/parameters/PageSize.json"
+      }
+    ],
+    "responses": {
+      "200": {
+        "description": "Successful response.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "../components/schemas/SSLListEnvelope.json"
+            },
+            "examples": {
+              "1": {
+                "summary": "Successful Example",
+                "value": {
+                  "list": [
+                    {
+                      "value": {
+                        "type": "server",
+                        "key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDh5cAWYXAMPLEbe\nfakekeyForOpenAPISpecPlaceholderOnlyDoNotUseForRealKeysNopeNopeNo\npeNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNo\npeNopeNopeNopeNopeNopeNope==\n-----END PRIVATE KEY-----\n",
+                        "snis": [
+                          "test.com"
+                        ],
+                        "id": "1",
+                        "create_time": 1684373523,
+                        "status": 1,
+                        "cert": "-----BEGIN CERTIFICATE-----\nMIIDazCCAlOgAwIBAgIUJ9hQk3kXgZeZpY/m/0V6RmH1AbcwDQYJKoZIhvcNAQEL\nBQAwRTELMAkGA1UEBhMCVVMxEzARBgNVBAgMClNvbWUtU3RhdGUxITAfBgNVBAoM\nGEludGVybmFsIFJvb3QgQ0EgKGV4YW1wbGUpMB4XDTI1MDEwMTAwMDAwMFoXDTM1\nMDEwMTAwMDAwMFowRTELMAkGA1UEBhMCVVMxEzARBgNVBAgMClNvbWUtU3RhdGUx\nITAfBgNVBAoMGEludGVybmFsIFJvb3QgQ0EgKGV4YW1wbGUpMIIBIjANBgkqhkiG\n9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4eXAMPLEcaPUBLIcfakeforopeNAPIspecON\nLYexampleCAcontentsoExpandedFakeKeyMaterial==\n-----END CERTIFICATE-----\n",
+                        "update_time": 1684373523
+                      },
+                      "key": "/apisix/ssls/1",
+                      "modifiedIndex": 133,
+                      "createdIndex": 133
+                    }
+                  ],
+                  "total": 1
+                }
+              }
+            }
+          }
+        }
+      },
+      "401": {
+        "$ref": "../components/responses/Unauthorized.json"
+      }
+    },
+    "operationId": "listSSLCertificates"
+  },
+  "post": {
+    "summary": "Create an SSL Certificate",
+    "description": "Upload a new SSL certificate with an auto-generated ID.",
+    "tags": [
+      "SSL Certificates"
+    ],
+    "parameters": [
+      {
+        "$ref": "../components/parameters/Ttl.json"
+      }
+    ],
+    "requestBody": {
+      "$ref": "../components/requestBodies/SslUpsertPostCollection.json"
+    },
+    "responses": {
+      "201": {
+        "description": "Created",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "../components/schemas/SSLEnvelope.json"
+            },
+            "examples": {
+              "1": {
+                "summary": "Successful Example",
+                "value": {
+                  "key": "/apisix/ssls/00000000000000000134",
+                  "value": {
+                    "type": "server",
+                    "cert": "-----BEGIN CERTIFICATE-----\nMIIDazCCAlOgAwIBAgIUJ9hQk3kXgZeZpY/m/0V6RmH1AbcwDQYJKoZIhvcNAQEL\nBQAwRTELMAkGA1UEBhMCVVMxEzARBgNVBAgMClNvbWUtU3RhdGUxITAfBgNVBAoM\nGEludGVybmFsIFJvb3QgQ0EgKGV4YW1wbGUpMB4XDTI1MDEwMTAwMDAwMFoXDTM1\nMDEwMTAwMDAwMFowRTELMAkGA1UEBhMCVVMxEzARBgNVBAgMClNvbWUtU3RhdGUx\nITAfBgNVBAoMGEludGVybmFsIFJvb3QgQ0EgKGV4YW1wbGUpMIIBIjANBgkqhkiG\n9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4eXAMPLEcaPUBLIcfakeforopeNAPIspecON\nLYexampleCAcontentsoExpandedFakeKeyMaterial==\n-----END CERTIFICATE-----\n",
+                    "key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDh5cAWYXAMPLEbe\nfakekeyForOpenAPISpecPlaceholderOnlyDoNotUseForRealKeysNopeNopeNo\npeNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNo\npeNopeNopeNopeNopeNopeNope==\n-----END PRIVATE KEY-----\n",
+                    "id": "00000000000000000134",
+                    "create_time": 1684374944,
+                    "status": 1,
+                    "snis": [
+                      "test.com"
+                    ],
+                    "update_time": 1684374944
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "400": {
+        "$ref": "../components/responses/BadRequest.json",
+        "description": "Invalid configuration"
+      },
+      "401": {
+        "$ref": "../components/responses/Unauthorized.json"
+      }
+    },
+    "operationId": "createSSLCertificate"
+  }
+}

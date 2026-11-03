@@ -1,0 +1,13 @@
+{
+  "name": "username",
+  "in": "path",
+  "required": true,
+  "schema": {
+    "type": "string",
+    "minLength": 1,
+    "maxLength": 256,
+    "pattern": "^[a-zA-Z0-9_\\-]+$"
+  },
+  "description": "Consumer username.",
+  "example": "jack"
+}

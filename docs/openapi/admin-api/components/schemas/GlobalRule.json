@@ -1,0 +1,26 @@
+{
+  "type": "object",
+  "description": "Global Rule configuration. Global plugins apply independently of locally bound plugins. For HTTP requests, execution is interleaved by phase: global `rewrite`, local `rewrite`, global `access`, then local `access`. Priorities order plugins within each phase and scope, and an early response skips handlers scheduled later.",
+  "required": [
+    "plugins"
+  ],
+  "properties": {
+    "id": {
+      "$ref": "./ResourceId.json"
+    },
+    "create_time": {
+      "type": "integer",
+      "readOnly": true,
+      "description": "Unix timestamp of creation. Read-only."
+    },
+    "update_time": {
+      "type": "integer",
+      "readOnly": true,
+      "description": "Unix timestamp of last update. Read-only."
+    },
+    "plugins": {
+      "$ref": "./Plugins.json"
+    }
+  },
+  "additionalProperties": false
+}

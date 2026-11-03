@@ -1,0 +1,22 @@
+{
+  "type": "object",
+  "description": "`ConsumerGroup` wrapped in the etcd-style envelope.",
+  "properties": {
+    "key": {
+      "type": "string"
+    },
+    "value": {
+      "$ref": "./ConsumerGroup.json"
+    },
+    "createdIndex": {
+      "type": "integer"
+    },
+    "modifiedIndex": {
+      "type": "integer"
+    }
+  },
+  "required": [
+    "key",
+    "value"
+  ]
+}

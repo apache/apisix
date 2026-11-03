@@ -1,0 +1,13 @@
+{
+  "name": "force",
+  "in": "query",
+  "required": false,
+  "schema": {
+    "type": "string",
+    "enum": [
+      "true"
+    ]
+  },
+  "description": "When `true`, skip dependency checks before deletion.",
+  "example": "true"
+}

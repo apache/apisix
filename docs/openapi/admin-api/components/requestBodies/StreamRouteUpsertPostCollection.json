@@ -1,0 +1,21 @@
+{
+  "description": "`StreamRoute` configuration body for create / replace / patch.",
+  "required": true,
+  "content": {
+    "application/json": {
+      "schema": {
+        "$ref": "../schemas/StreamRoute.json"
+      },
+      "example": {
+        "server_addr": "127.0.0.1",
+        "server_port": 2000,
+        "upstream": {
+          "nodes": {
+            "127.0.0.1:1995": 1
+          },
+          "type": "roundrobin"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "description": "`PluginConfig` configuration body for create / replace / patch.",
+  "required": true,
+  "content": {
+    "application/json": {
+      "schema": {
+        "$ref": "../schemas/PluginConfig.json"
+      },
+      "example": {
+        "plugins": {
+          "limit-count": {
+            "count": 100,
+            "time_window": 60,
+            "rejected_code": 429,
+            "key_type": "var",
+            "key": "remote_addr"
+          },
+          "proxy-rewrite": {
+            "uri": "/backend$uri"
+          }
+        }
+      }
+    }
+  }
+}

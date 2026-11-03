@@ -1,0 +1,33 @@
+{
+  "type": "object",
+  "description": "Thresholds for considering a target healthy during active checks.",
+  "properties": {
+    "interval": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 1,
+      "description": "Interval in seconds between active health check probes for healthy targets."
+    },
+    "http_statuses": {
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "minimum": 200,
+        "maximum": 599
+      },
+      "uniqueItems": true,
+      "default": [
+        200,
+        302
+      ],
+      "description": "HTTP status codes that indicate a healthy target."
+    },
+    "successes": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 254,
+      "default": 2,
+      "description": "Number of consecutive successful probes to consider a target healthy."
+    }
+  }
+}

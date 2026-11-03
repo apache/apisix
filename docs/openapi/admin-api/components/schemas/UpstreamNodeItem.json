@@ -1,0 +1,43 @@
+{
+  "type": "object",
+  "description": "An upstream node with explicit host, port, weight, and optional priority.",
+  "required": [
+    "host",
+    "weight"
+  ],
+  "properties": {
+    "host": {
+      "type": "string",
+      "description": "Hostname or IP address of the upstream node.",
+      "examples": [
+        "10.0.0.1"
+      ]
+    },
+    "port": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 65535,
+      "description": "Port of the upstream node.",
+      "examples": [
+        8080
+      ]
+    },
+    "weight": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Weight for load balancing. Higher values mean more traffic. `0` means no traffic.",
+      "examples": [
+        1
+      ]
+    },
+    "priority": {
+      "type": "integer",
+      "default": 0,
+      "description": "Priority of the node. Nodes with higher priority are used first. Lower-priority nodes serve as fallbacks."
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Arbitrary metadata associated with this node."
+    }
+  }
+}

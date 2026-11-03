@@ -1,0 +1,10 @@
+{
+  "name": "label",
+  "in": "query",
+  "required": false,
+  "schema": {
+    "type": "string"
+  },
+  "description": "Filter list to resources with the given label key.",
+  "example": "env"
+}

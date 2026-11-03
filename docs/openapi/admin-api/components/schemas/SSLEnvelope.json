@@ -1,0 +1,22 @@
+{
+  "type": "object",
+  "description": "`SSLRead` wrapped in the etcd-style envelope.",
+  "properties": {
+    "key": {
+      "type": "string"
+    },
+    "value": {
+      "$ref": "./SSLRead.json"
+    },
+    "createdIndex": {
+      "type": "integer"
+    },
+    "modifiedIndex": {
+      "type": "integer"
+    }
+  },
+  "required": [
+    "key",
+    "value"
+  ]
+}

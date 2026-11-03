@@ -1,0 +1,67 @@
+{
+  "type": "object",
+  "description": "Service configuration. A service groups an upstream and plugins so multiple routes can share the same backend configuration.\n\nDeclarative service configuration. The optional `modifiedIndex` controls resource-level change detection with the YAML configuration provider.",
+  "properties": {
+    "id": {
+      "$ref": "./ResourceId.json"
+    },
+    "name": {
+      "type": "string",
+      "maxLength": 256,
+      "minLength": 1,
+      "description": "Human-readable name."
+    },
+    "desc": {
+      "type": "string",
+      "maxLength": 256,
+      "description": "Description of this service."
+    },
+    "labels": {
+      "$ref": "./Labels.json"
+    },
+    "create_time": {
+      "type": "integer",
+      "readOnly": true,
+      "description": "Unix timestamp of creation. Read-only."
+    },
+    "update_time": {
+      "type": "integer",
+      "readOnly": true,
+      "description": "Unix timestamp of last update. Read-only."
+    },
+    "plugins": {
+      "$ref": "./Plugins.json"
+    },
+    "upstream": {
+      "$ref": "./Upstream.json"
+    },
+    "upstream_id": {
+      "$ref": "./ResourceId.json",
+      "description": "Reference to an existing Upstream resource."
+    },
+    "script": {
+      "type": "string",
+      "minLength": 10,
+      "maxLength": 102400,
+      "description": "Lua script for plugin orchestration."
+    },
+    "enable_websocket": {
+      "type": "boolean",
+      "description": "Enable WebSocket proxying for routes using this service."
+    },
+    "hosts": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "uniqueItems": true,
+      "description": "Hostnames associated with this service."
+    },
+    "modifiedIndex": {
+      "type": "integer",
+      "description": "Optional resource version used for change detection by the YAML configuration provider."
+    }
+  },
+  "additionalProperties": false
+}

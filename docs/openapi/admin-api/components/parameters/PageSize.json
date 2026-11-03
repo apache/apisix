@@ -1,0 +1,12 @@
+{
+  "name": "page_size",
+  "in": "query",
+  "required": false,
+  "schema": {
+    "type": "integer",
+    "minimum": 10,
+    "maximum": 500
+  },
+  "description": "Items per page (10–500). When omitted, no pagination is applied and the full list is returned.",
+  "example": 20
+}

@@ -1,0 +1,23 @@
+{
+  "description": "Unique identifier for the resource. Can be a string (1–64 characters, alphanumeric with `-`, `_`, `.`) or a positive integer.",
+  "anyOf": [
+    {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[a-zA-Z0-9-_.]+$",
+      "examples": [
+        "my-route-1"
+      ],
+      "title": "String ID"
+    },
+    {
+      "type": "integer",
+      "minimum": 1,
+      "examples": [
+        1
+      ],
+      "title": "Integer ID"
+    }
+  ]
+}

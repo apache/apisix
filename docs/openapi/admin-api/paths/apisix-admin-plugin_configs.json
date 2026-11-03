@@ -1,0 +1,72 @@
+{
+  "get": {
+    "summary": "List All Plugin Configs",
+    "description": "Retrieve all configured plugin configs.",
+    "tags": [
+      "Plugin Configs"
+    ],
+    "parameters": [
+      {
+        "$ref": "../components/parameters/NameFilter.json"
+      },
+      {
+        "$ref": "../components/parameters/LabelFilter.json"
+      },
+      {
+        "$ref": "../components/parameters/Page.json"
+      },
+      {
+        "$ref": "../components/parameters/PageSize.json"
+      }
+    ],
+    "responses": {
+      "200": {
+        "description": "Successful response.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "../components/schemas/PluginConfigListEnvelope.json"
+            },
+            "examples": {
+              "1": {
+                "summary": "Successful Example",
+                "value": {
+                  "list": [
+                    {
+                      "value": {
+                        "plugins": {
+                          "limit-count": {
+                            "rejected_code": 503,
+                            "time_window": 60,
+                            "key": "remote_addr",
+                            "key_type": "var",
+                            "count": 2,
+                            "allow_degradation": false,
+                            "show_limit_quota_header": true,
+                            "policy": "local"
+                          }
+                        },
+                        "desc": "desc",
+                        "id": "1",
+                        "create_time": 1684380007,
+                        "update_time": 1684380034
+                      },
+                      "key": "/apisix/plugin_configs/1",
+                      "modifiedIndex": 151,
+                      "createdIndex": 150
+                    }
+                  ],
+                  "total": 1
+                }
+              }
+            }
+          }
+        }
+      },
+      "401": {
+        "$ref": "../components/responses/Unauthorized.json"
+      }
+    },
+    "operationId": "listPluginConfigs"
+  }
+}

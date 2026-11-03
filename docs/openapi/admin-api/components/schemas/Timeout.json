@@ -1,0 +1,42 @@
+{
+  "type": "object",
+  "description": "Timeout settings in seconds for connecting to, sending data to, and reading data from the upstream.",
+  "required": [
+    "connect",
+    "send",
+    "read"
+  ],
+  "properties": {
+    "connect": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "description": "Timeout in seconds for establishing a connection to the upstream.",
+      "examples": [
+        6
+      ]
+    },
+    "send": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "description": "Timeout in seconds for sending data to the upstream.",
+      "examples": [
+        6
+      ]
+    },
+    "read": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "description": "Timeout in seconds for reading the response from the upstream.",
+      "examples": [
+        6
+      ]
+    }
+  },
+  "examples": [
+    {
+      "connect": 6,
+      "send": 6,
+      "read": 6
+    }
+  ]
+}

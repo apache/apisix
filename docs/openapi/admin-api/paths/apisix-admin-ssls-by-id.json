@@ -1,0 +1,244 @@
+{
+  "put": {
+    "summary": "Create or Replace an SSL Certificate",
+    "description": "Upload a new SSL certificate with a specified ID, or replace an existing one.",
+    "tags": [
+      "SSL Certificates"
+    ],
+    "parameters": [
+      {
+        "name": "id",
+        "in": "path",
+        "description": "Unique identifier of the resource. Can be a string (alphanumeric, `-`, `_`, `.`) or a positive integer.",
+        "required": true,
+        "example": "my-resource-1",
+        "schema": {
+          "type": "string"
+        }
+      },
+      {
+        "$ref": "../components/parameters/Ttl.json"
+      }
+    ],
+    "requestBody": {
+      "$ref": "../components/requestBodies/SslUpsertPutId.json"
+    },
+    "responses": {
+      "201": {
+        "description": "Created",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "../components/schemas/SSLEnvelope.json"
+            },
+            "examples": {
+              "1": {
+                "summary": "Successful Example",
+                "value": {
+                  "key": "/apisix/ssls/1",
+                  "value": {
+                    "type": "server",
+                    "key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDh5cAWYXAMPLEbe\nfakekeyForOpenAPISpecPlaceholderOnlyDoNotUseForRealKeysNopeNopeNo\npeNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNo\npeNopeNopeNopeNopeNopeNope==\n-----END PRIVATE KEY-----\n",
+                    "snis": [
+                      "test.com"
+                    ],
+                    "id": "1",
+                    "create_time": 1684373523,
+                    "status": 1,
+                    "cert": "-----BEGIN CERTIFICATE-----\nMIIDazCCAlOgAwIBAgIUJ9hQk3kXgZeZpY/m/0V6RmH1AbcwDQYJKoZIhvcNAQEL\nBQAwRTELMAkGA1UEBhMCVVMxEzARBgNVBAgMClNvbWUtU3RhdGUxITAfBgNVBAoM\nGEludGVybmFsIFJvb3QgQ0EgKGV4YW1wbGUpMB4XDTI1MDEwMTAwMDAwMFoXDTM1\nMDEwMTAwMDAwMFowRTELMAkGA1UEBhMCVVMxEzARBgNVBAgMClNvbWUtU3RhdGUx\nITAfBgNVBAoMGEludGVybmFsIFJvb3QgQ0EgKGV4YW1wbGUpMIIBIjANBgkqhkiG\n9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4eXAMPLEcaPUBLIcfakeforopeNAPIspecON\nLYexampleCAcontentsoExpandedFakeKeyMaterial==\n-----END CERTIFICATE-----\n",
+                    "update_time": 1684373523
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "400": {
+        "$ref": "../components/responses/BadRequest.json",
+        "description": "Invalid configuration"
+      },
+      "401": {
+        "$ref": "../components/responses/Unauthorized.json"
+      }
+    },
+    "operationId": "createSSLCertificateById"
+  },
+  "get": {
+    "summary": "Get an SSL Certificate",
+    "description": "Retrieve a single SSL certificate by its ID. The private key is **not** included in the response.",
+    "tags": [
+      "SSL Certificates"
+    ],
+    "parameters": [
+      {
+        "name": "id",
+        "in": "path",
+        "description": "Unique identifier of the resource. Can be a string (alphanumeric, `-`, `_`, `.`) or a positive integer.",
+        "required": true,
+        "example": "my-resource-1",
+        "schema": {
+          "type": "string"
+        }
+      }
+    ],
+    "responses": {
+      "200": {
+        "description": "Successful response.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "../components/schemas/SSLEnvelope.json"
+            },
+            "examples": {
+              "1": {
+                "summary": "Successful Example",
+                "value": {
+                  "value": {
+                    "type": "server",
+                    "snis": [
+                      "test.com"
+                    ],
+                    "id": "1",
+                    "create_time": 1684373523,
+                    "status": 1,
+                    "cert": "-----BEGIN CERTIFICATE-----\nMIIDazCCAlOgAwIBAgIUJ9hQk3kXgZeZpY/m/0V6RmH1AbcwDQYJKoZIhvcNAQEL\nBQAwRTELMAkGA1UEBhMCVVMxEzARBgNVBAgMClNvbWUtU3RhdGUxITAfBgNVBAoM\nGEludGVybmFsIFJvb3QgQ0EgKGV4YW1wbGUpMB4XDTI1MDEwMTAwMDAwMFoXDTM1\nMDEwMTAwMDAwMFowRTELMAkGA1UEBhMCVVMxEzARBgNVBAgMClNvbWUtU3RhdGUx\nITAfBgNVBAoMGEludGVybmFsIFJvb3QgQ0EgKGV4YW1wbGUpMIIBIjANBgkqhkiG\n9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4eXAMPLEcaPUBLIcfakeforopeNAPIspecON\nLYexampleCAcontentsoExpandedFakeKeyMaterial==\n-----END CERTIFICATE-----\n",
+                    "update_time": 1684373523
+                  },
+                  "key": "/apisix/ssls/1",
+                  "modifiedIndex": 133,
+                  "createdIndex": 133
+                }
+              }
+            }
+          }
+        }
+      },
+      "401": {
+        "$ref": "../components/responses/Unauthorized.json"
+      },
+      "404": {
+        "$ref": "../components/responses/NotFound.json",
+        "description": "Key not found"
+      }
+    },
+    "operationId": "getSSLCertificate"
+  },
+  "patch": {
+    "summary": "Update an SSL Certificate (Partial)",
+    "description": "Partially update an SSL certificate's configuration. Only the fields included in the request body are modified; all other fields remain unchanged.",
+    "tags": [
+      "SSL Certificates"
+    ],
+    "parameters": [
+      {
+        "name": "id",
+        "in": "path",
+        "description": "Unique identifier of the resource. Can be a string (alphanumeric, `-`, `_`, `.`) or a positive integer.",
+        "required": true,
+        "example": "my-resource-1",
+        "schema": {
+          "type": "string"
+        }
+      },
+      {
+        "$ref": "../components/parameters/Ttl.json"
+      }
+    ],
+    "requestBody": {
+      "$ref": "../components/requestBodies/SslUpsertPatchId.json"
+    },
+    "responses": {
+      "200": {
+        "description": "Successful response.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "../components/schemas/SSLEnvelope.json"
+            }
+          }
+        }
+      },
+      "400": {
+        "$ref": "../components/responses/BadRequest.json",
+        "description": "Invalid configuration"
+      },
+      "401": {
+        "$ref": "../components/responses/Unauthorized.json"
+      },
+      "404": {
+        "$ref": "../components/responses/NotFound.json",
+        "description": "Key not found"
+      }
+    },
+    "operationId": "updateSSLCertificate"
+  },
+  "delete": {
+    "summary": "Delete an SSL Certificate",
+    "description": "Delete an SSL certificate by its ID.",
+    "tags": [
+      "SSL Certificates"
+    ],
+    "parameters": [
+      {
+        "name": "id",
+        "in": "path",
+        "description": "Unique identifier of the resource. Can be a string (alphanumeric, `-`, `_`, `.`) or a positive integer.",
+        "required": true,
+        "example": "my-resource-1",
+        "schema": {
+          "type": "string"
+        }
+      },
+      {
+        "name": "force",
+        "in": "query",
+        "description": "Delete resource by force even if the resource is in use.",
+        "required": false,
+        "example": "true",
+        "schema": {
+          "type": "string"
+        }
+      }
+    ],
+    "responses": {
+      "200": {
+        "description": "Successful response.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "key": {
+                  "description": "The storage key or path identifier for the SSL object in the data store.",
+                  "type": "string"
+                },
+                "deleted": {
+                  "description": "The ID of the successfully deleted SSL.",
+                  "type": "string"
+                }
+              }
+            },
+            "examples": {
+              "1": {
+                "summary": "Successful Example",
+                "value": {
+                  "key": "/apisix/ssls/00000000000000000134",
+                  "deleted": "1"
+                }
+              }
+            }
+          }
+        }
+      },
+      "401": {
+        "$ref": "../components/responses/Unauthorized.json"
+      },
+      "404": {
+        "$ref": "../components/responses/NotFound.json",
+        "description": "Key not found"
+      }
+    },
+    "operationId": "deleteSSLCertificate"
+  }
+}

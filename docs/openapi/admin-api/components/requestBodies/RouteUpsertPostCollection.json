@@ -1,0 +1,47 @@
+{
+  "description": "`Route` configuration body for create / replace / patch.",
+  "required": true,
+  "content": {
+    "application/json": {
+      "schema": {
+        "$ref": "../schemas/Route.json"
+      },
+      "example": {
+        "name": "my-api-route",
+        "desc": "Route for user management API",
+        "uri": "/api/v1/users/*",
+        "hosts": [
+          "api.example.com"
+        ],
+        "methods": [
+          "GET",
+          "POST",
+          "PUT",
+          "DELETE"
+        ],
+        "plugins": {
+          "limit-count": {
+            "count": 100,
+            "time_window": 60,
+            "rejected_code": 429,
+            "key_type": "var",
+            "key": "remote_addr"
+          }
+        },
+        "upstream": {
+          "type": "roundrobin",
+          "nodes": {
+            "10.0.0.1:8080": 3,
+            "10.0.0.2:8080": 2
+          },
+          "retries": 2,
+          "timeout": {
+            "connect": 6,
+            "send": 6,
+            "read": 6
+          }
+        }
+      }
+    }
+  }
+}
