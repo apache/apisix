@@ -262,9 +262,9 @@ paths:
   /apisix/admin/schema/plugins/{plugin_name}:
     $ref: ./paths/apisix-admin-schema-plugins-by-plugin_name.yaml
   /apisix/admin/services/{service_id}/graphql_cost_decorations:
-    $ref: ./paths/apisix-admin-services-by-service_id-graphql_cost_decorations.yaml
+    $ref: ./paths/service-graphql-cost-decorations.yaml
   /apisix/admin/services/{service_id}/graphql_cost_decorations/{decoration_id}:
-    $ref: ./paths/apisix-admin-services-by-service_id-graphql_cost_decorations-by-decoration_id.yaml
+    $ref: ./paths/service-graphql-cost-decoration-by-id.yaml
 servers:
   - url: "{protocol}://{host}:{port}"
     description: APISIX Admin API Server
