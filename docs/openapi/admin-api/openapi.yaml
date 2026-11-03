@@ -180,9 +180,9 @@ paths:
   /apisix/admin/services/{id}:
     $ref: ./paths/apisix-admin-services-by-id.yaml
   /apisix/admin/services/{service_id}/graphql_cost_decorations:
-    $ref: ./paths/apisix-admin-services-by-service_id-graphql_cost_decorations.yaml
+    $ref: ./paths/service-graphql-cost-decorations.yaml
   /apisix/admin/services/{service_id}/graphql_cost_decorations/{decoration_id}:
-    $ref: ./paths/apisix-admin-services-by-service_id-graphql_cost_decorations-by-decoration_id.yaml
+    $ref: ./paths/service-graphql-cost-decoration-by-id.yaml
   /apisix/admin/consumers:
     $ref: ./paths/apisix-admin-consumers.yaml
   /apisix/admin/consumers/{username}:
