@@ -159,7 +159,7 @@ local _M = {
     priority = 411,
     name = plugin_name,
     schema = batch_processor_manager:wrap_schema(schema),
-    metadata_schema = metadata_schema
+    metadata_schema = batch_processor_manager:wrap_metadata_schema(metadata_schema)
 }
 
 

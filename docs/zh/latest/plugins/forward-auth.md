@@ -42,8 +42,26 @@ import TabItem from '@theme/TabItem';
 - `X-Forwarded-Proto`：协议
 - `X-Forwarded-Method`：HTTP 方法
 - `X-Forwarded-Host`：主机
-- `X-Forwarded-Uri`：URI
+- `X-Forwarded-Uri`：规范化后的 URI，包含查询字符串
 - `X-Forwarded-For`：源 IP
+
+:::note
+
+这些请求头描述的是客户端发送的原始请求。如果该路由同时使用 [proxy-rewrite](./proxy-rewrite.md) 改写请求，上游服务收到的是改写后的协议、方法、主机和 URI，而上述请求头仍然携带客户端的值。
+
+如果授权服务需要根据上游服务实际收到的 URI 做出决策，请通过 `extra_headers` 和 `$upstream_uri` 变量显式传递：
+
+```json
+{
+  "extra_headers": {
+    "X-Forwarded-Upstream-Uri": "$upstream_uri"
+  }
+}
+```
+
+`$upstream_uri` 由改写转发路径的插件设置，例如 `proxy-rewrite`。当没有插件改写请求时该变量为空，此时上游服务收到的就是 `X-Forwarded-Uri` 中的 URI。
+
+:::
 
 ## 属性
 
@@ -53,7 +71,7 @@ import TabItem from '@theme/TabItem';
 | ssl_verify        | boolean | 否     | true    |                               | 如果为 true，则验证授权服务的 SSL 证书。                                                                                                                                                                                                                   |
 | request_method    | string  | 否     | GET     | `GET` 或 `POST`               | APISIX 向外部授权服务发送请求时使用的 HTTP 方法。当设置为 `POST` 时，APISIX 将连同请求体一起向外部授权服务发送 POST 请求。如果授权决策依赖 POST 正文中的请求参数，建议使用 `$post_arg.*` 提取必要字段并通过 `extra_headers` 字段传递，而不是发送完整请求体。 |
 | request_headers   | array   | 否     |         |                               | 需要转发给外部授权服务的客户端请求头。如果未配置，则只转发 APISIX 添加的请求头，例如 `X-Forwarded-*`。                                                                                                                                                     |
-| upstream_headers  | array   | 否     |         |                               | 认证通过时，需要转发到 Upstream 服务的外部授权服务响应头。如果未配置，则不转发任何请求头。                                                                                                                                                                 |
+| upstream_headers  | array   | 否     |         |                               | 认证通过时，需要转发到 Upstream 服务的外部授权服务响应头。如果未配置，则不转发任何请求头。客户端传入的同名请求头总会被移除。                                                                                                                                                                 |
 | client_headers    | array   | 否     |         |                               | 认证失败时，需要转发给客户端的外部授权服务响应头。如果未配置，则不转发任何响应头。                                                                                                                                                                         |
 | extra_headers     | object  | 否     |         |                               | 发送给授权服务的额外请求头，支持在值中使用 [NGINX 变量](https://nginx.org/en/docs/http/ngx_http_core_module.html)。                                                                                                                                         |
 | timeout           | integer | 否     | 3000    | 1 到 60000 之间（含）         | 外部授权服务 HTTP 调用的超时时间（毫秒）。                                                                                                                                                                                                                 |

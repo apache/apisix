@@ -1,0 +1,333 @@
+--
+-- Licensed to the Apache Software Foundation (ASF) under one or more
+-- contributor license agreements.  See the NOTICE file distributed with
+-- this work for additional information regarding copyright ownership.
+-- The ASF licenses this file to You under the Apache License, Version 2.0
+-- (the "License"); you may not use this file except in compliance with
+-- the License.  You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+--
+
+-- What the openapi-to-mcp suites point the plugin at: the OpenAPI documents
+-- under test, served next to the API their tools call.
+local core = require("apisix.core")
+local t    = require("lib.test_admin").test
+
+
+local _M = {}
+
+
+local DOCUMENTS = {
+    ["/openapi.json"] = {
+        openapi = "3.0.0",
+        info = { title = "Demo", version = "1.0.0" },
+        paths = { ["/pet/{petId}"] = { get = {
+            operationId = "getPet",
+            summary = "Get a pet",
+            parameters = {
+                { name = "petId", ["in"] = "path", required = true,
+                  schema = { type = "integer" } },
+                { name = "verbose", ["in"] = "query",
+                  schema = { type = "boolean", default = true } },
+            },
+        } } },
+    },
+
+    -- one query parameter per OpenAPI serialization style
+    ["/styles.json"] = {
+        openapi = "3.0.0",
+        info = { title = "Styles", version = "1" },
+        paths = { ["/s"] = { get = {
+            operationId = "styles",
+            parameters = {
+                { name = "formArr", ["in"] = "query", explode = false,
+                  schema = { type = "array", items = { type = "string" } } },
+                { name = "spaceArr", ["in"] = "query", style = "spaceDelimited",
+                  schema = { type = "array", items = { type = "string" } } },
+                { name = "pipeArr", ["in"] = "query", style = "pipeDelimited",
+                  schema = { type = "array", items = { type = "string" } } },
+                { name = "deep", ["in"] = "query", style = "deepObject", explode = true,
+                  schema = { type = "object", properties = { x = { type = "string" } } } },
+                { name = "formObj", ["in"] = "query", explode = false,
+                  schema = { type = "object", properties = { k = { type = "string" } } } },
+            },
+        } } },
+    },
+
+    -- a tool that declares one header parameter
+    ["/headerparam.json"] = {
+        openapi = "3.0.0",
+        info = { title = "Header", version = "1" },
+        paths = { ["/traced"] = { get = {
+            operationId = "traced",
+            parameters = {
+                { name = "X-Trace", ["in"] = "header", schema = { type = "string" } },
+                { name = "Authorization", ["in"] = "header", schema = { type = "string" } },
+            },
+        } } },
+    },
+
+    -- a document that declares framing headers, and one spelled in another
+    -- case than the Route's own header, as tool parameters
+    ["/framing.json"] = {
+        openapi = "3.0.0",
+        info = { title = "Framing", version = "1" },
+        paths = { ["/framed"] = { post = {
+            operationId = "framed",
+            parameters = {
+                { name = "Transfer-Encoding", ["in"] = "header", schema = { type = "string" } },
+                { name = "Content-Length", ["in"] = "header", schema = { type = "string" } },
+                { name = "Host", ["in"] = "header", schema = { type = "string" } },
+                { name = "authorization", ["in"] = "header", schema = { type = "string" } },
+            },
+            requestBody = { content = { ["application/json"] = {
+                schema = { type = "object" } } } },
+        } } },
+    },
+
+    -- parameters declared on the Path Item, one of them overridden
+    ["/pathitem.json"] = {
+        openapi = "3.0.0",
+        info = { title = "Path item", version = "1" },
+        paths = { ["/pets/{id}"] = {
+            parameters = {
+                { name = "id", ["in"] = "path", required = true, schema = { type = "integer" } },
+                { name = "verbose", ["in"] = "query", schema = { type = "boolean" } },
+            },
+            get = {
+                operationId = "getPetById",
+                parameters = {
+                    { name = "verbose", ["in"] = "query", schema = { type = "string" } },
+                },
+            },
+        } },
+    },
+
+    -- one operation over the endpoint that answers with a large body
+    ["/large.json"] = {
+        openapi = "3.0.0",
+        info = { title = "Large", version = "1" },
+        paths = { ["/large"] = { get = {
+            operationId = "getLarge",
+            parameters = {
+                { name = "size", ["in"] = "query", schema = { type = "integer" } },
+            },
+        } } },
+    },
+
+    -- one operation over the endpoint that closes the connection to end the body
+    ["/closing.json"] = {
+        openapi = "3.0.0",
+        info = { title = "Closing", version = "1" },
+        paths = { ["/closing"] = { get = { operationId = "getClosing" } } },
+    },
+
+    ["/identity.json"] = {
+        openapi = "3.0.0",
+        info = { title = "Identity", version = "1" },
+        paths = { ["/identity"] = { get = { operationId = "getIdentity" } } },
+    },
+
+    -- a request body whose only media type is not JSON
+    ["/textbody.json"] = {
+        openapi = "3.0.0",
+        info = { title = "Text body", version = "1" },
+        paths = { ["/notes"] = { post = {
+            operationId = "addNote",
+            requestBody = { required = true, content = { ["text/plain"] = {
+                schema = { type = "string" } } } },
+        } } },
+    },
+
+    -- a required parameter and a required body property, both with a default
+    ["/defaults.json"] = {
+        openapi = "3.0.0",
+        info = { title = "Defaults", version = "1" },
+        paths = {
+            ["/items/{id}"] = { get = {
+                operationId = "getItem",
+                parameters = {
+                    { name = "id", ["in"] = "path", required = true,
+                      schema = { type = "string" } },
+                },
+            } },
+            ["/items"] = {
+                get = {
+                    operationId = "listItems",
+                    parameters = {
+                        { name = "status", ["in"] = "query", required = true,
+                          schema = { type = "string", default = "available" } },
+                        { name = "limit", ["in"] = "query",
+                          schema = { type = "integer", default = 10 } },
+                    },
+                },
+                post = {
+                    operationId = "createItem",
+                    requestBody = { required = true, content = { ["application/json"] = {
+                        schema = {
+                            type = "object",
+                            required = { "mode" },
+                            properties = {
+                                mode = { type = "string", default = "fast" },
+                                n = { type = "integer", default = 3 },
+                            },
+                        } } } },
+                },
+            },
+        },
+    },
+
+    -- parses as JSON and is not an OpenAPI document
+    ["/notaspec.json"] = { this = "is not an openapi document" },
+
+    -- query parameters that are an object and an array
+    ["/objq.json"] = {
+        openapi = "3.0.0",
+        info = { title = "Q", version = "1" },
+        paths = { ["/q"] = { get = {
+            operationId = "objQuery",
+            parameters = {
+                { name = "filter", ["in"] = "query", schema = {
+                    type = "object", properties = { a = { type = "string" } } } },
+                { name = "tags", ["in"] = "query", schema = {
+                    type = "array", items = { type = "string" } } },
+            },
+        } } },
+    },
+}
+
+
+-- Served from fixed files, so the path order a test sees is the order written
+-- in the document rather than whatever order a Lua table encodes in.
+local FILES = {
+    -- petstore3, the same document oas-validator is tested with
+    ["/petstore.json"] = "../spec/spec.json",
+    -- `in: body` / `in: formData` and `definitions`; source in
+    -- openapi_to_mcp_swagger2_spec.lua
+    ["/swagger2.json"] = "openapi_to_mcp_swagger2_spec.json",
+}
+
+
+local function read_body()
+    ngx.req.read_body()
+    return ngx.req.get_body_data()
+end
+
+
+-- Answers without a Content-Length and without chunked encoding, ending the
+-- body by closing the connection: the shape an HTTP/1.0 upstream produces, and
+-- the one a reader that stops at the first "closed" would throw away.
+local function closing_body()
+    ngx.req.read_body()
+    local sock = assert(ngx.req.socket(true))
+    sock:send("HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n" ..
+              "Connection: close\r\n\r\n" ..
+              '{"closed":true,"blob":"' .. string.rep("y", 1024) .. '"}')
+    return ngx.exit(200)
+end
+
+
+-- Announces a transfer coding that is not chunked and sends no Content-Length,
+-- so the body still ends at the close. The client reads it exactly like an
+-- unframed one, which a reader keying off the header's mere presence does not.
+local function identity_body()
+    ngx.req.read_body()
+    local sock = assert(ngx.req.socket(true))
+    sock:send("HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n" ..
+              "Transfer-Encoding: identity\r\nConnection: close\r\n\r\n" ..
+              '{"identity":true,"blob":"' .. string.rep("z", 1024) .. '"}')
+    return ngx.exit(200)
+end
+
+
+-- answers with a body of the requested size, for the response size limit
+local function large_body()
+    local size = tonumber(ngx.var.arg_size) or (2 * 1024 * 1024)
+    ngx.header["Content-Type"] = "application/json"
+    ngx.print('{"blob":"', string.rep("x", size), '"}')
+end
+
+
+-- content handler for `location /`
+function _M.serve()
+    local uri = ngx.var.uri
+    ngx.header["Content-Type"] = "application/json"
+
+    if uri == "/large" then
+        return large_body()
+    end
+
+    if uri == "/closing" then
+        return closing_body()
+    end
+
+    if uri == "/identity" then
+        return identity_body()
+    end
+
+    local doc = DOCUMENTS[uri]
+    if doc then
+        ngx.say(core.json.encode(doc))
+        return
+    end
+
+    local file = FILES[uri]
+    if file then
+        local f = assert(io.open(ngx.config.prefix() .. "../lib/" .. file, "r"))
+        ngx.print(f:read("*a"))
+        f:close()
+        return
+    end
+
+    -- anything else is the API a generated tool called: say what it received
+    ngx.say(core.json.encode({
+        seen_path = ngx.var.request_uri,
+        seen_method = ngx.req.get_method(),
+        seen_auth = ngx.req.get_headers()["authorization"],
+        seen_injected = ngx.req.get_headers()["x-injected"],
+        seen_trace = ngx.req.get_headers()["x-trace"],
+        seen_host = ngx.var.http_host,
+        seen_forwarded = ngx.req.get_headers()["x-forwarded-for"],
+        seen_content_type = ngx.req.get_headers()["content-type"],
+        seen_transfer_encoding = ngx.req.get_headers()["transfer-encoding"],
+        seen_content_length = ngx.req.get_headers()["content-length"],
+        seen_body = ngx.req.get_method() ~= "GET" and read_body() or nil,
+    }))
+end
+
+
+-- PUT one openapi-to-mcp route per { id, uri, conf[, plugins] } entry.
+-- Prints and returns false on the first failure, true when all are in.
+-- route[5], when given, is merged into the route body itself, for the cases
+-- that need a predicate of their own such as `hosts`
+function _M.put_routes(routes)
+    for _, route in ipairs(routes) do
+        local id, uri, conf, plugins = route[1], route[2], route[3], route[4] or {}
+        plugins["openapi-to-mcp"] = conf
+        local body_table = {
+            uri = uri,
+            plugins = plugins,
+            upstream = { nodes = { ["127.0.0.1:1980"] = 1 }, type = "roundrobin" },
+        }
+        for key, value in pairs(route[5] or {}) do
+            body_table[key] = value
+        end
+        local code, body = t("/apisix/admin/routes/" .. id, ngx.HTTP_PUT,
+            core.json.encode(body_table))
+        if code >= 300 then
+            ngx.say("route ", id, ": ", body)
+            return false
+        end
+    end
+    return true
+end
+
+
+return _M

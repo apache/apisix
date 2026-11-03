@@ -1,5 +1,5 @@
 {
-  "version": "3.17.0",
+  "version": "3.19.0",
   "sidebar": [
     {
       "type": "category",
@@ -126,6 +126,7 @@
             "plugins/feishu-auth",
             "plugins/authz-casbin",
             "plugins/ldap-auth",
+            "plugins/ldap-auth-advanced",
             "plugins/opa",
             "plugins/forward-auth",
             "plugins/multi-auth",
@@ -238,7 +239,9 @@
           "items": [
             "plugins/dubbo-proxy",
             "plugins/mqtt-proxy",
-            "plugins/http-dubbo"
+            "plugins/websocket-proxy",
+            "plugins/http-dubbo",
+            "plugins/openapi-to-mcp"
           ]
         }
       ]

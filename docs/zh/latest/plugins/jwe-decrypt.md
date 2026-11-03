@@ -56,7 +56,7 @@ import TabItem from '@theme/TabItem';
 | 名称           | 类型    | 必选项 | 默认值        | 有效值 | 描述                                                                                           |
 | -------------- | ------- | ------ | ------------- | ------ | ---------------------------------------------------------------------------------------------- |
 | header         | string  | 是     | Authorization |        | 用于获取令牌的请求头。                                                                         |
-| forward_header | string  | 是     | Authorization |        | 传递明文给上游的请求头名称。                                                                   |
+| forward_header | string  | 是     | Authorization |        | 传递明文给上游的请求头名称。客户端传入的同名请求头会被移除。                                   |
 | strict         | boolean | 否     | true          |        | 如果为 true，当请求中缺少 JWE 令牌时抛出 403 错误。如果为 false，当找不到 JWE 令牌时不抛出错误。 |
 
 ## 使用示例
@@ -160,13 +160,15 @@ kubectl apply -f jwe-consumer-ic.yaml
 </TabItem>
 </Tabs>
 
-要为消费者生成 JWE 令牌，可使用任意 AES-256-GCM 库离线加密 payload，加密密钥为消费者的 secret。令牌结构如下：
+要为消费者生成 JWE 令牌，可使用任意支持 `A256GCM` 直接加密的 JWE 库，加密密钥为消费者的 secret。令牌结构如下：
 
 ```text
 base64url(header).<empty>.base64url(iv).base64url(ciphertext).base64url(tag)
 ```
 
-其中 header 为 `{"alg":"dir","enc":"A256GCM","kid":"<consumer-key>"}`。每个令牌的 IV 必须唯一且随机生成，切勿在同一密钥下复用 IV。
+其中 header 为 `{"alg":"dir","enc":"A256GCM","kid":"<consumer-key>"}`，`alg` 与 `enc` 若为其他值则会被拒绝。每个令牌的 IV 必须唯一且随机生成，切勿在同一密钥下复用 IV。
+
+按 [RFC 7516](https://datatracker.ietf.org/doc/html/rfc7516#section-5.1) 的要求，JWE 库会将编码后的 protected header 作为 AES-GCM 的附加认证数据（AAD）参与认证，从而使 `kid` 不可篡改。为保持向后兼容，未使用 AAD 加密的令牌（例如 APISIX 早期自行生成的令牌）仍然可以正常解密。
 
 例如，以下令牌使用上面配置的 secret，为消费者密钥 `jack-key` 加密了 payload `{"uid":10000,"uname":"test"}`：
 

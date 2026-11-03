@@ -145,17 +145,18 @@ function _M.incoming(self, key, cost)
     local last_rate = last_count / self.window_size
     local estimated_last_window_count = last_rate * remaining_time
     log.debug("accepted: ", accepted, ", count: ", count, ", limit: ", self.limit)
+    local info = {now = now, count = count, last_count = last_count}
 
     if accepted == 0 then
         if count >= self.limit then
-            return nil, "rejected", round_off_decimal_places(remaining_time, 2)
+            return nil, "rejected", round_off_decimal_places(remaining_time, 2), info
         end
         local desired_delay = get_desired_delay(self, remaining_time, last_rate, count)
-        return nil, "rejected", round_off_decimal_places(desired_delay, 2)
+        return nil, "rejected", round_off_decimal_places(desired_delay, 2), info
     end
 
     local remaining = self.limit - count - estimated_last_window_count
-    return 0, math_floor(remaining), round_off_decimal_places(remaining_time, 2)
+    return 0, math_floor(remaining), round_off_decimal_places(remaining_time, 2), info
 end
 
 
@@ -169,6 +170,7 @@ end
 function _M.commit(self, key, cost)
     local now = ngx_now()
     local counter_key = get_counter_key(self, key, now)
+    local last_counter_key = get_counter_key(self, key, now - self.window_size)
     local remaining_time = self.window_size - now % self.window_size
 
     local red_cli, err
@@ -179,19 +181,40 @@ function _M.commit(self, key, cost)
         end
     end
 
+    local red = self.red_cli or red_cli
     local expiry = self.window_size * 2
     local new_count
-    new_count, err = self.store:incr(counter_key, cost, expiry, self.red_cli or red_cli)
+    new_count, err = self.store:incr(counter_key, cost, expiry, red)
     if err then
         return nil, err, 0
+    end
+
+    -- the delta is already recorded at this point, so a failed read of the
+    -- previous window must not fail the commit -- the caller would retry it
+    -- and double-count the delta. Degrade to a remaining without the previous
+    -- window's share instead.
+    local last_count, last_err = self.store:get(last_counter_key, red)
+    if last_err then
+        log.error("failed to get the last window count: ", last_err)
+    end
+    if not last_count then
+        last_count = 0
+    end
+    if last_count > self.limit then
+        last_count = self.limit
     end
 
     if red_cli then
         red_cli:set_keepalive(10000, 100)
     end
 
-    local remaining = math_floor(self.limit - new_count)
-    return 0, remaining, round_off_decimal_places(remaining_time, 2)
+    -- report the same window-weighted remaining as incoming(); reporting
+    -- limit - new_count alone hands delayed-sync callers a full budget at
+    -- every window start, degrading the sliding window to a fixed one
+    local estimated_last_window_count = last_count / self.window_size * remaining_time
+    local remaining = math_floor(self.limit - new_count - estimated_last_window_count)
+    return 0, remaining, round_off_decimal_places(remaining_time, 2),
+           {now = now, count = new_count, last_count = last_count}
 end
 
 return _M

@@ -16,7 +16,6 @@
 --
 local core     = require("apisix.core")
 local log_util = require("apisix.utils.log-util")
-local plugin   = require("apisix.plugin")
 local bp_manager_mod = require("apisix.utils.batch-processor-manager")
 local plugin_name = "tcp-logger"
 local tostring = tostring
@@ -24,7 +23,7 @@ local ngx = ngx
 local tcp = ngx.socket.tcp
 
 
-local batch_processor_manager = bp_manager_mod.new("tcp logger")
+local batch_processor_manager = bp_manager_mod.new("tcp logger", plugin_name)
 local schema = {
     type = "object",
     properties = {
@@ -66,11 +65,6 @@ local metadata_schema = {
         log_format = {
             type = "object"
         },
-        max_pending_entries = {
-            type = "integer",
-            description = "maximum number of pending entries in the batch processor",
-            minimum = 1,
-        },
     },
 }
 
@@ -78,7 +72,7 @@ local _M = {
     version = 0.1,
     priority = 405,
     name = plugin_name,
-    metadata_schema = metadata_schema,
+    metadata_schema = batch_processor_manager:wrap_metadata_schema(metadata_schema),
     schema = batch_processor_manager:wrap_schema(schema),
 }
 
@@ -146,12 +140,9 @@ end
 
 
 function _M.log(conf, ctx)
-    local metadata = plugin.plugin_metadata(plugin_name)
-    local max_pending_entries = metadata and metadata.value and
-                                metadata.value.max_pending_entries or nil
     local entry = log_util.get_log_entry(plugin_name, conf, ctx)
 
-    if batch_processor_manager:add_entry(conf, entry, max_pending_entries) then
+    if batch_processor_manager:add_entry(conf, entry) then
         return
     end
 
@@ -171,7 +162,7 @@ function _M.log(conf, ctx)
         return send_tcp_data(conf, data)
     end
 
-    batch_processor_manager:add_entry_to_new_processor(conf, entry, ctx, func, max_pending_entries)
+    batch_processor_manager:add_entry_to_new_processor(conf, entry, ctx, func)
 end
 
 

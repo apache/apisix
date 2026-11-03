@@ -373,7 +373,7 @@ function _M.rewrite(conf, ctx)
     end
 
     if conf.hide_credentials then
-        core.request.set_header("Authorization", nil)
+        core.request.set_header(ctx, "Authorization", nil)
     end
 
     consumer.attach_consumer(ctx, cur_consumer, consumers_conf)

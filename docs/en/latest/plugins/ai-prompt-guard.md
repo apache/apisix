@@ -40,10 +40,15 @@ The `ai-prompt-guard` Plugin safeguards your LLM endpoints by inspecting and val
 
 When both `allow_patterns` and `deny_patterns` are configured, the Plugin first ensures that at least one `allow_patterns` is matched. If none match, the request is rejected. If an allowed pattern is matched, it then checks for any occurrences of denied patterns.
 
+For Embeddings requests, the Plugin checks a string `input` or all strings in an `input` array. Batch items are joined with spaces and checked together, regardless of `match_all_conversation_history`. Allow patterns apply to this combined text; a denied pattern anywhere in the batch rejects the request.
+
+When no content is selected for inspection, the request continues upstream. This includes messages excluded by role filtering and Embeddings inputs containing only token IDs, which the Plugin does not decode into text. `fail_mode: "error"` applies to unrecognized protocols; it does not reject recognized requests solely because no text was selected.
+
 ## Plugin Attributes
 
 | Name | Type | Required | Default | Valid values | Description |
 | --- | --- | --- | --- | --- | --- |
+| `max_req_body_size` | integer | False | 67108864 | >= 1 | Maximum request body size in bytes buffered into memory. Requests with a larger body are rejected. |
 | `match_all_roles` | boolean | False | false | | If `true`, validate messages from all roles. If `false`, validate the message from `user` role only. |
 | `match_all_conversation_history` | boolean | False | false | | If `true`, concatenate and check all messages in the conversation history. If `false`, only check the content of the last message. |
 | `allow_patterns` | array | False | [] | | An array of regex patterns that messages should match. When configured, messages must match at least one pattern to be considered valid. |

@@ -40,6 +40,13 @@ local plugin_name = "cas-auth"
 local schema = {
     type = "object",
     properties = {
+        max_req_body_size = {
+            type = "integer",
+            minimum = 1,
+            default = 67108864,
+            description = "maximum request body size in bytes buffered into "
+                       .. "memory; larger request bodies are rejected",
+        },
         idp_uri = {type = "string"},
         cas_callback_uri = {
             type = "string",
@@ -358,7 +365,7 @@ function _M.access(conf, ctx)
     end
 
     if method == "POST" and uri == cas_callback_path then
-        local data = core.request.get_body()
+        local data = core.request.get_body(conf.max_req_body_size)
         local ticket = data and data:match("<samlp:SessionIndex>(.+)</samlp:SessionIndex>")
         if ticket == nil then
             return ngx.HTTP_BAD_REQUEST,

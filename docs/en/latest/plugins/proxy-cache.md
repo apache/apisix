@@ -43,6 +43,7 @@ Responses can be conditionally cached based on request HTTP methods, response st
 
 | Name               | Type           | Required | Default                   | Valid values            | Description                                                                                                                                                                                                                                                                                           |
 |--------------------|----------------|----------|---------------------------|-------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| max_resp_body_size | integer | False | 67108864 | >= 1 | Maximum response body size in bytes buffered into memory by the `memory` cache strategy. Larger responses are streamed through without being cached. |
 | cache_strategy     | string         | False    | disk                      | ["disk","memory"]       | Caching strategy. Cache on disk or in memory.          |
 | cache_zone         | string         | False    | disk_cache_one            |                         | Cache zone used with the caching strategy. The value should match one of the cache zones defined in the [configuration files](#static-configurations) and should correspond to the caching strategy. For example, when using the in-memory caching strategy, you should use an in-memory cache zone. |
 | cache_key          | array[string]  | False    | ["$host", "$request_uri"] |                         | Key to use for caching. Support [NGINX variables](https://nginx.org/en/docs/varindex.html) and constant strings in values. Variables should be prefixed with a `$` sign.    |
@@ -59,6 +60,8 @@ Responses can be conditionally cached based on request HTTP methods, response st
 The plugin always honors upstream `Cache-Control: private`, `no-store`, and `no-cache` directives — responses carrying any of these are not cached, regardless of the `cache_control` flag. The `cache_control` flag governs request-side semantics (client `Cache-Control` request directives such as `max-age` and `min-fresh`) and TTL derivation from `max-age` / `s-maxage`; it does not control whether upstream non-cacheability directives are respected.
 
 Both caching strategies honor the upstream `Vary` response header (RFC 9111 §4.1). Cache entries are partitioned by the request's values for each header listed in `Vary`, so a response served with `Vary: Accept-Encoding` will not be served to a request with a different `Accept-Encoding`. Responses with `Vary: *` are treated as not reusable and are not cached.
+
+The `consumer_isolation` fallback to `$remote_user` does not verify credentials. NGINX parses `$remote_user` from the client's `Authorization: Basic` header as-is, so any client can claim any username. Do not rely on this fallback to protect personalized cached responses. Configure an authentication plugin on the route so the identity resolves to a verified APISIX consumer, or disable caching for routes that return per-user content.
 
 ## Static Configurations
 

@@ -18,7 +18,10 @@ local ngx       = ngx
 local ipairs    = ipairs
 local next      = next
 local type      = type
+local t_remove  = table.remove
 local re_sub    = ngx.re.sub
+local str_lower = string.lower
+local str_gsub  = string.gsub
 local core      = require("apisix.core")
 local jp        = require("jsonpath")
 
@@ -152,6 +155,17 @@ local function mask_table(tab, conf)
 end
 
 
+-- ngx.req.set_header() is a no-op once a response status exists, so the masked
+-- value is also kept on ctx for the loggers to read
+local function mask_header(ctx, headers, name, value)
+    core.request.set_header(ctx, name, value)
+
+    local key = str_lower(name)
+    headers[key] = value
+    ctx.var["http_" .. str_gsub(key, "-", "_")] = value or ""
+end
+
+
 -- jsonpath index of array starts from 0, lua table index starts from 1
 local function table_index(idx)
     if type(idx) == "number" then
@@ -173,7 +187,8 @@ local function mask_json(obj, conf)
     end
 
     local masked = false
-    for _, node in ipairs(nodes) do
+    for ni = #nodes, 1, -1 do
+        local node = nodes[ni]
         local nested = obj
         -- first element is root($), last element is the field name
         for i = 2, #node.path - 1 do
@@ -181,7 +196,11 @@ local function mask_json(obj, conf)
         end
         local index = table_index(node.path[#node.path])
         if conf.action == "remove" then
-            nested[index] = nil
+            if type(index) == "number" then
+                t_remove(nested, index)
+            else
+                nested[index] = nil
+            end
             masked = true
         elseif conf.action == "replace" then
             nested[index] = conf.value
@@ -211,6 +230,7 @@ function _M.log(conf, ctx)
     local body = ngx.req.get_body_data()
     local json_body
     local body_masked = false
+    local masked_headers
 
     if conf.request then
         for _, item in ipairs(conf.request) do
@@ -223,14 +243,17 @@ function _M.log(conf, ctx)
             if item.type == "header" then
                 local header = core.request.header(ctx, item.name)
                 if header then
+                    if not masked_headers then
+                        masked_headers = ngx.req.get_headers()
+                    end
                     if item.action == "remove" then
-                        core.request.set_header(ctx, item.name, nil)
+                        mask_header(ctx, masked_headers, item.name, nil)
                     elseif item.action == "replace" then
-                        core.request.set_header(ctx, item.name, item.value)
+                        mask_header(ctx, masked_headers, item.name, item.value)
                     elseif item.action == "regex" then
                         local new_header, n = regex_replace(header, item.regex, item.value)
                         if new_header ~= nil and n > 0 then
-                            core.request.set_header(ctx, item.name, new_header)
+                            mask_header(ctx, masked_headers, item.name, new_header)
                         end
                     end
                 end
@@ -286,6 +309,10 @@ function _M.log(conf, ctx)
                 end
             end
         end
+    end
+
+    if masked_headers then
+        ctx.data_mask_headers = masked_headers
     end
 
     if query_masked then

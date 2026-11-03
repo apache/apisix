@@ -48,6 +48,20 @@ local schema = {
     properties = {
         request = transform_schema,
         response = transform_schema,
+        max_req_body_size = {
+            type = "integer",
+            minimum = 1,
+            default = 67108864,
+            description = "maximum request body size in bytes buffered into "
+                       .. "memory; larger request bodies are rejected",
+        },
+        max_resp_body_size = {
+            type = "integer",
+            minimum = 1,
+            default = 67108864,
+            description = "maximum response body size in bytes buffered into "
+                       .. "memory; larger responses are truncated",
+        },
     },
     anyOf = {
         {required = {"request"}},
@@ -233,7 +247,11 @@ function _M.rewrite(conf, ctx)
         local request_method  = ngx.var.request_method
         conf = core.table.deepcopy(conf)
         ctx.body_transformer_conf = conf
-        local body = core.request.get_body()
+        local body, err = core.request.get_body(conf.max_req_body_size)
+        if err then
+            core.log.error("failed to get request body: ", err)
+            return 413
+        end
         set_input_format(conf, "request", ctx.var.http_content_type, request_method)
         local out, status, err = transform(conf, body, "request", ctx, request_method)
         if not out then
@@ -262,7 +280,7 @@ function _M.body_filter(_, ctx)
         return
     end
     if conf.response then
-        local body = core.response.hold_body_chunk(ctx)
+        local body = core.response.hold_body_chunk(ctx, false, conf.max_resp_body_size)
         if ngx.arg[2] == false and not body then
             return
         end

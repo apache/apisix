@@ -93,8 +93,9 @@ local function handle_error_response(status_detail_type, proto)
 end
 
 
-return function(ctx, proto, service, method, pb_option, show_status_in_body, status_detail_type)
-    local buffer = core.response.hold_body_chunk(ctx)
+return function(ctx, proto, service, method, pb_option, show_status_in_body, status_detail_type,
+                max_resp_body_size)
+    local buffer = core.response.hold_body_chunk(ctx, false, max_resp_body_size)
     if not buffer then
         return nil
     end

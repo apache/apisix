@@ -66,6 +66,12 @@ When enabled, the plugin will collect information from the request context (e.g.
 
 This Plugin supports using batch processors to aggregate and process events in a batch. This avoids the need for frequently submitting the data. The batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. See [Batch Processor](../batch-processor.md#configuration) for more information or setting your custom configuration.
 
+## Plugin Metadata
+
+| Name | Type | Required | Default | Description |
+|------|------|----------|---------|-------------|
+| max_pending_entries | integer | False | 8192 | Maximum number of entries waiting to be processed. New entries are discarded while the backlog exceeds this, which stops a slow or unreachable Lago service from growing the worker's memory without bound. See [Batch Processor](../batch-processor.md#limiting-the-backlog) for the memory a backlog of this size costs. |
+
 ## Examples
 
 The examples below demonstrate how you can configure `lago` Plugin for typical scenario.
