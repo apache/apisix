@@ -522,7 +522,7 @@ local function skip_mtls(ssl, ctx)
 end
 
 
-function _M.verify_https_client(ctx)
+local function verify_https_client(ctx)
     local scheme = ctx.var.scheme
     if scheme ~= "https" then
         return true
@@ -929,7 +929,7 @@ function _M.http_access_phase()
 
     local span = tracer.start(ngx_ctx, "apisix.phase.access", tracer.kind.server)
 
-    local verified, status = _M.verify_https_client(api_ctx)
+    local verified, status = verify_https_client(api_ctx)
     if not verified then
         return core.response.exit(status or 400)
     end
