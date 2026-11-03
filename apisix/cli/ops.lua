@@ -1179,7 +1179,10 @@ local function start(env, ...)
         init_etcd(env, args)
     end
 
-    util.execute_cmd(env.openresty_args)
+    -- Don't capture openresty's stdout: a log file configured as /dev/stdout
+    -- would be opened on the capture pipe and kept by the daemonized workers,
+    -- so the read would never see EOF and would buffer every log line.
+    execute(env.openresty_args)
 end
 
 

@@ -190,6 +190,8 @@ local scheme_to_port = {
     https = 443,
     grpc = 80,
     grpcs = 443,
+    ws = 80,
+    wss = 443,
 }
 
 
@@ -327,6 +329,55 @@ local function set_stream_upstream_client_cert(api_ctx, up_conf)
 end
 
 
+local function set_http_upstream_tls(api_ctx, up_conf)
+    local scheme = up_conf.scheme
+    if scheme == "https" then
+        -- grpcs applies these in `set_grpcs_upstream_param` instead, after the
+        -- internal redirect that drops the settings made here
+        local ok, err = set_upstream_ssl_opts(up_conf)
+        if not ok then
+            return 503, err
+        end
+    end
+
+    local tls_has_cert = up_conf.tls and (up_conf.tls.client_cert or up_conf.tls.client_cert_id)
+    if (scheme == "https" or scheme == "grpcs") and tls_has_cert then
+        local client_cert, client_key
+        if up_conf.tls.client_cert_id then
+            client_cert = api_ctx.upstream_ssl.cert
+            client_key = api_ctx.upstream_ssl.key
+        else
+            client_cert = up_conf.tls.client_cert
+            client_key = up_conf.tls.client_key
+        end
+
+        -- the sni here is just for logging
+        local sni = api_ctx.var.upstream_host
+        local cert, err = apisix_ssl.fetch_cert(sni, client_cert)
+        if not cert then
+            return 503, err
+        end
+
+        local key, err = apisix_ssl.fetch_pkey(sni, client_key)
+        if not key then
+            return 503, err
+        end
+
+        if scheme == "grpcs" then
+            api_ctx.upstream_grpcs_cert = cert
+            api_ctx.upstream_grpcs_key = key
+        else
+            local ok, err = set_upstream_tls_client_param(cert, key)
+            if not ok then
+                return 503, err
+            end
+        end
+    end
+
+    return
+end
+
+
 function _M.set_by_route(route, api_ctx)
     -- Ahead of the traffic-split short circuit below so its inline upstream is
     -- covered too. A second handshake would send the client's ClientHello as payload.
@@ -339,7 +390,7 @@ function _M.set_by_route(route, api_ctx)
 
     if api_ctx.upstream_conf then
         -- upstream_conf has been set by traffic-split plugin
-        return
+        return set_http_upstream_tls(api_ctx, api_ctx.upstream_conf)
     end
 
     local up_conf = api_ctx.matched_upstream
@@ -447,51 +498,8 @@ function _M.set_by_route(route, api_ctx)
                                                                   node_ver )
     local checker = healthcheck_manager.fetch_checker(up_conf.resource_key, resource_version)
     api_ctx.up_checker = checker
-    local scheme = up_conf.scheme
-    if scheme == "https" then
-        -- grpcs applies these in `set_grpcs_upstream_param` instead, after the
-        -- internal redirect that drops the settings made here
-        local ok, err = set_upstream_ssl_opts(up_conf)
-        if not ok then
-            return 503, err
-        end
-    end
 
-    local tls_has_cert = up_conf.tls and (up_conf.tls.client_cert or up_conf.tls.client_cert_id)
-    if (scheme == "https" or scheme == "grpcs") and tls_has_cert then
-        local client_cert, client_key
-        if up_conf.tls.client_cert_id then
-            client_cert = api_ctx.upstream_ssl.cert
-            client_key = api_ctx.upstream_ssl.key
-        else
-            client_cert = up_conf.tls.client_cert
-            client_key = up_conf.tls.client_key
-        end
-
-        -- the sni here is just for logging
-        local sni = api_ctx.var.upstream_host
-        local cert, err = apisix_ssl.fetch_cert(sni, client_cert)
-        if not cert then
-            return 503, err
-        end
-
-        local key, err = apisix_ssl.fetch_pkey(sni, client_key)
-        if not key then
-            return 503, err
-        end
-
-        if scheme == "grpcs" then
-            api_ctx.upstream_grpcs_cert = cert
-            api_ctx.upstream_grpcs_key = key
-        else
-            local ok, err = set_upstream_tls_client_param(cert, key)
-            if not ok then
-                return 503, err
-            end
-        end
-    end
-
-    return
+    return set_http_upstream_tls(api_ctx, up_conf)
 end
 
 
@@ -559,11 +567,68 @@ local function get_chash_key_schema(hash_on)
 end
 
 
+-- Constraints of `warm_up_conf` within one upstream that JSON schema cannot
+-- express. A ramp needs a single roundrobin tier to work in, so a combination it
+-- could never act on is rejected at the Admin API rather than accepted and
+-- ignored. Where the upstream is used is a different question: like every other
+-- field that only applies to HTTP, `warm_up_conf` is simply ignored on the
+-- stream path.
+--
+-- This runs on the configuration entry points only, never on the data plane
+-- checker: a configuration that reaches a running gateway some other way - it is
+-- written to etcd or to a standalone config file directly, or it is embedded in a
+-- route or a service, neither of which runs this - must not take the whole
+-- upstream out of service over a field
+-- that only accelerates a ramp. `slow_start.usable()` logs and keeps proxying
+-- with the configured weights there.
+local function check_warm_up_conf(conf)
+    local warm_up_conf = conf.warm_up_conf
+    if not warm_up_conf then
+        return true
+    end
+
+    if (conf.type or "roundrobin") ~= "roundrobin" then
+        return false, "warm_up_conf is only supported by the roundrobin upstream type"
+    end
+
+    local interval = warm_up_conf.interval or 1
+    if interval > warm_up_conf.slow_start_time_seconds then
+        return false, "warm_up_conf.interval can't be greater than " ..
+                      "warm_up_conf.slow_start_time_seconds"
+    end
+
+    -- APISIX drains the highest priority tier before it uses the next one, so a
+    -- weight ramp inside one tier can't hold traffic back from a new node in a
+    -- tier above the mature ones
+    local nodes = conf.nodes
+    if nodes and core.table.isarray(nodes) then
+        local priority
+        for i, node in ipairs(nodes) do
+            local node_priority = node.priority or 0
+            if i == 1 then
+                priority = node_priority
+            elseif node_priority ~= priority then
+                return false, "warm_up_conf doesn't support an upstream with " ..
+                              "nodes of different priorities"
+            end
+        end
+    end
+
+    return true
+end
+_M.check_warm_up_conf = check_warm_up_conf
+
+
 local function check_upstream_conf(in_dp, conf)
     if not in_dp then
         local ok, err = check_schema(conf)
         if not ok then
             return false, "invalid configuration: " .. err
+        end
+
+        local ok, err = check_warm_up_conf(conf)
+        if not ok then
+            return false, err
         end
 
         if conf.nodes and not core.table.isarray(conf.nodes) then
@@ -608,11 +673,28 @@ local function check_upstream_conf(in_dp, conf)
         end
     end
 
+    -- a discovery module may check discovery_args against its own configuration
+    local dis = conf.discovery_type and discovery and discovery[conf.discovery_type]
+    if dis and dis.check_discovery_args then
+        local ok, err = dis.check_discovery_args(conf.discovery_args, conf.service_name, in_dp)
+        if not ok then
+            return false, err
+        end
+    end
+
     if is_http then
         if conf.pass_host == "rewrite" and
             (conf.upstream_host == nil or conf.upstream_host == "")
         then
             return false, "`upstream_host` can't be empty when `pass_host` is `rewrite`"
+        end
+
+        -- the ws/wss client connects through a plain cosocket, which can only
+        -- trust the global lua_ssl_trusted_certificate, not a per-upstream store
+        if (conf.scheme == "ws" or conf.scheme == "wss")
+            and conf.tls and conf.tls.ca_certs
+        then
+            return false, "`tls.ca_certs` is not supported by the `ws`/`wss` scheme"
         end
     end
 

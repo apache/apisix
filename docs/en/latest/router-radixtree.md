@@ -23,7 +23,7 @@ Title: Router Radixtree
 
 ### What is Libradixtree?
 
-[Libradixtree](https://github.com/api7/lua-resty-radixtree) is an adaptive radix tree that is implemented in Lua for OpenResty and it is based on FFI for [rax](https://github.com/antirez/rax). APISIX uses libradixtree as a route dispatching library.
+Libradixtree is an adaptive radix tree implemented in Lua for OpenResty and based on FFI for [rax](https://github.com/antirez/rax). APISIX uses libradixtree as a route dispatching library.
 
 ### How to use Libradixtree in APISIX?
 
@@ -194,7 +194,7 @@ route like
 
 will match both `/blog/dog` and `/blog/cat`.
 
-For more details, see https://github.com/api7/lua-resty-radixtree/#parameters-in-path.
+Named parameters match one path segment. A trailing wildcard parameter matches the remaining path segments.
 
 By default, an URL-encoded slash (`%2F`) inside a parameter is decoded by Nginx
 into a real `/` before route matching, so a request like `/blog/cat%2Fdog` is
@@ -240,16 +240,39 @@ when either actually rewrites the URI (a stripped trailing slash, a servlet-styl
 matching without keeping `%2F`. The fallback is safe; the encoded-slash match
 simply does not apply to such requests.
 
+#### 6. Path forwarded to the upstream
+
+Routes are matched on the normalized `$uri`: Nginx percent-decodes the path,
+resolves dot segments (including encoded ones such as `..%2F` and `%2e%2e`),
+cuts the path at `#` and merges consecutive slashes. When the request path
+differs from `$uri` only by percent-encoding or consecutive slashes, APISIX
+forwards the original request line to the upstream. Otherwise it forwards the
+matched path, escaped by Nginx, with the current query string. For example, a
+request to `/admin/..%2Fapi/x` matches a route for `/api/*` and the upstream
+receives `/api/x`.
+
+In that case encoded delimiters arrive decoded: `/api/./a%2Fb%3Bc` reaches the
+upstream as `/api/a/b;c`, while `/api/a%2Fb` is forwarded as is.
+
+Changes that plugins make to the path or the query string after matching still
+apply, and plugins that set the upstream URI, such as `proxy-rewrite`, still
+take precedence.
+
+This section does not apply when `normalize_uri_like_servlet` is enabled, which
+sets the upstream path itself.
+
 ### How to filter route by Nginx built-in variable?
 
-Nginx provides a variety of built-in variables that can be used to filter routes based on certain criteria. Here is an example of how to filter routes by Nginx built-in variables:
+The Route `vars` field accepts APISIX expressions. Each basic condition uses the form `[variable, operator, value]`. Conditions in the outer array are combined with AND by default. Supported operators include equality and inequality comparisons, numeric comparisons, regular-expression matching, membership checks, array containment checks, and IP address matching.
+
+Nginx provides built-in variables that can be used in these expressions. The following example filters a route by request variables:
 
 ```shell
 $ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -i -d '
 {
     "uri": "/index.html",
     "vars": [
-        ["http_host", "==", "iresty.com"],
+        ["http_host", "==", "example.com"],
         ["cookie_device_id", "==", "a66f0cdc4ba2df8c096f74c9110163a9"],
         ["arg_name", "==", "json"],
         ["arg_age", ">", "18"],
@@ -264,7 +287,7 @@ $ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X
 }'
 ```
 
-This route will require the request header `host` equal `iresty.com`, request cookie key `_device_id` equal `a66f0cdc4ba2df8c096f74c9110163a9` etc. You can learn more at [radixtree-new](https://github.com/api7/lua-resty-radixtree#new).
+This route requires the request host to equal `example.com`, the `_device_id` cookie to equal `a66f0cdc4ba2df8c096f74c9110163a9`, and the remaining expressions to match.
 
 ### How to filter route by POST form attributes?
 
