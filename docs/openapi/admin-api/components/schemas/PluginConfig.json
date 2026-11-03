@@ -1,0 +1,34 @@
+{
+  "required": [
+    "plugins"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "update_time": {
+      "type": "integer",
+      "readOnly": true
+    },
+    "plugins": {
+      "type": "object"
+    },
+    "create_time": {
+      "type": "integer",
+      "readOnly": true
+    },
+    "labels": {
+      "$ref": "./Labels.json"
+    },
+    "id": {
+      "$ref": "./ResourceId.json"
+    },
+    "desc": {
+      "maxLength": 256,
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    }
+  },
+  "type": "object",
+  "x-source": "apisix/schema_def.lua"
+}

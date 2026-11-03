@@ -1,0 +1,21 @@
+{
+  "properties": {
+    "unhealthy": {
+      "$ref": "./HealthCheckPassiveUnhealthy.json"
+    },
+    "healthy": {
+      "$ref": "./HealthCheckPassiveHealthy.json"
+    },
+    "type": {
+      "default": "http",
+      "enum": [
+        "http",
+        "https",
+        "tcp"
+      ],
+      "type": "string"
+    }
+  },
+  "type": "object",
+  "x-source": "apisix/schema_def.lua"
+}

@@ -1,0 +1,193 @@
+{
+  "get": {
+    "summary": "List All Consumer Groups",
+    "description": "Retrieve all configured consumer groups.",
+    "tags": [
+      "Consumer Groups"
+    ],
+    "parameters": [
+      {
+        "$ref": "../components/parameters/NameFilter.json"
+      },
+      {
+        "$ref": "../components/parameters/LabelFilter.json"
+      },
+      {
+        "$ref": "../components/parameters/Page.json"
+      },
+      {
+        "$ref": "../components/parameters/PageSize.json"
+      }
+    ],
+    "responses": {
+      "200": {
+        "description": "Successful response.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "../components/schemas/ConsumerGroupListEnvelope.json"
+            },
+            "examples": {
+              "1": {
+                "summary": "Successful Example",
+                "value": {
+                  "list": [
+                    {
+                      "value": {
+                        "plugins": {
+                          "limit-count": {
+                            "allow_degradation": false,
+                            "count": 2,
+                            "group": "consumer_group_name",
+                            "time_window": 60,
+                            "show_limit_quota_header": true,
+                            "key": "remote_addr",
+                            "rejected_code": 503,
+                            "key_type": "var",
+                            "policy": "local"
+                          }
+                        },
+                        "desc": "desc",
+                        "id": "company_a",
+                        "create_time": 1684377809,
+                        "update_time": 1684378459
+                      },
+                      "key": "/apisix/consumer_groups/company_a",
+                      "modifiedIndex": 144,
+                      "createdIndex": 143
+                    }
+                  ],
+                  "total": 1
+                }
+              }
+            }
+          }
+        }
+      },
+      "401": {
+        "$ref": "../components/responses/Unauthorized.json"
+      },
+      "503": {
+        "$ref": "../components/responses/BadRequest.json",
+        "description": "Storage access or write failed."
+      }
+    },
+    "operationId": "listConsumerGroups"
+  },
+  "put": {
+    "summary": "Create or replace consumer_groups using a body ID",
+    "description": "Equivalent to PUT on the item URL, with id required in the request body. The resource handler injects and validates this ID before persistence.",
+    "tags": [
+      "Consumer Groups"
+    ],
+    "parameters": [
+      {
+        "$ref": "../components/parameters/Ttl.json"
+      }
+    ],
+    "requestBody": {
+      "description": "`ConsumerGroup` configuration body for create / replace / patch.",
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": {
+            "allOf": [
+              {
+                "allOf": [
+                  {
+                    "$ref": "../components/schemas/ConsumerGroup.json"
+                  },
+                  {
+                    "not": {
+                      "anyOf": [
+                        {
+                          "required": [
+                            "create_time"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "update_time"
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                ],
+                "description": "Wire request body. APISIX injects timestamps and, where appropriate, the path or generated resource ID. A supplied ID must agree with the path."
+              },
+              {
+                "required": [
+                  "id"
+                ]
+              }
+            ]
+          },
+          "example": {
+            "plugins": {
+              "limit-count": {
+                "count": 200,
+                "time_window": 60,
+                "rejected_code": 429,
+                "key_type": "var",
+                "key": "consumer_name"
+              }
+            },
+            "id": "1"
+          }
+        }
+      }
+    },
+    "responses": {
+      "201": {
+        "description": "Created",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "../components/schemas/ConsumerGroupEnvelope.json"
+            },
+            "examples": {
+              "1": {
+                "summary": "Successful Example",
+                "value": {
+                  "key": "/apisix/consumer_groups/company_a",
+                  "value": {
+                    "plugins": {
+                      "limit-count": {
+                        "allow_degradation": false,
+                        "count": 2,
+                        "group": "company_a",
+                        "time_window": 60,
+                        "key": "remote_addr",
+                        "key_type": "var",
+                        "show_limit_quota_header": true,
+                        "rejected_code": 503,
+                        "policy": "local"
+                      }
+                    },
+                    "desc": "desc",
+                    "id": "company_a",
+                    "create_time": 1684377809,
+                    "update_time": 1684378459
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "400": {
+        "$ref": "../components/responses/BadRequest.json",
+        "description": "Invalid configuration"
+      },
+      "401": {
+        "$ref": "../components/responses/Unauthorized.json"
+      },
+      "503": {
+        "$ref": "../components/responses/BadRequest.json",
+        "description": "Storage access or write failed."
+      }
+    },
+    "operationId": "putConsumerGroupWithBodyId"
+  }
+}

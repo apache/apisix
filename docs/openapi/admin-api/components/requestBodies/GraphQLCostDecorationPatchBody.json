@@ -1,0 +1,27 @@
+{
+  "description": "Fields to merge into an existing GraphQL cost decoration. The owning service cannot be changed. The merged resource must pass validation.",
+  "required": true,
+  "content": {
+    "application/json": {
+      "schema": {
+        "$ref": "../schemas/GraphQLCostDecorationPatch.json"
+      },
+      "examples": {
+        "changeMultiplier": {
+          "summary": "Change the descendant cost multiplier",
+          "value": {
+            "mul_value": 2
+          }
+        },
+        "usePaginationArgument": {
+          "summary": "Multiply descendant cost by a pagination argument",
+          "value": {
+            "mul_arguments": [
+              "first"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

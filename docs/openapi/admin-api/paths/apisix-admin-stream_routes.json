@@ -1,0 +1,252 @@
+{
+  "get": {
+    "summary": "List All Stream Routes",
+    "description": "Retrieve all configured stream (L4) routes.\n\n**Prerequisite:** Stream mode must be enabled in `config.yaml`.",
+    "tags": [
+      "Stream Routes"
+    ],
+    "parameters": [
+      {
+        "$ref": "../components/parameters/NameFilter.json"
+      },
+      {
+        "$ref": "../components/parameters/LabelFilter.json"
+      },
+      {
+        "$ref": "../components/parameters/FilterExpr.json"
+      },
+      {
+        "$ref": "../components/parameters/Page.json"
+      },
+      {
+        "$ref": "../components/parameters/PageSize.json"
+      }
+    ],
+    "responses": {
+      "200": {
+        "description": "Successful response.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "../components/schemas/StreamRouteListEnvelope.json"
+            },
+            "examples": {
+              "1": {
+                "summary": "Successful Example",
+                "value": {
+                  "total": 1,
+                  "list": [
+                    {
+                      "createdIndex": 173,
+                      "key": "/apisix/stream_routes/1",
+                      "value": {
+                        "id": "1",
+                        "create_time": 1684392990,
+                        "server_addr": "127.0.0.1",
+                        "upstream": {
+                          "hash_on": "vars",
+                          "pass_host": "pass",
+                          "nodes": {
+                            "127.0.0.1:1995": 1
+                          },
+                          "type": "roundrobin",
+                          "scheme": "http"
+                        },
+                        "update_time": 1684392990,
+                        "server_port": 2000
+                      },
+                      "modifiedIndex": 173
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "401": {
+        "$ref": "../components/responses/Unauthorized.json"
+      },
+      "503": {
+        "$ref": "../components/responses/BadRequest.json",
+        "description": "Storage access or write failed."
+      }
+    },
+    "operationId": "listStreamRoutes"
+  },
+  "post": {
+    "summary": "Create a Stream Route",
+    "description": "Create a new stream route with an auto-generated ID.",
+    "tags": [
+      "Stream Routes"
+    ],
+    "parameters": [
+      {
+        "$ref": "../components/parameters/Ttl.json"
+      }
+    ],
+    "requestBody": {
+      "$ref": "../components/requestBodies/StreamRouteUpsertPostCollection.json"
+    },
+    "responses": {
+      "201": {
+        "description": "Created",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "../components/schemas/StreamRouteEnvelope.json"
+            },
+            "examples": {
+              "1": {
+                "summary": "Successful Example",
+                "value": {
+                  "value": {
+                    "id": "00000000000000000176",
+                    "create_time": 1684393167,
+                    "server_addr": "127.0.0.1",
+                    "upstream": {
+                      "hash_on": "vars",
+                      "pass_host": "pass",
+                      "nodes": {
+                        "127.0.0.1:1995": 1
+                      },
+                      "type": "roundrobin",
+                      "scheme": "http"
+                    },
+                    "update_time": 1684393167,
+                    "server_port": 2000
+                  },
+                  "key": "/apisix/stream_routes/00000000000000000176"
+                }
+              }
+            }
+          }
+        }
+      },
+      "400": {
+        "$ref": "../components/responses/BadRequest.json",
+        "description": "Invalid configuration"
+      },
+      "401": {
+        "$ref": "../components/responses/Unauthorized.json"
+      },
+      "503": {
+        "$ref": "../components/responses/BadRequest.json",
+        "description": "Storage access or write failed."
+      }
+    },
+    "operationId": "createStreamRoute"
+  },
+  "put": {
+    "summary": "Create or replace stream_routes using a body ID",
+    "description": "Equivalent to PUT on the item URL, with id required in the request body. The resource handler injects and validates this ID before persistence.",
+    "tags": [
+      "Stream Routes"
+    ],
+    "parameters": [
+      {
+        "$ref": "../components/parameters/Ttl.json"
+      }
+    ],
+    "requestBody": {
+      "description": "`StreamRoute` configuration body for create / replace / patch.",
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": {
+            "allOf": [
+              {
+                "allOf": [
+                  {
+                    "$ref": "../components/schemas/StreamRoute.json"
+                  },
+                  {
+                    "not": {
+                      "anyOf": [
+                        {
+                          "required": [
+                            "create_time"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "update_time"
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                ],
+                "description": "Wire request body. APISIX injects timestamps and, where appropriate, the path or generated resource ID. A supplied ID must agree with the path."
+              },
+              {
+                "required": [
+                  "id"
+                ]
+              }
+            ]
+          },
+          "example": {
+            "server_addr": "127.0.0.1",
+            "server_port": 2000,
+            "upstream": {
+              "nodes": {
+                "127.0.0.1:1995": 1
+              },
+              "type": "roundrobin"
+            },
+            "id": "1"
+          }
+        }
+      }
+    },
+    "responses": {
+      "201": {
+        "description": "Created",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "../components/schemas/StreamRouteEnvelope.json"
+            },
+            "examples": {
+              "1": {
+                "summary": "Successful Example",
+                "value": {
+                  "value": {
+                    "id": "00000000000000000176",
+                    "create_time": 1684393167,
+                    "server_addr": "127.0.0.1",
+                    "upstream": {
+                      "hash_on": "vars",
+                      "pass_host": "pass",
+                      "nodes": {
+                        "127.0.0.1:1995": 1
+                      },
+                      "type": "roundrobin",
+                      "scheme": "http"
+                    },
+                    "update_time": 1684393167,
+                    "server_port": 2000
+                  },
+                  "key": "/apisix/stream_routes/00000000000000000176"
+                }
+              }
+            }
+          }
+        }
+      },
+      "400": {
+        "$ref": "../components/responses/BadRequest.json",
+        "description": "Invalid configuration"
+      },
+      "401": {
+        "$ref": "../components/responses/Unauthorized.json"
+      },
+      "503": {
+        "$ref": "../components/responses/BadRequest.json",
+        "description": "Storage access or write failed."
+      }
+    },
+    "operationId": "putStreamRouteWithBodyId"
+  }
+}

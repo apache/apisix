@@ -1,0 +1,121 @@
+{
+  "get": {
+    "tags": [
+      "Standalone"
+    ],
+    "operationId": "getStandaloneConfig",
+    "summary": "Get the standalone configuration",
+    "description": "Available in API-driven standalone mode, with the YAML configuration provider and Admin API enabled. Returns the accepted configuration snapshot and its version and digest metadata, not a worker synchronization report. See [API-Driven Standalone Mode Usage](/apisix/reference/api-standalone-usage).",
+    "responses": {
+      "200": {
+        "description": "Current standalone configuration.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object"
+            }
+          },
+          "application/yaml": {
+            "schema": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "401": {
+        "$ref": "../components/responses/Unauthorized.json"
+      },
+      "500": {
+        "$ref": "../components/responses/BadRequest.json",
+        "description": "Failed to retrieve or encode stored configuration."
+      }
+    },
+    "parameters": []
+  },
+  "put": {
+    "tags": [
+      "Standalone"
+    ],
+    "operationId": "putStandaloneConfig",
+    "summary": "Replace the standalone configuration",
+    "description": "Replace the complete API-driven standalone configuration. X-Digest is a required client-supplied identifier. A matching digest returns 204 without applying the body. Otherwise the snapshot is stored and broadcast asynchronously; 202 does not confirm synchronization of all workers. Omitted resource sections may remove existing resources unless the corresponding configuration version is retained.",
+    "requestBody": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": {
+            "type": "object"
+          }
+        },
+        "application/yaml": {
+          "schema": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "responses": {
+      "202": {
+        "description": "Configuration accepted; asynchronous worker update scheduled."
+      },
+      "204": {
+        "description": "Digest unchanged; no update."
+      },
+      "400": {
+        "$ref": "../components/responses/BadRequest.json"
+      },
+      "401": {
+        "$ref": "../components/responses/Unauthorized.json"
+      },
+      "500": {
+        "description": "Failed to store or broadcast the configuration.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "../components/schemas/ErrorResponse.json"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "parameters": [
+      {
+        "name": "X-Digest",
+        "in": "header",
+        "required": true,
+        "description": "Client-chosen identifier for this snapshot. Use a new value for changed content.",
+        "schema": {
+          "type": "string"
+        }
+      }
+    ]
+  },
+  "head": {
+    "tags": [
+      "Standalone"
+    ],
+    "operationId": "headStandaloneConfig",
+    "summary": "Probe standalone configuration availability",
+    "description": "Returns `200 OK` when the API-driven standalone configuration endpoint is reachable, including before any snapshot is loaded. When available, digest and last-modified metadata are returned in headers. This endpoint does not confirm worker synchronization.",
+    "responses": {
+      "200": {
+        "description": "Standalone configuration is reachable."
+      },
+      "401": {
+        "$ref": "../components/responses/Unauthorized.json"
+      },
+      "500": {
+        "$ref": "../components/responses/BadRequest.json",
+        "description": "Failed to retrieve or encode stored configuration."
+      }
+    },
+    "parameters": []
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "update_time": {
+      "type": "integer",
+      "readOnly": true
+    },
+    "create_time": {
+      "type": "integer",
+      "readOnly": true
+    },
+    "labels": {
+      "$ref": "./Labels.json"
+    },
+    "upstream": {
+      "$ref": "./Upstream.json"
+    },
+    "upstream_id": {
+      "$ref": "./ResourceId.json"
+    },
+    "plugins": {
+      "type": "object"
+    },
+    "name": {
+      "minLength": 1,
+      "maxLength": 256,
+      "type": "string"
+    },
+    "script": {
+      "minLength": 10,
+      "maxLength": 102400,
+      "type": "string"
+    },
+    "hosts": {
+      "items": {
+        "pattern": "^\\*$|^\\*?[0-9a-zA-Z-._\\[\\]:]+$",
+        "type": "string"
+      },
+      "minItems": 1,
+      "uniqueItems": true,
+      "type": "array"
+    },
+    "id": {
+      "$ref": "./ResourceId.json"
+    },
+    "desc": {
+      "maxLength": 256,
+      "type": "string"
+    },
+    "enable_websocket": {
+      "type": "boolean",
+      "description": "enable websocket for request"
+    },
+    "modifiedIndex": {
+      "type": "integer"
+    }
+  },
+  "type": "object",
+  "x-source": "apisix/schema_def.lua"
+}

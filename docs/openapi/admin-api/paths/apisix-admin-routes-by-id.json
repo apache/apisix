@@ -1,0 +1,551 @@
+{
+  "put": {
+    "summary": "Create or Replace a Route",
+    "description": "Create a new route with a specified ID, or fully replace an existing route.\n\n**Note:** This is a full replacement — all fields must be provided. Use `PATCH` for partial updates.",
+    "tags": [
+      "Routes"
+    ],
+    "parameters": [
+      {
+        "name": "id",
+        "in": "path",
+        "description": "Unique identifier of the resource. Can be a string (alphanumeric, `-`, `_`, `.`) or a positive integer.",
+        "required": true,
+        "example": "my-resource-1",
+        "schema": {
+          "type": "string"
+        }
+      },
+      {
+        "$ref": "../components/parameters/Ttl.json"
+      }
+    ],
+    "requestBody": {
+      "$ref": "../components/requestBodies/RouteUpsertPutId.json"
+    },
+    "responses": {
+      "201": {
+        "description": "Created",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "../components/schemas/RouteEnvelope.json"
+            },
+            "examples": {
+              "1": {
+                "summary": "Successful Example",
+                "value": {
+                  "value": {
+                    "remote_addrs": [
+                      "127.0.0.1"
+                    ],
+                    "desc": "desc",
+                    "name": "route-test",
+                    "priority": 0,
+                    "plugins": {
+                      "limit-count": {
+                        "show_limit_quota_header": true,
+                        "policy": "local",
+                        "count": 2,
+                        "key": "remote_addr",
+                        "rejected_code": 503,
+                        "time_window": 60,
+                        "key_type": "var",
+                        "allow_degradation": false
+                      }
+                    },
+                    "vars": [
+                      [
+                        "http_user",
+                        "==",
+                        "ios"
+                      ]
+                    ],
+                    "id": "1",
+                    "status": 1,
+                    "uri": "/ip",
+                    "timeout": {
+                      "connect": 3,
+                      "read": 3,
+                      "send": 3
+                    },
+                    "upstream": {
+                      "hash_on": "vars",
+                      "pass_host": "pass",
+                      "nodes": {
+                        "httpbin.org:80": 1
+                      },
+                      "type": "roundrobin",
+                      "scheme": "http"
+                    },
+                    "methods": [
+                      "GET",
+                      "POST"
+                    ],
+                    "hosts": [
+                      "a.com",
+                      "b.com"
+                    ]
+                  },
+                  "key": "/apisix/routes/1"
+                }
+              }
+            }
+          }
+        }
+      },
+      "400": {
+        "$ref": "../components/responses/BadRequest.json",
+        "description": "Invalid configuration"
+      },
+      "401": {
+        "$ref": "../components/responses/Unauthorized.json"
+      },
+      "503": {
+        "$ref": "../components/responses/BadRequest.json",
+        "description": "Storage access or write failed."
+      }
+    },
+    "operationId": "createRouteById",
+    "x-codeSamples": [
+      {
+        "lang": "cURL",
+        "label": "cURL",
+        "source": "curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \\\n  -H 'X-API-KEY: your-api-key' \\\n  -H 'Content-Type: application/json' \\\n  -X PUT -d '{\n    \"uri\": \"/api/v1/payments\",\n    \"methods\": [\"POST\"],\n    \"upstream\": {\n      \"type\": \"roundrobin\",\n      \"nodes\": {\"payments-service:8080\": 1}\n    }\n  }'"
+      }
+    ]
+  },
+  "get": {
+    "summary": "Get a Route",
+    "description": "Retrieve a single route by its ID.",
+    "tags": [
+      "Routes"
+    ],
+    "parameters": [
+      {
+        "name": "id",
+        "in": "path",
+        "description": "Unique identifier of the resource. Can be a string (alphanumeric, `-`, `_`, `.`) or a positive integer.",
+        "required": true,
+        "example": "my-resource-1",
+        "schema": {
+          "type": "string"
+        }
+      }
+    ],
+    "responses": {
+      "200": {
+        "description": "Successful response.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "../components/schemas/RouteEnvelope.json"
+            },
+            "examples": {
+              "1": {
+                "summary": "Successful Example",
+                "value": {
+                  "createdIndex": 203,
+                  "key": "/apisix/routes/1",
+                  "value": {
+                    "remote_addrs": [
+                      "127.0.0.1"
+                    ],
+                    "desc": "desc",
+                    "name": "route-test",
+                    "priority": 0,
+                    "vars": [
+                      [
+                        "http_user",
+                        "==",
+                        "ios"
+                      ]
+                    ],
+                    "update_time": 1684490006,
+                    "create_time": 1684490006,
+                    "id": "1",
+                    "plugins": {
+                      "limit-count": {
+                        "show_limit_quota_header": true,
+                        "policy": "local",
+                        "count": 2,
+                        "allow_degradation": false,
+                        "rejected_code": 503,
+                        "time_window": 60,
+                        "key_type": "var",
+                        "key": "remote_addr"
+                      }
+                    },
+                    "status": 1,
+                    "timeout": {
+                      "read": 3,
+                      "connect": 3,
+                      "send": 3
+                    },
+                    "uri": "/ip",
+                    "upstream": {
+                      "hash_on": "vars",
+                      "pass_host": "pass",
+                      "nodes": {
+                        "httpbin.org:80": 1
+                      },
+                      "type": "roundrobin",
+                      "scheme": "http"
+                    },
+                    "methods": [
+                      "GET",
+                      "POST"
+                    ],
+                    "hosts": [
+                      "a.com",
+                      "b.com"
+                    ]
+                  },
+                  "modifiedIndex": 203
+                }
+              }
+            }
+          }
+        }
+      },
+      "401": {
+        "$ref": "../components/responses/Unauthorized.json"
+      },
+      "404": {
+        "$ref": "../components/responses/NotFound.json",
+        "description": "Key not found"
+      },
+      "503": {
+        "$ref": "../components/responses/BadRequest.json",
+        "description": "Storage access or write failed."
+      }
+    },
+    "operationId": "getRoute",
+    "x-codeSamples": [
+      {
+        "lang": "cURL",
+        "label": "cURL",
+        "source": "curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \\\n  -H 'X-API-KEY: your-api-key'"
+      }
+    ]
+  },
+  "patch": {
+    "summary": "Update a Route (Partial)",
+    "description": "Partially update a route's configuration. Only the fields included in the request body are modified; all other fields remain unchanged.\n\n**Tip:** Use this to update a single field (e.g., change the upstream) without resending the entire route configuration.",
+    "tags": [
+      "Routes"
+    ],
+    "parameters": [
+      {
+        "name": "id",
+        "in": "path",
+        "description": "Unique identifier of the resource. Can be a string (alphanumeric, `-`, `_`, `.`) or a positive integer.",
+        "required": true,
+        "example": "my-resource-1",
+        "schema": {
+          "type": "string"
+        }
+      },
+      {
+        "$ref": "../components/parameters/Ttl.json"
+      }
+    ],
+    "requestBody": {
+      "$ref": "../components/requestBodies/RouteUpsertPatchId.json"
+    },
+    "responses": {
+      "200": {
+        "description": "Successful response.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "../components/schemas/RouteEnvelope.json"
+            },
+            "examples": {
+              "1": {
+                "summary": "Update Upstream Node To The Route",
+                "value": {
+                  "value": {
+                    "remote_addrs": [
+                      "127.0.0.1"
+                    ],
+                    "desc": "desc",
+                    "name": "route-test",
+                    "priority": 0,
+                    "vars": [
+                      [
+                        "http_user",
+                        "==",
+                        "ios"
+                      ]
+                    ],
+                    "update_time": 1684490363,
+                    "create_time": 1684490006,
+                    "id": "1",
+                    "plugins": {
+                      "limit-count": {
+                        "show_limit_quota_header": true,
+                        "policy": "local",
+                        "count": 2,
+                        "allow_degradation": false,
+                        "rejected_code": 503,
+                        "time_window": 60,
+                        "key_type": "var",
+                        "key": "remote_addr"
+                      }
+                    },
+                    "status": 1,
+                    "timeout": {
+                      "read": 3,
+                      "connect": 3,
+                      "send": 3
+                    },
+                    "uri": "/ip",
+                    "upstream": {
+                      "hash_on": "vars",
+                      "pass_host": "pass",
+                      "nodes": {
+                        "httpbin.org:80": 1,
+                        "127.0.0.1:1981": 1
+                      },
+                      "type": "roundrobin",
+                      "scheme": "http"
+                    },
+                    "methods": [
+                      "GET",
+                      "POST"
+                    ],
+                    "hosts": [
+                      "a.com",
+                      "b.com"
+                    ]
+                  },
+                  "key": "/apisix/routes/1"
+                }
+              },
+              "2": {
+                "summary": "Delete An Upstream Node For The Route",
+                "value": {
+                  "value": {
+                    "remote_addrs": [
+                      "127.0.0.1"
+                    ],
+                    "desc": "desc",
+                    "name": "route-test",
+                    "vars": [
+                      [
+                        "http_user",
+                        "==",
+                        "ios"
+                      ]
+                    ],
+                    "priority": 0,
+                    "update_time": 1684490476,
+                    "create_time": 1684490006,
+                    "plugins": {
+                      "limit-count": {
+                        "show_limit_quota_header": true,
+                        "policy": "local",
+                        "count": 2,
+                        "key": "remote_addr",
+                        "rejected_code": 503,
+                        "time_window": 60,
+                        "key_type": "var",
+                        "allow_degradation": false
+                      }
+                    },
+                    "id": "1",
+                    "status": 1,
+                    "uri": "/ip",
+                    "timeout": {
+                      "connect": 3,
+                      "read": 3,
+                      "send": 3
+                    },
+                    "upstream": {
+                      "hash_on": "vars",
+                      "pass_host": "pass",
+                      "nodes": {
+                        "httpbin.org:80": 1
+                      },
+                      "type": "roundrobin",
+                      "scheme": "http"
+                    },
+                    "methods": [
+                      "GET",
+                      "POST"
+                    ],
+                    "hosts": [
+                      "a.com",
+                      "b.com"
+                    ]
+                  },
+                  "key": "/apisix/routes/1"
+                }
+              },
+              "3": {
+                "summary": "Disable Route",
+                "value": {
+                  "value": {
+                    "remote_addrs": [
+                      "127.0.0.1"
+                    ],
+                    "vars": [
+                      [
+                        "http_user",
+                        "==",
+                        "ios"
+                      ]
+                    ],
+                    "name": "route-test",
+                    "desc": "desc",
+                    "priority": 0,
+                    "update_time": 1684490503,
+                    "create_time": 1684490006,
+                    "id": "1",
+                    "plugins": {
+                      "limit-count": {
+                        "show_limit_quota_header": true,
+                        "policy": "local",
+                        "count": 2,
+                        "allow_degradation": false,
+                        "rejected_code": 503,
+                        "time_window": 60,
+                        "key_type": "var",
+                        "key": "remote_addr"
+                      }
+                    },
+                    "status": 0,
+                    "timeout": {
+                      "read": 3,
+                      "connect": 3,
+                      "send": 3
+                    },
+                    "uri": "/ip",
+                    "upstream": {
+                      "hash_on": "vars",
+                      "pass_host": "pass",
+                      "nodes": {
+                        "httpbin.org:80": 1
+                      },
+                      "type": "roundrobin",
+                      "scheme": "http"
+                    },
+                    "methods": [
+                      "GET",
+                      "POST"
+                    ],
+                    "hosts": [
+                      "a.com",
+                      "b.com"
+                    ]
+                  },
+                  "key": "/apisix/routes/1"
+                }
+              }
+            }
+          }
+        }
+      },
+      "400": {
+        "$ref": "../components/responses/BadRequest.json",
+        "description": "Invalid configuration"
+      },
+      "401": {
+        "$ref": "../components/responses/Unauthorized.json"
+      },
+      "404": {
+        "$ref": "../components/responses/NotFound.json",
+        "description": "Key not found"
+      },
+      "503": {
+        "$ref": "../components/responses/BadRequest.json",
+        "description": "Storage access or write failed."
+      }
+    },
+    "operationId": "updateRoute"
+  },
+  "delete": {
+    "summary": "Delete a Route",
+    "description": "Delete a route by its ID. This action is irreversible.",
+    "tags": [
+      "Routes"
+    ],
+    "parameters": [
+      {
+        "name": "id",
+        "in": "path",
+        "description": "Unique identifier of the resource. Can be a string (alphanumeric, `-`, `_`, `.`) or a positive integer.",
+        "required": true,
+        "example": "my-resource-1",
+        "schema": {
+          "type": "string"
+        }
+      },
+      {
+        "name": "force",
+        "in": "query",
+        "description": "Delete resource by force even if the resource is in use.",
+        "required": false,
+        "example": "true",
+        "schema": {
+          "type": "string"
+        }
+      }
+    ],
+    "responses": {
+      "200": {
+        "description": "Successful response.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "key": {
+                  "description": "Unique key identifier for this route in the data store.",
+                  "type": "string"
+                },
+                "deleted": {
+                  "description": "Number of deleted keys, serialized as a string for compatibility.",
+                  "type": "string"
+                }
+              }
+            },
+            "examples": {
+              "1": {
+                "summary": "Successful Example",
+                "value": {
+                  "deleted": "1",
+                  "key": "/apisix/routes/1"
+                }
+              }
+            }
+          }
+        }
+      },
+      "400": {
+        "$ref": "../components/responses/BadRequest.json",
+        "description": "Missing identifier or resource is still referenced (where dependency checks apply)."
+      },
+      "401": {
+        "$ref": "../components/responses/Unauthorized.json"
+      },
+      "404": {
+        "$ref": "../components/responses/NotFound.json",
+        "description": "Key not found"
+      },
+      "503": {
+        "$ref": "../components/responses/BadRequest.json",
+        "description": "Storage access or write failed."
+      }
+    },
+    "operationId": "deleteRoute",
+    "x-codeSamples": [
+      {
+        "lang": "cURL",
+        "label": "cURL",
+        "source": "curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \\\n  -H 'X-API-KEY: your-api-key' -X DELETE"
+      }
+    ]
+  }
+}

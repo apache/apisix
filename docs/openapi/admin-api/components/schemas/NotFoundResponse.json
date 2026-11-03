@@ -1,0 +1,19 @@
+{
+  "description": "Etcd missing keys return message; handler and plugin failures return error_msg.",
+  "anyOf": [
+    {
+      "type": "object",
+      "required": [
+        "message"
+      ],
+      "properties": {
+        "message": {
+          "type": "string"
+        }
+      }
+    },
+    {
+      "$ref": "./ErrorResponse.json"
+    }
+  ]
+}

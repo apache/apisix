@@ -1,0 +1,33 @@
+{
+  "description": "**Unauthorized** — The API key is missing, invalid, or lacks permission.",
+  "content": {
+    "application/json": {
+      "schema": {
+        "$ref": "../schemas/AuthErrorResponse.json"
+      },
+      "examples": {
+        "missing_key": {
+          "summary": "No API key provided",
+          "value": {
+            "error_msg": "failed to check token",
+            "description": "missing apikey"
+          }
+        },
+        "wrong_key": {
+          "summary": "Invalid API key",
+          "value": {
+            "error_msg": "failed to check token",
+            "description": "wrong apikey"
+          }
+        },
+        "viewer_role": {
+          "summary": "Viewer role attempting write operation",
+          "value": {
+            "error_msg": "failed to check token",
+            "description": "invalid method for role viewer"
+          }
+        }
+      }
+    }
+  }
+}

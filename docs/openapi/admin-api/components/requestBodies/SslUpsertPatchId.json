@@ -1,0 +1,28 @@
+{
+  "description": "Fields to merge into the existing `SSL`. Object fields are merged recursively; arrays are replaced.",
+  "required": true,
+  "content": {
+    "application/json": {
+      "schema": {
+        "$ref": "../schemas/SSLPatch.json"
+      },
+      "examples": {
+        "updateSnis": {
+          "summary": "Replace the SNI hostnames",
+          "value": {
+            "snis": [
+              "api.example.com",
+              "admin.example.com"
+            ]
+          }
+        },
+        "disableCertificate": {
+          "summary": "Disable the certificate",
+          "value": {
+            "status": 0
+          }
+        }
+      }
+    }
+  }
+}

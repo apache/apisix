@@ -1,0 +1,19 @@
+{
+  "type": "object",
+  "description": "Paginated list of `Proto` envelopes.",
+  "properties": {
+    "total": {
+      "type": "integer"
+    },
+    "list": {
+      "type": "array",
+      "items": {
+        "$ref": "./ProtoEnvelope.json"
+      }
+    }
+  },
+  "required": [
+    "total",
+    "list"
+  ]
+}

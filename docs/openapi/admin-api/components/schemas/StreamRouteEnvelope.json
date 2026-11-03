@@ -1,0 +1,22 @@
+{
+  "type": "object",
+  "description": "`StreamRoute` wrapped in the etcd-style envelope.",
+  "properties": {
+    "key": {
+      "type": "string"
+    },
+    "value": {
+      "$ref": "./StreamRoute.json"
+    },
+    "createdIndex": {
+      "type": "integer"
+    },
+    "modifiedIndex": {
+      "type": "integer"
+    }
+  },
+  "required": [
+    "key",
+    "value"
+  ]
+}

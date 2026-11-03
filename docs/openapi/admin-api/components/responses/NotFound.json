@@ -1,0 +1,13 @@
+{
+  "description": "**Not Found** — The specified resource does not exist.",
+  "content": {
+    "application/json": {
+      "schema": {
+        "$ref": "../schemas/NotFoundResponse.json"
+      },
+      "example": {
+        "error_msg": "Key not found"
+      }
+    }
+  }
+}

@@ -1,0 +1,61 @@
+{
+  "get": {
+    "summary": "List Plugin Names",
+    "description": "Returns successfully loaded configured plugins in the selected subsystem, sorted by descending priority. The installed plugin inventory is deployment-dependent.",
+    "tags": [
+      "Plugins"
+    ],
+    "parameters": [
+      {
+        "$ref": "../components/parameters/Subsystem.json"
+      }
+    ],
+    "responses": {
+      "200": {
+        "description": "Successful response.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "array",
+              "description": "An array of plugin names.",
+              "items": {
+                "type": "string"
+              }
+            },
+            "examples": {
+              "configuredSubset": {
+                "summary": "An instance configured with key-auth, proxy-rewrite and limit-count, sorted by priority",
+                "value": [
+                  "key-auth",
+                  "proxy-rewrite",
+                  "limit-count"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "400": {
+        "description": "Unsupported subsystem or missing schema. /plugins/list returns a JSON string; other plugin endpoints return an error object.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "$ref": "../components/schemas/ErrorResponse.json"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "401": {
+        "$ref": "../components/responses/Unauthorized.json"
+      }
+    },
+    "operationId": "listPluginNames"
+  }
+}

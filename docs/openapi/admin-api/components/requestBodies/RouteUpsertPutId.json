@@ -1,0 +1,61 @@
+{
+  "description": "`Route` configuration body for create / replace / patch.",
+  "required": true,
+  "content": {
+    "application/json": {
+      "schema": {
+        "allOf": [
+          {
+            "$ref": "../schemas/Route.json"
+          },
+          {
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "create_time"
+                  ]
+                },
+                {
+                  "required": [
+                    "update_time"
+                  ]
+                }
+              ]
+            }
+          }
+        ],
+        "description": "Wire request body. APISIX injects timestamps and, where appropriate, the path or generated resource ID. A supplied ID must agree with the path."
+      },
+      "example": {
+        "name": "payments-route",
+        "desc": "Route for payment processing API",
+        "uri": "/api/v1/payments",
+        "methods": [
+          "POST"
+        ],
+        "plugins": {
+          "key-auth": {},
+          "limit-count": {
+            "count": 10,
+            "time_window": 60,
+            "rejected_code": 429,
+            "key_type": "var",
+            "key": "consumer_name"
+          }
+        },
+        "upstream": {
+          "type": "roundrobin",
+          "nodes": {
+            "payments-service:8080": 1
+          }
+        },
+        "timeout": {
+          "connect": 10,
+          "send": 10,
+          "read": 30
+        }
+      }
+    }
+  }
+}

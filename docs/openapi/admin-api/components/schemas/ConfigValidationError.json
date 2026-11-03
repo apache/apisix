@@ -1,0 +1,32 @@
+{
+  "type": "object",
+  "required": [
+    "error"
+  ],
+  "properties": {
+    "resource_type": {
+      "type": "string",
+      "description": "Top-level resource section that failed validation."
+    },
+    "resource_id": {
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "integer"
+        }
+      ],
+      "description": "Resource ID or consumer username, when one is available. An empty string indicates that the invalid item has no ID."
+    },
+    "index": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Zero-based index of the invalid resource."
+    },
+    "error": {
+      "type": "string",
+      "description": "Validation error for this resource or section."
+    }
+  }
+}

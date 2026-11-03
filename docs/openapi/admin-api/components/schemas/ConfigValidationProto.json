@@ -1,0 +1,41 @@
+{
+  "required": [
+    "content"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "update_time": {
+      "type": "integer",
+      "readOnly": true
+    },
+    "content": {
+      "minLength": 1,
+      "maxLength": 1048576,
+      "type": "string"
+    },
+    "create_time": {
+      "type": "integer",
+      "readOnly": true
+    },
+    "labels": {
+      "$ref": "./Labels.json"
+    },
+    "id": {
+      "$ref": "./ResourceId.json"
+    },
+    "desc": {
+      "maxLength": 256,
+      "type": "string"
+    },
+    "name": {
+      "minLength": 1,
+      "maxLength": 256,
+      "type": "string"
+    },
+    "modifiedIndex": {
+      "type": "integer"
+    }
+  },
+  "type": "object",
+  "x-source": "apisix/schema_def.lua"
+}

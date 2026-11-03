@@ -1,0 +1,300 @@
+{
+  "put": {
+    "summary": "Create or Replace a Global Rule",
+    "description": "Create a new global rule with a specified ID, or fully replace an existing one.",
+    "tags": [
+      "Global Rules"
+    ],
+    "parameters": [
+      {
+        "name": "id",
+        "in": "path",
+        "description": "Unique identifier of the resource. Can be a string (alphanumeric, `-`, `_`, `.`) or a positive integer.",
+        "required": true,
+        "example": "my-resource-1",
+        "schema": {
+          "type": "string"
+        }
+      },
+      {
+        "$ref": "../components/parameters/Ttl.json"
+      }
+    ],
+    "requestBody": {
+      "$ref": "../components/requestBodies/GlobalRuleUpsertPutId.json"
+    },
+    "responses": {
+      "201": {
+        "description": "Created",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "../components/schemas/GlobalRuleEnvelope.json"
+            },
+            "examples": {
+              "1": {
+                "summary": "Successful Example",
+                "value": {
+                  "key": "/apisix/global_rules/1",
+                  "value": {
+                    "plugins": {
+                      "limit-count": {
+                        "time_window": 60,
+                        "rejected_code": 503,
+                        "key": "remote_addr",
+                        "key_type": "var",
+                        "count": 2,
+                        "show_limit_quota_header": true,
+                        "allow_degradation": false,
+                        "policy": "local"
+                      }
+                    },
+                    "id": "1",
+                    "create_time": 1684375502,
+                    "update_time": 1684375502
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "400": {
+        "$ref": "../components/responses/BadRequest.json",
+        "description": "Invalid configuration"
+      },
+      "401": {
+        "$ref": "../components/responses/Unauthorized.json"
+      },
+      "503": {
+        "$ref": "../components/responses/BadRequest.json",
+        "description": "Storage access or write failed."
+      }
+    },
+    "operationId": "createGlobalRuleById"
+  },
+  "get": {
+    "summary": "Get a Global Rule",
+    "description": "Retrieve a single global rule by its ID.",
+    "tags": [
+      "Global Rules"
+    ],
+    "parameters": [
+      {
+        "name": "id",
+        "in": "path",
+        "description": "Unique identifier of the resource. Can be a string (alphanumeric, `-`, `_`, `.`) or a positive integer.",
+        "required": true,
+        "example": "my-resource-1",
+        "schema": {
+          "type": "string"
+        }
+      }
+    ],
+    "responses": {
+      "200": {
+        "description": "Successful response.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "../components/schemas/GlobalRuleEnvelope.json"
+            },
+            "examples": {
+              "1": {
+                "summary": "Successful Example",
+                "value": {
+                  "value": {
+                    "plugins": {
+                      "limit-count": {
+                        "rejected_code": 503,
+                        "time_window": 60,
+                        "key": "remote_addr",
+                        "key_type": "var",
+                        "count": 2,
+                        "allow_degradation": false,
+                        "show_limit_quota_header": true,
+                        "policy": "local"
+                      }
+                    },
+                    "update_time": 1684375502,
+                    "create_time": 1684375502,
+                    "id": "1"
+                  },
+                  "key": "/apisix/global_rules/1",
+                  "modifiedIndex": 137,
+                  "createdIndex": 137
+                }
+              }
+            }
+          }
+        }
+      },
+      "401": {
+        "$ref": "../components/responses/Unauthorized.json"
+      },
+      "404": {
+        "$ref": "../components/responses/NotFound.json",
+        "description": "Key not found"
+      },
+      "503": {
+        "$ref": "../components/responses/BadRequest.json",
+        "description": "Storage access or write failed."
+      }
+    },
+    "operationId": "getGlobalRule"
+  },
+  "patch": {
+    "summary": "Update a Global Rule (Partial)",
+    "description": "Partially update a global rule's configuration.",
+    "tags": [
+      "Global Rules"
+    ],
+    "parameters": [
+      {
+        "name": "id",
+        "in": "path",
+        "description": "Unique identifier of the resource. Can be a string (alphanumeric, `-`, `_`, `.`) or a positive integer.",
+        "required": true,
+        "example": "my-resource-1",
+        "schema": {
+          "type": "string"
+        }
+      },
+      {
+        "$ref": "../components/parameters/Ttl.json"
+      }
+    ],
+    "requestBody": {
+      "$ref": "../components/requestBodies/GlobalRuleUpsertPatchId.json"
+    },
+    "responses": {
+      "200": {
+        "description": "Successful response.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "../components/schemas/GlobalRuleEnvelope.json"
+            },
+            "examples": {
+              "1": {
+                "summary": "Successful Example",
+                "value": {
+                  "key": "/apisix/global_rules/1",
+                  "value": {
+                    "plugins": {
+                      "limit-count": {
+                        "rejected_code": 503,
+                        "time_window": 60,
+                        "key": "remote_addr",
+                        "key_type": "var",
+                        "count": 3,
+                        "allow_degradation": false,
+                        "show_limit_quota_header": true,
+                        "policy": "local"
+                      }
+                    },
+                    "update_time": 1684376614,
+                    "create_time": 1684375502,
+                    "id": "1"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "400": {
+        "$ref": "../components/responses/BadRequest.json",
+        "description": "Invalid configuration"
+      },
+      "401": {
+        "$ref": "../components/responses/Unauthorized.json"
+      },
+      "404": {
+        "$ref": "../components/responses/NotFound.json",
+        "description": "Key not found"
+      },
+      "503": {
+        "$ref": "../components/responses/BadRequest.json",
+        "description": "Storage access or write failed."
+      }
+    },
+    "operationId": "updateGlobalRule"
+  },
+  "delete": {
+    "summary": "Delete a Global Rule",
+    "description": "Delete a global rule by its ID.",
+    "tags": [
+      "Global Rules"
+    ],
+    "parameters": [
+      {
+        "name": "id",
+        "in": "path",
+        "description": "Unique identifier of the resource. Can be a string (alphanumeric, `-`, `_`, `.`) or a positive integer.",
+        "required": true,
+        "example": "my-resource-1",
+        "schema": {
+          "type": "string"
+        }
+      },
+      {
+        "name": "force",
+        "in": "query",
+        "description": "Delete resource by force even if the resource is in use.",
+        "required": false,
+        "example": "true",
+        "schema": {
+          "type": "string"
+        }
+      }
+    ],
+    "responses": {
+      "200": {
+        "description": "Successful response.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "key": {
+                  "description": "The storage key or path identifier for the global rule.",
+                  "type": "string"
+                },
+                "deleted": {
+                  "description": "Number of deleted keys, serialized as a string for compatibility.",
+                  "type": "string"
+                }
+              }
+            },
+            "examples": {
+              "1": {
+                "summary": "Successful Example",
+                "value": {
+                  "key": "/apisix/global_rules/1",
+                  "deleted": "1"
+                }
+              }
+            }
+          }
+        }
+      },
+      "400": {
+        "$ref": "../components/responses/BadRequest.json",
+        "description": "Missing identifier or resource is still referenced (where dependency checks apply)."
+      },
+      "401": {
+        "$ref": "../components/responses/Unauthorized.json"
+      },
+      "404": {
+        "$ref": "../components/responses/NotFound.json",
+        "description": "Key not found"
+      },
+      "503": {
+        "$ref": "../components/responses/BadRequest.json",
+        "description": "Storage access or write failed."
+      }
+    },
+    "operationId": "deleteGlobalRule"
+  }
+}

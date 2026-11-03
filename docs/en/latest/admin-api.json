@@ -9,6 +9,41 @@
       "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
     }
   },
+  "servers": [
+    {
+      "url": "{protocol}://{host}:{port}",
+      "description": "APISIX Admin API Server",
+      "variables": {
+        "protocol": {
+          "default": "http",
+          "enum": [
+            "http",
+            "https"
+          ],
+          "description": "Protocol scheme. Use `https` when `deployment.admin.https_admin` is enabled and `deployment.admin.admin_api_mtls.admin_ssl_cert` and `admin_ssl_cert_key` are configured."
+        },
+        "host": {
+          "default": "127.0.0.1",
+          "description": "Admin API host address. Configure via `deployment.admin.admin_listen` in `config.yaml`."
+        },
+        "port": {
+          "default": "9180",
+          "description": "Admin API port. Default is `9180`."
+        }
+      }
+    }
+  ],
+  "security": [
+    {
+      "adminKey": []
+    },
+    {
+      "apiKeyQuery": []
+    },
+    {
+      "apiKeyCookie": []
+    }
+  ],
   "tags": [
     {
       "name": "Routes",
@@ -993,16 +1028,16 @@
               }
             }
           },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": "Missing identifier or resource is still referenced (where dependency checks apply)."
+          },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
           "404": {
             "$ref": "#/components/responses/NotFound",
             "description": "Key not found"
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequest",
-            "description": "Missing identifier or resource is still referenced (where dependency checks apply)."
           },
           "503": {
             "$ref": "#/components/responses/BadRequest",
@@ -1630,16 +1665,16 @@
               }
             }
           },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": "Missing identifier or resource is still referenced (where dependency checks apply)."
+          },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
           "404": {
             "$ref": "#/components/responses/NotFound",
             "description": "Key not found"
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequest",
-            "description": "Missing identifier or resource is still referenced (where dependency checks apply)."
           },
           "503": {
             "$ref": "#/components/responses/BadRequest",
@@ -1969,16 +2004,16 @@
               }
             }
           },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": "Missing identifier or resource is still referenced (where dependency checks apply)."
+          },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
           "404": {
             "$ref": "#/components/responses/NotFound",
             "description": "Key not found"
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequest",
-            "description": "Missing identifier or resource is still referenced (where dependency checks apply)."
           },
           "503": {
             "$ref": "#/components/responses/BadRequest",
@@ -2924,16 +2959,16 @@
               }
             }
           },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": "Missing identifier or resource is still referenced (where dependency checks apply)."
+          },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
           "404": {
             "$ref": "#/components/responses/NotFound",
             "description": "Key not found"
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequest",
-            "description": "Missing identifier or resource is still referenced (where dependency checks apply)."
           },
           "503": {
             "$ref": "#/components/responses/BadRequest",
@@ -3417,16 +3452,16 @@
               }
             }
           },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": "Missing identifier or resource is still referenced (where dependency checks apply)."
+          },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
           "404": {
             "$ref": "#/components/responses/NotFound",
             "description": "Key not found"
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequest",
-            "description": "Missing identifier or resource is still referenced (where dependency checks apply)."
           },
           "503": {
             "$ref": "#/components/responses/BadRequest",
@@ -3906,16 +3941,16 @@
               }
             }
           },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": "Missing identifier or resource is still referenced (where dependency checks apply)."
+          },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
           "404": {
             "$ref": "#/components/responses/NotFound",
             "description": "Key not found"
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequest",
-            "description": "Missing identifier or resource is still referenced (where dependency checks apply)."
           },
           "503": {
             "$ref": "#/components/responses/BadRequest",
@@ -4408,16 +4443,16 @@
               }
             }
           },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": "Missing identifier or resource is still referenced (where dependency checks apply)."
+          },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
           "404": {
             "$ref": "#/components/responses/NotFound",
             "description": "Key not found"
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequest",
-            "description": "Missing identifier or resource is still referenced (where dependency checks apply)."
           },
           "503": {
             "$ref": "#/components/responses/BadRequest",
@@ -4907,16 +4942,16 @@
               }
             }
           },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": "Missing identifier or resource is still referenced (where dependency checks apply)."
+          },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
           "404": {
             "$ref": "#/components/responses/NotFound",
             "description": "Key not found"
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequest",
-            "description": "Missing identifier or resource is still referenced (where dependency checks apply)."
           },
           "503": {
             "$ref": "#/components/responses/BadRequest",
@@ -5209,16 +5244,16 @@
               }
             }
           },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": "Missing identifier or resource is still referenced (where dependency checks apply)."
+          },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
           "404": {
             "$ref": "#/components/responses/NotFound",
             "description": "Key not found"
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequest",
-            "description": "Missing identifier or resource is still referenced (where dependency checks apply)."
           },
           "503": {
             "$ref": "#/components/responses/BadRequest",
@@ -5265,9 +5300,6 @@
               }
             }
           },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
-          },
           "400": {
             "description": "Unsupported subsystem or missing schema. /plugins/list returns a JSON string; other plugin endpoints return an error object.",
             "content": {
@@ -5284,6 +5316,9 @@
                 }
               }
             }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
           }
         },
         "operationId": "listPluginNames"
@@ -5344,13 +5379,6 @@
               }
             }
           },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFound",
-            "description": "Key not found"
-          },
           "400": {
             "description": "Unsupported subsystem or missing schema. /plugins/list returns a JSON string; other plugin endpoints return an error object.",
             "content": {
@@ -5367,6 +5395,13 @@
                 }
               }
             }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound",
+            "description": "Key not found"
           }
         },
         "operationId": "getPluginSchema"
@@ -6038,16 +6073,16 @@
               }
             }
           },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": "Missing identifier or resource is still referenced (where dependency checks apply)."
+          },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
           "404": {
             "$ref": "#/components/responses/NotFound",
             "description": "Key not found"
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequest",
-            "description": "Missing identifier or resource is still referenced (where dependency checks apply)."
           },
           "503": {
             "$ref": "#/components/responses/BadRequest",
@@ -6514,16 +6549,16 @@
               }
             }
           },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": "Missing identifier or resource is still referenced (where dependency checks apply)."
+          },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
           "404": {
             "$ref": "#/components/responses/NotFound",
             "description": "Key not found"
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequest",
-            "description": "Missing identifier or resource is still referenced (where dependency checks apply)."
           },
           "503": {
             "$ref": "#/components/responses/BadRequest",
@@ -6914,16 +6949,16 @@
               }
             }
           },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": "Missing identifier or resource is still referenced (where dependency checks apply)."
+          },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
           "404": {
             "$ref": "#/components/responses/NotFound",
             "description": "Key not found"
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequest",
-            "description": "Missing identifier or resource is still referenced (where dependency checks apply)."
           },
           "503": {
             "$ref": "#/components/responses/BadRequest",
@@ -7368,16 +7403,16 @@
               }
             }
           },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": "Missing identifier or resource is still referenced (where dependency checks apply)."
+          },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
           "404": {
             "$ref": "#/components/responses/NotFound",
             "description": "Key not found"
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequest",
-            "description": "Missing identifier or resource is still referenced (where dependency checks apply)."
           },
           "503": {
             "$ref": "#/components/responses/BadRequest",
@@ -7461,6 +7496,9 @@
           }
         },
         "responses": {
+          "202": {
+            "description": "Configuration accepted; asynchronous worker update scheduled."
+          },
           "204": {
             "description": "Digest unchanged; no update."
           },
@@ -7486,9 +7524,6 @@
                 }
               }
             }
-          },
-          "202": {
-            "description": "Configuration accepted; asynchronous worker update scheduled."
           }
         },
         "parameters": [
@@ -8634,30 +8669,6 @@
       }
     }
   },
-  "servers": [
-    {
-      "url": "{protocol}://{host}:{port}",
-      "description": "APISIX Admin API Server",
-      "variables": {
-        "protocol": {
-          "default": "http",
-          "enum": [
-            "http",
-            "https"
-          ],
-          "description": "Protocol scheme. Use `https` when `deployment.admin.https_admin` is enabled and `deployment.admin.admin_api_mtls.admin_ssl_cert` and `admin_ssl_cert_key` are configured."
-        },
-        "host": {
-          "default": "127.0.0.1",
-          "description": "Admin API host address. Configure via `deployment.admin.admin_listen` in `config.yaml`."
-        },
-        "port": {
-          "default": "9180",
-          "description": "Admin API port. Default is `9180`."
-        }
-      }
-    }
-  ],
   "components": {
     "securitySchemes": {
       "adminKey": {
@@ -20016,17 +20027,6 @@
       }
     }
   },
-  "security": [
-    {
-      "adminKey": []
-    },
-    {
-      "apiKeyQuery": []
-    },
-    {
-      "apiKeyCookie": []
-    }
-  ],
   "x-source-revision": "947d4b47d824657bba6508b1c0cb204a2ec01f82",
   "x-verification": {
     "source": "apache/apisix release/3.18",

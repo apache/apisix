@@ -1,0 +1,6 @@
+{
+  "type": "apiKey",
+  "in": "cookie",
+  "name": "x_api_key",
+  "description": "Admin API key passed in a cookie."
+}

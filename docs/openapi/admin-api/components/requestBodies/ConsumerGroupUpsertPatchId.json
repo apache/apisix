@@ -1,0 +1,31 @@
+{
+  "description": "Fields to merge into the existing `ConsumerGroup`. Object fields are merged recursively; arrays are replaced.",
+  "required": true,
+  "content": {
+    "application/json": {
+      "schema": {
+        "$ref": "../schemas/ConsumerGroupPatch.json"
+      },
+      "examples": {
+        "updateDescription": {
+          "summary": "Update the consumer group description",
+          "value": {
+            "desc": "Updated consumer group description"
+          }
+        },
+        "configurePlugin": {
+          "summary": "Configure a plugin",
+          "value": {
+            "plugins": {
+              "limit-count": {
+                "count": 100,
+                "time_window": 60,
+                "rejected_code": 429
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "description": "`Service` configuration body for create / replace / patch.",
+  "required": true,
+  "content": {
+    "application/json": {
+      "schema": {
+        "allOf": [
+          {
+            "$ref": "../schemas/Service.json"
+          },
+          {
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "create_time"
+                  ]
+                },
+                {
+                  "required": [
+                    "update_time"
+                  ]
+                },
+                {
+                  "required": [
+                    "id"
+                  ]
+                }
+              ]
+            }
+          }
+        ],
+        "description": "Wire request body. APISIX injects timestamps and, where appropriate, the path or generated resource ID. A supplied ID must agree with the path."
+      },
+      "example": {
+        "plugins": {},
+        "upstream": {
+          "type": "roundrobin",
+          "nodes": {
+            "127.0.0.1:1980": 1
+          }
+        },
+        "name": "service-test",
+        "desc": "hello world",
+        "enable_websocket": true,
+        "hosts": [
+          "foo.com"
+        ]
+      }
+    }
+  }
+}
