@@ -436,7 +436,6 @@ attempt to perform arithmetic
 
 
 
-
 === TEST 19: non-table csrf token (JSON null)
 --- request
 POST /hello
