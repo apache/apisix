@@ -397,7 +397,7 @@ do
                     n_resolved = n_resolved + 1
                     seg = tostring(v)
                     if escaper then
-                        seg = escaper(seg)
+                        seg = tostring(escaper(seg))
                     end
                 end
             end

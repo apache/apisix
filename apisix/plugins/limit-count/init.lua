@@ -568,8 +568,9 @@ local function run_rate_limit(conf, rule, ctx, name, cost, dry_run)
     elseif not conf.policy or conf.policy == "local" then
         -- count/time_window are resolved per request. A local limiter keeps its
         -- counters in the shared dict, so limiters with the same resolved values
-        -- can be shared by every request and route.
-        local key = str_format("%s#%d#%d#%s", name, rule.count, rule.time_window,
+        -- can be shared by every request and route. %d would saturate counts
+        -- beyond int64, so keep every significant digit.
+        local key = str_format("%s#%.17g#%.17g#%s", name, rule.count, rule.time_window,
                                conf.window_type or "")
         lim, err = local_limit_lru(key, nil, create_limit_obj, conf, rule, name)
     else

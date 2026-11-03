@@ -504,12 +504,17 @@ $f => false 1 nil
             local ctx = {sp = "x y", sl = "/"}
             local res, err, n = resolve_var("$sp-${sl}-${none??a b}", ctx, ngx.escape_uri)
             ngx.say(res, " ", n, " ", tostring(err))
+            res, err, n = resolve_var("$sp-$sl", ctx, function(v)
+                return v == "/" and 1 or nil
+            end)
+            ngx.say(res, " ", n, " ", tostring(err))
         }
     }
 --- request
 GET /t
 --- response_body
 x%20y-%2F-a%20b 3 nil
+nil-1 2 nil
 
 
 
