@@ -15,7 +15,7 @@
 -- limitations under the License.
 --
 local core         = require("apisix.core")
-local http         = require("resty.http")
+local fetch        = require("apisix.plugins.openapi-to-mcp.fetch")
 local json_pretty  = require("apisix.plugins.openapi-to-mcp.json_pretty")
 local pairs        = pairs
 local ipairs       = ipairs
@@ -34,6 +34,9 @@ local escape_uri   = ngx.escape_uri
 local _M = {}
 
 local DEFAULT_TIMEOUT = 30000
+
+-- How much of an upstream response is read before the call is failed.
+local DEFAULT_MAX_BODY = 1024 * 1024
 local NESTED_KEYS = { "pathParameters", "queryParameters", "headerParameters" }
 
 
@@ -71,7 +74,23 @@ end
 -- Whether the caller used the flat or the nested argument shape is decided by
 -- the arguments themselves, not by the plugin's flatten_parameters setting.
 -- A client that sends flat arguments to a nested tool therefore still works.
+local function container(arguments, key)
+    local value = arguments[key]
+    return type(value) == "table" and value or {}
+end
+
+
+-- Both shapes are filtered against what the operation declares. The generated
+-- input schema does not forbid extra properties, and an operation that declares
+-- no header parameter gets no headerParameters container to constrain either,
+-- so an argument the document never mentioned would otherwise reach the API --
+-- letting a caller add or replace request headers, the route's credentials
+-- among them.
 local function split_arguments(tool, arguments)
+    local path_names = path_param_names(tool.path_template)
+    local query_names = names_by_location(tool, "query")
+    local header_names = names_by_location(tool, "header")
+
     local nested = false
     for _, key in ipairs(NESTED_KEYS) do
         if arguments[key] ~= nil then
@@ -81,14 +100,14 @@ local function split_arguments(tool, arguments)
     end
 
     if nested then
-        return type(arguments.pathParameters) == "table" and arguments.pathParameters or {},
-               type(arguments.queryParameters) == "table" and arguments.queryParameters or {},
-               type(arguments.headerParameters) == "table" and arguments.headerParameters or {}
+        return pick(container(arguments, "pathParameters"), path_names),
+               pick(container(arguments, "queryParameters"), query_names),
+               pick(container(arguments, "headerParameters"), header_names)
     end
 
-    return pick(arguments, path_param_names(tool.path_template)),
-           pick(arguments, names_by_location(tool, "query")),
-           pick(arguments, names_by_location(tool, "header"))
+    return pick(arguments, path_names),
+           pick(arguments, query_names),
+           pick(arguments, header_names)
 end
 
 
@@ -283,13 +302,55 @@ local function text_result(payload, is_error)
 end
 
 
-local function has_header(headers, lower_name)
-    for key in pairs(headers) do
-        if str_lower(key) == lower_name then
-            return true
-        end
+-- Headers a tool call may not contribute, whatever the document declares.
+--
+-- The framing ones decide where this request ends and the next one begins.
+-- resty.http drops Content-Length as soon as a Transfer-Encoding says chunked
+-- and then writes the body exactly as given, unchunked: the caller would be
+-- writing the frame boundaries of a request the gateway is sending, and the
+-- connection goes back to the pool afterwards for the next tool call to reuse.
+-- A short Content-Length does the same thing by leaving the rest of the body
+-- to be read as another request.
+--
+-- The rest are hop-by-hop, or belong to the connection the gateway opened
+-- rather than to the call: Host picks the virtual host, Connection and Upgrade
+-- decide what happens to the connection itself.
+--
+-- This applies to the arguments of a call, not to the Route's own headers: an
+-- operator naming one of these means it.
+local FORBIDDEN_PARAM_HEADERS = {
+    ["transfer-encoding"] = true,
+    ["content-length"] = true,
+    ["connection"] = true,
+    ["keep-alive"] = true,
+    ["host"] = true,
+    ["upgrade"] = true,
+    ["expect"] = true,
+    ["te"] = true,
+    ["trailer"] = true,
+    ["proxy-authenticate"] = true,
+    ["proxy-authorization"] = true,
+}
+
+
+-- Writes a header under one spelling per name.
+--
+-- Header names are case-insensitive, and the client normalises them at the
+-- end, so "Authorization" and "authorization" are the same header there but
+-- two keys in a plain Lua table. Both would survive to the client, which
+-- resolves the collision in pairs() order -- the caller's copy would win
+-- whenever the hash order put it last, and the Route's credential would be the
+-- one replaced. Keeping one entry per lowercased name makes the later write
+-- the one that counts, which is what "the Route's headers win" requires.
+local function put_header(headers, seen, name, value)
+    local lower = str_lower(name)
+    local spelling = seen[lower]
+    if spelling then
+        headers[spelling] = value
+        return
     end
-    return false
+    seen[lower] = name
+    headers[name] = value
 end
 
 
@@ -302,12 +363,29 @@ function _M.call(tool, arguments, opts)
     local path = build_path(tool.path_template, path_params)
     local query = build_query(tool, query_params)
 
-    local headers = {}
-    for key, value in pairs(opts.headers or {}) do
-        headers[key] = value
-    end
+    -- Header parameters are written first so that the route's own headers win:
+    -- they carry the credentials the gateway adds, and a tool call must not be
+    -- able to replace them. Both sources are checked: a route header is a
+    -- template resolved against the request, so its value is not fixed either.
+    local headers, seen = {}, {}
     for key, value in pairs(header_params) do
-        headers[key] = tostring(value)
+        if FORBIDDEN_PARAM_HEADERS[str_lower(key)] then
+            core.log.warn("dropped the header parameter ", key,
+                          ": a tool call cannot set this header")
+        elseif fetch.header_is_sane(key, value) then
+            put_header(headers, seen, key, tostring(value))
+        else
+            core.log.warn("dropped a header parameter whose name or value ",
+                          "cannot appear in a request header")
+        end
+    end
+    for key, value in pairs(opts.headers or {}) do
+        if fetch.header_is_sane(key, value) then
+            put_header(headers, seen, key, value)
+        else
+            core.log.warn("dropped a configured header whose resolved name or ",
+                          "value cannot appear in a request header")
+        end
     end
 
     local body = arguments.requestBody
@@ -317,8 +395,9 @@ function _M.call(tool, arguments, opts)
         end
         -- Label the body with the media type the operation declares, unless the
         -- route's headers or a header parameter already set one.
-        if not has_header(headers, "content-type") then
-            headers["Content-Type"] = tool.request_body_content_type or "application/json"
+        if not seen["content-type"] then
+            put_header(headers, seen, "Content-Type",
+                       tool.request_body_content_type or "application/json")
         end
     end
 
@@ -331,22 +410,12 @@ function _M.call(tool, arguments, opts)
         url = url .. "?" .. query
     end
 
-    local httpc, client_err = http.new()
-    if not httpc then
-        return text_result({
-            status = 0,
-            statusText = "Network Error",
-            headers = {},
-            data = core.json.null,
-            error = { message = tostring(client_err), code = "NETWORK_ERROR" },
-        })
-    end
-    httpc:set_timeout(opts.timeout or DEFAULT_TIMEOUT)
-
-    local res, req_err = httpc:request_uri(url, {
+    local res, req_err = fetch.request(url, {
         method = str_gsub(str_lower(tool.method), "^%l", str_upper),
         headers = headers,
         body = body,
+        timeout = opts.timeout or DEFAULT_TIMEOUT,
+        max_body_size = (opts.conf and opts.conf.max_response_body_size) or DEFAULT_MAX_BODY,
     })
 
     if not res then
@@ -359,6 +428,21 @@ function _M.call(tool, arguments, opts)
             data = core.json.null,
             error = { message = tostring(req_err), code = "NETWORK_ERROR" },
         })
+    end
+
+    if res.truncated then
+        local limit = (opts.conf and opts.conf.max_response_body_size) or DEFAULT_MAX_BODY
+        core.log.warn("upstream response exceeded max_response_body_size (", limit, " bytes)")
+        return text_result({
+            status = res.status,
+            statusText = res.reason or "",
+            headers = lower_headers(res.headers),
+            data = core.json.null,
+            error = {
+                message = "response body exceeds max_response_body_size (" .. limit .. " bytes)",
+                code = "RESPONSE_TOO_LARGE",
+            },
+        }, true)
     end
 
     return text_result({

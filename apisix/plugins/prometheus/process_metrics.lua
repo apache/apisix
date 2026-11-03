@@ -35,11 +35,20 @@ local pairs         = pairs
 local select        = select
 
 
--- The prefix of struct ngx_cycle_s up to write_events. Its layout is the same
--- in every nginx core shipped by the supported runtimes (1.21.4 to 1.29.x);
--- the self check in check_cycle_layout() is what keeps a future change from
--- turning into a wrong number.
-ffi.cdef[[
+-- nginx 1.29.7 appends spare slots to ngx_log_t in --with-compat builds
+local log_spare = ""
+if ngx.config.nginx_version >= 1029007
+   and ngx.config.nginx_configure():find("--with-compat", 1, true)
+then
+    log_spare = "uint64_t spare[5];"
+end
+
+
+-- The prefix of struct ngx_cycle_s up to write_events, as laid out by the
+-- supported runtimes (nginx 1.21.4 to 1.31.x); the self check in
+-- check_cycle_layout() is what keeps a future change from turning into a
+-- wrong number.
+ffi.cdef([[
 typedef struct {
     uintptr_t       log_level;
     void           *file;
@@ -51,6 +60,7 @@ typedef struct {
     void           *wdata;
     char           *action;
     void           *next;
+    ]] .. log_spare .. [[
 } apisix_prom_ngx_log_t;
 
 typedef struct {
@@ -126,7 +136,7 @@ typedef struct {
 } apisix_prom_ngx_cycle_t;
 
 extern apisix_prom_ngx_cycle_t *ngx_cycle;
-]]
+]])
 
 
 -- nginx's own defaults for lua_max_running_timers / lua_max_pending_timers,
@@ -186,13 +196,7 @@ local function read_cycle()
     local cycle = C.ngx_cycle
     local connection_n = tonumber(cycle.connection_n)
     local free_n = tonumber(cycle.free_connection_n)
-
-    -- every connection slot is wired to its own pair of events at startup, so
-    -- this pins down the offsets right after connection_n as well
-    local conns = cycle.connections
-    if connection_n == 0 or free_n > connection_n or conns == nil
-       or conns[0].read ~= cycle.read_events or conns[0].write ~= cycle.write_events
-    then
+    if connection_n == 0 or free_n > connection_n then
         return nil
     end
 
@@ -211,6 +215,17 @@ local function check_cycle_layout()
     if connection_n ~= expected then
         return false, "worker connection slots read as " .. tostring(connection_n)
                       .. ", but worker_connections is " .. tostring(expected)
+    end
+
+    -- every connection slot is wired to its own pair of events at startup, so
+    -- this pins down the offsets right after connection_n as well. Only follow
+    -- the pointer once connection_n matched: a bad one crashes the worker.
+    local cycle = C.ngx_cycle
+    local conns = cycle.connections
+    if conns == nil
+       or conns[0].read ~= cycle.read_events or conns[0].write ~= cycle.write_events
+    then
+        return false, "unexpected nginx cycle layout"
     end
 
     return true

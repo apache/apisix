@@ -89,25 +89,18 @@ When a request goes through APISIX, the plugin's corresponding methods are execu
 
 A route whose `upstream.scheme` is `ws` or `wss` still runs `rewrite`/`access`/`before_proxy`/`log` normally, but replaces `header_filter`/`body_filter`/`delayed_body_filter` with four WebSocket-specific phases: `ws_handshake`, `ws_client_frame`, `ws_upstream_frame`, and `ws_close`. See the ["extra phase" section of the plugin development guide](../plugin-develop.md#extra-phase) for details.
 
-<br />
-<div style={{textAlign: 'center'}}>
-<img src="https://static.apiseven.com/uploads/2023/03/09/ZsH5C8Og_plugins-phases.png" alt="Routes Diagram" width="50%"/>
-</div>
-<br />
-
 ## Plugins execution order
 
-In general, plugins are executed in the following order:
+Global and locally bound plugins for a matched HTTP Route are interleaved by phase:
 
-1. Plugins in [global rules](./global-rule.md)
-   1. plugins in rewrite phase
-   2. plugins in access phase
+1. global-rule plugins in the `rewrite` phase;
+2. locally bound plugins in the `rewrite` phase;
+3. global-rule plugins in the `access` phase; and
+4. locally bound plugins in the `access` phase.
 
-2. Plugins bound to other objects
-   1. plugins in rewrite phase
-   2. plugins in access phase
+A locally bound `rewrite` handler runs before every global-rule `access` handler. If a `rewrite` handler terminates the request, the `access` handlers scheduled after it do not run, but `log` handlers still run.
 
-Within each phase, you can optionally define a new priority number in the `_meta.priority` field of the plugin, which takes precedence over the default plugins priority during execution. Plugins with higher priority numbers are executed first.
+Within each of these groups, you can optionally define a new priority number in the `_meta.priority` field of the plugin, which takes precedence over the default plugin priority during execution. Plugins with higher priority numbers are executed first. A priority does not move a plugin across phase or global/local groups.
 
 For example, if you want to have `limit-count` (priority 1002) run before `ip-restriction` (priority 3000) when requests hit a route, you can do so by passing a higher priority number to `_meta.priority` field of `limit-count`:
 
@@ -146,7 +139,7 @@ Some common configurations can be applied to plugins through the `_meta` configu
 | disable        | boolean        | When set to `true`, the plugin is disabled. |
 | error_response | string/object  | Custom error response. |
 | priority       | integer        | Custom plugin priority. |
-| filter         | array          | Depending on the requested parameters, it is decided at runtime whether the plugin should be executed. Something like this: `{{var, operator, val}, {var, operator, val}, ...}}`. For example: `{"arg_version", "==", "v2"}`, indicating that the current request parameter `version` is `v2`. The variables here are consistent with NGINX internal variables. For details on supported operators, please see [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list). |
+| filter         | array          | Depending on the requested parameters, it is decided at runtime whether the plugin should be executed. Something like this: `{{var, operator, val}, {var, operator, val}, ...}}`. For example: `{"arg_version", "==", "v2"}`, indicating that the current request parameter `version` is `v2`. The variables here are consistent with NGINX internal variables. See [APISIX expressions](../router-radixtree.md#how-to-filter-route-by-nginx-built-in-variable) for the supported condition format and operators. |
 
 ### Disable the plugin
 

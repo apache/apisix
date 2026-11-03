@@ -359,7 +359,8 @@ local _M = {
         ip = "127.0.0.1",
         port = 9091
       },
-      refresh_interval = 15
+      refresh_interval = 15,
+      remove_expired_keys_interval = 3600
     },
     ["server-info"] = {
       report_ttl = 60
