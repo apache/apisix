@@ -353,7 +353,7 @@ passed
             ngx.status = res.status
         }
     }
---- error_code: 401
+--- error_code: 503
 --- error_log
 OIDC introspection failed: JSON decoding failed
 --- grep_error_log eval

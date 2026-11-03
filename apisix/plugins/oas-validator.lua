@@ -141,6 +141,9 @@ local function get_spec_url_lrucache()
             invalid_stale = true,
             refresh_stale = true,
             serial_creating = true,
+            -- release a spec no resource has asked for within a ttl, instead
+            -- of keeping it until 512 other specs push it out
+            inactive = ttl,
         })
         spec_url_lrucache_ttl = ttl
     end

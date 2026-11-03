@@ -425,6 +425,7 @@ local function get_rules(ctx, conf)
         end
         return {
             {
+                idx = 1,
                 count = count,
                 time_window = time_window,
                 key = conf.key,
@@ -451,6 +452,7 @@ local function get_rules(ctx, conf)
             return nil, err2
         end
         core.table.insert(rules, {
+            idx = index,
             count = count,
             time_window = time_window,
             key_type = "constant",
@@ -603,7 +605,11 @@ local function run_rate_limit(conf, rule, ctx, name, cost, dry_run)
             lim:log_phase_incoming(key, commit_cost)
             return
         elseif enable_delayed_sync then
-            local extra_key = name .. '#' .. conf.policy
+            -- the delayed syncer flushes every queued key with its own limiter,
+            -- so each rule needs a separate syncer (queue and timer). Sharing one
+            -- per plugin instance would sync the keys of other rules through the
+            -- count/time_window of whichever rule started the timer.
+            local extra_key = name .. '#' .. conf.policy .. '#' .. rule.idx
             if conf._vid then
                 extra_key = extra_key .. '#' .. conf._vid
             end

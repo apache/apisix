@@ -557,14 +557,26 @@ between two names across the metrics.
 
             assert(sock:close())
 
-            local body, err = scrape()
-            if not body then
-                ngx.say(err)
-                return
-            end
-
             local status = 'code="200",listen_addr="0.0.0.0:1985",service="%s",'
                            .. 'service_id="svc-b",node="127.0.0.1:1993"'
+
+            -- the status is counted when the session ends and shows up only
+            -- once its worker has synced it, every second, and the cache has
+            -- been refilled after that, which can take longer than one scrape
+            local body, err
+            for _ = 1, 5 do
+                body, err = scrape()
+                if not body then
+                    ngx.say(err)
+                    return
+                end
+
+                if series_value(body, "apisix_stream_status", status:format("Billing"))
+                   ~= "no-series" then
+                    break
+                end
+            end
+
             ngx.say("status under the first name: ",
                     series_value(body, "apisix_stream_status", status:format("Billing")))
             ngx.say("status under the new name: ",
