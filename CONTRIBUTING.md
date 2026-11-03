@@ -138,6 +138,34 @@ Once we've discussed your changes and you've got your code ready, make sure that
       Please take a look at `t/plugin/limit-conn.t` and `t/plugin/limit-conn2.t`.
     * For more details, see the [testing framework](https://github.com/apache/apisix/blob/master/docs/en/latest/internal/testing-framework.md)
 
+## API Contracts
+
+When changing Admin API routes, schemas, validation, or responses, review and update
+`docs/en/latest/admin-api.json` in the same PR. Implementation and tests are authoritative.
+Keep the contract explicit; do not fetch or generate it from downstream documentation.
+Plugin-specific schemas remain available through the schema endpoints.
+
+When changing Control API routes or responses, also review
+`docs/en/latest/control-api.json`. The contract documents the built-in API and stable
+patterns registered by shipped optional components. Qualify configuration-dependent
+endpoints in their operation descriptions; plugin-specific endpoints remain documented
+with their plugins.
+
+Run the contract checks from the repository root:
+
+```shell
+python3 -m pip install -r utils/requirements-admin-api.txt
+python3 -m unittest discover -s t/openapi -v
+python3 utils/validate-admin-api.py
+python3 utils/validate-control-api.py
+```
+
+The validator checks OpenAPI 3.1, local references, operation IDs, path parameters,
+request/response schemas, examples, defaults, and the English/Chinese documentation
+and runtime versions. Master describes the current source, including unreleased changes;
+its version follows the repository version files. The CI job runs on implementation
+changes too. Schema validity does not replace reviewing behavior against Lua and tests.
+
 ## Contributor gifts
 
 If you have contributed to Apache APISIX, no matter it is a code contribution to fix a bug or a feature request, or a documentation change, Congratulations! You are eligible to receive the APISIX special gifts with a digital certificate! It's always been the community effort that has made Apache APISIX be understood and used by more developers.
