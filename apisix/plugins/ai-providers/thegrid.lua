@@ -15,7 +15,7 @@
 -- limitations under the License.
 --
 
--- The Grid accepts `max_completion_tokens` like OpenAI, so the override is
+-- The Grid AI accepts `max_completion_tokens` like OpenAI, so the override is
 -- mapped to that field rather than the legacy `max_tokens`.
 local function rewrite_chat_request_body(body, override, force)
     if override.max_tokens then

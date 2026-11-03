@@ -133,7 +133,7 @@ local REDIRECT_STATUSES = {
 
 
 --- Follow one same-origin 307/308 redirect, reusing the open connection.
--- Providers that route through a redirect (The Grid's Consumption API answers
+-- Providers that route through a redirect (The Grid AI's Consumption API answers
 -- with a documented 307 to its routing layer) need it followed inside the
 -- gateway: returning the 3xx downstream would leave the Plugin blind to the
 -- real response, so token usage, retries and instance fallback would all see a

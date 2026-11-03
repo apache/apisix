@@ -820,7 +820,7 @@ local function ai_fixture_dispatch()
 end
 
 -- Routing-redirect endpoints, modelling a provider whose API validates the
--- request and then answers with a 307 to the host that fulfills it (The Grid's
+-- request and then answers with a 307 to the host that fulfills it (The Grid AI's
 -- Consumption API works this way). The redirect target is on the same origin.
 function _M.redirect_v1_chat_completions()
     ngx.status = 307
