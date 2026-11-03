@@ -18,8 +18,8 @@
 
 # A broker that is not registered in ZooKeeper yet rejects topic creation with
 # "Replication factor: 1 larger than available brokers: 0". The failure used to be
-# silent, and the topic was then auto-created with the default single partition on
-# first produce, which quietly broke tests that expect a specific partition layout.
+# silent, and the topic was then auto-created with the broker's default partition
+# count, which quietly broke tests that expect a specific partition layout.
 create_kafka_topic() {
     local container="$1"
     local zookeeper="$2"

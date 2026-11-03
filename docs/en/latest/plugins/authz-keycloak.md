@@ -109,6 +109,8 @@ If the `lazy_load_paths` attribute is set to `true`, the request URI is resolved
 
 Dynamic loading requires the Plugin to obtain a service-account token. Enable service accounts for the Keycloak client and ensure the issued token contains the `uma_protection` role before using the Protection API.
 
+The Plugin forwards a request only when Keycloak grants every permission to check, including every scope listed in each permission. If any permission or scope is not granted, the request is rejected.
+
 ### Automatically Mapping HTTP Method to Scope
 
 The `http_method_as_scope` is often used together with `lazy_load_paths` but can also be used with a static permission list.

@@ -109,6 +109,8 @@ import TabItem from '@theme/TabItem';
 
 动态加载要求插件获取服务账号令牌。使用 Protection API 前，需要为 Keycloak 客户端启用服务账号，并确保签发的令牌包含 `uma_protection` 角色。
 
+只有当 Keycloak 授予所有待核对的权限（包括每个权限中列出的所有作用域）时，插件才会转发请求。若任一权限或作用域未被授予，请求将被拒绝。
+
 ### 自动将 HTTP 方法映射到作用域
 
 `http_method_as_scope` 通常与 `lazy_load_paths` 一起使用，也可以与静态权限列表配合使用。

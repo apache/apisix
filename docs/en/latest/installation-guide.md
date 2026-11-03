@@ -115,8 +115,19 @@ See the [apisix-helm-chart repository](https://github.com/apache/apisix-helm-cha
 
 For a distribution supported by the APISIX RPM repository, add the repository and install the package:
 
+The repository URL uses the system's major release version. Starting with APISIX 3.14.0, RPM packages are built on UBI 9 instead of UBI 8. Check the versions available in your system's repository before installing a specific version.
+
 ```shell
 sudo dnf install -y dnf-plugins-core
+```
+
+On Rocky Linux 9, enable the CRB repository before installing APISIX. It provides the `libyaml-devel` dependency required by the RPM:
+
+```shell
+sudo dnf config-manager --set-enabled crb
+```
+
+```shell
 sudo dnf config-manager --add-repo \
   https://repos.apiseven.com/packages/redhat/apache-apisix.repo
 sudo dnf install -y apisix
