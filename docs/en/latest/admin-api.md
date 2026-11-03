@@ -1059,7 +1059,7 @@ To use mTLS to communicate with Upstream, you can use the `tls.client_cert/key` 
 
 Or you can reference SSL object by `tls.client_cert_id` to set SSL cert and key. The SSL object can be referenced only if the `type` field is `client`, otherwise the request will be rejected by APISIX. In addition, only `cert` and `key` will be used in the SSL object.
 
-To verify the certificate presented by the Upstream, set `tls.verify` to `true`. Leaving it unset keeps the behaviour configured in nginx, which is off unless `proxy_ssl_verify` is turned on. The certificate is checked against the CA certificates in `tls.ca_certs`, or against `ssl_trusted_certificate` from `config.yaml` when `tls.ca_certs` is not set:
+To verify the certificate presented by the Upstream, set `tls.verify` to `true`. Leaving it unset keeps the behaviour configured in nginx, which is off unless `proxy_ssl_verify` is turned on. The certificate is checked against the CA certificates in `tls.ca_certs`, or against `ssl_trusted_certificate` from `config.yaml` when `tls.ca_certs` is not set. In the latter case, a CRL configured in nginx with `proxy_ssl_crl` (`grpc_ssl_crl` for gRPC) is also checked:
 
 ```json
 {
@@ -1347,7 +1347,7 @@ For notes on ID syntax please refer to: [ID Syntax](#quick-note-on-id-syntax)
 | keys         | False    | An array of private keys | Private keys to pair with the `certs`. This field supports saving the value in Secret Manager using the [APISIX Secret](./terminology/secret.md) resource.                                                                   |                                                  |
 | client.ca    | False    | Certificate              | Sets the CA certificate that verifies the client. Requires OpenResty 1.19+.                                    |                                                  |
 | client.depth | False    | Certificate              | Sets the verification depth in client certificate chains. Defaults to 1. Requires OpenResty 1.19+.             |                                                  |
-| client.skip_mtls_uri_regex | False    | An array of regular expressions, in PCRE format              | Used to match URI, if matched, this request bypasses the client certificate checking, i.e. skip the MTLS.             | ["/hello[0-9]+", "/foobar"]                                                |
+| client.skip_mtls_uri_regex | False    | An array of regular expressions, in PCRE format              | Used to match URI, if matched, this request bypasses the client certificate checking, i.e. skip the MTLS. When `match_uri_encoded_slash` is enabled, a URI containing an encoded slash (`%2F`) must match in both its decoded and its `%2F`-kept form. | ["/hello[0-9]+", "/foobar"]                                                |
 | snis         | True, only if `type` is `server`     | Match Rules              | A non-empty array of HTTPS SNI                                                                                 |                                                  |
 | desc         | False    | Auxiliary                | Description of usage scenarios. | certs for production env |
 | labels       | False    | Match Rules              | Attributes of the resource specified as key-value pairs.                                                       | {"version":"v2","build":"16","env":"production"} |

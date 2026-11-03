@@ -183,7 +183,9 @@ local function set_upstream(upstream_info, ctx)
         key = upstream_info.key,
         nodes = new_nodes,
         timeout = upstream_info.timeout,
-        scheme = upstream_info.scheme
+        scheme = upstream_info.scheme,
+        tls = upstream_info.tls,
+        keepalive_pool = upstream_info.keepalive_pool,
     }
 
     local ok, err = upstream.check_schema(up_conf)
