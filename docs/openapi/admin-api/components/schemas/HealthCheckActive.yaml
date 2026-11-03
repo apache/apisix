@@ -1,0 +1,45 @@
+type: object
+description: Active health check configuration. APISIX periodically sends probes to upstream nodes to determine their health status.
+properties:
+  type:
+    type: string
+    enum:
+      - http
+      - https
+      - tcp
+    default: http
+    description: Protocol type for health check probes.
+  timeout:
+    type: number
+    default: 1
+    description: Timeout in seconds for each health check probe.
+  concurrency:
+    type: integer
+    default: 10
+    description: Number of targets to check concurrently during active health checks.
+  host:
+    type: string
+    description: Hostname to use in the health check probe `Host` header. Defaults to the upstream node's host.
+  port:
+    type: integer
+    minimum: 1
+    maximum: 65535
+    description: Port to use for health check probes. Defaults to the upstream node's port.
+  http_path:
+    type: string
+    default: /
+    description: HTTP request path for health check probes.
+  https_verify_certificate:
+    type: boolean
+    default: true
+    description: Whether to verify the upstream's TLS certificate during HTTPS health checks.
+  req_headers:
+    type: array
+    items:
+      type: string
+    minItems: 1
+    description: Additional HTTP headers to include in health check probe requests.
+  healthy:
+    $ref: ./HealthCheckActiveHealthy.yaml
+  unhealthy:
+    $ref: ./HealthCheckActiveUnhealthy.yaml

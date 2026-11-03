@@ -1,0 +1,15 @@
+type: object
+description: Health check configuration for monitoring upstream node availability. Active checks require at least the `active` field.
+properties:
+  active:
+    $ref: ./HealthCheckActive.yaml
+  passive:
+    $ref: ./HealthCheckPassive.yaml
+anyOf:
+  - required:
+      - active
+    title: Active Check
+  - required:
+      - active
+      - passive
+    title: Passive Check

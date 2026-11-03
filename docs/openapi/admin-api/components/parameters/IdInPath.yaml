@@ -1,0 +1,7 @@
+name: id
+in: path
+required: true
+schema:
+  $ref: ../schemas/ResourceId.yaml
+description: Resource identifier.
+example: r1

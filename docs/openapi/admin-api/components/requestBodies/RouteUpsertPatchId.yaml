@@ -1,0 +1,29 @@
+description: Fields to merge into the existing `Route`. Object fields are merged recursively; arrays are replaced.
+required: true
+content:
+  application/json:
+    schema:
+      $ref: ../schemas/RoutePatch.yaml
+    examples:
+      disableRoute:
+        summary: Disable the route
+        value:
+          status: 0
+      addUpstreamNode:
+        summary: Add an upstream node
+        value:
+          upstream:
+            nodes:
+              127.0.0.1:1981: 1
+      deleteUpstreamNode:
+        summary: Delete an upstream node
+        value:
+          upstream:
+            nodes:
+              127.0.0.1:1980: null
+      replaceMethods:
+        summary: Replace the allowed methods
+        value:
+          methods:
+            - GET
+            - POST

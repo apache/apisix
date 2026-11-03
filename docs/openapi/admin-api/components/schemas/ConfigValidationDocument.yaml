@@ -1,0 +1,110 @@
+type: object
+description: Declarative APISIX configuration to validate. Only the documented resource arrays and their `*_conf_version` fields are evaluated.
+properties:
+  routes:
+    type: array
+    description: Declarative `routes` resources to validate.
+    items:
+      $ref: ./ConfigValidationRoute.yaml
+  routes_conf_version:
+    type: number
+    description: Optional `routes` configuration version. When present, the value must be numeric.
+  services:
+    type: array
+    description: Declarative `services` resources to validate.
+    items:
+      $ref: ./ConfigValidationService.yaml
+  services_conf_version:
+    type: number
+    description: Optional `services` configuration version. When present, the value must be numeric.
+  upstreams:
+    type: array
+    description: Declarative `upstreams` resources to validate.
+    items:
+      $ref: ./ConfigValidationUpstream.yaml
+  upstreams_conf_version:
+    type: number
+    description: Optional `upstreams` configuration version. When present, the value must be numeric.
+  consumers:
+    type: array
+    description: Declarative `consumers` resources to validate.
+    items:
+      oneOf:
+        - $ref: ./ConfigValidationConsumer.yaml
+        - $ref: ./ConfigValidationCredential.yaml
+  consumers_conf_version:
+    type: number
+    description: Optional `consumers` configuration version. When present, the value must be numeric.
+  ssls:
+    type: array
+    description: Declarative `ssls` resources to validate.
+    items:
+      $ref: ./ConfigValidationSSL.yaml
+  ssls_conf_version:
+    type: number
+    description: Optional `ssls` configuration version. When present, the value must be numeric.
+  global_rules:
+    type: array
+    description: Declarative `global_rules` resources to validate.
+    items:
+      $ref: ./ConfigValidationGlobalRule.yaml
+  global_rules_conf_version:
+    type: number
+    description: Optional `global_rules` configuration version. When present, the value must be numeric.
+  stream_routes:
+    type: array
+    description: Declarative `stream_routes` resources to validate.
+    items:
+      $ref: ./ConfigValidationStreamRoute.yaml
+  stream_routes_conf_version:
+    type: number
+    description: Optional `stream_routes` configuration version. When present, the value must be numeric.
+  protos:
+    type: array
+    description: Declarative `protos` resources to validate.
+    items:
+      $ref: ./ConfigValidationProto.yaml
+  protos_conf_version:
+    type: number
+    description: Optional `protos` configuration version. When present, the value must be numeric.
+  plugin_configs:
+    type: array
+    description: Declarative `plugin_configs` resources to validate.
+    items:
+      $ref: ./ConfigValidationPluginConfig.yaml
+  plugin_configs_conf_version:
+    type: number
+    description: Optional `plugin_configs` configuration version. When present, the value must be numeric.
+  consumer_groups:
+    type: array
+    description: Declarative `consumer_groups` resources to validate.
+    items:
+      $ref: ./ConfigValidationConsumerGroup.yaml
+  consumer_groups_conf_version:
+    type: number
+    description: Optional `consumer_groups` configuration version. When present, the value must be numeric.
+  secrets:
+    type: array
+    description: Declarative `secrets` resources to validate.
+    items:
+      $ref: ./Secret.yaml
+  secrets_conf_version:
+    type: number
+    description: Optional `secrets` configuration version. When present, the value must be numeric.
+  plugin_metadata:
+    type: array
+    description: Declarative `plugin_metadata` resources to validate.
+    items:
+      type: object
+  plugin_metadata_conf_version:
+    type: number
+    description: Optional `plugin_metadata` configuration version. When present, the value must be numeric.
+  plugins:
+    type: array
+    description: Declarative `plugins` resources to validate.
+    items:
+      type: object
+  plugins_conf_version:
+    type: number
+    description: Optional `plugins` configuration version. When present, the value must be numeric.
+additionalProperties: true

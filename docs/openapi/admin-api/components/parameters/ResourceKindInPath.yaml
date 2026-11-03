@@ -1,0 +1,19 @@
+name: resource
+in: path
+required: true
+schema:
+  type: string
+  enum:
+    - routes
+    - services
+    - upstreams
+    - consumers
+    - ssls
+    - plugin_configs
+    - global_rules
+    - stream_routes
+    - protos
+    - consumer_groups
+    - credentials
+description: Resource kind.
+example: routes

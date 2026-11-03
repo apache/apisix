@@ -1,0 +1,17 @@
+description: Fields to merge into the existing `Service`. Object fields are merged recursively; arrays are replaced.
+required: true
+content:
+  application/json:
+    schema:
+      $ref: ../schemas/ServicePatch.yaml
+    examples:
+      updateDescription:
+        summary: Update the service description
+        value:
+          desc: Updated service description
+      addUpstreamNode:
+        summary: Add an inline upstream node
+        value:
+          upstream:
+            nodes:
+              127.0.0.1:1981: 1

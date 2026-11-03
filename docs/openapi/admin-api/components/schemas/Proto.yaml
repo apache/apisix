@@ -1,0 +1,32 @@
+type: object
+description: Protocol buffer definition for gRPC transcoding.
+required:
+  - content
+properties:
+  id:
+    $ref: ./ResourceId.yaml
+  name:
+    type: string
+    maxLength: 256
+    minLength: 1
+    description: Human-readable name.
+  desc:
+    type: string
+    maxLength: 256
+    description: Description.
+  labels:
+    $ref: ./Labels.yaml
+  create_time:
+    type: integer
+    readOnly: true
+    description: Unix timestamp of creation. Read-only.
+  update_time:
+    type: integer
+    readOnly: true
+    description: Unix timestamp of last update. Read-only.
+  content:
+    type: string
+    minLength: 1
+    maxLength: 1048576
+    description: Protobuf `.proto` file content as a string.
+additionalProperties: false

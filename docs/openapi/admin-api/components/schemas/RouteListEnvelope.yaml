@@ -1,0 +1,12 @@
+type: object
+description: Paginated list of `Route` envelopes.
+properties:
+  total:
+    type: integer
+  list:
+    type: array
+    items:
+      $ref: ./RouteEnvelope.yaml
+required:
+  - total
+  - list

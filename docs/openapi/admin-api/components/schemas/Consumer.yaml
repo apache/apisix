@@ -1,0 +1,33 @@
+type: object
+description: Consumer configuration. Represents an API user or application with authentication credentials and plugin policies.
+required:
+  - username
+properties:
+  username:
+    type: string
+    minLength: 1
+    maxLength: 256
+    pattern: ^[a-zA-Z0-9_\-]+$
+    description: Unique username for the consumer. Only alphanumeric characters, hyphens, and underscores are allowed.
+    examples:
+      - my-app
+  desc:
+    type: string
+    maxLength: 256
+    description: Description of this consumer.
+  labels:
+    $ref: ./Labels.yaml
+  create_time:
+    type: integer
+    readOnly: true
+    description: Unix timestamp of creation. Read-only.
+  update_time:
+    type: integer
+    readOnly: true
+    description: Unix timestamp of last update. Read-only.
+  group_id:
+    $ref: ./ResourceId.yaml
+    description: Reference to a Consumer Group for shared plugin configurations.
+  plugins:
+    $ref: ./Plugins.yaml
+additionalProperties: false

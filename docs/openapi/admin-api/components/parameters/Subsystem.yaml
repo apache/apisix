@@ -1,0 +1,10 @@
+name: subsystem
+in: query
+required: false
+schema:
+  type: string
+  enum:
+    - http
+    - stream
+  default: http
+description: Plugin subsystem.

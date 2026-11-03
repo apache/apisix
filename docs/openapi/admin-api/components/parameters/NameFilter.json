@@ -1,9 +1,0 @@
-{
-  "name": "name",
-  "in": "query",
-  "required": false,
-  "schema": {
-    "type": "string"
-  },
-  "description": "Filter list by `name` (regex match)."
-}

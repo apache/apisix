@@ -1,0 +1,12 @@
+type: object
+required:
+  - error_msg
+  - errors
+properties:
+  error_msg:
+    type: string
+    const: Configuration validation failed
+  errors:
+    type: array
+    items:
+      $ref: ./ConfigValidationError.yaml

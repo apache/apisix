@@ -1,0 +1,17 @@
+description: "`Service` configuration body for create / replace / patch."
+required: true
+content:
+  application/json:
+    schema:
+      $ref: ../schemas/Service.yaml
+    example:
+      plugins: {}
+      upstream:
+        type: roundrobin
+        nodes:
+          127.0.0.1:1980: 1
+      name: service-test
+      desc: hello world
+      enable_websocket: true
+      hosts:
+        - foo.com

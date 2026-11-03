@@ -1,0 +1,14 @@
+description: "**Bad Request** — The request body is invalid or missing required fields."
+content:
+  application/json:
+    schema:
+      $ref: ../schemas/ErrorResponse.yaml
+    examples:
+      validation_error:
+        summary: Schema validation error
+        value:
+          error_msg: 'invalid configuration: property "uri" is required'
+      invalid_json:
+        summary: Malformed JSON body
+        value:
+          error_msg: "invalid request body: unexpected character at line 1 column 2"

@@ -1,0 +1,159 @@
+put:
+  summary: Create or Replace a Proto
+  description: Upload a protobuf definition with a specified ID, or replace an existing one.
+  tags:
+    - Protos
+  parameters:
+    - name: id
+      in: path
+      description: Unique identifier of the resource. Can be a string (alphanumeric, `-`, `_`, `.`) or a positive integer.
+      required: true
+      schema:
+        type: string
+      example: my-resource-1
+    - $ref: ../components/parameters/Ttl.yaml
+  requestBody:
+    $ref: ../components/requestBodies/ProtoUpsertPutId.yaml
+  responses:
+    "201":
+      description: Created
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProtoEnvelope.yaml
+          examples:
+            "1":
+              summary: Successful Example
+              value:
+                key: /apisix/protos/1
+                value:
+                  id: "1"
+                  create_time: 1684752213
+                  update_time: 1684752213
+                  content: |-
+                    syntax = "proto3";
+                        package helloworld;
+                        service Greeter {
+                            rpc GetErrResp (HelloRequest) returns (HelloReply) {}
+                        }
+                        message HelloRequest {
+                            string name = 1;
+                            repeated string items = 2;
+                        }
+                        message HelloReply {
+                            string message = 1;
+                            repeated string items = 2;
+                        }
+                        message ErrorDetail {
+                            int64 code = 1;
+                            string message = 2;
+                            string type = 3;
+                        }
+    "400":
+      $ref: ../components/responses/BadRequest.yaml
+      description: Invalid configuration
+    "401":
+      $ref: ../components/responses/Unauthorized.yaml
+  operationId: createProtoById
+get:
+  summary: Get a Proto
+  description: Retrieve a single protobuf definition by its ID.
+  tags:
+    - Protos
+  parameters:
+    - name: id
+      in: path
+      description: Unique identifier of the resource. Can be a string (alphanumeric, `-`, `_`, `.`) or a positive integer.
+      required: true
+      schema:
+        type: string
+      example: my-resource-1
+  responses:
+    "200":
+      description: Successful response.
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ProtoEnvelope.yaml
+          examples:
+            "1":
+              summary: Successful Example
+              value:
+                value:
+                  id: "1"
+                  content: |-
+                    syntax = "proto3";
+                        package helloworld;
+                        service Greeter {
+                            rpc GetErrResp (HelloRequest) returns (HelloReply) {}
+                        }
+                        message HelloRequest {
+                            string name = 1;
+                            repeated string items = 2;
+                        }
+                        message HelloReply {
+                            string message = 1;
+                            repeated string items = 2;
+                        }
+                        message ErrorDetail {
+                            int64 code = 1;
+                            string message = 2;
+                            string type = 3;
+                        }
+                  update_time: 1684752213
+                  create_time: 1684752213
+                key: /apisix/protos/1
+                modifiedIndex: 292
+                createdIndex: 292
+    "401":
+      $ref: ../components/responses/Unauthorized.yaml
+    "404":
+      $ref: ../components/responses/NotFound.yaml
+      description: Key not found
+  operationId: getProto
+delete:
+  summary: Delete a Proto
+  description: Delete a protobuf definition by its ID.
+  tags:
+    - Protos
+  parameters:
+    - name: id
+      in: path
+      description: Unique identifier of the resource. Can be a string (alphanumeric, `-`, `_`, `.`) or a positive integer.
+      required: true
+      schema:
+        type: string
+      example: my-resource-1
+    - name: force
+      in: query
+      description: Delete resource by force even if the resource is in use.
+      required: false
+      example: "true"
+      schema:
+        type: string
+  responses:
+    "200":
+      description: Successful response.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              key:
+                type: string
+                description: Unique key identifier for this proto in the data store.
+              deleted:
+                type: string
+                description: The ID of the successfully deleted proto.
+          examples:
+            "1":
+              summary: Successful Example
+              value:
+                key: /apisix/protos/1
+                deleted: "1"
+    "401":
+      $ref: ../components/responses/Unauthorized.yaml
+    "404":
+      $ref: ../components/responses/NotFound.yaml
+      description: Key not found
+  operationId: deleteProto

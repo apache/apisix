@@ -1,0 +1,14 @@
+description: "`ConsumerGroup` configuration body for create / replace / patch."
+required: true
+content:
+  application/json:
+    schema:
+      $ref: ../schemas/ConsumerGroup.yaml
+    example:
+      plugins:
+        limit-count:
+          count: 200
+          time_window: 60
+          rejected_code: 429
+          key_type: var
+          key: consumer_name

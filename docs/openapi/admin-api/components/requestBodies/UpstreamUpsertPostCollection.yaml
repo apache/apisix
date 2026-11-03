@@ -1,0 +1,18 @@
+description: "`Upstream` configuration body for create / replace / patch."
+required: true
+content:
+  application/json:
+    schema:
+      $ref: ../schemas/Upstream.yaml
+    example:
+      name: upstream-for-test
+      desc: desc
+      scheme: http
+      retries: 1
+      type: roundrobin
+      nodes:
+        127.0.0.1:1980: 1
+      timeout:
+        connect: 15
+        send: 15
+        read: 15

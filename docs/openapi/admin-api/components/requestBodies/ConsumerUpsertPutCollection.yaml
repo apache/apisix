@@ -1,0 +1,15 @@
+description: "`Consumer` configuration body for create / replace / patch."
+required: true
+content:
+  application/json:
+    schema:
+      $ref: ../schemas/Consumer.yaml
+    example:
+      username: my-app
+      desc: Mobile application consumer
+      labels:
+        team: mobile
+        env: production
+      plugins:
+        key-auth:
+          key: app-secret-key-123

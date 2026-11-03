@@ -1,0 +1,20 @@
+description: Fields to merge into the existing `GlobalRule`. Object fields are merged recursively; arrays are replaced.
+required: true
+content:
+  application/json:
+    schema:
+      $ref: ../schemas/GlobalRulePatch.yaml
+    examples:
+      enablePlugin:
+        summary: Enable a plugin
+        value:
+          plugins:
+            serverless-pre-function:
+              phase: rewrite
+              functions:
+                - return function() end
+      removePlugin:
+        summary: Remove a plugin
+        value:
+          plugins:
+            serverless-pre-function: null

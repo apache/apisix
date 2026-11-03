@@ -1,0 +1,55 @@
+get:
+  summary: List All Plugin Metadata
+  description: Retrieve metadata for all plugins that have metadata configured.
+  tags:
+    - Plugin Metadata
+  parameters:
+    - $ref: ../components/parameters/Page.yaml
+    - $ref: ../components/parameters/PageSize.yaml
+  responses:
+    "200":
+      description: Successful response.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              list:
+                description: A list of plugin metadata.
+                type: array
+                items:
+                  type: object
+                  properties:
+                    value:
+                      description: Plugin metadata values.
+                      type: object
+                      properties: {}
+                    key:
+                      description: Unique key identifier for this plugin metadata in the data store.
+                      type: string
+                    modifiedIndex:
+                      description: The index number representing the most recent update to the object. It starts with the same value as `createdIndex` and increases by 1 each time the resource is modified.
+                      type: integer
+                    createdIndex:
+                      description: The index number representing when the object was first created. It indicates the creation order of the resource.
+                      type: integer
+              total:
+                description: Total number of plugin metadata entries available.
+                type: integer
+          examples:
+            "1":
+              summary: Successful Example
+              value:
+                list:
+                  - value:
+                      log_format:
+                        host: $host
+                        "@timestamp": $time_iso8601
+                        client_ip: $remote_addr
+                    key: /apisix/plugin_metadata/syslog
+                    modifiedIndex: 283
+                    createdIndex: 283
+                total: 1
+    "401":
+      $ref: ../components/responses/Unauthorized.yaml
+  operationId: listPluginMetadata

@@ -1,0 +1,23 @@
+description: "`Proto` configuration body for create / replace / patch."
+required: true
+content:
+  application/json:
+    schema:
+      $ref: ../schemas/Proto.yaml
+    example:
+      content: |-
+        syntax = "proto3";
+
+        package helloworld;
+
+        service Greeter {
+          rpc SayHello (HelloRequest) returns (HelloReply) {}
+        }
+
+        message HelloRequest {
+          string name = 1;
+        }
+
+        message HelloReply {
+          string message = 1;
+        }

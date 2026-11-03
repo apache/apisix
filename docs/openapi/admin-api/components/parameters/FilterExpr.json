@@ -1,9 +1,0 @@
-{
-  "name": "filter",
-  "in": "query",
-  "required": false,
-  "schema": {
-    "type": "string"
-  },
-  "description": "Filter expression. Supports `service_id` and `upstream_id`. URL-encoded query string, e.g. `service_id%3D1`."
-}

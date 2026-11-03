@@ -1,0 +1,125 @@
+type: object
+description: |-
+  SSL certificate configuration for TLS termination or mTLS.
+
+  **Read-only response variant**: private keys (`key`, `keys`) are stripped from GET responses, so they are not present here.
+properties:
+  id:
+    $ref: ./ResourceId.yaml
+  desc:
+    type: string
+    maxLength: 256
+    description: Description.
+  labels:
+    $ref: ./Labels.yaml
+  create_time:
+    type: integer
+    readOnly: true
+    description: Unix timestamp of creation. Read-only.
+  update_time:
+    type: integer
+    readOnly: true
+    description: Unix timestamp of last update. Read-only.
+  type:
+    type: string
+    default: server
+    enum:
+      - server
+      - client
+    description: Certificate type.
+    x-enumDescriptions:
+      server: HTTPS termination matched by SNI.
+      client: Client certificate for mTLS with upstream services.
+  sni:
+    type: string
+    description: Server Name Indication (SNI) to match. Supports wildcard prefix (`*.example.com`). Mutually exclusive with `snis`.
+    examples:
+      - api.example.com
+  snis:
+    type: array
+    items:
+      type: string
+    minItems: 1
+    description: Multiple SNI hostnames. Mutually exclusive with `sni`.
+  cert:
+    type: string
+    minLength: 128
+    maxLength: 65536
+    description: PEM-encoded server certificate. Can also be a secret reference (`$secret://...`).
+  key:
+    type: string
+    minLength: 128
+    maxLength: 65536
+    description: PEM-encoded private key. Can also be a secret reference (`$secret://...`). **Not returned in GET responses for security.**
+  certs:
+    type: array
+    items:
+      type: string
+    description: Additional certificates for certificate chain or alternative key types.
+  keys:
+    type: array
+    items:
+      type: string
+    description: Additional private keys corresponding to `certs`.
+  client:
+    type: object
+    description: mTLS client verification settings.
+    required:
+      - ca
+    properties:
+      ca:
+        type: string
+        minLength: 128
+        maxLength: 65536
+        description: PEM-encoded CA certificate for client verification.
+      depth:
+        type: integer
+        minimum: 0
+        default: 1
+        description: Maximum certificate chain depth.
+      skip_mtls_uri_regex:
+        type: array
+        items:
+          type: string
+        minItems: 1
+        uniqueItems: true
+        description: URI regex patterns to skip mTLS verification.
+  status:
+    type: integer
+    enum:
+      - 1
+      - 0
+    default: 1
+    description: SSL status.
+    x-enumDescriptions:
+      "0": Disabled.
+      "1": Enabled (default).
+  ssl_protocols:
+    type: array
+    items:
+      type: string
+      enum:
+        - TLSv1.1
+        - TLSv1.2
+        - TLSv1.3
+    maxItems: 3
+    uniqueItems: true
+    description: Allowed TLS protocol versions.
+additionalProperties: false
+if:
+  properties:
+    type:
+      enum:
+        - server
+then:
+  oneOf:
+    - title: Single SNI
+      required:
+        - sni
+        - cert
+    - title: Multiple SNIs
+      required:
+        - snis
+        - cert
+else:
+  title: SNI not required

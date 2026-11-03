@@ -1,0 +1,12 @@
+type: object
+description: Paginated list of `Consumer` envelopes.
+properties:
+  total:
+    type: integer
+  list:
+    type: array
+    items:
+      $ref: ./ConsumerEnvelope.yaml
+required:
+  - total
+  - list

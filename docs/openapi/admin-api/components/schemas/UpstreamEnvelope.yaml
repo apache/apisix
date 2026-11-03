@@ -1,0 +1,14 @@
+type: object
+description: "`Upstream` wrapped in the etcd-style envelope."
+properties:
+  key:
+    type: string
+  value:
+    $ref: ./Upstream.yaml
+  createdIndex:
+    type: integer
+  modifiedIndex:
+    type: integer
+required:
+  - key
+  - value

@@ -1,0 +1,27 @@
+type: object
+description: TLS configuration for connecting to upstream nodes over HTTPS/gRPCS.
+properties:
+  client_cert_id:
+    $ref: ./ResourceId.yaml
+    description: ID of an SSL resource containing the client certificate. Mutually exclusive with `client_cert`/`client_key`.
+  client_cert:
+    type: string
+    minLength: 128
+    maxLength: 65536
+    description: PEM-encoded client certificate for mTLS with the upstream.
+  client_key:
+    type: string
+    minLength: 64
+    maxLength: 65536
+    description: PEM-encoded client private key for mTLS with the upstream.
+  verify:
+    type: boolean
+    description: Whether to verify the upstream server certificate. If omitted for HTTPS/gRPCS, follows the NGINX verification setting, which is off unless enabled. Explicit `false` disables verification. For `wss`, explicitly set `true` to enable verification against the shared trust store.
+  ca_certs:
+    type: array
+    minItems: 1
+    items:
+      type: string
+      minLength: 128
+      maxLength: 65536
+    description: PEM-encoded CA certificates for HTTPS/gRPCS upstream verification. Replaces the NGINX trust store for this upstream. If omitted, configure and load the shared store using `proxy_ssl_verify` for HTTPS or `grpc_ssl_verify` for gRPCS. See [Configure Upstream HTTPS](/apisix/how-to-guide/traffic-management/tls-and-mtls/configure-upstream-https). Does not enable verification by itself; set `tls.verify` to `true`. Rejected for `ws` and `wss` upstreams.

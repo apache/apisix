@@ -1,0 +1,18 @@
+type: object
+description: Connection pool configuration for keepalive connections to upstream nodes.
+properties:
+  size:
+    type: integer
+    default: 320
+    minimum: 1
+    description: Maximum number of keepalive connections cached in the connection pool.
+  idle_timeout:
+    type: number
+    default: 60
+    minimum: 0
+    description: Time in seconds after which an idle keepalive connection is closed. `0` disables the timeout.
+  requests:
+    type: integer
+    default: 1000
+    minimum: 1
+    description: Maximum number of requests that can be sent over a single keepalive connection before it is closed.

@@ -1,0 +1,6 @@
+name: uri
+in: query
+required: false
+schema:
+  type: string
+description: Filter routes by URI (regex match against `uri` or any `uris[]`).

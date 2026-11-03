@@ -1,0 +1,12 @@
+type: object
+description: Paginated list of `ConsumerGroup` envelopes.
+properties:
+  total:
+    type: integer
+  list:
+    type: array
+    items:
+      $ref: ./ConsumerGroupEnvelope.yaml
+required:
+  - total
+  - list

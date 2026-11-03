@@ -1,0 +1,43 @@
+type: object
+description: Thresholds for considering a target unhealthy during active checks.
+properties:
+  interval:
+    type: integer
+    minimum: 1
+    default: 1
+    description: Interval in seconds between active health check probes for unhealthy targets.
+  http_statuses:
+    type: array
+    items:
+      type: integer
+      minimum: 200
+      maximum: 599
+    uniqueItems: true
+    default:
+      - 429
+      - 404
+      - 500
+      - 501
+      - 502
+      - 503
+      - 504
+      - 505
+    description: HTTP status codes that indicate an unhealthy target.
+  http_failures:
+    type: integer
+    minimum: 1
+    maximum: 254
+    default: 5
+    description: Number of HTTP failures to consider a target unhealthy.
+  tcp_failures:
+    type: integer
+    minimum: 1
+    maximum: 254
+    default: 2
+    description: Number of TCP connection failures to consider a target unhealthy.
+  timeouts:
+    type: integer
+    minimum: 1
+    maximum: 254
+    default: 3
+    description: Number of probe timeouts to consider a target unhealthy.

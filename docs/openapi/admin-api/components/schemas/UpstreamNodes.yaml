@@ -1,0 +1,13 @@
+description: |-
+  Upstream backend nodes. Supports two formats:
+
+  **Map format** (shorthand): `{"host:port": weight}`
+
+  **Array format** (full control): `[{"host": "...", "port": ..., "weight": ...}]`
+anyOf:
+  - $ref: ./UpstreamNodesMap.yaml
+    title: Weight Mapping
+  - type: array
+    items:
+      $ref: ./UpstreamNodeItem.yaml
+    title: Node Objects

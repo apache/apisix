@@ -1,0 +1,14 @@
+type: object
+description: "`SSLRead` wrapped in the etcd-style envelope."
+properties:
+  key:
+    type: string
+  value:
+    $ref: ./SSLRead.yaml
+  createdIndex:
+    type: integer
+  modifiedIndex:
+    type: integer
+required:
+  - key
+  - value

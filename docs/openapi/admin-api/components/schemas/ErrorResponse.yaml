@@ -1,0 +1,12 @@
+type: object
+description: Standard error response returned by the APISIX Admin API.
+required:
+  - error_msg
+properties:
+  error_msg:
+    type: string
+    description: Human-readable error message describing what went wrong.
+    examples:
+      - 'invalid configuration: property "uri" is required'
+examples:
+  - error_msg: 'invalid configuration: property "uri" is required'
