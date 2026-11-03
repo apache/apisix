@@ -1,0 +1,147 @@
+put:
+  summary: Create or Update a Consumer
+  description: Create a new consumer or update an existing one. The consumer is identified by `username` in the request body.
+  tags:
+    - Consumers
+  parameters:
+    - $ref: ../components/parameters/Ttl.yaml
+  requestBody:
+    $ref: ../components/requestBodies/ConsumerUpsertPutCollection.yaml
+  responses:
+    "201":
+      description: Created
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              key:
+                description: Unique key identifier for this consumer.
+                type: string
+              value:
+                description: Consumer values.
+                properties:
+                  plugins:
+                    description: Key-value pairs of plugins and their configurations on the object.
+                    type: object
+                    properties: {}
+                  username:
+                    description: The unique identifier of the consumer.
+                    type: string
+                    minLength: 1
+                    maxLength: 100
+                    pattern: ^[a-zA-Z0-9_-]+$
+                  labels:
+                    type: object
+                    patternProperties:
+                      .*:
+                        minLength: 1
+                        maxLength: 64
+                        pattern: ^\S+$
+                        type: string
+                        description: Value of label.
+                    description: Key-value pairs to specify attributes.
+                    properties: {}
+                  desc:
+                    description: Consumer description.
+                    maxLength: 256
+                    type: string
+                  group_id:
+                    description: Consumer group ID.
+                    anyOf:
+                      - type: string
+                        minLength: 1
+                        maxLength: 64
+                        pattern: ^[a-zA-Z0-9-_.]+$
+                      - minimum: 1
+                        type: integer
+                  create_time:
+                    description: Creation time of the consumer.
+                    type: integer
+                type: object
+          examples:
+            "1":
+              summary: Successful Example
+              value:
+                key: /apisix/consumers/jack
+                value:
+                  plugins:
+                    limit-count:
+                      time_window: 60
+                      rejected_code: 503
+                      key: remote_addr
+                      key_type: var
+                      count: 2
+                      show_limit_quota_header: true
+                      allow_degradation: false
+                      policy: local
+                  username: jack
+                  create_time: 1683164776
+                  update_time: 1684289832
+    "400":
+      $ref: ../components/responses/BadRequest.yaml
+      description: Invalid configuration
+    "401":
+      $ref: ../components/responses/Unauthorized.yaml
+    "503":
+      $ref: ../components/responses/BadRequest.yaml
+      description: Storage access or write failed.
+  operationId: createConsumer
+  x-codeSamples:
+    - lang: cURL
+      label: cURL
+      source: |-
+        curl -i http://127.0.0.1:9180/apisix/admin/consumers \
+          -H 'X-API-KEY: your-api-key' \
+          -H 'Content-Type: application/json' \
+          -X PUT -d '{
+            "username": "my-app",
+            "plugins": {
+              "key-auth": {"key": "app-secret-key-123"}
+            }
+          }'
+get:
+  summary: List All Consumers
+  description: Retrieve all configured consumers.
+  tags:
+    - Consumers
+  parameters:
+    - $ref: ../components/parameters/LabelFilter.yaml
+    - $ref: ../components/parameters/Page.yaml
+    - $ref: ../components/parameters/PageSize.yaml
+  responses:
+    "200":
+      description: Successful response.
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ConsumerListEnvelope.yaml
+          examples:
+            "1":
+              summary: Successful Example
+              value:
+                list:
+                  - value:
+                      plugins:
+                        limit-count:
+                          rejected_code: 503
+                          time_window: 60
+                          key: remote_addr
+                          key_type: var
+                          count: 2
+                          allow_degradation: false
+                          show_limit_quota_header: true
+                          policy: local
+                      username: jack
+                      create_time: 1683164776
+                      update_time: 1684289832
+                    key: /apisix/consumers/jack
+                    modifiedIndex: 119
+                    createdIndex: 17
+                total: 1
+    "401":
+      $ref: ../components/responses/Unauthorized.yaml
+    "503":
+      $ref: ../components/responses/BadRequest.yaml
+      description: Storage access or write failed.
+  operationId: listConsumers

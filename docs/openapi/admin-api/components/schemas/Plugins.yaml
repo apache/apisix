@@ -1,0 +1,4 @@
+type: object
+description: Map of loaded plugin names to configuration objects. Each plugin has its own schema and Lua check_schema validation; retrieve it from /apisix/admin/schema/plugins/{plugin_name}.
+additionalProperties:
+  type: object

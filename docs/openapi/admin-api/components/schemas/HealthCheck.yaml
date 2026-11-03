@@ -1,0 +1,13 @@
+anyOf:
+  - required:
+      - active
+  - required:
+      - active
+      - passive
+properties:
+  passive:
+    $ref: ./HealthCheckPassive.yaml
+  active:
+    $ref: ./HealthCheckActive.yaml
+type: object
+x-source: apisix/schema_def.lua

@@ -1,0 +1,11 @@
+type: object
+properties:
+  total:
+    type: integer
+  list:
+    type: array
+    items:
+      $ref: ./GraphQLCostDecorationEnvelope.yaml
+required:
+  - total
+  - list

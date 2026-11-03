@@ -1,6 +1,0 @@
-{
-  "type": "apiKey",
-  "in": "query",
-  "name": "api_key",
-  "description": "Admin API key passed as a query parameter. Convenient for `curl` experiments, but avoid in production — keys may be logged."
-}

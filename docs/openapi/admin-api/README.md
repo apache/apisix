@@ -22,7 +22,7 @@
 This directory contains the modular source for the Admin API OpenAPI
 document.
 
-- `openapi.json` defines document metadata and references each path and
+- `openapi.yaml` defines document metadata and references each path and
   component module.
 - `paths/` contains one OpenAPI Path Item per file.
 - `components/` contains one reusable OpenAPI component per file, grouped
@@ -47,5 +47,5 @@ same bundler version.
 
 References inside a module are relative to that module. For example, a path
 module can reference a schema with
-`../components/schemas/Route.json`, while one schema can reference another
-schema in the same directory with `./ResourceId.json`.
+`../components/schemas/Route.yaml`, while one schema can reference another
+schema in the same directory with `./ResourceId.yaml`.

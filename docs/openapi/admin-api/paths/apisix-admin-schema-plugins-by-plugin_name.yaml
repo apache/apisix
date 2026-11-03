@@ -1,0 +1,39 @@
+parameters:
+  - $ref: ../components/parameters/PluginNameInPath.yaml
+get:
+  tags:
+    - Schema Validation
+  operationId: getPluginSchemaAlt
+  summary: Get a plugin's JSON Schema (alternative path)
+  description: Equivalent to `GET /apisix/admin/plugins/{plugin_name}`. Provided for symmetry with `GET /apisix/admin/schema/{resource}`.
+  responses:
+    "200":
+      description: Plugin JSON Schema.
+      content:
+        application/json:
+          schema:
+            type: object
+            description: JSON Schema of the loaded plugin, selected by subsystem and schema_type. Plugin schemas and Lua validation depend on the installed plugin set.
+          examples:
+            keyAuthConsumer:
+              summary: key-auth with schema_type=consumer (from release/3.18 plugin source)
+              value:
+                type: object
+                properties:
+                  key:
+                    type: string
+                encrypt_fields:
+                  - key
+                required:
+                  - key
+    "400":
+      $ref: ../components/responses/BadRequest.yaml
+    "401":
+      $ref: ../components/responses/Unauthorized.yaml
+  parameters:
+    - in: query
+      name: schema_type
+      description: Use consumer to retrieve the consumer schema; otherwise returns the plugin schema.
+      schema:
+        type: string
+      example: consumer

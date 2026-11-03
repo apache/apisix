@@ -1,0 +1,100 @@
+additionalProperties: false
+properties:
+  tls:
+    $ref: ./UpstreamTLS.yaml
+  update_time:
+    type: integer
+    readOnly: true
+  retry_timeout:
+    minimum: 0
+    type: number
+  scheme:
+    default: http
+    description: The scheme of the upstream. For L7 proxy, it can be one of grpc/grpcs/http/https. For L4 proxy, it can be one of tcp/tls/udp. For specific protocols, it can be kafka.
+    enum:
+      - grpc
+      - grpcs
+      - http
+      - https
+      - tcp
+      - tls
+      - udp
+      - kafka
+  retries:
+    minimum: 0
+    type: integer
+  hash_on:
+    default: vars
+    enum:
+      - vars
+      - header
+      - cookie
+      - consumer
+      - vars_combinations
+    type: string
+  service_name:
+    minLength: 1
+    maxLength: 256
+    type: string
+  nodes:
+    $ref: ./UpstreamNodes.yaml
+  discovery_type:
+    type: string
+    description: discovery type
+  upstream_host:
+    pattern: ^\*$|^\*?[0-9a-zA-Z-._\[\]:]+$
+    type: string
+  timeout:
+    $ref: ./Timeout.yaml
+  create_time:
+    type: integer
+    readOnly: true
+  labels:
+    $ref: ./Labels.yaml
+  keepalive_pool:
+    $ref: ./KeepalivePool.yaml
+  checks:
+    $ref: ./HealthCheck.yaml
+  key:
+    type: string
+    description: the key of chash for dynamic load balancing
+  discovery_args:
+    properties:
+      group_name:
+        type: string
+        description: group name
+      namespace_id:
+        type: string
+        description: namespace id
+    type: object
+  name:
+    minLength: 1
+    maxLength: 256
+    type: string
+  pass_host:
+    default: pass
+    description: mod of host passing
+    enum:
+      - pass
+      - node
+      - rewrite
+    type: string
+  id:
+    $ref: ./ResourceId.yaml
+  desc:
+    maxLength: 256
+    type: string
+  type:
+    description: algorithms of load balancing
+    default: roundrobin
+    type: string
+  modifiedIndex:
+    type: integer
+oneOf:
+  - required:
+      - nodes
+  - required:
+      - service_name
+      - discovery_type
+type: object
+x-source: apisix/schema_def.lua

@@ -1,0 +1,180 @@
+get:
+  summary: Get a Consumer
+  description: Retrieve a single consumer by username.
+  tags:
+    - Consumers
+  parameters:
+    - $ref: ../components/parameters/UsernameInPath.yaml
+  responses:
+    "200":
+      description: Successful response.
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ConsumerEnvelope.yaml
+          examples:
+            "1":
+              summary: Successful Example
+              value:
+                value:
+                  plugins:
+                    limit-count:
+                      rejected_code: 503
+                      time_window: 60
+                      key: remote_addr
+                      key_type: var
+                      count: 2
+                      allow_degradation: false
+                      show_limit_quota_header: true
+                      policy: local
+                  username: jack
+                  create_time: 1683164776
+                  update_time: 1684289832
+                key: /apisix/consumers/jack
+                modifiedIndex: 119
+                createdIndex: 17
+    "401":
+      $ref: ../components/responses/Unauthorized.yaml
+    "404":
+      $ref: ../components/responses/NotFound.yaml
+      description: Key not found
+    "503":
+      $ref: ../components/responses/BadRequest.yaml
+      description: Storage access or write failed.
+  operationId: getConsumer
+delete:
+  summary: Delete a Consumer
+  description: Delete a consumer by username. This also deletes all associated credentials.
+  tags:
+    - Consumers
+  parameters:
+    - $ref: ../components/parameters/UsernameInPath.yaml
+    - name: force
+      in: query
+      description: Delete resource by force even if the resource is in use.
+      required: false
+      example: "true"
+      schema:
+        type: string
+  responses:
+    "200":
+      description: Successful response.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              key:
+                description: Unique key identifier for this consumer in the data store.
+                type: string
+              deleted:
+                description: Number of deleted keys, serialized as a string for compatibility.
+                type: string
+          examples:
+            "1":
+              summary: Successful Example
+              value:
+                key: /apisix/consumers/jack
+                deleted: "1"
+    "400":
+      $ref: ../components/responses/BadRequest.yaml
+      description: Missing identifier or resource is still referenced (where dependency checks apply).
+    "401":
+      $ref: ../components/responses/Unauthorized.yaml
+    "404":
+      $ref: ../components/responses/NotFound.yaml
+      description: Key not found
+    "503":
+      $ref: ../components/responses/BadRequest.yaml
+      description: Storage access or write failed.
+  operationId: deleteConsumer
+put:
+  summary: Create or replace a consumer by username
+  description: The request body username must match the URL username.
+  tags:
+    - Consumers
+  parameters:
+    - $ref: ../components/parameters/UsernameInPath.yaml
+    - $ref: ../components/parameters/Ttl.yaml
+  requestBody:
+    $ref: ../components/requestBodies/ConsumerUpsertPutCollection.yaml
+  responses:
+    "201":
+      description: Created
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              key:
+                description: Unique key identifier for this consumer.
+                type: string
+              value:
+                description: Consumer values.
+                properties:
+                  plugins:
+                    description: Key-value pairs of plugins and their configurations on the object.
+                    type: object
+                    properties: {}
+                  username:
+                    description: The unique identifier of the consumer.
+                    type: string
+                    minLength: 1
+                    maxLength: 100
+                    pattern: ^[a-zA-Z0-9_-]+$
+                  labels:
+                    type: object
+                    patternProperties:
+                      .*:
+                        minLength: 1
+                        maxLength: 64
+                        pattern: ^\S+$
+                        type: string
+                        description: Value of label.
+                    description: Key-value pairs to specify attributes.
+                    properties: {}
+                  desc:
+                    description: Consumer description.
+                    maxLength: 256
+                    type: string
+                  group_id:
+                    description: Consumer group ID.
+                    anyOf:
+                      - type: string
+                        minLength: 1
+                        maxLength: 64
+                        pattern: ^[a-zA-Z0-9-_.]+$
+                      - minimum: 1
+                        type: integer
+                  create_time:
+                    description: Creation time of the consumer.
+                    type: integer
+                type: object
+          examples:
+            "1":
+              summary: Successful Example
+              value:
+                key: /apisix/consumers/jack
+                value:
+                  plugins:
+                    limit-count:
+                      time_window: 60
+                      rejected_code: 503
+                      key: remote_addr
+                      key_type: var
+                      count: 2
+                      show_limit_quota_header: true
+                      allow_degradation: false
+                      policy: local
+                  username: jack
+                  create_time: 1683164776
+                  update_time: 1684289832
+    "400":
+      $ref: ../components/responses/BadRequest.yaml
+      description: Invalid configuration
+    "401":
+      $ref: ../components/responses/Unauthorized.yaml
+    "503":
+      $ref: ../components/responses/BadRequest.yaml
+      description: Storage access or write failed.
+  operationId: putConsumerByUsername

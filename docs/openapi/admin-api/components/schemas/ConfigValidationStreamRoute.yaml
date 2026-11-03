@@ -1,0 +1,100 @@
+additionalProperties: false
+properties:
+  update_time:
+    type: integer
+    readOnly: true
+  protocol:
+    required:
+      - name
+    properties:
+      superior_id:
+        $ref: ./ResourceId.yaml
+      name:
+        type: string
+      logger:
+        items:
+          additionalProperties: false
+          properties:
+            name:
+              type: string
+            conf:
+              type: object
+              description: logger plugin configuration
+            filter:
+              type: array
+              description: logger filter rules
+          dependentRequired:
+            name:
+              - conf
+        type: array
+      conf:
+        type: object
+        description: protocol-specific configuration
+    type: object
+  upstream_id:
+    $ref: ./ResourceId.yaml
+  service_id:
+    $ref: ./ResourceId.yaml
+  create_time:
+    type: integer
+    readOnly: true
+  labels:
+    $ref: ./Labels.yaml
+  upstream:
+    $ref: ./Upstream.yaml
+  remote_addr:
+    description: client IP
+    anyOf:
+      - format: ipv4
+        type: string
+        title: IPv4
+      - pattern: ^([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])/([12]?[0-9]|3[0-2])$
+        type: string
+        title: IPv4/CIDR
+      - format: ipv6
+        type: string
+        title: IPv6
+      - pattern: ^([a-fA-F0-9]{0,4}:){1,8}(:[a-fA-F0-9]{0,4}){0,8}([a-fA-F0-9]{0,4})?/[0-9]{1,3}$
+        type: string
+        title: IPv6/CIDR
+    type: string
+  plugins:
+    type: object
+  sni:
+    description: server name indication
+    pattern: ^\*$|^\*?[0-9a-zA-Z-._\[\]:]+$
+    type: string
+  server_port:
+    maximum: 65535
+    description: server port
+    minimum: 1
+    type: integer
+  server_addr:
+    description: server IP
+    anyOf:
+      - format: ipv4
+        type: string
+        title: IPv4
+      - pattern: ^([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])/([12]?[0-9]|3[0-2])$
+        type: string
+        title: IPv4/CIDR
+      - format: ipv6
+        type: string
+        title: IPv6
+      - pattern: ^([a-fA-F0-9]{0,4}:){1,8}(:[a-fA-F0-9]{0,4}){0,8}([a-fA-F0-9]{0,4})?/[0-9]{1,3}$
+        type: string
+        title: IPv6/CIDR
+    type: string
+  id:
+    $ref: ./ResourceId.yaml
+  desc:
+    maxLength: 256
+    type: string
+  name:
+    minLength: 1
+    maxLength: 256
+    type: string
+  modifiedIndex:
+    type: integer
+type: object
+x-source: apisix/schema_def.lua

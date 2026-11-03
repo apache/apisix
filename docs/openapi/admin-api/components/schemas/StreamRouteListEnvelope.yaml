@@ -1,0 +1,12 @@
+type: object
+description: Paginated list of `StreamRoute` envelopes.
+properties:
+  total:
+    type: integer
+  list:
+    type: array
+    items:
+      $ref: ./StreamRouteEnvelope.yaml
+required:
+  - total
+  - list

@@ -1,0 +1,19 @@
+required:
+  - id
+  - plugins
+additionalProperties: false
+properties:
+  plugins:
+    type: object
+  id:
+    $ref: ./ResourceId.yaml
+  update_time:
+    type: integer
+    readOnly: true
+  create_time:
+    type: integer
+    readOnly: true
+  modifiedIndex:
+    type: integer
+type: object
+x-source: apisix/schema_def.lua

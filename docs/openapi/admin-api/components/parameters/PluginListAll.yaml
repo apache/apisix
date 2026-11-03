@@ -1,0 +1,9 @@
+name: all
+in: query
+required: true
+schema:
+  type: string
+  enum:
+    - "true"
+description: Deprecated. When `true`, return the full plugin catalog.
+deprecated: true

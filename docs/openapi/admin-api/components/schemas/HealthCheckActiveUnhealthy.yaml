@@ -1,0 +1,39 @@
+properties:
+  interval:
+    default: 1
+    minimum: 1
+    type: integer
+  http_statuses:
+    items:
+      maximum: 599
+      minimum: 200
+      type: integer
+    minItems: 1
+    uniqueItems: true
+    default:
+      - 429
+      - 404
+      - 500
+      - 501
+      - 502
+      - 503
+      - 504
+      - 505
+    type: array
+  timeouts:
+    default: 3
+    maximum: 254
+    minimum: 1
+    type: integer
+  tcp_failures:
+    default: 2
+    maximum: 254
+    minimum: 1
+    type: integer
+  http_failures:
+    default: 5
+    maximum: 254
+    minimum: 1
+    type: integer
+type: object
+x-source: apisix/schema_def.lua

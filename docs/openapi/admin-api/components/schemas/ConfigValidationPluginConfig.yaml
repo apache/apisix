@@ -1,0 +1,26 @@
+required:
+  - id
+  - plugins
+additionalProperties: false
+properties:
+  update_time:
+    type: integer
+    readOnly: true
+  plugins:
+    type: object
+  create_time:
+    type: integer
+    readOnly: true
+  labels:
+    $ref: ./Labels.yaml
+  id:
+    $ref: ./ResourceId.yaml
+  desc:
+    maxLength: 256
+    type: string
+  name:
+    type: string
+  modifiedIndex:
+    type: integer
+type: object
+x-source: apisix/schema_def.lua

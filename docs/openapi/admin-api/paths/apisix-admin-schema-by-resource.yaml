@@ -1,0 +1,20 @@
+parameters:
+  - $ref: ../components/parameters/SchemaNameInPath.yaml
+get:
+  tags:
+    - Schema Validation
+  operationId: getResourceSchema
+  summary: Get the JSON Schema of a built-in resource
+  description: Returns the JSON Schema document used internally by APISIX to validate the named resource type.
+  responses:
+    "200":
+      description: JSON Schema document.
+      content:
+        application/json:
+          schema:
+            type: object
+    "400":
+      $ref: ../components/responses/BadRequest.yaml
+    "401":
+      $ref: ../components/responses/Unauthorized.yaml
+  parameters: []

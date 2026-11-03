@@ -1,0 +1,56 @@
+properties:
+  http_method:
+    default: GET
+    enum:
+      - GET
+      - POST
+      - PUT
+      - DELETE
+      - PATCH
+      - HEAD
+      - OPTIONS
+      - CONNECT
+      - TRACE
+      - PURGE
+    type: string
+  port:
+    maximum: 65535
+    minimum: 1
+    type: integer
+  host:
+    pattern: ^\*$|^\*?[0-9a-zA-Z-._\[\]:]+$
+    type: string
+  timeout:
+    default: 1
+    type: number
+  unhealthy:
+    $ref: ./HealthCheckActiveUnhealthy.yaml
+  healthy:
+    $ref: ./HealthCheckActiveHealthy.yaml
+  https_verify_certificate:
+    default: true
+    type: boolean
+  req_headers:
+    items:
+      uniqueItems: true
+      type: string
+    minItems: 1
+    type: array
+  http_path:
+    default: /
+    type: string
+  http_req_body:
+    default: ""
+    type: string
+  concurrency:
+    default: 10
+    type: integer
+  type:
+    default: http
+    enum:
+      - http
+      - https
+      - tcp
+    type: string
+type: object
+x-source: apisix/schema_def.lua

@@ -1,0 +1,21 @@
+description: "`GlobalRule` configuration body for create / replace / patch."
+required: true
+content:
+  application/json:
+    schema:
+      allOf:
+        - $ref: ../schemas/GlobalRule.yaml
+        - not:
+            anyOf:
+              - required:
+                  - create_time
+              - required:
+                  - update_time
+      description: Wire request body. APISIX injects timestamps and, where appropriate, the path or generated resource ID. A supplied ID must agree with the path.
+    example:
+      plugins:
+        prometheus: {}
+        ip-restriction:
+          whitelist:
+            - 10.0.0.0/8
+            - 172.16.0.0/12

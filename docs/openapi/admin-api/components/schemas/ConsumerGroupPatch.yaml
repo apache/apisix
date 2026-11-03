@@ -1,0 +1,31 @@
+type: object
+properties:
+  plugins:
+    anyOf:
+      - type: object
+      - type: "null"
+  labels:
+    anyOf:
+      - type: object
+      - type: "null"
+  desc:
+    anyOf:
+      - maxLength: 256
+        type: string
+      - type: "null"
+  name:
+    anyOf:
+      - minLength: 1
+        maxLength: 256
+        type: string
+      - type: "null"
+  id:
+    $ref: ./ResourceId.yaml
+  create_time:
+    type: integer
+    readOnly: true
+  update_time:
+    type: integer
+    readOnly: true
+additionalProperties: false
+description: Recursive merge fragment. Null deletes object fields; arrays are replaced. APISIX validates the resulting resource, including plugin and reference checks.

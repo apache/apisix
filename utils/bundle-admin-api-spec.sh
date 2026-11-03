@@ -21,7 +21,7 @@ set -euo pipefail
 
 task_script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 task_repo_root=$(cd -- "${task_script_dir}/.." && pwd)
-task_source="${task_repo_root}/docs/openapi/admin-api/openapi.json"
+task_source="${task_repo_root}/docs/openapi/admin-api/openapi.yaml"
 task_output="${1:-${task_repo_root}/docs/en/latest/admin-api.json}"
 task_tmp_dir=$(mktemp -d)
 

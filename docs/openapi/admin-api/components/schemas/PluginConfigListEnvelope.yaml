@@ -1,0 +1,12 @@
+type: object
+description: Paginated list of `PluginConfig` envelopes.
+properties:
+  total:
+    type: integer
+  list:
+    type: array
+    items:
+      $ref: ./PluginConfigEnvelope.yaml
+required:
+  - total
+  - list

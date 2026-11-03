@@ -1,0 +1,25 @@
+required:
+  - host
+  - weight
+properties:
+  weight:
+    description: weight of node
+    minimum: 0
+    type: integer
+  port:
+    maximum: 65535
+    description: port of node
+    minimum: 1
+    type: integer
+  host:
+    pattern: ^\*$|^\*?[0-9a-zA-Z-._\[\]:]+$
+    type: string
+  metadata:
+    type: object
+    description: metadata of node
+  priority:
+    description: priority of node
+    default: 0
+    type: integer
+type: object
+x-source: apisix/schema_def.lua

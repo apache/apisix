@@ -1,0 +1,9 @@
+name: page_size
+in: query
+required: false
+schema:
+  type: integer
+  minimum: 10
+  maximum: 500
+description: Items per page, 10–500. Pagination is applied only when both page and page_size are numeric; otherwise the full filtered list is returned.
+example: 20

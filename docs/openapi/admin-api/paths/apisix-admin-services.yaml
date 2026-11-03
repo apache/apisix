@@ -1,0 +1,192 @@
+get:
+  summary: List All Services
+  description: Retrieve all configured services.
+  tags:
+    - Services
+  parameters:
+    - $ref: ../components/parameters/NameFilter.yaml
+    - $ref: ../components/parameters/LabelFilter.yaml
+    - $ref: ../components/parameters/Page.yaml
+    - $ref: ../components/parameters/PageSize.yaml
+  responses:
+    "200":
+      description: Successful response.
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ServiceListEnvelope.yaml
+          examples:
+            "1":
+              summary: Successful Example
+              value:
+                total: 1
+                list:
+                  - createdIndex: 117
+                    key: /apisix/services/1
+                    value:
+                      enable_websocket: true
+                      name: service-test
+                      update_time: 1684288908
+                      create_time: 1684287870
+                      id: "1"
+                      desc: hello world
+                      upstream:
+                        hash_on: vars
+                        pass_host: pass
+                        nodes:
+                          127.0.0.1:1980: 1
+                        type: roundrobin
+                        scheme: http
+                      plugins:
+                        limit-count:
+                          show_limit_quota_header: true
+                          policy: local
+                          count: 2
+                          key: remote_addr
+                          rejected_code: 503
+                          time_window: 60
+                          key_type: var
+                          allow_degradation: false
+                      hosts:
+                        - foo.com
+                    modifiedIndex: 118
+    "401":
+      $ref: ../components/responses/Unauthorized.yaml
+    "503":
+      $ref: ../components/responses/BadRequest.yaml
+      description: Storage access or write failed.
+  operationId: listServices
+post:
+  summary: Create a Service
+  description: Create a new service with an auto-generated ID.
+  tags:
+    - Services
+  parameters:
+    - $ref: ../components/parameters/Ttl.yaml
+  requestBody:
+    $ref: ../components/requestBodies/ServiceUpsertPostCollection.yaml
+  responses:
+    "201":
+      description: Created
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ServiceEnvelope.yaml
+          examples:
+            "1":
+              summary: Successful Example
+              value:
+                value:
+                  enable_websocket: true
+                  name: service-test
+                  update_time: 1684491069
+                  create_time: 1684491069
+                  plugins: {}
+                  id: "00000000000000000218"
+                  upstream:
+                    hash_on: vars
+                    pass_host: pass
+                    nodes:
+                      127.0.0.1:1980: 1
+                    type: roundrobin
+                    scheme: http
+                  desc: hello world
+                  hosts:
+                    - foo.com
+                key: /apisix/services/00000000000000000218
+    "400":
+      $ref: ../components/responses/BadRequest.yaml
+      description: Invalid configuration
+    "401":
+      $ref: ../components/responses/Unauthorized.yaml
+    "503":
+      $ref: ../components/responses/BadRequest.yaml
+      description: Storage access or write failed.
+  operationId: createService
+put:
+  summary: Create or replace services using a body ID
+  description: Equivalent to PUT on the item URL, with id required in the request body. The resource handler injects and validates this ID before persistence.
+  tags:
+    - Services
+  parameters:
+    - $ref: ../components/parameters/Ttl.yaml
+  requestBody:
+    description: "`Service` configuration body for create / replace / patch."
+    required: true
+    content:
+      application/json:
+        schema:
+          allOf:
+            - allOf:
+                - $ref: ../components/schemas/Service.yaml
+                - not:
+                    anyOf:
+                      - required:
+                          - create_time
+                      - required:
+                          - update_time
+              description: Wire request body. APISIX injects timestamps and, where appropriate, the path or generated resource ID. A supplied ID must agree with the path.
+            - required:
+                - id
+        example:
+          name: user-service
+          desc: User management microservice
+          upstream:
+            type: roundrobin
+            nodes:
+              user-svc:8080: 1
+          plugins:
+            limit-count:
+              count: 200
+              time_window: 60
+              rejected_code: 429
+              key_type: var
+              key: remote_addr
+          id: "1"
+  responses:
+    "201":
+      description: Created
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ServiceEnvelope.yaml
+          examples:
+            "1":
+              summary: Successful Example
+              value:
+                value:
+                  desc: hello world
+                  name: service-test
+                  update_time: 1684491005
+                  create_time: 1684287870
+                  plugins:
+                    limit-count:
+                      show_limit_quota_header: true
+                      policy: local
+                      count: 2
+                      key: remote_addr
+                      rejected_code: 503
+                      time_window: 60
+                      key_type: var
+                      allow_degradation: false
+                  id: "1"
+                  upstream:
+                    hash_on: vars
+                    pass_host: pass
+                    nodes:
+                      127.0.0.1:1980: 1
+                    type: roundrobin
+                    scheme: http
+                  enable_websocket: true
+                  hosts:
+                    - foo.com
+                key: /apisix/services/1
+    "400":
+      $ref: ../components/responses/BadRequest.yaml
+      description: Invalid configuration
+    "401":
+      $ref: ../components/responses/Unauthorized.yaml
+    "503":
+      $ref: ../components/responses/BadRequest.yaml
+      description: Storage access or write failed.
+  operationId: putServiceWithBodyId

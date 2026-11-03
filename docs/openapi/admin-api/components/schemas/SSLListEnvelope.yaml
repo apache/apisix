@@ -1,0 +1,12 @@
+type: object
+description: Paginated list of `SSLRead` envelopes.
+properties:
+  total:
+    type: integer
+  list:
+    type: array
+    items:
+      $ref: ./SSLEnvelope.yaml
+required:
+  - total
+  - list

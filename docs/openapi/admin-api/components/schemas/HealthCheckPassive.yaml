@@ -1,0 +1,14 @@
+properties:
+  unhealthy:
+    $ref: ./HealthCheckPassiveUnhealthy.yaml
+  healthy:
+    $ref: ./HealthCheckPassiveHealthy.yaml
+  type:
+    default: http
+    enum:
+      - http
+      - https
+      - tcp
+    type: string
+type: object
+x-source: apisix/schema_def.lua

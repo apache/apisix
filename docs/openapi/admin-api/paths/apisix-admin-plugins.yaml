@@ -1,0 +1,47 @@
+get:
+  summary: List Plugin Attributes
+  description: |-
+    Get attributes of all plugins configured on the APISIX instance.
+
+    > **Deprecated:** This endpoint is being replaced. Use `GET /plugins/list` and `GET /plugins/{plugin_name}` instead.
+  tags:
+    - Plugins
+  parameters:
+    - $ref: ../components/parameters/PluginListAll.yaml
+    - $ref: ../components/parameters/Subsystem.yaml
+  responses:
+    "200":
+      description: Successful response.
+      content:
+        application/json:
+          schema:
+            type: object
+            description: Map of loaded plugin names to plugin attributes. Attribute availability depends on the plugin.
+            additionalProperties:
+              type: object
+              properties:
+                version:
+                  type: number
+                priority:
+                  type: integer
+                schema:
+                  type: object
+                consumer_schema:
+                  type: object
+                metadata_schema:
+                  type: object
+                type:
+                  type: string
+                scope:
+                  type: string
+    "400":
+      description: Unsupported subsystem or missing schema. /plugins/list returns a JSON string; other plugin endpoints return an error object.
+      content:
+        application/json:
+          schema:
+            anyOf:
+              - type: string
+              - $ref: ../components/schemas/ErrorResponse.yaml
+    "401":
+      $ref: ../components/responses/Unauthorized.yaml
+  operationId: listPluginAttributes

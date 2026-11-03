@@ -1,0 +1,6 @@
+anyOf:
+  - $ref: ./UpstreamNodesMap.yaml
+  - items:
+      $ref: ./UpstreamNodeItem.yaml
+    type: array
+x-source: apisix/schema_def.lua

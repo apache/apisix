@@ -1,0 +1,643 @@
+type: object
+properties:
+  upstream:
+    anyOf:
+      - type: object
+        properties:
+          tls:
+            anyOf:
+              - type: object
+                properties:
+                  client_key:
+                    anyOf:
+                      - minLength: 64
+                        maxLength: 65536
+                        type: string
+                      - type: "null"
+                  client_cert:
+                    anyOf:
+                      - minLength: 128
+                        maxLength: 65536
+                        type: string
+                      - type: "null"
+                  client_cert_id:
+                    anyOf:
+                      - anyOf:
+                          - minLength: 1
+                            pattern: ^[a-zA-Z0-9-_.]+$
+                            maxLength: 64
+                            type: string
+                          - type: "null"
+                      - anyOf:
+                          - minimum: 1
+                            type: integer
+                          - type: "null"
+                      - type: "null"
+                  verify:
+                    anyOf:
+                      - description: Turn on server certificate verification, currently only kafka upstream is supported
+                        type: boolean
+                      - type: "null"
+              - type: "null"
+          update_time:
+            anyOf:
+              - type: integer
+              - type: "null"
+          retry_timeout:
+            anyOf:
+              - minimum: 0
+                type: number
+              - type: "null"
+          scheme:
+            anyOf:
+              - description: The scheme of the upstream. For L7 proxy, it can be one of grpc/grpcs/http/https. For L4 proxy, it can be one of tcp/tls/udp. For specific protocols, it can be kafka.
+                enum:
+                  - grpc
+                  - grpcs
+                  - http
+                  - https
+                  - tcp
+                  - tls
+                  - udp
+                  - kafka
+              - type: "null"
+          retries:
+            anyOf:
+              - minimum: 0
+                type: integer
+              - type: "null"
+          hash_on:
+            anyOf:
+              - enum:
+                  - vars
+                  - header
+                  - cookie
+                  - consumer
+                  - vars_combinations
+                type: string
+              - type: "null"
+          service_name:
+            anyOf:
+              - minLength: 1
+                maxLength: 256
+                type: string
+              - type: "null"
+          nodes:
+            anyOf:
+              - anyOf:
+                  - type: object
+                  - type: "null"
+              - anyOf:
+                  - items:
+                      $ref: ./UpstreamNodeItem.yaml
+                    type: array
+                  - type: "null"
+              - type: "null"
+          discovery_type:
+            anyOf:
+              - type: string
+                description: discovery type
+              - type: "null"
+          upstream_host:
+            anyOf:
+              - pattern: ^\*$|^\*?[0-9a-zA-Z-._\[\]:]+$
+                type: string
+              - type: "null"
+          timeout:
+            anyOf:
+              - type: object
+                properties:
+                  connect:
+                    anyOf:
+                      - exclusiveMinimum: 0
+                        type: number
+                      - type: "null"
+                  send:
+                    anyOf:
+                      - exclusiveMinimum: 0
+                        type: number
+                      - type: "null"
+                  read:
+                    anyOf:
+                      - exclusiveMinimum: 0
+                        type: number
+                      - type: "null"
+              - type: "null"
+          create_time:
+            anyOf:
+              - type: integer
+              - type: "null"
+          labels:
+            anyOf:
+              - type: object
+              - type: "null"
+          keepalive_pool:
+            anyOf:
+              - type: object
+                properties:
+                  size:
+                    anyOf:
+                      - minimum: 1
+                        type: integer
+                      - type: "null"
+                  requests:
+                    anyOf:
+                      - minimum: 1
+                        type: integer
+                      - type: "null"
+                  idle_timeout:
+                    anyOf:
+                      - minimum: 0
+                        type: number
+                      - type: "null"
+              - type: "null"
+          checks:
+            anyOf:
+              - type: object
+                properties:
+                  passive:
+                    anyOf:
+                      - type: object
+                        properties:
+                          unhealthy:
+                            anyOf:
+                              - type: object
+                                properties:
+                                  http_failures:
+                                    anyOf:
+                                      - maximum: 254
+                                        minimum: 0
+                                        type: integer
+                                      - type: "null"
+                                  http_statuses:
+                                    anyOf:
+                                      - items:
+                                          maximum: 599
+                                          minimum: 200
+                                          type: integer
+                                        minItems: 1
+                                        uniqueItems: true
+                                        type: array
+                                      - type: "null"
+                                  tcp_failures:
+                                    anyOf:
+                                      - maximum: 254
+                                        minimum: 0
+                                        type: integer
+                                      - type: "null"
+                                  timeouts:
+                                    anyOf:
+                                      - maximum: 254
+                                        minimum: 0
+                                        type: integer
+                                      - type: "null"
+                              - type: "null"
+                          healthy:
+                            anyOf:
+                              - type: object
+                                properties:
+                                  successes:
+                                    anyOf:
+                                      - maximum: 254
+                                        minimum: 0
+                                        type: integer
+                                      - type: "null"
+                                  http_statuses:
+                                    anyOf:
+                                      - items:
+                                          maximum: 599
+                                          minimum: 200
+                                          type: integer
+                                        minItems: 1
+                                        uniqueItems: true
+                                        type: array
+                                      - type: "null"
+                              - type: "null"
+                          type:
+                            anyOf:
+                              - enum:
+                                  - http
+                                  - https
+                                  - tcp
+                                type: string
+                              - type: "null"
+                      - type: "null"
+                  active:
+                    anyOf:
+                      - type: object
+                        properties:
+                          http_method:
+                            anyOf:
+                              - enum:
+                                  - GET
+                                  - POST
+                                  - PUT
+                                  - DELETE
+                                  - PATCH
+                                  - HEAD
+                                  - OPTIONS
+                                  - CONNECT
+                                  - TRACE
+                                  - PURGE
+                                type: string
+                              - type: "null"
+                          port:
+                            anyOf:
+                              - maximum: 65535
+                                minimum: 1
+                                type: integer
+                              - type: "null"
+                          host:
+                            anyOf:
+                              - pattern: ^\*$|^\*?[0-9a-zA-Z-._\[\]:]+$
+                                type: string
+                              - type: "null"
+                          timeout:
+                            anyOf:
+                              - type: number
+                              - type: "null"
+                          unhealthy:
+                            anyOf:
+                              - type: object
+                                properties:
+                                  interval:
+                                    anyOf:
+                                      - minimum: 1
+                                        type: integer
+                                      - type: "null"
+                                  http_statuses:
+                                    anyOf:
+                                      - items:
+                                          maximum: 599
+                                          minimum: 200
+                                          type: integer
+                                        minItems: 1
+                                        uniqueItems: true
+                                        type: array
+                                      - type: "null"
+                                  timeouts:
+                                    anyOf:
+                                      - maximum: 254
+                                        minimum: 1
+                                        type: integer
+                                      - type: "null"
+                                  tcp_failures:
+                                    anyOf:
+                                      - maximum: 254
+                                        minimum: 1
+                                        type: integer
+                                      - type: "null"
+                                  http_failures:
+                                    anyOf:
+                                      - maximum: 254
+                                        minimum: 1
+                                        type: integer
+                                      - type: "null"
+                              - type: "null"
+                          healthy:
+                            anyOf:
+                              - type: object
+                                properties:
+                                  interval:
+                                    anyOf:
+                                      - minimum: 1
+                                        type: integer
+                                      - type: "null"
+                                  http_statuses:
+                                    anyOf:
+                                      - items:
+                                          maximum: 599
+                                          minimum: 200
+                                          type: integer
+                                        minItems: 1
+                                        uniqueItems: true
+                                        type: array
+                                      - type: "null"
+                                  successes:
+                                    anyOf:
+                                      - maximum: 254
+                                        minimum: 1
+                                        type: integer
+                                      - type: "null"
+                              - type: "null"
+                          https_verify_certificate:
+                            anyOf:
+                              - type: boolean
+                              - type: "null"
+                          req_headers:
+                            anyOf:
+                              - items:
+                                  uniqueItems: true
+                                  type: string
+                                minItems: 1
+                                type: array
+                              - type: "null"
+                          http_path:
+                            anyOf:
+                              - type: string
+                              - type: "null"
+                          http_req_body:
+                            anyOf:
+                              - type: string
+                              - type: "null"
+                          concurrency:
+                            anyOf:
+                              - type: integer
+                              - type: "null"
+                          type:
+                            anyOf:
+                              - enum:
+                                  - http
+                                  - https
+                                  - tcp
+                                type: string
+                              - type: "null"
+                      - type: "null"
+              - type: "null"
+          key:
+            anyOf:
+              - type: string
+                description: the key of chash for dynamic load balancing
+              - type: "null"
+          discovery_args:
+            anyOf:
+              - type: object
+                properties:
+                  group_name:
+                    anyOf:
+                      - type: string
+                        description: group name
+                      - type: "null"
+                  namespace_id:
+                    anyOf:
+                      - type: string
+                        description: namespace id
+                      - type: "null"
+              - type: "null"
+          name:
+            anyOf:
+              - minLength: 1
+                maxLength: 256
+                type: string
+              - type: "null"
+          pass_host:
+            anyOf:
+              - description: mod of host passing
+                enum:
+                  - pass
+                  - node
+                  - rewrite
+                type: string
+              - type: "null"
+          id:
+            anyOf:
+              - anyOf:
+                  - minLength: 1
+                    pattern: ^[a-zA-Z0-9-_.]+$
+                    maxLength: 64
+                    type: string
+                  - type: "null"
+              - anyOf:
+                  - minimum: 1
+                    type: integer
+                  - type: "null"
+              - type: "null"
+          desc:
+            anyOf:
+              - maxLength: 256
+                type: string
+              - type: "null"
+          type:
+            anyOf:
+              - description: algorithms of load balancing
+                type: string
+              - type: "null"
+        additionalProperties: false
+      - type: "null"
+  script:
+    anyOf:
+      - minLength: 10
+        maxLength: 102400
+        type: string
+      - type: "null"
+  plugins:
+    anyOf:
+      - type: object
+      - type: "null"
+  remote_addrs:
+    anyOf:
+      - items:
+          description: client IP
+          anyOf:
+            - format: ipv4
+              type: string
+              title: IPv4
+            - pattern: ^([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])/([12]?[0-9]|3[0-2])$
+              type: string
+              title: IPv4/CIDR
+            - format: ipv6
+              type: string
+              title: IPv6
+            - pattern: ^([a-fA-F0-9]{0,4}:){1,8}(:[a-fA-F0-9]{0,4}){0,8}([a-fA-F0-9]{0,4})?/[0-9]{1,3}$
+              type: string
+              title: IPv6/CIDR
+          type: string
+        minItems: 1
+        uniqueItems: true
+        type: array
+      - type: "null"
+  priority:
+    anyOf:
+      - type: integer
+      - type: "null"
+  hosts:
+    anyOf:
+      - items:
+          pattern: ^\*$|^\*?[0-9a-zA-Z-._\[\]:]+$
+          type: string
+        minItems: 1
+        uniqueItems: true
+        type: array
+      - type: "null"
+  plugin_config_id:
+    anyOf:
+      - anyOf:
+          - minLength: 1
+            pattern: ^[a-zA-Z0-9-_.]+$
+            maxLength: 64
+            type: string
+          - type: "null"
+      - anyOf:
+          - minimum: 1
+            type: integer
+          - type: "null"
+      - type: "null"
+  methods:
+    anyOf:
+      - items:
+          description: HTTP method
+          enum:
+            - GET
+            - POST
+            - PUT
+            - DELETE
+            - PATCH
+            - HEAD
+            - OPTIONS
+            - CONNECT
+            - TRACE
+            - PURGE
+          type: string
+        uniqueItems: true
+        type: array
+      - type: "null"
+  uri:
+    anyOf:
+      - minLength: 1
+        maxLength: 4096
+        type: string
+      - type: "null"
+  enable_websocket:
+    anyOf:
+      - type: boolean
+        description: enable websocket for request
+      - type: "null"
+  upstream_id:
+    anyOf:
+      - anyOf:
+          - minLength: 1
+            pattern: ^[a-zA-Z0-9-_.]+$
+            maxLength: 64
+            type: string
+          - type: "null"
+      - anyOf:
+          - minimum: 1
+            type: integer
+          - type: "null"
+      - type: "null"
+  service_id:
+    anyOf:
+      - anyOf:
+          - minLength: 1
+            pattern: ^[a-zA-Z0-9-_.]+$
+            maxLength: 64
+            type: string
+          - type: "null"
+      - anyOf:
+          - minimum: 1
+            type: integer
+          - type: "null"
+      - type: "null"
+  host:
+    anyOf:
+      - pattern: ^\*$|^\*?[0-9a-zA-Z-._\[\]:]+$
+        type: string
+      - type: "null"
+  timeout:
+    anyOf:
+      - type: object
+        properties:
+          connect:
+            anyOf:
+              - exclusiveMinimum: 0
+                type: number
+              - type: "null"
+          send:
+            anyOf:
+              - exclusiveMinimum: 0
+                type: number
+              - type: "null"
+          read:
+            anyOf:
+              - exclusiveMinimum: 0
+                type: number
+              - type: "null"
+      - type: "null"
+  labels:
+    anyOf:
+      - type: object
+      - type: "null"
+  script_id:
+    anyOf:
+      - anyOf:
+          - minLength: 1
+            pattern: ^[a-zA-Z0-9-_.]+$
+            maxLength: 64
+            type: string
+          - type: "null"
+      - anyOf:
+          - minimum: 1
+            type: integer
+          - type: "null"
+      - type: "null"
+  remote_addr:
+    anyOf:
+      - anyOf:
+          - format: ipv4
+            type: string
+            title: IPv4
+          - type: "null"
+      - anyOf:
+          - pattern: ^([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])/([12]?[0-9]|3[0-2])$
+            type: string
+            title: IPv4/CIDR
+          - type: "null"
+      - anyOf:
+          - format: ipv6
+            type: string
+            title: IPv6
+          - type: "null"
+      - anyOf:
+          - pattern: ^([a-fA-F0-9]{0,4}:){1,8}(:[a-fA-F0-9]{0,4}){0,8}([a-fA-F0-9]{0,4})?/[0-9]{1,3}$
+            type: string
+            title: IPv6/CIDR
+          - type: "null"
+      - type: "null"
+  status:
+    anyOf:
+      - description: route status, 1 to enable, 0 to disable
+        enum:
+          - 1
+          - 0
+        type: integer
+      - type: "null"
+  filter_func:
+    anyOf:
+      - pattern: ^function
+        minLength: 10
+        type: string
+      - type: "null"
+  vars:
+    anyOf:
+      - type: array
+      - type: "null"
+  name:
+    anyOf:
+      - minLength: 1
+        maxLength: 256
+        type: string
+      - type: "null"
+  desc:
+    anyOf:
+      - maxLength: 256
+        type: string
+      - type: "null"
+  uris:
+    anyOf:
+      - items:
+          type: string
+          description: HTTP uri
+        minItems: 1
+        uniqueItems: true
+        type: array
+      - type: "null"
+  id:
+    $ref: ./ResourceId.yaml
+  create_time:
+    type: integer
+    readOnly: true
+  update_time:
+    type: integer
+    readOnly: true
+additionalProperties: false
+description: Recursive merge fragment. Null deletes object fields; arrays are replaced. APISIX validates the resulting resource, including plugin and reference checks.

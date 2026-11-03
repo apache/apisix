@@ -1,0 +1,14 @@
+type: object
+description: SSL write response, which may contain encrypted private-key fields.
+properties:
+  key:
+    type: string
+  value:
+    $ref: ./SSL.yaml
+  createdIndex:
+    type: integer
+  modifiedIndex:
+    type: integer
+required:
+  - key
+  - value

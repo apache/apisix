@@ -1,0 +1,196 @@
+get:
+  summary: List All SSL Certificates
+  description: Retrieve all configured SSL certificates. Private keys are **not** included in the response for security.
+  tags:
+    - SSL Certificates
+  parameters:
+    - $ref: ../components/parameters/LabelFilter.yaml
+    - $ref: ../components/parameters/Page.yaml
+    - $ref: ../components/parameters/PageSize.yaml
+  responses:
+    "200":
+      description: Successful response.
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/SSLListEnvelope.yaml
+          examples:
+            "1":
+              summary: Successful Example
+              value:
+                list:
+                  - value:
+                      type: server
+                      snis:
+                        - test.com
+                      id: "1"
+                      create_time: 1684373523
+                      status: 1
+                      cert: |
+                        -----BEGIN CERTIFICATE-----
+                        MIIDazCCAlOgAwIBAgIUJ9hQk3kXgZeZpY/m/0V6RmH1AbcwDQYJKoZIhvcNAQEL
+                        BQAwRTELMAkGA1UEBhMCVVMxEzARBgNVBAgMClNvbWUtU3RhdGUxITAfBgNVBAoM
+                        GEludGVybmFsIFJvb3QgQ0EgKGV4YW1wbGUpMB4XDTI1MDEwMTAwMDAwMFoXDTM1
+                        MDEwMTAwMDAwMFowRTELMAkGA1UEBhMCVVMxEzARBgNVBAgMClNvbWUtU3RhdGUx
+                        ITAfBgNVBAoMGEludGVybmFsIFJvb3QgQ0EgKGV4YW1wbGUpMIIBIjANBgkqhkiG
+                        9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4eXAMPLEcaPUBLIcfakeforopeNAPIspecON
+                        LYexampleCAcontentsoExpandedFakeKeyMaterial==
+                        -----END CERTIFICATE-----
+                      update_time: 1684373523
+                    key: /apisix/ssls/1
+                    modifiedIndex: 133
+                    createdIndex: 133
+                total: 1
+    "401":
+      $ref: ../components/responses/Unauthorized.yaml
+    "503":
+      $ref: ../components/responses/BadRequest.yaml
+      description: Storage access or write failed.
+  operationId: listSSLCertificates
+post:
+  summary: Create an SSL Certificate
+  description: Upload a new SSL certificate with an auto-generated ID.
+  tags:
+    - SSL Certificates
+  parameters:
+    - $ref: ../components/parameters/Ttl.yaml
+  requestBody:
+    $ref: ../components/requestBodies/SslUpsertPostCollection.yaml
+  responses:
+    "201":
+      description: Created
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/SSLWriteEnvelope.yaml
+          examples:
+            "1":
+              summary: Successful Example
+              value:
+                key: /apisix/ssls/00000000000000000134
+                value:
+                  type: server
+                  cert: |
+                    -----BEGIN CERTIFICATE-----
+                    MIIDazCCAlOgAwIBAgIUJ9hQk3kXgZeZpY/m/0V6RmH1AbcwDQYJKoZIhvcNAQEL
+                    BQAwRTELMAkGA1UEBhMCVVMxEzARBgNVBAgMClNvbWUtU3RhdGUxITAfBgNVBAoM
+                    GEludGVybmFsIFJvb3QgQ0EgKGV4YW1wbGUpMB4XDTI1MDEwMTAwMDAwMFoXDTM1
+                    MDEwMTAwMDAwMFowRTELMAkGA1UEBhMCVVMxEzARBgNVBAgMClNvbWUtU3RhdGUx
+                    ITAfBgNVBAoMGEludGVybmFsIFJvb3QgQ0EgKGV4YW1wbGUpMIIBIjANBgkqhkiG
+                    9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4eXAMPLEcaPUBLIcfakeforopeNAPIspecON
+                    LYexampleCAcontentsoExpandedFakeKeyMaterial==
+                    -----END CERTIFICATE-----
+                  key: |
+                    -----BEGIN PRIVATE KEY-----
+                    MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDh5cAWYXAMPLEbe
+                    fakekeyForOpenAPISpecPlaceholderOnlyDoNotUseForRealKeysNopeNopeNo
+                    peNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNo
+                    peNopeNopeNopeNopeNopeNope==
+                    -----END PRIVATE KEY-----
+                  id: "00000000000000000134"
+                  create_time: 1684374944
+                  status: 1
+                  snis:
+                    - test.com
+                  update_time: 1684374944
+    "400":
+      $ref: ../components/responses/BadRequest.yaml
+      description: Invalid configuration
+    "401":
+      $ref: ../components/responses/Unauthorized.yaml
+    "503":
+      $ref: ../components/responses/BadRequest.yaml
+      description: Storage access or write failed.
+  operationId: createSSLCertificate
+put:
+  summary: Create or replace ssls using a body ID
+  description: Equivalent to PUT on the item URL, with id required in the request body. The resource handler injects and validates this ID before persistence.
+  tags:
+    - SSL Certificates
+  parameters:
+    - $ref: ../components/parameters/Ttl.yaml
+  requestBody:
+    description: "`SSL` configuration body for create / replace / patch."
+    required: true
+    content:
+      application/json:
+        schema:
+          allOf:
+            - allOf:
+                - $ref: ../components/schemas/SSL.yaml
+                - not:
+                    anyOf:
+                      - required:
+                          - create_time
+                      - required:
+                          - update_time
+              description: Wire request body. APISIX injects timestamps and, where appropriate, the path or generated resource ID. A supplied ID must agree with the path.
+            - required:
+                - id
+        example:
+          type: server
+          sni: api.example.com
+          cert: |
+            -----BEGIN CERTIFICATE-----
+            MIIDazCCAlOgAwIBAgIUJ9hQk3kXgZeZpY/m/0V6RmH1AbcwDQYJKoZIhvcNAQEL
+            BQAwRTELMAkGA1UEBhMCVVMxEzARBgNVBAgMClNvbWUtU3RhdGUxITAfBgNVBAoM
+            GEludGVybmFsIFJvb3QgQ0EgKGV4YW1wbGUpMB4XDTI1MDEwMTAwMDAwMFoXDTM1
+            MDEwMTAwMDAwMFowRTELMAkGA1UEBhMCVVMxEzARBgNVBAgMClNvbWUtU3RhdGUx
+            ITAfBgNVBAoMGEludGVybmFsIFJvb3QgQ0EgKGV4YW1wbGUpMIIBIjANBgkqhkiG
+            9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4eXAMPLEcaPUBLIcfakeforopeNAPIspecON
+            LYexampleCAcontentsoExpandedFakeKeyMaterial==
+            -----END CERTIFICATE-----
+          key: |
+            -----BEGIN PRIVATE KEY-----
+            MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDh5cAWYXAMPLEbe
+            fakekeyForOpenAPISpecPlaceholderOnlyDoNotUseForRealKeysNopeNopeNo
+            peNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNo
+            peNopeNopeNopeNopeNopeNope==
+            -----END PRIVATE KEY-----
+          id: "1"
+  responses:
+    "201":
+      description: Created
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/SSLWriteEnvelope.yaml
+          examples:
+            "1":
+              summary: Successful Example
+              value:
+                key: /apisix/ssls/1
+                value:
+                  type: server
+                  key: |
+                    -----BEGIN PRIVATE KEY-----
+                    MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDh5cAWYXAMPLEbe
+                    fakekeyForOpenAPISpecPlaceholderOnlyDoNotUseForRealKeysNopeNopeNo
+                    peNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNo
+                    peNopeNopeNopeNopeNopeNope==
+                    -----END PRIVATE KEY-----
+                  snis:
+                    - test.com
+                  id: "1"
+                  create_time: 1684373523
+                  status: 1
+                  cert: |
+                    -----BEGIN CERTIFICATE-----
+                    MIIDazCCAlOgAwIBAgIUJ9hQk3kXgZeZpY/m/0V6RmH1AbcwDQYJKoZIhvcNAQEL
+                    BQAwRTELMAkGA1UEBhMCVVMxEzARBgNVBAgMClNvbWUtU3RhdGUxITAfBgNVBAoM
+                    GEludGVybmFsIFJvb3QgQ0EgKGV4YW1wbGUpMB4XDTI1MDEwMTAwMDAwMFoXDTM1
+                    MDEwMTAwMDAwMFowRTELMAkGA1UEBhMCVVMxEzARBgNVBAgMClNvbWUtU3RhdGUx
+                    ITAfBgNVBAoMGEludGVybmFsIFJvb3QgQ0EgKGV4YW1wbGUpMIIBIjANBgkqhkiG
+                    9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4eXAMPLEcaPUBLIcfakeforopeNAPIspecON
+                    LYexampleCAcontentsoExpandedFakeKeyMaterial==
+                    -----END CERTIFICATE-----
+                  update_time: 1684373523
+    "400":
+      $ref: ../components/responses/BadRequest.yaml
+      description: Invalid configuration
+    "401":
+      $ref: ../components/responses/Unauthorized.yaml
+    "503":
+      $ref: ../components/responses/BadRequest.yaml
+      description: Storage access or write failed.
+  operationId: putSSLWithBodyId

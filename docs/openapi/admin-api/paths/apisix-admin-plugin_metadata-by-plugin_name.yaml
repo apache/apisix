@@ -1,0 +1,139 @@
+put:
+  summary: Create or Replace Plugin Metadata
+  description: Set metadata for a specific plugin. This applies to all instances of the plugin across the cluster.
+  tags:
+    - Plugin Metadata
+  parameters:
+    - $ref: ../components/parameters/PluginNameInPath.yaml
+    - $ref: ../components/parameters/Ttl.yaml
+  requestBody:
+    $ref: ../components/requestBodies/PluginMetadataUpsert.yaml
+  responses:
+    "201":
+      description: Created
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              key:
+                description: Unique key identifier for this plugin metadata in the data store.
+                type: string
+              value:
+                description: Plugin metadata values.
+                type: object
+                properties: {}
+          examples:
+            "1":
+              summary: Successful Example
+              value:
+                key: /apisix/plugin_metadata/syslog
+                value:
+                  log_format:
+                    host: $host
+                    "@timestamp": $time_iso8601
+                    client_ip: $remote_addr
+    "400":
+      $ref: ../components/responses/BadRequest.yaml
+      description: Invalid configuration
+    "401":
+      $ref: ../components/responses/Unauthorized.yaml
+    "503":
+      $ref: ../components/responses/BadRequest.yaml
+      description: Storage access or write failed.
+  operationId: createPluginMetadata
+get:
+  summary: Get Plugin Metadata
+  description: Retrieve metadata for a specific plugin by plugin name.
+  tags:
+    - Plugin Metadata
+  parameters:
+    - $ref: ../components/parameters/PluginNameInPath.yaml
+  responses:
+    "200":
+      description: Successful response.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              value:
+                description: Plugin metadata values.
+                type: object
+                properties: {}
+              key:
+                description: Unique key identifier for this plugin metadata in the data store.
+                type: string
+              modifiedIndex:
+                description: The index number representing the most recent update to the object. It starts with the same value as `createdIndex` and increases by 1 each time the resource is modified.
+                type: integer
+              createdIndex:
+                description: The index number representing when the object was first created. It indicates the creation order of the resource.
+                type: integer
+          examples:
+            "1":
+              summary: Successful Example
+              value:
+                value:
+                  log_format:
+                    host: $host
+                    "@timestamp": $time_iso8601
+                    client_ip: $remote_addr
+                key: /apisix/plugin_metadata/syslog
+                modifiedIndex: 156
+                createdIndex: 156
+    "401":
+      $ref: ../components/responses/Unauthorized.yaml
+    "404":
+      $ref: ../components/responses/NotFound.yaml
+      description: Key not found
+    "503":
+      $ref: ../components/responses/BadRequest.yaml
+      description: Storage access or write failed.
+  operationId: getPluginMetadata
+delete:
+  summary: Delete Plugin Metadata
+  description: Delete metadata for a specific plugin.
+  tags:
+    - Plugin Metadata
+  parameters:
+    - $ref: ../components/parameters/PluginNameInPath.yaml
+    - name: force
+      in: query
+      description: Delete resource by force even if the resource is in use.
+      required: false
+      example: "true"
+      schema:
+        type: string
+  responses:
+    "200":
+      description: Successful response.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              key:
+                description: Unique key identifier for this plugin metadata in the data store.
+                type: string
+              deleted:
+                description: Number of deleted keys, serialized as a string for compatibility.
+                type: string
+          examples:
+            "1":
+              summary: Successful Example
+              value:
+                key: /apisix/plugin_metadata/syslog
+                deleted: "1"
+    "400":
+      $ref: ../components/responses/BadRequest.yaml
+      description: Missing identifier or resource is still referenced (where dependency checks apply).
+    "401":
+      $ref: ../components/responses/Unauthorized.yaml
+    "404":
+      $ref: ../components/responses/NotFound.yaml
+      description: Key not found
+    "503":
+      $ref: ../components/responses/BadRequest.yaml
+      description: Storage access or write failed.
+  operationId: deletePluginMetadata

@@ -1,0 +1,36 @@
+properties:
+  successes:
+    default: 5
+    maximum: 254
+    minimum: 0
+    type: integer
+  http_statuses:
+    items:
+      maximum: 599
+      minimum: 200
+      type: integer
+    minItems: 1
+    uniqueItems: true
+    default:
+      - 200
+      - 201
+      - 202
+      - 203
+      - 204
+      - 205
+      - 206
+      - 207
+      - 208
+      - 226
+      - 300
+      - 301
+      - 302
+      - 303
+      - 304
+      - 305
+      - 306
+      - 307
+      - 308
+    type: array
+type: object
+x-source: apisix/schema_def.lua

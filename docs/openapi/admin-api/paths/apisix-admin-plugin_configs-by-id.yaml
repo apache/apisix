@@ -1,0 +1,211 @@
+put:
+  summary: Create or Replace a Plugin Config
+  description: Create a new plugin config with a specified ID, or fully replace an existing one.
+  tags:
+    - Plugin Configs
+  parameters:
+    - name: id
+      in: path
+      description: Unique identifier of the resource. Can be a string (alphanumeric, `-`, `_`, `.`) or a positive integer.
+      required: true
+      schema:
+        type: integer
+    - $ref: ../components/parameters/Ttl.yaml
+  requestBody:
+    $ref: ../components/requestBodies/PluginConfigUpsertPutId.yaml
+  responses:
+    "201":
+      description: Created
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/PluginConfigEnvelope.yaml
+          examples:
+            "1":
+              summary: Successful Example
+              value:
+                key: /apisix/plugin_configs/1
+                value:
+                  plugins:
+                    limit-count:
+                      time_window: 60
+                      rejected_code: 503
+                      key: remote_addr
+                      key_type: var
+                      count: 2
+                      show_limit_quota_header: true
+                      allow_degradation: false
+                      policy: local
+                  desc: desc
+                  id: "1"
+                  create_time: 1684380007
+                  update_time: 1684380034
+    "400":
+      $ref: ../components/responses/BadRequest.yaml
+      description: Invalid configuration
+    "401":
+      $ref: ../components/responses/Unauthorized.yaml
+    "503":
+      $ref: ../components/responses/BadRequest.yaml
+      description: Storage access or write failed.
+  operationId: createPluginConfigById
+get:
+  summary: Get a Plugin Config
+  description: Retrieve a single plugin config by its ID.
+  tags:
+    - Plugin Configs
+  parameters:
+    - name: id
+      in: path
+      description: Unique identifier of the resource. Can be a string (alphanumeric, `-`, `_`, `.`) or a positive integer.
+      required: true
+      example: my-resource-1
+      schema:
+        type: string
+  responses:
+    "200":
+      description: Successful response.
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/PluginConfigEnvelope.yaml
+          examples:
+            "1":
+              summary: Successful Example
+              value:
+                value:
+                  plugins:
+                    limit-count:
+                      rejected_code: 503
+                      time_window: 60
+                      key: remote_addr
+                      key_type: var
+                      count: 2
+                      allow_degradation: false
+                      show_limit_quota_header: true
+                      policy: local
+                  desc: desc
+                  id: "1"
+                  create_time: 1684380007
+                  update_time: 1684380034
+                key: /apisix/plugin_configs/1
+                modifiedIndex: 151
+                createdIndex: 150
+    "401":
+      $ref: ../components/responses/Unauthorized.yaml
+    "404":
+      $ref: ../components/responses/NotFound.yaml
+      description: Key not found
+    "503":
+      $ref: ../components/responses/BadRequest.yaml
+      description: Storage access or write failed.
+  operationId: getPluginConfig
+patch:
+  summary: Update a Plugin Config (Partial)
+  description: Partially update a plugin config's configuration.
+  tags:
+    - Plugin Configs
+  parameters:
+    - name: id
+      in: path
+      description: Unique identifier of the resource. Can be a string (alphanumeric, `-`, `_`, `.`) or a positive integer.
+      required: true
+      example: my-resource-1
+      schema:
+        type: string
+    - $ref: ../components/parameters/Ttl.yaml
+  requestBody:
+    $ref: ../components/requestBodies/PluginConfigUpsertPatchId.yaml
+  responses:
+    "200":
+      description: Successful response.
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/PluginConfigEnvelope.yaml
+          examples:
+            "1":
+              summary: Successful Example
+              value:
+                key: /apisix/plugin_configs/1
+                value:
+                  plugins:
+                    limit-count:
+                      rejected_code: 503
+                      time_window: 60
+                      key: remote_addr
+                      key_type: var
+                      count: 2
+                      allow_degradation: false
+                      show_limit_quota_header: true
+                      policy: local
+                    prometheus:
+                      prefer_name: false
+                  desc: desc
+                  id: "1"
+                  create_time: 1684380007
+                  update_time: 1684380472
+    "400":
+      $ref: ../components/responses/BadRequest.yaml
+      description: Invalid configuration
+    "401":
+      $ref: ../components/responses/Unauthorized.yaml
+    "404":
+      $ref: ../components/responses/NotFound.yaml
+      description: Key not found
+    "503":
+      $ref: ../components/responses/BadRequest.yaml
+      description: Storage access or write failed.
+  operationId: updatePluginConfig
+delete:
+  summary: Delete a Plugin Config
+  description: Delete a plugin config by its ID.
+  tags:
+    - Plugin Configs
+  parameters:
+    - name: id
+      in: path
+      description: Unique identifier of the resource. Can be a string (alphanumeric, `-`, `_`, `.`) or a positive integer.
+      required: true
+      example: my-resource-1
+      schema:
+        type: string
+    - name: force
+      in: query
+      description: Delete resource by force even if the resource is in use.
+      required: false
+      example: "true"
+      schema:
+        type: string
+  responses:
+    "200":
+      description: Successful response.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              key:
+                description: Unique key identifier for this plugin configuration in the data store.
+                type: string
+              deleted:
+                description: Number of deleted keys, serialized as a string for compatibility.
+                type: string
+          examples:
+            "1":
+              summary: Successful Example
+              value:
+                key: /apisix/plugin_configs/1
+                deleted: "1"
+    "400":
+      $ref: ../components/responses/BadRequest.yaml
+      description: Missing identifier or resource is still referenced (where dependency checks apply).
+    "401":
+      $ref: ../components/responses/Unauthorized.yaml
+    "404":
+      $ref: ../components/responses/NotFound.yaml
+      description: Key not found
+    "503":
+      $ref: ../components/responses/BadRequest.yaml
+      description: Storage access or write failed.
+  operationId: deletePluginConfig

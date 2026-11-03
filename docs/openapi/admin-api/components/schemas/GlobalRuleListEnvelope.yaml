@@ -1,0 +1,12 @@
+type: object
+description: Paginated list of `GlobalRule` envelopes.
+properties:
+  total:
+    type: integer
+  list:
+    type: array
+    items:
+      $ref: ./GlobalRuleEnvelope.yaml
+required:
+  - total
+  - list
