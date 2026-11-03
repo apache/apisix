@@ -73,6 +73,7 @@ lua {
     {% end %}
     {% if standalone_with_admin_api then %}
     lua_shared_dict standalone-config {* meta.lua_shared_dict["standalone-config"] *};
+    lua_shared_dict standalone-status {* meta.lua_shared_dict["standalone-status"] *};
     {% end %}
     {% if status then %}
     lua_shared_dict status-report {* meta.lua_shared_dict["status-report"] *};
@@ -88,6 +89,15 @@ http {
     lua_package_cpath "{*extra_lua_cpath*}$prefix/deps/lib64/lua/5.1/?.so;]=]
                       .. [=[$prefix/deps/lib/lua/5.1/?.so;;]=]
                       .. [=[{*lua_cpath*};";
+
+    # the same limits as the stream subsystem, which nginx_timers_max
+    # reports for every Lua VM
+    {% if max_pending_timers then %}
+    lua_max_pending_timers {* max_pending_timers *};
+    {% end %}
+    {% if max_running_timers then %}
+    lua_max_running_timers {* max_running_timers *};
+    {% end %}
 
     {% if enabled_stream_plugins["prometheus"] then %}
 
@@ -233,12 +243,25 @@ stream {
     }
 
     {% for _, server_group in ipairs(stream_proxy.servers or {}) do %}
+    {% if server_group.tls_mixed then %}
+    upstream {* server_group.tls_terminate_up *} {
+        server unix:{* server_group.tls_terminate_sock *};
+    }
+
+    upstream {* server_group.tls_passthrough_up *} {
+        server unix:{* server_group.tls_passthrough_sock *};
+    }
+    {% end %}
     server {
         {% for _, item in ipairs(server_group.tcp) do %}
-        listen {*item.addr*} {% if item.tls then %} ssl {% end %} {% if enable_reuseport then %} reuseport {% end %} {% if item.proxy_protocol then %} proxy_protocol {% end %};
+        listen {*item.addr*} {% if item.tls and not server_group.tls_mixed then %} ssl {% end %} {% if enable_reuseport then %} reuseport {% end %} {% if item.proxy_protocol then %} proxy_protocol {% end %};
         {% end %}
         {% for _, addr in ipairs(server_group.udp) do %}
         listen {*addr*} udp {% if enable_reuseport then %} reuseport {% end %};
+        {% end %}
+
+        {% if server_group.tls_passthrough then %}
+        ssl_preread on;
         {% end %}
 
         {% if server_group.tcp_enable_ssl then %}
@@ -254,12 +277,43 @@ stream {
         }
         {% end %}
 
+        {% if server_group.tls_mixed then %}
+        # carries the client address across the internal hop
+        proxy_protocol on;
+        access_log off;
+
+        set $stream_tls_target "";
+
+        preread_by_lua_block {
+            apisix.stream_tls_route_phase("{* server_group.tls_terminate_up *}",
+                                          "{* server_group.tls_passthrough_up *}")
+        }
+
+        proxy_pass $stream_tls_target;
+    }
+
+    # internal: terminates the handshake
+    server {
+        listen unix:{* server_group.tls_terminate_sock *} ssl proxy_protocol;
+        set_real_ip_from unix:;
+
+        ssl_certificate      {* ssl.ssl_cert *};
+        ssl_certificate_key  {* ssl.ssl_cert_key *};
+
+        ssl_client_hello_by_lua_block {
+            apisix.ssl_client_hello_phase()
+        }
+
+        ssl_certificate_by_lua_block {
+            apisix.ssl_phase()
+        }
+
         {% if server_group.proxy_protocol_to_upstream then %}
         proxy_protocol on;
         {% end %}
 
         preread_by_lua_block {
-            apisix.stream_preread_phase()
+            apisix.stream_preread_phase(nil, true)
         }
 
         proxy_pass apisix_backend;
@@ -274,6 +328,49 @@ stream {
             apisix.stream_log_phase()
         }
     }
+
+    # internal: forwards the stream untouched, prereading the same ClientHello again
+    server {
+        listen unix:{* server_group.tls_passthrough_sock *} proxy_protocol;
+        set_real_ip_from unix:;
+        ssl_preread on;
+
+        {% if server_group.proxy_protocol_to_upstream then %}
+        proxy_protocol on;
+        {% end %}
+
+        preread_by_lua_block {
+            apisix.stream_preread_phase(true, true)
+        }
+
+        proxy_pass apisix_backend;
+
+        log_by_lua_block {
+            apisix.stream_log_phase()
+        }
+    }
+    {% else %}
+        {% if server_group.proxy_protocol_to_upstream then %}
+        proxy_protocol on;
+        {% end %}
+
+        preread_by_lua_block {
+            apisix.stream_preread_phase({% if server_group.tls_passthrough then %}true{% end %})
+        }
+
+        proxy_pass apisix_backend;
+
+        {% if use_apisix_base and not server_group.tls_passthrough then %}
+        set $upstream_sni "apisix_backend";
+        proxy_ssl_server_name on;
+        proxy_ssl_name $upstream_sni;
+        {% end %}
+
+        log_by_lua_block {
+            apisix.stream_log_phase()
+        }
+    }
+    {% end %}
     {% end %}
 }
 {% end %}
@@ -320,6 +417,7 @@ http {
     lua_shared_dict internal-status {* http.lua_shared_dict["internal-status"] *};
     lua_shared_dict worker-events {* http.lua_shared_dict["worker-events"] *};
     lua_shared_dict lrucache-lock {* http.lua_shared_dict["lrucache-lock"] *};
+    lua_shared_dict upstream-slow-start {* http.lua_shared_dict["upstream-slow-start"] *};
     lua_shared_dict balancer-ewma {* http.lua_shared_dict["balancer-ewma"] *};
     lua_shared_dict balancer-ewma-locks {* http.lua_shared_dict["balancer-ewma-locks"] *};
     lua_shared_dict balancer-ewma-last-touched-at {* http.lua_shared_dict["balancer-ewma-last-touched-at"] *};
@@ -371,6 +469,10 @@ http {
     lua_shared_dict redis_cluster_health 10m;
     {% end %}
 
+    {% if enabled_plugins["saml-auth"] then %}
+    lua_shared_dict plugin-saml-auth-replay {* http.lua_shared_dict["plugin-saml-auth-replay"] *};
+    {% end %}
+
     {% if enabled_plugins["graphql-limit-count"] then %}
     lua_shared_dict plugin-graphql-limit-count {* http.lua_shared_dict["plugin-graphql-limit-count"] *};
     lua_shared_dict plugin-graphql-limit-count-reset-header {* http.lua_shared_dict["plugin-graphql-limit-count-reset-header"] *};
@@ -419,7 +521,7 @@ http {
     lua_shared_dict ext-plugin {* http.lua_shared_dict["ext-plugin"] *}; # cache for ext-plugin
     {% end %}
 
-    {% if enabled_plugins["mcp-bridge"] then %}
+    {% if enabled_plugins["openapi-to-mcp"] then %}
     lua_shared_dict mcp-session {* http.lua_shared_dict["mcp-session"] *}; # cache for mcp-session
     {% end %}
 
@@ -795,6 +897,7 @@ http {
 
         {% if ssl.ssl_trusted_certificate ~= nil then %}
         proxy_ssl_trusted_certificate {* ssl.ssl_trusted_certificate *};
+        grpc_ssl_trusted_certificate {* ssl.ssl_trusted_certificate *};
         {% end %}
 
         # opentelemetry_set_ngx_var starts
@@ -1002,6 +1105,9 @@ http {
             grpc_set_header   Content-Type application/grpc;
             grpc_set_header   TE trailers;
             grpc_socket_keepalive on;
+            # only consulted once upstream.tls.verify turns verification on;
+            # without it the certificate would be checked against "apisix_backend"
+            grpc_ssl_name     $upstream_host;
             grpc_pass         $upstream_scheme://apisix_backend;
 
             {% if enabled_plugins["proxy-mirror"] then %}
@@ -1087,6 +1193,16 @@ http {
             proxy_buffering off;
         }
         {% end %}
+
+        location @websocket_pass {
+            content_by_lua_block {
+                apisix.websocket_content_phase()
+            }
+
+            log_by_lua_block {
+                apisix.websocket_log_phase()
+            }
+        }
 
         {% if enabled_plugins["proxy-mirror"] then %}
         location = /proxy_mirror {
