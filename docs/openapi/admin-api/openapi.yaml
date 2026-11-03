@@ -172,99 +172,99 @@ tags:
     description: "Endpoints exposed only when the deployment uses the YAML config provider (`deployment.role_data_plane.config_provider: yaml`)."
 paths:
   /apisix/admin/routes:
-    $ref: ./paths/apisix-admin-routes.yaml
+    $ref: ./paths/routes.yaml
   /apisix/admin/routes/{id}:
-    $ref: ./paths/apisix-admin-routes-by-id.yaml
+    $ref: ./paths/routes-by-id.yaml
   /apisix/admin/services:
-    $ref: ./paths/apisix-admin-services.yaml
+    $ref: ./paths/services.yaml
   /apisix/admin/services/{id}:
-    $ref: ./paths/apisix-admin-services-by-id.yaml
+    $ref: ./paths/services-by-id.yaml
   /apisix/admin/services/{service_id}/graphql_cost_decorations:
     $ref: ./paths/service-graphql-cost-decorations.yaml
   /apisix/admin/services/{service_id}/graphql_cost_decorations/{decoration_id}:
     $ref: ./paths/service-graphql-cost-decoration-by-id.yaml
   /apisix/admin/consumers:
-    $ref: ./paths/apisix-admin-consumers.yaml
+    $ref: ./paths/consumers.yaml
   /apisix/admin/consumers/{username}:
-    $ref: ./paths/apisix-admin-consumers-by-username.yaml
+    $ref: ./paths/consumers-by-username.yaml
   /apisix/admin/upstreams:
-    $ref: ./paths/apisix-admin-upstreams.yaml
+    $ref: ./paths/upstreams.yaml
   /apisix/admin/upstreams/{id}:
-    $ref: ./paths/apisix-admin-upstreams-by-id.yaml
+    $ref: ./paths/upstreams-by-id.yaml
   /apisix/admin/ssls:
-    $ref: ./paths/apisix-admin-ssls.yaml
+    $ref: ./paths/ssls.yaml
   /apisix/admin/ssls/{id}:
-    $ref: ./paths/apisix-admin-ssls-by-id.yaml
+    $ref: ./paths/ssls-by-id.yaml
   /apisix/admin/global_rules:
-    $ref: ./paths/apisix-admin-global_rules.yaml
+    $ref: ./paths/global-rules.yaml
   /apisix/admin/global_rules/{id}:
-    $ref: ./paths/apisix-admin-global_rules-by-id.yaml
+    $ref: ./paths/global-rules-by-id.yaml
   /apisix/admin/consumer_groups:
-    $ref: ./paths/apisix-admin-consumer_groups.yaml
+    $ref: ./paths/consumer-groups.yaml
   /apisix/admin/consumer_groups/{id}:
-    $ref: ./paths/apisix-admin-consumer_groups-by-id.yaml
+    $ref: ./paths/consumer-groups-by-id.yaml
   /apisix/admin/plugin_configs:
-    $ref: ./paths/apisix-admin-plugin_configs.yaml
+    $ref: ./paths/plugin-configs.yaml
   /apisix/admin/plugin_configs/{id}:
-    $ref: ./paths/apisix-admin-plugin_configs-by-id.yaml
+    $ref: ./paths/plugin-configs-by-id.yaml
   /apisix/admin/plugin_metadata:
-    $ref: ./paths/apisix-admin-plugin_metadata.yaml
+    $ref: ./paths/plugin-metadata.yaml
   /apisix/admin/plugin_metadata/{plugin_name}:
-    $ref: ./paths/apisix-admin-plugin_metadata-by-plugin_name.yaml
+    $ref: ./paths/plugin-metadata-by-plugin-name.yaml
   /apisix/admin/plugins/list:
-    $ref: ./paths/apisix-admin-plugins-list.yaml
+    $ref: ./paths/plugins-list.yaml
   /apisix/admin/plugins/{plugin_name}:
-    $ref: ./paths/apisix-admin-plugins-by-plugin_name.yaml
+    $ref: ./paths/plugins-by-plugin-name.yaml
   /apisix/admin/plugins:
-    $ref: ./paths/apisix-admin-plugins.yaml
+    $ref: ./paths/plugins.yaml
   /apisix/admin/plugins/reload:
-    $ref: ./paths/apisix-admin-plugins-reload.yaml
+    $ref: ./paths/plugins-reload.yaml
   /apisix/admin/stream_routes:
-    $ref: ./paths/apisix-admin-stream_routes.yaml
+    $ref: ./paths/stream-routes.yaml
   /apisix/admin/secrets:
-    $ref: ./paths/apisix-admin-secrets.yaml
+    $ref: ./paths/secrets.yaml
   /apisix/admin/protos/{id}:
-    $ref: ./paths/apisix-admin-protos-by-id.yaml
+    $ref: ./paths/protos-by-id.yaml
   /apisix/admin/protos:
-    $ref: ./paths/apisix-admin-protos.yaml
+    $ref: ./paths/protos.yaml
   /apisix/admin/schema/validate/{resource}:
-    $ref: ./paths/apisix-admin-schema-validate-by-resource.yaml
+    $ref: ./paths/schema-validate-by-resource.yaml
   /apisix/admin/stream_routes/{id}:
-    $ref: ./paths/apisix-admin-stream_routes-by-id.yaml
+    $ref: ./paths/stream-routes-by-id.yaml
   /apisix/admin/consumers/{username}/credentials:
-    $ref: ./paths/apisix-admin-consumers-by-username-credentials.yaml
+    $ref: ./paths/consumers-by-username-credentials.yaml
   /apisix/admin/consumers/{username}/credentials/{id}:
-    $ref: ./paths/apisix-admin-consumers-by-username-credentials-by-id.yaml
+    $ref: ./paths/consumers-by-username-credentials-by-id.yaml
   /apisix/admin/secrets/{secret_type}/{id}:
-    $ref: ./paths/apisix-admin-secrets-by-secret_type-by-id.yaml
+    $ref: ./paths/secrets-by-secret-type-by-id.yaml
   /apisix/admin:
     $ref: ./paths/apisix-admin.yaml
   /apisix/admin/configs:
-    $ref: ./paths/apisix-admin-configs.yaml
+    $ref: ./paths/configs.yaml
   /apisix/admin/configs/validate:
-    $ref: ./paths/apisix-admin-configs-validate.yaml
+    $ref: ./paths/configs-validate.yaml
   /apisix/admin/routes/{id}/{sub_path}:
-    $ref: ./paths/apisix-admin-routes-by-id-by-sub_path.yaml
+    $ref: ./paths/routes-by-id-by-sub-path.yaml
   /apisix/admin/services/{id}/{sub_path}:
-    $ref: ./paths/apisix-admin-services-by-id-by-sub_path.yaml
+    $ref: ./paths/services-by-id-by-sub-path.yaml
   /apisix/admin/upstreams/{id}/{sub_path}:
-    $ref: ./paths/apisix-admin-upstreams-by-id-by-sub_path.yaml
+    $ref: ./paths/upstreams-by-id-by-sub-path.yaml
   /apisix/admin/ssls/{id}/{sub_path}:
-    $ref: ./paths/apisix-admin-ssls-by-id-by-sub_path.yaml
+    $ref: ./paths/ssls-by-id-by-sub-path.yaml
   /apisix/admin/consumer_groups/{id}/{sub_path}:
-    $ref: ./paths/apisix-admin-consumer_groups-by-id-by-sub_path.yaml
+    $ref: ./paths/consumer-groups-by-id-by-sub-path.yaml
   /apisix/admin/global_rules/{id}/{sub_path}:
-    $ref: ./paths/apisix-admin-global_rules-by-id-by-sub_path.yaml
+    $ref: ./paths/global-rules-by-id-by-sub-path.yaml
   /apisix/admin/plugin_configs/{id}/{sub_path}:
-    $ref: ./paths/apisix-admin-plugin_configs-by-id-by-sub_path.yaml
+    $ref: ./paths/plugin-configs-by-id-by-sub-path.yaml
   /apisix/admin/secrets/{secret_type}:
-    $ref: ./paths/apisix-admin-secrets-by-secret_type.yaml
+    $ref: ./paths/secrets-by-secret-type.yaml
   /apisix/admin/secrets/{secret_type}/{id}/{sub_path}:
-    $ref: ./paths/apisix-admin-secrets-by-secret_type-by-id-by-sub_path.yaml
+    $ref: ./paths/secrets-by-secret-type-by-id-by-sub-path.yaml
   /apisix/admin/schema/{resource}:
-    $ref: ./paths/apisix-admin-schema-by-resource.yaml
+    $ref: ./paths/schema-by-resource.yaml
   /apisix/admin/schema/plugins/{plugin_name}:
-    $ref: ./paths/apisix-admin-schema-plugins-by-plugin_name.yaml
+    $ref: ./paths/schema-plugins-by-plugin-name.yaml
 servers:
   - url: "{protocol}://{host}:{port}"
     description: APISIX Admin API Server
