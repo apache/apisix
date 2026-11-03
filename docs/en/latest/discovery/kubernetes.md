@@ -408,7 +408,7 @@ Which will yield the following response:
 }
 ```
 
-# Tuning Kubernetes service discovery watch and retry behaviour
+## Tuning Kubernetes service discovery watch and retry behaviour
 
 The Kubernetes service discovery module performs a long-poll **watch** against
 the API server and re-establishes the connection when it ends or fails. Until
@@ -443,7 +443,7 @@ discovery:
     watch_retry_max_seconds: 60         # exponential backoff cap       (default: 40)
 ```
 
-## Field reference
+### Field reference
 
 | Field | Type | Default | Range | Description |
 |-------|------|---------|-------|-------------|
@@ -452,7 +452,7 @@ discovery:
 | `watch_retry_interval_seconds` | integer | 40 | 1–3600 | Initial backoff between consecutive failed `list_watch` cycles. Must be positive; zero is not supported. |
 | `watch_retry_max_seconds` | integer | 40 | 0–3600 | Upper bound for exponential backoff. After each consecutive failure the backoff is doubled until it hits this cap; on the next successful cycle it resets to `watch_retry_interval_seconds`. If `watch_retry_max_seconds < watch_retry_interval_seconds`, the value is coerced up to `watch_retry_interval_seconds` (i.e. backoff stays constant). |
 
-## Recommended settings behind a 5-minute idle LB
+### Recommended settings behind a 5-minute idle LB
 
 ```yaml
 discovery:
@@ -467,7 +467,7 @@ This causes APISIX itself to terminate each watch every ~4 minutes (well below
 the 5-minute LB idle timeout), and in case of a real failure the module
 backs off 5s → 10s → 20s → 40s → 60s before plateauing.
 
-## Backward compatibility
+### Backward compatibility
 
 If none of these fields are present in `config.yaml`, the module behaves
 exactly as before this change.
