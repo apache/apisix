@@ -259,6 +259,18 @@ my $disable_proxy_buffering_location = <<_EOC_;
         }
 _EOC_
 
+my $websocket_location = <<_EOC_;
+        location \@websocket_pass {
+            content_by_lua_block {
+                apisix.websocket_content_phase()
+            }
+
+            log_by_lua_block {
+                apisix.websocket_log_phase()
+            }
+        }
+_EOC_
+
 my $a6_ngx_directives = "";
 if ($version =~ m/\/apisix-nginx-module/) {
     $a6_ngx_directives = <<_EOC_;
@@ -657,9 +669,11 @@ _EOC_
     lua_shared_dict plugin-ai-rate-limiting-reset-header 10m;
     lua_shared_dict plugin-graphql-limit-count 10m;
     lua_shared_dict plugin-graphql-limit-count-reset-header 10m;
+    lua_shared_dict plugin-saml-auth-replay 10m;
     lua_shared_dict internal-status 10m;
     lua_shared_dict worker-events 10m;
     lua_shared_dict lrucache-lock 10m;
+    lua_shared_dict upstream-slow-start 10m;
     lua_shared_dict balancer-ewma 1m;
     lua_shared_dict balancer-ewma-locks 1m;
     lua_shared_dict balancer-ewma-last-touched-at 1m;
@@ -772,6 +786,20 @@ _EOC_
             }
 
             more_clear_headers Date;
+        }
+    }
+
+    # accepts a connection on any path but never writes a response, so a
+    # client waiting on it reliably times out instead of being refused or
+    # having to depend on an unroutable address actually hanging
+    server {
+        listen 1986;
+        server_tokens off;
+
+        location / {
+            content_by_lua_block {
+                ngx.sleep(30)
+            }
         }
     }
 
@@ -1008,6 +1036,7 @@ _EOC_
         $grpc_location
         $dubbo_location
         $disable_proxy_buffering_location
+        $websocket_location
 
         location = /proxy_mirror {
             internal;

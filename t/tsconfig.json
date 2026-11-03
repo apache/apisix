@@ -2,13 +2,13 @@
   "compilerOptions": {
     "target": "esnext",
     "module": "esnext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "lib": ["esnext"],
     "esModuleInterop": true,
     "strict": true,
     "noEmit": true,
-    "types": ["node", "jest"],
+    "types": ["node", "vitest/globals"],
     "allowJs": true
   },
-  "include": ["**/*.ts", "**/*.mts", "**/*.cts", "**/*.js"],
+  "include": ["**/*.ts", "**/*.cts", "**/*.js"]
 }

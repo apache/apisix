@@ -81,11 +81,12 @@ More examples can be found in [test cases](https://github.com/apache/apisix/blob
 
 ## More stream route filtering options
 
-Currently there are three attributes in stream routes that can be used for filtering requests:
+Stream routes can filter connections with the following attributes:
 
 - `server_addr`: The address of the APISIX server that accepts the L4 stream connection.
 - `server_port`: The port of the APISIX server that accepts the L4 stream connection.
 - `remote_addr`: The address of client from which the request has been made.
+- `sni` or `snis`: One or more TLS Server Name Indication values. These fields apply to TLS-enabled stream listeners.
 
 Here is an example:
 
@@ -220,6 +221,28 @@ curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H "X-API-KEY: $admin_ke
 ```
 
 In this case, a connection handshaked with SNI `a.test.com` will be proxied to `127.0.0.1:5991`.
+
+To serve several names from one route, use `snis`, the plural form of `sni`:
+
+```shell
+curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
+{
+    "snis": ["a.test.com", "b.test.com"],
+    "upstream": {
+        "nodes": {
+            "127.0.0.1:5991": 1
+        },
+        "type": "roundrobin"
+    }
+}'
+```
+
+Here a connection handshaked with SNI `a.test.com` or `b.test.com` will be proxied to
+`127.0.0.1:5991`. Wildcards are matched as a suffix, so `*.test.com` also matches
+`a.b.test.com`, and a single `*` matches any SNI — a connection carrying none is still left to
+the routes that match on address instead.
+
+A route can carry `sni` or `snis`, not both.
 
 ## Proxy to TLS over TCP upstream
 

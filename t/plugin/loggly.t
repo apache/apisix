@@ -617,6 +617,24 @@ qr/message received: <14>1 [\d\-T:.]+Z [\d.]+ apisix [\d]+ - \[tok\@41058 tag="a
                 ngx.say("fail")
                 return
             end
+
+            -- The Admin API write can return before the worker's metadata watch updates.
+            local plugin = require("apisix.plugin")
+            local synced
+            for _ = 1, 50 do
+                local metadata = plugin.plugin_metadata("loggly")
+                local format = metadata and metadata.value.log_format
+                if format and format.host == "$host" and format.client == "$remote_addr" then
+                    synced = true
+                    break
+                end
+                ngx.sleep(0.1)
+            end
+            if not synced then
+                ngx.status = 500
+                ngx.say("loggly metadata did not propagate")
+                return
+            end
             ngx.say(body)
 
             local code, _, body = t("/opentracing?foo=bar", "GET")
@@ -628,6 +646,7 @@ qr/message received: <14>1 [\d\-T:.]+Z [\d.]+ apisix [\d]+ - \[tok\@41058 tag="a
             ngx.print(body)
         }
     }
+--- timeout: 10
 --- response_body
 passed
 opentracing

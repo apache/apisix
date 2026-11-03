@@ -136,7 +136,12 @@ location /t {
             keepalive_pool = 1,
         })
         ngx.sleep(2)
-        t('/apisix/admin/plugin_metadata/elasticsearch-logger', ngx.HTTP_DELETE)
+        local code, body = t('/apisix/admin/plugin_metadata/elasticsearch-logger', ngx.HTTP_DELETE)
+        if not code or code >= 300 then
+            ngx.status = code or ngx.HTTP_INTERNAL_SERVER_ERROR
+            ngx.say(body)
+            return
+        end
     }
 }
 --- error_log
