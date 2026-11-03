@@ -22,10 +22,12 @@ local plugin_checker = require("apisix.plugin").plugin_checker
 local check_schema   = require("apisix.core.schema").check
 local error          = error
 local ipairs         = ipairs
+local next           = next
 local pairs          = pairs
 local type           = type
 local tostring       = tostring
 local string_sub     = string.sub
+local ngx            = ngx
 local consumers
 
 
@@ -231,6 +233,8 @@ local function parent_consumer_name(eid)
     return eid
 end
 local tracked_count = 0         -- count of consumers.values at last sync
+local tracked_values            -- consumers.values table at last sync (snapshot detection)
+local cached_consumer           -- clone + secret fill, cached per node (set below)
 local FULL_SYNC_INTERVAL = 30   -- seconds between background consistency checks
 
 -- key-auth (and the other auth plugins) look consumers up by a key value, not by
@@ -244,8 +248,13 @@ local function kv_upsert(pd, consumer)
     if not pd.kv or not pd.key_attr then
         return
     end
-    local nc = core.table.clone(consumer)
-    nc.auth_conf = secret.fetch_secrets(nc.auth_conf, false)
+    -- resolving a secret ref can yield; let the plugin rebuild its map instead
+    if secret.has_secret_ref(consumer.auth_conf) then
+        pd.kv_dirty = true
+        return
+    end
+    -- same clone as the full build, so an unchanged modifiedIndex keeps its key
+    local nc = cached_consumer(consumer)
     -- fail closed: skip unset credentials or unresolved secret refs so a client
     -- can never authenticate with a literal "$ENV://..." reference string.
     if secret.has_secret_ref(nc.auth_conf) then
@@ -371,6 +380,7 @@ local function full_rebuild()
         end
     end
     tracked_count = consumers.values and #consumers.values or 0
+    tracked_values = consumers.values
     cached_conf_version = consumers.conf_version
     core.table.clear(pending_set)
     has_pending = false
@@ -414,7 +424,8 @@ local function apply_incremental()
     -- part), so it stays cheap even with a large consumer base, and it runs only
     -- when a delete actually happened -- independent of whether the net count
     -- went down (e.g. creates and deletes interleaved under churn).
-    if pending_delete then
+    -- Snapshot loads replace the values table without delete events.
+    if pending_delete or consumers.values ~= tracked_values then
         local cur_ids = collect_current_ids()
         -- Collect first, then remove (can't modify entry_plugins during pairs iteration)
         local to_remove = {}
@@ -431,6 +442,7 @@ local function apply_incremental()
 
     has_pending = false
     tracked_count = consumers.values and #consumers.values or 0
+    tracked_values = consumers.values
 
     -- Update conf_version on all plugin data; keep the (incrementally maintained)
     -- key_value map version in lockstep so _M.consumers_kv() serves it without a
@@ -500,6 +512,10 @@ local function fill_consumer_secret(consumer)
     return new_consumer
 end
 
+function cached_consumer(consumer)
+    return consumer_lrucache(consumer, nil, fill_consumer_secret, consumer)
+end
+
 
 function create_consume_cache(consumers_conf, key_attr)
     local consumer_names = {}
@@ -546,15 +562,26 @@ function _M.consumers_kv(plugin_name, consumer_conf, key_attr)
     -- least every KV_TTL seconds.
     local now = ngx.now()
     if consumer_conf.kv and consumer_conf.key_attr == key_attr
+       and not consumer_conf.kv_dirty
        and consumer_conf.kv_version == consumer_conf.conf_version
        and (now - (consumer_conf.kv_built_at or 0)) < KV_TTL then
         return consumer_conf.kv
     end
 
-    consumer_conf.kv = create_consume_cache(consumer_conf, key_attr)
+    -- resolving secrets can yield: build from a copy of the nodes and publish
+    -- only if no update was applied in the meantime
+    local version = consumer_conf.conf_version
+    local kv = create_consume_cache({ nodes = core.table.clone(consumer_conf.nodes) },
+                                    key_attr)
+    if consumer_conf.conf_version ~= version then
+        return kv
+    end
+
+    consumer_conf.kv = kv
     consumer_conf.key_attr = key_attr
-    consumer_conf.kv_version = consumer_conf.conf_version
+    consumer_conf.kv_version = version
     consumer_conf.kv_built_at = now
+    consumer_conf.kv_dirty = nil
     return consumer_conf.kv
 end
 

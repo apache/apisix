@@ -464,3 +464,155 @@ GET /hello
 apikey: pat-key
 --- response_headers
 X-Grp: B
+
+
+
+=== TEST 29: a secret lookup that yields cannot publish a superseded key
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local core = require("apisix.core")
+            local secret = require("apisix.secret")
+            local consumer = require("apisix.consumer")
+
+            -- K1 resolves slowly, so request A is still inside the lookup
+            -- when version 3 (K2) gets applied
+            local resolve = {
+                ["$env://RACE_K1"] = { value = "race-new1", delay = 0.5 },
+                ["$env://RACE_K2"] = { value = "race-new2", delay = 0 },
+            }
+            local orig_fetch = secret.fetch_secrets
+            secret.fetch_secrets = function(refs)
+                if type(refs) ~= "table" then
+                    return nil
+                end
+                local out = core.table.deepcopy(refs)
+                for k, v in pairs(out) do
+                    local r = resolve[v]
+                    if r then
+                        if r.delay > 0 then
+                            ngx.sleep(r.delay)
+                        end
+                        out[k] = r.value
+                    end
+                end
+                return out
+            end
+
+            local function put_key(key)
+                local code = t('/apisix/admin/consumers', ngx.HTTP_PUT,
+                    core.json.encode({
+                        username = "racer",
+                        plugins = { ["key-auth"] = { key = key } },
+                    }))
+                assert(code < 300, "failed to put consumer: " .. code)
+                ngx.sleep(0.3)
+            end
+
+            local function lookup(key)
+                local c = consumer.find_consumer("key-auth", "key", key)
+                return c and c.username or "none"
+            end
+
+            put_key("race-plain")
+            ngx.say("plain: ", lookup("race-plain"))
+
+            put_key("$env://RACE_K1")
+            local th = ngx.thread.spawn(lookup, "race-new1")
+
+            put_key("$env://RACE_K2")
+            ngx.say("new2: ", lookup("race-new2"))
+
+            ngx.thread.wait(th)
+            ngx.say("new1 after v3: ", lookup("race-new1"))
+            ngx.say("new2 after v3: ", lookup("race-new2"))
+
+            t('/apisix/admin/consumers/racer', ngx.HTTP_DELETE)
+            ngx.sleep(0.3)
+            lookup("race-new2")
+            secret.fetch_secrets = orig_fetch
+        }
+    }
+--- request
+GET /t
+--- response_body
+plain: racer
+new2: racer
+new1 after v3: none
+new2 after v3: racer
+--- timeout: 10
+
+
+
+=== TEST 30: a key-auth lookup does not resolve secrets for pending basic-auth updates
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local core = require("apisix.core")
+            local secret = require("apisix.secret")
+            local consumer = require("apisix.consumer")
+
+            local reads = 0
+            local resolve = {
+                ["$env://P2_PASS1"] = "pass-1",
+                ["$env://P2_PASS2"] = "pass-2",
+            }
+            local orig_fetch = secret.fetch_secrets
+            secret.fetch_secrets = function(refs)
+                if type(refs) ~= "table" then
+                    return nil
+                end
+                local out = core.table.deepcopy(refs)
+                for k, v in pairs(out) do
+                    if resolve[v] then
+                        reads = reads + 1
+                        out[k] = resolve[v]
+                    end
+                end
+                return out
+            end
+
+            local function put(body)
+                local code = t('/apisix/admin/consumers', ngx.HTTP_PUT,
+                               core.json.encode(body))
+                assert(code < 300, "failed to put consumer: " .. code)
+            end
+
+            put({ username = "p2key",
+                  plugins = { ["key-auth"] = { key = "p2-plain" } } })
+            put({ username = "p2basic",
+                  plugins = { ["basic-auth"] = { username = "p2user",
+                                                 password = "$env://P2_PASS1" } } })
+            ngx.sleep(0.3)
+
+            -- warm both maps
+            assert(consumer.find_consumer("key-auth", "key", "p2-plain"))
+            assert(consumer.find_consumer("basic-auth", "username", "p2user"))
+
+            reads = 0
+            put({ username = "p2basic",
+                  plugins = { ["basic-auth"] = { username = "p2user",
+                                                 password = "$env://P2_PASS2" } } })
+            ngx.sleep(0.3)
+
+            local c = consumer.find_consumer("key-auth", "key", "p2-plain")
+            ngx.say("key-auth: ", c and c.username, ", secret reads: ", reads)
+
+            c = consumer.find_consumer("basic-auth", "username", "p2user")
+            ngx.say("basic-auth password: ", c and c.auth_conf.password,
+                    ", secret reads: ", reads)
+
+            t('/apisix/admin/consumers/p2key', ngx.HTTP_DELETE)
+            t('/apisix/admin/consumers/p2basic', ngx.HTTP_DELETE)
+            ngx.sleep(0.3)
+            consumer.find_consumer("basic-auth", "username", "p2user")
+            secret.fetch_secrets = orig_fetch
+        }
+    }
+--- request
+GET /t
+--- response_body
+key-auth: p2key, secret reads: 0
+basic-auth password: pass-2, secret reads: 1
