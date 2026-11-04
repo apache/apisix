@@ -594,3 +594,39 @@ GET /t
 raised: true
 in-x/B 2 nil
 in-x/B 2 nil
+
+
+
+=== TEST 19: resolve_var with no_cache resolves the template without caching it
+--- config
+    location /t {
+        content_by_lua_block {
+            local resolve_var = require("apisix.core.utils").resolve_var
+            local tpl_cache
+            for i = 1, math.huge do
+                local name, value = debug.getupvalue(resolve_var, i)
+                if not name then
+                    break
+                end
+                if name == "tpl_cache" then
+                    tpl_cache = value
+                    break
+                end
+            end
+
+            local res, err, n = resolve_var("once-$a", {a = "x"}, nil, true)
+            ngx.say(res, " ", n, " ", tostring(err))
+            ngx.say("cached: ", tpl_cache:get("once-$a") ~= nil)
+
+            res = resolve_var("kept-$a", {a = "x"})
+            ngx.say(res)
+            ngx.say("cached: ", tpl_cache:get("kept-$a") ~= nil)
+        }
+    }
+--- request
+GET /t
+--- response_body
+once-x 1 nil
+cached: false
+kept-x
+cached: true

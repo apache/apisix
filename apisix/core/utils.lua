@@ -361,7 +361,9 @@ do
         return segs
     end
 
-    function resolve_var(tpl, ctx, escaper)
+    -- no_cache: the template is built per request, so caching it would only
+    -- evict the configured templates
+    function resolve_var(tpl, ctx, escaper, no_cache)
         local n_resolved = 0
         if not tpl then
             return tpl, nil, n_resolved
@@ -372,14 +374,16 @@ do
             return tpl, nil, n_resolved
         end
 
-        local segs = tpl_cache:get(tpl)
+        local segs = not no_cache and tpl_cache:get(tpl)
         if not segs then
             local err
             segs, err = parse(tpl)
             if not segs then
                 return nil, err
             end
-            tpl_cache:set(tpl, segs)
+            if not no_cache then
+                tpl_cache:set(tpl, segs)
+            end
         end
 
         local n = #segs
