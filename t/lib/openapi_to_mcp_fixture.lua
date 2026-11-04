@@ -61,6 +61,19 @@ local DOCUMENTS = {
         } } },
     },
 
+    -- a path parameter that fills only part of a segment
+    ["/partialsegment.json"] = {
+        openapi = "3.0.0",
+        info = { title = "Partial", version = "1" },
+        paths = { ["/files/{name}.json"] = { get = {
+            operationId = "getFile",
+            parameters = {
+                { name = "name", ["in"] = "path", required = true,
+                  schema = { type = "string" } },
+            },
+        } } },
+    },
+
     -- a tool that declares one header parameter
     ["/headerparam.json"] = {
         openapi = "3.0.0",

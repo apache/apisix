@@ -1615,7 +1615,7 @@ timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
     -H "Accept: application/json, text/event-stream" \
     2>&1 | cat
 --- response_body eval
-qr/(?s)(?=.*"isError":true)(?=.*path parameter id must be a single path segment)/
+qr/(?s)(?=.*"isError":true)(?=.*path parameter in segment \{id\} cannot produce an empty or dot path segment)/
 
 
 
@@ -1627,7 +1627,7 @@ timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
     -H "Accept: application/json, text/event-stream" \
     2>&1 | cat
 --- response_body eval
-qr/(?s)(?=.*"isError":true)(?=.*path parameter id must be a single path segment)/
+qr/(?s)(?=.*"isError":true)(?=.*path parameter in segment \{id\} cannot produce an empty or dot path segment)/
 
 
 
@@ -1639,7 +1639,7 @@ timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
     -H "Accept: application/json, text/event-stream" \
     2>&1 | cat
 --- response_body eval
-qr/(?s)(?=.*"isError":true)(?=.*path parameter id must be a single path segment)/
+qr/(?s)(?=.*"isError":true)(?=.*path parameter id cannot contain a path separator)/
 
 
 
@@ -1651,7 +1651,7 @@ timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
     -H "Accept: application/json, text/event-stream" \
     2>&1 | cat
 --- response_body eval
-qr/(?s)(?=.*"isError":true)(?=.*path parameter id must be a single path segment)/
+qr/(?s)(?=.*"isError":true)(?=.*path parameter id cannot contain a path separator)/
 
 
 
@@ -1663,4 +1663,83 @@ timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
     -H "Accept: application/json, text/event-stream" \
     2>&1 | cat
 --- response_body eval
-qr/(?s)(?=.*"isError":true)(?=.*path parameter id must be a single path segment)/
+qr/(?s)(?=.*"isError":true)(?=.*path parameter in segment \{id\} cannot produce an empty or dot path segment)/
+
+
+
+=== TEST 93: a route over a document whose parameter fills part of a segment
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "streamable_http",
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/partialsegment.json",
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 94: a parameter that fills part of a segment is sent as given
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"getFile","arguments":{"pathParameters":{"name":"report"}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/seen_path.*files\/report\.json/
+
+
+
+=== TEST 95: a dot-dot value that is not a whole segment is allowed through
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"getFile","arguments":{"pathParameters":{"name":".."}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/seen_path.*files\/\.\.\.json/
+
+
+
+=== TEST 96: a single dot that is not a whole segment is allowed through
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"getFile","arguments":{"pathParameters":{"name":"."}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/seen_path.*files\/\.\.json/
+
+
+
+=== TEST 97: an empty value that leaves a non-empty segment is allowed through
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"getFile","arguments":{"pathParameters":{"name":""}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/seen_path.*files\/\.json/
+
+
+
+=== TEST 98: a separator is still rejected when the parameter fills part of a segment
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"getFile","arguments":{"pathParameters":{"name":"../secret"}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/(?s)(?=.*"isError":true)(?=.*path parameter name cannot contain a path separator)/

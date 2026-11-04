@@ -124,24 +124,40 @@ local function apply_query_defaults(tool, query)
 end
 
 
--- A path parameter fills one segment of the operation's path, so its value
--- cannot carry the path's own syntax.
---
--- "." and ".." are segments the receiving server resolves away: "/pets/../x"
--- is a request for "/x", so the call would land on a path the operation does
--- not describe. Percent-encoding does not help, because the dot is an
--- unreserved character and stays as it is.
---
--- A "/" is sent as "%2F", which a server that accepts an encoded separator
--- decodes back into one, and an empty value leaves "//" for a server that
--- merges slashes to collapse. Both move the request the same way.
-local function segment_is_safe(value)
-    if value == "" or value == "." or value == ".." then
-        return false
-    end
+-- A path parameter fills part of one segment of the operation's path, so its
+-- value cannot carry a separator. A "/" goes out as "%2F", which a server that
+-- accepts an encoded separator decodes back into one, and the call would then
+-- address a path the operation does not describe. This reads the value as it
+-- arrived, because the encoding hides the separator from the finished path.
+local function has_separator(value)
     -- core.string.find is a plain search; this is a pattern, so it needs
     -- string.find itself. A backslash is a separator on some servers.
-    return not str_find(value, "[/\\]")
+    return str_find(value, "[/\\]") ~= nil
+end
+
+
+-- The segments of a path, with the empty one a leading or trailing slash
+-- leaves: "/items/x" is { "", "items", "x" }.
+local function path_segments(path)
+    local segments = {}
+    for segment in str_gmatch(path .. "/", "([^/]*)/") do
+        segments[#segments + 1] = segment
+    end
+    return segments
+end
+
+
+-- A server receiving the request resolves "." and ".." away, but only where
+-- one is a whole segment. A template expression may fill part of a segment,
+-- and "{name}.json" filled with ".." comes out as "...json", which addresses
+-- nothing else, so the value alone does not say whether it moves the request.
+-- The finished path does.
+--
+-- Only the segments an expression helped build are checked: one the template
+-- contributes by itself is not the caller's to shift. Rejecting a separator
+-- above keeps both segment lists the same length, so they line up by index.
+local function resolved_away(segment)
+    return segment == "" or segment == "." or segment == ".."
 end
 
 
@@ -149,8 +165,8 @@ local function build_path(template, path_params)
     local path = template
     for name, value in pairs(path_params) do
         local text = tostring(value)
-        if not segment_is_safe(text) then
-            return nil, "path parameter " .. name .. " must be a single path segment"
+        if has_separator(text) then
+            return nil, "path parameter " .. name .. " cannot contain a path separator"
         end
         -- the name is a literal, so escape any pattern magic in it
         local pattern = "{" .. str_gsub(name, "([%^%$%(%)%%%.%[%]%*%+%-%?])", "%%%1") .. "}"
@@ -162,6 +178,18 @@ local function build_path(template, path_params)
             return escaped
         end)
     end
+
+    local declared = path_segments(template)
+    for index, segment in ipairs(path_segments(path)) do
+        local from_template = declared[index]
+        if from_template and str_find(from_template, "{", 1, true)
+           and resolved_away(segment)
+        then
+            return nil, "path parameter in segment " .. from_template ..
+                        " cannot produce an empty or dot path segment"
+        end
+    end
+
     return path
 end
 
