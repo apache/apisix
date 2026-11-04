@@ -150,19 +150,13 @@ local function get_spec_url_lrucache()
     return spec_url_lrucache
 end
 
--- nil means the default, which verifies
-local function ssl_verify_enabled(conf)
-    return conf.ssl_verify ~= false
-end
-
-
 local function fetch_and_compile(conf)
     local httpc = http.new()
     httpc:set_timeout(conf.timeout or 10000)
 
     local params = {
         method = "GET",
-        ssl_verify = ssl_verify_enabled(conf),
+        ssl_verify = conf.ssl_verify,
     }
     if conf.spec_url_request_headers then
         params.headers = conf.spec_url_request_headers
@@ -231,7 +225,7 @@ local function get_validator(conf)
     end
 
     local lrucache = get_spec_url_lrucache()
-    local cache_key = conf.spec_url .. "#ssl_verify=" .. tostring(ssl_verify_enabled(conf))
+    local cache_key = conf.spec_url .. "#ssl_verify=" .. tostring(conf.ssl_verify)
     if conf.spec_url_request_headers then
         local sorted_keys = {}
         for k in pairs(conf.spec_url_request_headers) do
