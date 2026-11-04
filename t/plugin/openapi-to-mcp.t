@@ -1573,3 +1573,94 @@ streamable_http 5: true
 streamable_http 6: true
 streamable_http 7: true
 streamable_http 8: true
+
+
+
+=== TEST 86: a route over a document with a string path parameter
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "streamable_http",
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/defaults.json",
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 87: a path parameter fills the segment it was declared for
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"getItem","arguments":{"pathParameters":{"id":"abc"}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/seen_path.*items\/abc/
+
+
+
+=== TEST 88: a dot segment in a path parameter fails the call
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"getItem","arguments":{"pathParameters":{"id":".."}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/(?s)(?=.*"isError":true)(?=.*path parameter id must be a single path segment)/
+
+
+
+=== TEST 89: a single dot in a path parameter fails the call
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"getItem","arguments":{"pathParameters":{"id":"."}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/(?s)(?=.*"isError":true)(?=.*path parameter id must be a single path segment)/
+
+
+
+=== TEST 90: a separator in a path parameter fails the call
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"getItem","arguments":{"pathParameters":{"id":"../items"}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/(?s)(?=.*"isError":true)(?=.*path parameter id must be a single path segment)/
+
+
+
+=== TEST 91: a backslash in a path parameter fails the call
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"getItem","arguments":{"pathParameters":{"id":"..\\\\items"}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/(?s)(?=.*"isError":true)(?=.*path parameter id must be a single path segment)/
+
+
+
+=== TEST 92: an empty path parameter fails the call
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"getItem","arguments":{"pathParameters":{"id":""}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/(?s)(?=.*"isError":true)(?=.*path parameter id must be a single path segment)/

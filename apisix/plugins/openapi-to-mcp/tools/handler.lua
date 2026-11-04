@@ -124,12 +124,37 @@ local function apply_query_defaults(tool, query)
 end
 
 
+-- A path parameter fills one segment of the operation's path, so its value
+-- cannot carry the path's own syntax.
+--
+-- "." and ".." are segments the receiving server resolves away: "/pets/../x"
+-- is a request for "/x", so the call would land on a path the operation does
+-- not describe. Percent-encoding does not help, because the dot is an
+-- unreserved character and stays as it is.
+--
+-- A "/" is sent as "%2F", which a server that accepts an encoded separator
+-- decodes back into one, and an empty value leaves "//" for a server that
+-- merges slashes to collapse. Both move the request the same way.
+local function segment_is_safe(value)
+    if value == "" or value == "." or value == ".." then
+        return false
+    end
+    -- core.string.find is a plain search; this is a pattern, so it needs
+    -- string.find itself. A backslash is a separator on some servers.
+    return not str_find(value, "[/\\]")
+end
+
+
 local function build_path(template, path_params)
     local path = template
     for name, value in pairs(path_params) do
+        local text = tostring(value)
+        if not segment_is_safe(text) then
+            return nil, "path parameter " .. name .. " must be a single path segment"
+        end
         -- the name is a literal, so escape any pattern magic in it
         local pattern = "{" .. str_gsub(name, "([%^%$%(%)%%%.%[%]%*%+%-%?])", "%%%1") .. "}"
-        local escaped = escape_uri(tostring(value))
+        local escaped = escape_uri(text)
         -- The replacement has to be a function: percent-encoding produces "%2F"
         -- and friends, and gsub would read those as capture references in a
         -- string replacement and raise "invalid capture index".
@@ -354,13 +379,18 @@ local function put_header(headers, seen, name, value)
 end
 
 
+-- Returns the tool result, or nil plus a message for an argument that cannot
+-- be sent at all.
 function _M.call(tool, arguments, opts)
     arguments = type(arguments) == "table" and arguments or {}
 
     local path_params, query_params, header_params = split_arguments(tool, arguments)
     apply_query_defaults(tool, query_params)
 
-    local path = build_path(tool.path_template, path_params)
+    local path, path_err = build_path(tool.path_template, path_params)
+    if not path then
+        return nil, path_err
+    end
     local query = build_query(tool, query_params)
 
     -- Header parameters are written first so that the route's own headers win:

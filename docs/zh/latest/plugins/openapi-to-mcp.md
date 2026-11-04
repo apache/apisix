@@ -65,6 +65,7 @@ MCP 服务运行在 APISIX 内部，不需要额外的进程或服务。
 * 查询参数按其 `style` 和 `explode` 序列化，规则见 [OpenAPI Parameter Object](https://spec.openapis.org/oas/v3.0.3#style-values)。使用默认值（`form`，展开）时，`tags: ["a", "b"]` 发送为 `tags=a&tags=b`，而不是 `tags[]=a&tags[]=b`；声明为 `explode: false` 的数组参数发送为 `tags=a,b`。同时支持 `spaceDelimited`、`pipeDelimited` 和 `deepObject`。如果 API 要求方括号形式，需要另外通过改写查询字符串的插件处理。
 * 请求体使用操作中声明的媒体类型发送，除非 `headers` 中已设置 `Content-Type`。
 * header 参数在插件自身的 `headers` 之前写入，因此工具调用无法覆盖路由添加的凭据；取值中含换行符的 header 会被丢弃。
+* 路径参数只填充操作路径中的一个片段。取值为空、为 `.` 或 `..`，或含有斜杠、反斜杠时，调用失败并返回 `isError`，因为接收请求的服务器会将其解析为该操作未描述的路径。
 
 使用 SSE 传输时，`base_url` 和 `headers` 中的变量在打开事件流的那次请求上解析，解析结果用于该会话的所有消息。`"Authorization": "Bearer ${http_x_api_token}"` 这类配置因此在 SSE 下同样可用：后续的消息请求只携带会话 ID，此时已无从解析变量。解析结果会随会话记录存放在共享字典 `mcp-session` 中直到会话结束，因此调用方以这种方式提供的凭据会在网关内存中最长保留 30 分钟；配置中不含变量时则不存储。
 
