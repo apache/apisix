@@ -1308,3 +1308,75 @@ generated id: false
     }
 --- response_body
 passed
+
+
+
+=== TEST 36: a global rule sets the request id through the setter without ctx
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "request-id": {}
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/opentracing"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            code, body = t('/apisix/admin/global_rules/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "serverless-pre-function": {
+                                "phase": "rewrite",
+                                "functions": ["return function(conf, ctx) local core = require('apisix.core'); core.request.headers(ctx); core.request.set_header('X-Request-Id', 'from-global-rule') end"]
+                            }
+                        }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 37: the request id set without ctx is the one echoed back
+--- request
+GET /opentracing
+--- more_headers
+X-Request-Id: from-client
+--- response_headers
+X-Request-Id: from-global-rule
+
+
+
+=== TEST 38: delete the global rule
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/global_rules/1', ngx.HTTP_DELETE)
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
