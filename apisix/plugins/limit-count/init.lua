@@ -59,8 +59,8 @@ local group_conf_lru = core.lrucache.new({
 })
 local group_limit_lru = core.lrucache.new({type = 'plugin'})
 local lrucache = core.lrucache.new({type = 'plugin', serial_creating = true})
-local local_limit_lru = core.lrucache.new({type = 'plugin', count = 1024})
-local limit_headers_lru = core.lrucache.new({type = 'plugin', count = 1024})
+-- pureffi: once full, resty.lrucache rehashes its key table on most evictions
+local limit_headers_lru = require("resty.lrucache.pureffi").new(1024)
 local limit_key_prefix = setmetatable({}, {__mode = "k"})
 
 policy_to_additional_properties["redis-sentinel"] = {
@@ -505,8 +505,13 @@ local function construct_rate_limiting_headers(conf, rule, metadata)
         prefix = tostring(rule.header_prefix)
         key = prefix .. "\0" .. key
     end
-    return limit_headers_lru(key, nil, gen_limit_headers, prefix,
-                             base_limit, base_remaining, base_reset)
+
+    local headers = limit_headers_lru:get(key)
+    if not headers then
+        headers = gen_limit_headers(prefix, base_limit, base_remaining, base_reset)
+        limit_headers_lru:set(key, headers)
+    end
+    return headers
 end
 
 
@@ -565,14 +570,6 @@ local function run_rate_limit(conf, rule, ctx, name, cost, dry_run)
         end
         lim, err = core.lrucache.plugin_ctx(lrucache, ctx, key,
                                             create_limit_obj, conf, conf, name)
-    elseif not conf.policy or conf.policy == "local" then
-        -- count/time_window are resolved per request. A local limiter keeps its
-        -- counters in the shared dict, so limiters with the same resolved values
-        -- can be shared by every request and route. %d would saturate counts
-        -- beyond int64, so keep every significant digit.
-        local key = str_format("%s#%.17g#%.17g#%s", name, rule.count, rule.time_window,
-                               conf.window_type or "")
-        lim, err = local_limit_lru(key, nil, create_limit_obj, conf, rule, name)
     else
         lim, err = create_limit_obj(conf, rule, name)
     end

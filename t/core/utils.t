@@ -630,3 +630,45 @@ once-x 1 nil
 cached: false
 kept-x
 cached: true
+
+
+
+=== TEST 20: resolve_var stays correct with more templates than its cache holds
+--- config
+    location /t {
+        content_by_lua_block {
+            local resolve_var = require("apisix.core.utils").resolve_var
+            local tpl_cache
+            for i = 1, math.huge do
+                local name, value = debug.getupvalue(resolve_var, i)
+                if not name then
+                    break
+                end
+                if name == "tpl_cache" then
+                    tpl_cache = value
+                    break
+                end
+            end
+
+            -- the second pass resolves templates the first one evicted
+            local bad = 0
+            for pass = 1, 2 do
+                local ctx = {uri = "/p" .. pass}
+                for i = 1, 3000 do
+                    local res, err, n = resolve_var("/svc-" .. i .. "${uri}", ctx)
+                    if res ~= "/svc-" .. i .. "/p" .. pass or err or n ~= 1 then
+                        bad = bad + 1
+                    end
+                end
+            end
+            ngx.say("mismatches: ", bad)
+            ngx.say("first template evicted: ", tpl_cache:get("/svc-1${uri}") == nil)
+            ngx.say("last template cached: ", tpl_cache:get("/svc-3000${uri}") ~= nil)
+        }
+    }
+--- request
+GET /t
+--- response_body
+mismatches: 0
+first template evicted: true
+last template cached: true

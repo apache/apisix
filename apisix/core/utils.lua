@@ -28,7 +28,7 @@ local json           = require("apisix.core.json")
 local string         = require("apisix.core.string")
 local dns_client     = require("apisix.core.dns.client")
 local ngx_re         = require("ngx.re")
-local lrucache       = require("resty.lrucache")
+local lrucache       = require("resty.lrucache.pureffi")
 local tablepool      = require("tablepool")
 local ipmatcher      = require("resty.ipmatcher")
 local ffi            = require("ffi")
@@ -316,6 +316,9 @@ _M.sleep = sleep
 local resolve_var
 do
     local pat = [[(?<!\\)\$(\{\s*([^}]+?)\s*\}|([\w\.]+))]]
+    -- pureffi: once full, resty.lrucache rehashes its key table on most
+    -- evictions, so a configuration with more templates than fit would pay
+    -- for a rehash on most calls
     local tpl_cache = lrucache.new(1024)
 
     -- Split a template into literal strings and variables once, so resolving it
