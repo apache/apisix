@@ -396,3 +396,73 @@ http: 400
 https: 200
 http: 400
 https: 200
+
+
+
+=== TEST 18: setup a route whose Host comes from a client header
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t("/apisix/admin/routes/fa-empty-host", ngx.HTTP_PUT, {
+                uri = "/fa-empty-host",
+                priority = 10,
+                plugins = {
+                    ["forward-auth"] = {
+                        uri = "http://localhost:1986/auth",
+                        extra_headers = {Host = "$http_x_auth_target"},
+                        upstream_headers = {"X-Auth-Host"},
+                    },
+                    ["serverless-post-function"] = {
+                        phase = "access",
+                        functions = {
+                            [[return function(conf, ctx)
+                                local core = require("apisix.core")
+                                local host = core.request.header(ctx, "X-Auth-Host")
+                                core.response.exit(200, "host: " .. tostring(host) .. "\n")
+                            end]]
+                        }
+                    },
+                },
+                upstream = {nodes = {["127.0.0.1:1980"] = 1}, type = "roundrobin"},
+            })
+            ngx.say(code >= 300 and body or "passed")
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 19: ngx_http_ffi_client replaces an empty Host with the address it dials
+--- request
+GET /fa-empty-host
+--- response_body
+host: 127.0.0.1:1986
+--- no_error_log
+[error]
+
+
+
+=== TEST 20: a Host resolved from the client header is sent as is
+--- request
+GET /fa-empty-host
+--- more_headers
+X-Auth-Target: auth.example
+--- response_body
+host: auth.example
+--- no_error_log
+[error]
+
+
+
+=== TEST 21: lua-resty-http sends the empty Host, which the auth service rejects
+--- extra_yaml_config
+plugin_attr:
+  forward-auth:
+    http_client: lua-resty-http
+--- request
+GET /fa-empty-host
+--- error_code: 400
+--- no_error_log
+[error]
