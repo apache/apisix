@@ -3,14 +3,12 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "NODE_OPTIONS=--experimental-vm-modules jest --verbose"
+    "test": "vitest run --reporter=verbose"
   },
   "devDependencies": {
-    "@jest/globals": "^29.7.0",
     "@modelcontextprotocol/sdk": "1.26.0",
     "@trivago/prettier-plugin-sort-imports": "^5.2.2",
     "@types/google-protobuf": "^3.15.12",
-    "@types/jest": "29.5.14",
     "@types/node": "22.14.1",
     "@types/ws": "^8.18.1",
     "axios": "^1.16.0",
@@ -19,11 +17,9 @@
     "graphql": "^16.11.0",
     "graphql-request": "^7.1.2",
     "grpc-web": "^1.5.0",
-    "jest": "29.7.0",
     "lago-javascript-client": "^1.26.0",
     "simple-git": "^3.27.0",
-    "ts-jest": "29.3.2",
-    "ts-node": "10.9.2",
+    "vitest": "^5.0.2",
     "ws": "^8.21.3",
     "xhr2": "^0.2.1",
     "yaml": "^2.7.1"

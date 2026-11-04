@@ -413,12 +413,6 @@ install: runtime
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/ai-lakera-guard
 	$(ENV_INSTALL) apisix/plugins/ai-lakera-guard/*.lua $(ENV_INST_LUADIR)/apisix/plugins/ai-lakera-guard
 
-	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/mcp/broker
-	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/mcp/transport
-	$(ENV_INSTALL) apisix/plugins/mcp/*.lua $(ENV_INST_LUADIR)/apisix/plugins/mcp
-	$(ENV_INSTALL) apisix/plugins/mcp/broker/*.lua $(ENV_INST_LUADIR)/apisix/plugins/mcp/broker
-	$(ENV_INSTALL) apisix/plugins/mcp/transport/*.lua $(ENV_INST_LUADIR)/apisix/plugins/mcp/transport
-
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/openapi-to-mcp/openapi
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/openapi-to-mcp/tools
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/openapi-to-mcp/transport
