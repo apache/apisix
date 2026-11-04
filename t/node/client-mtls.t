@@ -864,45 +864,11 @@ fetching data from env uri
 
 
 
-=== TEST 29: request to route with fallback_sni when matched_ssl is nil does not crash
---- yaml_config
-apisix:
-  node_listen: 1984
-  ssl:
-    fallback_sni: "test.com"
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                ngx.HTTP_PUT,
-                [=[{
-                    "uri": "/hello",
-                    "upstream": {
-                        "type": "roundrobin",
-                        "nodes": {
-                            "127.0.0.1:1980": 1
-                        }
-                    }
-                }]=]
-            )
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- request
-GET /t
---- response_body
-passed
-
-
-
-=== TEST 30: hit route via HTTPS without SNI using fallback_sni (matched_ssl is nil)
+=== TEST 29: access to https using keepalive connection (matched_ssl is nil on subsequent request)
 --- exec
-curl -k https://127.0.0.1:1994/hello
+curl --cert t/certs/mtls_client.crt --key t/certs/mtls_client.key -k https://test.com:1994/hello https://test.com:1994/hello
 --- response_body
+hello world
 hello world
 --- no_error_log
 [error]
