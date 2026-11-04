@@ -739,6 +739,15 @@ passed
 
 
 === TEST 23: hit route, send failure is reported with a separator before the cause
+--- extra_init_by_lua
+    local logger_socket = require("resty.logger.socket")
+    logger_socket.new = function()
+        return {
+            log = function()
+                return nil, "mocked send failure"
+            end
+        }
+    end
 --- request
 GET /hello
 --- response_body
