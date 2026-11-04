@@ -162,6 +162,13 @@ local function check_disable(plugin_conf)
 
     return plugin_conf._meta.disable
 end
+
+
+local function warn_unavailable_plugin(name, plugin_conf)
+    if check_disable(plugin_conf) ~= true then
+        core.log.warn("plugin [", name, "] is not enabled and will be skipped")
+    end
+end
 -- exposed for callers that must not act on a plugin config which never runs,
 -- such as the control API reporting the health checkers a plugin owns
 _M.check_disable = check_disable
@@ -1016,8 +1023,7 @@ local function check_single_plugin_schema(name, plugin_conf, schema_type, skip_d
         end
 
         if skip_disabled_plugin then
-            core.log.warn("skipping check schema for disabled or unknown plugin [",
-                                    name, "]. Enable the plugin or modify configuration")
+            warn_unavailable_plugin(name, plugin_conf)
             return true
         else
             return false, "unknown plugin [" .. name .. "]"
@@ -1271,6 +1277,7 @@ local function stream_check_schema(plugins_conf, schema_type, skip_disabled_plug
         local plugin_obj = stream_local_plugins_hash[name]
         if not plugin_obj then
             if skip_disabled_plugin then
+                warn_unavailable_plugin(name, plugin_conf)
                 goto CONTINUE
             else
                 return false, "unknown plugin [" .. name .. "]"
@@ -1318,7 +1325,9 @@ end
 
 function _M.stream_plugin_checker(item, in_cp)
     if item.plugins then
-        local skip_disabled_plugins = not in_cp
+        -- config_etcd passes the key as the second checker argument, so only
+        -- an explicit boolean marks validation on the control plane.
+        local skip_disabled_plugins = in_cp ~= true
         if core.config.type == "yaml" or core.config.type == "json" then
             skip_disabled_plugins = false
         end

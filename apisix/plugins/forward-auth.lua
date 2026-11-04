@@ -178,6 +178,10 @@ function _M.access(conf, ctx)
 
     local res, err = httpc:request_uri(conf.uri, params)
     if not res and conf.allow_degradation then
+        -- drop client-supplied copies of the configured upstream headers
+        for _, header in ipairs(conf.upstream_headers) do
+            core.request.set_header(ctx, header, nil)
+        end
         return
     elseif not res then
         core.log.warn("failed to process forward auth, err: ", err)

@@ -29,8 +29,49 @@ local sse = require("apisix.plugins.ai-transport.sse")
 local table = table
 local type = type
 local ipairs = ipairs
+local pairs = pairs
 
 local _M = {}
+
+
+-- Anthropic reports cache tokens alongside input_tokens rather than inside it,
+-- so add them back to get a prompt total with the same meaning as OpenAI's
+-- prompt_tokens. Mirrors LiteLLM's AnthropicConfig.calculate_usage.
+local function to_usage(raw)
+    local cache_read = raw.cache_read_input_tokens or 0
+    local cache_creation = raw.cache_creation_input_tokens or 0
+    local prompt = (raw.input_tokens or 0) + cache_read + cache_creation
+    local completion = raw.output_tokens or 0
+    return {
+        prompt_tokens = prompt,
+        completion_tokens = completion,
+        total_tokens = prompt + completion,
+        cache_read_input_tokens = cache_read,
+        cache_creation_input_tokens = cache_creation,
+        reasoning_tokens = 0,
+    }
+end
+
+
+-- message_delta usage is cumulative but may omit fields reported at
+-- message_start (and some providers only report cache tokens there), so
+-- merge the raw fields across events before computing usage. A later event
+-- overwrites a field rather than adding to it, because the values are
+-- cumulative: summing them would double-count.
+local function merge_usage_fields(state, raw)
+    if type(state) ~= "table" then
+        return raw
+    end
+    local acc = state.anthropic_usage
+    if not acc then
+        acc = {}
+        state.anthropic_usage = acc
+    end
+    for k, v in pairs(raw) do
+        acc[k] = v
+    end
+    return acc
+end
 
 
 --- Detect whether the request matches the Anthropic Messages API format.
@@ -83,12 +124,7 @@ function _M.parse_sse_event(event, ctx, state)
         if type(data.usage) == "table" then
             return {
                 type = "usage",
-                usage = {
-                    prompt_tokens = data.usage.input_tokens or 0,
-                    completion_tokens = data.usage.output_tokens or 0,
-                    total_tokens = (data.usage.input_tokens or 0)
-                        + (data.usage.output_tokens or 0),
-                },
+                usage = to_usage(merge_usage_fields(state, data.usage)),
                 raw_usage = data.usage,
             }
         end
@@ -106,14 +142,7 @@ function _M.parse_sse_event(event, ctx, state)
             local usage = data.message.usage
             return {
                 type = "usage",
-                usage = {
-                    prompt_tokens = usage.input_tokens or 0,
-                    completion_tokens = usage.output_tokens or 0,
-                    total_tokens = (usage.input_tokens or 0) + (usage.output_tokens or 0),
-                    cache_read_input_tokens = usage.cache_read_input_tokens or 0,
-                    cache_creation_input_tokens = usage.cache_creation_input_tokens or 0,
-                    reasoning_tokens = 0,
-                },
+                usage = to_usage(merge_usage_fields(state, usage)),
                 raw_usage = usage,
             }
         end
@@ -174,16 +203,7 @@ function _M.extract_usage(res_body)
         return nil, nil
     end
     local raw = res_body.usage
-    local prompt = raw.input_tokens or 0
-    local completion = raw.output_tokens or 0
-    return {
-        prompt_tokens = prompt,
-        completion_tokens = completion,
-        total_tokens = prompt + completion,
-        cache_read_input_tokens = raw.cache_read_input_tokens or 0,
-        cache_creation_input_tokens = raw.cache_creation_input_tokens or 0,
-        reasoning_tokens = 0,
-    }, raw
+    return to_usage(raw), raw
 end
 
 

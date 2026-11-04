@@ -514,6 +514,12 @@ invalid username-password pair
 --- config
     location /t {
         content_by_lua_block {
+            local redis = require "resty.redis"
+            local red = redis:new()
+            assert(red:connect("127.0.0.1", 6479))
+            assert(red:flushall())
+            assert(red:close())
+
             local t = require("lib.test_admin").test
             for i, db in ipairs({1, 2}) do
                 local code, body = t('/apisix/admin/routes/' .. i,
@@ -575,7 +581,6 @@ invalid username-password pair
 
             -- each database must contain only its own route's counter,
             -- tracking exactly the 2 requests sent to that route
-            local redis = require "resty.redis"
             for db = 1, 2 do
                 local red = redis:new()
                 red:set_timeout(1000)

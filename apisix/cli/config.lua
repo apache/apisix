@@ -49,6 +49,7 @@ local _M = {
     normalize_uri_like_servlet = false,
     match_uri_encoded_slash = false,
     max_post_args_readable_size = 64,
+    max_request_headers_readable = 100,
     router = {
       http = "radixtree_host_uri",
       ssl = "radixtree_sni"
@@ -168,6 +169,7 @@ local _M = {
         ["plugin-limit-conn"] = "10m",
         ["worker-events"] = "10m",
         ["lrucache-lock"] = "10m",
+        ["upstream-slow-start"] = "10m",
         ["balancer-ewma"] = "10m",
         ["balancer-ewma-locks"] = "10m",
         ["balancer-ewma-last-touched-at"] = "10m",
@@ -177,6 +179,7 @@ local _M = {
         ["plugin-limit-conn-redis-cluster-slot-lock"] = "1m",
         ["plugin-graphql-limit-count"] = "10m",
         ["plugin-graphql-limit-count-reset-header"] = "10m",
+        ["plugin-saml-auth-replay"] = "10m",
         ["plugin-ai-rate-limiting"] = "10m",
         ["plugin-ai-rate-limiting-reset-header"] = "10m",
         tracing_buffer = "32m",
@@ -215,6 +218,7 @@ local _M = {
     "referer-restriction",
     "csrf",
     "uri-blocker",
+    "request-decompress",
     "request-validation",
     "chaitin-waf",
     "multi-auth",
@@ -269,10 +273,11 @@ local _M = {
     "traffic-split",
     "redirect",
     "response-rewrite",
+    "openapi-to-mcp",
     "oas-validator",
-    "mcp-bridge",
     "degraphql",
     "kafka-proxy",
+    "websocket-proxy",
     "grpc-transcode",
     "grpc-web",
     "http-dubbo",
@@ -355,7 +360,8 @@ local _M = {
         ip = "127.0.0.1",
         port = 9091
       },
-      refresh_interval = 15
+      refresh_interval = 15,
+      remove_expired_keys_interval = 3600
     },
     ["server-info"] = {
       report_ttl = 60

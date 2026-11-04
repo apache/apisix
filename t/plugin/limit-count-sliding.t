@@ -32,6 +32,26 @@ add_block_preprocessor(sub {
     }
 });
 
+our $burst_config = <<'_EOC_';
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local window = 5
+            while ngx.now() % window >= 1 do
+                ngx.sleep(0.05)
+            end
+            local window_id = math.floor(ngx.now() / window)
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            for i = 1, 3 do
+                local res = assert(http.new():request_uri(uri))
+                ngx.say(res.status)
+            end
+            assert(math.floor(ngx.now() / window) == window_id,
+                   "request burst crossed the rate-limit window")
+        }
+    }
+_EOC_
+
 run_tests;
 
 __DATA__
@@ -77,10 +97,13 @@ passed
 
 
 === TEST 2: up the limit
---- pipelined_requests eval
-["GET /hello", "GET /hello", "GET /hello"]
---- error_code eval
-[200, 200, 503]
+--- timeout: 10
+--- config eval
+$::burst_config
+--- response_body
+200
+200
+503
 
 
 
@@ -196,10 +219,13 @@ passed
 
 
 === TEST 5: up the limit
---- pipelined_requests eval
-["GET /hello", "GET /hello", "GET /hello"]
---- error_code eval
-[200, 200, 503]
+--- timeout: 10
+--- config eval
+$::burst_config
+--- response_body
+200
+200
+503
 
 
 
