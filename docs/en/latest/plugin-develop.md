@@ -378,7 +378,7 @@ By default, APISIX has `data_encryption` enabled with [two default keys](https:/
 ```yaml
 apisix:
     data_encryption:
-        enable: true
+        enable_encrypt_fields: true
         keyring:
             - ...
 ```
@@ -388,6 +388,31 @@ Each key doubles as the IV, so its length selects the cipher: a key of 16 charac
 APISIX will try to decrypt the data with keys in the order of the keys in the keyring (only for parameters declared in `encrypt_fields`). If the decryption fails, the next key will be tried until the decryption succeeds.
 
 If none of the keys in `keyring` can decrypt the data, the original data is used.
+
+### Encryption marker
+
+Whether a stored value declared in `encrypt_fields` is ciphertext is decided by the `encrypt_fields` and `enable_encrypt_fields` of the APISIX instance that reads it. A value encrypted by a version that declares the field in `encrypt_fields` is therefore used as it is by a version that does not, for example after rolling back to a version released before the field was added to `encrypt_fields`, and so is any value read with `enable_encrypt_fields: false`.
+
+To make an encrypted value self-describing, APISIX can store it with the `$ENC$v1$` prefix (the marker) followed by the ciphertext described above:
+
+```yaml
+apisix:
+    data_encryption:
+        enable_encrypt_fields: true
+        write_marker: true
+        keyring:
+            - ...
+```
+
+With `write_marker: true`, the Admin API stores every value it encrypts in the plugin configurations and the plugin metadata with the marker. The option does not change which fields are encrypted, and it takes effect only with `enable_encrypt_fields: true`. It defaults to `false`.
+
+APISIX decrypts every string value carrying the marker in plugin configurations (routes, services, plugin configs, consumers, credentials, consumer groups, global rules and stream routes) and in plugin metadata, whether or not the field is declared in `encrypt_fields` and whatever `enable_encrypt_fields` is. A value carrying the marker is never used as it is: if it cannot be decrypted with the `keyring`, the resource is invalid. The Admin API returns these values decrypted, and rejects with `400` any user-supplied string in a plugin configuration or plugin metadata that starts with `$ENC$`, the prefix reserved for the marker.
+
+:::warning
+
+A version of APISIX that does not recognize the marker uses a marked value as it is. Enable `write_marker` only once every APISIX instance runs a version that recognizes the marker, and only if you will not roll back below that version.
+
+:::
 
 ## Register public API
 

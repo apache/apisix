@@ -255,13 +255,17 @@ local function run()
     end
 
     if code then
-        if code == 200 and method == "get" and plugin.enable_gde() then
+        if code == 200 and method == "get" then
+            local schema_type
             if seg_res == "consumers" or seg_res == "credentials" then
-                utils.decrypt_params(plugin.decrypt_conf, data, core.schema.TYPE_CONSUMER)
+                schema_type = core.schema.TYPE_CONSUMER
             elseif seg_res == "plugin_metadata" then
-                utils.decrypt_params(plugin.decrypt_conf, data, core.schema.TYPE_METADATA)
-            else
-                utils.decrypt_params(plugin.decrypt_conf, data)
+                schema_type = core.schema.TYPE_METADATA
+            end
+
+            local err = utils.decrypt_params(data, schema_type)
+            if err then
+                core.log.error("failed to decrypt the ", seg_res, " in the response: ", err)
             end
         end
 

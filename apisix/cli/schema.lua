@@ -256,6 +256,9 @@ local config_schema = {
                 data_encryption = {
                     type = "object",
                     properties = {
+                        write_marker = {
+                            type = "boolean",
+                        },
                         keyring = {
                             anyOf = {
                                 {

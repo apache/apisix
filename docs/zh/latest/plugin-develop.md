@@ -337,7 +337,7 @@ encrypt_fields = {"clickhouse.password"}
 ```yaml
 apisix:
     data_encryption:
-        enable: true
+        enable_encrypt_fields: true
         keyring:
             - ...
 ```
@@ -347,6 +347,31 @@ apisix:
 `keyring` 是一个数组，可以指定多个 key，APISIX 会按照 keyring 中 key 的顺序，依次尝试用 key 来解密数据（只对在 `encrypt_fields` 声明的参数）。如果解密失败，会尝试下一个 key，直到解密成功。
 
 如果 `keyring` 中的 key 都无法解密数据，则使用原始数据。
+
+### 加密标记
+
+存储的值是否为密文，由读取它的 APISIX 实例自身的 `encrypt_fields` 和 `enable_encrypt_fields` 决定。因此，由在 `encrypt_fields` 中声明了某个字段的版本加密的值，会被没有声明该字段的版本当作原值使用，例如回滚到该字段加入 `encrypt_fields` 之前发布的版本后；在 `enable_encrypt_fields: false` 时读取的值也是如此。
+
+为了让加密后的值能够自我描述，APISIX 可以在存储时为其加上 `$ENC$v1$` 前缀（即加密标记），后接上文所述的密文：
+
+```yaml
+apisix:
+    data_encryption:
+        enable_encrypt_fields: true
+        write_marker: true
+        keyring:
+            - ...
+```
+
+设置 `write_marker: true` 后，Admin API 会为插件配置和插件元数据中所有被加密的值加上标记后再存储。该选项不改变哪些字段会被加密，且仅在 `enable_encrypt_fields: true` 时生效，默认值为 `false`。
+
+APISIX 会解密插件配置（路由、服务、插件配置、消费者、凭证、消费者组、全局规则和 Stream 路由）及插件元数据中所有带标记的字符串值，无论该字段是否在 `encrypt_fields` 中声明，也无论 `enable_encrypt_fields` 的取值。带标记的值不会被当作原值使用：如果无法用 `keyring` 解密，该资源无效。Admin API 返回这些值时会将其解密；对于插件配置或插件元数据中以 `$ENC$`（为加密标记保留的前缀）开头的用户输入字符串，Admin API 会返回 `400` 拒绝。
+
+:::warning
+
+不识别加密标记的 APISIX 版本会把带标记的值当作原值使用。请仅在所有 APISIX 实例都已运行识别加密标记的版本、且不会回滚到更低版本时，才启用 `write_marker`。
+
+:::
 
 ## 注册公共接口
 

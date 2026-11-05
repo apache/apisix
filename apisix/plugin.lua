@@ -1115,7 +1115,7 @@ local decrypt_hint = ". This can happen after upgrading if the field was recentl
     .. "added to encrypt_fields; if the value was encrypted, verify the data_encryption "
     .. "keyring. Re-save the configuration via the Admin API to resolve."
 
-local function process_encrypt_field(conf, key_path, operation, plugin_name, op_name)
+local function process_encrypt_field(conf, key_path, operation, plugin_name, op_name, marked)
     local log_func = op_name == "decrypt" and core.log.info or core.log.warn
     local hint = op_name == "decrypt" and decrypt_hint or ""
     local dot_pos = core.string.find(key_path, ".")
@@ -1128,6 +1128,11 @@ local function process_encrypt_field(conf, key_path, operation, plugin_name, op_
         end
 
         if type(val) == "string" then
+            local skip = marked and marked[conf]
+            if skip and skip[key_path] then
+                return
+            end
+
             local result, err = operation(val)
             if not result then
                 log_func("failed to ", op_name, " the conf of plugin [",
@@ -1137,10 +1142,11 @@ local function process_encrypt_field(conf, key_path, operation, plugin_name, op_
             end
 
         elseif type(val) == "table" then
+            local skip = marked and marked[val]
             if core.table.isarray(val) then
                 -- array of strings
                 for i, item in ipairs(val) do
-                    if type(item) == "string" then
+                    if type(item) == "string" and not (skip and skip[i]) then
                         local result, err = operation(item)
                         if not result then
                             log_func("failed to ", op_name, " the conf of plugin [",
@@ -1154,7 +1160,7 @@ local function process_encrypt_field(conf, key_path, operation, plugin_name, op_
             else
                 -- map of strings
                 for k, v in pairs(val) do
-                    if type(v) == "string" then
+                    if type(v) == "string" and not (skip and skip[k]) then
                         local result, err = operation(v)
                         if not result then
                             log_func("failed to ", op_name, " the conf of plugin [",
@@ -1182,19 +1188,21 @@ local function process_encrypt_field(conf, key_path, operation, plugin_name, op_
             -- array: iterate each element and recurse
             for _, item in ipairs(val) do
                 if type(item) == "table" then
-                    process_encrypt_field(item, rest, operation, plugin_name, op_name)
+                    process_encrypt_field(item, rest, operation, plugin_name, op_name, marked)
                 end
             end
         else
             -- map: recurse into it
-            process_encrypt_field(val, rest, operation, plugin_name, op_name)
+            process_encrypt_field(val, rest, operation, plugin_name, op_name, marked)
         end
     end
 end
 _M.process_encrypt_field = process_encrypt_field
 
 
-local function decrypt_conf(name, conf, schema_type)
+-- `marked` (optional) holds the positions already decrypted through the
+-- marker, which are skipped.
+local function decrypt_conf(name, conf, schema_type, marked)
     if not enable_gde() then
         return
     end
@@ -1206,11 +1214,105 @@ local function decrypt_conf(name, conf, schema_type)
 
     if schema.encrypt_fields and not core.table.isempty(schema.encrypt_fields) then
         for _, key in ipairs(schema.encrypt_fields) do
-            process_encrypt_field(conf, key, core.data_encryption.decrypt, name, "decrypt")
+            process_encrypt_field(conf, key, core.data_encryption.decrypt, name, "decrypt",
+                                  marked)
         end
     end
 end
 _M.decrypt_conf = decrypt_conf
+
+
+-- Decrypt every string value under `conf` that carries the marker into
+-- `marked` = {[container] = {[key] = plaintext}} (nil when there is none), or
+-- return nil, err and the path of the value that failed. Nothing is written back
+-- here, so a failed item is logged without the plaintexts decrypted before it.
+local function collect_marked(conf, marked)
+    for k, v in pairs(conf) do
+        local tv = type(v)
+        if tv == "string" then
+            if core.data_encryption.has_marker(v) then
+                local plain, err = core.data_encryption.decrypt_marked(v)
+                if not plain then
+                    return nil, err, tostring(k)
+                end
+
+                marked = marked or {}
+                local keys = marked[conf]
+                if not keys then
+                    keys = {}
+                    marked[conf] = keys
+                end
+                keys[k] = plain
+            end
+
+        elseif tv == "table" then
+            local err, path
+            marked, err, path = collect_marked(v, marked)
+            if err then
+                return nil, err, tostring(k) .. "." .. path
+            end
+        end
+    end
+
+    return marked
+end
+
+
+local function apply_marked(marked)
+    if marked then
+        for conf, keys in pairs(marked) do
+            for k, plain in pairs(keys) do
+                conf[k] = plain
+            end
+        end
+    end
+
+    return marked
+end
+
+
+-- Decrypt the marked values of a plugins conf in place, all or nothing.
+-- Returns the decrypted positions for `decrypt_conf`, or nil, err.
+local function decrypt_marked_plugins(plugins)
+    local marked
+    for name, conf in pairs(plugins) do
+        if type(conf) == "table" then
+            local err, path
+            marked, err, path = collect_marked(conf, marked)
+            if err then
+                return nil, "failed to decrypt the value of plugin [" .. name
+                            .. "] key [" .. path .. "]: " .. err
+            end
+        end
+    end
+
+    return apply_marked(marked)
+end
+_M.decrypt_marked_plugins = decrypt_marked_plugins
+
+
+-- Same as `decrypt_marked_plugins`, for a plugin metadata conf.
+local function decrypt_marked_metadata(conf)
+    local marked, err, path = collect_marked(conf)
+    if err then
+        return nil, "failed to decrypt the value of plugin metadata [" .. tostring(conf.id)
+                    .. "] key [" .. path .. "]: " .. err
+    end
+
+    return apply_marked(marked)
+end
+_M.decrypt_marked_metadata = decrypt_marked_metadata
+
+
+local enable_write_marker
+local function write_marker()
+    if enable_write_marker == nil then
+        enable_write_marker = core.table.try_read_attr(local_conf, "apisix", "data_encryption",
+                                                       "write_marker") == true
+    end
+
+    return enable_write_marker
+end
 
 
 local function encrypt_conf(name, conf, schema_type)
@@ -1224,8 +1326,10 @@ local function encrypt_conf(name, conf, schema_type)
     end
 
     if schema.encrypt_fields and not core.table.isempty(schema.encrypt_fields) then
+        local encrypt = write_marker() and core.data_encryption.encrypt_with_marker
+                        or core.data_encryption.encrypt
         for _, key in ipairs(schema.encrypt_fields) do
-            process_encrypt_field(conf, key, core.data_encryption.encrypt, name, "encrypt")
+            process_encrypt_field(conf, key, encrypt, name, "encrypt")
         end
     end
 end
@@ -1233,6 +1337,11 @@ _M.encrypt_conf = encrypt_conf
 
 
 check_plugin_metadata = function(item)
+    local marked, err = decrypt_marked_metadata(item)
+    if err then
+        return false, err
+    end
+
     -- A plugin_metadata entry takes no effect until its plugin is enabled,
     -- so entries of disabled or unknown plugins are ignored silently. This
     -- also covers the entries of the other subsystem's plugins: the
@@ -1243,7 +1352,7 @@ check_plugin_metadata = function(item)
     -- the schema of an unloaded plugin is unavailable, so decrypting its
     -- metadata would only produce a "failed to get schema" warning
     if ok and enable_gde() and local_plugins_hash[item.id] then
-        decrypt_conf(item.id, item, core.schema.TYPE_METADATA)
+        decrypt_conf(item.id, item, core.schema.TYPE_METADATA, marked)
     end
 
     return ok, err
@@ -1266,8 +1375,7 @@ _M.check_schema = check_schema
 
 local function stream_check_schema(plugins_conf, schema_type, skip_disabled_plugin)
     for name, plugin_conf in pairs(plugins_conf) do
-        core.log.info("check stream plugin schema, name: ", name,
-                      ": ", core.json.delay_encode(plugin_conf, true))
+        core.log.info("check stream plugin schema, name: ", name)
         if type(plugin_conf) ~= "table" then
             return false, "invalid plugin conf " ..
                 core.json.encode(plugin_conf, true) ..
@@ -1307,11 +1415,16 @@ _M.stream_check_schema = stream_check_schema
 
 function _M.plugin_checker(item, schema_type)
     if item.plugins then
+        local marked, err = decrypt_marked_plugins(item.plugins)
+        if err then
+            return false, err
+        end
+
         if enable_gde() then
             -- decrypt conf before validation so that content-level checks
             -- (e.g. ai-proxy service_account_json JSON parsing) see plaintext
             for name, conf in pairs(item.plugins) do
-                decrypt_conf(name, conf, schema_type)
+                decrypt_conf(name, conf, schema_type, marked)
             end
         end
 
@@ -1331,6 +1444,12 @@ function _M.stream_plugin_checker(item, in_cp)
         if core.config.type == "yaml" or core.config.type == "json" then
             skip_disabled_plugins = false
         end
+
+        local _, err = decrypt_marked_plugins(item.plugins)
+        if err then
+            return false, err
+        end
+
         return stream_check_schema(item.plugins, nil, skip_disabled_plugins)
     end
 

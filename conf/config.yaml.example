@@ -165,6 +165,12 @@ apisix:
 
   data_encryption:                # Data encryption settings.
     enable_encrypt_fields: true   # Whether enable encrypt fields specified in `encrypt_fields` in plugin schema.
+    write_marker: false           # Whether the Admin API writes the encrypted plugin values with the `$ENC$v1$`
+                                  # prefix, which lets APISIX decrypt them whatever its `encrypt_fields` and
+                                  # `enable_encrypt_fields` are. Takes effect only with `enable_encrypt_fields: true`.
+                                  # CAUTION: Enable it only once every node runs a release that recognizes the
+                                  # prefix and you will not roll back below that release: an older release uses
+                                  # a prefixed value as it is.
     keyring:                      # This field is used to encrypt the private key of SSL and the `encrypt_fields`
                                   # in plugin schema.
       - qeddd145sfvddff3          # Set the encryption key. A key of length 16 selects AES-128-CBC and a key
