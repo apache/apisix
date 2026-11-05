@@ -208,6 +208,11 @@ do
         -- var.args should not be cached as it can be changed via set_uri_args
         args = true,
         is_args = true,
+        -- these change as the response progresses, reading one early must not stick
+        status = true,
+        bytes_sent = true,
+        body_bytes_sent = true,
+        request_time = true,
     }
 
     local ngx_var_names = {
