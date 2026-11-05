@@ -551,3 +551,66 @@ qr/property \\"rules\\" is required/
 --- error_code: 400
 --- response_body eval
 qr/expect array to have at least 1 items/
+
+
+
+=== TEST 19: set route with an ipmatch match expression
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "traffic-label": {
+                                "rules": [
+                                    {
+                                        "match": [
+                                            [
+                                                "http_x_forwarded_for",
+                                                "ipmatch",
+                                                ["10.7.22.0/24"]
+                                            ]
+                                        ],
+                                        "actions": [
+                                            {
+                                                "set_headers": {
+                                                    "X-server-id": 100
+                                                }
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/echo"
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 20: the route config stays serialisable once the expression is compiled
+--- pipelined_requests eval
+["GET /echo", "GET /echo"]
+--- more_headers
+X-Forwarded-For: 10.7.22.1
+--- error_code eval
+[200, 200]
+--- no_error_log
+[error]
+excessively sparse array

@@ -570,3 +570,120 @@ qr/6data: \[DONE\]\n\n/
 --- error_code: 400
 --- response_body eval
 qr/.invalid endpoint.*/
+
+
+
+=== TEST 16: reject instances that share a name
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-proxy-multi": {
+                            "instances": [
+                                {
+                                    "name": "same-name",
+                                    "provider": "openai",
+                                    "weight": 1,
+                                    "auth": {
+                                        "header": {
+                                            "Authorization": "Bearer token-1"
+                                        }
+                                    }
+                                },
+                                {
+                                    "name": "other",
+                                    "provider": "openai",
+                                    "weight": 1,
+                                    "auth": {
+                                        "header": {
+                                            "Authorization": "Bearer token-2"
+                                        }
+                                    }
+                                },
+                                {
+                                    "name": "same-name",
+                                    "provider": "openai",
+                                    "weight": 1,
+                                    "auth": {
+                                        "header": {
+                                            "Authorization": "Bearer token-3"
+                                        }
+                                    }
+                                }
+                            ],
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- error_code: 400
+--- response_body eval
+qr/duplicate instance name 'same-name' at instances\[1\] and instances\[3\]/
+
+
+
+=== TEST 17: instances with distinct names are accepted
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-proxy-multi": {
+                            "instances": [
+                                {
+                                    "name": "key-1",
+                                    "provider": "openai",
+                                    "weight": 1,
+                                    "auth": {
+                                        "header": {
+                                            "Authorization": "Bearer token-1"
+                                        }
+                                    },
+                                    "override": {
+                                        "endpoint": "http://127.0.0.1:6724"
+                                    }
+                                },
+                                {
+                                    "name": "key-2",
+                                    "provider": "openai",
+                                    "weight": 1,
+                                    "auth": {
+                                        "header": {
+                                            "Authorization": "Bearer token-2"
+                                        }
+                                    },
+                                    "override": {
+                                        "endpoint": "http://127.0.0.1:6724"
+                                    }
+                                }
+                            ],
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed

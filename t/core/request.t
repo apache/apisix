@@ -577,3 +577,37 @@ x-mixed-case: old
 count: 1
 value: new
 header: new
+
+
+
+=== TEST 19: get_body marks a body over max_size as too_large
+--- config
+    location /read {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            ngx.ctx.api_ctx = {}
+            local body, err, kind = core.request.get_body(8, ngx.ctx.api_ctx)
+            ngx.say("body: ", body)
+            ngx.say("err: ", err)
+            ngx.say("kind: ", kind)
+        }
+    }
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local httpc = http.new()
+            local res, err = httpc:request_uri("http://127.0.0.1:1984/read", {
+                method = "POST",
+                body = [[{"name":"doggie"}]],
+            })
+            if not res then
+                ngx.say(err)
+                return
+            end
+            ngx.print(res.body)
+        }
+    }
+--- response_body
+body: nil
+err: request size 17 is greater than the maximum size 8 allowed
+kind: too_large

@@ -137,7 +137,6 @@ deps: install-runtime
 		$(ENV_LUAROCKS) config $(ENV_LUAROCKS_FLAG_LOCAL) variables.OPENSSL_LIBDIR $(addprefix $(ENV_OPENSSL_PREFIX), /lib); \
 		$(ENV_LUAROCKS) config $(ENV_LUAROCKS_FLAG_LOCAL) variables.OPENSSL_INCDIR $(addprefix $(ENV_OPENSSL_PREFIX), /include); \
 		$(ENV_LUAROCKS) config $(ENV_LUAROCKS_FLAG_LOCAL) variables.YAML_DIR $(ENV_LIBYAML_INSTALL_PREFIX); \
-		LUAROCKS=$(ENV_LUAROCKS) ./ci/install-lua-rapidjson.sh deps; \
 		$(ENV_LUAROCKS) install apisix-master-0.rockspec --tree deps --only-deps $(ENV_LUAROCKS_SERVER_OPT); \
 	else \
 		$(call func_echo_warn_status, "WARNING: You're not using LuaRocks 3.x; please remove the luarocks and reinstall it via https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-luarocks.sh"); \
@@ -310,6 +309,9 @@ install: runtime
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/ext-plugin
 	$(ENV_INSTALL) apisix/plugins/ext-plugin/*.lua $(ENV_INST_LUADIR)/apisix/plugins/ext-plugin/
 
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/graphql-limit-count
+	$(ENV_INSTALL) apisix/plugins/graphql-limit-count/*.lua $(ENV_INST_LUADIR)/apisix/plugins/graphql-limit-count/
+
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/grpc-transcode
 	$(ENV_INSTALL) apisix/plugins/grpc-transcode/*.lua $(ENV_INST_LUADIR)/apisix/plugins/grpc-transcode/
 
@@ -411,11 +413,13 @@ install: runtime
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/ai-lakera-guard
 	$(ENV_INSTALL) apisix/plugins/ai-lakera-guard/*.lua $(ENV_INST_LUADIR)/apisix/plugins/ai-lakera-guard
 
-	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/mcp/broker
-	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/mcp/transport
-	$(ENV_INSTALL) apisix/plugins/mcp/*.lua $(ENV_INST_LUADIR)/apisix/plugins/mcp
-	$(ENV_INSTALL) apisix/plugins/mcp/broker/*.lua $(ENV_INST_LUADIR)/apisix/plugins/mcp/broker
-	$(ENV_INSTALL) apisix/plugins/mcp/transport/*.lua $(ENV_INST_LUADIR)/apisix/plugins/mcp/transport
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/openapi-to-mcp/openapi
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/openapi-to-mcp/tools
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/openapi-to-mcp/transport
+	$(ENV_INSTALL) apisix/plugins/openapi-to-mcp/*.lua $(ENV_INST_LUADIR)/apisix/plugins/openapi-to-mcp
+	$(ENV_INSTALL) apisix/plugins/openapi-to-mcp/openapi/*.lua $(ENV_INST_LUADIR)/apisix/plugins/openapi-to-mcp/openapi
+	$(ENV_INSTALL) apisix/plugins/openapi-to-mcp/tools/*.lua $(ENV_INST_LUADIR)/apisix/plugins/openapi-to-mcp/tools
+	$(ENV_INSTALL) apisix/plugins/openapi-to-mcp/transport/*.lua $(ENV_INST_LUADIR)/apisix/plugins/openapi-to-mcp/transport
 
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/jwt-auth
 	$(ENV_INSTALL) apisix/plugins/jwt-auth/*.lua $(ENV_INST_LUADIR)/apisix/plugins/jwt-auth

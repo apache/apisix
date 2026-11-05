@@ -49,7 +49,7 @@ You can use APISIX Secret functions by specifying format variables in the consum
 Secret references (`$secret://...`, `$env://...`, `$ENV://...`) can be used in the following contexts:
 
 - **Plugin configurations**: Any string field in any plugin configuration. Secret references are automatically resolved at runtime in `plugin.filter()` before the plugin executes.
-- **SSL certificates**: The `cert`, `key`, `certs`, and `keys` fields in SSL resources. Secret references are resolved during TLS handshake.
+- **SSL certificates**: The `cert`, `key`, `certs`, and `keys` fields in SSL resources. Secret references are resolved during TLS handshake, including stream (L4) TLS mode.
 - **Consumer auth configurations**: Any string field in consumer authentication plugin configurations (e.g., `key-auth`, `jwt-auth`). Secret references are resolved when consumer configuration is loaded.
 
 :::tip
@@ -61,6 +61,8 @@ When a configuration field uses a secret reference like `$secret://...` or `$env
 :::note
 
 If a key-value pair `key: "$ENV://ABC"` is configured in APISIX and the value of `$ENV://ABC` is unassigned in the environment variable, `$ENV://ABC` will be interpreted as a string literal, instead of `nil`.
+
+This applies to every secret reference: when a reference cannot be resolved (the secret manager is not configured, the lookup fails, or the environment variable is unset), the literal reference string is used as the field value and an error such as `failed to resolve secret reference: $secret://vault/1/foo/bar, field: password` is written to the error log. Check the error log if a plugin behaves as if its credential were wrong.
 
 :::
 

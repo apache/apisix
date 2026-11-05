@@ -24,6 +24,7 @@ local type = type
 local tostring = tostring
 local redis_schema = require("apisix.utils.redis-schema")
 local get_phase = ngx.get_phase
+local ngx_now = ngx.now
 local math_floor = math.floor
 local str_format = string.format
 
@@ -486,6 +487,47 @@ local function construct_rate_limiting_headers(conf, rule, metadata)
 end
 
 
+-- Collects what $rate_limiting_info reports about the window this request was
+-- counted in. `info` is what the limiter returned next to the decision; the
+-- request's own figures are added to it.
+local function rate_limiting_detail(conf, rule, cost, delay, remaining, reset, info)
+    local detail = info or {}
+    detail.window_type = conf.window_type == "sliding" and "sliding" or "fixed"
+    detail.window_size = rule.time_window
+    if delay then
+        detail.decision = "allowed"
+    elseif remaining == "rejected" then
+        detail.decision = "rejected"
+    else
+        detail.decision = "error"
+        return detail
+    end
+
+    local delayed = detail.delayed_sync
+    -- a fixed window counts the cost even when it rejects the request, the
+    -- sliding window and the delayed sync only count what they allow
+    if delay or (detail.window_type == "fixed" and not delayed) then
+        detail.cost = cost
+    else
+        detail.cost = 0
+    end
+
+    if not detail.now then
+        detail.now = ngx_now()
+    end
+    if detail.window_type == "fixed" then
+        detail.window_end = reset and detail.now + reset
+    elseif not delayed then
+        detail.window_now = detail.now
+    end
+    if delayed and delayed.synced_count then
+        detail.count = delayed.synced_count + delayed.local_delta + detail.cost
+    end
+
+    return detail
+end
+
+
 local function run_rate_limit(conf, rule, ctx, name, cost, dry_run)
     local lim, err
     if conf.group then
@@ -547,9 +589,9 @@ local function run_rate_limit(conf, rule, ctx, name, cost, dry_run)
     local is_log_phase = phase == "log"
     local commit_cost = dry_run and 0 or cost
 
-    local delay, remaining, reset
+    local delay, remaining, reset, info
     if not conf.policy or conf.policy == "local" then
-        delay, remaining, reset = lim:incoming(key, commit_cost)
+        delay, remaining, reset, info = lim:incoming(key, commit_cost)
     else
         local enable_delayed_sync = conf.sync_interval and (conf.sync_interval ~= NO_DELAYED_SYNC)
         -- a dynamic time_window may resolve to a value <= sync_interval at request
@@ -566,9 +608,10 @@ local function run_rate_limit(conf, rule, ctx, name, cost, dry_run)
                 extra_key = extra_key .. '#' .. conf._vid
             end
             local plugin_instance_id = core.lrucache.plugin_ctx_id(ctx, extra_key)
-            delay, remaining, reset = lim:incoming_delayed(key, commit_cost, plugin_instance_id)
+            delay, remaining, reset, info = lim:incoming_delayed(key, commit_cost,
+                                                                 plugin_instance_id)
         else
-            delay, remaining, reset = lim:incoming(key, commit_cost)
+            delay, remaining, reset, info = lim:incoming(key, commit_cost)
         end
     end
 
@@ -576,9 +619,10 @@ local function run_rate_limit(conf, rule, ctx, name, cost, dry_run)
         delay = nil
         remaining = "rejected"
     end
+    local detail = rate_limiting_detail(conf, rule, commit_cost, delay, remaining, reset, info)
     reset = reset and (math_floor(reset * 100) / 100)
 
-    core.utils.set_var_rate_limiting_info(ctx, key, lim.limit, remaining, reset)
+    core.utils.set_var_rate_limiting_info(ctx, key, lim.limit, remaining, reset, detail)
 
     local metadata = apisix_plugin.plugin_metadata(name)
     if metadata then

@@ -37,6 +37,7 @@ to do authentication, from the SP (service provider) perspective.
 
 | Name      | Type | Required      | Default | Description |
 | ----------- | ----------- | ----------- | ----------- | ----------- |
+| max_req_body_size | integer | False | 67108864 | >= 1 | Maximum request body size in bytes buffered into memory. Requests with a larger body are rejected. |
 | `idp_uri`      | string       | True      | | URI of IdP.       |
 | `cas_callback_uri`      | string       | True      | | redirect uri used to callback the SP from IdP after login or logout.       |
 | `logout_uri`      | string       | True      | | logout uri to trigger logout.       |

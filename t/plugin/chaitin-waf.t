@@ -519,3 +519,211 @@ trigger: true
 chaitin-waf client_ip: 127.0.0.1
 --- no_error_log
 chaitin-waf client_ip: 192.0.2.10
+
+
+
+=== TEST 16: wrong schema: negative resp_body_size
+--- config
+    location /do {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/chaitin-waf',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "nodes": [
+                        {
+                            "host": "127.0.0.1",
+                            "port": 8088
+                        }
+                    ],
+                    "config": {
+                        "log_resp": true,
+                        "resp_body_size": -1
+                    }
+                 }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.print(body)
+        }
+    }
+--- error_code: 400
+--- response_body
+{"error_msg":"invalid configuration: property \"config\" validation failed: property \"resp_body_size\" validation failed: expected -1 to be at least 0"}
+
+
+
+=== TEST 17: wrong schema: extra_ignored_content_types wrong type
+--- config
+    location /do {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/chaitin-waf',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "nodes": [
+                        {
+                            "host": "127.0.0.1",
+                            "port": 8088
+                        }
+                    ],
+                    "config": {
+                        "log_resp": true,
+                        "extra_ignored_content_types": ["text/csv"]
+                    }
+                 }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.print(body)
+        }
+    }
+--- error_code: 400
+--- response_body
+{"error_msg":"invalid configuration: property \"config\" validation failed: property \"extra_ignored_content_types\" validation failed: wrong type: expected string, got table"}
+
+
+
+=== TEST 18: response logging enabled prepare
+--- config
+    location /do {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            local code, body = t('/apisix/admin/plugin_metadata/chaitin-waf',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "nodes": [
+                        {
+                            "host": "127.0.0.1",
+                            "port": 8088
+                        }
+                    ]
+                 }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                return ngx.print(body)
+            end
+
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "methods": ["GET"],
+                    "plugins": {
+                        "chaitin-waf": {
+                            "config": {
+                                "log_resp": true,
+                                "resp_body_size": 1,
+                                "extra_ignored_content_types": "text/csv"
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/*"
+                 }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                return ngx.print(body)
+            end
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 19: response logging does not affect the response
+--- request
+GET /hello
+--- error_code: 200
+--- response_body
+hello world
+--- response_headers
+X-APISIX-CHAITIN-WAF: yes
+X-APISIX-CHAITIN-WAF-ACTION: pass
+X-APISIX-CHAITIN-WAF-STATUS: 200
+
+
+
+=== TEST 20: a plugin config keeps the metadata fields it does not set
+--- config
+    location /do {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local http = require("resty.http")
+
+            -- the metadata caps the reported request body at one KB, which is
+            -- what the assertion below observes
+            local code, body = t('/apisix/admin/plugin_metadata/chaitin-waf',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "nodes": [
+                        {
+                            "host": "127.0.0.1",
+                            "port": 8088
+                        }
+                    ],
+                    "config": {
+                        "req_body_size": 1
+                    }
+                 }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                return ngx.print(body)
+            end
+
+            -- a plugin config that sets an unrelated field must not discard it
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "methods": ["POST"],
+                    "plugins": {
+                        "chaitin-waf": {
+                            "config": {
+                                "real_client_ip": false
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/*"
+                 }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                return ngx.print(body)
+            end
+
+            local httpc = http.new()
+            local res, err = httpc:request_uri("http://127.0.0.1:1984/echo", {
+                method = "POST",
+                body = string.rep("a", 2048),
+            })
+            if not res then
+                return ngx.say("request failed: ", err)
+            end
+            ngx.say("client body size: ", #res.body)
+        }
+    }
+--- response_body
+client body size: 2048
+--- error_log
+lua-resty-t1k: request body is too long, total size: 2048 bytes, truncated size: 1024 bytes
+--- log_level: debug

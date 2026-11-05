@@ -41,6 +41,13 @@ local plugin_name = "grpc-web"
 local schema = {
     type = "object",
     properties = {
+        max_req_body_size = {
+            type = "integer",
+            minimum = 1,
+            default = 67108864,
+            description = "maximum request body size in bytes buffered into "
+                       .. "memory; larger request bodies are rejected",
+        },
         cors_allow_headers = {
             description =
             "multiple header use ',' to split. default: content-type,x-grpc-web,x-user-agent.",
@@ -143,7 +150,7 @@ function _M.access(conf, ctx)
     end
 
     -- set grpc body
-    local body, err = core.request.get_body()
+    local body, err = core.request.get_body(conf.max_req_body_size)
     if err or not body then
         core.log.error("failed to read request body, err: ", err)
         return exit(ctx, 400)

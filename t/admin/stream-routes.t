@@ -654,3 +654,53 @@ passed
 GET /t
 --- response_body
 passed
+
+
+
+=== TEST 18: an inline upstream client key is encrypted at rest
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local etcd = require("apisix.core.etcd")
+            local t = require("lib.test_admin")
+
+            local ssl_cert = t.read_file("t/certs/apisix.crt")
+            local ssl_key = t.read_file("t/certs/apisix.key")
+            local code, body = t.test('/apisix/admin/stream_routes/enc',
+                ngx.HTTP_PUT,
+                core.json.encode({
+                    remote_addr = "127.0.0.1",
+                    upstream = {
+                        nodes = { ["127.0.0.1:8080"] = 1 },
+                        type = "roundrobin",
+                        scheme = "tls",
+                        tls = {
+                            client_cert = ssl_cert,
+                            client_key = ssl_key,
+                        },
+                    },
+                })
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local res = assert(etcd.get('/stream_routes/enc'))
+            local stored = res.body.node.value.upstream.tls.client_key
+            assert(not core.string.find(stored, "PRIVATE KEY"),
+                   "the client key must be encrypted at rest")
+
+            code, body = t.test('/apisix/admin/stream_routes/enc', ngx.HTTP_GET)
+            assert(code == 200, "the admin API must return the stream route")
+            assert(not core.string.find(body, "PRIVATE KEY"),
+                   "the admin API must not return the plaintext client key")
+            ngx.say("encrypted")
+        }
+    }
+--- request
+GET /t
+--- response_body
+encrypted

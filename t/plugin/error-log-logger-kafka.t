@@ -372,3 +372,42 @@ qr/send data to kafka: .*this is a error message for tls test/]
 --- no_error_log
 failed to do SSL handshake
 --- wait: 3
+
+
+
+=== TEST 11: kafka send failure must not leak the sasl password
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local code = t('/apisix/admin/plugin_metadata/error-log-logger',
+                ngx.HTTP_PUT,
+                [[{
+                    "kafka": {
+                        "brokers": [{
+                            "host": "127.0.0.1",
+                            "port": 29999,
+                            "sasl_config": {
+                                "mechanism": "PLAIN",
+                                "user": "admin",
+                                "password": "super-secret-pw"
+                            }
+                        }],
+                        "producer_type": "sync",
+                        "kafka_topic": "no_such_topic"
+                    },
+                    "level": "ERROR",
+                    "inactive_timeout": 1
+                }]]
+                )
+            ngx.sleep(2)
+            core.log.error("trigger a send to the dead broker")
+            ngx.sleep(1)
+        }
+    }
+--- error_log eval
+qr/failed to send data to Kafka topic/
+--- no_error_log
+super-secret-pw
+--- wait: 3

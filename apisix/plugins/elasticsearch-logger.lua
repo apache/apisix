@@ -18,7 +18,6 @@ local core            = require("apisix.core")
 local http            = require("resty.http")
 local log_util        = require("apisix.utils.log-util")
 local bp_manager_mod  = require("apisix.utils.batch-processor-manager")
-local plugin          = require("apisix.plugin")
 local ngx             = ngx
 local ngx_re          = ngx.re
 local str_format      = core.string.format
@@ -129,11 +128,6 @@ local metadata_schema = {
         log_format = {
             type = "object"
         },
-        max_pending_entries = {
-            type = "integer",
-            description = "maximum number of pending entries in the batch processor",
-            minimum = 1,
-        },
     },
 }
 
@@ -144,7 +138,7 @@ local _M = {
     priority = 413,
     name = plugin_name,
     schema = batch_processor_manager:wrap_schema(schema),
-    metadata_schema = metadata_schema,
+    metadata_schema = batch_processor_manager:wrap_metadata_schema(metadata_schema),
 }
 
 
@@ -345,9 +339,6 @@ _M.access = log_util.check_and_read_req_body
 
 function _M.log(conf, ctx)
     local index = resolve_index_vars(conf.field.index, ctx.var)
-    local metadata = plugin.plugin_metadata(plugin_name)
-    local max_pending_entries = metadata and metadata.value and
-                                metadata.value.max_pending_entries or nil
     local log_entry = log_util.get_log_entry(plugin_name, conf, ctx)
     local body, err = core.json.encode(log_entry)
     if not body then
@@ -361,7 +352,7 @@ function _M.log(conf, ctx)
         body = body
     }
 
-    if batch_processor_manager:add_entry(conf, entry, max_pending_entries) then
+    if batch_processor_manager:add_entry(conf, entry) then
         return
     end
 
@@ -369,8 +360,7 @@ function _M.log(conf, ctx)
         return send_to_elasticsearch(conf, entries)
     end
 
-    batch_processor_manager:add_entry_to_new_processor(conf, entry, ctx,
-                                                       process, max_pending_entries)
+    batch_processor_manager:add_entry_to_new_processor(conf, entry, ctx, process)
 end
 
 _M._resolve_index_vars = resolve_index_vars
