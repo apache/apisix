@@ -82,6 +82,23 @@ If your authorization service decides based on the URI that the Upstream service
 | allow_degradation | boolean       | False    | false   |                           | If true, allow APISIX to continue handling requests without the Plugin when the Plugin or its dependencies become unavailable.                                                                                                                                                               |
 | status_on_error   | integer       | False    | 403     | between 200 and 599 inclusive | HTTP status code to return to the client when there is a network error with the external authorization service.                                                                                                                                                                         |
 
+## Authorization Service HTTP Client
+
+Requests to the authorization service go through `ngx_http_ffi_client`, a C HTTP client that costs less CPU per request than `lua-resty-http`.
+
+`plugin_attr.forward-auth.http_client` in `config.yaml` names the client:
+
+```yaml
+plugin_attr:
+  forward-auth:
+    http_client: ngx_http_ffi_client # or lua-resty-http
+```
+
+- `ngx_http_ffi_client` (default): the C client. It requires an APISIX runtime built with the module, which the runtime pinned in `.requirements` is. On a runtime without it, the auth request fails and returns `status_on_error`, and the error log names the missing module; the Plugin never silently switches clients.
+- `lua-resty-http`: the Lua client, on every runtime.
+
+The two clients frame the auth request slightly differently: `ngx_http_ffi_client` sends `Connection: keep-alive` (or `close` when `keepalive` is `false`), sends `Content-Length: 0` on a `GET`, and sends no default `User-Agent`. Its `timeout` bounds the whole response read, where `lua-resty-http` applies it to each receive.
+
 ## Examples
 
 The examples below demonstrate how you can use `forward-auth` for different scenarios.
