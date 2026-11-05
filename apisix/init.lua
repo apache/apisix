@@ -1870,13 +1870,12 @@ function _M.stream_preread_phase(tls_passthrough, behind_mixed_hop)
         return ngx_exit(1)
     end
 
-    core.log.info("matched route: ", api_ctx.matched_route.value.id)
-
     local matched_route = api_ctx.matched_route
     if not matched_route then
         return ngx_exit(1)
     end
 
+    core.log.info("matched route: ", matched_route.value.id)
 
     local up_id = matched_route.value.upstream_id
     if up_id then
