@@ -462,7 +462,7 @@ function _M:patch(id, conf, sub_path, args)
     -- the stored plugin conf holds ciphertext (marked values and the
     -- encrypt_fields), decrypt it before merging, otherwise the check_conf
     -- below will encrypt it again, resulting in fields encrypted multiple times
-    local err, marked = utils.decrypt_params(res_old.body)
+    local err, marked = utils.decrypt_patch_target(res_old.body)
     if err then
         return 400, {error_msg = "failed to decrypt the stored configuration: " .. err}
     end
@@ -499,11 +499,12 @@ function _M:patch(id, conf, sub_path, args)
         utils.inject_timestamp(node_value, nil, conf)
     end
 
+    local unchanged = utils.unchanged_marked(marked)
     local ok, err = self:check_conf(id, node_value, true, typ, true)
     if not ok then
         return 400, err
     end
-    utils.restore_marked(marked)
+    utils.restore_marked(unchanged)
 
     -- log after check_conf so the encrypt_fields are encrypted again and
     -- the plaintext values decrypted above don't leak into the log

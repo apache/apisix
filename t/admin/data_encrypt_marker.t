@@ -500,3 +500,108 @@ apisix:
 200
 true
 true
+
+
+
+=== TEST 13: PATCH keeps the stored marked values it does not modify, write_marker off
+--- yaml_config
+apisix:
+    data_encryption:
+        enable_encrypt_fields: true
+        write_marker: false
+        keyring:
+            - edd1c9f0985e76a2
+            - qeddd145sfvddff3
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local de = core.data_encryption
+            -- encrypted with the older key, so encrypting again would differ
+            local old = de.init_iv_tbl({"qeddd145sfvddff3"})
+            local pass = "$ENC$v1$" .. assert(de.aes_cbc_encrypt(old, "secret"))
+            local hdr = "$ENC$v1$" .. assert(de.aes_cbc_encrypt(old, "hdr"))
+            assert(core.etcd.set("/routes/1", {
+                id = "1",
+                uri = "/hello",
+                plugins = {
+                    ["proxy-rewrite"] = {headers = {set = {["X-Secret"] = hdr}}},
+                    ["limit-count"] = {
+                        count = 2,
+                        time_window = 60,
+                        policy = "redis",
+                        redis_host = "127.0.0.1",
+                        redis_password = pass,
+                    },
+                },
+                upstream = {nodes = {["127.0.0.1:1980"] = 1}, type = "roundrobin"},
+            }))
+
+            local code = admin("/apisix/admin/routes/1", ngx.HTTP_PATCH, {desc = "patched"})
+            ngx.say(code)
+            local plugins = stored("/routes/1").plugins
+            ngx.say(plugins["proxy-rewrite"].headers.set["X-Secret"] == hdr)
+            ngx.say(plugins["limit-count"].redis_password == pass)
+
+            -- a modified position follows write_marker
+            code = admin("/apisix/admin/routes/1/plugins/limit-count/redis_password",
+                         ngx.HTTP_PATCH, "new-secret")
+            ngx.say(code)
+            plugins = stored("/routes/1").plugins
+            ngx.say(plugins["limit-count"].redis_password
+                    == assert(de.aes_cbc_encrypt(de.init_iv_tbl({"edd1c9f0985e76a2"}),
+                                                 "new-secret")))
+            ngx.say(plugins["proxy-rewrite"].headers.set["X-Secret"] == hdr)
+
+            assert(core.etcd.delete("/routes/1"))
+        }
+    }
+--- response_body
+200
+true
+true
+200
+true
+true
+
+
+
+=== TEST 14: PATCH keeps the stored marked values it does not modify, encryption off
+--- yaml_config
+apisix:
+    data_encryption:
+        enable_encrypt_fields: false
+        keyring:
+            - edd1c9f0985e76a2
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            assert(core.etcd.set("/routes/1", {
+                id = "1",
+                uri = "/hello",
+                plugins = {
+                    ["limit-count"] = {
+                        count = 2,
+                        time_window = 60,
+                        policy = "redis",
+                        redis_host = "127.0.0.1",
+                        redis_password = mark("patch-secret"),
+                    },
+                },
+                upstream = {nodes = {["127.0.0.1:1980"] = 1}, type = "roundrobin"},
+            }))
+
+            local code = admin("/apisix/admin/routes/1", ngx.HTTP_PATCH, {desc = "patched"})
+            ngx.say(code)
+            ngx.say(stored("/routes/1").plugins["limit-count"].redis_password == mark("patch-secret"))
+
+            assert(core.etcd.delete("/routes/1"))
+        }
+    }
+--- response_body
+200
+true
+--- no_error_log
+[error]
+patch-secret

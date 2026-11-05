@@ -97,6 +97,9 @@ __DATA__
     }
 --- response_body
 passed
+--- no_error_log
+[error]
+route-secret
 
 
 
@@ -108,6 +111,9 @@ uri: /uri
 host: localhost
 x-real-ip: 127.0.0.1
 x-secret: route-secret
+--- no_error_log
+[error]
+route-secret
 
 
 
@@ -172,6 +178,9 @@ apisix:
     }
 --- response_body
 x-secret: route-secret
+--- no_error_log
+[error]
+route-secret
 
 
 
@@ -212,6 +221,10 @@ x-secret: route-secret
     }
 --- response_body
 x-service-secret: service-secret
+global-secret
+--- no_error_log
+[error]
+service-secret
 global-secret
 
 
@@ -316,6 +329,9 @@ failed to decrypt the value of plugin [key-auth] key [key]: base64 decode failed
     }
 --- response_body
 metadata-secret
+--- no_error_log
+[error]
+metadata-secret
 
 
 
@@ -394,3 +410,40 @@ mmm
 receive stream response error: connection reset by peer
 --- error_log
 failed to decrypt the value of plugin [ip-restriction] key [whitelist.1]
+
+
+
+=== TEST 15: no plaintext in the logs when enable_encrypt_fields is off
+--- yaml_config
+apisix:
+    data_encryption:
+        enable_encrypt_fields: false
+        keyring:
+            - edd1c9f0985e76a2
+--- config
+    location /t {
+        content_by_lua_block {
+            del("/stream_routes/2")
+            put("/services/1", {
+                plugins = {
+                    ["proxy-rewrite"] = {
+                        headers = {
+                            set = {["X-Service-Secret"] = mark("service-secret")},
+                        },
+                    },
+                },
+                upstream = {nodes = {["127.0.0.1:1980"] = 1}, type = "roundrobin"},
+            })
+            put("/routes/1", {uri = "/uri", service_id = "1"})
+            ngx.sleep(0.5)
+
+            ngx.say(get("/uri").body:match("x%-service%-secret: [^\n]+"))
+            del("/routes/1")
+            del("/services/1")
+        }
+    }
+--- response_body
+x-service-secret: service-secret
+--- no_error_log
+[error]
+service-secret

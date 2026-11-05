@@ -97,7 +97,7 @@ local function decrypt_value(value, schema_type)
         if apisix_plugin.enable_gde() then
             apisix_plugin.decrypt_conf(value.id, value, schema_type, marked)
         end
-        return nil, marked
+        return
     end
 
     local plugins = value.plugins
@@ -115,16 +115,13 @@ local function decrypt_value(value, schema_type)
             apisix_plugin.decrypt_conf(name, conf, schema_type, marked)
         end
     end
-
-    return nil, marked
 end
 
 
 -- Decrypt the plugin confs, or the plugin metadata, of an etcd response body in
 -- place: values carrying the encryption marker always, `encrypt_fields` when
 -- data encryption is enabled. A resource with a marked value that fails to
--- decrypt is left as stored, and the error of the first one is returned. For a
--- single node, the positions decrypted through the marker are returned too.
+-- decrypt is left as stored, and the error of the first one is returned.
 function _M.decrypt_params(body, schema_type)
     if body.list then
         local first_err
@@ -141,18 +138,70 @@ function _M.decrypt_params(body, schema_type)
 end
 
 
--- Encrypt again with the marker the values `decrypt_params` decrypted through
--- it and that are still unchanged, so that they stay encrypted at rest.
-function _M.restore_marked(marked)
-    if not marked then
-        return
+local function find_marked(conf, found)
+    for k, v in pairs(conf) do
+        local tv = type(v)
+        if tv == "string" then
+            if core.data_encryption.has_marker(v) then
+                found = found or {}
+                core.table.insert(found, {conf, k, v})
+            end
+
+        elseif tv == "table" then
+            found = find_marked(v, found)
+        end
     end
 
-    for conf, keys in pairs(marked) do
-        for k, plain in pairs(keys) do
-            if conf[k] == plain then
-                conf[k] = core.data_encryption.encrypt_with_marker(plain)
+    return found
+end
+
+
+-- Decrypt the stored node a PATCH merges into, like `decrypt_params`. Also
+-- returns the positions of its marked values as {container, key, stored value,
+-- plaintext}, for `unchanged_marked`.
+function _M.decrypt_patch_target(body)
+    local value = body.node and body.node.value
+    local found = type(value) == "table" and type(value.plugins) == "table"
+                  and find_marked(value.plugins) or nil
+
+    local err = _M.decrypt_params(body)
+    if err then
+        return err
+    end
+
+    if found then
+        for _, pos in ipairs(found) do
+            pos[4] = pos[1][pos[2]]
+        end
+    end
+
+    return nil, found
+end
+
+
+-- Call between the merge and `check_conf`: the positions of `found` that the
+-- merge left unchanged, for `restore_marked`.
+function _M.unchanged_marked(found)
+    local unchanged
+    if found then
+        for _, pos in ipairs(found) do
+            if pos[1][pos[2]] == pos[4] then
+                unchanged = unchanged or {}
+                core.table.insert(unchanged, pos)
             end
+        end
+    end
+
+    return unchanged
+end
+
+
+-- Write back the stored marked values of `unchanged` after `check_conf`, so a
+-- PATCH keeps them byte for byte whatever it encrypts.
+function _M.restore_marked(unchanged)
+    if unchanged then
+        for _, pos in ipairs(unchanged) do
+            pos[1][pos[2]] = pos[3]
         end
     end
 end
