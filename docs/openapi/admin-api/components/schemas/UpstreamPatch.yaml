@@ -307,6 +307,7 @@ properties:
             type:
               - string
               - "null"
+            pattern: ^\*$|^\*?[0-9a-zA-Z-._\[\]:]+$
             description: Hostname to use in the health check probe `Host` header. Defaults to the upstream node's host.
           port:
             type:
@@ -644,6 +645,7 @@ properties:
     type:
       - string
       - "null"
+    pattern: ^\*$|^\*?[0-9a-zA-Z-._\[\]:]+$
     description: Custom `Host` header value. Only effective when `pass_host` is `rewrite`.
   discovery_type:
     type:

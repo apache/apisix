@@ -22,6 +22,7 @@ required:
 properties:
   host:
     type: string
+    pattern: ^\*$|^\*?[0-9a-zA-Z-._\[\]:]+$
     description: Hostname or IP address of the upstream node.
     examples:
       - 10.0.0.1

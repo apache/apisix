@@ -100,6 +100,7 @@ properties:
     type:
       - string
       - "null"
+    pattern: ^\*$|^\*?[0-9a-zA-Z-._\[\]:]+$
     description: Single hostname to match against the request's `Host` header. Supports wildcard prefix (`*.example.com`). Mutually exclusive with `hosts`.
     examples:
       - api.example.com
@@ -109,6 +110,7 @@ properties:
       - "null"
     items:
       type: string
+      pattern: ^\*$|^\*?[0-9a-zA-Z-._\[\]:]+$
     minItems: 1
     uniqueItems: true
     description: Multiple hostnames to match. Mutually exclusive with `host`.
@@ -522,6 +524,7 @@ properties:
                 type:
                   - string
                   - "null"
+                pattern: ^\*$|^\*?[0-9a-zA-Z-._\[\]:]+$
                 description: Hostname to use in the health check probe `Host` header. Defaults to the upstream node's host.
               port:
                 type:
@@ -859,6 +862,7 @@ properties:
         type:
           - string
           - "null"
+        pattern: ^\*$|^\*?[0-9a-zA-Z-._\[\]:]+$
         description: Custom `Host` header value. Only effective when `pass_host` is `rewrite`.
       discovery_type:
         type:

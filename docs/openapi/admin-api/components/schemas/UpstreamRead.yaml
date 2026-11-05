@@ -133,6 +133,7 @@ properties:
       rewrite: Use the value of `upstream_host`.
   upstream_host:
     type: string
+    pattern: ^\*$|^\*?[0-9a-zA-Z-._\[\]:]+$
     description: Custom `Host` header value. Only effective when `pass_host` is `rewrite`.
   discovery_type:
     type: string
