@@ -288,6 +288,13 @@ local config_schema = {
                     description = "cap (in MB) on the request body read for post_arg.* "
                                   .. "route matching; 0 disables the limit",
                 },
+                max_request_headers_readable = {
+                    type = "integer",
+                    minimum = 0,
+                    default = 100,
+                    description = "max number of request headers plugins can read; "
+                                  .. "0 disables the limit",
+                },
             }
         },
         nginx_config = {

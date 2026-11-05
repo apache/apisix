@@ -138,12 +138,18 @@ Once we've discussed your changes and you've got your code ready, make sure that
       Please take a look at `t/plugin/limit-conn.t` and `t/plugin/limit-conn2.t`.
     * For more details, see the [testing framework](https://github.com/apache/apisix/blob/master/docs/en/latest/internal/testing-framework.md)
 
-## Admin API Contract
+## API Contracts
 
 When changing Admin API routes, schemas, validation, or responses, review and update
 `docs/en/latest/admin-api.json` in the same PR. Implementation and tests are authoritative.
 Keep the contract explicit; do not fetch or generate it from downstream documentation.
 Plugin-specific schemas remain available through the schema endpoints.
+
+When changing Control API routes or responses, also review
+`docs/en/latest/control-api.json`. The contract documents the built-in API and stable
+patterns registered by shipped optional components. Qualify configuration-dependent
+endpoints in their operation descriptions; plugin-specific endpoints remain documented
+with their plugins.
 
 Run the contract checks from the repository root:
 
@@ -151,6 +157,7 @@ Run the contract checks from the repository root:
 python3 -m pip install -r utils/requirements-admin-api.txt
 python3 -m unittest discover -s t/openapi -v
 python3 utils/validate-admin-api.py
+python3 utils/validate-control-api.py
 ```
 
 The validator checks OpenAPI 3.1, local references, operation IDs, path parameters,
