@@ -90,23 +90,15 @@ properties:
   certs:
     anyOf:
       - items:
-          minLength: 128
-          maxLength: 65536
-          type: string
+          $ref: ./CertificateOrReference.yaml
         type: array
       - type: "null"
-    items:
-      $ref: ./CertificateOrReference.yaml
   keys:
     anyOf:
       - items:
-          minLength: 64
-          maxLength: 65536
-          type: string
+          $ref: ./PrivateKeyOrReference.yaml
         type: array
       - type: "null"
-    items:
-      $ref: ./PrivateKeyOrReference.yaml
   desc:
     anyOf:
       - maxLength: 256

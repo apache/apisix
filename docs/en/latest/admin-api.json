@@ -18531,37 +18531,27 @@
             "anyOf": [
               {
                 "items": {
-                  "minLength": 128,
-                  "maxLength": 65536,
-                  "type": "string"
+                  "$ref": "#/components/schemas/CertificateOrReference"
                 },
                 "type": "array"
               },
               {
                 "type": "null"
               }
-            ],
-            "items": {
-              "$ref": "#/components/schemas/CertificateOrReference"
-            }
+            ]
           },
           "keys": {
             "anyOf": [
               {
                 "items": {
-                  "minLength": 64,
-                  "maxLength": 65536,
-                  "type": "string"
+                  "$ref": "#/components/schemas/PrivateKeyOrReference"
                 },
                 "type": "array"
               },
               {
                 "type": "null"
               }
-            ],
-            "items": {
-              "$ref": "#/components/schemas/PrivateKeyOrReference"
-            }
+            ]
           },
           "desc": {
             "anyOf": [
