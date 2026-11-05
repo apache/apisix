@@ -137,6 +137,7 @@ plugins:
 | error_response | string/object | 自定义错误响应。 |
 | priority       | integer       | 自定义插件优先级。 |
 | filter         | array         | 根据请求的参数，在运行时控制插件是否执行。此配置由一个或多个 {var, operator, val} 元素组成列表，类似：`{{var, operator, val}, {var, operator, val}, ...}}`。例如 `{"arg_version", "==", "v2"}`，表示当前请求参数 `version` 是 `v2`。这里的 `var` 与 NGINX 内部自身变量命名保持一致。条件格式和支持的操作符请参考 [APISIX 表达式](../router-radixtree.md#如何通过-nginx-内置变量过滤路由)。|
+| filter_phase   | string        | 计算 `filter` 的阶段，可选值为 `rewrite`、`access`、`before_proxy`、`header_filter`、`body_filter`、`log`。必须与 `filter` 一起配置。详见[在后续阶段计算过滤器](#在后续阶段计算过滤器)。|
 
 ### 禁用指定插件
 
@@ -307,6 +308,70 @@ plugins:
     "url": "http://httpbin.org/anything?version=v2"
     }
     ```
+
+### 在后续阶段计算过滤器
+
+默认情况下，`filter` 在每个请求中只计算一次，时机是插件在该请求中的第一个函数，其结果适用于插件后续的所有函数。因此对于带有 `access` 函数的插件（比如日志类插件），决定是在请求被代理之前做出的，此时 `status` 和 `upstream_status` 还没有值。
+
+`filter_phase` 用于指定做出决定的阶段：
+
+- 插件在早于 `filter_phase` 的阶段中的函数总是会执行，与过滤器的结果无关。
+- 在 `filter_phase` 阶段，或者其后第一个有插件函数的阶段，计算过滤器。结果会保留到请求结束，这一点与未配置 `filter_phase` 时相同。
+- 如果请求没有经过该阶段，则在下一个实际运行的阶段做出决定。例如 `HEAD` 请求没有 `body_filter` 阶段，因此 `filter_phase` 为 `body_filter` 时会在 `log` 阶段做出决定。
+- Stream 路由运行 `preread`、`before_proxy` 和 `log` 阶段：`filter_phase` 为 `rewrite` 或 `access` 时在 `preread` 决定，为 `header_filter` 或 `body_filter` 时在 `log` 决定。
+
+如果插件在 `filter_phase` 及其之后没有任何函数（过滤器永远不会被计算），或者没有配置 `filter`，配置会被拒绝。未配置 `filter_phase` 时，行为没有任何变化。
+
+下面的配置会记录除 APISIX 或其插件生成的 404 之外的所有响应，并保留上游返回的 404：
+
+```json
+{
+    "file-logger": {
+        "path": "logs/file.log",
+        "include_resp_body": true,
+        "_meta": {
+            "filter": ["OR", ["status", "~=", 404], ["upstream_status", "==", 404]],
+            "filter_phase": "body_filter"
+        }
+    }
+}
+```
+
+对于日志类插件，当过滤器读取 `status` 或 `upstream_status` 时使用 `body_filter`，被排除的请求不会缓存响应体；当过滤器读取 `bytes_sent`、`body_bytes_sent`、`upstream_response_time` 或 `request_time` 时使用 `log`，这些变量在此之前都不是最终值。
+
+下表列出了一些常用变量及其最早有意义的阶段，并非完整列表。
+
+| 变量 | 最早有意义的阶段 | 说明 |
+|------|------------------|------|
+| `arg_*`、`http_*`、`uri`、`request_method`、`remote_addr`、`host`、`route_id` | `rewrite` | |
+| `consumer_name` | `access` | 在 `rewrite` 阶段只对运行在认证插件之后的插件有值。 |
+| `balancer_ip` | `before_proxy` | |
+| `status` | `header_filter` | |
+| `upstream_status`、`upstream_addr`、`upstream_http_*` | `header_filter` | 响应由 APISIX 生成时为空。 |
+| `sent_http_*` | `header_filter` | |
+| `upstream_response_time`、`bytes_sent`、`body_bytes_sent`、`request_time` | `log` | 在此之前读取会得到 `0` 或中间值。 |
+
+#### 不支持的配置
+
+`filter_phase` 无法让插件在较早阶段的行为取决于只有之后才存在的信息：指定阶段之前的函数总是会执行。下面这些配置是设计上明确不支持的，其结果不是 Bug。
+
+要判断未列出的插件，请查看它在哪些阶段有函数，以及每个函数做了什么。`filter_phase` 适合较早函数只做状态准备的插件。如果较早的函数有以下行为，请不要使用：
+
+- 响应或拒绝请求，此时再做决定已经来不及阻止。
+- 获取资源并由后续函数释放，决定为 `false` 时释放会被跳过。
+- 产生请求之外的影响，比如复制请求或上报数据。
+- 开始了必须由后续函数完成的工作，决定为 `false` 时工作只完成一半。
+
+| 插件 | `filter` | `filter_phase` | 结果 |
+|------|----------|----------------|------|
+| `limit-conn` | `status ~= 500` | `log` | 连接在 `access` 阶段获取，500 响应之后不会释放，后续请求返回 503。 |
+| `csrf` | 豁免带有指定请求头的请求 | `header_filter` | 校验在 `access` 阶段执行，被豁免但没有 token 的 `POST` 请求返回 401。 |
+| `cors` | 结果为 `false` | `header_filter` | `OPTIONS` 请求仍然在 `rewrite` 阶段直接返回空的 200，不会到达上游。 |
+| `proxy-mirror` | 结果为 `false` | `before_proxy` | 镜像在 `rewrite` 阶段设置，被排除的请求仍然会被镜像。 |
+| `grpc-web` | 结果为 `false` | `header_filter` | 方法校验在 `access` 阶段执行，`GET` 请求返回 405。 |
+| `ai-proxy` | 结果为 `false` | `before_proxy` | `access` 阶段接管了代理而 `before_proxy` 又被跳过，请求返回 500。 |
+| `zipkin` | `status >= 500` | `log` | 被排除的请求仍然会向上游发送追踪请求头，并上报在 `log` 之前已结束的 span（`apisix.proxy`；`span_version` 为 1 时是 `apisix.rewrite` 和 `apisix.access`），但缺少它们的父 span。 |
+| `brotli` | `status == 200` | `body_filter` | `header_filter` 阶段同样为 404 声明了 `Content-Encoding: br`，而其响应体未经压缩就发出。请改用更早的阶段：使用 `header_filter` 时，200 会被压缩，404 不受影响。 |
 
 ## 热加载
 
