@@ -171,7 +171,7 @@ limit-conn log: ok
                         plugin.run_plugin(phase, nil, api_ctx)
                     end
                 end
-                ngx.say(filter_phase, ": ", table.concat(ran, " "))
+                ngx.say(filter_phase, ":", #ran > 0 and " " or "", table.concat(ran, " "))
             end
 
             local http = {"rewrite", "rewrite_in_consumer", "access", "before_proxy",
@@ -203,14 +203,14 @@ limit-conn log: ok
         }
     }
 --- response_body
-rewrite: 
+rewrite:
 access: rewrite rewrite
 before_proxy: rewrite rewrite access
 header_filter: rewrite rewrite access before_proxy
 body_filter: rewrite rewrite access before_proxy header_filter
 log: rewrite rewrite access before_proxy header_filter body_filter delayed_body_filter
 stream
-access: 
+access:
 before_proxy: preread
 header_filter: preread before_proxy
 log: preread before_proxy
@@ -219,7 +219,7 @@ before_proxy: access
 header_filter: access before_proxy lua_body_filter
 log: access before_proxy lua_body_filter header_filter body_filter lua_body_filter body_filter
 websocket
-before_proxy: 
+before_proxy:
 header_filter: before_proxy
 log: before_proxy ws_handshake ws_client_frame ws_upstream_frame ws_close
 
@@ -605,3 +605,59 @@ qr/otel collector received a span/
 --- grep_error_log_out
 otel collector received a span
 --- timeout: 10
+
+
+
+=== TEST 16: the final upstream status after a retry is matched with a regex
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local cjson = require("cjson.safe")
+            local code, body = t("/apisix/admin/routes/1", ngx.HTTP_PUT, cjson.encode({
+                uri = "/fp",
+                plugins = {
+                    ["fault-injection"] = {abort = {http_status = 404, body = "gateway-404\n",
+                                                    vars = {{{"arg_gw", "==", "1"}}}}},
+                    ["file-logger"] = {
+                        path = "filter-phase-retry.log",
+                        _meta = {
+                            filter = {"OR", {"status", "~=", 404},
+                                      {"upstream_status", "~~", "404$"}},
+                            filter_phase = "body_filter",
+                        },
+                    },
+                    ["serverless-post-function"] = {
+                        phase = "log",
+                        functions = {[[return function(conf, ctx)
+                            ngx.log(ngx.WARN, "upstream_status: ", ctx.var.upstream_status)
+                        end]]},
+                    },
+                },
+                upstream = {
+                    type = "roundrobin",
+                    retries = 1,
+                    nodes = {
+                        {host = "127.0.0.1", port = 1979, weight = 1, priority = 1},
+                        {host = "127.0.0.1", port = 1980, weight = 1, priority = 0},
+                    },
+                },
+            }))
+            if code >= 300 then
+                ngx.say(body)
+                return
+            end
+
+            local h = require("lib.meta_filter_phase")
+            ngx.say(h.req("?code=404").status)
+            ngx.say(h.req("?gw=1").status)
+            h.say_log_entries("filter-phase-retry.log")
+        }
+    }
+--- response_body
+404
+404
+404 nil
+end of log
+--- error_log
+upstream_status: 502, 404

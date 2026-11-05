@@ -322,7 +322,7 @@ plugins:
 
 如果插件在 `filter_phase` 及其之后没有任何函数（过滤器永远不会被计算），或者没有配置 `filter`，配置会被拒绝。未配置 `filter_phase` 时，行为没有任何变化。
 
-下面的配置会记录除 APISIX 或其插件生成的 404 之外的所有响应，并保留上游返回的 404：
+下面的配置会记录除 APISIX 或其插件生成的 404 之外的所有响应，并保留上游返回的 404。这里用正则表达式匹配 `upstream_status`，因为重试之后它是一个列表，比如 `502, 404`：
 
 ```json
 {
@@ -330,7 +330,7 @@ plugins:
         "path": "logs/file.log",
         "include_resp_body": true,
         "_meta": {
-            "filter": ["OR", ["status", "~=", 404], ["upstream_status", "==", 404]],
+            "filter": ["OR", ["status", "~=", 404], ["upstream_status", "~~", "404$"]],
             "filter_phase": "body_filter"
         }
     }
