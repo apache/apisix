@@ -93,7 +93,6 @@ title: Changelog
 
 ### Change
 
-- :warning: fix(openapi-to-mcp): reject path parameter values that can change the operation's path. Encoded `/` and `\` separators are rejected by default; set `allow_encoded_path_separators: true` only for an upstream that intentionally treats them as data. Finished empty and dot path segments remain rejected, and the opt-in still rejects separator-delimited empty and dot components [#14154](https://github.com/apache/apisix/pull/14154)
 - :warning: feat(upstream): verify the upstream certificate against configurable CAs. `upstream.tls.verify` was only read by the `kafka` scheme and is now honoured for `https` and `grpcs` as well, so an upstream that already carried `verify: true` starts rejecting a certificate it cannot validate; `tls.ca_certs` picks the trust anchors per upstream [#13863](https://github.com/apache/apisix/pull/13863)
 - :warning: fix(openid-connect): validate the introspection issuer. With an explicit `claim_validator.issuer.valid_issuers`, a successful remote introspection response must now carry a string `iss` matching one of them, or the request is rejected with 401; omit the allowlist to keep the previous behavior [#13916](https://github.com/apache/apisix/pull/13916)
 - :warning: fix(batch-requests): bound aggregated response bodies. New `max_response_body_size` (1 MiB) and `max_response_body_size_total` (10 MiB) plugin metadata; a pipeline above either limit now returns 502 instead of the full aggregate [#13906](https://github.com/apache/apisix/pull/13906)
