@@ -2089,7 +2089,7 @@ qr/(?s)(?=.*"isError":true)(?=.*cannot produce an empty or dot path segment)/
 
 
 
-=== TEST 99: a route over a document with a slash in an expression name
+=== TEST 124: a route over a document with a slash in an expression name
 --- config
     location /t {
         content_by_lua_block {
@@ -2108,7 +2108,7 @@ passed
 
 
 
-=== TEST 100: a literal dot segment of the template is not the caller's to answer for
+=== TEST 125: a literal dot segment of the template is not the caller's to answer for
 --- exec
 timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
     -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"literalDotTail","arguments":{"pathParameters":{"scope/key":"safe","id":"ok"}}}}' \
@@ -2120,7 +2120,7 @@ qr/seen_path.*x\/safe\/ok\/\.\./
 
 
 
-=== TEST 101: a dot-dot after a slashed expression name is rejected
+=== TEST 126: a dot-dot after a slashed expression name is rejected
 --- exec
 timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
     -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"slashNameTail","arguments":{"pathParameters":{"a/b":"v","c":".."}}}}' \
@@ -2132,7 +2132,7 @@ qr/(?s)(?=.*"isError":true)(?=.*path parameter in segment \{c\} cannot produce a
 
 
 
-=== TEST 102: an empty value after a slashed expression name is rejected
+=== TEST 127: an empty value after a slashed expression name is rejected
 --- exec
 timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
     -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"slashNameTail","arguments":{"pathParameters":{"a/b":"v","c":""}}}}' \
@@ -2144,7 +2144,7 @@ qr/(?s)(?=.*"isError":true)(?=.*path parameter in segment \{c\} cannot produce a
 
 
 
-=== TEST 103: a dot-dot between a slashed expression name and a literal is rejected
+=== TEST 128: a dot-dot between a slashed expression name and a literal is rejected
 --- exec
 timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
     -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"slashNameMiddle","arguments":{"pathParameters":{"a/b":"v","c":".."}}}}' \
@@ -2156,7 +2156,7 @@ qr/(?s)(?=.*"isError":true)(?=.*path parameter in segment \{c\} cannot produce a
 
 
 
-=== TEST 104: a safe value for a slashed expression name is sent percent-encoded
+=== TEST 129: a safe value for a slashed expression name is sent percent-encoded
 --- exec
 timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
     -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"slashNameTail","arguments":{"pathParameters":{"a/b":"v","c":"ok"}}}}' \
