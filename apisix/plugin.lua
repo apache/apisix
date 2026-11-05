@@ -1002,7 +1002,7 @@ function _M.conf_version(conf)
     if not conf._version then
         local data = core.json.stably_encode(conf)
         conf._version = tostring(crc32(data))
-        core.log.info("init plugin-level conf version: ", conf._version, ", from ", data)
+        core.log.info("init plugin-level conf version: ", conf._version)
     end
 
     return conf._version
