@@ -35,6 +35,7 @@ properties:
     description: Number of targets to check concurrently during active health checks.
   host:
     type: string
+    pattern: ^\*$|^\*?[0-9a-zA-Z-._\[\]:]+$
     description: Hostname to use in the health check probe `Host` header. Defaults to the upstream node's host.
   port:
     type: integer

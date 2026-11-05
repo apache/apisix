@@ -88,6 +88,7 @@ properties:
     type:
       - string
       - "null"
+    pattern: ^\*$|^\*?[0-9a-zA-Z-._\[\]:]+$
     description: Server Name Indication (SNI) to match. Supports wildcard prefix (`*.example.com`). Mutually exclusive with `snis`.
     examples:
       - api.example.com
@@ -97,6 +98,7 @@ properties:
       - "null"
     items:
       type: string
+      pattern: ^\*$|^\*?[0-9a-zA-Z-._\[\]:]+$
     minItems: 1
     description: Multiple SNI hostnames. Mutually exclusive with `sni`.
   cert:
