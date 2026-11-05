@@ -690,7 +690,7 @@ GET /t
 
 
 
-=== TEST 22: add syslog plugin for the send failure test
+=== TEST 22: add syslog plugin for the failure tests
 --- config
     location /t {
         content_by_lua_block {
@@ -746,3 +746,21 @@ hello world
 --- wait: 0.5
 --- error_log
 failed to log message: mocked send failure
+
+
+
+=== TEST 24: hit route, logger init failure is reported instead of crashing
+--- extra_init_by_lua
+    local logger_socket = require("resty.logger.socket")
+    logger_socket.new = function()
+        return nil, "mocked connection failure"
+    end
+--- request
+GET /hello
+--- response_body
+hello world
+--- wait: 0.5
+--- error_log
+failed when initiating the sys logger processor: mocked connection failure
+--- no_error_log
+attempt to index
