@@ -66,6 +66,11 @@ __DATA__
                     base_url = "http://127.0.0.1:11460",
                     openapi_url = "http://127.0.0.1:11460/openapi.json",
                 } },
+                { 3, "/mcp-interop-output", {
+                    transport = "streamable_http",
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/output.json",
+                } },
             })
             if ok then ngx.say("passed") end
         }
@@ -87,14 +92,17 @@ qr/Tests\s+(\d+) passed \(\1\)/
 
 
 
-=== TEST 3: remove the extra route so it cannot collide with later suites
+=== TEST 3: remove the extra routes so they cannot collide with later suites
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/2', ngx.HTTP_DELETE)
-            ngx.say(code < 300 and "deleted" or body)
+            for _, id in ipairs({ 2, 3 }) do
+                local code, body = t('/apisix/admin/routes/' .. id, ngx.HTTP_DELETE)
+                ngx.say(code < 300 and "deleted" or body)
+            end
         }
     }
 --- response_body
+deleted
 deleted

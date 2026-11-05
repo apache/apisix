@@ -290,6 +290,35 @@ local function decode_body(body)
 end
 
 
+local function structured_result(tool, status, data)
+    -- Only a successful answer carries the structure the schema describes; an
+    -- error body is a different shape and is reported as an error result,
+    -- which MCP exempts from the structured-content requirement.
+    if status < 200 or status >= 300 or type(data) ~= "table" then
+        return nil
+    end
+    -- an array body cannot satisfy an object schema, and would be encoded as
+    -- an object by structuredContent
+    if data[1] ~= nil then
+        return nil
+    end
+
+    local ok = core.schema.check(tool.output_check_schema, data)
+    if not ok then
+        return nil
+    end
+
+    local text, err = json_pretty.encode(data)
+    if not text then
+        text = "failed to encode response: " .. tostring(err)
+    end
+    return {
+        content = { { type = "text", text = text } },
+        structuredContent = data,
+    }
+end
+
+
 local function text_result(payload, is_error)
     local text, err = json_pretty.encode(payload)
     if not text then
@@ -445,12 +474,29 @@ function _M.call(tool, arguments, opts)
         }, true)
     end
 
-    return text_result({
+    local data = decode_body(res.body)
+    local envelope = {
         status = res.status,
         statusText = res.reason or "",
         headers = lower_headers(res.headers),
-        data = decode_body(res.body),
-    })
+        data = data,
+    }
+
+    if not tool.output_schema then
+        return text_result(envelope)
+    end
+
+    local structured = structured_result(tool, res.status, data)
+    if structured then
+        return structured
+    end
+
+    -- The tool advertised an output schema and this answer cannot satisfy it.
+    -- Returning the envelope on its own would leave a client that enforces the
+    -- schema with a protocol error, so the envelope is returned as an error
+    -- result instead, which is the case MCP allows to carry no structured
+    -- content.
+    return text_result(envelope, true)
 end
 
 
