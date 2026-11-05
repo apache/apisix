@@ -2086,3 +2086,82 @@ timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
     2>&1 | cat
 --- response_body eval
 qr/(?s)(?=.*"isError":true)(?=.*cannot produce an empty or dot path segment)/
+
+
+
+=== TEST 99: a route over a document with a slash in an expression name
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "streamable_http",
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/slashinname.json",
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 100: a literal dot segment of the template is not the caller's to answer for
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"literalDotTail","arguments":{"pathParameters":{"scope/key":"safe","id":"ok"}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/seen_path.*x\/safe\/ok\/\.\./
+
+
+
+=== TEST 101: a dot-dot after a slashed expression name is rejected
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"slashNameTail","arguments":{"pathParameters":{"a/b":"v","c":".."}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/(?s)(?=.*"isError":true)(?=.*path parameter in segment \{c\} cannot produce an empty or dot path segment)/
+
+
+
+=== TEST 102: an empty value after a slashed expression name is rejected
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"slashNameTail","arguments":{"pathParameters":{"a/b":"v","c":""}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/(?s)(?=.*"isError":true)(?=.*path parameter in segment \{c\} cannot produce an empty or dot path segment)/
+
+
+
+=== TEST 103: a dot-dot between a slashed expression name and a literal is rejected
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"slashNameMiddle","arguments":{"pathParameters":{"a/b":"v","c":".."}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/(?s)(?=.*"isError":true)(?=.*path parameter in segment \{c\} cannot produce an empty or dot path segment)/
+
+
+
+=== TEST 104: a safe value for a slashed expression name is sent percent-encoded
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"slashNameTail","arguments":{"pathParameters":{"a/b":"v","c":"ok"}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/seen_path.*x\/v\/ok/

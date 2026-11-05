@@ -61,6 +61,42 @@ local DOCUMENTS = {
         } } },
     },
 
+    -- a slash inside a template expression name, which the OpenAPI grammar
+    -- admits, so the template's segments have to be counted accordingly
+    ["/slashinname.json"] = {
+        openapi = "3.0.0",
+        info = { title = "SlashInName", version = "1" },
+        paths = {
+            ["/x/{scope/key}/{id}/.."] = { get = {
+                operationId = "literalDotTail",
+                parameters = {
+                    { name = "scope/key", ["in"] = "path", required = true,
+                      schema = { type = "string" } },
+                    { name = "id", ["in"] = "path", required = true,
+                      schema = { type = "string" } },
+                },
+            } },
+            ["/x/{a/b}/{c}"] = { get = {
+                operationId = "slashNameTail",
+                parameters = {
+                    { name = "a/b", ["in"] = "path", required = true,
+                      schema = { type = "string" } },
+                    { name = "c", ["in"] = "path", required = true,
+                      schema = { type = "string" } },
+                },
+            } },
+            ["/x/{a/b}/{c}/y"] = { get = {
+                operationId = "slashNameMiddle",
+                parameters = {
+                    { name = "a/b", ["in"] = "path", required = true,
+                      schema = { type = "string" } },
+                    { name = "c", ["in"] = "path", required = true,
+                      schema = { type = "string" } },
+                },
+            } },
+        },
+    },
+
     -- a path parameter that fills only part of a segment
     ["/partialsegment.json"] = {
         openapi = "3.0.0",

@@ -200,6 +200,36 @@ local function path_segments(value)
 end
 
 
+-- The segments of a path template. Only a slash outside braces separates them,
+-- because a template expression name may contain one: the OpenAPI grammar for
+-- the name admits every character except a brace, so "/x/{a/b}/{c}" declares
+-- two expressions rather than three segments. Splitting on every slash would
+-- shift every later entry, which both skips the segment "{c}" fills and
+-- attributes a literal segment of the template to an expression.
+--
+-- A parameter value cannot shift them: a separator in one is either refused or
+-- percent-encoded, so the substituted path keeps this segment count.
+local function template_segments(template)
+    local segments = {}
+    local path = uri_path(template)
+    local in_expression = false
+    local start = 1
+    for index = 1, #path do
+        local char = str_sub(path, index, index)
+        if char == "{" then
+            in_expression = true
+        elseif char == "}" then
+            in_expression = false
+        elseif char == "/" and not in_expression then
+            segments[#segments + 1] = str_sub(path, start, index - 1)
+            start = index + 1
+        end
+    end
+    segments[#segments + 1] = str_sub(path, start)
+    return segments
+end
+
+
 -- A server receiving the request resolves "." and ".." away, but only where
 -- one is a whole segment. A template expression may fill part of a segment,
 -- and "{name}.json" filled with ".." comes out as "...json", which addresses
@@ -237,7 +267,7 @@ local function build_path(template, path_params, allow_encoded_separators)
         end)
     end
 
-    local declared = path_segments(template)
+    local declared = template_segments(template)
     for index, segment in ipairs(path_segments(path)) do
         local from_template = declared[index]
         if from_template and str_find(from_template, "{", 1, true)
