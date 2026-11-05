@@ -24,7 +24,7 @@ properties:
     $ref: ./ResourceId.yaml
   name:
     type: string
-    maxLength: 100
+    maxLength: 256
     minLength: 1
     description: Human-readable name for the route.
   desc:

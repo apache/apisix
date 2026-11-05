@@ -24,6 +24,7 @@ properties:
     description: Interval in seconds between active health check probes for healthy targets.
   http_statuses:
     type: array
+    minItems: 1
     items:
       type: integer
       minimum: 200

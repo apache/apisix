@@ -15,12 +15,12 @@
 # limitations under the License.
 #
 type: object
-description: "`Upstream` wrapped in the etcd-style envelope."
+description: Stored Upstream wrapped in the etcd-style envelope.
 properties:
   key:
     type: string
   value:
-    $ref: ./Upstream.yaml
+    $ref: ./UpstreamRead.yaml
   createdIndex:
     type: integer
   modifiedIndex:

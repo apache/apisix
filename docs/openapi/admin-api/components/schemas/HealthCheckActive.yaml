@@ -59,3 +59,22 @@ properties:
     $ref: ./HealthCheckActiveHealthy.yaml
   unhealthy:
     $ref: ./HealthCheckActiveUnhealthy.yaml
+  http_method:
+    type: string
+    enum:
+      - GET
+      - POST
+      - PUT
+      - DELETE
+      - PATCH
+      - HEAD
+      - OPTIONS
+      - CONNECT
+      - TRACE
+      - PURGE
+    default: GET
+    description: HTTP method used for active health-check probes.
+  http_req_body:
+    type: string
+    default: ""
+    description: HTTP request body sent by active health-check probes.

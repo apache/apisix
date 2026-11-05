@@ -100,32 +100,28 @@ properties:
     minItems: 1
     description: Multiple SNI hostnames. Mutually exclusive with `sni`.
   cert:
-    type:
-      - string
-      - "null"
-    minLength: 128
-    maxLength: 65536
-    description: PEM-encoded server certificate. Can also be a secret reference (`$secret://...`).
+    anyOf:
+      - $ref: ./CertificateOrReference.yaml
+      - type: "null"
+    description: PEM-encoded server certificate, APISIX secret/environment reference, or null to remove the field.
   key:
-    type:
-      - string
-      - "null"
-    minLength: 128
-    maxLength: 65536
-    description: PEM-encoded private key. Can also be a secret reference (`$secret://...`). **Not returned in GET responses for security.**
+    anyOf:
+      - $ref: ./PrivateKeyOrReference.yaml
+      - type: "null"
+    description: PEM-encoded private key, APISIX secret/environment reference, or null to remove the field. Not returned in GET responses.
   certs:
     type:
       - array
       - "null"
     items:
-      type: string
+      $ref: ./CertificateOrReference.yaml
     description: Additional certificates for certificate chain or alternative key types.
   keys:
     type:
       - array
       - "null"
     items:
-      type: string
+      $ref: ./PrivateKeyOrReference.yaml
     description: Additional private keys corresponding to `certs`.
   client:
     type:
@@ -134,12 +130,10 @@ properties:
     description: mTLS client verification settings.
     properties:
       ca:
-        type:
-          - string
-          - "null"
-        minLength: 128
-        maxLength: 65536
-        description: PEM-encoded CA certificate for client verification.
+        anyOf:
+          - $ref: ./CertificateOrReference.yaml
+          - type: "null"
+        description: PEM-encoded CA certificate, APISIX secret/environment reference, or null to remove the field.
       depth:
         type:
           - integer

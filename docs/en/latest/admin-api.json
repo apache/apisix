@@ -1749,7 +1749,7 @@
                           "description": "The unique identifier of the consumer.",
                           "type": "string",
                           "minLength": 1,
-                          "maxLength": 100,
+                          "maxLength": 256,
                           "pattern": "^[a-zA-Z0-9_-]+$"
                         },
                         "labels": {
@@ -2618,7 +2618,6 @@
                         {
                           "value": {
                             "type": "server",
-                            "key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDh5cAWYXAMPLEbe\nfakekeyForOpenAPISpecPlaceholderOnlyDoNotUseForRealKeysNopeNopeNo\npeNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNo\npeNopeNopeNopeNopeNopeNope==\n-----END PRIVATE KEY-----\n",
                             "snis": [
                               "test.com"
                             ],
@@ -2666,7 +2665,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SSLEnvelope"
+                  "$ref": "#/components/schemas/SSLWriteEnvelope"
                 },
                 "examples": {
                   "1": {
@@ -2676,14 +2675,14 @@
                       "value": {
                         "type": "server",
                         "cert": "-----BEGIN CERTIFICATE-----\nMIIDazCCAlOgAwIBAgIUJ9hQk3kXgZeZpY/m/0V6RmH1AbcwDQYJKoZIhvcNAQEL\nBQAwRTELMAkGA1UEBhMCVVMxEzARBgNVBAgMClNvbWUtU3RhdGUxITAfBgNVBAoM\nGEludGVybmFsIFJvb3QgQ0EgKGV4YW1wbGUpMB4XDTI1MDEwMTAwMDAwMFoXDTM1\nMDEwMTAwMDAwMFowRTELMAkGA1UEBhMCVVMxEzARBgNVBAgMClNvbWUtU3RhdGUx\nITAfBgNVBAoMGEludGVybmFsIFJvb3QgQ0EgKGV4YW1wbGUpMIIBIjANBgkqhkiG\n9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4eXAMPLEcaPUBLIcfakeforopeNAPIspecON\nLYexampleCAcontentsoExpandedFakeKeyMaterial==\n-----END CERTIFICATE-----\n",
-                        "key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDh5cAWYXAMPLEbe\nfakekeyForOpenAPISpecPlaceholderOnlyDoNotUseForRealKeysNopeNopeNo\npeNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNo\npeNopeNopeNopeNopeNopeNope==\n-----END PRIVATE KEY-----\n",
                         "id": "00000000000000000134",
                         "create_time": 1684374944,
                         "status": 1,
                         "snis": [
                           "test.com"
                         ],
-                        "update_time": 1684374944
+                        "update_time": 1684374944,
+                        "key": "opaque-stored-private-key-value"
                       }
                     }
                   }
@@ -2733,7 +2732,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SSLEnvelope"
+                  "$ref": "#/components/schemas/SSLWriteEnvelope"
                 },
                 "examples": {
                   "1": {
@@ -2742,7 +2741,6 @@
                       "key": "/apisix/ssls/1",
                       "value": {
                         "type": "server",
-                        "key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDh5cAWYXAMPLEbe\nfakekeyForOpenAPISpecPlaceholderOnlyDoNotUseForRealKeysNopeNopeNo\npeNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNo\npeNopeNopeNopeNopeNopeNope==\n-----END PRIVATE KEY-----\n",
                         "snis": [
                           "test.com"
                         ],
@@ -2750,7 +2748,8 @@
                         "create_time": 1684373523,
                         "status": 1,
                         "cert": "-----BEGIN CERTIFICATE-----\nMIIDazCCAlOgAwIBAgIUJ9hQk3kXgZeZpY/m/0V6RmH1AbcwDQYJKoZIhvcNAQEL\nBQAwRTELMAkGA1UEBhMCVVMxEzARBgNVBAgMClNvbWUtU3RhdGUxITAfBgNVBAoM\nGEludGVybmFsIFJvb3QgQ0EgKGV4YW1wbGUpMB4XDTI1MDEwMTAwMDAwMFoXDTM1\nMDEwMTAwMDAwMFowRTELMAkGA1UEBhMCVVMxEzARBgNVBAgMClNvbWUtU3RhdGUx\nITAfBgNVBAoMGEludGVybmFsIFJvb3QgQ0EgKGV4YW1wbGUpMIIBIjANBgkqhkiG\n9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4eXAMPLEcaPUBLIcfakeforopeNAPIspecON\nLYexampleCAcontentsoExpandedFakeKeyMaterial==\n-----END CERTIFICATE-----\n",
-                        "update_time": 1684373523
+                        "update_time": 1684373523,
+                        "key": "opaque-stored-private-key-value"
                       }
                     }
                   }
@@ -2858,7 +2857,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SSLEnvelope"
+                  "$ref": "#/components/schemas/SSLWriteEnvelope"
                 }
               }
             }
@@ -5853,834 +5852,8 @@
                       "description": "Stream route entry with metadata.",
                       "properties": {
                         "value": {
-                          "description": "Stream route values.",
-                          "properties": {
-                            "desc": {
-                              "maxLength": 256,
-                              "type": "string",
-                              "description": "Description of the stream route."
-                            },
-                            "upstream_id": {
-                              "description": "Upstream ID.",
-                              "anyOf": [
-                                {
-                                  "type": "string",
-                                  "minLength": 1,
-                                  "maxLength": 64,
-                                  "pattern": "^[a-zA-Z0-9-_.]+$"
-                                },
-                                {
-                                  "minimum": 1,
-                                  "type": "integer"
-                                }
-                              ]
-                            },
-                            "update_time": {
-                              "type": "integer",
-                              "description": "Update time of the stream route."
-                            },
-                            "create_time": {
-                              "type": "integer",
-                              "description": "Creation time of the stream route."
-                            },
-                            "sni": {
-                              "type": "string",
-                              "description": "SNI hostname to match. Supports wildcard hostnames. Mutually exclusive with `snis`.",
-                              "pattern": "^\\*$|^\\*?[0-9a-zA-Z-._\\[\\]:]+$"
-                            },
-                            "id": {
-                              "description": "Unique identifier for the stream route.",
-                              "anyOf": [
-                                {
-                                  "type": "string",
-                                  "minLength": 1,
-                                  "maxLength": 64,
-                                  "pattern": "^[a-zA-Z0-9-_.]+$"
-                                },
-                                {
-                                  "minimum": 1,
-                                  "type": "integer"
-                                }
-                              ]
-                            },
-                            "remote_addr": {
-                              "description": "Client address filter. If the client request does not originate from `remote_addr`, the request will not be forwarded to the stream server.",
-                              "type": "string",
-                              "anyOf": [
-                                {
-                                  "format": "ipv4",
-                                  "type": "string",
-                                  "title": "IPv4"
-                                },
-                                {
-                                  "type": "string",
-                                  "title": "IPv4/CIDR",
-                                  "pattern": "^([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])/([12]?[0-9]|3[0-2])$"
-                                },
-                                {
-                                  "format": "ipv6",
-                                  "type": "string",
-                                  "title": "IPv6"
-                                },
-                                {
-                                  "type": "string",
-                                  "title": "IPv6/CIDR",
-                                  "pattern": "^([a-fA-F0-9]{0,4}:){1,8}(:[a-fA-F0-9]{0,4}){0,8}([a-fA-F0-9]{0,4})?/[0-9]{1,3}$"
-                                }
-                              ]
-                            },
-                            "protocol": {
-                              "description": "Protocol configuration for the stream route.",
-                              "properties": {
-                                "logger": {
-                                  "description": "An array of logger plugin configurations.",
-                                  "items": {
-                                    "description": "Logger configuration item.",
-                                    "properties": {
-                                      "conf": {
-                                        "type": "object",
-                                        "description": "Logger plugin configuration.",
-                                        "properties": {}
-                                      },
-                                      "filter": {
-                                        "type": "array",
-                                        "description": "Logger filter rules.",
-                                        "items": {
-                                          "type": "string",
-                                          "description": "A filter rule pattern."
-                                        }
-                                      },
-                                      "name": {
-                                        "type": "string",
-                                        "description": "Name of the logger plugin."
-                                      }
-                                    },
-                                    "type": "object",
-                                    "dependentRequired": {
-                                      "name": [
-                                        "conf"
-                                      ]
-                                    }
-                                  },
-                                  "type": "array"
-                                },
-                                "conf": {
-                                  "type": "object",
-                                  "description": "Protocol-specific configuration.",
-                                  "properties": {}
-                                },
-                                "superior_id": {
-                                  "description": "ID of a superior protocol configuration.",
-                                  "anyOf": [
-                                    {
-                                      "type": "string",
-                                      "minLength": 1,
-                                      "maxLength": 64,
-                                      "pattern": "^[a-zA-Z0-9-_.]+$"
-                                    },
-                                    {
-                                      "minimum": 1,
-                                      "type": "integer"
-                                    }
-                                  ]
-                                },
-                                "name": {
-                                  "type": "string",
-                                  "description": "Name of the protocol."
-                                }
-                              },
-                              "type": "object",
-                              "required": [
-                                "name"
-                              ]
-                            },
-                            "server_addr": {
-                              "type": "string",
-                              "description": "Server IP address.",
-                              "anyOf": [
-                                {
-                                  "format": "ipv4",
-                                  "type": "string",
-                                  "title": "IPv4"
-                                },
-                                {
-                                  "type": "string",
-                                  "title": "IPv4/CIDR",
-                                  "pattern": "^([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])/([12]?[0-9]|3[0-2])$"
-                                },
-                                {
-                                  "format": "ipv6",
-                                  "type": "string",
-                                  "title": "IPv6"
-                                },
-                                {
-                                  "type": "string",
-                                  "title": "IPv6/CIDR",
-                                  "pattern": "^([a-fA-F0-9]{0,4}:){1,8}(:[a-fA-F0-9]{0,4}){0,8}([a-fA-F0-9]{0,4})?/[0-9]{1,3}$"
-                                }
-                              ]
-                            },
-                            "upstream": {
-                              "description": "Upstream configuration for the stream route.",
-                              "properties": {
-                                "desc": {
-                                  "maxLength": 256,
-                                  "type": "string",
-                                  "description": "Description of the upstream."
-                                },
-                                "update_time": {
-                                  "type": "integer",
-                                  "description": "Update time of the stream route."
-                                },
-                                "key": {
-                                  "type": "string",
-                                  "description": "The key used with `hash_on` when `type` is `chash`.<br>When `hash_on` is set to `header` or `cookie`, `key` is required.<br>When `hash_on` is set to `vars` or `vars_combinations`, `key` is required and supports [built-in variables](/apisix/reference/built-in-variables).<br>When `hash_on` is set to `consumer`, `key` is not required as the consumer name will be used as the key automatically."
-                                },
-                                "retries": {
-                                  "minimum": 0,
-                                  "type": "integer",
-                                  "description": "The number of retries while passing the request to an upstream."
-                                },
-                                "retry_timeout": {
-                                  "minimum": 0,
-                                  "type": "number",
-                                  "description": "Timeout to continue with retries. Setting this to 0 disables the retry timeout."
-                                },
-                                "pass_host": {
-                                  "default": "pass",
-                                  "type": "string",
-                                  "enum": [
-                                    "pass",
-                                    "node",
-                                    "rewrite"
-                                  ],
-                                  "description": "How to set the `Host` header when proxying to the upstream.",
-                                  "x-enumDescriptions": {
-                                    "pass": "Forward the client's original `Host` header.",
-                                    "node": "Use the upstream node's hostname.",
-                                    "rewrite": "Use the value of `upstream_host`."
-                                  }
-                                },
-                                "upstream_host": {
-                                  "type": "string",
-                                  "description": "Configure the host when the request is forwarded to the upstream. `pass` is used to pass the request's host to the upstream without modification. `node` sets the host to the host of the upstream node. `rewrite` sets the host to the value of `upstream_host`."
-                                },
-                                "type": {
-                                  "type": "string",
-                                  "default": "roundrobin",
-                                  "enum": [
-                                    "roundrobin",
-                                    "chash",
-                                    "ewma",
-                                    "least_conn"
-                                  ],
-                                  "description": "Load balancing algorithm. Support weighted round robin, consistent hashing, exponentially weighted moving average, and least connections algorithms."
-                                },
-                                "checks": {
-                                  "description": "Health check configurations.",
-                                  "properties": {
-                                    "active": {
-                                      "description": "Active health check configuration.",
-                                      "properties": {
-                                        "port": {
-                                          "type": "integer",
-                                          "description": "By default, the port is the same as the one defined in the upstream target.",
-                                          "minimum": 1,
-                                          "maximum": 65535
-                                        },
-                                        "healthy": {
-                                          "description": "Active health check healthy configurations.",
-                                          "properties": {
-                                            "http_statuses": {
-                                              "description": "A list of HTTP response status codes which are considered healthy.",
-                                              "uniqueItems": true,
-                                              "items": {
-                                                "type": "integer",
-                                                "minimum": 200,
-                                                "maximum": 599
-                                              },
-                                              "type": "array",
-                                              "minItems": 1,
-                                              "default": [
-                                                200,
-                                                302
-                                              ]
-                                            },
-                                            "interval": {
-                                              "description": "Time interval of checking healthy targets in seconds.",
-                                              "type": "integer",
-                                              "minimum": 1,
-                                              "default": 1
-                                            },
-                                            "successes": {
-                                              "description": "The number of successful probes to define a healthy target.",
-                                              "default": 2,
-                                              "type": "integer",
-                                              "minimum": 1,
-                                              "maximum": 254
-                                            }
-                                          },
-                                          "type": "object"
-                                        },
-                                        "http_path": {
-                                          "description": "The HTTP path in HTTP probe requests.",
-                                          "default": "/",
-                                          "type": "string"
-                                        },
-                                        "https_verify_certificate": {
-                                          "description": "If true, verify the target's TLS certificate.",
-                                          "default": true,
-                                          "type": "boolean"
-                                        },
-                                        "unhealthy": {
-                                          "description": "Active health check unhealthy configurations.",
-                                          "properties": {
-                                            "interval": {
-                                              "description": "Time interval of checking unhealthy targets in seconds.",
-                                              "type": "integer",
-                                              "minimum": 1,
-                                              "default": 1
-                                            },
-                                            "tcp_failures": {
-                                              "description": "The number of TCP-related failures to define an unhealthy target.",
-                                              "default": 2,
-                                              "type": "integer",
-                                              "minimum": 1,
-                                              "maximum": 254
-                                            },
-                                            "timeouts": {
-                                              "description": "The number of probe timeouts to define an unhealthy target.",
-                                              "default": 3,
-                                              "type": "integer",
-                                              "minimum": 1,
-                                              "maximum": 254
-                                            },
-                                            "http_statuses": {
-                                              "description": "A list of HTTP response status codes which are considered unhealthy.",
-                                              "uniqueItems": true,
-                                              "items": {
-                                                "type": "integer",
-                                                "minimum": 200,
-                                                "maximum": 599
-                                              },
-                                              "type": "array",
-                                              "minItems": 1,
-                                              "default": [
-                                                429,
-                                                404,
-                                                500,
-                                                501,
-                                                502,
-                                                503,
-                                                504,
-                                                505
-                                              ]
-                                            },
-                                            "http_failures": {
-                                              "description": "The number of HTTP-related failures to define an unhealthy target.",
-                                              "default": 5,
-                                              "type": "integer",
-                                              "minimum": 1,
-                                              "maximum": 254
-                                            }
-                                          },
-                                          "type": "object"
-                                        },
-                                        "req_headers": {
-                                          "description": "The request headers.",
-                                          "items": {
-                                            "type": "string"
-                                          },
-                                          "type": "array",
-                                          "minItems": 1
-                                        },
-                                        "timeout": {
-                                          "description": "Active check timeout in seconds.",
-                                          "default": 1,
-                                          "type": "number"
-                                        },
-                                        "type": {
-                                          "description": "Active check probing type.",
-                                          "enum": [
-                                            "http",
-                                            "https",
-                                            "tcp"
-                                          ],
-                                          "default": "http",
-                                          "type": "string"
-                                        },
-                                        "host": {
-                                          "type": "string",
-                                          "description": "Host header value for health check probes sent to upstream nodes."
-                                        },
-                                        "concurrency": {
-                                          "default": 10,
-                                          "type": "integer",
-                                          "description": "The number of targets to be checked at the same time during the active check."
-                                        }
-                                      },
-                                      "type": "object"
-                                    },
-                                    "passive": {
-                                      "description": "Passive health check configurations.",
-                                      "properties": {
-                                        "healthy": {
-                                          "description": "Passive health check healthy configurations.",
-                                          "properties": {
-                                            "http_statuses": {
-                                              "description": "A list of HTTP response status codes which are considered healthy.",
-                                              "uniqueItems": true,
-                                              "items": {
-                                                "type": "integer",
-                                                "minimum": 200,
-                                                "maximum": 599
-                                              },
-                                              "type": "array",
-                                              "minItems": 1,
-                                              "default": [
-                                                200,
-                                                201,
-                                                202,
-                                                203,
-                                                204,
-                                                205,
-                                                206,
-                                                207,
-                                                208,
-                                                226,
-                                                300,
-                                                301,
-                                                302,
-                                                303,
-                                                304,
-                                                305,
-                                                306,
-                                                307,
-                                                308
-                                              ]
-                                            },
-                                            "successes": {
-                                              "description": "The number of successful probes to define a healthy target.",
-                                              "default": 5,
-                                              "type": "integer",
-                                              "minimum": 0,
-                                              "maximum": 254
-                                            }
-                                          },
-                                          "type": "object"
-                                        },
-                                        "unhealthy": {
-                                          "description": "Passive health check unhealthy configurations.",
-                                          "properties": {
-                                            "http_statuses": {
-                                              "description": "A list of HTTP response status codes which are considered unhealthy.",
-                                              "uniqueItems": true,
-                                              "items": {
-                                                "type": "integer",
-                                                "minimum": 200,
-                                                "maximum": 599
-                                              },
-                                              "type": "array",
-                                              "minItems": 1,
-                                              "default": [
-                                                429,
-                                                500,
-                                                503
-                                              ]
-                                            },
-                                            "http_failures": {
-                                              "description": "The number of HTTP-related failures to define an unhealthy target.",
-                                              "default": 5,
-                                              "type": "integer",
-                                              "minimum": 0,
-                                              "maximum": 254
-                                            },
-                                            "tcp_failures": {
-                                              "description": "The number of TCP-related failures to define an unhealthy target.",
-                                              "default": 2,
-                                              "type": "integer",
-                                              "minimum": 0,
-                                              "maximum": 254
-                                            },
-                                            "timeouts": {
-                                              "description": "The number of probe timeouts to define an unhealthy target.",
-                                              "default": 7,
-                                              "type": "integer",
-                                              "minimum": 0,
-                                              "maximum": 254
-                                            }
-                                          },
-                                          "type": "object"
-                                        },
-                                        "type": {
-                                          "description": "Passive check probing type.",
-                                          "enum": [
-                                            "http",
-                                            "https",
-                                            "tcp"
-                                          ],
-                                          "default": "http",
-                                          "type": "string"
-                                        }
-                                      },
-                                      "type": "object"
-                                    }
-                                  },
-                                  "type": "object",
-                                  "anyOf": [
-                                    {
-                                      "title": "Active Check",
-                                      "required": [
-                                        "active"
-                                      ]
-                                    },
-                                    {
-                                      "title": "Passive Check",
-                                      "required": [
-                                        "active",
-                                        "passive"
-                                      ]
-                                    }
-                                  ]
-                                },
-                                "hash_on": {
-                                  "default": "vars",
-                                  "enum": [
-                                    "vars",
-                                    "header",
-                                    "cookie",
-                                    "consumer",
-                                    "vars_combinations"
-                                  ],
-                                  "description": "What to hash on when `type` is `chash`.",
-                                  "type": "string",
-                                  "x-enumDescriptions": {
-                                    "vars": "Hash on an NGINX variable specified by `key`.",
-                                    "header": "Hash on a request header specified by `key`.",
-                                    "cookie": "Hash on a cookie value specified by `key`.",
-                                    "consumer": "Hash on the authenticated consumer name.",
-                                    "vars_combinations": "Hash on a combination of variables."
-                                  }
-                                },
-                                "name": {
-                                  "description": "Upstream name.",
-                                  "type": "string",
-                                  "maxLength": 100,
-                                  "minLength": 1
-                                },
-                                "scheme": {
-                                  "enum": [
-                                    "grpc",
-                                    "grpcs",
-                                    "http",
-                                    "https",
-                                    "ws",
-                                    "wss",
-                                    "tcp",
-                                    "tls",
-                                    "udp",
-                                    "kafka"
-                                  ],
-                                  "default": "http",
-                                  "description": "Protocol for communicating with upstream nodes.",
-                                  "x-enumDescriptions": {
-                                    "grpc": "Layer 7 gRPC.",
-                                    "grpcs": "Layer 7 gRPC over TLS.",
-                                    "http": "Layer 7 HTTP.",
-                                    "https": "Layer 7 HTTP over TLS.",
-                                    "tcp": "Layer 4 TCP.",
-                                    "tls": "Layer 4 TCP over TLS.",
-                                    "udp": "Layer 4 UDP.",
-                                    "kafka": "Apache Kafka protocol.",
-                                    "ws": "Frame-aware WebSocket proxying; `enable_websocket` is ignored.",
-                                    "wss": "Frame-aware WebSocket proxying over TLS; uses the shared CA trust store, not `tls.ca_certs`."
-                                  }
-                                },
-                                "keepalive_pool": {
-                                  "description": "Upstream keepalive connection pool.",
-                                  "properties": {
-                                    "size": {
-                                      "description": "The number of idle keepalive connections per worker to upstream servers.",
-                                      "default": 320,
-                                      "minimum": 1,
-                                      "type": "integer"
-                                    },
-                                    "idle_timeout": {
-                                      "description": "Time an idle keepalive connection remains open before being closed, in seconds.",
-                                      "default": 60,
-                                      "minimum": 0,
-                                      "type": "number"
-                                    },
-                                    "requests": {
-                                      "description": "The number of requests a single keepalive connection can handle before closing.",
-                                      "default": 1000,
-                                      "minimum": 1,
-                                      "type": "integer"
-                                    }
-                                  },
-                                  "type": "object"
-                                },
-                                "timeout": {
-                                  "description": "Timeout settings for connecting to, sending, and receiving messages from the upstream, in seconds.",
-                                  "properties": {
-                                    "connect": {
-                                      "description": "Connection timeout in seconds.",
-                                      "exclusiveMinimum": 0,
-                                      "type": "number"
-                                    },
-                                    "read": {
-                                      "description": "Receiving timeout in seconds.",
-                                      "exclusiveMinimum": 0,
-                                      "type": "number"
-                                    },
-                                    "send": {
-                                      "description": "Sending timeout in seconds.",
-                                      "exclusiveMinimum": 0,
-                                      "type": "number"
-                                    }
-                                  },
-                                  "type": "object"
-                                },
-                                "id": {
-                                  "description": "Upstream ID.",
-                                  "anyOf": [
-                                    {
-                                      "type": "string",
-                                      "minLength": 1,
-                                      "maxLength": 64,
-                                      "pattern": "^[a-zA-Z0-9-_.]+$"
-                                    },
-                                    {
-                                      "minimum": 1,
-                                      "type": "integer"
-                                    }
-                                  ]
-                                },
-                                "labels": {
-                                  "type": "object",
-                                  "patternProperties": {
-                                    ".*": {
-                                      "minLength": 1,
-                                      "maxLength": 64,
-                                      "pattern": "^\\S+$",
-                                      "type": "string",
-                                      "description": "Value of label."
-                                    }
-                                  },
-                                  "description": "Key-value pairs to specify attributes.",
-                                  "properties": {}
-                                },
-                                "discovery_args": {
-                                  "description": "Service discovery arguments.",
-                                  "properties": {
-                                    "group_name": {
-                                      "type": "string",
-                                      "description": "Group name."
-                                    },
-                                    "namespace_id": {
-                                      "type": "string",
-                                      "description": "Namespace ID."
-                                    }
-                                  },
-                                  "type": "object"
-                                },
-                                "tls": {
-                                  "description": "TLS configurations.",
-                                  "properties": {
-                                    "verify": {
-                                      "type": "boolean",
-                                      "description": "Whether to verify the upstream server certificate. If omitted for HTTPS/gRPCS, follows the NGINX verification setting, which is off unless enabled. Explicit `false` disables verification. For `wss`, explicitly set `true` to enable verification against the shared trust store."
-                                    },
-                                    "client_key": {
-                                      "description": "Private key.",
-                                      "minLength": 64,
-                                      "maxLength": 65536,
-                                      "type": "string"
-                                    },
-                                    "client_cert": {
-                                      "description": "Client certificate.",
-                                      "minLength": 128,
-                                      "maxLength": 65536,
-                                      "type": "string"
-                                    },
-                                    "client_cert_id": {
-                                      "description": "Client certificate ID.",
-                                      "anyOf": [
-                                        {
-                                          "type": "string",
-                                          "minLength": 1,
-                                          "maxLength": 64,
-                                          "pattern": "^[a-zA-Z0-9-_.]+$"
-                                        },
-                                        {
-                                          "minimum": 1,
-                                          "type": "integer"
-                                        }
-                                      ]
-                                    },
-                                    "ca_certs": {
-                                      "type": "array",
-                                      "minItems": 1,
-                                      "items": {
-                                        "type": "string",
-                                        "minLength": 128,
-                                        "maxLength": 65536
-                                      },
-                                      "description": "PEM-encoded CA certificates for HTTPS/gRPCS upstream verification. Replaces the NGINX trust store for this upstream. If omitted, configure and load the shared store using `proxy_ssl_verify` for HTTPS or `grpc_ssl_verify` for gRPCS. See [Configure Upstream HTTPS](/apisix/how-to-guide/traffic-management/tls-and-mtls/configure-upstream-https). Does not enable verification by itself; set `tls.verify` to `true`. Rejected for `ws` and `wss` upstreams."
-                                    }
-                                  },
-                                  "type": "object",
-                                  "dependentSchemas": {
-                                    "client_cert_id": {
-                                      "not": {
-                                        "required": [
-                                          "client_cert",
-                                          "client_key"
-                                        ]
-                                      }
-                                    },
-                                    "client_cert": {
-                                      "required": [
-                                        "client_key"
-                                      ],
-                                      "not": {
-                                        "required": [
-                                          "client_cert_id"
-                                        ]
-                                      }
-                                    },
-                                    "client_key": {
-                                      "required": [
-                                        "client_cert"
-                                      ],
-                                      "not": {
-                                        "required": [
-                                          "client_cert_id"
-                                        ]
-                                      }
-                                    }
-                                  }
-                                },
-                                "create_time": {
-                                  "description": "Creation time of the upstream.",
-                                  "type": "integer"
-                                },
-                                "warm_up_conf": {
-                                  "$ref": "#/components/schemas/UpstreamWarmUp"
-                                }
-                              },
-                              "additionalProperties": false,
-                              "type": "object",
-                              "oneOf": [
-                                {
-                                  "title": "Use Upstream Nodes",
-                                  "required": [
-                                    "nodes"
-                                  ],
-                                  "properties": {
-                                    "nodes": {
-                                      "description": "The upstream endpoints.",
-                                      "anyOf": [
-                                        {
-                                          "title": "Weight Mapping",
-                                          "patternProperties": {
-                                            ".*": {
-                                              "type": "integer",
-                                              "minimum": 0,
-                                              "description": "Weight of a node. For example, in `{\"ip:port\": 100}`, the value `100` represents the node's weight."
-                                            }
-                                          },
-                                          "type": "object"
-                                        },
-                                        {
-                                          "title": "Node Objects",
-                                          "items": {
-                                            "properties": {
-                                              "weight": {
-                                                "type": "integer",
-                                                "minimum": 0,
-                                                "description": "Weight of a node."
-                                              },
-                                              "port": {
-                                                "type": "integer",
-                                                "minimum": 1,
-                                                "description": "Port of a node."
-                                              },
-                                              "metadata": {
-                                                "type": "object",
-                                                "description": "Metadata of a node."
-                                              },
-                                              "host": {
-                                                "description": "Upstream host.",
-                                                "type": "string"
-                                              },
-                                              "priority": {
-                                                "type": "integer",
-                                                "default": 0,
-                                                "description": "Priority of a node. A higher value corresponds to a higher priority."
-                                              }
-                                            },
-                                            "type": "object"
-                                          },
-                                          "type": "array"
-                                        }
-                                      ]
-                                    }
-                                  }
-                                },
-                                {
-                                  "title": "Use Service Registry",
-                                  "required": [
-                                    "service_name",
-                                    "discovery_type"
-                                  ],
-                                  "properties": {
-                                    "service_name": {
-                                      "description": "Service name in the service registry. Only valid for service discovery.",
-                                      "type": "string",
-                                      "maxLength": 256,
-                                      "minLength": 1
-                                    },
-                                    "discovery_type": {
-                                      "type": "string",
-                                      "description": "Discovery type."
-                                    }
-                                  }
-                                }
-                              ]
-                            },
-                            "plugins": {
-                              "description": "Key-value pairs of plugins and their configurations on the object.",
-                              "type": "object",
-                              "properties": {}
-                            },
-                            "server_port": {
-                              "type": "integer",
-                              "description": "Server port."
-                            },
-                            "snis": {
-                              "type": "array",
-                              "minItems": 1,
-                              "uniqueItems": true,
-                              "items": {
-                                "type": "string",
-                                "pattern": "^\\*$|^\\*?[0-9a-zA-Z-._\\[\\]:]+$"
-                              },
-                              "description": "Alternative SNI hostnames to match, including wildcard hostnames. Mutually exclusive with `sni`."
-                            },
-                            "tls_passthrough": {
-                              "type": "boolean",
-                              "default": false,
-                              "description": "On a listener configured with both `tls` and `tls_passthrough`, `true` forwards encrypted TLS bytes to the upstream; `false` terminates TLS at APISIX. Ignored on dedicated listeners. Passthrough requires a TCP upstream, not scheme `tls`."
-                            }
-                          },
-                          "type": "object",
-                          "not": {
-                            "required": [
-                              "sni",
-                              "snis"
-                            ]
-                          }
+                          "$ref": "#/components/schemas/StreamRouteRead",
+                          "description": "Stored Stream Route configuration."
                         },
                         "key": {
                           "description": "Unique key identifier for this stream route in the data store.",
@@ -8537,6 +7710,53 @@
           }
         ]
       },
+      "CertificatePem": {
+        "type": "string",
+        "minLength": 128,
+        "maxLength": 65536,
+        "description": "PEM-encoded certificate or certificate chain.",
+        "not": {
+          "$ref": "#/components/schemas/SecretOrEnvironmentReference"
+        }
+      },
+      "PrivateKeyPem": {
+        "type": "string",
+        "minLength": 64,
+        "maxLength": 65536,
+        "description": "PEM-encoded private key.",
+        "not": {
+          "$ref": "#/components/schemas/SecretOrEnvironmentReference"
+        }
+      },
+      "SecretOrEnvironmentReference": {
+        "type": "string",
+        "pattern": "^\\$(?:secret|[eE][nN][vV])://",
+        "description": "APISIX secret ($secret://...) or environment variable ($env://..., case-insensitive) reference."
+      },
+      "CertificateOrReference": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/CertificatePem"
+          },
+          {
+            "$ref": "#/components/schemas/SecretOrEnvironmentReference"
+          }
+        ]
+      },
+      "PrivateKeyOrReference": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/PrivateKeyPem"
+          },
+          {
+            "$ref": "#/components/schemas/SecretOrEnvironmentReference"
+          }
+        ]
+      },
+      "StoredPrivateKeyValue": {
+        "type": "string",
+        "description": "Stored private-key value returned by the Admin API. Depending on configuration, it can be plaintext PEM when no keyring is configured, encrypted ciphertext when a keyring is configured, or a preserved SSL secret/environment reference."
+      },
       "HealthCheckActiveHealthy": {
         "type": "object",
         "description": "Thresholds for considering a target healthy during active checks.",
@@ -8549,6 +7769,7 @@
           },
           "http_statuses": {
             "type": "array",
+            "minItems": 1,
             "items": {
               "type": "integer",
               "minimum": 200,
@@ -8582,6 +7803,7 @@
           },
           "http_statuses": {
             "type": "array",
+            "minItems": 1,
             "items": {
               "type": "integer",
               "minimum": 200,
@@ -8680,6 +7902,28 @@
           },
           "unhealthy": {
             "$ref": "#/components/schemas/HealthCheckActiveUnhealthy"
+          },
+          "http_method": {
+            "type": "string",
+            "enum": [
+              "GET",
+              "POST",
+              "PUT",
+              "DELETE",
+              "PATCH",
+              "HEAD",
+              "OPTIONS",
+              "CONNECT",
+              "TRACE",
+              "PURGE"
+            ],
+            "default": "GET",
+            "description": "HTTP method used for active health-check probes."
+          },
+          "http_req_body": {
+            "type": "string",
+            "default": "",
+            "description": "HTTP request body sent by active health-check probes."
           }
         }
       },
@@ -8689,6 +7933,7 @@
         "properties": {
           "http_statuses": {
             "type": "array",
+            "minItems": 1,
             "items": {
               "type": "integer",
               "minimum": 200,
@@ -8733,6 +7978,7 @@
         "properties": {
           "http_statuses": {
             "type": "array",
+            "minItems": 1,
             "items": {
               "type": "integer",
               "minimum": 200,
@@ -8901,16 +8147,12 @@
             "description": "ID of an SSL resource containing the client certificate. Mutually exclusive with `client_cert`/`client_key`."
           },
           "client_cert": {
-            "type": "string",
-            "minLength": 128,
-            "maxLength": 65536,
-            "description": "PEM-encoded client certificate for mTLS with the upstream."
+            "$ref": "#/components/schemas/CertificatePem",
+            "description": "PEM-encoded client certificate for mTLS with the upstream. To use an SSL resource instead, configure client_cert_id."
           },
           "client_key": {
-            "type": "string",
-            "minLength": 64,
-            "maxLength": 65536,
-            "description": "PEM-encoded client private key for mTLS with the upstream."
+            "$ref": "#/components/schemas/PrivateKeyPem",
+            "description": "PEM-encoded client private key for mTLS with the upstream. To use an SSL resource instead, configure client_cert_id."
           },
           "verify": {
             "type": "boolean",
@@ -8920,11 +8162,79 @@
             "type": "array",
             "minItems": 1,
             "items": {
-              "type": "string",
-              "minLength": 128,
-              "maxLength": 65536
+              "$ref": "#/components/schemas/CertificatePem"
             },
             "description": "PEM-encoded CA certificates for HTTPS/gRPCS upstream verification. Replaces the NGINX trust store for this upstream. If omitted, configure and load the shared store using `proxy_ssl_verify` for HTTPS or `grpc_ssl_verify` for gRPCS. See [Configure Upstream HTTPS](/apisix/how-to-guide/traffic-management/tls-and-mtls/configure-upstream-https). Does not enable verification by itself; set `tls.verify` to `true`. Rejected for `ws` and `wss` upstreams."
+          }
+        },
+        "dependentSchemas": {
+          "client_cert": {
+            "required": [
+              "client_key"
+            ]
+          },
+          "client_key": {
+            "required": [
+              "client_cert"
+            ]
+          },
+          "client_cert_id": {
+            "not": {
+              "required": [
+                "client_cert",
+                "client_key"
+              ]
+            }
+          }
+        }
+      },
+      "UpstreamTLSRead": {
+        "type": "object",
+        "description": "Stored upstream TLS configuration returned by the Admin API.",
+        "properties": {
+          "client_cert_id": {
+            "$ref": "#/components/schemas/ResourceId",
+            "description": "ID of an SSL resource containing the client certificate. Mutually exclusive with `client_cert`/`client_key`."
+          },
+          "client_cert": {
+            "$ref": "#/components/schemas/CertificatePem",
+            "description": "PEM-encoded client certificate for mTLS with the upstream. To use an SSL resource instead, configure client_cert_id."
+          },
+          "client_key": {
+            "$ref": "#/components/schemas/StoredPrivateKeyValue",
+            "description": "Stored client private-key value returned by the Admin API."
+          },
+          "verify": {
+            "type": "boolean",
+            "description": "Whether to verify the upstream server certificate. If omitted for HTTPS/gRPCS, follows the NGINX verification setting, which is off unless enabled. Explicit `false` disables verification. For `wss`, explicitly set `true` to enable verification against the shared trust store."
+          },
+          "ca_certs": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "$ref": "#/components/schemas/CertificatePem"
+            },
+            "description": "PEM-encoded CA certificates for HTTPS/gRPCS upstream verification. Replaces the NGINX trust store for this upstream. If omitted, configure and load the shared store using `proxy_ssl_verify` for HTTPS or `grpc_ssl_verify` for gRPCS. See [Configure Upstream HTTPS](/apisix/how-to-guide/traffic-management/tls-and-mtls/configure-upstream-https). Does not enable verification by itself; set `tls.verify` to `true`. Rejected for `ws` and `wss` upstreams."
+          }
+        },
+        "dependentSchemas": {
+          "client_cert": {
+            "required": [
+              "client_key"
+            ]
+          },
+          "client_key": {
+            "required": [
+              "client_cert"
+            ]
+          },
+          "client_cert_id": {
+            "not": {
+              "required": [
+                "client_cert",
+                "client_key"
+              ]
+            }
           }
         }
       },
@@ -9146,6 +8456,200 @@
         ],
         "additionalProperties": false
       },
+      "UpstreamRead": {
+        "type": "object",
+        "description": "Stored upstream configuration returned by the Admin API.",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/ResourceId"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1,
+            "description": "Human-readable name for the upstream."
+          },
+          "desc": {
+            "type": "string",
+            "maxLength": 256,
+            "description": "Description of the upstream."
+          },
+          "labels": {
+            "$ref": "#/components/schemas/Labels"
+          },
+          "create_time": {
+            "type": "integer",
+            "description": "Unix timestamp when the upstream was created. Read-only, set automatically.",
+            "readOnly": true
+          },
+          "update_time": {
+            "type": "integer",
+            "description": "Unix timestamp when the upstream was last updated. Read-only, set automatically.",
+            "readOnly": true
+          },
+          "nodes": {
+            "description": "The upstream endpoints.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UpstreamNodes"
+              }
+            ]
+          },
+          "warm_up_conf": {
+            "$ref": "#/components/schemas/UpstreamWarmUp"
+          },
+          "retries": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Number of retry attempts when a request to the upstream fails."
+          },
+          "retry_timeout": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Maximum time in seconds for retry attempts. `0` disables the retry timeout."
+          },
+          "timeout": {
+            "$ref": "#/components/schemas/Timeout"
+          },
+          "type": {
+            "type": "string",
+            "default": "roundrobin",
+            "enum": [
+              "roundrobin",
+              "chash",
+              "ewma",
+              "least_conn"
+            ],
+            "description": "Load balancing algorithm.",
+            "x-enumDescriptions": {
+              "roundrobin": "Weighted round-robin distribution (default).",
+              "chash": "Consistent hashing for session affinity.",
+              "ewma": "Latency-based load balancing using an exponentially weighted moving average.",
+              "least_conn": "Least number of active connections."
+            }
+          },
+          "hash_on": {
+            "type": "string",
+            "default": "vars",
+            "enum": [
+              "vars",
+              "header",
+              "cookie",
+              "consumer",
+              "vars_combinations"
+            ],
+            "description": "What to hash on when `type` is `chash`.",
+            "x-enumDescriptions": {
+              "vars": "Hash on an NGINX variable specified by `key`.",
+              "header": "Hash on a request header specified by `key`.",
+              "cookie": "Hash on a cookie value specified by `key`.",
+              "consumer": "Hash on the authenticated consumer name.",
+              "vars_combinations": "Hash on a combination of variables."
+            }
+          },
+          "key": {
+            "type": "string",
+            "description": "The hash key used when `type` is `chash`. Required when `hash_on` is `header`, `cookie`, `vars`, or `vars_combinations`. Not needed when `hash_on` is `consumer`."
+          },
+          "scheme": {
+            "type": "string",
+            "default": "http",
+            "enum": [
+              "grpc",
+              "grpcs",
+              "http",
+              "https",
+              "ws",
+              "wss",
+              "tcp",
+              "tls",
+              "udp",
+              "kafka"
+            ],
+            "description": "Protocol for communicating with upstream nodes.",
+            "x-enumDescriptions": {
+              "grpc": "Layer 7 gRPC.",
+              "grpcs": "Layer 7 gRPC over TLS.",
+              "http": "Layer 7 HTTP.",
+              "https": "Layer 7 HTTP over TLS.",
+              "tcp": "Layer 4 TCP.",
+              "tls": "Layer 4 TCP over TLS.",
+              "udp": "Layer 4 UDP.",
+              "kafka": "Apache Kafka protocol.",
+              "ws": "Frame-aware WebSocket proxying; `enable_websocket` is ignored.",
+              "wss": "Frame-aware WebSocket proxying over TLS; uses the shared CA trust store, not `tls.ca_certs`."
+            }
+          },
+          "checks": {
+            "$ref": "#/components/schemas/HealthCheck"
+          },
+          "tls": {
+            "$ref": "#/components/schemas/UpstreamTLSRead"
+          },
+          "keepalive_pool": {
+            "$ref": "#/components/schemas/KeepalivePool"
+          },
+          "pass_host": {
+            "type": "string",
+            "enum": [
+              "pass",
+              "node",
+              "rewrite"
+            ],
+            "default": "pass",
+            "description": "How to set the `Host` header when proxying to the upstream.",
+            "x-enumDescriptions": {
+              "pass": "Forward the client's original `Host` header.",
+              "node": "Use the upstream node's hostname.",
+              "rewrite": "Use the value of `upstream_host`."
+            }
+          },
+          "upstream_host": {
+            "type": "string",
+            "description": "Custom `Host` header value. Only effective when `pass_host` is `rewrite`."
+          },
+          "discovery_type": {
+            "type": "string",
+            "description": "Service discovery type (e.g., `dns`, `consul`, `nacos`, `eureka`). Required when using service discovery instead of static `nodes`."
+          },
+          "discovery_args": {
+            "type": "object",
+            "description": "Additional arguments for service discovery.",
+            "properties": {
+              "namespace_id": {
+                "type": "string",
+                "description": "Namespace ID for Nacos service discovery."
+              },
+              "group_name": {
+                "type": "string",
+                "description": "Group name for service discovery."
+              }
+            }
+          },
+          "service_name": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1,
+            "description": "Service name for service discovery. Required when `discovery_type` is set."
+          }
+        },
+        "oneOf": [
+          {
+            "required": [
+              "nodes"
+            ],
+            "title": "Use Upstream Nodes"
+          },
+          {
+            "required": [
+              "service_name",
+              "discovery_type"
+            ],
+            "title": "Use Service Registry"
+          }
+        ],
+        "additionalProperties": false
+      },
       "Plugins": {
         "type": "object",
         "description": "Plugin configurations as a JSON object. Each key is a plugin name, and the value is that plugin's configuration object.\n\nExample:\n```json\n{\n  \"limit-count\": {\n    \"count\": 100,\n    \"time_window\": 60\n  },\n  \"key-auth\": {}\n}\n```\n\nSee the [Plugin Hub](https://apisix.apache.org/plugins/) for available plugins and their schemas.",
@@ -9173,7 +8677,7 @@
           },
           "name": {
             "type": "string",
-            "maxLength": 100,
+            "maxLength": 256,
             "minLength": 1,
             "description": "Human-readable name for the route."
           },
@@ -9419,6 +8923,261 @@
           }
         ]
       },
+      "RouteRead": {
+        "type": "object",
+        "description": "Stored Route configuration returned by the Admin API.",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/ResourceId"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1,
+            "description": "Human-readable name for the route."
+          },
+          "desc": {
+            "type": "string",
+            "maxLength": 256,
+            "description": "Description of what this route does."
+          },
+          "labels": {
+            "$ref": "#/components/schemas/Labels"
+          },
+          "create_time": {
+            "type": "integer",
+            "readOnly": true,
+            "description": "Unix timestamp of creation. Read-only."
+          },
+          "update_time": {
+            "type": "integer",
+            "readOnly": true,
+            "description": "Unix timestamp of last update. Read-only."
+          },
+          "uri": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096,
+            "description": "URI path pattern to match. Supports exact match (`/api/v1/users`) and prefix match (`/api/*`). Mutually exclusive with `uris`.",
+            "examples": [
+              "/api/v1/users/*"
+            ]
+          },
+          "uris": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "uniqueItems": true,
+            "description": "Multiple URI patterns. Mutually exclusive with `uri`."
+          },
+          "host": {
+            "type": "string",
+            "description": "Single hostname to match against the request's `Host` header. Supports wildcard prefix (`*.example.com`). Mutually exclusive with `hosts`.",
+            "examples": [
+              "api.example.com"
+            ]
+          },
+          "hosts": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "uniqueItems": true,
+            "description": "Multiple hostnames to match. Mutually exclusive with `host`."
+          },
+          "methods": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "GET",
+                "POST",
+                "PUT",
+                "DELETE",
+                "PATCH",
+                "HEAD",
+                "OPTIONS",
+                "CONNECT",
+                "TRACE",
+                "PURGE"
+              ]
+            },
+            "uniqueItems": true,
+            "description": "HTTP methods allowed on this route. If empty or not set, all methods are allowed.",
+            "examples": [
+              [
+                "GET",
+                "POST"
+              ]
+            ]
+          },
+          "remote_addr": {
+            "type": "string",
+            "description": "Single client IP address or CIDR range to match. Mutually exclusive with `remote_addrs`.",
+            "examples": [
+              "192.168.1.0/24"
+            ]
+          },
+          "remote_addrs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "uniqueItems": true,
+            "description": "Multiple client IP addresses or CIDR ranges to match. Mutually exclusive with `remote_addr`."
+          },
+          "priority": {
+            "type": "integer",
+            "default": 0,
+            "description": "Route priority. When multiple routes match the same request, the one with the highest priority wins."
+          },
+          "vars": {
+            "type": "array",
+            "description": "Custom matching conditions using [APISIX expressions](https://apisix.apache.org/docs/apisix/3.19/router-radixtree/#how-to-filter-route-by-nginx-built-in-variable). Each condition is an array of `[variable, operator, value]`.",
+            "examples": [
+              [
+                [
+                  "http_user_agent",
+                  "~*",
+                  "curl"
+                ]
+              ]
+            ],
+            "items": {}
+          },
+          "filter_func": {
+            "type": "string",
+            "minLength": 10,
+            "pattern": "^function",
+            "description": "Custom Lua function for advanced request matching. Must start with `function`."
+          },
+          "plugins": {
+            "$ref": "#/components/schemas/Plugins"
+          },
+          "plugin_config_id": {
+            "$ref": "#/components/schemas/ResourceId",
+            "description": "Reference to a Plugin Config resource. Cannot be used together with `script`."
+          },
+          "upstream": {
+            "$ref": "#/components/schemas/UpstreamRead"
+          },
+          "upstream_id": {
+            "$ref": "#/components/schemas/ResourceId",
+            "description": "Reference to an existing Upstream resource."
+          },
+          "service_id": {
+            "$ref": "#/components/schemas/ResourceId",
+            "description": "Reference to an existing Service resource."
+          },
+          "timeout": {
+            "$ref": "#/components/schemas/Timeout"
+          },
+          "enable_websocket": {
+            "type": "boolean",
+            "description": "Enable WebSocket proxying on this route."
+          },
+          "status": {
+            "type": "integer",
+            "enum": [
+              1,
+              0
+            ],
+            "default": 1,
+            "description": "Route status.",
+            "x-enumDescriptions": {
+              "0": "Disabled.",
+              "1": "Enabled (default)."
+            }
+          },
+          "script": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 102400,
+            "description": "Lua script for plugin orchestration. Cannot be used together with `plugins` or `plugin_config_id`."
+          },
+          "script_id": {
+            "$ref": "#/components/schemas/ResourceId",
+            "description": "Script ID (used internally by APISIX Dashboard)."
+          }
+        },
+        "additionalProperties": false,
+        "anyOf": [
+          {
+            "title": "Plugin and URI required",
+            "required": [
+              "plugins",
+              "uri"
+            ]
+          },
+          {
+            "title": "Upstream and URI required",
+            "required": [
+              "upstream",
+              "uri"
+            ]
+          },
+          {
+            "title": "Upstream ID and URI required",
+            "required": [
+              "upstream_id",
+              "uri"
+            ]
+          },
+          {
+            "title": "Service ID and URI required",
+            "required": [
+              "service_id",
+              "uri"
+            ]
+          },
+          {
+            "title": "Plugin and URIs required",
+            "required": [
+              "plugins",
+              "uris"
+            ]
+          },
+          {
+            "title": "Upstream and URIs required",
+            "required": [
+              "upstream",
+              "uris"
+            ]
+          },
+          {
+            "title": "Upstream ID and URIs required",
+            "required": [
+              "upstream_id",
+              "uris"
+            ]
+          },
+          {
+            "title": "Service ID and URIs required",
+            "required": [
+              "service_id",
+              "uris"
+            ]
+          },
+          {
+            "title": "Script and URI required",
+            "required": [
+              "script",
+              "uri"
+            ]
+          },
+          {
+            "title": "Script and URIs required",
+            "required": [
+              "script",
+              "uris"
+            ]
+          }
+        ]
+      },
       "Service": {
         "type": "object",
         "description": "Service configuration. A service groups an upstream and plugins so multiple routes can share the same backend configuration.",
@@ -9455,6 +9214,69 @@
           },
           "upstream": {
             "$ref": "#/components/schemas/Upstream"
+          },
+          "upstream_id": {
+            "$ref": "#/components/schemas/ResourceId",
+            "description": "Reference to an existing Upstream resource."
+          },
+          "script": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 102400,
+            "description": "Lua script for plugin orchestration."
+          },
+          "enable_websocket": {
+            "type": "boolean",
+            "description": "Enable WebSocket proxying for routes using this service."
+          },
+          "hosts": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "uniqueItems": true,
+            "description": "Hostnames associated with this service."
+          }
+        },
+        "additionalProperties": false
+      },
+      "ServiceRead": {
+        "type": "object",
+        "description": "Stored Service configuration returned by the Admin API.",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/ResourceId"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1,
+            "description": "Human-readable name."
+          },
+          "desc": {
+            "type": "string",
+            "maxLength": 256,
+            "description": "Description of this service."
+          },
+          "labels": {
+            "$ref": "#/components/schemas/Labels"
+          },
+          "create_time": {
+            "type": "integer",
+            "readOnly": true,
+            "description": "Unix timestamp of creation. Read-only."
+          },
+          "update_time": {
+            "type": "integer",
+            "readOnly": true,
+            "description": "Unix timestamp of last update. Read-only."
+          },
+          "plugins": {
+            "$ref": "#/components/schemas/Plugins"
+          },
+          "upstream": {
+            "$ref": "#/components/schemas/UpstreamRead"
           },
           "upstream_id": {
             "$ref": "#/components/schemas/ResourceId",
@@ -9660,28 +9482,24 @@
             "description": "Multiple SNI hostnames. Mutually exclusive with `sni`."
           },
           "cert": {
-            "type": "string",
-            "minLength": 128,
-            "maxLength": 65536,
-            "description": "PEM-encoded server certificate. Can also be a secret reference (`$secret://...`)."
+            "$ref": "#/components/schemas/CertificateOrReference",
+            "description": "PEM-encoded server certificate or an APISIX secret/environment reference."
           },
           "key": {
-            "type": "string",
-            "minLength": 128,
-            "maxLength": 65536,
-            "description": "PEM-encoded private key. Can also be a secret reference (`$secret://...`). **Not returned in GET responses for security.**"
+            "$ref": "#/components/schemas/PrivateKeyOrReference",
+            "description": "PEM-encoded private key or an APISIX secret/environment reference. Not returned in GET responses."
           },
           "certs": {
             "type": "array",
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/CertificateOrReference"
             },
             "description": "Additional certificates for certificate chain or alternative key types."
           },
           "keys": {
             "type": "array",
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/PrivateKeyOrReference"
             },
             "description": "Additional private keys corresponding to `certs`."
           },
@@ -9693,10 +9511,8 @@
             ],
             "properties": {
               "ca": {
-                "type": "string",
-                "minLength": 128,
-                "maxLength": 65536,
-                "description": "PEM-encoded CA certificate for client verification."
+                "$ref": "#/components/schemas/CertificateOrReference",
+                "description": "PEM-encoded CA certificate or an APISIX secret/environment reference for client verification."
               },
               "depth": {
                 "type": "integer",
@@ -9774,7 +9590,180 @@
           ]
         },
         "else": {
-          "title": "SNI not required"
+          "title": "Client certificate",
+          "required": [
+            "key",
+            "cert"
+          ]
+        }
+      },
+      "SSLWrite": {
+        "type": "object",
+        "description": "Stored SSL write-response representation. Private-key fields may contain encrypted values or stored references.",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/ResourceId"
+          },
+          "desc": {
+            "type": "string",
+            "maxLength": 256,
+            "description": "Description."
+          },
+          "labels": {
+            "$ref": "#/components/schemas/Labels"
+          },
+          "create_time": {
+            "type": "integer",
+            "readOnly": true,
+            "description": "Unix timestamp of creation. Read-only."
+          },
+          "update_time": {
+            "type": "integer",
+            "readOnly": true,
+            "description": "Unix timestamp of last update. Read-only."
+          },
+          "type": {
+            "type": "string",
+            "default": "server",
+            "enum": [
+              "server",
+              "client"
+            ],
+            "description": "Certificate type.",
+            "x-enumDescriptions": {
+              "server": "HTTPS termination matched by SNI.",
+              "client": "Client certificate for mTLS with upstream services."
+            }
+          },
+          "sni": {
+            "type": "string",
+            "description": "Server Name Indication (SNI) to match. Supports wildcard prefix (`*.example.com`). Mutually exclusive with `snis`.",
+            "examples": [
+              "api.example.com"
+            ]
+          },
+          "snis": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "description": "Multiple SNI hostnames. Mutually exclusive with `sni`."
+          },
+          "cert": {
+            "$ref": "#/components/schemas/CertificateOrReference",
+            "description": "PEM-encoded server certificate or an APISIX secret/environment reference."
+          },
+          "key": {
+            "$ref": "#/components/schemas/StoredPrivateKeyValue",
+            "description": "Stored private-key value returned by a write operation."
+          },
+          "certs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CertificateOrReference"
+            },
+            "description": "Additional certificates for certificate chain or alternative key types."
+          },
+          "keys": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StoredPrivateKeyValue"
+            },
+            "description": "Additional private keys corresponding to `certs`."
+          },
+          "client": {
+            "type": "object",
+            "description": "mTLS client verification settings.",
+            "required": [
+              "ca"
+            ],
+            "properties": {
+              "ca": {
+                "$ref": "#/components/schemas/CertificateOrReference",
+                "description": "PEM-encoded CA certificate or an APISIX secret/environment reference for client verification."
+              },
+              "depth": {
+                "type": "integer",
+                "minimum": 0,
+                "default": 1,
+                "description": "Maximum certificate chain depth."
+              },
+              "skip_mtls_uri_regex": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "minItems": 1,
+                "uniqueItems": true,
+                "description": "URI regex patterns to skip mTLS verification."
+              }
+            }
+          },
+          "status": {
+            "type": "integer",
+            "enum": [
+              1,
+              0
+            ],
+            "default": 1,
+            "description": "SSL status.",
+            "x-enumDescriptions": {
+              "0": "Disabled.",
+              "1": "Enabled (default)."
+            }
+          },
+          "ssl_protocols": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "TLSv1.1",
+                "TLSv1.2",
+                "TLSv1.3"
+              ]
+            },
+            "maxItems": 3,
+            "uniqueItems": true,
+            "description": "Allowed TLS protocol versions."
+          }
+        },
+        "additionalProperties": false,
+        "if": {
+          "properties": {
+            "type": {
+              "enum": [
+                "server"
+              ]
+            }
+          }
+        },
+        "then": {
+          "oneOf": [
+            {
+              "title": "Single SNI",
+              "required": [
+                "sni",
+                "key",
+                "cert"
+              ]
+            },
+            {
+              "title": "Multiple SNIs",
+              "required": [
+                "snis",
+                "key",
+                "cert"
+              ]
+            }
+          ]
+        },
+        "else": {
+          "title": "Client certificate",
+          "required": [
+            "key",
+            "cert"
+          ]
         }
       },
       "GlobalRule": {
@@ -9919,6 +9908,142 @@
             "type": "boolean",
             "default": false,
             "description": "On a listener configured with both `tls` and `tls_passthrough`, `true` forwards encrypted TLS bytes to the upstream; `false` terminates TLS at APISIX. Ignored on dedicated listeners. Passthrough requires a TCP upstream, not scheme `tls`."
+          },
+          "protocol": {
+            "$ref": "#/components/schemas/StreamRouteProtocol"
+          }
+        },
+        "additionalProperties": false,
+        "not": {
+          "required": [
+            "sni",
+            "snis"
+          ]
+        }
+      },
+      "StreamRouteProtocol": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "superior_id": {
+            "$ref": "#/components/schemas/ResourceId"
+          },
+          "conf": {
+            "type": "object",
+            "description": "Protocol-specific configuration."
+          },
+          "logger": {
+            "type": "array",
+            "items": {
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "filter": {
+                  "type": "array",
+                  "description": "Logger filter rules."
+                },
+                "conf": {
+                  "type": "object",
+                  "description": "Logger plugin configuration."
+                }
+              },
+              "dependentRequired": {
+                "name": [
+                  "conf"
+                ]
+              },
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "StreamRouteRead": {
+        "type": "object",
+        "description": "Stored Stream Route configuration returned by the Admin API.",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/ResourceId"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1,
+            "description": "Human-readable name."
+          },
+          "desc": {
+            "type": "string",
+            "maxLength": 256,
+            "description": "Description."
+          },
+          "labels": {
+            "$ref": "#/components/schemas/Labels"
+          },
+          "create_time": {
+            "type": "integer",
+            "readOnly": true,
+            "description": "Unix timestamp of creation. Read-only."
+          },
+          "update_time": {
+            "type": "integer",
+            "readOnly": true,
+            "description": "Unix timestamp of last update. Read-only."
+          },
+          "remote_addr": {
+            "type": "string",
+            "description": "Client IP address or CIDR range to match."
+          },
+          "server_addr": {
+            "type": "string",
+            "description": "Server IP address to match."
+          },
+          "server_port": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 65535,
+            "description": "Server port to match."
+          },
+          "sni": {
+            "type": "string",
+            "description": "SNI hostname to match. Supports wildcard hostnames. Mutually exclusive with `snis`.",
+            "pattern": "^\\*$|^\\*?[0-9a-zA-Z-._\\[\\]:]+$"
+          },
+          "upstream": {
+            "$ref": "#/components/schemas/UpstreamRead"
+          },
+          "upstream_id": {
+            "$ref": "#/components/schemas/ResourceId",
+            "description": "Reference to an existing Upstream."
+          },
+          "service_id": {
+            "$ref": "#/components/schemas/ResourceId",
+            "description": "Reference to an existing Service."
+          },
+          "plugins": {
+            "$ref": "#/components/schemas/Plugins"
+          },
+          "snis": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "pattern": "^\\*$|^\\*?[0-9a-zA-Z-._\\[\\]:]+$"
+            },
+            "description": "Alternative SNI hostnames to match, including wildcard hostnames. Mutually exclusive with `sni`."
+          },
+          "tls_passthrough": {
+            "type": "boolean",
+            "default": false,
+            "description": "On a listener configured with both `tls` and `tls_passthrough`, `true` forwards encrypted TLS bytes to the upstream; `false` terminates TLS at APISIX. Ignored on dedicated listeners. Passthrough requires a TCP upstream, not scheme `tls`."
+          },
+          "protocol": {
+            "$ref": "#/components/schemas/StreamRouteProtocol"
           }
         },
         "additionalProperties": false,
@@ -10026,30 +10151,15 @@
             "description": "Multiple SNI hostnames. Mutually exclusive with `sni`."
           },
           "cert": {
-            "type": "string",
-            "minLength": 128,
-            "maxLength": 65536,
-            "description": "PEM-encoded server certificate. Can also be a secret reference (`$secret://...`)."
-          },
-          "key": {
-            "type": "string",
-            "minLength": 128,
-            "maxLength": 65536,
-            "description": "PEM-encoded private key. Can also be a secret reference (`$secret://...`). **Not returned in GET responses for security.**"
+            "$ref": "#/components/schemas/CertificateOrReference",
+            "description": "PEM-encoded server certificate or the stored APISIX secret/environment reference."
           },
           "certs": {
             "type": "array",
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/CertificateOrReference"
             },
             "description": "Additional certificates for certificate chain or alternative key types."
-          },
-          "keys": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "description": "Additional private keys corresponding to `certs`."
           },
           "client": {
             "type": "object",
@@ -10059,10 +10169,8 @@
             ],
             "properties": {
               "ca": {
-                "type": "string",
-                "minLength": 128,
-                "maxLength": 65536,
-                "description": "PEM-encoded CA certificate for client verification."
+                "$ref": "#/components/schemas/CertificateOrReference",
+                "description": "PEM-encoded CA certificate or the stored APISIX secret/environment reference for client verification."
               },
               "depth": {
                 "type": "integer",
@@ -10138,7 +10246,10 @@
           ]
         },
         "else": {
-          "title": "SNI not required"
+          "title": "Client certificate",
+          "required": [
+            "cert"
+          ]
         }
       },
       "CredentialEnvelope": {
@@ -10184,13 +10295,13 @@
       },
       "RouteEnvelope": {
         "type": "object",
-        "description": "`Route` wrapped in the etcd-style envelope.",
+        "description": "Stored Route wrapped in the etcd-style envelope.",
         "properties": {
           "key": {
             "type": "string"
           },
           "value": {
-            "$ref": "#/components/schemas/Route"
+            "$ref": "#/components/schemas/RouteRead"
           },
           "createdIndex": {
             "type": "integer"
@@ -10464,13 +10575,13 @@
       },
       "ServiceEnvelope": {
         "type": "object",
-        "description": "`Service` wrapped in the etcd-style envelope.",
+        "description": "Stored Service wrapped in the etcd-style envelope.",
         "properties": {
           "key": {
             "type": "string"
           },
           "value": {
-            "$ref": "#/components/schemas/Service"
+            "$ref": "#/components/schemas/ServiceRead"
           },
           "createdIndex": {
             "type": "integer"
@@ -10505,13 +10616,13 @@
       },
       "UpstreamEnvelope": {
         "type": "object",
-        "description": "`Upstream` wrapped in the etcd-style envelope.",
+        "description": "Stored Upstream wrapped in the etcd-style envelope.",
         "properties": {
           "key": {
             "type": "string"
           },
           "value": {
-            "$ref": "#/components/schemas/Upstream"
+            "$ref": "#/components/schemas/UpstreamRead"
           },
           "createdIndex": {
             "type": "integer"
@@ -10648,6 +10759,28 @@
           "value"
         ]
       },
+      "SSLWriteEnvelope": {
+        "type": "object",
+        "description": "SSL write response, which may contain encrypted private-key fields or stored references.",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "value": {
+            "$ref": "#/components/schemas/SSLWrite"
+          },
+          "createdIndex": {
+            "type": "integer"
+          },
+          "modifiedIndex": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "key",
+          "value"
+        ]
+      },
       "SSLListEnvelope": {
         "type": "object",
         "description": "Paginated list of `SSLRead` envelopes.",
@@ -10751,13 +10884,13 @@
       },
       "StreamRouteEnvelope": {
         "type": "object",
-        "description": "`StreamRoute` wrapped in the etcd-style envelope.",
+        "description": "Stored Stream Route wrapped in the etcd-style envelope.",
         "properties": {
           "key": {
             "type": "string"
           },
           "value": {
-            "$ref": "#/components/schemas/StreamRoute"
+            "$ref": "#/components/schemas/StreamRouteRead"
           },
           "createdIndex": {
             "type": "integer"
@@ -10872,7 +11005,7 @@
               "string",
               "null"
             ],
-            "maxLength": 100,
+            "maxLength": 256,
             "minLength": 1,
             "description": "Human-readable name for the route."
           },
@@ -11663,6 +11796,28 @@
                             "description": "Number of probe timeouts to consider a target unhealthy."
                           }
                         }
+                      },
+                      "http_method": {
+                        "type": "string",
+                        "enum": [
+                          "GET",
+                          "POST",
+                          "PUT",
+                          "DELETE",
+                          "PATCH",
+                          "HEAD",
+                          "OPTIONS",
+                          "CONNECT",
+                          "TRACE",
+                          "PURGE"
+                        ],
+                        "default": "GET",
+                        "description": "HTTP method used for active health-check probes."
+                      },
+                      "http_req_body": {
+                        "type": "string",
+                        "default": "",
+                        "description": "HTTP request body sent by active health-check probes."
                       }
                     }
                   },
@@ -11841,22 +11996,26 @@
                     ]
                   },
                   "client_cert": {
-                    "type": [
-                      "string",
-                      "null"
+                    "anyOf": [
+                      {
+                        "$ref": "#/components/schemas/CertificatePem"
+                      },
+                      {
+                        "type": "null"
+                      }
                     ],
-                    "minLength": 128,
-                    "maxLength": 65536,
-                    "description": "PEM-encoded client certificate for mTLS with the upstream."
+                    "description": "PEM-encoded client certificate, or null to remove the field. To use an SSL resource instead, configure client_cert_id."
                   },
                   "client_key": {
-                    "type": [
-                      "string",
-                      "null"
+                    "anyOf": [
+                      {
+                        "$ref": "#/components/schemas/PrivateKeyPem"
+                      },
+                      {
+                        "type": "null"
+                      }
                     ],
-                    "minLength": 64,
-                    "maxLength": 65536,
-                    "description": "PEM-encoded client private key for mTLS with the upstream."
+                    "description": "PEM-encoded client private key, or null to remove the field. To use an SSL resource instead, configure client_cert_id."
                   },
                   "verify": {
                     "type": [
@@ -11872,9 +12031,7 @@
                     ],
                     "minItems": 1,
                     "items": {
-                      "type": "string",
-                      "minLength": 128,
-                      "maxLength": 65536
+                      "$ref": "#/components/schemas/CertificatePem"
                     },
                     "description": "PEM-encoded CA certificates for HTTPS/gRPCS upstream verification. Replaces the NGINX trust store for this upstream. If omitted, configure and load the shared store using `proxy_ssl_verify` for HTTPS or `grpc_ssl_verify` for gRPCS. See [Configure Upstream HTTPS](/apisix/how-to-guide/traffic-management/tls-and-mtls/configure-upstream-https). Does not enable verification by itself; set `tls.verify` to `true`. Rejected for `ws` and `wss` upstreams."
                   }
@@ -12834,6 +12991,28 @@
                             "description": "Number of probe timeouts to consider a target unhealthy."
                           }
                         }
+                      },
+                      "http_method": {
+                        "type": "string",
+                        "enum": [
+                          "GET",
+                          "POST",
+                          "PUT",
+                          "DELETE",
+                          "PATCH",
+                          "HEAD",
+                          "OPTIONS",
+                          "CONNECT",
+                          "TRACE",
+                          "PURGE"
+                        ],
+                        "default": "GET",
+                        "description": "HTTP method used for active health-check probes."
+                      },
+                      "http_req_body": {
+                        "type": "string",
+                        "default": "",
+                        "description": "HTTP request body sent by active health-check probes."
                       }
                     }
                   },
@@ -13012,22 +13191,26 @@
                     ]
                   },
                   "client_cert": {
-                    "type": [
-                      "string",
-                      "null"
+                    "anyOf": [
+                      {
+                        "$ref": "#/components/schemas/CertificatePem"
+                      },
+                      {
+                        "type": "null"
+                      }
                     ],
-                    "minLength": 128,
-                    "maxLength": 65536,
-                    "description": "PEM-encoded client certificate for mTLS with the upstream."
+                    "description": "PEM-encoded client certificate, or null to remove the field. To use an SSL resource instead, configure client_cert_id."
                   },
                   "client_key": {
-                    "type": [
-                      "string",
-                      "null"
+                    "anyOf": [
+                      {
+                        "$ref": "#/components/schemas/PrivateKeyPem"
+                      },
+                      {
+                        "type": "null"
+                      }
                     ],
-                    "minLength": 64,
-                    "maxLength": 65536,
-                    "description": "PEM-encoded client private key for mTLS with the upstream."
+                    "description": "PEM-encoded client private key, or null to remove the field. To use an SSL resource instead, configure client_cert_id."
                   },
                   "verify": {
                     "type": [
@@ -13043,9 +13226,7 @@
                     ],
                     "minItems": 1,
                     "items": {
-                      "type": "string",
-                      "minLength": 128,
-                      "maxLength": 65536
+                      "$ref": "#/components/schemas/CertificatePem"
                     },
                     "description": "PEM-encoded CA certificates for HTTPS/gRPCS upstream verification. Replaces the NGINX trust store for this upstream. If omitted, configure and load the shared store using `proxy_ssl_verify` for HTTPS or `grpc_ssl_verify` for gRPCS. See [Configure Upstream HTTPS](/apisix/how-to-guide/traffic-management/tls-and-mtls/configure-upstream-https). Does not enable verification by itself; set `tls.verify` to `true`. Rejected for `ws` and `wss` upstreams."
                   }
@@ -13768,6 +13949,28 @@
                         "description": "Number of probe timeouts to consider a target unhealthy."
                       }
                     }
+                  },
+                  "http_method": {
+                    "type": "string",
+                    "enum": [
+                      "GET",
+                      "POST",
+                      "PUT",
+                      "DELETE",
+                      "PATCH",
+                      "HEAD",
+                      "OPTIONS",
+                      "CONNECT",
+                      "TRACE",
+                      "PURGE"
+                    ],
+                    "default": "GET",
+                    "description": "HTTP method used for active health-check probes."
+                  },
+                  "http_req_body": {
+                    "type": "string",
+                    "default": "",
+                    "description": "HTTP request body sent by active health-check probes."
                   }
                 }
               },
@@ -13946,22 +14149,26 @@
                 ]
               },
               "client_cert": {
-                "type": [
-                  "string",
-                  "null"
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/CertificatePem"
+                  },
+                  {
+                    "type": "null"
+                  }
                 ],
-                "minLength": 128,
-                "maxLength": 65536,
-                "description": "PEM-encoded client certificate for mTLS with the upstream."
+                "description": "PEM-encoded client certificate, or null to remove the field. To use an SSL resource instead, configure client_cert_id."
               },
               "client_key": {
-                "type": [
-                  "string",
-                  "null"
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/PrivateKeyPem"
+                  },
+                  {
+                    "type": "null"
+                  }
                 ],
-                "minLength": 64,
-                "maxLength": 65536,
-                "description": "PEM-encoded client private key for mTLS with the upstream."
+                "description": "PEM-encoded client private key, or null to remove the field. To use an SSL resource instead, configure client_cert_id."
               },
               "verify": {
                 "type": [
@@ -13977,9 +14184,7 @@
                 ],
                 "minItems": 1,
                 "items": {
-                  "type": "string",
-                  "minLength": 128,
-                  "maxLength": 65536
+                  "$ref": "#/components/schemas/CertificatePem"
                 },
                 "description": "PEM-encoded CA certificates for HTTPS/gRPCS upstream verification. Replaces the NGINX trust store for this upstream. If omitted, configure and load the shared store using `proxy_ssl_verify` for HTTPS or `grpc_ssl_verify` for gRPCS. See [Configure Upstream HTTPS](/apisix/how-to-guide/traffic-management/tls-and-mtls/configure-upstream-https). Does not enable verification by itself; set `tls.verify` to `true`. Rejected for `ws` and `wss` upstreams."
               }
@@ -14662,22 +14867,26 @@
             "description": "Multiple SNI hostnames. Mutually exclusive with `sni`."
           },
           "cert": {
-            "type": [
-              "string",
-              "null"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CertificateOrReference"
+              },
+              {
+                "type": "null"
+              }
             ],
-            "minLength": 128,
-            "maxLength": 65536,
-            "description": "PEM-encoded server certificate. Can also be a secret reference (`$secret://...`)."
+            "description": "PEM-encoded server certificate, APISIX secret/environment reference, or null to remove the field."
           },
           "key": {
-            "type": [
-              "string",
-              "null"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PrivateKeyOrReference"
+              },
+              {
+                "type": "null"
+              }
             ],
-            "minLength": 128,
-            "maxLength": 65536,
-            "description": "PEM-encoded private key. Can also be a secret reference (`$secret://...`). **Not returned in GET responses for security.**"
+            "description": "PEM-encoded private key, APISIX secret/environment reference, or null to remove the field. Not returned in GET responses."
           },
           "certs": {
             "type": [
@@ -14685,7 +14894,7 @@
               "null"
             ],
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/CertificateOrReference"
             },
             "description": "Additional certificates for certificate chain or alternative key types."
           },
@@ -14695,7 +14904,7 @@
               "null"
             ],
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/PrivateKeyOrReference"
             },
             "description": "Additional private keys corresponding to `certs`."
           },
@@ -14707,13 +14916,15 @@
             "description": "mTLS client verification settings.",
             "properties": {
               "ca": {
-                "type": [
-                  "string",
-                  "null"
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/CertificateOrReference"
+                  },
+                  {
+                    "type": "null"
+                  }
                 ],
-                "minLength": 128,
-                "maxLength": 65536,
-                "description": "PEM-encoded CA certificate for client verification."
+                "description": "PEM-encoded CA certificate, APISIX secret/environment reference, or null to remove the field."
               },
               "depth": {
                 "type": [
@@ -15199,7 +15410,7 @@
           },
           "name": {
             "type": "string",
-            "maxLength": 100,
+            "maxLength": 256,
             "minLength": 1,
             "description": "Human-readable name for the route."
           },
@@ -15817,28 +16028,24 @@
             "description": "Multiple SNI hostnames. Mutually exclusive with `sni`."
           },
           "cert": {
-            "type": "string",
-            "minLength": 128,
-            "maxLength": 65536,
-            "description": "PEM-encoded server certificate. Can also be a secret reference (`$secret://...`)."
+            "$ref": "#/components/schemas/CertificateOrReference",
+            "description": "PEM-encoded server certificate or an APISIX secret/environment reference."
           },
           "key": {
-            "type": "string",
-            "minLength": 128,
-            "maxLength": 65536,
-            "description": "PEM-encoded private key. Can also be a secret reference (`$secret://...`). **Not returned in GET responses for security.**"
+            "$ref": "#/components/schemas/PrivateKeyOrReference",
+            "description": "PEM-encoded private key or an APISIX secret/environment reference. Not returned in GET responses."
           },
           "certs": {
             "type": "array",
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/CertificateOrReference"
             },
             "description": "Additional certificates for certificate chain or alternative key types."
           },
           "keys": {
             "type": "array",
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/PrivateKeyOrReference"
             },
             "description": "Additional private keys corresponding to `certs`."
           },
@@ -15850,10 +16057,8 @@
             ],
             "properties": {
               "ca": {
-                "type": "string",
-                "minLength": 128,
-                "maxLength": 65536,
-                "description": "PEM-encoded CA certificate for client verification."
+                "$ref": "#/components/schemas/CertificateOrReference",
+                "description": "PEM-encoded CA certificate or an APISIX secret/environment reference for client verification."
               },
               "depth": {
                 "type": "integer",
@@ -15935,7 +16140,11 @@
           ]
         },
         "else": {
-          "title": "SNI not required"
+          "title": "Client certificate",
+          "required": [
+            "key",
+            "cert"
+          ]
         }
       },
       "ConfigValidationStreamRoute": {
@@ -16020,6 +16229,9 @@
             "type": "boolean",
             "default": false,
             "description": "On a listener configured with both `tls` and `tls_passthrough`, `true` forwards encrypted TLS bytes to the upstream; `false` terminates TLS at APISIX. Ignored on dedicated listeners. Passthrough requires a TCP upstream, not scheme `tls`."
+          },
+          "protocol": {
+            "$ref": "#/components/schemas/StreamRouteProtocol"
           }
         },
         "additionalProperties": false,
