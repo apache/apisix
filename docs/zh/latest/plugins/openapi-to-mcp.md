@@ -51,6 +51,7 @@ MCP 服务运行在 APISIX 内部，不需要额外的进程或服务。
 | base_url | string | 是 | | | 工具调用的 API 基础地址，每个操作的路径拼接在其后。支持 [APISIX 变量](../apisix-variable.md) 和 [NGINX 变量](http://nginx.org/en/docs/varindex.html)，例如 `http://${http_x_backend}`。 |
 | headers | object | 否 | | | 发往 API 的每个请求都会携带的请求头。值支持变量，例如 `"Authorization": "Bearer ${http_x_api_token}"`。 |
 | flatten_parameters | boolean | 否 | `false` | | 为 `false` 时，工具输入中的参数分别嵌套在 `pathParameters`、`queryParameters` 和 `headerParameters` 下；为 `true` 时，参数直接放在输入对象的顶层。 |
+| allow_encoded_path_separators | boolean | 否 | `false` | | 是否允许路径参数值包含 `/` 或 `\`；向上游发送请求前会对它们进行百分号编码。仅当上游始终将编码后的分隔符视为数据时才启用。由分隔符划分的空片段、`.` 片段和 `..` 片段仍不允许。 |
 | max_response_body_size | integer | 否 | `1048576` | >= 1024 | 读取到工具结果中的上游响应体大小上限（字节）。超出时调用失败并返回 `RESPONSE_TOO_LARGE`，不会把响应缓冲下来。超过 256 KiB 的工具结果以紧凑 JSON 返回，不再缩进。 |
 | max_document_size | integer | 否 | `4194304` | >= 1024 | OpenAPI 文档，以及文档内 `http(s)` 形式 `$ref` 拉取的文档的大小上限（字节）。超出上限的文档不会读入 worker，该路由直接报错。 |
 | max_expanded_nodes | integer | 否 | `50000` | >= 1000 | 单次 `$ref` 展开在工具输入 Schema 中最多产生的节点数。超出后，仍在展开中的 `$ref` 及其后的所有 `$ref` 都降级为通用对象；足够大的正常文档也可能触及此上限。只有 `paths` 会被展开，文档其他部分不计入。 |
@@ -65,7 +66,7 @@ MCP 服务运行在 APISIX 内部，不需要额外的进程或服务。
 * 查询参数按其 `style` 和 `explode` 序列化，规则见 [OpenAPI Parameter Object](https://spec.openapis.org/oas/v3.0.3#style-values)。使用默认值（`form`，展开）时，`tags: ["a", "b"]` 发送为 `tags=a&tags=b`，而不是 `tags[]=a&tags[]=b`；声明为 `explode: false` 的数组参数发送为 `tags=a,b`。同时支持 `spaceDelimited`、`pipeDelimited` 和 `deepObject`。如果 API 要求方括号形式，需要另外通过改写查询字符串的插件处理。
 * 请求体使用操作中声明的媒体类型发送，除非 `headers` 中已设置 `Content-Type`。
 * header 参数在插件自身的 `headers` 之前写入，因此工具调用无法覆盖路由添加的凭据；取值中含换行符的 header 会被丢弃。
-* 路径参数不能含有斜杠或反斜杠；所有参数填充完成后，由模板表达式参与构成的片段也不能为空、为 `.` 或 `..`。两者都会让调用失败并返回 `isError`，因为接收请求的服务器会将这样的路径解析为该操作未描述的路径。参数只填充片段一部分时不受此限制：`/files/{name}.json` 的 `name` 取 `..` 时访问的是 `/files/...json`。
+* 默认情况下，路径参数不能包含 `/` 或 `\`。仅当上游始终将 `%2F` 和 `%5C` 视为数据时，才应将 `allow_encoded_path_separators` 设为 `true`；此时插件允许分隔符，但仍拒绝含有空、`.` 或 `..` 分隔片段的值。所有参数填充完成后，由模板表达式参与构成的片段也不能为空、为 `.` 或 `..`。判断以最终片段为准，因此 `/files/{name}.json` 的 `name` 取 `..` 时会被接受，访问 `/files/...json`。拒绝时调用失败并返回 `isError`。
 
 使用 SSE 传输时，`base_url` 和 `headers` 中的变量在打开事件流的那次请求上解析，解析结果用于该会话的所有消息。`"Authorization": "Bearer ${http_x_api_token}"` 这类配置因此在 SSE 下同样可用：后续的消息请求只携带会话 ID，此时已无从解析变量。解析结果会随会话记录存放在共享字典 `mcp-session` 中直到会话结束，因此调用方以这种方式提供的凭据会在网关内存中最长保留 30 分钟；配置中不含变量时则不存储。
 

@@ -74,6 +74,62 @@ local DOCUMENTS = {
         } } },
     },
 
+    -- path templates that exercise validation after every expression is filled
+    ["/path-safety.json"] = {
+        openapi = "3.0.0",
+        info = { title = "Path safety", version = "1" },
+        paths = {
+            ["/x/{a}{b}"] = { get = {
+                operationId = "adjacentPathParameters",
+                parameters = {
+                    { name = "a", ["in"] = "path", required = true,
+                      schema = { type = "string" } },
+                    { name = "b", ["in"] = "path", required = true,
+                      schema = { type = "string" } },
+                },
+            } },
+            ["/x/{a}.{b}"] = { get = {
+                operationId = "separatedPathParameters",
+                parameters = {
+                    { name = "a", ["in"] = "path", required = true,
+                      schema = { type = "string" } },
+                    { name = "b", ["in"] = "path", required = true,
+                      schema = { type = "string" } },
+                },
+            } },
+            ["/x/.{a}"] = { get = {
+                operationId = "prefixedPathParameter",
+                parameters = {
+                    { name = "a", ["in"] = "path", required = true,
+                      schema = { type = "string" } },
+                },
+            } },
+            ["/{Bucket}?acl"] = { get = {
+                operationId = "getBucketAcl",
+                parameters = {
+                    { name = "Bucket", ["in"] = "path", required = true,
+                      schema = { type = "string" } },
+                },
+            } },
+            ["/{Bucket}/{Key}#acl"] = { get = {
+                operationId = "getObjectAcl",
+                parameters = {
+                    { name = "Bucket", ["in"] = "path", required = true,
+                      schema = { type = "string" } },
+                    { name = "Key", ["in"] = "path", required = true,
+                      schema = { type = "string" } },
+                },
+            } },
+            ["/encoded/{path}"] = { get = {
+                operationId = "getEncodedPath",
+                parameters = {
+                    { name = "path", ["in"] = "path", required = true,
+                      schema = { type = "string" } },
+                },
+            } },
+        },
+    },
+
     -- a tool that declares one header parameter
     ["/headerparam.json"] = {
         openapi = "3.0.0",

@@ -27,6 +27,7 @@ local str_upper    = string.upper
 local str_gsub     = string.gsub
 local str_gmatch   = string.gmatch
 local str_find     = string.find
+local str_sub      = string.sub
 local table_concat = table.concat
 local table_sort   = table.sort
 local escape_uri   = ngx.escape_uri
@@ -124,11 +125,10 @@ local function apply_query_defaults(tool, query)
 end
 
 
--- A path parameter fills part of one segment of the operation's path, so its
--- value cannot carry a separator. A "/" goes out as "%2F", which a server that
--- accepts an encoded separator decodes back into one, and the call would then
--- address a path the operation does not describe. This reads the value as it
--- arrived, because the encoding hides the separator from the finished path.
+-- A separator in a path parameter is percent-encoded, but servers disagree on
+-- whether to preserve it as data or decode it into path syntax. The secure
+-- default is to reject it; a Route may opt in for an API that deliberately
+-- accepts encoded separators.
 local function has_separator(value)
     -- core.string.find is a plain search; this is a pattern, so it needs
     -- string.find itself. A backslash is a separator on some servers.
@@ -136,10 +136,53 @@ local function has_separator(value)
 end
 
 
+-- Even with encoded separators enabled, refuse values whose components would
+-- be resolved away after a server decodes them. Empty components cover leading,
+-- trailing and repeated separators. Both slash spellings are considered: a
+-- backslash is a separator on some servers.
+local function resolved_away(segment)
+    return segment == "" or segment == "." or segment == ".."
+end
+
+
+local function separator_creates_unsafe_component(value)
+    if not has_separator(value) then
+        return false
+    end
+
+    for component in str_gmatch(value .. "/", "([^/\\]*)[/\\]") do
+        if resolved_away(component) then
+            return true
+        end
+    end
+    return false
+end
+
+
+-- Return only the URI path. A template expression name may itself contain a
+-- question mark or hash, so only a delimiter outside braces starts the query
+-- or fragment. Parameter values cannot introduce one: escape_uri encodes it.
+local function uri_path(value)
+    local in_expression = false
+    for index = 1, #value do
+        local char = str_sub(value, index, index)
+        if char == "{" then
+            in_expression = true
+        elseif char == "}" then
+            in_expression = false
+        elseif not in_expression and (char == "?" or char == "#") then
+            return str_sub(value, 1, index - 1)
+        end
+    end
+    return value
+end
+
+
 -- The segments of a path, with the empty one a leading or trailing slash
 -- leaves: "/items/x" is { "", "items", "x" }.
-local function path_segments(path)
+local function path_segments(value)
     local segments = {}
+    local path = uri_path(value)
     for segment in str_gmatch(path .. "/", "([^/]*)/") do
         segments[#segments + 1] = segment
     end
@@ -154,19 +197,19 @@ end
 -- The finished path does.
 --
 -- Only the segments an expression helped build are checked: one the template
--- contributes by itself is not the caller's to shift. Rejecting a separator
--- above keeps both segment lists the same length, so they line up by index.
-local function resolved_away(segment)
-    return segment == "" or segment == "." or segment == ".."
-end
-
-
-local function build_path(template, path_params)
+-- contributes by itself is not the caller's to shift. Encoded separators do
+-- not add a literal slash to the finished path, so the segment lists still
+-- line up by index when the Route opts in to them.
+local function build_path(template, path_params, allow_encoded_separators)
     local path = template
     for name, value in pairs(path_params) do
         local text = tostring(value)
-        if has_separator(text) then
+        if has_separator(text) and not allow_encoded_separators then
             return nil, "path parameter " .. name .. " cannot contain a path separator"
+        end
+        if allow_encoded_separators and separator_creates_unsafe_component(text) then
+            return nil, "path parameter " .. name ..
+                        " cannot contain an empty or dot path component"
         end
         -- the name is a literal, so escape any pattern magic in it
         local pattern = "{" .. str_gsub(name, "([%^%$%(%)%%%.%[%]%*%+%-%?])", "%%%1") .. "}"
@@ -415,8 +458,12 @@ function _M.call(tool, arguments, opts)
     local path_params, query_params, header_params = split_arguments(tool, arguments)
     apply_query_defaults(tool, query_params)
 
-    local path, path_err = build_path(tool.path_template, path_params)
+    local allow_encoded_separators = opts.conf and
+                                     opts.conf.allow_encoded_path_separators == true
+    local path, path_err = build_path(tool.path_template, path_params,
+                                      allow_encoded_separators)
     if not path then
+        core.log.warn("rejected an openapi-to-mcp tool call: ", path_err)
         return nil, path_err
     end
     local query = build_query(tool, query_params)

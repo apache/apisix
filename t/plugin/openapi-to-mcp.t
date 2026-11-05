@@ -282,14 +282,17 @@ data:\s*/mcp\?sessionId=.*
         content_by_lua_block {
             local plugin = require("apisix.plugins.openapi-to-mcp")
             for _, flatten in ipairs({ true, false }) do
-                local ok, err = plugin.check_schema({
-                    base_url = "http://127.0.0.1:11460",
-                    openapi_url = "http://127.0.0.1:11460/petstore.json",
-                    flatten_parameters = flatten,
-                })
-                if not ok then
-                    ngx.say(err)
-                    return
+                for _, allow_separators in ipairs({ true, false }) do
+                    local ok, err = plugin.check_schema({
+                        base_url = "http://127.0.0.1:11460",
+                        openapi_url = "http://127.0.0.1:11460/petstore.json",
+                        flatten_parameters = flatten,
+                        allow_encoded_path_separators = allow_separators,
+                    })
+                    if not ok then
+                        ngx.say(err)
+                        return
+                    end
                 end
             end
 
@@ -1743,3 +1746,244 @@ timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
     2>&1 | cat
 --- response_body eval
 qr/(?s)(?=.*"isError":true)(?=.*path parameter name cannot contain a path separator)/
+
+
+
+=== TEST 99: a route over path templates with several expressions and URI suffixes
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "streamable_http",
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/path-safety.json",
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 100: adjacent expressions are judged as one finished segment
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"adjacentPathParameters","arguments":{"pathParameters":{"a":".","b":"."}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/(?s)(?=.*"isError":true)(?=.*cannot produce an empty or dot path segment)/
+
+
+
+=== TEST 101: literals between expressions take part in the finished segment
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"separatedPathParameters","arguments":{"pathParameters":{"a":"","b":""}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/(?s)(?=.*"isError":true)(?=.*cannot produce an empty or dot path segment)/
+
+
+
+=== TEST 102: a literal prefix can complete a dot segment
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"prefixedPathParameter","arguments":{"pathParameters":{"a":"."}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/(?s)(?=.*"isError":true)(?=.*cannot produce an empty or dot path segment)/
+
+
+
+=== TEST 103: a query suffix does not hide a dot path segment
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"getBucketAcl","arguments":{"pathParameters":{"Bucket":".."}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/(?s)(?=.*"isError":true)(?=.*cannot produce an empty or dot path segment)/
+
+
+
+=== TEST 104: a query suffix does not hide an empty path segment
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"getBucketAcl","arguments":{"pathParameters":{"Bucket":""}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/(?s)(?=.*"isError":true)(?=.*cannot produce an empty or dot path segment)/
+
+
+
+=== TEST 105: a fragment suffix does not hide a dot path segment
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"getObjectAcl","arguments":{"pathParameters":{"Bucket":"b","Key":".."}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/(?s)(?=.*"isError":true)(?=.*cannot produce an empty or dot path segment)/
+
+
+
+=== TEST 106: a safe query-suffixed path is still sent unchanged
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"getBucketAcl","arguments":{"pathParameters":{"Bucket":"reports"}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/seen_path.*reports\?acl/
+
+
+
+=== TEST 107: an ordinary separator is rejected by default and logged
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"getEncodedPath","arguments":{"pathParameters":{"path":"group/project"}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/(?s)(?=.*"isError":true)(?=.*path parameter path cannot contain a path separator)/
+--- error_log
+rejected an openapi-to-mcp tool call: path parameter path cannot contain a path separator
+
+
+
+=== TEST 108: path validation also applies to flattened arguments
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "streamable_http",
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/path-safety.json",
+                    flatten_parameters = true,
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 109: a flattened call is judged on its finished segment
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"adjacentPathParameters","arguments":{"a":".","b":"."}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/(?s)(?=.*"isError":true)(?=.*cannot produce an empty or dot path segment)/
+
+
+
+=== TEST 110: a route can opt in to encoded path separators
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "streamable_http",
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/path-safety.json",
+                    allow_encoded_path_separators = true,
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 111: the opt-in sends a slash as data
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"getEncodedPath","arguments":{"pathParameters":{"path":"group/project"}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/seen_path.*encoded\/group%2Fproject/
+
+
+
+=== TEST 112: the opt-in sends a backslash as data
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"getEncodedPath","arguments":{"pathParameters":{"path":"group\\project"}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/seen_path.*encoded\/group%5Cproject/
+
+
+
+=== TEST 113: the opt-in still rejects a leading parent component
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"getEncodedPath","arguments":{"pathParameters":{"path":"../admin"}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/(?s)(?=.*"isError":true)(?=.*cannot contain an empty or dot path component)/
+
+
+
+=== TEST 114: the opt-in still rejects an embedded parent component
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"getEncodedPath","arguments":{"pathParameters":{"path":"a/../b"}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/(?s)(?=.*"isError":true)(?=.*cannot contain an empty or dot path component)/
+
+
+
+=== TEST 115: the opt-in still rejects an empty component
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"getEncodedPath","arguments":{"pathParameters":{"path":"a//b"}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/(?s)(?=.*"isError":true)(?=.*cannot contain an empty or dot path component)/
+
+
+
+=== TEST 116: encoded query and fragment characters remain parameter data
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"getEncodedPath","arguments":{"pathParameters":{"path":"a?b#c"}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/seen_path.*encoded\/a%3Fb%23c/
