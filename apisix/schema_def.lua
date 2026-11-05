@@ -1223,8 +1223,8 @@ _M.plugin_injected_schema = {
                 description = "the phase at which filter is evaluated. Functions of the "..
                               "plugin in earlier phases run regardless of the filter",
                 type = "string",
-                enum = {"rewrite", "access", "before_proxy", "header_filter", "body_filter",
-                        "log"},
+                enum = {"access", "before_proxy", "lua_body_filter", "header_filter",
+                        "body_filter", "log"},
             },
             pre_function = {
                 description = "function to be executed in each phase " ..

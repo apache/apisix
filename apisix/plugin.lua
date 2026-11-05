@@ -535,32 +535,6 @@ function _M.trace_expected_plugins_for_debug(api_ctx)
 end
 
 
--- The order in which every phase passed to meta_filter runs in a request.
--- preread shares the rank of access so that on a stream route, which runs neither
--- rewrite nor access, a filter_phase naming either decides at preread.
--- lua_body_filter is called from before_proxy, and its first call comes before the
--- header_filter it triggers. Later calls are interleaved with body_filter, so
--- meta_filter reads a stored decision before looking at this order.
--- A WebSocket route runs no header_filter or body_filter, so the ws_* phases rank
--- after them: a filter_phase naming either decides at the next ws_* phase.
-local PHASE_ORDER = {
-    rewrite = 1,
-    rewrite_in_consumer = 2,
-    access = 3,
-    preread = 3,
-    before_proxy = 4,
-    lua_body_filter = 5,
-    header_filter = 6,
-    body_filter = 7,
-    delayed_body_filter = 8,
-    ws_handshake = 9,
-    ws_client_frame = 10,
-    ws_upstream_frame = 10,
-    ws_close = 11,
-    log = 12,
-}
-
-
 local function meta_filter(ctx, plugin_name, plugin_conf, phase)
     local filter = plugin_conf._meta and plugin_conf._meta.filter
     if not filter then
@@ -575,7 +549,7 @@ local function meta_filter(ctx, plugin_name, plugin_conf, phase)
     end
 
     local filter_phase = plugin_conf._meta.filter_phase
-    if filter_phase and PHASE_ORDER[phase] < PHASE_ORDER[filter_phase] then
+    if filter_phase and phase ~= filter_phase then
         return true
     end
 
@@ -1039,34 +1013,14 @@ end
 
 
 
-local HTTP_PHASE_FUNCTIONS = {
-    "rewrite", "access", "before_proxy", "lua_body_filter", "header_filter", "body_filter",
-    "delayed_body_filter", "ws_handshake", "ws_client_frame", "ws_upstream_frame", "ws_close",
-    "log",
-}
-local STREAM_PHASE_FUNCTIONS = {"preread", "before_proxy", "log"}
-
-
-local function check_filter_phase(name, plugin_obj, plugin_conf, phase_functions)
+local function check_filter_phase(name, plugin_obj, plugin_conf)
     local filter_phase = plugin_conf._meta and plugin_conf._meta.filter_phase
-    if not filter_phase then
-        return true
+    if filter_phase and not plugin_obj[filter_phase] then
+        return false, "invalid _meta.filter_phase of plugin " .. name .. ": it has no "
+                      .. filter_phase .. " function"
     end
 
-    local order = PHASE_ORDER[filter_phase]
-    if not order then
-        return false, "invalid _meta.filter_phase of plugin " .. name .. ": "
-                      .. tostring(filter_phase)
-    end
-
-    for _, phase in ipairs(phase_functions) do
-        if plugin_obj[phase] and PHASE_ORDER[phase] >= order then
-            return true
-        end
-    end
-
-    return false, "invalid _meta.filter_phase of plugin " .. name .. ": it has no function"
-                  .. " at or after the " .. filter_phase .. " phase"
+    return true
 end
 
 
@@ -1128,7 +1082,7 @@ local function check_single_plugin_schema(name, plugin_conf, schema_type, skip_d
         end
     end
 
-    return check_filter_phase(name, plugin_obj, plugin_conf, HTTP_PHASE_FUNCTIONS)
+    return check_filter_phase(name, plugin_obj, plugin_conf)
 end
 
 
@@ -1359,8 +1313,7 @@ local function stream_check_schema(plugins_conf, schema_type, skip_disabled_plug
             end
         end
 
-        local ok, err = check_filter_phase(name, plugin_obj, plugin_conf,
-                                           STREAM_PHASE_FUNCTIONS)
+        local ok, err = check_filter_phase(name, plugin_obj, plugin_conf)
         if not ok then
             return false, err
         end

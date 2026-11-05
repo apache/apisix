@@ -35,6 +35,9 @@ add_block_preprocessor(sub {
         content_by_lua_block {
             ngx.sleep(tonumber(ngx.var.arg_delay) or 0)
             ngx.status = tonumber(ngx.var.arg_code) or 200
+            if ngx.status == 204 or ngx.status == 304 then
+                return ngx.exit(ngx.status)
+            end
             ngx.header["Content-Type"] = "application/json"
             ngx.print('{"from":"upstream"}')
         }
@@ -63,21 +66,23 @@ __DATA__
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local cjson = require("cjson.safe")
+            local filter = {{"status", "==", 200}}
             local cases = {
                 {name = "bad enum", plugin = "file-logger", conf = {path = "x.log", _meta = {
-                    filter = {{"status", "==", 200}}, filter_phase = "balancer"}}},
+                    filter = filter, filter_phase = "balancer"}}},
+                {name = "rewrite", plugin = "cors", conf = {_meta = {
+                    filter = filter, filter_phase = "rewrite"}}},
                 {name = "no filter", plugin = "file-logger", conf = {path = "x.log", _meta = {
                     filter_phase = "log"}}},
-                {name = "last function is access", plugin = "limit-count", conf = {
+                {name = "no such function", plugin = "file-logger", conf = {path = "x.log", _meta = {
+                    filter = filter, filter_phase = "header_filter"}}},
+                {name = "no later function", plugin = "limit-count", conf = {
                     count = 1, time_window = 60, _meta = {
-                    filter = {{"status", "==", 200}}, filter_phase = "header_filter"}}},
-                {name = "last function is rewrite", plugin = "proxy-rewrite", conf = {
-                    uri = "/x", _meta = {
-                    filter = {{"status", "==", 200}}, filter_phase = "access"}}},
-                {name = "last function is lua_body_filter", plugin = "ai-aws-content-moderation",
-                 conf = {comprehend = {access_key_id = "a", secret_access_key = "b",
-                                       region = "us-east-1"}, _meta = {
-                    filter = {{"status", "==", 200}}, filter_phase = "header_filter"}}},
+                    filter = filter, filter_phase = "log"}}},
+                {name = "only lua_body_filter", plugin = "ai-aws-content-moderation", conf = {
+                    comprehend = {access_key_id = "a", secret_access_key = "b",
+                                  region = "us-east-1"}, _meta = {
+                    filter = filter, filter_phase = "header_filter"}}},
             }
             for _, case in ipairs(cases) do
                 local code, body = t("/apisix/admin/routes/1", ngx.HTTP_PUT, cjson.encode({
@@ -91,26 +96,34 @@ __DATA__
     }
 --- response_body
 bad enum: 400 failed to check the configuration of plugin file-logger err: property "_meta" validation failed: property "filter_phase" validation failed: matches none of the enum values
+rewrite: 400 failed to check the configuration of plugin cors err: property "_meta" validation failed: property "filter_phase" validation failed: matches none of the enum values
 no filter: 400 failed to check the configuration of plugin file-logger err: property "_meta" validation failed: property "filter" is required when "filter_phase" is set
-last function is access: 400 invalid _meta.filter_phase of plugin limit-count: it has no function at or after the header_filter phase
-last function is rewrite: 400 invalid _meta.filter_phase of plugin proxy-rewrite: it has no function at or after the access phase
-last function is lua_body_filter: 400 invalid _meta.filter_phase of plugin ai-aws-content-moderation: it has no function at or after the header_filter phase
+no such function: 400 invalid _meta.filter_phase of plugin file-logger: it has no header_filter function
+no later function: 400 invalid _meta.filter_phase of plugin limit-count: it has no log function
+only lua_body_filter: 400 invalid _meta.filter_phase of plugin ai-aws-content-moderation: it has no header_filter function
 
 
 
-=== TEST 2: filter_phase is accepted at a plugin's last function, and checked on stream routes
+=== TEST 2: filter_phase is accepted when the plugin has that function, also on stream routes
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local cjson = require("cjson.safe")
-            local code, body = t("/apisix/admin/routes/1", ngx.HTTP_PUT, cjson.encode({
-                uri = "/fp",
-                plugins = {["limit-count"] = {count = 1, time_window = 60, _meta = {
-                    filter = {{"arg_a", "==", "1"}}, filter_phase = "access"}}},
-                upstream = {type = "roundrobin", nodes = {["127.0.0.1:1980"] = 1}},
-            }))
-            ngx.say("access on limit-count: ", code < 300 and "ok" or body)
+            local function route(plugin, conf, filter_phase)
+                conf._meta = {filter = {{"arg_a", "==", "1"}}, filter_phase = filter_phase}
+                local code, body = t("/apisix/admin/routes/1", ngx.HTTP_PUT, cjson.encode({
+                    uri = "/fp",
+                    plugins = {[plugin] = conf},
+                    upstream = {type = "roundrobin", nodes = {["127.0.0.1:1980"] = 1}},
+                }))
+                ngx.say(plugin, " ", filter_phase, ": ", code < 300 and "ok" or body)
+            end
+
+            route("limit-count", {count = 1, time_window = 60}, "access")
+            route("file-logger", {path = "x.log"}, "body_filter")
+            route("ai-aws-content-moderation", {comprehend = {access_key_id = "a",
+                  secret_access_key = "b", region = "us-east-1"}}, "lua_body_filter")
 
             local function stream_route(plugin, conf, filter_phase)
                 conf._meta = {filter = {{"remote_addr", "==", "127.0.0.1"}},
@@ -120,10 +133,10 @@ last function is lua_body_filter: 400 invalid _meta.filter_phase of plugin ai-aw
                         plugins = {[plugin] = conf},
                         upstream = {type = "roundrobin", nodes = {["127.0.0.1:1995"] = 1}},
                     }))
-                ngx.say(plugin, " ", filter_phase, ": ", code < 300 and "ok" or body)
+                ngx.say("stream ", plugin, " ", filter_phase, ": ",
+                        code < 300 and "ok" or body)
             end
 
-            stream_route("ip-restriction", {blacklist = {"10.0.0.1"}}, "access")
             stream_route("ip-restriction", {blacklist = {"10.0.0.1"}}, "log")
             stream_route("limit-conn", {conn = 1, burst = 0, default_conn_delay = 0.1,
                                         key = "remote_addr"}, "log")
@@ -132,15 +145,16 @@ last function is lua_body_filter: 400 invalid _meta.filter_phase of plugin ai-aw
         }
     }
 --- response_body
-access on limit-count: ok
-ip-restriction access: ok
-ip-restriction log: {"error_msg":"invalid _meta.filter_phase of plugin ip-restriction: it has no function at or after the log phase"}
+limit-count access: ok
+file-logger body_filter: ok
+ai-aws-content-moderation lua_body_filter: ok
+stream ip-restriction log: {"error_msg":"invalid _meta.filter_phase of plugin ip-restriction: it has no log function"}
 
-limit-conn log: ok
+stream limit-conn log: ok
 
 
 
-=== TEST 3: functions before the named phase run, and the named phase holds one decision
+=== TEST 3: functions before the named phase run, false there gates later ones, skipping it decides nothing
 --- config
     location /t {
         content_by_lua_block {
@@ -176,21 +190,25 @@ limit-conn log: ok
 
             local http = {"rewrite", "rewrite_in_consumer", "access", "before_proxy",
                           "header_filter", "body_filter", "delayed_body_filter", "log"}
-            for _, filter_phase in ipairs({"rewrite", "access", "before_proxy", "header_filter",
-                                           "body_filter", "log"}) do
+            for _, filter_phase in ipairs({"access", "before_proxy", "lua_body_filter",
+                                           "header_filter", "body_filter", "log"}) do
                 run(filter_phase, http)
             end
 
+            ngx.say("no body_filter")
+            run("body_filter", {"rewrite", "access", "before_proxy", "header_filter", "log"})
+
             ngx.say("stream")
             local stream = {"preread", "before_proxy", "log"}
-            for _, filter_phase in ipairs({"access", "before_proxy", "header_filter", "log"}) do
+            for _, filter_phase in ipairs({"access", "before_proxy", "log"}) do
                 run(filter_phase, stream)
             end
 
             ngx.say("streaming, interleaved with the response phases")
             local ai = {"access", "before_proxy", "lua_body_filter", "header_filter",
                         "body_filter", "lua_body_filter", "body_filter", "log"}
-            for _, filter_phase in ipairs({"before_proxy", "header_filter", "log"}) do
+            for _, filter_phase in ipairs({"before_proxy", "lua_body_filter", "header_filter",
+                                           "log"}) do
                 run(filter_phase, ai)
             end
 
@@ -203,24 +221,26 @@ limit-conn log: ok
         }
     }
 --- response_body
-rewrite:
 access: rewrite rewrite
 before_proxy: rewrite rewrite access
+lua_body_filter: rewrite rewrite access before_proxy header_filter body_filter delayed_body_filter log
 header_filter: rewrite rewrite access before_proxy
 body_filter: rewrite rewrite access before_proxy header_filter
 log: rewrite rewrite access before_proxy header_filter body_filter delayed_body_filter
+no body_filter
+body_filter: rewrite access before_proxy header_filter log
 stream
-access:
+access: preread before_proxy log
 before_proxy: preread
-header_filter: preread before_proxy
 log: preread before_proxy
 streaming, interleaved with the response phases
 before_proxy: access
+lua_body_filter: access before_proxy
 header_filter: access before_proxy lua_body_filter
 log: access before_proxy lua_body_filter header_filter body_filter lua_body_filter body_filter
 websocket
 before_proxy:
-header_filter: before_proxy
+header_filter: before_proxy ws_handshake ws_client_frame ws_upstream_frame ws_close log
 log: before_proxy ws_handshake ws_client_frame ws_upstream_frame ws_close
 
 
@@ -306,40 +326,146 @@ probe excluded buffered: nothing
 
 
 
-=== TEST 6: HEAD runs no body_filter, so filter_phase=body_filter decides at log
+=== TEST 6: a logger on filter_phase=body_filter decides nothing when body_filter does not run
 --- config
     location /t {
         content_by_lua_block {
             local h = require("lib.meta_filter_phase")
             h.set_route({
-                ["fault-injection"] = {abort = {http_status = 404, body = "gateway-404\n",
-                                                vars = {{{"arg_gw", "==", "1"}}}}},
                 ["file-logger"] = {
                     path = "filter-phase-head.log",
                     _meta = {
-                        filter = {"OR", {"status", "~=", 404}, {"upstream_status", "==", 404}},
+                        filter = {{"status", ">=", 500}},
                         filter_phase = "body_filter",
                     },
                 },
             })
 
-            ngx.say(h.req("?code=200", "HEAD").status)
-            ngx.say(h.req("?code=404", "HEAD").status)
-            ngx.say(h.req("?gw=1", "HEAD").status)
+            ngx.say("GET ", h.req("?code=200").status)
+            ngx.say("HEAD ", h.req("?code=200", "HEAD").status)
+            ngx.say("GET ", h.req("?code=204").status)
+            ngx.say("GET ", h.req("?code=304").status)
+            ngx.say("GET ", h.req("?code=500").status)
+
+            local sock = ngx.socket.tcp()
+            sock:connect("127.0.0.1", ngx.var.server_port)
+            sock:send("GET /fp?delay=0.5 HTTP/1.1\r\nHost: localhost\r\n\r\n")
+            ngx.sleep(0.05)
+            sock:close()
+            ngx.sleep(1)
+
             h.say_log_entries("filter-phase-head.log")
         }
     }
 --- response_body
-200
-404
-404
+GET 200
+HEAD 200
+GET 204
+GET 304
+GET 500
 200 nil
-404 nil
+500 nil
+499 nil
 end of log
 
 
 
-=== TEST 7: body-transformer with filter_phase=header_filter transforms 200 and leaves 404
+=== TEST 7: a logger on filter_phase=access decides nothing when a rewrite plugin responds first
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local cjson = require("cjson.safe")
+            local code, body = t("/apisix/admin/consumers", ngx.HTTP_PUT, cjson.encode({
+                username = "filter_phase_rejected",
+                plugins = {["key-auth"] = {key = "filter-phase-rejected"}},
+            }))
+            if code >= 300 then
+                ngx.say(body)
+                return
+            end
+
+            local h = require("lib.meta_filter_phase")
+            h.set_route({
+                ["key-auth"] = {},
+                ["file-logger"] = {
+                    path = "filter-phase-401.log",
+                    _meta = {filter = {{"arg_nope", "==", "1"}}, filter_phase = "access"},
+                },
+            })
+
+            ngx.say(h.req("?code=200").status)
+            ngx.say(h.req("?code=200", "GET", {apikey = "filter-phase-rejected"}).status)
+            h.say_log_entries("filter-phase-401.log")
+        }
+    }
+--- response_body
+401
+200
+401 nil
+end of log
+
+
+
+=== TEST 8: exact filtering on filter_phase=log buffers excluded bodies unless the expr repeats it
+--- config
+    location /t {
+        content_by_lua_block {
+            local h = require("lib.meta_filter_phase")
+            local probe = {
+                phase = "log",
+                functions = {[[return function(conf, ctx)
+                    ngx.log(ngx.WARN, "probe ", ctx.var.arg_tag, " buffered: ",
+                            ctx.resp_body and #ctx.resp_body or "nothing")
+                end]]},
+            }
+            local filter = {{"status", ">=", 500}}
+
+            h.set_route({
+                ["file-logger"] = {
+                    path = "filter-phase-5xx.log",
+                    include_resp_body = true,
+                    _meta = {filter = filter, filter_phase = "log"},
+                },
+                ["serverless-post-function"] = probe,
+            })
+            ngx.say(h.req("?code=200&tag=no-expr-200").status)
+            ngx.say(h.req("?code=500&tag=no-expr-500").status)
+
+            h.set_route({
+                ["file-logger"] = {
+                    path = "filter-phase-5xx.log",
+                    include_resp_body = true,
+                    include_resp_body_expr = filter,
+                    _meta = {filter = filter, filter_phase = "log"},
+                },
+                ["serverless-post-function"] = probe,
+            })
+            ngx.say(h.req("?code=200&tag=expr-200").status)
+            ngx.say(h.req("?code=500&tag=expr-500").status)
+
+            h.say_log_entries("filter-phase-5xx.log")
+        }
+    }
+--- response_body
+200
+500
+200
+500
+500 {"from":"upstream"}
+500 {"from":"upstream"}
+end of log
+--- grep_error_log eval
+qr/probe \S+ buffered: \w+/
+--- grep_error_log_out
+probe no-expr-200 buffered: 19
+probe no-expr-500 buffered: 19
+probe expr-200 buffered: nothing
+probe expr-500 buffered: 19
+
+
+
+=== TEST 9: body-transformer with filter_phase=header_filter transforms 200 and leaves 404
 --- config
     location /t {
         content_by_lua_block {
@@ -364,7 +490,7 @@ end of log
 
 
 
-=== TEST 8: filter_phase unset, response-rewrite turning 404 into 200 changes status and body
+=== TEST 10: filter_phase unset, response-rewrite turning 404 into 200 changes status and body
 --- config
     location /t {
         content_by_lua_block {
@@ -390,7 +516,7 @@ end of log
 
 
 
-=== TEST 9: filter_phase unset, limit-conn releases the connection on a response the filter names
+=== TEST 11: filter_phase unset, limit-conn releases the connection on a response the filter names
 --- config
     location /t {
         content_by_lua_block {
@@ -414,7 +540,7 @@ end of log
 
 
 
-=== TEST 10: a logger filter on status does not poison response-rewrite's vars on status
+=== TEST 12: a logger filter on status does not poison response-rewrite's vars on status
 --- config
     location /t {
         content_by_lua_block {
@@ -439,7 +565,7 @@ end of log
 
 
 
-=== TEST 11: response variables read early do not stick
+=== TEST 13: response variables read early do not stick
 --- config
     location /t {
         content_by_lua_block {
@@ -473,7 +599,7 @@ at log: status=201 bytes_sent>0=true body_bytes_sent>0=true request_time>=0.1=tr
 
 
 
-=== TEST 12: filter_phase=log can filter on bytes_sent
+=== TEST 14: filter_phase=log can filter on bytes_sent
 --- config
     location /t {
         content_by_lua_block {
@@ -496,7 +622,7 @@ end of log
 
 
 
-=== TEST 13: cors with filter_phase=header_filter keeps the Origin saved by its rewrite
+=== TEST 15: cors with filter_phase=header_filter keeps the Origin saved by its rewrite
 --- config
     location /t {
         content_by_lua_block {
@@ -519,7 +645,7 @@ end of log
 
 
 
-=== TEST 14: a plugin on the consumer runs its rewrite before the named phase
+=== TEST 16: a plugin on the consumer runs its rewrite before the named phase
 --- config
     location /t {
         content_by_lua_block {
@@ -558,7 +684,7 @@ end of log
 
 
 
-=== TEST 15: opentelemetry with filter_phase=log exports only the requests the filter includes
+=== TEST 17: opentelemetry with filter_phase=log exports only the requests the filter includes
 --- extra_yaml_config
 plugins:
     - opentelemetry
@@ -608,7 +734,7 @@ otel collector received a span
 
 
 
-=== TEST 16: the final upstream status after a retry is matched with a regex
+=== TEST 18: the final upstream status after a retry is matched with a regex
 --- config
     location /t {
         content_by_lua_block {
@@ -661,3 +787,53 @@ otel collector received a span
 end of log
 --- error_log
 upstream_status: 502, 404
+
+
+
+=== TEST 19: filter_phase=access on a consumer-merged route decides after the merge
+--- upstream_server_config
+    location = /fp {
+        content_by_lua_block {
+            ngx.print("traced: ", ngx.var.http_x_b3_traceid ~= nil)
+        }
+    }
+--- extra_yaml_config
+plugins:
+    - key-auth
+    - zipkin
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local cjson = require("cjson.safe")
+            for _, name in ipairs({"alice", "bob"}) do
+                local code, body = t("/apisix/admin/consumers", ngx.HTTP_PUT, cjson.encode({
+                    username = "filter_phase_" .. name,
+                    plugins = {["key-auth"] = {key = "filter-phase-" .. name}},
+                }))
+                if code >= 300 then
+                    ngx.say(body)
+                    return
+                end
+            end
+
+            local h = require("lib.meta_filter_phase")
+            h.set_route({
+                ["key-auth"] = {},
+                ["zipkin"] = {
+                    endpoint = "http://127.0.0.1:1980/mock_zipkin",
+                    sample_ratio = 0.00001,
+                    _meta = {filter = {{"consumer_name", "==", "filter_phase_alice"}},
+                             filter_phase = "access"},
+                },
+            })
+
+            for _, name in ipairs({"alice", "bob"}) do
+                local res = h.req("", "GET", {apikey = "filter-phase-" .. name})
+                ngx.say(name, " ", res.status, " ", res.body)
+            end
+        }
+    }
+--- response_body
+alice 200 traced: true
+bob 200 traced: false

@@ -137,7 +137,7 @@ plugins:
 | error_response | string/object | 自定义错误响应。 |
 | priority       | integer       | 自定义插件优先级。 |
 | filter         | array         | 根据请求的参数，在运行时控制插件是否执行。此配置由一个或多个 {var, operator, val} 元素组成列表，类似：`{{var, operator, val}, {var, operator, val}, ...}}`。例如 `{"arg_version", "==", "v2"}`，表示当前请求参数 `version` 是 `v2`。这里的 `var` 与 NGINX 内部自身变量命名保持一致。条件格式和支持的操作符请参考 [APISIX 表达式](../router-radixtree.md#如何通过-nginx-内置变量过滤路由)。|
-| filter_phase   | string        | 计算 `filter` 的阶段，可选值为 `rewrite`、`access`、`before_proxy`、`header_filter`、`body_filter`、`log`。必须与 `filter` 一起配置。详见[在后续阶段计算过滤器](#在后续阶段计算过滤器)。|
+| filter_phase   | string        | 计算 `filter` 的阶段，可选值为 `access`、`before_proxy`、`lua_body_filter`、`header_filter`、`body_filter`、`log`。必须与 `filter` 一起配置。详见[在后续阶段计算过滤器](#在后续阶段计算过滤器)。|
 
 ### 禁用指定插件
 
@@ -311,16 +311,23 @@ plugins:
 
 ### 在后续阶段计算过滤器
 
-默认情况下，`filter` 在每个请求中只计算一次，时机是插件在该请求中的第一个函数，其结果适用于插件后续的所有函数。因此对于带有 `access` 函数的插件（比如日志类插件），决定是在请求被代理之前做出的，此时 `status` 和 `upstream_status` 还没有值。
+默认情况下，`filter` 在每个请求中只计算一次，时机是插件第一个运行的函数，其结果适用于插件后续的所有函数。因此对于带有 `access` 函数的插件（比如日志类插件），决定是在请求被代理之前做出的，此时 `status` 和 `upstream_status` 还没有值。
 
-`filter_phase` 用于指定做出决定的阶段：
+`filter_phase` 用于指定做出决定的阶段，可选值为 `access`、`before_proxy`、`lua_body_filter`、`header_filter`、`body_filter`、`log`。未配置时，行为没有任何变化。
 
-- 插件在早于 `filter_phase` 的阶段中的函数总是会执行，与过滤器的结果无关。
-- 在 `filter_phase` 阶段，或者其后第一个有插件函数的阶段，计算过滤器。结果会保留到请求结束，这一点与未配置 `filter_phase` 时相同。
-- 如果请求没有经过该阶段，则在下一个实际运行的阶段做出决定。例如 `HEAD` 请求没有 `body_filter` 阶段，因此 `filter_phase` 为 `body_filter` 时会在 `log` 阶段做出决定。
-- Stream 路由运行 `preread`、`before_proxy` 和 `log` 阶段：`filter_phase` 为 `rewrite` 或 `access` 时在 `preread` 决定，为 `header_filter` 或 `body_filter` 时在 `log` 决定。
+- 插件在 `filter_phase` 之前的阶段中的函数总是会执行，与过滤器的结果无关。
+- `filter_phase` 运行时计算一次过滤器。结果为 `false` 时，该函数以及插件后续的所有函数在本次请求中都会被跳过。
+- 如果 `filter_phase` 在本次请求中没有运行，则不会做出决定，插件后续的所有函数都会执行。不会回退到其他阶段，包括 `log`。
 
-如果插件在 `filter_phase` 及其之后没有任何函数（过滤器永远不会被计算），或者没有配置 `filter`，配置会被拒绝。未配置 `filter_phase` 时，行为没有任何变化。
+如果没有配置 `filter`，或者插件没有与 `filter_phase` 同名的函数，配置会被拒绝。
+
+指定的阶段被跳过是正常且受支持的行为。例如：
+
+- `HEAD` 请求会运行 `header_filter`，但不会运行 `body_filter`，因此 `body_filter` 不会做出决定。上游返回的 204 或 304 响应会运行 `body_filter`。
+- 客户端在响应头返回之前关闭连接（状态码 499）时，`header_filter` 和 `body_filter` 都不会运行。
+- 插件在 `rewrite` 阶段直接响应（比如 `key-auth` 返回 401）时会跳过 `access`，因此 `access` 不会做出决定。插件在 `access` 阶段直接响应时会跳过 `before_proxy`。
+- `upstream.scheme` 为 `ws` 或 `wss` 的路由不会运行 `header_filter` 和 `body_filter`，因此它们不会做出决定。使用 `enable_websocket` 的路由会运行这两个阶段。
+- Stream 路由运行 `preread`、`before_proxy` 和 `log`，因此只有 `before_proxy` 和 `log` 能做出决定。
 
 下面的配置会记录除 APISIX 或其插件生成的 404 之外的所有响应，并保留上游返回的 404。这里用正则表达式匹配 `upstream_status`，因为重试之后它是一个列表，比如 `502, 404`：
 
@@ -337,13 +344,13 @@ plugins:
 }
 ```
 
-对于日志类插件，当过滤器读取 `status` 或 `upstream_status` 时使用 `body_filter`，被排除的请求不会缓存响应体；当过滤器读取 `bytes_sent`、`body_bytes_sent`、`upstream_response_time` 或 `request_time` 时使用 `log`，这些变量在此之前都不是最终值。
+对于日志类插件，当过滤器读取 `status` 或 `upstream_status` 时使用 `body_filter`，被排除的请求不会缓存响应体。没有运行 `body_filter` 的请求无论过滤器结果如何都会被记录，因此使用 `body_filter` 且“只记录 5xx”的日志插件仍然会记录 `HEAD` 请求。精确过滤需要使用 `log`，过滤器读取 `bytes_sent`、`body_bytes_sent`、`upstream_response_time` 或 `request_time` 时也应使用它。使用 `log` 且开启 `include_resp_body` 时，被排除的请求也会缓存响应体，除非在 `include_resp_body_expr` 中重复该条件。
 
 下表列出了一些常用变量及其最早有意义的阶段，并非完整列表。
 
 | 变量 | 最早有意义的阶段 | 说明 |
 |------|------------------|------|
-| `arg_*`、`http_*`、`uri`、`request_method`、`remote_addr`、`host`、`route_id` | `rewrite` | |
+| `arg_*`、`http_*`、`uri`、`request_method`、`remote_addr`、`host`、`route_id` | `rewrite` | 不需要配置 `filter_phase`。 |
 | `consumer_name` | `access` | 在 `rewrite` 阶段只对运行在认证插件之后的插件有值。 |
 | `balancer_ip` | `before_proxy` | |
 | `status` | `header_filter` | |
