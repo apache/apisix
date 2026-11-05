@@ -38,10 +38,9 @@ properties:
       - type: "null"
   key:
     anyOf:
-      - minLength: 64
-        maxLength: 65536
-        type: string
+      - $ref: ./PrivateKeyOrReference.yaml
       - type: "null"
+    description: PEM-encoded private key, APISIX secret/environment reference, or null to remove the field.
   labels:
     anyOf:
       - type: object
@@ -56,20 +55,18 @@ properties:
       - type: "null"
   cert:
     anyOf:
-      - minLength: 128
-        maxLength: 65536
-        type: string
+      - $ref: ./CertificateOrReference.yaml
       - type: "null"
+    description: PEM-encoded certificate, APISIX secret/environment reference, or null to remove the field.
   client:
     anyOf:
       - type: object
         properties:
           ca:
             anyOf:
-              - minLength: 128
-                maxLength: 65536
-                type: string
+              - $ref: ./CertificateOrReference.yaml
               - type: "null"
+            description: PEM-encoded CA certificate, APISIX secret/environment reference, or null to remove the field.
           skip_mtls_uri_regex:
             anyOf:
               - uniqueItems: true
@@ -98,6 +95,8 @@ properties:
           type: string
         type: array
       - type: "null"
+    items:
+      $ref: ./CertificateOrReference.yaml
   keys:
     anyOf:
       - items:
@@ -106,6 +105,8 @@ properties:
           type: string
         type: array
       - type: "null"
+    items:
+      $ref: ./PrivateKeyOrReference.yaml
   desc:
     anyOf:
       - maxLength: 256

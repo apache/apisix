@@ -136,7 +136,7 @@ put:
                     description: The unique identifier of the consumer.
                     type: string
                     minLength: 1
-                    maxLength: 100
+                    maxLength: 256
                     pattern: ^[a-zA-Z0-9_-]+$
                   labels:
                     type: object

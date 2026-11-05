@@ -55,9 +55,8 @@ properties:
     uniqueItems: true
     type: array
   key:
-    minLength: 64
-    maxLength: 65536
-    type: string
+    $ref: ./PrivateKeyOrReference.yaml
+    description: PEM-encoded private key or an APISIX secret/environment reference.
   create_time:
     type: integer
     readOnly: true
@@ -71,17 +70,15 @@ properties:
       - 0
     type: integer
   cert:
-    minLength: 128
-    maxLength: 65536
-    type: string
+    $ref: ./CertificateOrReference.yaml
+    description: PEM-encoded certificate or an APISIX secret/environment reference.
   client:
     required:
       - ca
     properties:
       ca:
-        minLength: 128
-        maxLength: 65536
-        type: string
+        $ref: ./CertificateOrReference.yaml
+        description: PEM-encoded CA certificate or an APISIX secret/environment reference.
       skip_mtls_uri_regex:
         uniqueItems: true
         minItems: 1
@@ -99,15 +96,11 @@ properties:
     type: string
   certs:
     items:
-      minLength: 128
-      maxLength: 65536
-      type: string
+      $ref: ./CertificateOrReference.yaml
     type: array
   keys:
     items:
-      minLength: 64
-      maxLength: 65536
-      type: string
+      $ref: ./PrivateKeyOrReference.yaml
     type: array
   id:
     $ref: ./ResourceId.yaml

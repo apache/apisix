@@ -22,15 +22,11 @@ properties:
         properties:
           client_key:
             anyOf:
-              - minLength: 64
-                maxLength: 65536
-                type: string
+              - $ref: ./PrivateKeyPem.yaml
               - type: "null"
           client_cert:
             anyOf:
-              - minLength: 128
-                maxLength: 65536
-                type: string
+              - $ref: ./CertificatePem.yaml
               - type: "null"
           client_cert_id:
             anyOf:
@@ -47,8 +43,16 @@ properties:
               - type: "null"
           verify:
             anyOf:
-              - description: Turn on server certificate verification, currently only kafka upstream is supported
-                type: boolean
+              - type: boolean
+                description: Enable or disable upstream certificate verification. When omitted, fall back to the NGINX verification setting.
+              - type: "null"
+          ca_certs:
+            anyOf:
+              - type: array
+                minItems: 1
+                items:
+                  $ref: ./CertificatePem.yaml
+                description: PEM-encoded CA certificates for upstream verification.
               - type: "null"
       - type: "null"
   retry_timeout:
@@ -58,7 +62,7 @@ properties:
       - type: "null"
   scheme:
     anyOf:
-      - description: The scheme of the upstream. For L7 proxy, it can be one of grpc/grpcs/http/https. For L4 proxy, it can be one of tcp/tls/udp. For specific protocols, it can be kafka.
+      - description: The scheme of the upstream. For L7 proxy, it can be one of grpc/grpcs/http/https/ws/wss. For L4 proxy, it can be one of tcp/tls/udp. For specific protocols, it can be kafka.
         enum:
           - grpc
           - grpcs
@@ -68,6 +72,9 @@ properties:
           - tls
           - udp
           - kafka
+          - ws
+          - wss
+        default: http
       - type: "null"
   retries:
     anyOf:
@@ -377,6 +384,15 @@ properties:
               - type: string
                 description: namespace id
               - type: "null"
+          cluster_ids:
+            anyOf:
+              - type: array
+                minItems: 1
+                uniqueItems: true
+                items:
+                  type: string
+                description: Kubernetes service-discovery cluster IDs.
+              - type: "null"
       - type: "null"
   name:
     anyOf:
@@ -411,5 +427,9 @@ properties:
   update_time:
     type: integer
     readOnly: true
+  warm_up_conf:
+    anyOf:
+      - $ref: ./UpstreamWarmUpPatch.yaml
+      - type: "null"
 additionalProperties: false
 description: Recursive merge fragment. Null deletes object fields; arrays are replaced. APISIX validates the resulting resource, including plugin and reference checks.

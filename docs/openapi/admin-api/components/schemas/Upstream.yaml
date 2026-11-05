@@ -20,9 +20,7 @@ properties:
     properties:
       ca_certs:
         items:
-          maxLength: 65536
-          minLength: 128
-          type: string
+          $ref: ./CertificatePem.yaml
         description: CA certificates used to verify the upstream certificate
         minItems: 1
         type: array
@@ -35,15 +33,11 @@ properties:
           - minimum: 1
             type: integer
       client_key:
-        maxLength: 65536
-        minLength: 64
-        type: string
+        $ref: ./PrivateKeyPem.yaml
       client_cert:
-        maxLength: 65536
-        minLength: 128
-        type: string
+        $ref: ./CertificatePem.yaml
       verify:
-        description: enable or disable upstream certificate verification, fall back to the nginx configuration when not set
+        description: Enable or disable upstream certificate verification. When omitted, fall back to the NGINX verification setting.
         type: boolean
     type: object
     dependentSchemas:
@@ -320,7 +314,7 @@ properties:
     type: string
     description: mod of host passing
   scheme:
-    description: The scheme of the upstream. For L7 proxy, it can be one of grpc/grpcs/http/https. For L4 proxy, it can be one of tcp/tls/udp. For specific protocols, it can be kafka.
+    description: The scheme of the upstream. For L7 proxy, it can be one of grpc/grpcs/http/https/ws/wss. For L4 proxy, it can be one of tcp/tls/udp. For specific protocols, it can be kafka.
     enum:
       - grpc
       - grpcs
