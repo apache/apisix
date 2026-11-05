@@ -1304,14 +1304,9 @@ end
 _M.decrypt_marked_metadata = decrypt_marked_metadata
 
 
-local enable_write_marker
 local function write_marker()
-    if enable_write_marker == nil then
-        enable_write_marker = core.table.try_read_attr(local_conf, "apisix", "data_encryption",
-                                                       "write_marker") == true
-    end
-
-    return enable_write_marker
+    return core.table.try_read_attr(local_conf, "apisix", "data_encryption",
+                                    "write_marker") == true
 end
 
 

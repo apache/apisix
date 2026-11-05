@@ -287,8 +287,15 @@ apisix:
             code, body = admin("/apisix/admin/stream_routes/1", ngx.HTTP_GET)
             ngx.say(body.value.plugins["ip-restriction"].whitelist[1])
 
-            -- PATCH merges the decrypted value; with encryption off it is stored as is
+            -- PATCH keeps the marked value it did not change encrypted at rest
             code = admin("/apisix/admin/routes/1", ngx.HTTP_PATCH, {desc = "patched"})
+            ngx.say(code)
+            ngx.say(stored("/routes/1").plugins["proxy-rewrite"].headers.set["X-Secret"]
+                    == mark("hdr"))
+
+            -- a value replaced by the PATCH is user input, stored as given
+            code = admin("/apisix/admin/routes/1/plugins/proxy-rewrite/headers/set/X-Secret",
+                         ngx.HTTP_PATCH, "new-hdr")
             ngx.say(code)
             ngx.say(stored("/routes/1").plugins["proxy-rewrite"].headers.set["X-Secret"])
 
@@ -300,7 +307,9 @@ hdr
 hdr
 127.0.0.1
 200
-hdr
+true
+200
+new-hdr
 
 
 
@@ -454,3 +463,40 @@ apisix:
 201
 200
 200 $ENC$v2$stored
+
+
+
+=== TEST 12: PATCH keeps a marked value outside encrypt_fields encrypted at rest
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            assert(core.etcd.set("/routes/1", {
+                id = "1",
+                uri = "/hello",
+                plugins = {
+                    ["proxy-rewrite"] = {headers = {set = {["X-Secret"] = mark("hdr")}}},
+                    ["limit-count"] = {
+                        count = 2,
+                        time_window = 60,
+                        policy = "redis",
+                        redis_host = "127.0.0.1",
+                        redis_password = mark("secret"),
+                    },
+                },
+                upstream = {nodes = {["127.0.0.1:1980"] = 1}, type = "roundrobin"},
+            }))
+
+            local code = admin("/apisix/admin/routes/1", ngx.HTTP_PATCH, {desc = "patched"})
+            ngx.say(code)
+            local plugins = stored("/routes/1").plugins
+            ngx.say(plugins["proxy-rewrite"].headers.set["X-Secret"] == mark("hdr"))
+            ngx.say(plugins["limit-count"].redis_password == mark("secret"))
+
+            assert(core.etcd.delete("/routes/1"))
+        }
+    }
+--- response_body
+200
+true
+true

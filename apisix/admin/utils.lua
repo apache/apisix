@@ -97,7 +97,7 @@ local function decrypt_value(value, schema_type)
         if apisix_plugin.enable_gde() then
             apisix_plugin.decrypt_conf(value.id, value, schema_type, marked)
         end
-        return
+        return nil, marked
     end
 
     local plugins = value.plugins
@@ -115,13 +115,16 @@ local function decrypt_value(value, schema_type)
             apisix_plugin.decrypt_conf(name, conf, schema_type, marked)
         end
     end
+
+    return nil, marked
 end
 
 
 -- Decrypt the plugin confs, or the plugin metadata, of an etcd response body in
 -- place: values carrying the encryption marker always, `encrypt_fields` when
 -- data encryption is enabled. A resource with a marked value that fails to
--- decrypt is left as stored, and the error of the first one is returned.
+-- decrypt is left as stored, and the error of the first one is returned. For a
+-- single node, the positions decrypted through the marker are returned too.
 function _M.decrypt_params(body, schema_type)
     if body.list then
         local first_err
@@ -135,6 +138,23 @@ function _M.decrypt_params(body, schema_type)
     end
 
     return decrypt_value(body.node and body.node.value, schema_type)
+end
+
+
+-- Encrypt again with the marker the values `decrypt_params` decrypted through
+-- it and that are still unchanged, so that they stay encrypted at rest.
+function _M.restore_marked(marked)
+    if not marked then
+        return
+    end
+
+    for conf, keys in pairs(marked) do
+        for k, plain in pairs(keys) do
+            if conf[k] == plain then
+                conf[k] = core.data_encryption.encrypt_with_marker(plain)
+            end
+        end
+    end
 end
 
 
