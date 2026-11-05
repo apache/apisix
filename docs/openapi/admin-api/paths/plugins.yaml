@@ -1,0 +1,306 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+get:
+  summary: List Plugin Attributes
+  description: |-
+    Get attributes of all plugins configured on the APISIX instance.
+
+    > **Deprecated:** This endpoint is being replaced. Use `GET /plugins/list` and `GET /plugins/{plugin_name}` instead.
+  tags:
+    - Plugins
+  parameters:
+    - $ref: ../components/parameters/PluginListAll.yaml
+    - $ref: ../components/parameters/Subsystem.yaml
+  responses:
+    "200":
+      description: Successful response.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              plugin_name:
+                description: Plugin configuration and metadata.
+                type: object
+                properties:
+                  version:
+                    description: Plugin schema version number.
+                    type: number
+                  schema:
+                    description: JSON Schema defining the plugin configuration structure.
+                    type: object
+                    properties:
+                      required:
+                        description: Required fields for the plugin.
+                        type: array
+                        items:
+                          type: string
+                      type:
+                        description: JSON Schema type definition.
+                        type: string
+                      $comment:
+                        description: Comment metadata for the schema.
+                        type: string
+                      properties:
+                        description: Plugin properties.
+                        type: object
+                  priority:
+                    description: Execution priority of the plugin.
+                    type: integer
+          examples:
+            "1":
+              summary: Successful Example
+              value:
+                limit-conn:
+                  priority: 1003
+                  version: 0.1
+                  schema:
+                    type: object
+                    $comment: this is a mark for our injected plugin schema
+                    required:
+                      - conn
+                      - burst
+                      - default_conn_delay
+                      - key
+                    properties:
+                      only_use_default_delay:
+                        type: boolean
+                        default: false
+                      conn:
+                        type: integer
+                        exclusiveMinimum: 0
+                      burst:
+                        type: integer
+                        minimum: 0
+                      key_type:
+                        type: string
+                        enum:
+                          - var
+                          - var_combination
+                        default: var
+                      _meta:
+                        type: object
+                        properties:
+                          filter:
+                            type: array
+                            description: filter determines whether the plugin needs to be executed at runtime
+                            items: {}
+                          error_response:
+                            oneOf:
+                              - type: string
+                              - type: object
+                          priority:
+                            type: integer
+                            description: priority of plugins by customized order
+                          disable:
+                            type: boolean
+                      key:
+                        type: string
+                      default_conn_delay:
+                        type: number
+                        exclusiveMinimum: 0
+                syslog:
+                  schema:
+                    type: object
+                    $comment: this is a mark for our injected plugin schema
+                    required:
+                      - host
+                      - port
+                    properties:
+                      _meta:
+                        type: object
+                        properties:
+                          filter:
+                            type: array
+                            description: filter determines whether the plugin needs to be executed at runtime
+                            items: {}
+                          error_response:
+                            oneOf:
+                              - type: string
+                              - type: object
+                          priority:
+                            type: integer
+                            description: priority of plugins by customized order
+                          disable:
+                            type: boolean
+                      host:
+                        type: string
+                      max_retry_count:
+                        type: integer
+                        default: 0
+                        minimum: 0
+                      drop_limit:
+                        type: integer
+                        default: 1048576
+                      flush_limit:
+                        type: integer
+                        default: 4096
+                        minimum: 1
+                      pool_size:
+                        type: integer
+                        default: 5
+                        minimum: 5
+                      sock_type:
+                        type: string
+                        default: tcp
+                        enum:
+                          - tcp
+                          - udp
+                      buffer_duration:
+                        type: integer
+                        default: 60
+                        minimum: 1
+                      retry_delay:
+                        type: integer
+                        default: 1
+                        minimum: 0
+                      tls:
+                        type: boolean
+                        default: false
+                      name:
+                        type: string
+                        default: stream sys logger
+                      log_format:
+                        type: object
+                      batch_max_size:
+                        type: integer
+                        default: 1000
+                        minimum: 1
+                      timeout:
+                        type: integer
+                        default: 3000
+                        minimum: 1
+                      inactive_timeout:
+                        type: integer
+                        default: 5
+                        minimum: 1
+                      port:
+                        type: integer
+                  priority: 401
+                  version: 0.1
+                  metadata_schema:
+                    type: object
+                    properties:
+                      log_format:
+                        type: object
+                        default:
+                          "@timestamp": $time_iso8601
+                          host: $host
+                          client_ip: $remote_addr
+                ip-restriction:
+                  priority: 3000
+                  version: 0.1
+                  schema:
+                    type: object
+                    oneOf:
+                      - required:
+                          - whitelist
+                      - required:
+                          - blacklist
+                    $comment: this is a mark for our injected plugin schema
+                    properties:
+                      message:
+                        type: string
+                        minLength: 1
+                        maxLength: 1024
+                        default: Your IP address is not allowed
+                      _meta:
+                        type: object
+                        properties:
+                          filter:
+                            type: array
+                            description: filter determines whether the plugin needs to be executed at runtime
+                            items: {}
+                          error_response:
+                            oneOf:
+                              - type: string
+                              - type: object
+                          priority:
+                            type: integer
+                            description: priority of plugins by customized order
+                          disable:
+                            type: boolean
+                      blacklist:
+                        type: array
+                        minItems: 1
+                        items:
+                          anyOf:
+                            - type: string
+                              format: ipv4
+                              title: IPv4
+                            - type: string
+                              pattern: ^([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])/([12]?[0-9]|3[0-2])$
+                              title: IPv4/CIDR
+                            - type: string
+                              format: ipv6
+                              title: IPv6
+                            - type: string
+                              pattern: ^([a-fA-F0-9]{0,4}:){1,8}(:[a-fA-F0-9]{0,4}){0,8}([a-fA-F0-9]{0,4})?/[0-9]{1,3}$
+                              title: IPv6/CIDR
+                      whitelist:
+                        type: array
+                        minItems: 1
+                        items:
+                          anyOf:
+                            - type: string
+                              format: ipv4
+                              title: IPv4
+                            - type: string
+                              pattern: ^([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])/([12]?[0-9]|3[0-2])$
+                              title: IPv4/CIDR
+                            - type: string
+                              format: ipv6
+                              title: IPv6
+                            - type: string
+                              pattern: ^([a-fA-F0-9]{0,4}:){1,8}(:[a-fA-F0-9]{0,4}){0,8}([a-fA-F0-9]{0,4})?/[0-9]{1,3}$
+                              title: IPv6/CIDR
+                mqtt-proxy:
+                  priority: 1000
+                  version: 0.1
+                  schema:
+                    type: object
+                    $comment: this is a mark for our injected plugin schema
+                    required:
+                      - protocol_name
+                      - protocol_level
+                    properties:
+                      _meta:
+                        type: object
+                        properties:
+                          filter:
+                            type: array
+                            description: filter determines whether the plugin needs to be executed at runtime
+                            items: {}
+                          error_response:
+                            oneOf:
+                              - type: string
+                              - type: object
+                          priority:
+                            type: integer
+                            description: priority of plugins by customized order
+                          disable:
+                            type: boolean
+                      protocol_name:
+                        type: string
+                      protocol_level:
+                        type: integer
+    "400":
+      $ref: ../components/responses/BadRequest.yaml
+      description: Not found plugin name
+    "401":
+      $ref: ../components/responses/Unauthorized.yaml
+  operationId: listPluginAttributes

@@ -1,0 +1,561 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+openapi: 3.1.0
+info:
+  title: Apache APISIX Admin API
+  description: |-
+    The **Apache APISIX Admin API** is a RESTful interface for managing all APISIX gateway resources — routes, upstreams, services, consumers, SSL certificates, plugins, and more.
+
+    APISIX Admin API allows you to dynamically configure the API gateway without restarts. All changes take effect immediately.
+
+    Unless API key authentication is explicitly disabled with `deployment.admin.admin_key_required: false`, endpoints require an **API key**. Pass a key configured under `deployment.admin.admin_key` in APISIX's `config.yaml` using the `X-API-KEY` request header.
+
+    By default, the Admin API binds to `0.0.0.0:9180` and allows clients from `127.0.0.0/24`. The examples use `http://127.0.0.1:9180`; configure the listener and client allowlist in `config.yaml` under `deployment.admin.admin_listen` and `deployment.admin.allow_admin`.
+
+    To learn how to configure and operate APISIX, see [Get Started](https://apisix.apache.org/docs/apisix/3.19/getting-started/README/).
+  version: 3.19.0
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+tags:
+  - name: Routes
+    description: |-
+      A **Route** defines how client requests are matched and forwarded to upstream services. Routes are the most fundamental resource in APISIX — every incoming request is evaluated against configured routes.
+
+      A route must include at least one URI pattern through `uri` or `uris`, and one of: an inline `upstream`, an `upstream_id`, a `service_id`, `plugins`, or `script`.
+
+      **Key Features**
+      - Match by URI, host, HTTP method, headers, query parameters, and custom expressions
+      - Attach plugins for authentication, rate limiting, transformation, and more
+      - Support WebSocket proxying and gRPC transcoding
+      - Priority-based routing when multiple routes match
+
+      To learn how to configure routes, see [Routes](https://apisix.apache.org/docs/apisix/3.19/terminology/route/).
+    x-displayName: Routes
+  - name: Upstreams
+    description: |-
+      An **Upstream** is a virtual host abstraction over a pool of backend service nodes. It defines how APISIX distributes traffic to your backend servers.
+
+      **Load Balancing Algorithms**
+      - `roundrobin` — Weighted round-robin (default)
+      - `chash` — Consistent hashing for session affinity
+      - `ewma` — Latency-based selection (exponentially weighted moving average)
+      - `least_conn` — Fewest active connections
+
+      **Health Checks**
+      Upstreams support **active** and **passive** health checks to automatically remove unhealthy nodes from the load balancing pool.
+
+      To learn how to configure upstreams, see [Upstreams](https://apisix.apache.org/docs/apisix/3.19/terminology/upstream/).
+    x-displayName: Upstreams
+  - name: Services
+    description: |-
+      A **Service** is a reusable abstraction that groups an upstream and a set of plugins. Multiple routes can reference the same service, reducing configuration duplication.
+
+      When a route references a service via `service_id`, the service's upstream and plugins are merged with the route's own configuration. Route-level settings take precedence.
+
+      To learn how to configure services, see [Services](https://apisix.apache.org/docs/apisix/3.19/terminology/service/).
+    x-displayName: Services
+  - name: Consumers
+    description: |-
+      A **Consumer** represents an API user, application, or host that consumes your APIs. Consumers are typically used with authentication plugins (e.g., `key-auth`, `jwt-auth`) to identify callers and apply per-consumer rate limits or access controls.
+
+      Each consumer is uniquely identified by a `username` and can belong to a consumer group.
+
+      To learn how to configure consumers, see [Consumers](https://apisix.apache.org/docs/apisix/3.19/terminology/consumer/).
+    x-displayName: Consumers
+  - name: Consumer Groups
+    description: |-
+      A **Consumer Group** allows you to define shared plugin configurations that apply to multiple consumers. Instead of duplicating plugin settings across consumers, assign them to a group.
+
+      Consumers reference a group via the `group_id` field. Group-level plugins are merged with consumer-level plugins, with consumer-level taking precedence.
+
+      To learn how to configure consumer groups, see [Consumer Groups](https://apisix.apache.org/docs/apisix/3.19/terminology/consumer-group/).
+    x-displayName: Consumer Groups
+  - name: Credentials
+    description: |-
+      A **Credential** stores authentication configuration associated with a consumer. Each credential can hold at most one authentication plugin (for example, `key-auth`, `basic-auth`, or `jwt-auth`).
+
+      Credentials are sub-resources of consumers. A consumer can have multiple credentials for the same authentication plugin when their identifying values differ, or for different authentication plugins.
+
+      To learn how to configure consumer credentials, see [Credentials](https://apisix.apache.org/docs/apisix/3.19/terminology/credential/).
+    x-displayName: Credentials
+  - name: Plugins
+    description: |-
+      **Plugins** extend APISIX's core functionality with middleware capabilities such as authentication, traffic control, observability, and request/response transformation.
+
+      Use these endpoints to query available plugins and their JSON schemas, or to hot-reload plugins without restarting APISIX.
+
+      Plugin configurations can be attached to routes, services, consumers, consumer groups, plugin configs, global rules, and stream routes through the `plugins` object. Credentials can hold at most one authentication plugin configuration.
+
+      See [Plugin Hub](https://apisix.apache.org/plugins/) for the full list of available plugins.
+    x-displayName: Plugins
+  - name: Plugin Configs
+    description: |-
+      A **Plugin Config** is a reusable set of plugin configurations that can be shared across multiple routes. Instead of duplicating plugin settings in each route, create a plugin config and reference it via `plugin_config_id`.
+
+      Route-level plugins are merged with plugin config plugins, with route-level taking precedence.
+
+      To learn how to configure reusable plugin configurations, see [Plugin Configs](https://apisix.apache.org/docs/apisix/3.19/terminology/plugin-config/).
+    x-displayName: Plugin Configs
+  - name: Plugin Metadata
+    description: |-
+      **Plugin Metadata** configures shared settings for instances of a specific plugin across the APISIX cluster. A plugin can allow an individual instance to override a metadata setting. This is useful for plugins that need global configuration, such as log format templates.
+
+      For example, metadata for `http-logger` supplies a shared `log_format`; an instance-level `log_format` takes precedence.
+
+      To learn how to configure plugin metadata, see [Plugin Metadata](https://apisix.apache.org/docs/apisix/3.19/terminology/plugin-metadata/).
+    x-displayName: Plugin Metadata
+  - name: Global Rules
+    description: |-
+      A Global Rule applies plugins to incoming requests independently of route and service configuration. For HTTP requests, global and local plugins are interleaved by phase: global `rewrite`, local `rewrite`, global `access`, then local `access`. Plugin priority applies within each phase and scope.
+
+      To learn how to configure global rules, see [Plugin Global Rules](https://apisix.apache.org/docs/apisix/3.19/terminology/global-rule/).
+    x-displayName: Global Rules
+  - name: Stream Routes
+    description: |-
+      A **Stream Route** defines TCP/UDP layer (L4) proxying rules. Unlike HTTP routes, stream routes operate at the transport layer and can proxy raw TCP and UDP connections.
+
+      Stream routes match traffic by `remote_addr`, `server_addr`, `server_port`, or the `sni` and `snis` fields for TLS connections.
+
+      **Note:** Stream mode must be enabled in `config.yaml` (`apisix.proxy_mode: stream` or `http&stream`) before creating stream routes.
+
+      To learn how to configure stream routes, see [Stream Routes](https://apisix.apache.org/docs/apisix/3.19/stream-proxy/).
+    x-displayName: Stream Routes
+  - name: SSL Certificates
+    description: |-
+      The **SSL** resource manages TLS certificates for HTTPS termination and mTLS authentication.
+
+      **Certificate Types**
+      - `server` — Server certificate for HTTPS termination (matched by SNI)
+      - `client` — Client certificate for mTLS with upstream services
+
+      APISIX dynamically selects the correct certificate based on the SNI (Server Name Indication) in the TLS handshake. Certificates can be rotated without restart.
+
+      To learn how to configure TLS certificates, see [SSL Certificates](https://apisix.apache.org/docs/apisix/3.19/certificate/).
+    x-displayName: SSL Certificates
+  - name: Secrets
+    description: |-
+      The **Secret** resource integrates APISIX with external secret managers (e.g., HashiCorp Vault, AWS Secrets Manager) for dynamic secret retrieval at runtime.
+
+      Once configured, you can reference a provider value through an APISIX Secret resource. For example, `$secret://vault/1/my-secret/key` uses the Vault Secret resource `1` to retrieve `key` from `my-secret`.
+
+      To learn how to configure secret managers, see [Secrets](https://apisix.apache.org/docs/apisix/3.19/terminology/secret/).
+    x-displayName: Secrets
+  - name: Protos
+    description: |-
+      The **Proto** resource stores Protocol Buffer (protobuf) `.proto` file content used by the `grpc-transcode` plugin to convert between HTTP/JSON and gRPC.
+
+      Upload your `.proto` definitions here, then reference them by ID in the `grpc-transcode` plugin configuration.
+
+      To learn how to configure gRPC transcoding, see [gRPC Transcode](https://apisix.apache.org/docs/apisix/3.19/plugins/grpc-transcode/).
+    x-displayName: Protos
+  - name: Schema Validation
+    description: Endpoints for validating one resource or a complete declarative configuration without creating, persisting, or applying it.
+    x-displayName: Schema Validation
+  - name: Health
+    description: Liveness probe.
+  - name: Standalone
+    description: "Endpoints exposed only when the deployment uses the YAML config provider (`deployment.role_data_plane.config_provider: yaml`)."
+paths:
+  /apisix/admin/routes:
+    $ref: ./paths/routes.yaml
+  /apisix/admin/routes/{id}:
+    $ref: ./paths/routes-by-id.yaml
+  /apisix/admin/services:
+    $ref: ./paths/services.yaml
+  /apisix/admin/services/{id}:
+    $ref: ./paths/services-by-id.yaml
+  /apisix/admin/services/{service_id}/graphql_cost_decorations:
+    $ref: ./paths/service-graphql-cost-decorations.yaml
+  /apisix/admin/services/{service_id}/graphql_cost_decorations/{decoration_id}:
+    $ref: ./paths/service-graphql-cost-decoration-by-id.yaml
+  /apisix/admin/consumers:
+    $ref: ./paths/consumers.yaml
+  /apisix/admin/consumers/{username}:
+    $ref: ./paths/consumers-by-username.yaml
+  /apisix/admin/upstreams:
+    $ref: ./paths/upstreams.yaml
+  /apisix/admin/upstreams/{id}:
+    $ref: ./paths/upstreams-by-id.yaml
+  /apisix/admin/ssls:
+    $ref: ./paths/ssls.yaml
+  /apisix/admin/ssls/{id}:
+    $ref: ./paths/ssls-by-id.yaml
+  /apisix/admin/global_rules:
+    $ref: ./paths/global-rules.yaml
+  /apisix/admin/global_rules/{id}:
+    $ref: ./paths/global-rules-by-id.yaml
+  /apisix/admin/consumer_groups:
+    $ref: ./paths/consumer-groups.yaml
+  /apisix/admin/consumer_groups/{id}:
+    $ref: ./paths/consumer-groups-by-id.yaml
+  /apisix/admin/plugin_configs:
+    $ref: ./paths/plugin-configs.yaml
+  /apisix/admin/plugin_configs/{id}:
+    $ref: ./paths/plugin-configs-by-id.yaml
+  /apisix/admin/plugin_metadata:
+    $ref: ./paths/plugin-metadata.yaml
+  /apisix/admin/plugin_metadata/{plugin_name}:
+    $ref: ./paths/plugin-metadata-by-plugin-name.yaml
+  /apisix/admin/plugins/list:
+    $ref: ./paths/plugins-list.yaml
+  /apisix/admin/plugins/{plugin_name}:
+    $ref: ./paths/plugins-by-plugin-name.yaml
+  /apisix/admin/plugins:
+    $ref: ./paths/plugins.yaml
+  /apisix/admin/plugins/reload:
+    $ref: ./paths/plugins-reload.yaml
+  /apisix/admin/stream_routes:
+    $ref: ./paths/stream-routes.yaml
+  /apisix/admin/secrets:
+    $ref: ./paths/secrets.yaml
+  /apisix/admin/protos/{id}:
+    $ref: ./paths/protos-by-id.yaml
+  /apisix/admin/protos:
+    $ref: ./paths/protos.yaml
+  /apisix/admin/schema/validate/{resource}:
+    $ref: ./paths/schema-validate-by-resource.yaml
+  /apisix/admin/stream_routes/{id}:
+    $ref: ./paths/stream-routes-by-id.yaml
+  /apisix/admin/consumers/{username}/credentials:
+    $ref: ./paths/consumers-by-username-credentials.yaml
+  /apisix/admin/consumers/{username}/credentials/{id}:
+    $ref: ./paths/consumers-by-username-credentials-by-id.yaml
+  /apisix/admin/secrets/{secret_type}/{id}:
+    $ref: ./paths/secrets-by-secret-type-by-id.yaml
+  /apisix/admin:
+    $ref: ./paths/apisix-admin.yaml
+  /apisix/admin/configs:
+    $ref: ./paths/configs.yaml
+  /apisix/admin/configs/validate:
+    $ref: ./paths/configs-validate.yaml
+  /apisix/admin/routes/{id}/{sub_path}:
+    $ref: ./paths/routes-by-id-by-sub-path.yaml
+  /apisix/admin/services/{id}/{sub_path}:
+    $ref: ./paths/services-by-id-by-sub-path.yaml
+  /apisix/admin/upstreams/{id}/{sub_path}:
+    $ref: ./paths/upstreams-by-id-by-sub-path.yaml
+  /apisix/admin/ssls/{id}/{sub_path}:
+    $ref: ./paths/ssls-by-id-by-sub-path.yaml
+  /apisix/admin/consumer_groups/{id}/{sub_path}:
+    $ref: ./paths/consumer-groups-by-id-by-sub-path.yaml
+  /apisix/admin/global_rules/{id}/{sub_path}:
+    $ref: ./paths/global-rules-by-id-by-sub-path.yaml
+  /apisix/admin/plugin_configs/{id}/{sub_path}:
+    $ref: ./paths/plugin-configs-by-id-by-sub-path.yaml
+  /apisix/admin/secrets/{secret_type}:
+    $ref: ./paths/secrets-by-secret-type.yaml
+  /apisix/admin/secrets/{secret_type}/{id}/{sub_path}:
+    $ref: ./paths/secrets-by-secret-type-by-id-by-sub-path.yaml
+  /apisix/admin/schema/{resource}:
+    $ref: ./paths/schema-by-resource.yaml
+  /apisix/admin/schema/plugins/{plugin_name}:
+    $ref: ./paths/schema-plugins-by-plugin-name.yaml
+servers:
+  - url: "{protocol}://{host}:{port}"
+    description: APISIX Admin API Server
+    variables:
+      protocol:
+        default: http
+        enum:
+          - http
+          - https
+        description: Protocol scheme. Use `https` if `admin_api_mtls` is configured.
+      host:
+        default: 127.0.0.1
+        description: Admin API host address. Configure via `deployment.admin.admin_listen` in `config.yaml`.
+      port:
+        default: "9180"
+        description: Admin API port. Default is `9180`.
+components:
+  securitySchemes:
+    adminKey:
+      $ref: ./components/securitySchemes/adminKey.yaml
+    apiKeyQuery:
+      $ref: ./components/securitySchemes/apiKeyQuery.yaml
+    apiKeyCookie:
+      $ref: ./components/securitySchemes/apiKeyCookie.yaml
+  schemas:
+    ErrorResponse:
+      $ref: ./components/schemas/ErrorResponse.yaml
+    AuthErrorResponse:
+      $ref: ./components/schemas/AuthErrorResponse.yaml
+    NotFoundResponse:
+      $ref: ./components/schemas/NotFoundResponse.yaml
+    ResourceId:
+      $ref: ./components/schemas/ResourceId.yaml
+    Timeout:
+      $ref: ./components/schemas/Timeout.yaml
+    Labels:
+      $ref: ./components/schemas/Labels.yaml
+    HealthCheckActiveHealthy:
+      $ref: ./components/schemas/HealthCheckActiveHealthy.yaml
+    HealthCheckActiveUnhealthy:
+      $ref: ./components/schemas/HealthCheckActiveUnhealthy.yaml
+    HealthCheckActive:
+      $ref: ./components/schemas/HealthCheckActive.yaml
+    HealthCheckPassiveHealthy:
+      $ref: ./components/schemas/HealthCheckPassiveHealthy.yaml
+    HealthCheckPassiveUnhealthy:
+      $ref: ./components/schemas/HealthCheckPassiveUnhealthy.yaml
+    HealthCheckPassive:
+      $ref: ./components/schemas/HealthCheckPassive.yaml
+    HealthCheck:
+      $ref: ./components/schemas/HealthCheck.yaml
+    UpstreamNodesMap:
+      $ref: ./components/schemas/UpstreamNodesMap.yaml
+    UpstreamNodeItem:
+      $ref: ./components/schemas/UpstreamNodeItem.yaml
+    UpstreamNodes:
+      $ref: ./components/schemas/UpstreamNodes.yaml
+    UpstreamTLS:
+      $ref: ./components/schemas/UpstreamTLS.yaml
+    KeepalivePool:
+      $ref: ./components/schemas/KeepalivePool.yaml
+    Upstream:
+      $ref: ./components/schemas/Upstream.yaml
+    Plugins:
+      $ref: ./components/schemas/Plugins.yaml
+    Route:
+      $ref: ./components/schemas/Route.yaml
+    Service:
+      $ref: ./components/schemas/Service.yaml
+    Consumer:
+      $ref: ./components/schemas/Consumer.yaml
+    Credential:
+      $ref: ./components/schemas/Credential.yaml
+    ConsumerGroup:
+      $ref: ./components/schemas/ConsumerGroup.yaml
+    SSL:
+      $ref: ./components/schemas/SSL.yaml
+    GlobalRule:
+      $ref: ./components/schemas/GlobalRule.yaml
+    PluginConfig:
+      $ref: ./components/schemas/PluginConfig.yaml
+    StreamRoute:
+      $ref: ./components/schemas/StreamRoute.yaml
+    Proto:
+      $ref: ./components/schemas/Proto.yaml
+    SSLRead:
+      $ref: ./components/schemas/SSLRead.yaml
+    CredentialEnvelope:
+      $ref: ./components/schemas/CredentialEnvelope.yaml
+    CredentialListEnvelope:
+      $ref: ./components/schemas/CredentialListEnvelope.yaml
+    RouteEnvelope:
+      $ref: ./components/schemas/RouteEnvelope.yaml
+    RouteListEnvelope:
+      $ref: ./components/schemas/RouteListEnvelope.yaml
+    GraphQLCostDecoration:
+      $ref: ./components/schemas/GraphQLCostDecoration.yaml
+    GraphQLCostDecorationCreate:
+      $ref: ./components/schemas/GraphQLCostDecorationCreate.yaml
+    GraphQLCostDecorationPatch:
+      $ref: ./components/schemas/GraphQLCostDecorationPatch.yaml
+    GraphQLCostDecorationEnvelope:
+      $ref: ./components/schemas/GraphQLCostDecorationEnvelope.yaml
+    GraphQLCostDecorationListEnvelope:
+      $ref: ./components/schemas/GraphQLCostDecorationListEnvelope.yaml
+    ServiceEnvelope:
+      $ref: ./components/schemas/ServiceEnvelope.yaml
+    ServiceListEnvelope:
+      $ref: ./components/schemas/ServiceListEnvelope.yaml
+    UpstreamEnvelope:
+      $ref: ./components/schemas/UpstreamEnvelope.yaml
+    UpstreamListEnvelope:
+      $ref: ./components/schemas/UpstreamListEnvelope.yaml
+    ConsumerEnvelope:
+      $ref: ./components/schemas/ConsumerEnvelope.yaml
+    ConsumerListEnvelope:
+      $ref: ./components/schemas/ConsumerListEnvelope.yaml
+    ConsumerGroupEnvelope:
+      $ref: ./components/schemas/ConsumerGroupEnvelope.yaml
+    ConsumerGroupListEnvelope:
+      $ref: ./components/schemas/ConsumerGroupListEnvelope.yaml
+    SSLEnvelope:
+      $ref: ./components/schemas/SSLEnvelope.yaml
+    SSLListEnvelope:
+      $ref: ./components/schemas/SSLListEnvelope.yaml
+    GlobalRuleEnvelope:
+      $ref: ./components/schemas/GlobalRuleEnvelope.yaml
+    GlobalRuleListEnvelope:
+      $ref: ./components/schemas/GlobalRuleListEnvelope.yaml
+    PluginConfigEnvelope:
+      $ref: ./components/schemas/PluginConfigEnvelope.yaml
+    PluginConfigListEnvelope:
+      $ref: ./components/schemas/PluginConfigListEnvelope.yaml
+    StreamRouteEnvelope:
+      $ref: ./components/schemas/StreamRouteEnvelope.yaml
+    StreamRouteListEnvelope:
+      $ref: ./components/schemas/StreamRouteListEnvelope.yaml
+    ProtoEnvelope:
+      $ref: ./components/schemas/ProtoEnvelope.yaml
+    ProtoListEnvelope:
+      $ref: ./components/schemas/ProtoListEnvelope.yaml
+    RoutePatch:
+      $ref: ./components/schemas/RoutePatch.yaml
+    ServicePatch:
+      $ref: ./components/schemas/ServicePatch.yaml
+    UpstreamPatch:
+      $ref: ./components/schemas/UpstreamPatch.yaml
+    GlobalRulePatch:
+      $ref: ./components/schemas/GlobalRulePatch.yaml
+    ConsumerGroupPatch:
+      $ref: ./components/schemas/ConsumerGroupPatch.yaml
+    PluginConfigPatch:
+      $ref: ./components/schemas/PluginConfigPatch.yaml
+    VaultSecret:
+      $ref: ./components/schemas/VaultSecret.yaml
+    AwsSecret:
+      $ref: ./components/schemas/AwsSecret.yaml
+    GcpSecret:
+      $ref: ./components/schemas/GcpSecret.yaml
+    Secret:
+      $ref: ./components/schemas/Secret.yaml
+    SSLPatch:
+      $ref: ./components/schemas/SSLPatch.yaml
+    SecretPatch:
+      $ref: ./components/schemas/SecretPatch.yaml
+    ConfigValidationDocument:
+      $ref: ./components/schemas/ConfigValidationDocument.yaml
+    ConfigValidationError:
+      $ref: ./components/schemas/ConfigValidationError.yaml
+    ConfigValidationErrorResponse:
+      $ref: ./components/schemas/ConfigValidationErrorResponse.yaml
+    ConfigValidationCredential:
+      $ref: ./components/schemas/ConfigValidationCredential.yaml
+    ConfigValidationRoute:
+      $ref: ./components/schemas/ConfigValidationRoute.yaml
+    ConfigValidationService:
+      $ref: ./components/schemas/ConfigValidationService.yaml
+    ConfigValidationUpstream:
+      $ref: ./components/schemas/ConfigValidationUpstream.yaml
+    ConfigValidationConsumer:
+      $ref: ./components/schemas/ConfigValidationConsumer.yaml
+    ConfigValidationSSL:
+      $ref: ./components/schemas/ConfigValidationSSL.yaml
+    ConfigValidationStreamRoute:
+      $ref: ./components/schemas/ConfigValidationStreamRoute.yaml
+    ConfigValidationPluginConfig:
+      $ref: ./components/schemas/ConfigValidationPluginConfig.yaml
+    ConfigValidationConsumerGroup:
+      $ref: ./components/schemas/ConfigValidationConsumerGroup.yaml
+    ConfigValidationGlobalRule:
+      $ref: ./components/schemas/ConfigValidationGlobalRule.yaml
+    ConfigValidationProto:
+      $ref: ./components/schemas/ConfigValidationProto.yaml
+    UpstreamWarmUp:
+      $ref: ./components/schemas/UpstreamWarmUp.yaml
+  responses:
+    BadRequest:
+      $ref: ./components/responses/BadRequest.yaml
+    Unauthorized:
+      $ref: ./components/responses/Unauthorized.yaml
+    NotFound:
+      $ref: ./components/responses/NotFound.yaml
+  parameters:
+    Ttl:
+      $ref: ./components/parameters/Ttl.yaml
+    Force:
+      $ref: ./components/parameters/Force.yaml
+    Page:
+      $ref: ./components/parameters/Page.yaml
+    PageSize:
+      $ref: ./components/parameters/PageSize.yaml
+    IdInPath:
+      $ref: ./components/parameters/IdInPath.yaml
+    SecretType:
+      $ref: ./components/parameters/SecretType.yaml
+    NameFilter:
+      $ref: ./components/parameters/NameFilter.yaml
+    LabelFilter:
+      $ref: ./components/parameters/LabelFilter.yaml
+    UriFilter:
+      $ref: ./components/parameters/UriFilter.yaml
+    FilterExpr:
+      $ref: ./components/parameters/FilterExpr.yaml
+    UsernameInPath:
+      $ref: ./components/parameters/UsernameInPath.yaml
+    PluginNameInPath:
+      $ref: ./components/parameters/PluginNameInPath.yaml
+    Subsystem:
+      $ref: ./components/parameters/Subsystem.yaml
+    PluginListAll:
+      $ref: ./components/parameters/PluginListAll.yaml
+    ResourceKindInPath:
+      $ref: ./components/parameters/ResourceKindInPath.yaml
+  requestBodies:
+    GraphQLCostDecorationPatchBody:
+      $ref: ./components/requestBodies/GraphQLCostDecorationPatchBody.yaml
+    CredentialUpsert:
+      $ref: ./components/requestBodies/CredentialUpsert.yaml
+    PluginMetadataUpsert:
+      $ref: ./components/requestBodies/PluginMetadataUpsert.yaml
+    RouteUpsertPostCollection:
+      $ref: ./components/requestBodies/RouteUpsertPostCollection.yaml
+    RouteUpsertPutId:
+      $ref: ./components/requestBodies/RouteUpsertPutId.yaml
+    RouteUpsertPatchId:
+      $ref: ./components/requestBodies/RouteUpsertPatchId.yaml
+    ServiceUpsertPostCollection:
+      $ref: ./components/requestBodies/ServiceUpsertPostCollection.yaml
+    ServiceUpsertPutId:
+      $ref: ./components/requestBodies/ServiceUpsertPutId.yaml
+    ServiceUpsertPatchId:
+      $ref: ./components/requestBodies/ServiceUpsertPatchId.yaml
+    UpstreamUpsertPostCollection:
+      $ref: ./components/requestBodies/UpstreamUpsertPostCollection.yaml
+    UpstreamUpsertPutId:
+      $ref: ./components/requestBodies/UpstreamUpsertPutId.yaml
+    UpstreamUpsertPatchId:
+      $ref: ./components/requestBodies/UpstreamUpsertPatchId.yaml
+    ConsumerUpsertPutCollection:
+      $ref: ./components/requestBodies/ConsumerUpsertPutCollection.yaml
+    ConsumerGroupUpsertPutId:
+      $ref: ./components/requestBodies/ConsumerGroupUpsertPutId.yaml
+    ConsumerGroupUpsertPatchId:
+      $ref: ./components/requestBodies/ConsumerGroupUpsertPatchId.yaml
+    SslUpsertPostCollection:
+      $ref: ./components/requestBodies/SslUpsertPostCollection.yaml
+    SslUpsertPutId:
+      $ref: ./components/requestBodies/SslUpsertPutId.yaml
+    GlobalRuleUpsertPutId:
+      $ref: ./components/requestBodies/GlobalRuleUpsertPutId.yaml
+    GlobalRuleUpsertPatchId:
+      $ref: ./components/requestBodies/GlobalRuleUpsertPatchId.yaml
+    PluginConfigUpsertPutId:
+      $ref: ./components/requestBodies/PluginConfigUpsertPutId.yaml
+    PluginConfigUpsertPatchId:
+      $ref: ./components/requestBodies/PluginConfigUpsertPatchId.yaml
+    StreamRouteUpsertPostCollection:
+      $ref: ./components/requestBodies/StreamRouteUpsertPostCollection.yaml
+    StreamRouteUpsertPutId:
+      $ref: ./components/requestBodies/StreamRouteUpsertPutId.yaml
+    ProtoUpsertPostCollection:
+      $ref: ./components/requestBodies/ProtoUpsertPostCollection.yaml
+    ProtoUpsertPutId:
+      $ref: ./components/requestBodies/ProtoUpsertPutId.yaml
+    SecretUpsertPutCollection:
+      $ref: ./components/requestBodies/SecretUpsertPutCollection.yaml
+    SecretUpsertPatchCollection:
+      $ref: ./components/requestBodies/SecretUpsertPatchCollection.yaml
+    SslUpsertPatchId:
+      $ref: ./components/requestBodies/SslUpsertPatchId.yaml
+security:
+  - adminKey: []
+  - apiKeyQuery: []
+  - apiKeyCookie: []

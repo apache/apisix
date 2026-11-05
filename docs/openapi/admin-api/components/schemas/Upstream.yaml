@@ -1,0 +1,166 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+type: object
+description: |-
+  Upstream configuration defining backend service nodes and load balancing behavior.
+
+  An upstream must specify either `nodes` (static list) or `service_name` + `discovery_type` (service discovery).
+properties:
+  id:
+    $ref: ./ResourceId.yaml
+  name:
+    type: string
+    maxLength: 256
+    minLength: 1
+    description: Human-readable name for the upstream.
+  desc:
+    type: string
+    maxLength: 256
+    description: Description of the upstream.
+  labels:
+    $ref: ./Labels.yaml
+  create_time:
+    type: integer
+    description: Unix timestamp when the upstream was created. Read-only, set automatically.
+    readOnly: true
+  update_time:
+    type: integer
+    description: Unix timestamp when the upstream was last updated. Read-only, set automatically.
+    readOnly: true
+  nodes:
+    description: The upstream endpoints.
+    allOf:
+      - $ref: ./UpstreamNodes.yaml
+  warm_up_conf:
+    $ref: ./UpstreamWarmUp.yaml
+  retries:
+    type: integer
+    minimum: 0
+    description: Number of retry attempts when a request to the upstream fails.
+  retry_timeout:
+    type: number
+    minimum: 0
+    description: Maximum time in seconds for retry attempts. `0` disables the retry timeout.
+  timeout:
+    $ref: ./Timeout.yaml
+  type:
+    type: string
+    default: roundrobin
+    enum:
+      - roundrobin
+      - chash
+      - ewma
+      - least_conn
+    description: Load balancing algorithm.
+    x-enumDescriptions:
+      roundrobin: Weighted round-robin distribution (default).
+      chash: Consistent hashing for session affinity.
+      ewma: Latency-based load balancing using an exponentially weighted moving average.
+      least_conn: Least number of active connections.
+  hash_on:
+    type: string
+    default: vars
+    enum:
+      - vars
+      - header
+      - cookie
+      - consumer
+      - vars_combinations
+    description: What to hash on when `type` is `chash`.
+    x-enumDescriptions:
+      vars: Hash on an NGINX variable specified by `key`.
+      header: Hash on a request header specified by `key`.
+      cookie: Hash on a cookie value specified by `key`.
+      consumer: Hash on the authenticated consumer name.
+      vars_combinations: Hash on a combination of variables.
+  key:
+    type: string
+    description: The hash key used when `type` is `chash`. Required when `hash_on` is `header`, `cookie`, `vars`, or `vars_combinations`. Not needed when `hash_on` is `consumer`.
+  scheme:
+    type: string
+    default: http
+    enum:
+      - grpc
+      - grpcs
+      - http
+      - https
+      - ws
+      - wss
+      - tcp
+      - tls
+      - udp
+      - kafka
+    description: Protocol for communicating with upstream nodes.
+    x-enumDescriptions:
+      grpc: Layer 7 gRPC.
+      grpcs: Layer 7 gRPC over TLS.
+      http: Layer 7 HTTP.
+      https: Layer 7 HTTP over TLS.
+      tcp: Layer 4 TCP.
+      tls: Layer 4 TCP over TLS.
+      udp: Layer 4 UDP.
+      kafka: Apache Kafka protocol.
+      ws: Frame-aware WebSocket proxying; `enable_websocket` is ignored.
+      wss: Frame-aware WebSocket proxying over TLS; uses the shared CA trust store, not `tls.ca_certs`.
+  checks:
+    $ref: ./HealthCheck.yaml
+  tls:
+    $ref: ./UpstreamTLS.yaml
+  keepalive_pool:
+    $ref: ./KeepalivePool.yaml
+  pass_host:
+    type: string
+    enum:
+      - pass
+      - node
+      - rewrite
+    default: pass
+    description: How to set the `Host` header when proxying to the upstream.
+    x-enumDescriptions:
+      pass: Forward the client's original `Host` header.
+      node: Use the upstream node's hostname.
+      rewrite: Use the value of `upstream_host`.
+  upstream_host:
+    type: string
+    description: Custom `Host` header value. Only effective when `pass_host` is `rewrite`.
+  discovery_type:
+    type: string
+    description: Service discovery type (e.g., `dns`, `consul`, `nacos`, `eureka`). Required when using service discovery instead of static `nodes`.
+  discovery_args:
+    type: object
+    description: Additional arguments for service discovery.
+    properties:
+      namespace_id:
+        type: string
+        description: Namespace ID for Nacos service discovery.
+      group_name:
+        type: string
+        description: Group name for service discovery.
+  service_name:
+    type: string
+    maxLength: 256
+    minLength: 1
+    description: Service name for service discovery. Required when `discovery_type` is set.
+oneOf:
+  - required:
+      - nodes
+    title: Use Upstream Nodes
+  - required:
+      - service_name
+      - discovery_type
+    title: Use Service Registry
+additionalProperties: false

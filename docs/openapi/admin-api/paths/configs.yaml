@@ -1,0 +1,87 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+get:
+  tags:
+    - Standalone
+  operationId: getStandaloneConfig
+  summary: Get the standalone configuration
+  description: Available in API-driven standalone mode, with the YAML configuration provider and Admin API enabled. Returns the accepted configuration snapshot and its version and digest metadata, not a worker synchronization report. See [API-Driven Standalone Mode Usage](/apisix/reference/api-standalone-usage).
+  responses:
+    "200":
+      description: Current standalone configuration.
+      content:
+        application/json:
+          schema:
+            type: object
+        application/yaml:
+          schema:
+            type: string
+    "401":
+      $ref: ../components/responses/Unauthorized.yaml
+  parameters: []
+put:
+  tags:
+    - Standalone
+  operationId: putStandaloneConfig
+  summary: Replace the standalone configuration
+  description: Replace the complete configuration snapshot in API-driven standalone mode. Omitted resources are removed unless their resource type's configuration version is explicitly retained. Validate the complete document before applying it. A client-supplied `X-Digest` is required and must change when the intended configuration changes. APISIX compares the supplied identifier, not a computed hash. A matching digest skips the update and any wait. APISIX supports an optional bounded `wait` for local worker synchronization; this does not verify other instances or upstream health. See [API-Driven Standalone Mode Usage](/apisix/reference/api-standalone-usage).
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+      application/yaml:
+        schema:
+          type: string
+  responses:
+    "200":
+      description: With a positive wait, all local workers reported the submitted digest for their tracked HTTP and enabled stream resource types.
+    "202":
+      description: Snapshot accepted. No wait was requested, or the wait expired before local worker synchronization was confirmed. A timeout does not roll back the snapshot.
+    "204":
+      description: The supplied digest matches the stored snapshot. No update or wait was performed; this is not a readiness confirmation.
+    "400":
+      $ref: ../components/responses/BadRequest.yaml
+    "401":
+      $ref: ../components/responses/Unauthorized.yaml
+  parameters:
+    - name: X-Digest
+      in: header
+      required: true
+      description: Client-chosen identifier for this snapshot. Use a new value for changed content.
+      schema:
+        type: string
+    - name: wait
+      in: query
+      description: Wait timeout in milliseconds. Values above 60000 are capped; absent, nonnumeric, or nonpositive values do not wait.
+      schema:
+        type: number
+        default: 0
+      example: 5000
+head:
+  tags:
+    - Standalone
+  operationId: headStandaloneConfig
+  summary: Probe standalone configuration availability
+  description: Returns `200 OK` when the API-driven standalone configuration endpoint is reachable, including before any snapshot is loaded. When available, digest and last-modified metadata are returned in headers. This endpoint does not confirm worker synchronization.
+  responses:
+    "200":
+      description: Standalone configuration is reachable.
+    "401":
+      $ref: ../components/responses/Unauthorized.yaml
+  parameters: []

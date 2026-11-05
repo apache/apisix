@@ -1,0 +1,185 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+type: object
+description: Partial update for an existing `SSL`. APISIX recursively merges object fields, replaces arrays, and removes an object field when its value is `null`. The merged resource is then validated against the complete `SSL` schema.
+properties:
+  id:
+    description: Unique identifier for the resource. Can be a string (1–64 characters, alphanumeric with `-`, `_`, `.`) or a positive integer.
+    anyOf:
+      - type:
+          - string
+          - "null"
+        minLength: 1
+        maxLength: 64
+        pattern: ^[a-zA-Z0-9-_.]+$
+        examples:
+          - my-route-1
+        title: String ID
+      - type:
+          - integer
+          - "null"
+        minimum: 1
+        examples:
+          - 1
+        title: Integer ID
+      - type: "null"
+  desc:
+    type:
+      - string
+      - "null"
+    maxLength: 256
+    description: Description.
+  labels:
+    type:
+      - object
+      - "null"
+    description: Key-value pairs for categorizing and filtering resources. Values must be non-empty strings (max 256 characters).
+    additionalProperties:
+      type:
+        - string
+        - "null"
+      pattern: ^\S+$
+      maxLength: 256
+      minLength: 1
+    examples:
+      - env: production
+        team: platform
+        version: v2
+  create_time:
+    type:
+      - integer
+      - "null"
+    readOnly: true
+    description: Unix timestamp of creation. Read-only.
+  update_time:
+    type:
+      - integer
+      - "null"
+    readOnly: true
+    description: Unix timestamp of last update. Read-only.
+  type:
+    type:
+      - string
+      - "null"
+    default: server
+    enum:
+      - server
+      - client
+      - null
+    description: Certificate type.
+    x-enumDescriptions:
+      server: HTTPS termination matched by SNI.
+      client: Client certificate for mTLS with upstream services.
+  sni:
+    type:
+      - string
+      - "null"
+    description: Server Name Indication (SNI) to match. Supports wildcard prefix (`*.example.com`). Mutually exclusive with `snis`.
+    examples:
+      - api.example.com
+  snis:
+    type:
+      - array
+      - "null"
+    items:
+      type: string
+    minItems: 1
+    description: Multiple SNI hostnames. Mutually exclusive with `sni`.
+  cert:
+    type:
+      - string
+      - "null"
+    minLength: 128
+    maxLength: 65536
+    description: PEM-encoded server certificate. Can also be a secret reference (`$secret://...`).
+  key:
+    type:
+      - string
+      - "null"
+    minLength: 128
+    maxLength: 65536
+    description: PEM-encoded private key. Can also be a secret reference (`$secret://...`). **Not returned in GET responses for security.**
+  certs:
+    type:
+      - array
+      - "null"
+    items:
+      type: string
+    description: Additional certificates for certificate chain or alternative key types.
+  keys:
+    type:
+      - array
+      - "null"
+    items:
+      type: string
+    description: Additional private keys corresponding to `certs`.
+  client:
+    type:
+      - object
+      - "null"
+    description: mTLS client verification settings.
+    properties:
+      ca:
+        type:
+          - string
+          - "null"
+        minLength: 128
+        maxLength: 65536
+        description: PEM-encoded CA certificate for client verification.
+      depth:
+        type:
+          - integer
+          - "null"
+        minimum: 0
+        default: 1
+        description: Maximum certificate chain depth.
+      skip_mtls_uri_regex:
+        type:
+          - array
+          - "null"
+        items:
+          type: string
+        minItems: 1
+        uniqueItems: true
+        description: URI regex patterns to skip mTLS verification.
+  status:
+    type:
+      - integer
+      - "null"
+    enum:
+      - 1
+      - 0
+      - null
+    default: 1
+    description: SSL status.
+    x-enumDescriptions:
+      "0": Disabled.
+      "1": Enabled (default).
+  ssl_protocols:
+    type:
+      - array
+      - "null"
+    items:
+      type: string
+      enum:
+        - TLSv1.1
+        - TLSv1.2
+        - TLSv1.3
+    maxItems: 3
+    uniqueItems: true
+    description: Allowed TLS protocol versions.
+additionalProperties: false

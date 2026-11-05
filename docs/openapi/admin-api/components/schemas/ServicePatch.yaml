@@ -1,0 +1,805 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+type: object
+description: Partial update for an existing `Service`. APISIX recursively merges object fields, replaces arrays, and removes an object field when its value is `null`. The merged resource is then validated against the complete `Service` schema.
+properties:
+  id:
+    description: Unique identifier for the resource. Can be a string (1–64 characters, alphanumeric with `-`, `_`, `.`) or a positive integer.
+    anyOf:
+      - type:
+          - string
+          - "null"
+        minLength: 1
+        maxLength: 64
+        pattern: ^[a-zA-Z0-9-_.]+$
+        examples:
+          - my-route-1
+        title: String ID
+      - type:
+          - integer
+          - "null"
+        minimum: 1
+        examples:
+          - 1
+        title: Integer ID
+      - type: "null"
+  name:
+    type:
+      - string
+      - "null"
+    maxLength: 256
+    minLength: 1
+    description: Human-readable name.
+  desc:
+    type:
+      - string
+      - "null"
+    maxLength: 256
+    description: Description of this service.
+  labels:
+    type:
+      - object
+      - "null"
+    description: Key-value pairs for categorizing and filtering resources. Values must be non-empty strings (max 256 characters).
+    additionalProperties:
+      type:
+        - string
+        - "null"
+      pattern: ^\S+$
+      maxLength: 256
+      minLength: 1
+    examples:
+      - env: production
+        team: platform
+        version: v2
+  create_time:
+    type:
+      - integer
+      - "null"
+    readOnly: true
+    description: Unix timestamp of creation. Read-only.
+  update_time:
+    type:
+      - integer
+      - "null"
+    readOnly: true
+    description: Unix timestamp of last update. Read-only.
+  plugins:
+    type:
+      - object
+      - "null"
+    description: |-
+      Plugin configurations as a JSON object. Each key is a plugin name, and the value is that plugin's configuration object.
+
+      Example:
+      ```json
+      {
+        "limit-count": {
+          "count": 100,
+          "time_window": 60
+        },
+        "key-auth": {}
+      }
+      ```
+
+      See the [Plugin Hub](https://apisix.apache.org/plugins/) for available plugins and their schemas.
+    additionalProperties:
+      type:
+        - object
+        - "null"
+    examples:
+      - limit-count:
+          count: 100
+          time_window: 60
+          rejected_code: 429
+          key_type: var
+          key: remote_addr
+  upstream:
+    type:
+      - object
+      - "null"
+    description: |-
+      Upstream configuration defining backend service nodes and load balancing behavior.
+
+      An upstream must specify either `nodes` (static list) or `service_name` + `discovery_type` (service discovery).
+    properties:
+      id:
+        description: Unique identifier for the resource. Can be a string (1–64 characters, alphanumeric with `-`, `_`, `.`) or a positive integer.
+        anyOf:
+          - type:
+              - string
+              - "null"
+            minLength: 1
+            maxLength: 64
+            pattern: ^[a-zA-Z0-9-_.]+$
+            examples:
+              - my-route-1
+            title: String ID
+          - type:
+              - integer
+              - "null"
+            minimum: 1
+            examples:
+              - 1
+            title: Integer ID
+          - type: "null"
+      name:
+        type:
+          - string
+          - "null"
+        maxLength: 256
+        minLength: 1
+        description: Human-readable name for the upstream.
+      desc:
+        type:
+          - string
+          - "null"
+        maxLength: 256
+        description: Description of the upstream.
+      labels:
+        type:
+          - object
+          - "null"
+        description: Key-value pairs for categorizing and filtering resources. Values must be non-empty strings (max 256 characters).
+        additionalProperties:
+          type:
+            - string
+            - "null"
+          pattern: ^\S+$
+          maxLength: 256
+          minLength: 1
+        examples:
+          - env: production
+            team: platform
+            version: v2
+      create_time:
+        type:
+          - integer
+          - "null"
+        description: Unix timestamp when the upstream was created. Read-only, set automatically.
+        readOnly: true
+      update_time:
+        type:
+          - integer
+          - "null"
+        description: Unix timestamp when the upstream was last updated. Read-only, set automatically.
+        readOnly: true
+      nodes:
+        description: The upstream endpoints.
+        anyOf:
+          - description: |-
+              Upstream backend nodes. Supports two formats:
+
+              **Map format** (shorthand): `{"host:port": weight}`
+
+              **Array format** (full control): `[{"host": "...", "port": ..., "weight": ...}]`
+            anyOf:
+              - type:
+                  - object
+                  - "null"
+                description: 'Upstream nodes as a map of `"host:port": weight` pairs. This is the shorthand format.'
+                additionalProperties:
+                  type:
+                    - integer
+                    - "null"
+                  minimum: 0
+                  description: Weight of this node for load balancing. `0` means the node receives no traffic.
+                examples:
+                  - httpbin.org:80: 1
+                    10.0.0.1:8080: 2
+              - type:
+                  - array
+                  - "null"
+                items:
+                  $ref: ./UpstreamNodeItem.yaml
+                title: Node Objects
+              - type: "null"
+              - type: "null"
+          - type: "null"
+          - type: "null"
+      warm_up_conf:
+        type:
+          - object
+          - "null"
+        description: Gradually increases the effective weight of newly observed nodes. Only supported for HTTP upstreams using `roundrobin` and a single node priority; ignored by stream routes and rejected in inline `traffic-split` upstreams. The initial node set is already warmed. Each gateway instance tracks ramps independently. This changes traffic distribution, not the total request rate.
+        properties:
+          slow_start_time_seconds:
+            type:
+              - integer
+              - "null"
+            minimum: 1
+            description: Seconds for a new node to reach its configured weight.
+          min_weight_percent:
+            type:
+              - integer
+              - "null"
+            minimum: 1
+            maximum: 100
+            description: Minimum percentage of the configured node weight. Effective positive weights are rounded down but never below 1.
+          interval:
+            type:
+              - integer
+              - "null"
+            minimum: 1
+            default: 1
+            description: Seconds between weight refreshes. Cannot exceed `slow_start_time_seconds`.
+          aggression:
+            type:
+              - number
+              - "null"
+            minimum: 0.01
+            default: 1
+            description: "Ramp shape: 1 is linear, above 1 is faster initially, and below 1 is slower initially."
+          startup_grace_period_seconds:
+            type:
+              - integer
+              - "null"
+            minimum: 0
+            default: 0
+            description: Seconds after the gateway starts during which newly observed nodes are treated as already warmed.
+        additionalProperties: false
+      retries:
+        type:
+          - integer
+          - "null"
+        minimum: 0
+        description: Number of retry attempts when a request to the upstream fails.
+      retry_timeout:
+        type:
+          - number
+          - "null"
+        minimum: 0
+        description: Maximum time in seconds for retry attempts. `0` disables the retry timeout.
+      timeout:
+        type:
+          - object
+          - "null"
+        description: Timeout settings in seconds for connecting to, sending data to, and reading data from the upstream.
+        properties:
+          connect:
+            type:
+              - number
+              - "null"
+            exclusiveMinimum: 0
+            description: Timeout in seconds for establishing a connection to the upstream.
+            examples:
+              - 6
+          send:
+            type:
+              - number
+              - "null"
+            exclusiveMinimum: 0
+            description: Timeout in seconds for sending data to the upstream.
+            examples:
+              - 6
+          read:
+            type:
+              - number
+              - "null"
+            exclusiveMinimum: 0
+            description: Timeout in seconds for reading the response from the upstream.
+            examples:
+              - 6
+        examples:
+          - connect: 6
+            send: 6
+            read: 6
+      type:
+        type:
+          - string
+          - "null"
+        default: roundrobin
+        enum:
+          - roundrobin
+          - chash
+          - ewma
+          - least_conn
+          - null
+        description: Load balancing algorithm.
+        x-enumDescriptions:
+          roundrobin: Weighted round-robin distribution (default).
+          chash: Consistent hashing for session affinity.
+          ewma: Latency-based load balancing using an exponentially weighted moving average.
+          least_conn: Least number of active connections.
+      hash_on:
+        type:
+          - string
+          - "null"
+        default: vars
+        enum:
+          - vars
+          - header
+          - cookie
+          - consumer
+          - vars_combinations
+          - null
+        description: What to hash on when `type` is `chash`.
+        x-enumDescriptions:
+          vars: Hash on an NGINX variable specified by `key`.
+          header: Hash on a request header specified by `key`.
+          cookie: Hash on a cookie value specified by `key`.
+          consumer: Hash on the authenticated consumer name.
+          vars_combinations: Hash on a combination of variables.
+      key:
+        type:
+          - string
+          - "null"
+        description: The hash key used when `type` is `chash`. Required when `hash_on` is `header`, `cookie`, `vars`, or `vars_combinations`. Not needed when `hash_on` is `consumer`.
+      scheme:
+        type:
+          - string
+          - "null"
+        default: http
+        enum:
+          - grpc
+          - grpcs
+          - http
+          - https
+          - ws
+          - wss
+          - tcp
+          - tls
+          - udp
+          - kafka
+          - null
+        description: Protocol for communicating with upstream nodes.
+        x-enumDescriptions:
+          grpc: Layer 7 gRPC.
+          grpcs: Layer 7 gRPC over TLS.
+          http: Layer 7 HTTP.
+          https: Layer 7 HTTP over TLS.
+          tcp: Layer 4 TCP.
+          tls: Layer 4 TCP over TLS.
+          udp: Layer 4 UDP.
+          kafka: Apache Kafka protocol.
+          ws: Frame-aware WebSocket proxying; `enable_websocket` is ignored.
+          wss: Frame-aware WebSocket proxying over TLS; uses the shared CA trust store, not `tls.ca_certs`.
+      checks:
+        type:
+          - object
+          - "null"
+        description: Health check configuration for monitoring upstream node availability. Active checks require at least the `active` field.
+        properties:
+          active:
+            type:
+              - object
+              - "null"
+            description: Active health check configuration. APISIX periodically sends probes to upstream nodes to determine their health status.
+            properties:
+              type:
+                type:
+                  - string
+                  - "null"
+                enum:
+                  - http
+                  - https
+                  - tcp
+                  - null
+                default: http
+                description: Protocol type for health check probes.
+              timeout:
+                type:
+                  - number
+                  - "null"
+                default: 1
+                description: Timeout in seconds for each health check probe.
+              concurrency:
+                type:
+                  - integer
+                  - "null"
+                default: 10
+                description: Number of targets to check concurrently during active health checks.
+              host:
+                type:
+                  - string
+                  - "null"
+                description: Hostname to use in the health check probe `Host` header. Defaults to the upstream node's host.
+              port:
+                type:
+                  - integer
+                  - "null"
+                minimum: 1
+                maximum: 65535
+                description: Port to use for health check probes. Defaults to the upstream node's port.
+              http_path:
+                type:
+                  - string
+                  - "null"
+                default: /
+                description: HTTP request path for health check probes.
+              https_verify_certificate:
+                type:
+                  - boolean
+                  - "null"
+                default: true
+                description: Whether to verify the upstream's TLS certificate during HTTPS health checks.
+              req_headers:
+                type:
+                  - array
+                  - "null"
+                items:
+                  type: string
+                minItems: 1
+                description: Additional HTTP headers to include in health check probe requests.
+              healthy:
+                type:
+                  - object
+                  - "null"
+                description: Thresholds for considering a target healthy during active checks.
+                properties:
+                  interval:
+                    type:
+                      - integer
+                      - "null"
+                    minimum: 1
+                    default: 1
+                    description: Interval in seconds between active health check probes for healthy targets.
+                  http_statuses:
+                    type:
+                      - array
+                      - "null"
+                    items:
+                      type: integer
+                      minimum: 200
+                      maximum: 599
+                    uniqueItems: true
+                    default:
+                      - 200
+                      - 302
+                    description: HTTP status codes that indicate a healthy target.
+                  successes:
+                    type:
+                      - integer
+                      - "null"
+                    minimum: 1
+                    maximum: 254
+                    default: 2
+                    description: Number of consecutive successful probes to consider a target healthy.
+              unhealthy:
+                type:
+                  - object
+                  - "null"
+                description: Thresholds for considering a target unhealthy during active checks.
+                properties:
+                  interval:
+                    type:
+                      - integer
+                      - "null"
+                    minimum: 1
+                    default: 1
+                    description: Interval in seconds between active health check probes for unhealthy targets.
+                  http_statuses:
+                    type:
+                      - array
+                      - "null"
+                    items:
+                      type: integer
+                      minimum: 200
+                      maximum: 599
+                    uniqueItems: true
+                    default:
+                      - 429
+                      - 404
+                      - 500
+                      - 501
+                      - 502
+                      - 503
+                      - 504
+                      - 505
+                    description: HTTP status codes that indicate an unhealthy target.
+                  http_failures:
+                    type:
+                      - integer
+                      - "null"
+                    minimum: 1
+                    maximum: 254
+                    default: 5
+                    description: Number of HTTP failures to consider a target unhealthy.
+                  tcp_failures:
+                    type:
+                      - integer
+                      - "null"
+                    minimum: 1
+                    maximum: 254
+                    default: 2
+                    description: Number of TCP connection failures to consider a target unhealthy.
+                  timeouts:
+                    type:
+                      - integer
+                      - "null"
+                    minimum: 1
+                    maximum: 254
+                    default: 3
+                    description: Number of probe timeouts to consider a target unhealthy.
+          passive:
+            type:
+              - object
+              - "null"
+            description: Passive health check configuration. APISIX monitors real traffic responses to determine upstream node health — no extra probes are sent.
+            properties:
+              type:
+                type:
+                  - string
+                  - "null"
+                enum:
+                  - http
+                  - https
+                  - tcp
+                  - null
+                default: http
+                description: Protocol type for passive health monitoring.
+              healthy:
+                type:
+                  - object
+                  - "null"
+                description: Thresholds for considering a target healthy based on real traffic responses.
+                properties:
+                  http_statuses:
+                    type:
+                      - array
+                      - "null"
+                    items:
+                      type: integer
+                      minimum: 200
+                      maximum: 599
+                    uniqueItems: true
+                    default:
+                      - 200
+                      - 201
+                      - 202
+                      - 203
+                      - 204
+                      - 205
+                      - 206
+                      - 207
+                      - 208
+                      - 226
+                      - 300
+                      - 301
+                      - 302
+                      - 303
+                      - 304
+                      - 305
+                      - 306
+                      - 307
+                      - 308
+                    description: HTTP status codes from real traffic that indicate a healthy target.
+                  successes:
+                    type:
+                      - integer
+                      - "null"
+                    minimum: 0
+                    maximum: 254
+                    default: 5
+                    description: Number of consecutive successful requests to restore a target to healthy status.
+              unhealthy:
+                type:
+                  - object
+                  - "null"
+                description: Thresholds for considering a target unhealthy based on real traffic responses.
+                properties:
+                  http_statuses:
+                    type:
+                      - array
+                      - "null"
+                    items:
+                      type: integer
+                      minimum: 200
+                      maximum: 599
+                    uniqueItems: true
+                    default:
+                      - 429
+                      - 500
+                      - 503
+                    description: HTTP status codes from real traffic that indicate an unhealthy target.
+                  tcp_failures:
+                    type:
+                      - integer
+                      - "null"
+                    minimum: 0
+                    maximum: 254
+                    default: 2
+                    description: Number of TCP failures from real traffic to consider a target unhealthy.
+                  timeouts:
+                    type:
+                      - integer
+                      - "null"
+                    minimum: 0
+                    maximum: 254
+                    default: 7
+                    description: Number of timeouts from real traffic to consider a target unhealthy.
+                  http_failures:
+                    type:
+                      - integer
+                      - "null"
+                    minimum: 0
+                    maximum: 254
+                    default: 5
+                    description: Number of HTTP failures from real traffic to consider a target unhealthy.
+      tls:
+        type:
+          - object
+          - "null"
+        description: TLS configuration for connecting to upstream nodes over HTTPS/gRPCS.
+        properties:
+          client_cert_id:
+            description: Unique identifier for the resource. Can be a string (1–64 characters, alphanumeric with `-`, `_`, `.`) or a positive integer.
+            anyOf:
+              - type:
+                  - string
+                  - "null"
+                minLength: 1
+                maxLength: 64
+                pattern: ^[a-zA-Z0-9-_.]+$
+                examples:
+                  - my-route-1
+                title: String ID
+              - type:
+                  - integer
+                  - "null"
+                minimum: 1
+                examples:
+                  - 1
+                title: Integer ID
+              - type: "null"
+          client_cert:
+            type:
+              - string
+              - "null"
+            minLength: 128
+            maxLength: 65536
+            description: PEM-encoded client certificate for mTLS with the upstream.
+          client_key:
+            type:
+              - string
+              - "null"
+            minLength: 64
+            maxLength: 65536
+            description: PEM-encoded client private key for mTLS with the upstream.
+          verify:
+            type:
+              - boolean
+              - "null"
+            description: Whether to verify the upstream server certificate. If omitted for HTTPS/gRPCS, follows the NGINX verification setting, which is off unless enabled. Explicit `false` disables verification. For `wss`, explicitly set `true` to enable verification against the shared trust store.
+          ca_certs:
+            type:
+              - array
+              - "null"
+            minItems: 1
+            items:
+              type: string
+              minLength: 128
+              maxLength: 65536
+            description: PEM-encoded CA certificates for HTTPS/gRPCS upstream verification. Replaces the NGINX trust store for this upstream. If omitted, configure and load the shared store using `proxy_ssl_verify` for HTTPS or `grpc_ssl_verify` for gRPCS. See [Configure Upstream HTTPS](/apisix/how-to-guide/traffic-management/tls-and-mtls/configure-upstream-https). Does not enable verification by itself; set `tls.verify` to `true`. Rejected for `ws` and `wss` upstreams.
+      keepalive_pool:
+        type:
+          - object
+          - "null"
+        description: Connection pool configuration for keepalive connections to upstream nodes.
+        properties:
+          size:
+            type:
+              - integer
+              - "null"
+            default: 320
+            minimum: 1
+            description: Maximum number of keepalive connections cached in the connection pool.
+          idle_timeout:
+            type:
+              - number
+              - "null"
+            default: 60
+            minimum: 0
+            description: Time in seconds after which an idle keepalive connection is closed. `0` disables the timeout.
+          requests:
+            type:
+              - integer
+              - "null"
+            default: 1000
+            minimum: 1
+            description: Maximum number of requests that can be sent over a single keepalive connection before it is closed.
+      pass_host:
+        type:
+          - string
+          - "null"
+        enum:
+          - pass
+          - node
+          - rewrite
+          - null
+        default: pass
+        description: How to set the `Host` header when proxying to the upstream.
+        x-enumDescriptions:
+          pass: Forward the client's original `Host` header.
+          node: Use the upstream node's hostname.
+          rewrite: Use the value of `upstream_host`.
+      upstream_host:
+        type:
+          - string
+          - "null"
+        description: Custom `Host` header value. Only effective when `pass_host` is `rewrite`.
+      discovery_type:
+        type:
+          - string
+          - "null"
+        description: Service discovery type (e.g., `dns`, `consul`, `nacos`, `eureka`). Required when using service discovery instead of static `nodes`.
+      discovery_args:
+        type:
+          - object
+          - "null"
+        description: Additional arguments for service discovery.
+        properties:
+          namespace_id:
+            type:
+              - string
+              - "null"
+            description: Namespace ID for Nacos service discovery.
+          group_name:
+            type:
+              - string
+              - "null"
+            description: Group name for service discovery.
+      service_name:
+        type:
+          - string
+          - "null"
+        maxLength: 256
+        minLength: 1
+        description: Service name for service discovery. Required when `discovery_type` is set.
+    additionalProperties: false
+  upstream_id:
+    description: Unique identifier for the resource. Can be a string (1–64 characters, alphanumeric with `-`, `_`, `.`) or a positive integer.
+    anyOf:
+      - type:
+          - string
+          - "null"
+        minLength: 1
+        maxLength: 64
+        pattern: ^[a-zA-Z0-9-_.]+$
+        examples:
+          - my-route-1
+        title: String ID
+      - type:
+          - integer
+          - "null"
+        minimum: 1
+        examples:
+          - 1
+        title: Integer ID
+      - type: "null"
+  script:
+    type:
+      - string
+      - "null"
+    minLength: 10
+    maxLength: 102400
+    description: Lua script for plugin orchestration.
+  enable_websocket:
+    type:
+      - boolean
+      - "null"
+    description: Enable WebSocket proxying for routes using this service.
+  hosts:
+    type:
+      - array
+      - "null"
+    items:
+      type: string
+    minItems: 1
+    uniqueItems: true
+    description: Hostnames associated with this service.
+additionalProperties: false

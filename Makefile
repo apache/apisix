@@ -559,3 +559,8 @@ merge-dev-tags:
 		$(IMAGE_NAME):dev-arm64
 	$(ENV_DOCKER) manifest push $(IMAGE_NAME):dev
 	@$(call func_echo_success_status, "$@ -> [ Done ]")
+
+### bundle-admin-api-spec : Generate the bundled Admin API OpenAPI document
+.PHONY: bundle-admin-api-spec
+bundle-admin-api-spec:
+	./utils/bundle-admin-api-spec.sh
