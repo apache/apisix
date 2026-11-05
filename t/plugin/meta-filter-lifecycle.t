@@ -450,3 +450,37 @@ done
 failed to encode Elasticsearch log entry:
 --- no_error_log
 [alert]
+
+
+
+=== TEST 10: response-rewrite preserves its body rewrite when 404 becomes 200
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, {
+                uri = "/specific_status",
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {["127.0.0.1:1980"] = 1}
+                },
+                plugins = {
+                    ["response-rewrite"] = {
+                        _meta = {filter = {{"status", "==", 404}}},
+                        status_code = 200,
+                        body = "replacement body"
+                    }
+                }
+            })
+            assert(code < 300, body)
+            local res = assert(require("resty.http").new():request_uri(
+                "http://127.0.0.1:1984/specific_status", {
+                    headers = {["x-test-upstream-status"] = "404"}
+                }))
+            ngx.say(res.status)
+            ngx.say(res.body)
+        }
+    }
+--- response_body
+200
+replacement body
