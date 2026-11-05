@@ -568,8 +568,9 @@ local function load_full_data(self, dir_res, headers, prev_values, prev_values_h
         if data_valid and self.checker then
             data_valid, err = self.checker(item.value, item.key)
             if not data_valid then
+                -- the checker may have decrypted fields in place, so only the key is logged
                 log.error("failed to check item data of [", self.key,
-                          "] err:", err, " ,val: ", json.delay_encode(item.value))
+                          "] err:", err, ", key: ", item.key)
             end
         end
 
@@ -649,8 +650,9 @@ local function load_full_data(self, dir_res, headers, prev_values, prev_values_h
                 -- as different checkers may use different parameters
                 data_valid, err = self.checker(item.value, item.key)
                 if not data_valid then
+                    -- the checker may have decrypted fields in place, so only the key is logged
                     log.error("failed to check item data of [", self.key,
-                              "] err:", err, " ,val: ", json.delay_encode(item.value))
+                              "] err:", err, ", key: ", item.key)
                 end
             end
 
@@ -804,8 +806,9 @@ local function sync_data(self)
         if data_valid and res.value and self.checker then
             data_valid, err = self.checker(res.value, res.key)
             if not data_valid then
+                -- the checker may have decrypted fields in place, so only the key is logged
                 log.error("failed to check item data of [", self.key,
-                          "] err:", err, " ,val: ", json.delay_encode(res.value))
+                          "] err:", err, ", key: ", res.key)
             end
         end
 
