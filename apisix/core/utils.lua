@@ -28,6 +28,8 @@ local json           = require("apisix.core.json")
 local string         = require("apisix.core.string")
 local dns_client     = require("apisix.core.dns.client")
 local ngx_re         = require("ngx.re")
+local lrucache       = require("resty.lrucache.pureffi")
+local tablepool      = require("tablepool")
 local ipmatcher      = require("resty.ipmatcher")
 local ffi            = require("ffi")
 local base           = require("resty.core.base")
@@ -49,6 +51,7 @@ local exiting        = ngx.worker.exiting
 local ngx_sleep      = ngx.sleep
 local ipairs         = ipairs
 local str_format     = string.format
+local tab_concat     = table.concat
 local ngx_now        = ngx.now
 local ngx_update_time = ngx.update_time
 local math_random    = math.random
@@ -312,36 +315,59 @@ _M.sleep = sleep
 
 local resolve_var
 do
-    local _ctx
-    local n_resolved
     local pat = [[(?<!\\)\$(\{\s*([^}]+?)\s*\}|([\w\.]+))]]
-    local _escaper
+    -- pureffi: once full, resty.lrucache rehashes its key table on most
+    -- evictions, so a configuration with more templates than fit would pay
+    -- for a rehash on most calls
+    local tpl_cache = lrucache.new(1024)
 
-    local function resolve(m)
-        local variable = m[2] or m[3]
-        -- handle the default value with ?? operator
-        local segs, err = ngx_re.split(variable, [[\s*\?\?\s*]])
-        if not segs then
-            log.error("failed to split variable ", variable, ": ", err)
-            return ""
-        end
-        local v = _ctx[segs[1]]
-
-        if v == nil then
-            if #segs == 1 then
-                return ""
+    -- Split a template into literal strings and variables once, so resolving it
+    -- is a table walk instead of a regex gsub with a callback.
+    local function parse(tpl)
+        local segs = {}
+        local m_ctx = {pos = 1}
+        local last = 1
+        while true do
+            local m, err = re_match(tpl, pat, "jo", m_ctx)
+            if err then
+                return nil, err
             end
-            v = segs[2]
+            if not m then
+                break
+            end
+
+            local from = m_ctx.pos - #m[0]
+            if from > last then
+                segs[#segs + 1] = sub_str(tpl, last, from - 1)
+            end
+
+            local variable = m[2] or m[3]
+            local seg = {name = variable}
+            -- handle the default value with ?? operator
+            if core_str.find(variable, "??") then
+                local parts, err = ngx_re.split(variable, [[\s*\?\?\s*]], "jo")
+                if not parts then
+                    return nil, err
+                end
+                seg.name = parts[1]
+                -- "${a??}" splits into {"a"}, which means no default
+                seg.has_default = #parts ~= 1
+                seg.default = parts[2]
+            end
+            segs[#segs + 1] = seg
+            last = m_ctx.pos
         end
-        n_resolved = n_resolved + 1
-        if _escaper then
-            return _escaper(tostring(v))
+
+        if last <= #tpl then
+            segs[#segs + 1] = sub_str(tpl, last)
         end
-        return tostring(v)
+        return segs
     end
 
-    function resolve_var(tpl, ctx, escaper)
-        n_resolved = 0
+    -- no_cache: the template is built per request, so caching it would only
+    -- evict the configured templates
+    function resolve_var(tpl, ctx, escaper, no_cache)
+        local n_resolved = 0
         if not tpl then
             return tpl, nil, n_resolved
         end
@@ -351,16 +377,42 @@ do
             return tpl, nil, n_resolved
         end
 
-        -- avoid creating temporary function
-        _ctx = ctx
-        _escaper = escaper
-        local res, _, err = re_gsub(tpl, pat, resolve, "jo")
-        _ctx = nil
-        _escaper = nil
-        if not res then
-            return nil, err
+        local segs = not no_cache and tpl_cache:get(tpl)
+        if not segs then
+            local err
+            segs, err = parse(tpl)
+            if not segs then
+                return nil, err
+            end
+            if not no_cache then
+                tpl_cache:set(tpl, segs)
+            end
         end
 
+        local n = #segs
+        local buf = tablepool.fetch("resolve_var", n, 0)
+        for i = 1, n do
+            local seg = segs[i]
+            if type(seg) == "table" then
+                local v = ctx[seg.name]
+                if v == nil and not seg.has_default then
+                    seg = ""
+                else
+                    if v == nil then
+                        v = seg.default
+                    end
+                    n_resolved = n_resolved + 1
+                    seg = tostring(v)
+                    if escaper then
+                        seg = tostring(escaper(seg))
+                    end
+                end
+            end
+            buf[i] = seg
+        end
+
+        local res = tab_concat(buf, "", 1, n)
+        tablepool.release("resolve_var", buf)
         return res, nil, n_resolved
     end
 end
