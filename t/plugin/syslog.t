@@ -690,16 +690,7 @@ GET /t
 
 
 
-=== TEST 22: add plugin with a logger that fails to send the log
---- extra_init_by_lua
-    local logger_socket = require("resty.logger.socket")
-    logger_socket.new = function()
-        return {
-            log = function()
-                return nil, "mocked send failure"
-            end
-        }
-    end
+=== TEST 22: add syslog plugin for the send failure test
 --- config
     location /t {
         content_by_lua_block {
