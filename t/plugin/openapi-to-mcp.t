@@ -1573,3 +1573,51 @@ streamable_http 5: true
 streamable_http 6: true
 streamable_http 7: true
 streamable_http 8: true
+
+
+
+=== TEST 86: query parameters extend a query suffix instead of adding a second ?
+--- config
+    location /t {
+        content_by_lua_block {
+            local fetch = require("apisix.plugins.openapi-to-mcp.fetch")
+            local real_request = fetch.request
+            fetch.request = function(url)
+                ngx.say(url)
+                return { status = 200, headers = {}, body = "" }
+            end
+
+            local handler = require("apisix.plugins.openapi-to-mcp.tools.handler")
+            handler.call({
+                method = "GET",
+                path_template = "/{Bucket}",
+                parameters = {
+                    { name = "Bucket", ["in"] = "path" },
+                    { name = "prefix", ["in"] = "query" },
+                },
+            }, {
+                pathParameters = { Bucket = "b" },
+                queryParameters = { prefix = "logs" },
+            }, {
+                base_url = "http://127.0.0.1:11460",
+            })
+            handler.call({
+                method = "GET",
+                path_template = "/{Bucket}?acl",
+                parameters = {
+                    { name = "Bucket", ["in"] = "path" },
+                    { name = "prefix", ["in"] = "query" },
+                },
+            }, {
+                pathParameters = { Bucket = "b" },
+                queryParameters = { prefix = "logs" },
+            }, {
+                base_url = "http://127.0.0.1:11460",
+            })
+
+            fetch.request = real_request
+        }
+    }
+--- response_body
+http://127.0.0.1:11460/b?prefix=logs
+http://127.0.0.1:11460/b?acl&prefix=logs
