@@ -470,6 +470,22 @@ After that, any get operation to `$a6_labels_zone` will call the registered gett
 
 Note that the custom variables can't be used in features that depend on the Nginx directive, like `access_log_format`.
 
+## Rewriting the upstream URI
+
+To override the upstream URI, assign the complete path and query string to
+`ctx.var.upstream_uri`. This updates the Nginx variable, its APISIX cache, and
+records the explicit override for servlet URI normalization. Assigning the same
+path is still an override: omitting the query string means it must not be appended
+again. Assigning an empty string or `nil` restores the default URI fallback.
+
+To modify only the request query arguments, use `core.request.set_uri_args(ctx, args)`
+instead. When no upstream URI override is present, servlet URI normalization
+combines the preserved servlet path with the arguments after rewrite and access
+plugins have run.
+
+Do not write `ngx.var.upstream_uri` directly: it bypasses the APISIX cache and
+override tracking, and a same-value assignment cannot be detected afterwards.
+
 ## Write test cases
 
 For functions, write and improve the test cases of various dimensions, do a comprehensive test for your plugin! The

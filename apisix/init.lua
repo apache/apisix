@@ -563,6 +563,7 @@ local function set_servlet_upstream_uri(api_ctx, uri)
     local servlet_uri = core.utils.uri_safe_encode(uri)
     api_ctx.var.upstream_uri = servlet_uri
     api_ctx.servlet_upstream_uri = servlet_uri
+    api_ctx.servlet_upstream_uri_overridden = false
 end
 
 
@@ -1081,7 +1082,8 @@ function _M.http_access_phase()
     span:finish(ngx_ctx)
 
     if api_ctx.servlet_upstream_uri then
-        if api_ctx.var.upstream_uri == api_ctx.servlet_upstream_uri or
+        if (not api_ctx.servlet_upstream_uri_overridden and
+            api_ctx.var.upstream_uri == api_ctx.servlet_upstream_uri) or
            not api_ctx.var.upstream_uri or api_ctx.var.upstream_uri == "" then
             api_ctx.var.upstream_uri = api_ctx.servlet_upstream_uri
                                        .. (api_ctx.var.is_args or "")

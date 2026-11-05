@@ -429,6 +429,20 @@ end)
 
 注意，自定义变量不能用于依赖 Nginx 指令的功能，如 `access_log_format`。
 
+## 改写上游 URI
+
+覆盖上游 URI 时，请将完整路径和查询字符串赋值给 `ctx.var.upstream_uri`。
+该入口会更新 Nginx 变量、APISIX 缓存，并记录显式覆盖状态供 servlet URI 规范化使用。
+赋值为相同路径也属于显式覆盖：省略查询字符串意味着不应再自动补回查询参数。
+赋值为空字符串或 `nil` 则恢复默认 URI 回退行为。
+
+如果只需修改请求查询参数，请使用 `core.request.set_uri_args(ctx, args)`。
+没有显式上游 URI 覆盖时，servlet URI 规范化会在 rewrite 和 access 插件执行后，
+将保留的 servlet 路径与最新查询参数组合。
+
+请勿直接写入 `ngx.var.upstream_uri`，因为它会绕过 APISIX 缓存和覆盖状态记录，
+事后也无法检测赋值为相同值的操作。
+
 ## 编写测试用例
 
 针对功能，完善各种维度的测试用例，对插件做个全方位的测试吧！插件的测试用例，都在 __t/plugin__ 目录下，可以前去了解。

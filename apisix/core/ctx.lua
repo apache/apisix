@@ -401,6 +401,12 @@ do
                 ngx_var[key] = val
             end
 
+            -- A same-path assignment can intentionally remove the query string.
+            -- Track writes rather than comparing the resulting URI with its seed.
+            if key == "upstream_uri" and t._ctx and t._ctx.servlet_upstream_uri then
+                t._ctx.servlet_upstream_uri_overridden = true
+            end
+
             -- log.info("key: ", key, " new val: ", val)
             t._cache[key] = val
         end,
