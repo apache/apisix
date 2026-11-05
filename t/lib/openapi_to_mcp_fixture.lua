@@ -120,6 +120,27 @@ local DOCUMENTS = {
                       schema = { type = "string" } },
                 },
             } },
+            ["/search?q={term}"] = { get = {
+                operationId = "searchByTerm",
+                parameters = {
+                    { name = "term", ["in"] = "path", required = true,
+                      schema = { type = "string" } },
+                },
+            } },
+            ["/search?url={u}"] = { get = {
+                operationId = "searchByUrl",
+                parameters = {
+                    { name = "u", ["in"] = "path", required = true,
+                      schema = { type = "string" } },
+                },
+            } },
+            ["/x#/{a}"] = { get = {
+                operationId = "discardFragmentExpression",
+                parameters = {
+                    { name = "a", ["in"] = "path", required = true,
+                      schema = { type = "string" } },
+                },
+            } },
             ["/encoded/{path}"] = { get = {
                 operationId = "getEncodedPath",
                 parameters = {

@@ -159,10 +159,10 @@ local function separator_creates_unsafe_component(value)
 end
 
 
--- Return only the URI path. A template expression name may itself contain a
--- question mark or hash, so only a delimiter outside braces starts the query
--- or fragment. Parameter values cannot introduce one: escape_uri encodes it.
-local function uri_path(value)
+-- Return everything before one of the given URI delimiters. A template
+-- expression name may itself contain a delimiter, so only one outside braces
+-- counts. Parameter values cannot introduce one: escape_uri encodes them.
+local function before_uri_delimiter(value, delimiters)
     local in_expression = false
     for index = 1, #value do
         local char = str_sub(value, index, index)
@@ -170,11 +170,21 @@ local function uri_path(value)
             in_expression = true
         elseif char == "}" then
             in_expression = false
-        elseif not in_expression and (char == "?" or char == "#") then
+        elseif not in_expression and str_find(delimiters, char, 1, true) then
             return str_sub(value, 1, index - 1)
         end
     end
     return value
+end
+
+
+local function uri_path(value)
+    return before_uri_delimiter(value, "?#")
+end
+
+
+local function without_fragment(value)
+    return before_uri_delimiter(value, "#")
 end
 
 
@@ -202,12 +212,17 @@ end
 -- line up by index when the Route opts in to them.
 local function build_path(template, path_params, allow_encoded_separators)
     local path = template
+    local declared_path = uri_path(template)
     for name, value in pairs(path_params) do
         local text = tostring(value)
-        if has_separator(text) and not allow_encoded_separators then
+        local expression = "{" .. name .. "}"
+        local is_in_path = str_find(declared_path, expression, 1, true) ~= nil
+        if is_in_path and has_separator(text) and not allow_encoded_separators then
             return nil, "path parameter " .. name .. " cannot contain a path separator"
         end
-        if allow_encoded_separators and separator_creates_unsafe_component(text) then
+        if is_in_path and allow_encoded_separators
+           and separator_creates_unsafe_component(text)
+        then
             return nil, "path parameter " .. name ..
                         " cannot contain an empty or dot path component"
         end
@@ -233,7 +248,10 @@ local function build_path(template, path_params, allow_encoded_separators)
         end
     end
 
-    return path
+    -- A URI fragment is client-side metadata and must not be sent in an HTTP
+    -- request target. A literal hash can only come from the template because
+    -- hashes in parameter values have already been percent-encoded.
+    return without_fragment(path)
 end
 
 

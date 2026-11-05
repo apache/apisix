@@ -1987,3 +1987,102 @@ timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
     2>&1 | cat
 --- response_body eval
 qr/seen_path.*encoded\/a%3Fb%23c/
+
+
+
+=== TEST 117: restore the secure-default path-safety route
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "streamable_http",
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/path-safety.json",
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 118: a separator in a query expression is not path syntax
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"searchByTerm","arguments":{"pathParameters":{"term":"a/b"}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/seen_path.*search\?q=a%2Fb/
+
+
+
+=== TEST 119: a fragment suffix is not sent upstream
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"getObjectAcl","arguments":{"pathParameters":{"Bucket":"b","Key":"k"}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/(?s)(?=.*seen_path.*b\/k)(?!.*#acl)/
+
+
+
+=== TEST 120: an expression in a discarded fragment is not path syntax
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"discardFragmentExpression","arguments":{"pathParameters":{"a":".."}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/(?s)(?=.*seen_path.*\/x)(?!.*#\/)/
+
+
+
+=== TEST 121: restore the encoded-separator opt-in route
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "streamable_http",
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/path-safety.json",
+                    allow_encoded_path_separators = true,
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 122: the opt-in does not apply path checks to a query expression
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"searchByUrl","arguments":{"pathParameters":{"u":"http://x/y"}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/seen_path.*search\?url=http%3A%2F%2Fx%2Fy/
+
+
+
+=== TEST 123: the opt-in still rejects a separator-free parent segment
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"getEncodedPath","arguments":{"pathParameters":{"path":".."}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/(?s)(?=.*"isError":true)(?=.*cannot produce an empty or dot path segment)/
