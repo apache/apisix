@@ -280,6 +280,13 @@ in the global and at the route level, only the route level one will take effect.
 
 `type` field is required to be set to `auth` if your plugin needs to work with consumer.
 
+Set `type` to `logger` for logging plugins whose `access` handler prepares request
+data. This handler and its `_meta.pre_function` run without evaluating `_meta.filter`,
+since response variables are not available yet. The response and log handlers share
+a filter decision, so excluded responses are not collected. Other plugins share one filter
+decision across all phases so that response changes and resource cleanup stay
+consistent.
+
 ## Load plugin and replace plugin
 
 Using `require "apisix.plugins.3rd-party"` will load your plugin, just like `require "apisix.plugins.jwt-auth"` will load the `jwt-auth` plugin.

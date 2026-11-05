@@ -111,7 +111,95 @@ upstream_status: 201
 
 
 
-=== TEST 3: configure a filtered logger and an unfiltered logger
+=== TEST 3: capture request and response bodies with a response filter
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local path = "file-logger-filter-bodies.log"
+            os.remove(path)
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, {
+                uri = "/hello",
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {["127.0.0.1:1980"] = 1}
+                },
+                plugins = {
+                    ["file-logger"] = {
+                        path = path,
+                        include_req_body = true,
+                        include_resp_body = true,
+                        _meta = {filter = {{"upstream_status", "==", "200"}}}
+                    }
+                }
+            })
+            assert(code < 300, body)
+            local res = assert(require("resty.http").new():request_uri(
+                "http://127.0.0.1:1984/hello", {
+                    method = "POST",
+                    body = "request payload"
+                }))
+            assert(res.status == 200, res.body)
+            local file = assert(io.open(path, "r"))
+            local entry = assert(core.json.decode(file:read("*l")))
+            assert(file:read("*l") == nil)
+            file:close()
+            ngx.say(entry.request.body)
+            ngx.print(entry.response.body)
+        }
+    }
+--- response_body
+request payload
+hello world
+
+
+
+=== TEST 4: a false log filter does not emit an entry after body capture
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local path = "file-logger-filter-bodies.log"
+            os.remove(path)
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, {
+                uri = "/hello",
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {["127.0.0.1:1980"] = 1}
+                },
+                plugins = {
+                    ["file-logger"] = {
+                        path = path,
+                        include_req_body = true,
+                        include_resp_body = true,
+                        _meta = {filter = {{"status", "==", 500}}}
+                    }
+                }
+            })
+            assert(code < 300, body)
+            local res = assert(require("resty.http").new():request_uri(
+                "http://127.0.0.1:1984/hello", {
+                    method = "POST",
+                    body = "excluded payload"
+                }))
+            ngx.say(res.status)
+            local file = io.open(path, "r")
+            if file then
+                ngx.say(file:read("*a"))
+                file:close()
+            else
+                ngx.say("no entry")
+            end
+        }
+    }
+--- response_body
+200
+no entry
+
+
+
+=== TEST 5: configure a filtered logger and an unfiltered logger
 --- config
     location /t {
         content_by_lua_block {
@@ -158,7 +246,7 @@ passed
 
 
 
-=== TEST 4: filtered logger does not cache status for another logger
+=== TEST 6: filtered logger does not cache status for another logger
 --- config
     location /t {
         content_by_lua_block {
@@ -184,3 +272,89 @@ passed
 --- error_code: 201
 --- response_body
 status: 201
+
+
+
+=== TEST 7: an excluded logger does not supply a body to another logger
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local path = "file-logger-body-isolation.log"
+            os.remove(path)
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, {
+                uri = "/hello",
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {["127.0.0.1:1980"] = 1}
+                },
+                plugins = {
+                    ["http-logger"] = {
+                        uri = "http://127.0.0.1:1980/log",
+                        include_resp_body = true,
+                        _meta = {filter = {{"status", "==", 500}}}
+                    },
+                    ["file-logger"] = {
+                        path = path,
+                        include_resp_body = true,
+                        include_resp_body_expr = {{"status", "==", 500}}
+                    }
+                }
+            })
+            assert(code < 300, body)
+            local res = assert(require("resty.http").new():request_uri(
+                "http://127.0.0.1:1984/hello"))
+            assert(res.status == 200, res.body)
+            local file = assert(io.open(path, "r"))
+            local entry = assert(core.json.decode(file:read("*l")))
+            file:close()
+            ngx.say("body excluded: ", entry.response.body == nil)
+        }
+    }
+--- response_body
+body excluded: true
+
+
+
+=== TEST 8: capture request bodies before a local access-phase rejection
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local path = "file-logger-local-rejection.log"
+            os.remove(path)
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, {
+                uri = "/hello",
+                plugins = {
+                    ["serverless-post-function"] = {
+                        phase = "access",
+                        functions = {"return function() return 500, 'local rejection' end"}
+                    },
+                    ["file-logger"] = {
+                        path = path,
+                        include_req_body = true,
+                        include_resp_body = true,
+                        _meta = {filter = {{"status", "==", 500}}}
+                    }
+                }
+            })
+            assert(code < 300, body)
+            local res = assert(require("resty.http").new():request_uri(
+                "http://127.0.0.1:1984/hello", {
+                    method = "POST",
+                    body = "rejected payload"
+                }))
+            ngx.say(res.status)
+            local file = assert(io.open(path, "r"))
+            local entry = assert(core.json.decode(file:read("*l")))
+            file:close()
+            ngx.say(entry.request.body)
+            ngx.say(entry.response.body)
+        }
+    }
+--- response_body
+500
+rejected payload
+local rejection

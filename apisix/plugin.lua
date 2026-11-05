@@ -525,16 +525,22 @@ function _M.trace_expected_plugins_for_debug(api_ctx)
 end
 
 
-local function meta_filter(ctx, plugin_name, plugin_conf, phase)
+local function meta_filter(ctx, plugin, plugin_conf, phase)
     local filter = plugin_conf._meta and plugin_conf._meta.filter
     if not filter then
         return true
     end
 
+    -- Logger access hooks prepare request data before response variables exist.
+    -- Keep the shared response/log decision, but do not cache it during access.
+    if plugin.type == "logger" and phase == "access" then
+        return true
+    end
+
+    local plugin_name = plugin.name
     local match_cache_key =
         ctx.conf_type .. "#" .. ctx.conf_id .. "#"
-            .. ctx.conf_version .. "#" .. plugin_name .. "#"
-            .. phase .. "#meta_filter_matched"
+            .. ctx.conf_version .. "#" .. plugin_name .. "#meta_filter_matched"
     if ctx[match_cache_key] ~= nil then
         return ctx[match_cache_key]
     end
@@ -1357,7 +1363,7 @@ function _M.run_plugin(phase, plugins, api_ctx)
             local phase_func = plugins[i][exec_phase]
             if phase_func then
                 local conf = plugins[i + 1]
-                if not meta_filter(api_ctx, plugins[i]["name"], conf, phase) then
+                if not meta_filter(api_ctx, plugins[i], conf, phase) then
                     goto CONTINUE
                 end
 
@@ -1404,7 +1410,7 @@ function _M.run_plugin(phase, plugins, api_ctx)
     for i = 1, #plugins, 2 do
         local phase_func = plugins[i][phase]
         local conf = plugins[i + 1]
-        if phase_func and meta_filter(api_ctx, plugins[i]["name"], conf, phase) then
+        if phase_func and meta_filter(api_ctx, plugins[i], conf, phase) then
             -- skip a plugin already run as a workflow action, before any meta hooks
             if api_ctx._skip_plugins and api_ctx._skip_plugins[plugins[i]["name"]] then
                 goto CONTINUE
@@ -1537,7 +1543,7 @@ function _M.lua_response_filter(api_ctx, headers, body, no_flush, wait)
             local phase_func = plugins[i]["lua_body_filter"]
             if phase_func then
                 local conf = plugins[i + 1]
-                if not meta_filter(api_ctx, plugins[i]["name"], conf, "lua_body_filter") then
+                if not meta_filter(api_ctx, plugins[i], conf, "lua_body_filter") then
                     goto CONTINUE
                 end
 
