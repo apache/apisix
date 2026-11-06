@@ -486,3 +486,57 @@ akey: secret
 zname: foo
 --- no_error_log
 no matching AI protocol
+
+
+
+=== TEST 18: set route whose path is rewritten by proxy-rewrite before passthrough
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/llm/*",
+                    "plugins": {
+                        "proxy-rewrite": {
+                            "regex_uri": ["^/llm/(.*)", "/$1"]
+                        },
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": {
+                                "header": {
+                                    "Authorization": "Bearer token"
+                                }
+                            },
+                            "override": {
+                                "endpoint": "http://127.0.0.1:1980"
+                            },
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 19: passthrough forwards the path produced by proxy-rewrite
+--- request
+POST /llm/plugin_proxy_rewrite_args?name=foo
+{"prompt":"x"}
+--- more_headers
+Content-Type: application/json
+--- response_body
+uri: /plugin_proxy_rewrite_args
+name: foo
+--- no_error_log
+no matching AI protocol
