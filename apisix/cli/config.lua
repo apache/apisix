@@ -78,7 +78,6 @@ local _M = {
     worker_startup_time_threshold = 60,
     data_encryption = {
       enable_encrypt_fields = true,
-      write_marker = false,
       keyring = { "qeddd145sfvddff3", "edd1c9f0985e76a2" }
     },
     lru = {

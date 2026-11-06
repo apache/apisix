@@ -66,7 +66,7 @@ local function filter(service)
 
     apisix_upstream.filter_upstream(service.value.upstream, service)
 
-    core.log.info("filter service: ", service.value.id)
+    core.log.info("filter service: ", core.json.delay_encode(service, true))
 end
 
 

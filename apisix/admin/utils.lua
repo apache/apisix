@@ -15,13 +15,10 @@
 -- limitations under the License.
 --
 local core    = require("apisix.core")
-local apisix_plugin = require("apisix.plugin")
 local ngx_time = ngx.time
 local tonumber = tonumber
-local tostring = tostring
 local ipairs = ipairs
 local pairs = pairs
-local type = type
 
 
 local _M = {}
@@ -83,194 +80,35 @@ function _M.fix_count(body, id)
 end
 
 
-local function decrypt_value(value, schema_type)
-    if type(value) ~= "table" then
-        return
-    end
-
-    if schema_type == core.schema.TYPE_METADATA then
-        local marked, err = apisix_plugin.decrypt_marked_metadata(value)
-        if err then
-            return err
-        end
-
-        if apisix_plugin.enable_gde() then
-            apisix_plugin.decrypt_conf(value.id, value, schema_type, marked)
-        end
-        return
-    end
-
-    local plugins = value.plugins
-    if type(plugins) ~= "table" then
-        return
-    end
-
-    local marked, err = apisix_plugin.decrypt_marked_plugins(plugins)
-    if err then
-        return err
-    end
-
-    if apisix_plugin.enable_gde() then
-        for name, conf in pairs(plugins) do
-            apisix_plugin.decrypt_conf(name, conf, schema_type, marked)
-        end
-    end
-end
-
-
--- Decrypt the plugin confs, or the plugin metadata, of an etcd response body in
--- place: values carrying the encryption marker always, `encrypt_fields` when
--- data encryption is enabled. A resource with a marked value that fails to
--- decrypt is left as stored, and the error of the first one is returned.
-function _M.decrypt_params(body, schema_type)
+function _M.decrypt_params(decrypt_func, body, schema_type)
+    -- list
     if body.list then
-        local first_err
-        for _, item in ipairs(body.list) do
-            local err = decrypt_value(item.value, schema_type)
-            if err and not first_err then
-                first_err = err
-            end
-        end
-        return first_err
-    end
-
-    return decrypt_value(body.node and body.node.value, schema_type)
-end
-
-
-local function find_marked(conf, found)
-    for k, v in pairs(conf) do
-        local tv = type(v)
-        if tv == "string" then
-            if core.data_encryption.has_marker(v) then
-                found = found or {}
-                core.table.insert(found, {conf, k, v})
-            end
-
-        elseif tv == "table" then
-            found = find_marked(v, found)
-        end
-    end
-
-    return found
-end
-
-
--- Decrypt the stored node a PATCH merges into, like `decrypt_params`. Also
--- returns the positions of its marked values as {container, key, stored value,
--- plaintext}, for `unchanged_marked`.
-function _M.decrypt_patch_target(body)
-    local value = body.node and body.node.value
-    local found = type(value) == "table" and type(value.plugins) == "table"
-                  and find_marked(value.plugins) or nil
-
-    local err = _M.decrypt_params(body)
-    if err then
-        return err
-    end
-
-    if found then
-        for _, pos in ipairs(found) do
-            pos[4] = pos[1][pos[2]]
-        end
-    end
-
-    return nil, found
-end
-
-
--- Call between the merge and `check_conf`: the positions of `found` that the
--- merge left unchanged, for `restore_marked`.
-function _M.unchanged_marked(found)
-    local unchanged
-    if found then
-        for _, pos in ipairs(found) do
-            if pos[1][pos[2]] == pos[4] then
-                unchanged = unchanged or {}
-                core.table.insert(unchanged, pos)
-            end
-        end
-    end
-
-    return unchanged
-end
-
-
--- Write back the stored marked values of `unchanged` after `check_conf`, so a
--- PATCH keeps them byte for byte whatever it encrypts.
-function _M.restore_marked(unchanged)
-    if unchanged then
-        for _, pos in ipairs(unchanged) do
-            pos[1][pos[2]] = pos[3]
-        end
-    end
-end
-
-
-local function find_reserved_prefix(conf)
-    for k, v in pairs(conf) do
-        local tv = type(v)
-        if tv == "string" then
-            if core.data_encryption.has_reserved_prefix(v) then
-                return tostring(k)
-            end
-
-        elseif tv == "table" then
-            local path = find_reserved_prefix(v)
-            if path then
-                return tostring(k) .. "." .. path
-            end
-        end
-    end
-end
-
-
-local function reserved_prefix_err(path)
-    return "invalid value of " .. path .. ": the prefix \""
-           .. core.data_encryption.RESERVED_PREFIX .. "\" is reserved for encrypted values"
-end
-
-
--- Reject user input that would be taken for an encrypted value: a string
--- starting with the reserved prefix anywhere the data plane decrypts marked
--- values, i.e. the plugin confs and the plugin metadata. `sub_path` is the
--- PATCH sub path `conf` is written to.
-function _M.check_reserved_prefix(res_name, conf, sub_path)
-    if res_name == "plugin_metadata" then
-        if type(conf) == "table" then
-            local path = find_reserved_prefix(conf)
-            if path then
-                return reserved_prefix_err(path)
-            end
-        end
-        return
-    end
-
-    if sub_path and sub_path ~= "" then
-        local segs = core.utils.split_uri(sub_path)
-        if segs[1] == "plugins" then
-            local base = core.table.concat(segs, ".")
-            if core.data_encryption.has_reserved_prefix(conf) then
-                return reserved_prefix_err(base)
-            end
-
-            if type(conf) == "table" then
-                local path = find_reserved_prefix(conf)
-                if path then
-                    return reserved_prefix_err(base .. "." .. path)
+        for _, route in ipairs(body.list) do
+            if route.value and route.value.plugins then
+                for name, conf in pairs(route.value.plugins) do
+                    decrypt_func(name, conf, schema_type)
                 end
             end
-            return
+        end
+        return
+    end
+
+    -- node
+    local plugins = body.node and body.node.value
+                    and body.node.value.plugins
+
+    if plugins then
+        for name, conf in pairs(plugins) do
+            decrypt_func(name, conf, schema_type)
         end
     end
 
-    if type(conf) == "table" and type(conf.plugins) == "table" then
-        local path = find_reserved_prefix(conf.plugins)
-        if path then
-            return reserved_prefix_err("plugins." .. path)
-        end
+    -- metadata
+    local conf = body.node and body.node.value
+
+    if conf and schema_type == core.schema.TYPE_METADATA then
+        decrypt_func(conf.id, conf, schema_type)
     end
 end
-
 
 return _M

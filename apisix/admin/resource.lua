@@ -17,6 +17,7 @@
 local core = require("apisix.core")
 local utils = require("apisix.admin.utils")
 local apisix_ssl = require("apisix.ssl")
+local apisix_plugin = require("apisix.plugin")
 local apisix_consumer = require("apisix.consumer")
 local apisix_service = require("apisix.http.service")
 local tbl_deepcopy = require("apisix.core.table").deepcopy
@@ -216,11 +217,6 @@ function _M:post(id, conf, sub_path, args)
         return 405, {error_msg = "not supported `POST` method for " .. self.kind}
     end
 
-    local err = utils.check_reserved_prefix(self.name, conf)
-    if err then
-        return 400, {error_msg = err}
-    end
-
     local id, err = self:check_conf(id, conf, false)
     if not id then
         return 400, err
@@ -271,11 +267,6 @@ function _M:put(id, conf, sub_path, args)
     if self.name == "secrets" then
         typ, id = split_typ_and_id(id, sub_path)
         key = key .. "/" .. typ
-    end
-
-    local err = utils.check_reserved_prefix(self.name, conf)
-    if err then
-        return 400, {error_msg = err}
     end
 
     local need_id = not no_id_res[self.name]
@@ -440,11 +431,6 @@ function _M:patch(id, conf, sub_path, args)
         end
     end
 
-    local err = utils.check_reserved_prefix(self.name, conf, sub_path)
-    if err then
-        return 400, {error_msg = err}
-    end
-
     local res_old, err = core.etcd.get(key)
     if not res_old then
         core.log.error("failed to get ", self.kind, " [", key, "] in etcd: ", err)
@@ -459,12 +445,11 @@ function _M:patch(id, conf, sub_path, args)
     local node_value = res_old.body.node.value
     local modified_index = res_old.body.node.modifiedIndex
 
-    -- the stored plugin conf holds ciphertext (marked values and the
-    -- encrypt_fields), decrypt it before merging, otherwise the check_conf
-    -- below will encrypt it again, resulting in fields encrypted multiple times
-    local err, marked = utils.decrypt_patch_target(res_old.body)
-    if err then
-        return 400, {error_msg = "failed to decrypt the stored configuration: " .. err}
+    -- the encrypt_fields of the stored plugin conf are ciphertext, decrypt
+    -- them before merging, otherwise the check_conf below will encrypt them
+    -- again, resulting in fields that are encrypted multiple times
+    if apisix_plugin.enable_gde() then
+        utils.decrypt_params(apisix_plugin.decrypt_stored_conf, res_old.body)
     end
 
     if sub_path and sub_path ~= "" then
@@ -499,12 +484,10 @@ function _M:patch(id, conf, sub_path, args)
         utils.inject_timestamp(node_value, nil, conf)
     end
 
-    local unchanged = utils.unchanged_marked(marked)
     local ok, err = self:check_conf(id, node_value, true, typ, true)
     if not ok then
         return 400, err
     end
-    utils.restore_marked(unchanged)
 
     -- log after check_conf so the encrypt_fields are encrypted again and
     -- the plaintext values decrypted above don't leak into the log

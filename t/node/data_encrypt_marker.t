@@ -107,7 +107,6 @@ __DATA__
 passed
 --- no_error_log
 [error]
-route-secret
 
 
 
@@ -121,22 +120,16 @@ x-real-ip: 127.0.0.1
 x-secret: route-secret
 --- no_error_log
 [error]
-route-secret
 
 
 
-=== TEST 3: marked value that fails to decrypt makes the route invalid
+=== TEST 3: marked value that fails to decrypt is logged and kept as it is
 --- config
     location /t {
         content_by_lua_block {
-            put("/routes/2", {
-                uri = "/hello",
+            put("/routes/1", {
+                uri = "/uri",
                 plugins = {
-                    ["response-rewrite"] = {
-                        headers = {
-                            set = {["X-Other"] = mark("other-secret")},
-                        },
-                    },
                     ["proxy-rewrite"] = {
                         headers = {
                             set = {["X-Secret"] = "$ENC$v1$" .. enc("x"):sub(2)},
@@ -146,16 +139,15 @@ route-secret
                 upstream = {nodes = {["127.0.0.1:1980"] = 1}, type = "roundrobin"},
             })
             ngx.sleep(0.5)
-            ngx.say(get("/hello").status)
-            del("/routes/2")
+            -- the route is loaded and the header is set from the value as stored
+            ngx.say(get("/uri").body:match("x%-secret: [^\n]*") ~= nil)
+            del("/routes/1")
         }
     }
 --- response_body
-404
+true
 --- error_log
 failed to decrypt the value of plugin [proxy-rewrite] key [headers.set.X-Secret]
---- no_error_log
-other-secret
 
 
 
@@ -188,7 +180,6 @@ apisix:
 x-secret: route-secret
 --- no_error_log
 [error]
-route-secret
 
 
 
@@ -232,8 +223,6 @@ x-service-secret: service-secret
 global-secret
 --- no_error_log
 [error]
-service-secret
-global-secret
 
 
 
@@ -293,12 +282,10 @@ global-secret
 
 
 
-=== TEST 8: consumer: marked value that fails to decrypt makes the consumer invalid
+=== TEST 8: consumer: marked value that fails to decrypt is logged and kept as it is
 --- config
     location /t {
         content_by_lua_block {
-            -- let the valid jack be loaded first
-            ngx.sleep(0.5)
             put("/consumers/jack", {
                 username = "jack",
                 plugins = {
@@ -307,15 +294,14 @@ global-secret
             })
             ngx.sleep(0.5)
             ngx.say(get("/hello", {apikey = "$ENC$v1$not-a-ciphertext"}).status)
-            -- the last valid config of jack is still in effect
             ngx.say(get("/hello", {apikey = "jack-key"}).status)
             del("/consumers/jack")
             del("/routes/1")
         }
     }
 --- response_body
-401
 200
+401
 --- error_log
 failed to decrypt the value of plugin [key-auth] key [key]: base64 decode failed
 
@@ -339,30 +325,29 @@ failed to decrypt the value of plugin [key-auth] key [key]: base64 decode failed
 metadata-secret
 --- no_error_log
 [error]
-metadata-secret
 
 
 
-=== TEST 10: plugin_metadata: marked value that fails to decrypt makes the metadata invalid
+=== TEST 10: plugin_metadata: marked value that fails to decrypt is logged and kept as it is
 --- config
     location /t {
         content_by_lua_block {
-            del("/plugin_metadata/http-logger")
-            ngx.sleep(0.5)
+            local bad = "$ENC$v1$" .. enc("x"):sub(2)
             put("/plugin_metadata/http-logger", {
                 id = "http-logger",
-                log_format = {secret = "$ENC$v1$" .. enc("x"):sub(2)},
+                log_format = {secret = bad},
             })
             ngx.sleep(0.5)
 
-            ngx.say(require("apisix.plugin").plugin_metadata("http-logger"))
+            local md = require("apisix.plugin").plugin_metadata("http-logger")
+            ngx.say(md.value.log_format.secret == bad)
             del("/plugin_metadata/http-logger")
         }
     }
 --- response_body
-nil
+true
 --- error_log
-failed to decrypt the value of plugin metadata [http-logger] key [log_format.secret]
+failed to decrypt the value of plugin [http-logger] key [log_format.secret]
 
 
 
@@ -416,7 +401,7 @@ hello world
 
 
 
-=== TEST 14: stream route: marked value that fails to decrypt makes the stream route invalid
+=== TEST 14: stream route: marked value that fails to decrypt is kept and validated as it is
 --- config
     location /t {
         content_by_lua_block {
@@ -435,7 +420,7 @@ passed
 
 
 
-=== TEST 15: the invalid stream route is not loaded
+=== TEST 15: the stream route with the kept value is not loaded
 --- stream_request
 mmm
 --- stream_response
@@ -486,7 +471,6 @@ hello world
 --- no_error_log
 [error]
 failed to limit conn
-enc-marker-pass
 
 
 
@@ -561,11 +545,6 @@ mmm
 receive stream response error: connection reset by peer
 --- error_log
 failed to limit conn: WRONGPASS
---- no_error_log
-wrong-pass
-
-
-
 === TEST 21: stream service: limit-conn authenticates to Redis with a marked password
 --- config
     location /t {
@@ -607,7 +586,6 @@ hello world
 --- no_error_log
 [error]
 failed to limit conn
-enc-marker-pass
 
 
 
@@ -641,40 +619,3 @@ mmm
 held: 1, second rejected: true
 --- error_log
 limit-conn exits with status code 503
-
-
-
-=== TEST 24: no plaintext in the logs when enable_encrypt_fields is off
---- yaml_config
-apisix:
-    data_encryption:
-        enable_encrypt_fields: false
-        keyring:
-            - edd1c9f0985e76a2
---- config
-    location /t {
-        content_by_lua_block {
-            del("/stream_routes/1")
-            put("/services/1", {
-                plugins = {
-                    ["proxy-rewrite"] = {
-                        headers = {
-                            set = {["X-Service-Secret"] = mark("service-secret")},
-                        },
-                    },
-                },
-                upstream = {nodes = {["127.0.0.1:1980"] = 1}, type = "roundrobin"},
-            })
-            put("/routes/1", {uri = "/uri", service_id = "1"})
-            ngx.sleep(0.5)
-
-            ngx.say(get("/uri").body:match("x%-service%-secret: [^\n]+"))
-            del("/routes/1")
-            del("/services/1")
-        }
-    }
---- response_body
-x-service-secret: service-secret
---- no_error_log
-[error]
-service-secret

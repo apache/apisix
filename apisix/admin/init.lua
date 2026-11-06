@@ -255,17 +255,14 @@ local function run()
     end
 
     if code then
+        -- marked values are returned decrypted even with data encryption disabled
         if code == 200 and method == "get" then
-            local schema_type
             if seg_res == "consumers" or seg_res == "credentials" then
-                schema_type = core.schema.TYPE_CONSUMER
+                utils.decrypt_params(plugin.decrypt_stored_conf, data, core.schema.TYPE_CONSUMER)
             elseif seg_res == "plugin_metadata" then
-                schema_type = core.schema.TYPE_METADATA
-            end
-
-            local err = utils.decrypt_params(data, schema_type)
-            if err then
-                core.log.error("failed to decrypt the ", seg_res, " in the response: ", err)
+                utils.decrypt_params(plugin.decrypt_stored_conf, data, core.schema.TYPE_METADATA)
+            else
+                utils.decrypt_params(plugin.decrypt_stored_conf, data)
             end
         end
 

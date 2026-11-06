@@ -294,7 +294,7 @@ function _M.get_log_entry(plugin_name, conf, ctx)
     end
 
     local metadata = plugin.plugin_metadata(plugin_name)
-    core.log.info("metadata of plugin ", plugin_name, " found: ", metadata ~= nil)
+    core.log.info("metadata: ", core.json.delay_encode(metadata))
 
     local entry
     local customized = false

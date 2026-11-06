@@ -49,11 +49,7 @@ local _M = {}
 local MARKER = "$ENC$v1$"
 local MARKER_LEN = #MARKER
 local MARKER_FIRST_BYTE = str_byte(MARKER, 1)
--- reserved for every version of the marker, so user input must not start with it
-local RESERVED_PREFIX = "$ENC$"
-local RESERVED_PREFIX_LEN = #RESERVED_PREFIX
 _M.MARKER = MARKER
-_M.RESERVED_PREFIX = RESERVED_PREFIX
 
 
 --- Build a table of AES-CBC ciphers from a keyring, each using the key itself
@@ -176,13 +172,6 @@ end
 function _M.has_marker(value)
     return type(value) == "string" and str_byte(value, 1) == MARKER_FIRST_BYTE
            and str_sub(value, 1, MARKER_LEN) == MARKER
-end
-
-
---- Whether `value` is a string starting with the prefix reserved for markers.
-function _M.has_reserved_prefix(value)
-    return type(value) == "string" and str_byte(value, 1) == MARKER_FIRST_BYTE
-           and str_sub(value, 1, RESERVED_PREFIX_LEN) == RESERVED_PREFIX
 end
 
 

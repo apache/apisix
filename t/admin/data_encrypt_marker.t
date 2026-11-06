@@ -35,7 +35,6 @@ apisix:
     proxy_mode: http&stream
     data_encryption:
         enable_encrypt_fields: true
-        write_marker: true
         keyring:
             - edd1c9f0985e76a2
 _EOC_
@@ -72,7 +71,7 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: write_marker: encrypt_fields are stored marked, read back as plaintext
+=== TEST 1: encrypt_fields are stored marked, read back as plaintext
 --- config
     location /t {
         content_by_lua_block {
@@ -126,7 +125,7 @@ hello world
 
 
 
-=== TEST 4: write_marker: PATCH keeps a marked value encrypted exactly once
+=== TEST 4: PATCH keeps a marked value encrypted exactly once
 --- config
     location /t {
         content_by_lua_block {
@@ -170,7 +169,7 @@ patched new-secret
 
 
 
-=== TEST 5: write_marker: plugin metadata is stored marked, read back as plaintext
+=== TEST 5: plugin metadata is stored marked, read back as plaintext
 --- config
     location /t {
         content_by_lua_block {
@@ -186,7 +185,8 @@ patched new-secret
             code, body = admin("/apisix/admin/plugin_metadata", ngx.HTTP_GET)
             for _, item in ipairs(body.list) do
                 if item.value.id == "azure-functions" then
-                    ngx.say(item.value.master_apikey)
+                    -- the list is returned as stored, as without the marker
+                    ngx.say(item.value.master_apikey == mark("master-key"))
                 end
             end
         }
@@ -195,64 +195,11 @@ patched new-secret
 201
 true
 master-key
-master-key
+true
 
 
 
-=== TEST 6: write_marker off: encrypt_fields are stored without the marker
---- yaml_config
-apisix:
-    data_encryption:
-        enable_encrypt_fields: true
-        keyring:
-            - edd1c9f0985e76a2
---- config
-    location /t {
-        content_by_lua_block {
-            local code, body = admin("/apisix/admin/consumers", ngx.HTTP_PUT, {
-                username = "foo",
-                plugins = {["basic-auth"] = {username = "foo", password = "bar"}},
-            })
-            ngx.say(code)
-            ngx.say(stored("/consumers/foo").plugins["basic-auth"].password)
-
-            code, body = admin("/apisix/admin/consumers/foo", ngx.HTTP_GET)
-            ngx.say(body.value.plugins["basic-auth"].password)
-        }
-    }
---- response_body
-200
-77+NmbYqNfN+oLm0aX5akg==
-bar
-
-
-
-=== TEST 7: write_marker has no effect without enable_encrypt_fields
---- yaml_config
-apisix:
-    data_encryption:
-        enable_encrypt_fields: false
-        write_marker: true
-        keyring:
-            - edd1c9f0985e76a2
---- config
-    location /t {
-        content_by_lua_block {
-            local code = admin("/apisix/admin/consumers", ngx.HTTP_PUT, {
-                username = "foo",
-                plugins = {["basic-auth"] = {username = "foo", password = "bar"}},
-            })
-            ngx.say(code)
-            ngx.say(stored("/consumers/foo").plugins["basic-auth"].password)
-        }
-    }
---- response_body
-200
-bar
-
-
-
-=== TEST 8: reads return plaintext for marked values outside encrypt_fields, encryption off
+=== TEST 6: reads return plaintext for marked values outside encrypt_fields, encryption off
 --- yaml_config
 apisix:
     proxy_mode: http&stream
@@ -313,7 +260,7 @@ new-hdr
 
 
 
-=== TEST 9: a stored marked value that fails to decrypt
+=== TEST 7: a stored marked value that fails to decrypt
 --- config
     location /t {
         content_by_lua_block {
@@ -331,277 +278,15 @@ new-hdr
             local code, body = admin("/apisix/admin/routes/1", ngx.HTTP_GET)
             ngx.say(code, " ", body.value.plugins["proxy-rewrite"].headers.set["X-Secret"])
 
-            -- PATCH refuses to merge into it
+            -- PATCH merges into it and keeps it as stored
             code, body = admin("/apisix/admin/routes/1", ngx.HTTP_PATCH, {desc = "patched"})
-            ngx.say(code, " ", body.error_msg)
+            ngx.say(code, " ", stored("/routes/1").plugins["proxy-rewrite"].headers.set["X-Secret"])
 
             assert(core.etcd.delete("/routes/1"))
         }
     }
 --- response_body
 200 $ENC$v1$bad
-400 failed to decrypt the stored configuration: failed to decrypt the value of plugin [proxy-rewrite] key [headers.set.X-Secret]: decrypt failed
+200 $ENC$v1$bad
 --- error_log
-failed to decrypt the routes in the response
-
-
-
-=== TEST 10: reject user input starting with the reserved prefix
---- config
-    location /t {
-        content_by_lua_block {
-            local upstream = {nodes = {["127.0.0.1:1980"] = 1}, type = "roundrobin"}
-            local function route(v)
-                return {
-                    uri = "/hello",
-                    plugins = {["proxy-rewrite"] = {headers = {set = {["X-A"] = v}}}},
-                    upstream = upstream,
-                }
-            end
-
-            local cases = {
-                {"/apisix/admin/routes/1", ngx.HTTP_PUT, route("$ENC$v1$abc")},
-                {"/apisix/admin/routes/1", ngx.HTTP_PUT, route("$ENC$v2$abc")},
-                {"/apisix/admin/routes", ngx.HTTP_POST, route("$ENC$")},
-                {"/apisix/admin/services/1", ngx.HTTP_PUT, {
-                    plugins = {["proxy-rewrite"] = {uri = "$ENC$x"}},
-                }},
-                {"/apisix/admin/global_rules/1", ngx.HTTP_PUT, {
-                    plugins = {["ip-restriction"] = {whitelist = {"127.0.0.1", "$ENC$x"}}},
-                }},
-                {"/apisix/admin/consumers", ngx.HTTP_PUT, {
-                    username = "jack",
-                    plugins = {["key-auth"] = {key = "$ENC$v1$abc"}},
-                }},
-                {"/apisix/admin/consumers/foo/credentials/c1", ngx.HTTP_PUT, {
-                    plugins = {["key-auth"] = {key = "$ENC$v1$abc"}},
-                }},
-                {"/apisix/admin/plugin_metadata/azure-functions", ngx.HTTP_PUT, {
-                    master_apikey = "$ENC$v1$abc",
-                }},
-                {"/apisix/admin/stream_routes/1", ngx.HTTP_PUT, {
-                    plugins = {["ip-restriction"] = {whitelist = {"$ENC$v1$abc"}}},
-                    upstream = upstream,
-                }},
-                {"/apisix/admin/routes/1", ngx.HTTP_PATCH, {
-                    plugins = {["proxy-rewrite"] = {uri = "$ENC$x"}},
-                }},
-                {"/apisix/admin/routes/1/plugins/proxy-rewrite", ngx.HTTP_PATCH, {
-                    uri = "$ENC$x",
-                }},
-                {"/apisix/admin/routes/1/plugins/proxy-rewrite/uri", ngx.HTTP_PATCH, "$ENC$x"},
-            }
-            for _, c in ipairs(cases) do
-                local code, body = admin(c[1], c[2], c[3])
-                ngx.say(code, " ", body.error_msg)
-            end
-        }
-    }
---- response_body
-400 invalid value of plugins.proxy-rewrite.headers.set.X-A: the prefix "$ENC$" is reserved for encrypted values
-400 invalid value of plugins.proxy-rewrite.headers.set.X-A: the prefix "$ENC$" is reserved for encrypted values
-400 invalid value of plugins.proxy-rewrite.headers.set.X-A: the prefix "$ENC$" is reserved for encrypted values
-400 invalid value of plugins.proxy-rewrite.uri: the prefix "$ENC$" is reserved for encrypted values
-400 invalid value of plugins.ip-restriction.whitelist.2: the prefix "$ENC$" is reserved for encrypted values
-400 invalid value of plugins.key-auth.key: the prefix "$ENC$" is reserved for encrypted values
-400 invalid value of plugins.key-auth.key: the prefix "$ENC$" is reserved for encrypted values
-400 invalid value of master_apikey: the prefix "$ENC$" is reserved for encrypted values
-400 invalid value of plugins.ip-restriction.whitelist.1: the prefix "$ENC$" is reserved for encrypted values
-400 invalid value of plugins.proxy-rewrite.uri: the prefix "$ENC$" is reserved for encrypted values
-400 invalid value of plugins.proxy-rewrite.uri: the prefix "$ENC$" is reserved for encrypted values
-400 invalid value of plugins.proxy-rewrite.uri: the prefix "$ENC$" is reserved for encrypted values
-
-
-
-=== TEST 11: reject the reserved prefix without write_marker, accept it elsewhere
---- yaml_config
-apisix:
-    data_encryption:
-        enable_encrypt_fields: false
-        keyring:
-            - edd1c9f0985e76a2
---- config
-    location /t {
-        content_by_lua_block {
-            local core = require("apisix.core")
-            local upstream = {nodes = {["127.0.0.1:1980"] = 1}, type = "roundrobin"}
-
-            local code, body = admin("/apisix/admin/routes/1", ngx.HTTP_PUT, {
-                uri = "/hello",
-                plugins = {["proxy-rewrite"] = {uri = "$ENC$v1$abc"}},
-                upstream = upstream,
-            })
-            ngx.say(code, " ", body.error_msg)
-
-            -- not a prefix
-            code = admin("/apisix/admin/routes/1", ngx.HTTP_PUT, {
-                uri = "/hello",
-                plugins = {["proxy-rewrite"] = {uri = "/a$ENC$"}},
-                upstream = upstream,
-            })
-            ngx.say(code)
-
-            -- outside the plugin confs
-            code = admin("/apisix/admin/routes/1", ngx.HTTP_PATCH, {desc = "$ENC$desc"})
-            ngx.say(code)
-
-            -- a stored value is not user input
-            assert(core.etcd.set("/routes/1", {
-                id = "1",
-                uri = "/hello",
-                plugins = {
-                    ["proxy-rewrite"] = {headers = {set = {["X-A"] = "$ENC$v2$stored"}}},
-                },
-                upstream = upstream,
-            }))
-            code = admin("/apisix/admin/routes/1", ngx.HTTP_PATCH, {desc = "patched"})
-            ngx.say(code, " ", stored("/routes/1").plugins["proxy-rewrite"].headers.set["X-A"])
-        }
-    }
---- response_body
-400 invalid value of plugins.proxy-rewrite.uri: the prefix "$ENC$" is reserved for encrypted values
-201
-200
-200 $ENC$v2$stored
-
-
-
-=== TEST 12: PATCH keeps a marked value outside encrypt_fields encrypted at rest
---- config
-    location /t {
-        content_by_lua_block {
-            local core = require("apisix.core")
-            assert(core.etcd.set("/routes/1", {
-                id = "1",
-                uri = "/hello",
-                plugins = {
-                    ["proxy-rewrite"] = {headers = {set = {["X-Secret"] = mark("hdr")}}},
-                    ["limit-count"] = {
-                        count = 2,
-                        time_window = 60,
-                        policy = "redis",
-                        redis_host = "127.0.0.1",
-                        redis_password = mark("secret"),
-                    },
-                },
-                upstream = {nodes = {["127.0.0.1:1980"] = 1}, type = "roundrobin"},
-            }))
-
-            local code = admin("/apisix/admin/routes/1", ngx.HTTP_PATCH, {desc = "patched"})
-            ngx.say(code)
-            local plugins = stored("/routes/1").plugins
-            ngx.say(plugins["proxy-rewrite"].headers.set["X-Secret"] == mark("hdr"))
-            ngx.say(plugins["limit-count"].redis_password == mark("secret"))
-
-            assert(core.etcd.delete("/routes/1"))
-        }
-    }
---- response_body
-200
-true
-true
-
-
-
-=== TEST 13: PATCH keeps the stored marked values it does not modify, write_marker off
---- yaml_config
-apisix:
-    data_encryption:
-        enable_encrypt_fields: true
-        write_marker: false
-        keyring:
-            - edd1c9f0985e76a2
-            - qeddd145sfvddff3
---- config
-    location /t {
-        content_by_lua_block {
-            local core = require("apisix.core")
-            local de = core.data_encryption
-            -- encrypted with the older key, so encrypting again would differ
-            local old = de.init_iv_tbl({"qeddd145sfvddff3"})
-            local pass = "$ENC$v1$" .. assert(de.aes_cbc_encrypt(old, "secret"))
-            local hdr = "$ENC$v1$" .. assert(de.aes_cbc_encrypt(old, "hdr"))
-            assert(core.etcd.set("/routes/1", {
-                id = "1",
-                uri = "/hello",
-                plugins = {
-                    ["proxy-rewrite"] = {headers = {set = {["X-Secret"] = hdr}}},
-                    ["limit-count"] = {
-                        count = 2,
-                        time_window = 60,
-                        policy = "redis",
-                        redis_host = "127.0.0.1",
-                        redis_password = pass,
-                    },
-                },
-                upstream = {nodes = {["127.0.0.1:1980"] = 1}, type = "roundrobin"},
-            }))
-
-            local code = admin("/apisix/admin/routes/1", ngx.HTTP_PATCH, {desc = "patched"})
-            ngx.say(code)
-            local plugins = stored("/routes/1").plugins
-            ngx.say(plugins["proxy-rewrite"].headers.set["X-Secret"] == hdr)
-            ngx.say(plugins["limit-count"].redis_password == pass)
-
-            -- a modified position follows write_marker
-            code = admin("/apisix/admin/routes/1/plugins/limit-count/redis_password",
-                         ngx.HTTP_PATCH, "new-secret")
-            ngx.say(code)
-            plugins = stored("/routes/1").plugins
-            ngx.say(plugins["limit-count"].redis_password
-                    == assert(de.aes_cbc_encrypt(de.init_iv_tbl({"edd1c9f0985e76a2"}),
-                                                 "new-secret")))
-            ngx.say(plugins["proxy-rewrite"].headers.set["X-Secret"] == hdr)
-
-            assert(core.etcd.delete("/routes/1"))
-        }
-    }
---- response_body
-200
-true
-true
-200
-true
-true
-
-
-
-=== TEST 14: PATCH keeps the stored marked values it does not modify, encryption off
---- yaml_config
-apisix:
-    data_encryption:
-        enable_encrypt_fields: false
-        keyring:
-            - edd1c9f0985e76a2
---- config
-    location /t {
-        content_by_lua_block {
-            local core = require("apisix.core")
-            assert(core.etcd.set("/routes/1", {
-                id = "1",
-                uri = "/hello",
-                plugins = {
-                    ["limit-count"] = {
-                        count = 2,
-                        time_window = 60,
-                        policy = "redis",
-                        redis_host = "127.0.0.1",
-                        redis_password = mark("patch-secret"),
-                    },
-                },
-                upstream = {nodes = {["127.0.0.1:1980"] = 1}, type = "roundrobin"},
-            }))
-
-            local code = admin("/apisix/admin/routes/1", ngx.HTTP_PATCH, {desc = "patched"})
-            ngx.say(code)
-            ngx.say(stored("/routes/1").plugins["limit-count"].redis_password == mark("patch-secret"))
-
-            assert(core.etcd.delete("/routes/1"))
-        }
-    }
---- response_body
-200
-true
---- no_error_log
-[error]
-patch-secret
+failed to decrypt the value of plugin [proxy-rewrite] key [headers.set.X-Secret]

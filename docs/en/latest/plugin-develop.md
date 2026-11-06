@@ -391,26 +391,13 @@ If none of the keys in `keyring` can decrypt the data, the original data is used
 
 ### Encryption marker
 
-Whether a stored value declared in `encrypt_fields` is ciphertext is decided by the `encrypt_fields` and `enable_encrypt_fields` of the APISIX instance that reads it. A value encrypted by a version that declares the field in `encrypt_fields` is therefore used as it is by a version that does not, for example after rolling back to a version released before the field was added to `encrypt_fields`, and so is any value read with `enable_encrypt_fields: false`.
+The Admin API stores every value it encrypts in plugin configurations and plugin metadata with the `$ENC$v1$` prefix (the marker) followed by the ciphertext described above, so the stored value says by itself that it is encrypted.
 
-To make an encrypted value self-describing, APISIX can store it with the `$ENC$v1$` prefix (the marker) followed by the ciphertext described above:
-
-```yaml
-apisix:
-    data_encryption:
-        enable_encrypt_fields: true
-        write_marker: true
-        keyring:
-            - ...
-```
-
-With `write_marker: true`, the Admin API stores every value it encrypts in the plugin configurations and the plugin metadata with the marker. The option does not change which fields are encrypted, and it takes effect only with `enable_encrypt_fields: true`. It defaults to `false`.
-
-APISIX decrypts every string value carrying the marker in plugin configurations (routes, services, plugin configs, consumers, credentials, consumer groups, global rules and stream routes) and in plugin metadata, whether or not the field is declared in `encrypt_fields` and whatever `enable_encrypt_fields` is. A value carrying the marker is never used as it is: if it cannot be decrypted with the `keyring`, the resource is invalid. The Admin API returns these values decrypted, and rejects with `400` any user-supplied string in a plugin configuration or plugin metadata that starts with `$ENC$`, the prefix reserved for the marker.
+APISIX decrypts every string value carrying the marker in plugin configurations (routes, services, plugin configs, consumers, credentials, consumer groups, global rules and stream routes) and in plugin metadata, whether or not the field is declared in `encrypt_fields` and whatever `enable_encrypt_fields` is. The Admin API returns these values decrypted. If a marked value cannot be decrypted with the `keyring`, the error is logged and the value is used as it is, like a value declared in `encrypt_fields` that cannot be decrypted. Values without the marker go through `encrypt_fields` as before.
 
 :::warning
 
-A version of APISIX that does not recognize the marker uses a marked value as it is. Enable `write_marker` only once every APISIX instance runs a version that recognizes the marker, and only if you will not roll back below that version.
+A version of APISIX that does not recognize the marker uses a marked value as it is. Once resources are re-saved by a version that writes the marker, going back to a version without marker support requires restoring the data backed up before the upgrade, and this affects every encrypted field. Avoid writing through the Admin API during a rolling upgrade.
 
 :::
 

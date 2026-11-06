@@ -70,7 +70,8 @@ function _M.create_radixtree_uri_router(routes, uri_routes, with_parameter)
                 end
             end
 
-            core.log.info("insert uri route: ", route.value.id)
+            core.log.info("insert uri route: ",
+                          core.json.delay_encode(route.value, true))
             core.table.insert(uri_routes, {
                 paths = route.value.uris or route.value.uri,
                 methods = route.value.methods,
