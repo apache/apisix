@@ -2613,3 +2613,68 @@ colliding decoration: 201
 service with a checker: 201
 route: 201
 healthcheck: 200 names the service
+
+
+
+=== TEST 68: set a service whose first upstream node has zero weight
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            local code = t('/apisix/admin/services/zero-weight-graphql',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1979": 0,
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "plugins": {
+                        "graphql-limit-count": {
+                            "count": 100000,
+                            "time_window": 60,
+                            "rejected_code": 429,
+                            "key": "remote_addr",
+                            "cost_strategy": "node_quantifier"
+                        }
+                    }
+                }]])
+            if code >= 300 then
+                ngx.status = code
+                return
+            end
+
+            code = t('/apisix/admin/services/zero-weight-graphql/'
+                     .. 'graphql_cost_decorations/d1', ngx.HTTP_PUT,
+                     [[{"field_path": "Query.products", "mul_arguments": ["first"]}]])
+            if code >= 300 then
+                ngx.status = code
+                return
+            end
+
+            local body
+            code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT,
+                           [[{"service_id": "zero-weight-graphql", "uri": "/graphql"}]])
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 69: introspection skips the zero-weight node and uses the enabled one
+--- request
+POST /graphql
+{"query":"query { products(first: 50) { nodes { name } } }"}
+--- more_headers
+Content-Type: application/json
+--- error_code: 200
+--- response_headers
+X-Graphql-Query-Cost: 2
