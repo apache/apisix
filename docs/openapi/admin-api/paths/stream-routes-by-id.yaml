@@ -33,41 +33,27 @@ get:
       content:
         application/json:
           schema:
-            type: object
-            description: Response object containing the list of stream routes.
-            properties:
-              items:
-                type: object
-                description: Stream route entry with metadata.
-                properties:
-                  value:
-                    $ref: ../components/schemas/StreamRouteRead.yaml
-                    description: Stored Stream Route configuration.
-                  key:
-                    description: Unique key identifier for this stream route in the data store.
-                    type: string
-                  modifiedIndex:
-                    description: The index number representing the most recent update to the object. It starts with the same value as `createdIndex` and increases by 1 each time the resource is modified.
-                    type: integer
-                  createdIndex:
-                    description: The index number representing when the object was first created. It indicates the creation order of the resource.
-                    type: integer
+            $ref: ../components/schemas/StreamRouteEnvelope.yaml
           examples:
             "1":
               summary: Successful Example
               value:
-                id: "1"
-                create_time: 1684392990
-                server_addr: 127.0.0.1
-                upstream:
-                  hash_on: vars
-                  pass_host: pass
-                  nodes:
-                    127.0.0.1:1995: 1
-                  type: roundrobin
-                  scheme: http
-                update_time: 1684392990
-                server_port: 2000
+                key: /apisix/stream_routes/1
+                value:
+                  id: "1"
+                  create_time: 1684392990
+                  server_addr: 127.0.0.1
+                  upstream:
+                    hash_on: vars
+                    pass_host: pass
+                    nodes:
+                      127.0.0.1:1995: 1
+                    type: roundrobin
+                    scheme: http
+                  update_time: 1684392990
+                  server_port: 2000
+                createdIndex: 123
+                modifiedIndex: 123
     "401":
       $ref: ../components/responses/Unauthorized.yaml
   operationId: getId]
