@@ -159,7 +159,67 @@ other-secret
 
 
 
-=== TEST 4: marked value is decrypted even when enable_encrypt_fields is off
+=== TEST 4: route: a decrypted marked value is not logged when a plugin schema check fails
+--- config
+    location /t {
+        content_by_lua_block {
+            put("/routes/2", {
+                uri = "/hello",
+                plugins = {
+                    ["proxy-rewrite"] = {
+                        uri = 123,
+                        headers = {
+                            set = {["X-Secret"] = mark("route-secret")},
+                        },
+                    },
+                },
+                upstream = {nodes = {["127.0.0.1:1980"] = 1}, type = "roundrobin"},
+            })
+            ngx.sleep(0.5)
+            ngx.say(get("/hello").status)
+            del("/routes/2")
+        }
+    }
+--- response_body
+404
+--- error_log
+failed to check the configuration of plugin proxy-rewrite
+--- no_error_log
+route-secret
+
+
+
+=== TEST 5: route: a decrypted marked value is not logged when the route check fails
+--- config
+    location /t {
+        content_by_lua_block {
+            put("/routes/2", {
+                uri = "/hello",
+                vars = {{"arg_a", "invalid-op", "1"}},
+                plugins = {
+                    ["proxy-rewrite"] = {
+                        headers = {
+                            set = {["X-Secret"] = mark("route-secret")},
+                        },
+                    },
+                },
+                upstream = {nodes = {["127.0.0.1:1980"] = 1}, type = "roundrobin"},
+            })
+            ngx.sleep(0.5)
+            ngx.say(get("/hello").status)
+            del("/routes/2")
+        }
+    }
+--- response_body
+404
+--- error_log
+failed to validate the 'vars' expression
+--- no_error_log
+route-secret
+
+
+
+=== TEST 6: marked value is decrypted even when enable_encrypt_fields is off
 --- yaml_config
 apisix:
     data_encryption:
@@ -192,7 +252,7 @@ route-secret
 
 
 
-=== TEST 5: service and global rule: decrypt marked values
+=== TEST 7: service and global rule: decrypt marked values
 --- config
     location /t {
         content_by_lua_block {
@@ -237,7 +297,7 @@ global-secret
 
 
 
-=== TEST 6: consumer: marked key whose plaintext is itself valid ciphertext is decrypted once
+=== TEST 8: consumer: marked key whose plaintext is itself valid ciphertext is decrypted once
 --- config
     location /t {
         content_by_lua_block {
@@ -263,7 +323,7 @@ global-secret
 
 
 
-=== TEST 7: consumer: unmarked values keep the encrypt_fields behavior
+=== TEST 9: consumer: unmarked values keep the encrypt_fields behavior
 --- config
     location /t {
         content_by_lua_block {
@@ -293,7 +353,7 @@ global-secret
 
 
 
-=== TEST 8: consumer: marked value that fails to decrypt makes the consumer invalid
+=== TEST 10: consumer: marked value that fails to decrypt makes the consumer invalid
 --- config
     location /t {
         content_by_lua_block {
@@ -321,7 +381,7 @@ failed to decrypt the value of plugin [key-auth] key [key]: base64 decode failed
 
 
 
-=== TEST 9: plugin_metadata: decrypt a marked value
+=== TEST 11: plugin_metadata: decrypt a marked value
 --- config
     location /t {
         content_by_lua_block {
@@ -343,7 +403,7 @@ metadata-secret
 
 
 
-=== TEST 10: plugin_metadata: marked value that fails to decrypt makes the metadata invalid
+=== TEST 12: plugin_metadata: marked value that fails to decrypt makes the metadata invalid
 --- config
     location /t {
         content_by_lua_block {
@@ -366,7 +426,31 @@ failed to decrypt the value of plugin metadata [http-logger] key [log_format.sec
 
 
 
-=== TEST 11: stream route: decrypt a marked value in an array
+=== TEST 13: plugin_metadata: a decrypted marked value is not logged when the schema check fails
+--- config
+    location /t {
+        content_by_lua_block {
+            put("/plugin_metadata/http-logger", {
+                id = "http-logger",
+                log_format = {secret = mark("metadata-secret")},
+                log_format_extra = "not-an-object",
+            })
+            ngx.sleep(0.5)
+
+            ngx.say(require("apisix.plugin").plugin_metadata("http-logger"))
+            del("/plugin_metadata/http-logger")
+        }
+    }
+--- response_body
+nil
+--- error_log
+failed to check item data of [/apisix/plugin_metadata]
+--- no_error_log
+metadata-secret
+
+
+
+=== TEST 14: stream route: decrypt a marked value in an array
 --- config
     location /t {
         content_by_lua_block {
@@ -384,7 +468,7 @@ passed
 
 
 
-=== TEST 12: hit the stream route
+=== TEST 15: hit the stream route
 --- stream_request
 mmm
 --- stream_response
@@ -392,7 +476,7 @@ hello world
 
 
 
-=== TEST 13: stream route: marked value that fails to decrypt makes the stream route invalid
+=== TEST 16: stream route: marked value that fails to decrypt makes the stream route invalid
 --- config
     location /t {
         content_by_lua_block {
@@ -411,7 +495,7 @@ passed
 
 
 
-=== TEST 14: the invalid stream route is not loaded
+=== TEST 17: the invalid stream route is not loaded
 --- stream_request
 mmm
 --- stream_response
@@ -421,7 +505,7 @@ failed to decrypt the value of plugin [ip-restriction] key [whitelist.1]
 
 
 
-=== TEST 15: stream route: limit-conn authenticates to Redis with a marked password
+=== TEST 18: stream route: limit-conn authenticates to Redis with a marked password
 --- config
     location /t {
         content_by_lua_block {
@@ -454,7 +538,7 @@ passed
 
 
 
-=== TEST 16: hit the stream route with limit-conn
+=== TEST 19: hit the stream route with limit-conn
 --- stream_request
 mmm
 --- stream_response
@@ -466,7 +550,7 @@ enc-marker-pass
 
 
 
-=== TEST 17: stream route: the held connection is counted in Redis and limits the next one
+=== TEST 20: stream route: the held connection is counted in Redis and limits the next one
 --- stream_upstream_code
             local sock = ngx.req.socket()
             sock:receive("1")
@@ -499,7 +583,7 @@ limit-conn exits with status code 503
 
 
 
-=== TEST 18: stream route: limit-conn with a marked password Redis rejects
+=== TEST 21: stream route: limit-conn with a marked password Redis rejects
 --- config
     location /t {
         content_by_lua_block {
@@ -530,7 +614,7 @@ passed
 
 
 
-=== TEST 19: the stream route with the wrong Redis password rejects the connection
+=== TEST 22: the stream route with the wrong Redis password rejects the connection
 --- stream_request
 mmm
 --- stream_response
@@ -542,7 +626,7 @@ wrong-pass
 
 
 
-=== TEST 20: stream service: limit-conn authenticates to Redis with a marked password
+=== TEST 23: stream service: limit-conn authenticates to Redis with a marked password
 --- config
     location /t {
         content_by_lua_block {
@@ -575,7 +659,7 @@ passed
 
 
 
-=== TEST 21: hit the stream route through the stream service
+=== TEST 24: hit the stream route through the stream service
 --- stream_request
 mmm
 --- stream_response
@@ -587,7 +671,7 @@ enc-marker-pass
 
 
 
-=== TEST 22: stream service: the held connection is counted in Redis and limits the next one
+=== TEST 25: stream service: the held connection is counted in Redis and limits the next one
 --- stream_upstream_code
             local sock = ngx.req.socket()
             sock:receive("1")
@@ -620,7 +704,7 @@ limit-conn exits with status code 503
 
 
 
-=== TEST 23: no plaintext in the logs when enable_encrypt_fields is off
+=== TEST 26: no plaintext in the logs when enable_encrypt_fields is off
 --- yaml_config
 apisix:
     data_encryption:

@@ -1334,7 +1334,10 @@ _M.encrypt_conf = encrypt_conf
 
 
 check_plugin_metadata = function(item)
-    local marked, err = decrypt_marked_metadata(item)
+    -- validate a decrypted copy and only commit it once the check passes,
+    -- so a rejected entry is logged with its values still marked
+    local conf = core.table.deepcopy(item)
+    local marked, err = decrypt_marked_metadata(conf)
     if err then
         return false, err
     end
@@ -1344,15 +1347,26 @@ check_plugin_metadata = function(item)
     -- also covers the entries of the other subsystem's plugins: the
     -- plugin_metadata directory is watched by both the http and the stream
     -- subsystems, while each of them only loads its own plugins.
-    local ok, err = check_single_plugin_schema(item.id, item,
+    local ok, err = check_single_plugin_schema(conf.id, conf,
                                                core.schema.TYPE_METADATA, false, true)
-    -- the schema of an unloaded plugin is unavailable, so decrypting its
-    -- metadata would only produce a "failed to get schema" warning
-    if ok and enable_gde() and local_plugins_hash[item.id] then
-        decrypt_conf(item.id, item, core.schema.TYPE_METADATA, marked)
+    if not ok then
+        return false, err
     end
 
-    return ok, err
+    -- the schema of an unloaded plugin is unavailable, so decrypting its
+    -- metadata would only produce a "failed to get schema" warning
+    if enable_gde() and local_plugins_hash[conf.id] then
+        decrypt_conf(conf.id, conf, core.schema.TYPE_METADATA, marked)
+    end
+
+    for k in pairs(item) do
+        item[k] = nil
+    end
+    for k, v in pairs(conf) do
+        item[k] = v
+    end
+
+    return true
 end
 
 
