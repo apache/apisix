@@ -69,6 +69,14 @@ _EOC_
             return
         end
     end
+    function _G.create_redis_user()
+        -- not every CI job starts Redis with an ACL user, so create one here
+        local red = require("resty.redis"):new()
+        assert(red:connect("127.0.0.1", 6379))
+        assert(red:acl("setuser", "enc-marker", "reset", "on",
+                       ">enc-marker-pass", "~*", "&*", "+\@all"))
+        red:close()
+    end
 _EOC_
     $block->set_value("extra_init_by_lua", $extra_init_by_lua);
 });
@@ -413,7 +421,206 @@ failed to decrypt the value of plugin [ip-restriction] key [whitelist.1]
 
 
 
-=== TEST 15: no plaintext in the logs when enable_encrypt_fields is off
+=== TEST 15: stream route: limit-conn authenticates to Redis with a marked password
+--- config
+    location /t {
+        content_by_lua_block {
+            create_redis_user()
+            del("/stream_routes/2")
+            put("/stream_routes/1", {
+                plugins = {
+                    ["limit-conn"] = {
+                        conn = 1,
+                        burst = 0,
+                        default_conn_delay = 0.1,
+                        key = "remote_addr",
+                        policy = "redis",
+                        redis_host = "127.0.0.1",
+                        redis_port = 6379,
+                        redis_database = 0,
+                        redis_timeout = 1000,
+                        key_ttl = 3600,
+                        redis_username = "enc-marker",
+                        redis_password = mark("enc-marker-pass"),
+                    },
+                },
+                upstream = {nodes = {["127.0.0.1:1995"] = 1}, type = "roundrobin"},
+            })
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 16: hit the stream route with limit-conn
+--- stream_request
+mmm
+--- stream_response
+hello world
+--- no_error_log
+[error]
+failed to limit conn
+enc-marker-pass
+
+
+
+=== TEST 17: stream route: the held connection is counted in Redis and limits the next one
+--- stream_upstream_code
+            local sock = ngx.req.socket()
+            sock:receive("1")
+
+            -- runs while the proxied connection holds the only slot
+            local redis = require("resty.redis")
+            local red = redis:new()
+            assert(red:connect("127.0.0.1", 6379))
+            assert(red:auth("enc-marker", "enc-marker-pass"))
+            local keys = assert(red:keys("limit_conn:/apisix/stream_routes/1:*"))
+            local held = 0
+            for _, key in ipairs(keys) do
+                held = held + assert(red:zcard(key))
+            end
+
+            local second = ngx.socket.tcp()
+            second:settimeout(2000)
+            assert(second:connect("127.0.0.1", 1985))
+            assert(second:send("mmm"))
+            local data = second:receive("*a")
+            second:close()
+
+            ngx.say("held: ", held, ", second rejected: ", data == nil)
+--- stream_request
+mmm
+--- stream_response
+held: 1, second rejected: true
+--- error_log
+limit-conn exits with status code 503
+
+
+
+=== TEST 18: stream route: limit-conn with a marked password Redis rejects
+--- config
+    location /t {
+        content_by_lua_block {
+            put("/stream_routes/1", {
+                plugins = {
+                    ["limit-conn"] = {
+                        conn = 1,
+                        burst = 0,
+                        default_conn_delay = 0.1,
+                        key = "remote_addr",
+                        policy = "redis",
+                        redis_host = "127.0.0.1",
+                        redis_port = 6379,
+                        redis_database = 0,
+                        redis_timeout = 1000,
+                        key_ttl = 3600,
+                        redis_username = "enc-marker",
+                        redis_password = mark("wrong-pass"),
+                    },
+                },
+                upstream = {nodes = {["127.0.0.1:1995"] = 1}, type = "roundrobin"},
+            })
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 19: the stream route with the wrong Redis password rejects the connection
+--- stream_request
+mmm
+--- stream_response
+receive stream response error: connection reset by peer
+--- error_log
+failed to limit conn: WRONGPASS
+--- no_error_log
+wrong-pass
+
+
+
+=== TEST 20: stream service: limit-conn authenticates to Redis with a marked password
+--- config
+    location /t {
+        content_by_lua_block {
+            create_redis_user()
+            put("/services/1", {
+                plugins = {
+                    ["limit-conn"] = {
+                        conn = 1,
+                        burst = 0,
+                        default_conn_delay = 0.1,
+                        key = "remote_addr",
+                        policy = "redis",
+                        redis_host = "127.0.0.1",
+                        redis_port = 6379,
+                        redis_database = 0,
+                        redis_timeout = 1000,
+                        key_ttl = 3600,
+                        redis_username = "enc-marker",
+                        redis_password = mark("enc-marker-pass"),
+                    },
+                },
+                upstream = {nodes = {["127.0.0.1:1995"] = 1}, type = "roundrobin"},
+            })
+            put("/stream_routes/1", {service_id = "1"})
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 21: hit the stream route through the stream service
+--- stream_request
+mmm
+--- stream_response
+hello world
+--- no_error_log
+[error]
+failed to limit conn
+enc-marker-pass
+
+
+
+=== TEST 22: stream service: the held connection is counted in Redis and limits the next one
+--- stream_upstream_code
+            local sock = ngx.req.socket()
+            sock:receive("1")
+
+            -- runs while the proxied connection holds the only slot
+            local redis = require("resty.redis")
+            local red = redis:new()
+            assert(red:connect("127.0.0.1", 6379))
+            assert(red:auth("enc-marker", "enc-marker-pass"))
+            local keys = assert(red:keys("limit_conn:/apisix/services/1:*"))
+            local held = 0
+            for _, key in ipairs(keys) do
+                held = held + assert(red:zcard(key))
+            end
+
+            local second = ngx.socket.tcp()
+            second:settimeout(2000)
+            assert(second:connect("127.0.0.1", 1985))
+            assert(second:send("mmm"))
+            local data = second:receive("*a")
+            second:close()
+
+            ngx.say("held: ", held, ", second rejected: ", data == nil)
+--- stream_request
+mmm
+--- stream_response
+held: 1, second rejected: true
+--- error_log
+limit-conn exits with status code 503
+
+
+
+=== TEST 23: no plaintext in the logs when enable_encrypt_fields is off
 --- yaml_config
 apisix:
     data_encryption:
@@ -423,7 +630,7 @@ apisix:
 --- config
     location /t {
         content_by_lua_block {
-            del("/stream_routes/2")
+            del("/stream_routes/1")
             put("/services/1", {
                 plugins = {
                     ["proxy-rewrite"] = {
