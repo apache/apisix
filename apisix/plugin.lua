@@ -535,7 +535,7 @@ function _M.trace_expected_plugins_for_debug(api_ctx)
 end
 
 
-local function meta_filter(ctx, plugin_name, plugin_conf)
+local function meta_filter(ctx, plugin_name, plugin_conf, phase)
     local filter = plugin_conf._meta and plugin_conf._meta.filter
     if not filter then
         return true
@@ -546,6 +546,11 @@ local function meta_filter(ctx, plugin_name, plugin_conf)
             .. ctx.conf_version .. "#" .. plugin_name .. "#meta_filter_matched"
     if ctx[match_cache_key] ~= nil then
         return ctx[match_cache_key]
+    end
+
+    local filter_phase = plugin_conf._meta.filter_phase
+    if filter_phase and phase ~= filter_phase then
+        return true
     end
 
     local ex, ok, err
@@ -1008,6 +1013,17 @@ end
 
 
 
+local function check_filter_phase(name, plugin_obj, plugin_conf)
+    local filter_phase = plugin_conf._meta and plugin_conf._meta.filter_phase
+    if filter_phase and not plugin_obj[filter_phase] then
+        return false, "invalid _meta.filter_phase of plugin " .. name .. ": it has no "
+                      .. filter_phase .. " function"
+    end
+
+    return true
+end
+
+
 local function check_single_plugin_schema(name, plugin_conf, schema_type, skip_disabled_plugin,
                                           ignore_disabled_plugin)
     if type(plugin_conf) ~= "table" then
@@ -1066,7 +1082,7 @@ local function check_single_plugin_schema(name, plugin_conf, schema_type, skip_d
         end
     end
 
-    return true
+    return check_filter_phase(name, plugin_obj, plugin_conf)
 end
 
 
@@ -1297,6 +1313,11 @@ local function stream_check_schema(plugins_conf, schema_type, skip_disabled_plug
             end
         end
 
+        local ok, err = check_filter_phase(name, plugin_obj, plugin_conf)
+        if not ok then
+            return false, err
+        end
+
         ::CONTINUE::
     end
 
@@ -1388,7 +1409,7 @@ function _M.run_plugin(phase, plugins, api_ctx)
             local phase_func = plugins[i][exec_phase]
             if phase_func then
                 local conf = plugins[i + 1]
-                if not meta_filter(api_ctx, plugins[i]["name"], conf)then
+                if not meta_filter(api_ctx, plugins[i]["name"], conf, phase) then
                     goto CONTINUE
                 end
 
@@ -1440,7 +1461,7 @@ function _M.run_plugin(phase, plugins, api_ctx)
     for i = 1, #plugins, 2 do
         local phase_func = plugins[i][phase]
         local conf = plugins[i + 1]
-        if phase_func and meta_filter(api_ctx, plugins[i]["name"], conf) then
+        if phase_func and meta_filter(api_ctx, plugins[i]["name"], conf, phase) then
             -- skip a plugin already run as a workflow action, before any meta hooks
             if api_ctx._skip_plugins and api_ctx._skip_plugins[plugins[i]["name"]] then
                 goto CONTINUE
@@ -1592,7 +1613,7 @@ function _M.lua_response_filter(api_ctx, headers, body, no_flush, wait)
             local phase_func = plugins[i]["lua_body_filter"]
             if phase_func then
                 local conf = plugins[i + 1]
-                if not meta_filter(api_ctx, plugins[i]["name"], conf)then
+                if not meta_filter(api_ctx, plugins[i]["name"], conf, "lua_body_filter") then
                     goto CONTINUE
                 end
 

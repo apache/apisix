@@ -1219,12 +1219,22 @@ _M.plugin_injected_schema = {
                                 "needs to be executed at runtime",
                 type  = "array",
             },
+            filter_phase = {
+                description = "the phase at which filter is evaluated. Functions of the "..
+                              "plugin in earlier phases run regardless of the filter",
+                type = "string",
+                enum = {"access", "before_proxy", "lua_body_filter", "header_filter",
+                        "body_filter", "log"},
+            },
             pre_function = {
                 description = "function to be executed in each phase " ..
                               "before execution of plugins. The pre_function will have access " ..
                               "to two arguments: `conf` and `ctx`.",
                 type = "string",
             },
+        },
+        dependencies = {
+            filter_phase = {"filter"},
         },
         additionalProperties = false,
     }
