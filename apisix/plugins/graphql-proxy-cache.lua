@@ -158,6 +158,10 @@ local check_graphql_request = {
                 return false, "invalid graphql request, " .. err
             end
 
+            if type(res) ~= "table" then
+                return false, "invalid graphql request, json body is not an object"
+            end
+
             if not res[GRAPHQL_REQ_QUERY] then
                 return false, "invalid graphql request, json body[" ..
                                 GRAPHQL_REQ_QUERY .. "] is nil"
