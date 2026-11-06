@@ -668,7 +668,8 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     "methods": ["POST"],
     "plugins": {
       "hmac-auth": {
-        "validate_request_body": true
+        "validate_request_body": true,
+        "signed_headers": ["date", "digest"]
       }
     },
     "upstream": {
@@ -706,6 +707,9 @@ services:
         plugins:
           hmac-auth:
             validate_request_body: true
+            signed_headers:
+              - date
+              - digest
     upstream:
       type: roundrobin
       nodes:
@@ -771,6 +775,9 @@ spec:
         _meta:
           disable: false
         validate_request_body: true
+        signed_headers:
+          - date
+          - digest
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
@@ -853,6 +860,9 @@ spec:
         enable: true
         config:
           validate_request_body: true
+          signed_headers:
+            - date
+            - digest
 ```
 
 Apply the configuration to your cluster:
@@ -959,7 +969,7 @@ You should see an `HTTP/1.1 200 OK` response similar to the following:
   },
   "headers": {
     "Accept": "*/*",
-    "Authorization": "Signature keyId=\"john-key\",algorithm=\"hmac-sha256\",headers=\"@request-target date\",signature=\"LGBTz7bVQQWlkijeyDpEwJWo+ppwX735uRZk5F8KhmU=\"",
+    "Authorization": "Signature keyId=\"john-key\",algorithm=\"hmac-sha256\",headers=\"@request-target date digest\",signature=\"LGBTz7bVQQWlkijeyDpEwJWo+ppwX735uRZk5F8KhmU=\"",
     "Content-Length": "17",
     "Content-Type": "application/x-www-form-urlencoded",
     "Date": "Fri, 06 Sep 2024 09:16:16 GMT",
@@ -977,14 +987,14 @@ You should see an `HTTP/1.1 200 OK` response similar to the following:
 }
 ```
 
-If you send a request without the digest or with an invalid digest:
+If you send a request without the digest, or with a body that does not match the signed digest:
 
 ```shell
 curl "http://127.0.0.1:9080/post" -X POST \
   -H "Date: Fri, 06 Sep 2024 09:16:16 GMT" \
   -H "Digest: SHA-256=78qzJuLwSpZ8HacsTdFCQJWxzPMOf8bYctRk2ySLpS8=" \
   -H 'Authorization: Signature keyId="john-key",algorithm="hmac-sha256",headers="@request-target date digest",signature="LGBTz7bVQQWlkijeyDpEwJWo+ppwX735uRZk5F8KhmU="' \
-  -d '{"name": "world"}'
+  -d '{"name": "tampered"}'
 ```
 
 You should see an `HTTP/1.1 401 Unauthorized` response with the following message:
