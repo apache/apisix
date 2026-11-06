@@ -3,7 +3,7 @@
   "info": {
     "title": "APISIX Control API",
     "description": "Use the APISIX Control API to inspect or control the runtime state of one APISIX instance. It is enabled by default at `http://127.0.0.1:9090`; configure `apisix.enable_control` and `apisix.control` in [`conf/config.yaml`](https://github.com/apache/apisix/blob/master/conf/config.yaml.example). The API does not provide authentication, so keep it on a loopback or otherwise trusted internal interface and never expose it to public traffic.\n\nMost endpoints in this reference are provided by the APISIX core. The Server Information and Service Discovery groups describe stable endpoint patterns registered only when the corresponding plugin or module is enabled. Enabled plugins and service discovery modules can register additional endpoints.",
-    "version": "3.19.0",
+    "version": "3.20.0",
     "license": {
       "name": "Apache 2.0",
       "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
@@ -1477,7 +1477,7 @@
                   "boot_time": 1608522102,
                   "hostname": "gateway-1",
                   "id": "b7ce1c5c-b1aa-4df7-888a-cbe403f3e948",
-                  "version": "3.19.0",
+                  "version": "3.20.0",
                   "etcd_version": "3.5.0"
                 }
               }
