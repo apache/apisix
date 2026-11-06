@@ -78,7 +78,265 @@ passed
 
 
 
-=== TEST 2: test prepend
+=== TEST 2: reject empty and non-object prompt arrays
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local empty_code = t('/apisix/admin/routes/18',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/invalid-empty",
+                    "plugins": {"ai-prompt-decorator": {"prepend": []}}
+                }]]
+            )
+            local item_code = t('/apisix/admin/routes/19',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/invalid-item",
+                    "plugins": {"ai-prompt-decorator": {"append": ["bad"]}}
+                }]]
+            )
+            ngx.say("empty=", empty_code, " item=", item_code)
+        }
+    }
+--- response_body
+empty=400 item=400
+
+
+
+=== TEST 3: configure protocol-aware decoration
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/20',
+                ngx.HTTP_PUT,
+                [[{
+                    "uris": ["/v1/messages", "/model/test/converse", "/v1/responses"],
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {"127.0.0.1:1980": 1}
+                    },
+                    "plugins": {
+                        "ai-prompt-decorator": {
+                            "prepend": [
+                                {"role": "system", "content": "first system"},
+                                {"role": "assistant", "content": "first assistant"}
+                            ],
+                            "append": [
+                                {"role": "assistant", "content": "last assistant"},
+                                {"role": "system", "content": "last system"}
+                            ]
+                        },
+                        "proxy-rewrite": {
+                            "uri": "/echo"
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 4: decorate Anthropic system and conversation fields
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            ngx.sleep(1)
+            local code, body = t('/v1/messages',
+                ngx.HTTP_POST,
+                [[{
+                    "model": "claude-test",
+                    "system": "existing system",
+                    "messages": [{"role": "user", "content": "question"}]
+                }]],
+                [[{
+                    "model": "claude-test",
+                    "system": [
+                        {"type": "text", "text": "first system"},
+                        {"type": "text", "text": "existing system"},
+                        {"type": "text", "text": "last system"}
+                    ],
+                    "messages": [
+                        {"role": "assistant", "content": "first assistant"},
+                        {"role": "user", "content": "question"},
+                        {"role": "assistant", "content": "last assistant"}
+                    ]
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 5: decorate Bedrock system and conversation fields
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/model/test/converse',
+                ngx.HTTP_POST,
+                [[{
+                    "system": [{"text": "existing system"}],
+                    "messages": [{"role": "user", "content": [{"text": "question"}]}]
+                }]],
+                [[{
+                    "system": [
+                        {"text": "first system"},
+                        {"text": "existing system"},
+                        {"text": "last system"}
+                    ],
+                    "messages": [
+                        {"role": "assistant", "content": [{"text": "first assistant"}]},
+                        {"role": "user", "content": [{"text": "question"}]},
+                        {"role": "assistant", "content": [{"text": "last assistant"}]}
+                    ]
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 6: preserve roles when decorating Responses input
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/v1/responses',
+                ngx.HTTP_POST,
+                [[{
+                    "model": "gpt-test",
+                    "instructions": "existing system",
+                    "input": "question"
+                }]],
+                [[{
+                    "model": "gpt-test",
+                    "instructions": "first system\nexisting system\nlast system",
+                    "input": [
+                        {"type": "message", "role": "assistant", "content": "first assistant"},
+                        {"type": "message", "role": "user", "content": "question"},
+                        {"type": "message", "role": "assistant", "content": "last assistant"}
+                    ]
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 7: fail_mode controls unsupported request handling
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/23',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/unsupported",
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {"127.0.0.1:1980": 1}
+                    },
+                    "plugins": {
+                        "ai-prompt-decorator": {
+                            "prepend": [{"role": "system", "content": "decorate"}],
+                            "fail_mode": "error"
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                return
+            end
+
+            local code, body = t('/unsupported', ngx.HTTP_POST, '{"plain":"json"}')
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- error_code: 400
+--- response_body eval
+qr/Request format not recognized by ai-prompt-decorator/
+
+
+
+=== TEST 8: reject oversized request body with 413
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/24',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/decorator-small",
+                    "plugins": {
+                        "ai-prompt-decorator": {
+                            "max_req_body_size": 10,
+                            "prepend": [{"role": "system", "content": "decorate"}]
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                return
+            end
+
+            local http = require("resty.http").new()
+            local res = assert(http:request_uri(
+                "http://127.0.0.1:" .. ngx.var.server_port .. "/decorator-small",
+                {
+                    method = "POST",
+                    body = '{"messages":[{"role":"user","content":"too large"}]}',
+                    headers = {['Content-Type'] = 'application/json'},
+                }
+            ))
+            ngx.status = res.status
+            ngx.say(res.body)
+        }
+    }
+--- error_code: 413
+--- response_body eval
+qr/greater than the maximum size/
+
+
+
+=== TEST 9: test prepend
 --- config
     location /t {
         content_by_lua_block {
@@ -112,7 +370,7 @@ passed
 
 
 
-=== TEST 3: sanity: configure append only
+=== TEST 10: sanity: configure append only
 --- config
     location /t {
         content_by_lua_block {
@@ -151,7 +409,7 @@ passed
 
 
 
-=== TEST 4: test append
+=== TEST 11: test append
 --- config
     location /t {
         content_by_lua_block {
@@ -185,7 +443,7 @@ passed
 
 
 
-=== TEST 5: sanity: configure append and prepend both
+=== TEST 12: sanity: configure append and prepend both
 --- config
     location /t {
         content_by_lua_block {
@@ -230,7 +488,7 @@ passed
 
 
 
-=== TEST 6: test append
+=== TEST 13: test append
 --- config
     location /t {
         content_by_lua_block {
@@ -265,7 +523,7 @@ passed
 
 
 
-=== TEST 7: verify no message accumulation across multiple requests
+=== TEST 14: verify no message accumulation across multiple requests
 --- config
     location /t {
         content_by_lua_block {
@@ -353,7 +611,7 @@ passed
 
 
 
-=== TEST 8: sanity: configure neither append nor prepend should fail
+=== TEST 15: sanity: configure neither append nor prepend should fail
 --- config
     location /t {
         content_by_lua_block {
@@ -387,7 +645,7 @@ qr/.*failed to check the configuration of plugin ai-prompt-decorator err.*/
 
 
 
-=== TEST 9: Responses API - configure prepend for Responses API test
+=== TEST 16: Responses API - configure prepend for Responses API test
 --- config
     location /t {
         content_by_lua_block {
@@ -426,7 +684,7 @@ passed
 
 
 
-=== TEST 10: Responses API - prepend sets instructions field
+=== TEST 17: Responses API - prepend sets instructions field
 --- config
     location /t {
         content_by_lua_block {
@@ -456,7 +714,7 @@ passed
 
 
 
-=== TEST 11: Responses API - prepend prepends to existing instructions
+=== TEST 18: Responses API - prepend prepends to existing instructions
 --- config
     location /t {
         content_by_lua_block {
@@ -487,7 +745,7 @@ passed
 
 
 
-=== TEST 12: Responses API - configure append for Responses API test
+=== TEST 19: Responses API - configure append for Responses API test
 --- config
     location /t {
         content_by_lua_block {
@@ -526,7 +784,7 @@ passed
 
 
 
-=== TEST 13: Responses API - append to string input
+=== TEST 20: Responses API - append to string input
 --- config
     location /t {
         content_by_lua_block {
@@ -555,7 +813,7 @@ passed
 
 
 
-=== TEST 14: Responses API - append to array input
+=== TEST 21: Responses API - append to array input
 --- config
     location /t {
         content_by_lua_block {
@@ -589,7 +847,7 @@ passed
 
 
 
-=== TEST 15: Responses API - configure both prepend and append
+=== TEST 22: Responses API - configure both prepend and append
 --- config
     location /t {
         content_by_lua_block {
@@ -634,7 +892,7 @@ passed
 
 
 
-=== TEST 16: Responses API - prepend and append together
+=== TEST 23: Responses API - prepend and append together
 --- config
     location /t {
         content_by_lua_block {
@@ -664,7 +922,7 @@ passed
 
 
 
-=== TEST 17: Chat Completions still works after Responses API support (regression)
+=== TEST 24: Chat Completions still works after Responses API support (regression)
 --- config
     location /t {
         content_by_lua_block {

@@ -14,28 +14,11 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local core      = require("apisix.core")
-local protocols = require("apisix.plugins.ai-protocols")
-local ngx   = ngx
-
-local prompt_schema = {
-    properties = {
-        role = {
-            type = "string",
-            enum = { "system", "user", "assistant" }
-        },
-        content = {
-            type = "string",
-            minLength = 1,
-        }
-    },
-    required = { "role", "content" }
-}
-
-local prompts = {
-    type = "array",
-    items = prompt_schema
-}
+local core          = require("apisix.core")
+local binding       = require("apisix.plugins.ai-protocols.binding")
+local body          = require("apisix.plugins.ai-prompt.body")
+local prompt_schema = require("apisix.plugins.ai-prompt.schema")
+local protocols     = require("apisix.plugins.ai-protocols")
 
 local schema = {
     type = "object",
@@ -47,8 +30,9 @@ local schema = {
             description = "maximum request body size in bytes buffered into "
                        .. "memory; larger request bodies are rejected",
         },
-        prepend = prompts,
-        append = prompts,
+        prepend = prompt_schema.messages,
+        append = prompt_schema.messages,
+        fail_mode = binding.schema_property("skip"),
     },
     anyOf = {
         { required = { "prepend" } },
@@ -71,36 +55,30 @@ function _M.check_schema(conf)
 end
 
 
-local function get_request_body_table(max_size)
-    local body, err = core.request.get_body(max_size)
-    if not body then
-        return nil, { message = "could not get body: " .. (err or "request body is empty") }
-    end
-
-    local body_tab, err = core.json.decode(body)
-    if not body_tab then
-        return nil, { message = "could not parse JSON request body: " .. (err or "invalid JSON") }
-    end
-
-    return body_tab
-end
-
-
 function _M.rewrite(conf, ctx)
-    local body_tab, err = get_request_body_table(conf.max_req_body_size)
+    local body_tab, status, err = body.read(conf.max_req_body_size)
     if not body_tab then
-        return 400, err
+        return status, err
     end
 
-    protocols.prepend_messages(body_tab, ctx, conf.prepend)
-    protocols.append_messages(body_tab, ctx, conf.append)
-
-    local new_jbody, err = core.json.encode(body_tab)
-    if not new_jbody then
-        return 500, { message = "failed to parse modified JSON request body: " .. err }
+    local protocol_name = protocols.detect(body_tab, ctx)
+    if not protocol_name or protocol_name == "passthrough"
+       or protocol_name == "openai-embeddings" then
+        local handled, code, response = binding.on_unsupported(
+            conf.fail_mode, _M.name, ctx,
+            "request body does not match a supported chat protocol",
+            400, {message = "Request format not recognized by ai-prompt-decorator"})
+        if handled then
+            return code, response
+        end
+        return
     end
 
-    ngx.req.set_body_data(new_jbody)
+    local protocol = protocols.get(protocol_name)
+    protocol.prepend_messages(body_tab, conf.prepend)
+    protocol.append_messages(body_tab, conf.append)
+
+    return body.write(ctx, body_tab)
 end
 
 

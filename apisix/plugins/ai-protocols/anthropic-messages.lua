@@ -345,31 +345,78 @@ function _M.get_messages(body)
 end
 
 
+local function system_blocks(system)
+    local blocks = {}
+    if type(system) == "string" then
+        core.table.insert(blocks, {type = "text", text = system})
+    elseif type(system) == "table" then
+        for _, block in ipairs(system) do
+            core.table.insert(blocks, block)
+        end
+    end
+    return blocks
+end
+
+
+local function configured_messages(msgs)
+    local systems = {}
+    local messages = {}
+    for _, msg in ipairs(msgs or {}) do
+        if msg.role == "system" then
+            core.table.insert(systems, {type = "text", text = msg.content})
+        else
+            core.table.insert(messages, {role = msg.role, content = msg.content})
+        end
+    end
+    return systems, messages
+end
+
+
 --- Prepend messages to the request body.
 function _M.prepend_messages(body, msgs)
     if not msgs or #msgs == 0 then return end
-    if not body.messages then
-        body.messages = {}
+
+    local systems, messages = configured_messages(msgs)
+    if #systems > 0 then
+        local merged = systems
+        for _, block in ipairs(system_blocks(body.system)) do
+            core.table.insert(merged, block)
+        end
+        body.system = merged
     end
-    local new_messages = {}
-    for _, msg in ipairs(msgs) do
-        core.table.insert(new_messages, {role = msg.role, content = msg.content})
+
+    if #messages == 0 then
+        return
     end
-    for _, msg in ipairs(body.messages) do
-        core.table.insert(new_messages, msg)
+    local merged = messages
+    for _, msg in ipairs(body.messages or {}) do
+        core.table.insert(merged, msg)
     end
-    body.messages = new_messages
+    body.messages = merged
 end
 
 
 --- Append messages to the request body.
 function _M.append_messages(body, msgs)
     if not msgs or #msgs == 0 then return end
+
+    local systems, messages = configured_messages(msgs)
+    if #systems > 0 then
+        local merged = system_blocks(body.system)
+        for _, block in ipairs(systems) do
+            core.table.insert(merged, block)
+        end
+        body.system = merged
+    end
+
+    if #messages == 0 then
+        return
+    end
     if not body.messages then
         body.messages = {}
     end
-    for _, msg in ipairs(msgs) do
-        core.table.insert(body.messages, {role = msg.role, content = msg.content})
+    for _, msg in ipairs(messages) do
+        core.table.insert(body.messages, msg)
     end
 end
 
