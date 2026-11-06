@@ -845,3 +845,133 @@ location /t {
 GET /t
 --- response_body_like eval
 qr/property \\"response_code\\" validation failed: expected 409 to be at most 404/
+
+
+
+=== TEST 36: set blacklist with an IPv4 CIDR
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    },
+                    "plugins": {
+                        "ip-restriction": {
+                            "blacklist": [
+                                "10.0.0.0/8"
+                            ]
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 37: hit route and IPv4-mapped IPv6 in the blacklist
+--- http_config
+set_real_ip_from 127.0.0.1;
+real_ip_header X-Forwarded-For;
+--- more_headers
+X-Forwarded-For: ::ffff:10.0.0.5
+--- request
+GET /hello
+--- error_code: 403
+--- response_body
+{"message":"Your IP address is not allowed"}
+
+
+
+=== TEST 38: hit route and IPv4-mapped IPv6 written in hex in the blacklist
+--- http_config
+set_real_ip_from 127.0.0.1;
+real_ip_header X-Forwarded-For;
+--- more_headers
+X-Forwarded-For: ::ffff:a00:5
+--- request
+GET /hello
+--- error_code: 403
+--- response_body
+{"message":"Your IP address is not allowed"}
+
+
+
+=== TEST 39: hit route and IPv4-mapped IPv6 not in the blacklist
+--- http_config
+set_real_ip_from 127.0.0.1;
+real_ip_header X-Forwarded-For;
+--- more_headers
+X-Forwarded-For: ::ffff:203.0.113.9
+--- request
+GET /hello
+--- response_body
+hello world
+
+
+
+=== TEST 40: set whitelist with an IPv4 CIDR
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    },
+                    "plugins": {
+                        "ip-restriction": {
+                            "whitelist": [
+                                "10.0.0.0/8"
+                            ]
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 41: hit route and IPv4-mapped IPv6 in the whitelist
+--- http_config
+set_real_ip_from 127.0.0.1;
+real_ip_header X-Forwarded-For;
+--- more_headers
+X-Forwarded-For: ::ffff:10.0.0.5
+--- request
+GET /hello
+--- response_body
+hello world
