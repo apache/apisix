@@ -545,6 +545,9 @@ mmm
 receive stream response error: connection reset by peer
 --- error_log
 failed to limit conn: WRONGPASS
+
+
+
 === TEST 21: stream service: limit-conn authenticates to Redis with a marked password
 --- config
     location /t {
