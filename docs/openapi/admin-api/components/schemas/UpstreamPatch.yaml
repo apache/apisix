@@ -91,7 +91,7 @@ properties:
           - type:
               - object
               - "null"
-            description: 'Upstream nodes as a map of `"host:port": weight` pairs. This is the shorthand format.'
+            description: "Upstream nodes as a map of `\"host:port\": weight` pairs. This is the shorthand format."
             additionalProperties:
               type:
                 - integer
@@ -307,6 +307,7 @@ properties:
             type:
               - string
               - "null"
+            pattern: ^\*$|^\*?[0-9a-zA-Z-._\[\]:]+$
             description: Hostname to use in the health check probe `Host` header. Defaults to the upstream node's host.
           port:
             type:
@@ -425,6 +426,25 @@ properties:
                 maximum: 254
                 default: 3
                 description: Number of probe timeouts to consider a target unhealthy.
+          http_method:
+            type: string
+            enum:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - PATCH
+              - HEAD
+              - OPTIONS
+              - CONNECT
+              - TRACE
+              - PURGE
+            default: GET
+            description: HTTP method used for active health-check probes.
+          http_req_body:
+            type: string
+            default: ""
+            description: HTTP request body sent by active health-check probes.
       passive:
         type:
           - object
@@ -557,19 +577,15 @@ properties:
             title: Integer ID
           - type: "null"
       client_cert:
-        type:
-          - string
-          - "null"
-        minLength: 128
-        maxLength: 65536
-        description: PEM-encoded client certificate for mTLS with the upstream.
+        anyOf:
+          - $ref: ./CertificatePem.yaml
+          - type: "null"
+        description: PEM-encoded client certificate, or null to remove the field. To use an SSL resource instead, configure client_cert_id.
       client_key:
-        type:
-          - string
-          - "null"
-        minLength: 64
-        maxLength: 65536
-        description: PEM-encoded client private key for mTLS with the upstream.
+        anyOf:
+          - $ref: ./PrivateKeyPem.yaml
+          - type: "null"
+        description: PEM-encoded client private key, or null to remove the field. To use an SSL resource instead, configure client_cert_id.
       verify:
         type:
           - boolean
@@ -581,9 +597,7 @@ properties:
           - "null"
         minItems: 1
         items:
-          type: string
-          minLength: 128
-          maxLength: 65536
+          $ref: ./CertificatePem.yaml
         description: PEM-encoded CA certificates for HTTPS/gRPCS upstream verification. Replaces the NGINX trust store for this upstream. If omitted, configure and load the shared store using `proxy_ssl_verify` for HTTPS or `grpc_ssl_verify` for gRPCS. See [Configure Upstream HTTPS](/apisix/how-to-guide/traffic-management/tls-and-mtls/configure-upstream-https). Does not enable verification by itself; set `tls.verify` to `true`. Rejected for `ws` and `wss` upstreams.
   keepalive_pool:
     type:
@@ -631,6 +645,7 @@ properties:
     type:
       - string
       - "null"
+    pattern: ^\*$|^\*?[0-9a-zA-Z-._\[\]:]+$
     description: Custom `Host` header value. Only effective when `pass_host` is `rewrite`.
   discovery_type:
     type:

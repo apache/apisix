@@ -81,6 +81,8 @@ properties:
     type: boolean
     default: false
     description: On a listener configured with both `tls` and `tls_passthrough`, `true` forwards encrypted TLS bytes to the upstream; `false` terminates TLS at APISIX. Ignored on dedicated listeners. Passthrough requires a TCP upstream, not scheme `tls`.
+  protocol:
+    $ref: ./StreamRouteProtocol.yaml
 additionalProperties: false
 not:
   required:

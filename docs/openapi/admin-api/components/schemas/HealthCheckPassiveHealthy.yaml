@@ -19,6 +19,7 @@ description: Thresholds for considering a target healthy based on real traffic r
 properties:
   http_statuses:
     type: array
+    minItems: 1
     items:
       type: integer
       minimum: 200

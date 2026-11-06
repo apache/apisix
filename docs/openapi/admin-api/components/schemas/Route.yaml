@@ -24,7 +24,7 @@ properties:
     $ref: ./ResourceId.yaml
   name:
     type: string
-    maxLength: 100
+    maxLength: 256
     minLength: 1
     description: Human-readable name for the route.
   desc:
@@ -57,6 +57,7 @@ properties:
     description: Multiple URI patterns. Mutually exclusive with `uri`.
   host:
     type: string
+    pattern: ^\*$|^\*?[0-9a-zA-Z-._\[\]:]+$
     description: Single hostname to match against the request's `Host` header. Supports wildcard prefix (`*.example.com`). Mutually exclusive with `hosts`.
     examples:
       - api.example.com
@@ -64,6 +65,7 @@ properties:
     type: array
     items:
       type: string
+      pattern: ^\*$|^\*?[0-9a-zA-Z-._\[\]:]+$
     minItems: 1
     uniqueItems: true
     description: Multiple hostnames to match. Mutually exclusive with `host`.

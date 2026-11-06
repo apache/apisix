@@ -35,6 +35,7 @@ properties:
     description: Number of targets to check concurrently during active health checks.
   host:
     type: string
+    pattern: ^\*$|^\*?[0-9a-zA-Z-._\[\]:]+$
     description: Hostname to use in the health check probe `Host` header. Defaults to the upstream node's host.
   port:
     type: integer
@@ -59,3 +60,22 @@ properties:
     $ref: ./HealthCheckActiveHealthy.yaml
   unhealthy:
     $ref: ./HealthCheckActiveUnhealthy.yaml
+  http_method:
+    type: string
+    enum:
+      - GET
+      - POST
+      - PUT
+      - DELETE
+      - PATCH
+      - HEAD
+      - OPTIONS
+      - CONNECT
+      - TRACE
+      - PURGE
+    default: GET
+    description: HTTP method used for active health-check probes.
+  http_req_body:
+    type: string
+    default: ""
+    description: HTTP request body sent by active health-check probes.

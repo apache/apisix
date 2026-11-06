@@ -302,6 +302,18 @@ components:
       $ref: ./components/schemas/Timeout.yaml
     Labels:
       $ref: ./components/schemas/Labels.yaml
+    CertificatePem:
+      $ref: ./components/schemas/CertificatePem.yaml
+    PrivateKeyPem:
+      $ref: ./components/schemas/PrivateKeyPem.yaml
+    SecretOrEnvironmentReference:
+      $ref: ./components/schemas/SecretOrEnvironmentReference.yaml
+    CertificateOrReference:
+      $ref: ./components/schemas/CertificateOrReference.yaml
+    PrivateKeyOrReference:
+      $ref: ./components/schemas/PrivateKeyOrReference.yaml
+    StoredPrivateKeyValue:
+      $ref: ./components/schemas/StoredPrivateKeyValue.yaml
     HealthCheckActiveHealthy:
       $ref: ./components/schemas/HealthCheckActiveHealthy.yaml
     HealthCheckActiveUnhealthy:
@@ -324,16 +336,24 @@ components:
       $ref: ./components/schemas/UpstreamNodes.yaml
     UpstreamTLS:
       $ref: ./components/schemas/UpstreamTLS.yaml
+    UpstreamTLSRead:
+      $ref: ./components/schemas/UpstreamTLSRead.yaml
     KeepalivePool:
       $ref: ./components/schemas/KeepalivePool.yaml
     Upstream:
       $ref: ./components/schemas/Upstream.yaml
+    UpstreamRead:
+      $ref: ./components/schemas/UpstreamRead.yaml
     Plugins:
       $ref: ./components/schemas/Plugins.yaml
     Route:
       $ref: ./components/schemas/Route.yaml
+    RouteRead:
+      $ref: ./components/schemas/RouteRead.yaml
     Service:
       $ref: ./components/schemas/Service.yaml
+    ServiceRead:
+      $ref: ./components/schemas/ServiceRead.yaml
     Consumer:
       $ref: ./components/schemas/Consumer.yaml
     Credential:
@@ -342,12 +362,18 @@ components:
       $ref: ./components/schemas/ConsumerGroup.yaml
     SSL:
       $ref: ./components/schemas/SSL.yaml
+    SSLWrite:
+      $ref: ./components/schemas/SSLWrite.yaml
     GlobalRule:
       $ref: ./components/schemas/GlobalRule.yaml
     PluginConfig:
       $ref: ./components/schemas/PluginConfig.yaml
     StreamRoute:
       $ref: ./components/schemas/StreamRoute.yaml
+    StreamRouteProtocol:
+      $ref: ./components/schemas/StreamRouteProtocol.yaml
+    StreamRouteRead:
+      $ref: ./components/schemas/StreamRouteRead.yaml
     Proto:
       $ref: ./components/schemas/Proto.yaml
     SSLRead:
@@ -388,6 +414,8 @@ components:
       $ref: ./components/schemas/ConsumerGroupListEnvelope.yaml
     SSLEnvelope:
       $ref: ./components/schemas/SSLEnvelope.yaml
+    SSLWriteEnvelope:
+      $ref: ./components/schemas/SSLWriteEnvelope.yaml
     SSLListEnvelope:
       $ref: ./components/schemas/SSLListEnvelope.yaml
     GlobalRuleEnvelope:

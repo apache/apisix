@@ -36,7 +36,7 @@ put:
       content:
         application/json:
           schema:
-            $ref: ../components/schemas/SSLEnvelope.yaml
+            $ref: ../components/schemas/SSLWriteEnvelope.yaml
           examples:
             "1":
               summary: Successful Example
@@ -44,13 +44,6 @@ put:
                 key: /apisix/ssls/1
                 value:
                   type: server
-                  key: |
-                    -----BEGIN PRIVATE KEY-----
-                    MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDh5cAWYXAMPLEbe
-                    fakekeyForOpenAPISpecPlaceholderOnlyDoNotUseForRealKeysNopeNopeNo
-                    peNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNo
-                    peNopeNopeNopeNopeNopeNope==
-                    -----END PRIVATE KEY-----
                   snis:
                     - test.com
                   id: "1"
@@ -67,6 +60,7 @@ put:
                     LYexampleCAcontentsoExpandedFakeKeyMaterial==
                     -----END CERTIFICATE-----
                   update_time: 1684373523
+                  key: opaque-stored-private-key-value
     "400":
       $ref: ../components/responses/BadRequest.yaml
       description: Invalid configuration
@@ -146,7 +140,7 @@ patch:
       content:
         application/json:
           schema:
-            $ref: ../components/schemas/SSLEnvelope.yaml
+            $ref: ../components/schemas/SSLWriteEnvelope.yaml
     "400":
       $ref: ../components/responses/BadRequest.yaml
       description: Invalid configuration

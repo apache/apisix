@@ -138,6 +138,15 @@ Once we've discussed your changes and you've got your code ready, make sure that
       Please take a look at `t/plugin/limit-conn.t` and `t/plugin/limit-conn2.t`.
     * For more details, see the [testing framework](https://github.com/apache/apisix/blob/master/docs/en/latest/internal/testing-framework.md)
 
+## API Contracts
+
+When changing Admin API routes, schemas, validation, or responses, edit the modular
+source under `docs/openapi/admin-api/`, run `make bundle-admin-api-spec`, and commit
+the regenerated `docs/en/latest/admin-api.json` in the same PR. Do not edit the
+generated JSON directly. Implementation and tests are authoritative. Keep the
+contract explicit; do not fetch or generate it from downstream documentation.
+Plugin-specific schemas remain available through the schema endpoints.
+
 ## Contributor gifts
 
 If you have contributed to Apache APISIX, no matter it is a code contribution to fix a bug or a feature request, or a documentation change, Congratulations! You are eligible to receive the APISIX special gifts with a digital certificate! It's always been the community effort that has made Apache APISIX be understood and used by more developers.

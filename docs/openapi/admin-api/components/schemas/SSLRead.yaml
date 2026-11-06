@@ -48,6 +48,7 @@ properties:
       client: Client certificate for mTLS with upstream services.
   sni:
     type: string
+    pattern: ^\*$|^\*?[0-9a-zA-Z-._\[\]:]+$
     description: Server Name Indication (SNI) to match. Supports wildcard prefix (`*.example.com`). Mutually exclusive with `snis`.
     examples:
       - api.example.com
@@ -55,28 +56,17 @@ properties:
     type: array
     items:
       type: string
+      pattern: ^\*$|^\*?[0-9a-zA-Z-._\[\]:]+$
     minItems: 1
     description: Multiple SNI hostnames. Mutually exclusive with `sni`.
   cert:
-    type: string
-    minLength: 128
-    maxLength: 65536
-    description: PEM-encoded server certificate. Can also be a secret reference (`$secret://...`).
-  key:
-    type: string
-    minLength: 128
-    maxLength: 65536
-    description: PEM-encoded private key. Can also be a secret reference (`$secret://...`). **Not returned in GET responses for security.**
+    $ref: ./CertificateOrReference.yaml
+    description: PEM-encoded server certificate or the stored APISIX secret/environment reference.
   certs:
     type: array
     items:
-      type: string
+      $ref: ./CertificateOrReference.yaml
     description: Additional certificates for certificate chain or alternative key types.
-  keys:
-    type: array
-    items:
-      type: string
-    description: Additional private keys corresponding to `certs`.
   client:
     type: object
     description: mTLS client verification settings.
@@ -84,10 +74,8 @@ properties:
       - ca
     properties:
       ca:
-        type: string
-        minLength: 128
-        maxLength: 65536
-        description: PEM-encoded CA certificate for client verification.
+        $ref: ./CertificateOrReference.yaml
+        description: PEM-encoded CA certificate or the stored APISIX secret/environment reference for client verification.
       depth:
         type: integer
         minimum: 0
@@ -138,4 +126,6 @@ then:
         - snis
         - cert
 else:
-  title: SNI not required
+  title: Client certificate
+  required:
+    - cert

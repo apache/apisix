@@ -37,13 +37,6 @@ get:
                 list:
                   - value:
                       type: server
-                      key: |
-                        -----BEGIN PRIVATE KEY-----
-                        MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDh5cAWYXAMPLEbe
-                        fakekeyForOpenAPISpecPlaceholderOnlyDoNotUseForRealKeysNopeNopeNo
-                        peNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNo
-                        peNopeNopeNopeNopeNopeNope==
-                        -----END PRIVATE KEY-----
                       snis:
                         - test.com
                       id: "1"
@@ -82,7 +75,7 @@ post:
       content:
         application/json:
           schema:
-            $ref: ../components/schemas/SSLEnvelope.yaml
+            $ref: ../components/schemas/SSLWriteEnvelope.yaml
           examples:
             "1":
               summary: Successful Example
@@ -100,19 +93,13 @@ post:
                     9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4eXAMPLEcaPUBLIcfakeforopeNAPIspecON
                     LYexampleCAcontentsoExpandedFakeKeyMaterial==
                     -----END CERTIFICATE-----
-                  key: |
-                    -----BEGIN PRIVATE KEY-----
-                    MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDh5cAWYXAMPLEbe
-                    fakekeyForOpenAPISpecPlaceholderOnlyDoNotUseForRealKeysNopeNopeNo
-                    peNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNopeNo
-                    peNopeNopeNopeNopeNopeNope==
-                    -----END PRIVATE KEY-----
                   id: "00000000000000000134"
                   create_time: 1684374944
                   status: 1
                   snis:
                     - test.com
                   update_time: 1684374944
+                  key: opaque-stored-private-key-value
     "400":
       $ref: ../components/responses/BadRequest.yaml
       description: Invalid configuration
