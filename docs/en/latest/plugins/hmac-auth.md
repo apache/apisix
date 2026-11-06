@@ -668,7 +668,8 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     "methods": ["POST"],
     "plugins": {
       "hmac-auth": {
-        "validate_request_body": true
+        "validate_request_body": true,
+        "signed_headers": ["date", "digest"]
       }
     },
     "upstream": {
@@ -706,6 +707,9 @@ services:
         plugins:
           hmac-auth:
             validate_request_body: true
+            signed_headers:
+              - date
+              - digest
     upstream:
       type: roundrobin
       nodes:
@@ -771,6 +775,9 @@ spec:
         _meta:
           disable: false
         validate_request_body: true
+        signed_headers:
+          - date
+          - digest
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
@@ -853,6 +860,9 @@ spec:
         enable: true
         config:
           validate_request_body: true
+          signed_headers:
+            - date
+            - digest
 ```
 
 Apply the configuration to your cluster:
@@ -890,23 +900,25 @@ body = '{"name": "world"}'          # example request body
 # skew to prolong the validity within the advised security boundary
 gmt_time = datetime.now(timezone.utc).strftime('%a, %d %b %Y %H:%M:%S GMT')
 
+# create the SHA-256 digest of the request body and base64 encode it
+body_digest = hashlib.sha256(body.encode('utf-8')).digest()
+body_digest_base64 = base64.b64encode(body_digest).decode('utf-8')
+
 # construct the signing string (ordered)
 # the date and any subsequent custom headers should be lowercased and separated by a
 # single space character, i.e. `<key>:<space><value>`
+# the Digest header is part of the signed headers when validating the request body
 # https://datatracker.ietf.org/doc/html/draft-cavage-http-signatures-12#section-2.1.6
 signing_string = (
     f"{key_id}\n"
     f"{request_method} {request_path}\n"
     f"date: {gmt_time}\n"
+    f"digest: SHA-256={body_digest_base64}\n"
 )
 
 # create signature
 signature = hmac.new(secret_key, signing_string.encode('utf-8'), hashlib.sha256).digest()
 signature_base64 = base64.b64encode(signature).decode('utf-8')
-
-# create the SHA-256 digest of the request body and base64 encode it
-body_digest = hashlib.sha256(body.encode('utf-8')).digest()
-body_digest_base64 = base64.b64encode(body_digest).decode('utf-8')
 
 # construct the request headers
 headers = {
@@ -914,7 +926,7 @@ headers = {
     "Digest": f"SHA-256={body_digest_base64}",
     "Authorization": (
         f'Signature keyId="{key_id}",algorithm="hmac-sha256",'
-        f'headers="@request-target date",'
+        f'headers="@request-target date digest",'
         f'signature="{signature_base64}"'
     )
 }
@@ -932,7 +944,7 @@ python3 hmac-sig-digest-header-gen.py
 You should see the request headers printed:
 
 ```text
-{'Date': 'Fri, 06 Sep 2024 09:16:16 GMT', 'Digest': 'SHA-256=78qzJuLwSpZ8HacsTdFCQJWxzPMOf8bYctRk2ySLpS8=', 'Authorization': 'Signature keyId="john-key",algorithm="hmac-sha256",headers="@request-target date",signature="rjS6NxOBKmzS8CZL05uLiAfE16hXdIpMD/L/HukOTYE="'}
+{'Date': 'Fri, 06 Sep 2024 09:16:16 GMT', 'Digest': 'SHA-256=78qzJuLwSpZ8HacsTdFCQJWxzPMOf8bYctRk2ySLpS8=', 'Authorization': 'Signature keyId="john-key",algorithm="hmac-sha256",headers="@request-target date digest",signature="LGBTz7bVQQWlkijeyDpEwJWo+ppwX735uRZk5F8KhmU="'}
 ```
 
 Using the headers generated, send a request to the Route:
@@ -941,7 +953,7 @@ Using the headers generated, send a request to the Route:
 curl "http://127.0.0.1:9080/post" -X POST \
   -H "Date: Fri, 06 Sep 2024 09:16:16 GMT" \
   -H "Digest: SHA-256=78qzJuLwSpZ8HacsTdFCQJWxzPMOf8bYctRk2ySLpS8=" \
-  -H 'Authorization: Signature keyId="john-key",algorithm="hmac-sha256",headers="@request-target date",signature="rjS6NxOBKmzS8CZL05uLiAfE16hXdIpMD/L/HukOTYE="' \
+  -H 'Authorization: Signature keyId="john-key",algorithm="hmac-sha256",headers="@request-target date digest",signature="LGBTz7bVQQWlkijeyDpEwJWo+ppwX735uRZk5F8KhmU="' \
   -d '{"name": "world"}'
 ```
 
@@ -957,7 +969,7 @@ You should see an `HTTP/1.1 200 OK` response similar to the following:
   },
   "headers": {
     "Accept": "*/*",
-    "Authorization": "Signature keyId=\"john-key\",algorithm=\"hmac-sha256\",headers=\"@request-target date\",signature=\"rjS6NxOBKmzS8CZL05uLiAfE16hXdIpMD/L/HukOTYE=\"",
+    "Authorization": "Signature keyId=\"john-key\",algorithm=\"hmac-sha256\",headers=\"@request-target date digest\",signature=\"LGBTz7bVQQWlkijeyDpEwJWo+ppwX735uRZk5F8KhmU=\"",
     "Content-Length": "17",
     "Content-Type": "application/x-www-form-urlencoded",
     "Date": "Fri, 06 Sep 2024 09:16:16 GMT",
@@ -975,14 +987,14 @@ You should see an `HTTP/1.1 200 OK` response similar to the following:
 }
 ```
 
-If you send a request without the digest or with an invalid digest:
+If you send a request without the digest, or with a body that does not match the signed digest:
 
 ```shell
 curl "http://127.0.0.1:9080/post" -X POST \
   -H "Date: Fri, 06 Sep 2024 09:16:16 GMT" \
   -H "Digest: SHA-256=78qzJuLwSpZ8HacsTdFCQJWxzPMOf8bYctRk2ySLpS8=" \
-  -H 'Authorization: Signature keyId="john-key",algorithm="hmac-sha256",headers="@request-target date",signature="rjS6NxOBKmzS8CZL05uLiAfE16hXdIpMD/L/HukOTYE="' \
-  -d '{"name": "world"}'
+  -H 'Authorization: Signature keyId="john-key",algorithm="hmac-sha256",headers="@request-target date digest",signature="LGBTz7bVQQWlkijeyDpEwJWo+ppwX735uRZk5F8KhmU="' \
+  -d '{"name": "tampered"}'
 ```
 
 You should see an `HTTP/1.1 401 Unauthorized` response with the following message:
