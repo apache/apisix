@@ -35,11 +35,15 @@ description: opentelemetry 插件可用于根据 OpenTelemetry 协议规范上�
 
 `opentelemetry` 插件可用于根据 [OpenTelemetry Specification](https://opentelemetry.io/docs/reference/specification/) 协议规范上报 Traces 数据。该插件仅支持二进制编码的 OTLP over HTTP，即请求类型为 `application/x-protobuf` 的数据上报。
 
+## 启用 opentelemetry 插件
+
+`opentelemetry` 插件默认处于禁用状态。在 `conf/config.yaml` 中保留部署使用的完整插件列表，并添加 `opentelemetry`。如果以 `conf/config.yaml.example` 为基础配置 APISIX，请取消注释已有的 `opentelemetry` 条目。
+
+重新加载 APISIX 以使更改生效。
+
 ## 配置
 
-默认情况下，服务名称、租户 ID、collector 和 batch span processor 的配置已预配置在[默认配置](https://github.com/apache/apisix/blob/master/apisix/cli/config.lua)中。
-
-你可以通过端点 `apisix/admin/plugin_metadata/opentelemetry` 更改插件的配置，例如：
+`opentelemetry` 插件从插件元数据中读取插件级配置。通过端点 `/apisix/admin/plugin_metadata/opentelemetry` 配置插件元数据，例如：
 
 :::note
 你可以从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
@@ -108,18 +112,6 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/opentelemetry -H "X-API-
 apisix:
   tracing: true
 ```
-
-### 启用 opentelemetry 插件
-
-默认情况下，APISIX 中的 `opentelemetry` 插件是禁用的。要启用它，请将插件添加到配置文件中，如下所示：
-
-```yaml title="config.yaml"
-plugins:
-  - ...
-  - opentelemetry
-```
-
-重新加载 APISIX 以使更改生效。
 
 ### 将 Traces 上报到 OpenTelemetry
 

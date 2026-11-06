@@ -36,11 +36,15 @@ The `opentelemetry` Plugin can be used to report tracing data according to the [
 
 The Plugin only supports binary-encoded [OTLP over HTTP](https://opentelemetry.io/docs/reference/specification/protocol/otlp/#otlphttp).
 
+## Enable `opentelemetry` Plugin
+
+The `opentelemetry` Plugin is disabled by default. In `conf/config.yaml`, keep the complete list of Plugins used by your deployment and add `opentelemetry`. If you are starting from `conf/config.yaml.example`, uncomment the existing `opentelemetry` entry.
+
+Reload APISIX for the change to take effect.
+
 ## Configurations
 
-By default, configurations of the Service name, tenant ID, collector, and batch span processor are pre-configured in [default configuration](https://github.com/apache/apisix/blob/master/apisix/cli/config.lua).
-
-You can change this configuration of the Plugin through the endpoint `apisix/admin/plugin_metadata/opentelemetry` For example:
+The `opentelemetry` Plugin reads its plugin-level settings from Plugin Metadata. Configure the metadata through the endpoint `/apisix/admin/plugin_metadata/opentelemetry`. For example:
 
 :::note
 You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
@@ -109,18 +113,6 @@ To enable comprehensive tracing across the request lifecycle (SSL/SNI, rewrite/a
 apisix:
   tracing: true
 ```
-
-### Enable `opentelemetry` Plugin
-
-By default, the `opentelemetry` Plugin is disabled in APISIX. To enable, add the Plugin to your configuration file as such:
-
-```yaml title="config.yaml"
-plugins:
-  - ...
-  - opentelemetry
-```
-
-Reload APISIX for changes to take effect.
 
 ### Send Traces to OpenTelemetry
 
