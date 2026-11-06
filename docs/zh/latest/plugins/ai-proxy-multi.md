@@ -146,6 +146,7 @@ import TabItem from '@theme/TabItem';
 | keepalive                           | boolean        | 否    | true                            |              | 如果为 true，在请求 LLM 服务时保持连接活跃。 |
 | keepalive_timeout                   | integer        | 否    | 60000                           | 大于或等于 1000 | 请求 LLM 服务时的请求超时时间（毫秒）。 |
 | keepalive_pool                      | integer        | 否    | 30                              |              | 连接 LLM 服务时的保活池大小。 |
+| streaming_flush_interval_ms         | integer        | 否    | 10                              | 大于或等于 0 | 后台刷新线程的间隔时间（毫秒）。`> 0`（默认值：`10`）时，后台定时器每隔 N 毫秒调用一次 `ngx.flush(false)`，适合上游批量发送 token 的场景。对于 SSE 流，只有已排队发给客户端的完整帧或转换后的事件才会触发刷新；不完整的帧会等待后续上游数据。定时刷新若返回 `nothing to flush`，会继续处理流式响应。设为 `0` 时禁用后台线程，改为每个 chunk 同步调用 `ngx.flush(true)` 立即刷新。 |
 | ssl_verify                          | boolean        | 否    | true                            |              | 如果为 true，验证 LLM 服务的证书。 |
 
 ## 请求头转发
