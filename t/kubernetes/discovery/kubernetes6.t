@@ -264,3 +264,109 @@ version keys in the shared dict: 0
 fixture restored: true
 --- error_log
 failed to set upstream
+
+
+
+=== TEST 6: every worker resolves the new nodes after a change
+# The issue was diagnosed per worker with ngx.worker.id(): one worker kept
+# a stale list while the others were fine. /worker_nodes answers from the
+# worker that served the request, and the probes are spread over the four
+# workers by reuseport, so each worker is checked on its own. The first
+# probes may run before the initial list has finished, which logs an
+# [error] for a 503, so the default `no_error_log: [error]` would be flaky.
+--- yaml_config eval: $::yaml_config
+--- config
+    location /worker_nodes {
+        content_by_lua_block {
+            local d = require("apisix.discovery.kubernetes")
+            local addrs = {}
+            for _, node in ipairs(d.nodes("ns-a/ep:p1") or {}) do
+                table.insert(addrs, node.host .. ":" .. node.port)
+            end
+            ngx.print(ngx.worker.id(), " ", table.concat(addrs, ","))
+        }
+    }
+
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.k8s_discovery_e2e").new(ngx.var.server_port)
+            local ip = t.backend_ip()
+
+            t.ensure_endpoints(t.port_subsets(1980))
+            ngx.say("serving 1980 within 5s: ", t.wait_for("1980", 5, 5) ~= nil)
+            local ok, seen = t.wait_for_workers(ip .. ":1980", 4, 10)
+            ngx.say("every worker on 1980: ", ok, ", workers seen: ", seen)
+
+            ngx.say("patch: ", t.set_subsets(t.port_subsets(1981)))
+            ok, seen = t.wait_for_workers(ip .. ":1981", 4, 10)
+            ngx.say("every worker on 1981: ", ok, ", workers seen: ", seen)
+        }
+    }
+--- response_body
+serving 1980 within 5s: true
+every worker on 1980: true, workers seen: 4
+patch: 200
+every worker on 1981: true, workers seen: 4
+--- no_error_log
+[alert]
+
+
+
+=== TEST 7: a burst of changes under traffic leaves no worker behind
+# The reported incidents followed rollouts and bulk scale-downs: many
+# Endpoints changes in a short time while requests keep flowing. The same
+# [error] caveat as above applies to the first probes.
+--- yaml_config eval: $::yaml_config
+--- config
+    location /worker_nodes {
+        content_by_lua_block {
+            local d = require("apisix.discovery.kubernetes")
+            local addrs = {}
+            for _, node in ipairs(d.nodes("ns-a/ep:p1") or {}) do
+                table.insert(addrs, node.host .. ":" .. node.port)
+            end
+            ngx.print(ngx.worker.id(), " ", table.concat(addrs, ","))
+        }
+    }
+
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.k8s_discovery_e2e").new(ngx.var.server_port)
+            local ip = t.backend_ip()
+
+            t.ensure_endpoints(t.port_subsets(1980))
+            ngx.say("serving 1980 within 5s: ", t.wait_for("1980", 5, 5) ~= nil)
+
+            -- twelve changes back and forth, three requests after each one;
+            -- the burst ends on 1980
+            local allowed = {["1980"] = true, ["1981"] = true}
+            local patches, unexpected = 0, 0
+            for i = 1, 12 do
+                local port = (i % 2 == 1) and 1981 or 1980
+                if t.set_subsets(t.port_subsets(port)) == 200 then
+                    patches = patches + 1
+                end
+                for _ = 1, 3 do
+                    if not allowed[t.get("/server_port")] then
+                        unexpected = unexpected + 1
+                    end
+                end
+            end
+            ngx.say("patches applied: ", patches)
+            ngx.say("answers outside 1980 and 1981 during the burst: ", unexpected)
+
+            -- let the last event land and every cache entry expire
+            ngx.sleep(1.5)
+            local ok, seen = t.wait_for_workers(ip .. ":1980", 4, 10)
+            ngx.say("every worker on the final state: ", ok, ", workers seen: ", seen)
+            ngx.say("answers not from 1980 in 40 requests: ", t.count_other_than("1980", 40))
+        }
+    }
+--- response_body
+serving 1980 within 5s: true
+patches applied: 12
+answers outside 1980 and 1981 during the burst: 0
+every worker on the final state: true, workers seen: 4
+answers not from 1980 in 40 requests: 0
+--- no_error_log
+[alert]

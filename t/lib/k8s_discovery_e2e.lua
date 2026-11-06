@@ -22,6 +22,7 @@ local core = require("apisix.core")
 local http = require("resty.http")
 local ngx = ngx
 local ipairs = ipairs
+local pairs = pairs
 local tostring = tostring
 local os_getenv = os.getenv
 
@@ -167,6 +168,41 @@ function _M.new(gateway_port)
                 return nil, unexpected
             end
             ngx.sleep(0.2)
+        end
+    end
+
+    -- polls the /worker_nodes location of the test block, which answers
+    -- "<worker id> <host:port,...>" from the worker that served the request,
+    -- until every one of n_workers workers has answered and the last answer
+    -- of each of them equals expected; returns whether that happened and
+    -- how many distinct workers answered
+    function t.wait_for_workers(expected, n_workers, timeout)
+        ngx.update_time()
+        local start = ngx.now()
+        local last = {}
+        while true do
+            local body = t.get("/worker_nodes")
+            local id, nodes = body:match("^(%d+) (.*)$")
+            if id then
+                last[id] = nodes
+            end
+
+            local seen, converged = 0, 0
+            for _, answer in pairs(last) do
+                seen = seen + 1
+                if answer == expected then
+                    converged = converged + 1
+                end
+            end
+            if seen >= n_workers and converged == seen then
+                return true, seen
+            end
+
+            ngx.update_time()
+            if ngx.now() - start > timeout then
+                return false, seen
+            end
+            ngx.sleep(0.05)
         end
     end
 
