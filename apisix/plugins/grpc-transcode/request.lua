@@ -26,7 +26,8 @@ local pcall = pcall
 local tonumber = tonumber
 local req_read_body = ngx.req.read_body
 
-return function (proto, service, method, pb_option, deadline, default_values)
+-- `binding` is the google.api.http match, if any.
+return function (proto, service, method, pb_option, deadline, default_values, binding)
     core.log.info("proto: ", core.json.delay_encode(proto, true))
     local m = util.find_method(proto, service, method)
     if not m then
@@ -39,7 +40,17 @@ return function (proto, service, method, pb_option, deadline, default_values)
     local pb_old_state = pb.state(proto.pb_state)
     util.set_options(proto, pb_option)
 
-    local map_message = util.map_message(m.input_type, default_values or {})
+    local request_table
+    if binding then
+        local err
+        request_table, err = util.get_annotated_request_table(binding)
+        if err then
+            pb.state(pb_old_state)
+            return false, err, 400
+        end
+    end
+
+    local map_message = util.map_message(m.input_type, default_values or {}, request_table)
     local ok, encoded = pcall(pb.encode, m.input_type, map_message)
     pb.state(pb_old_state)
 
