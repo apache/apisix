@@ -882,27 +882,43 @@ curl -i "http://127.0.0.1:9080/get" -H "Authorization: ${jwt_token}"
 
 你应收到 `HTTP/1.1 200 OK` 响应。
 
-### 在 Secret Manager 中管理密钥
+### 在 HashiCorp Vault 中存储 JWT 密钥
 
-以下示例演示如何在 [HashiCorp Vault](https://www.vaultproject.io) 中管理 `jwt-auth` 消费者密钥，并在插件配置中引用。
+[HashiCorp Vault](https://developer.hashicorp.com/vault/docs) 提供集中式外部密钥存储。以下示例将 JWT 签名密钥存储在 Vault 中，而不是直接存储在 `jwt-auth` 凭据中，并从 APISIX 引用该密钥。
 
-在 Docker 中启动 Vault 开发服务器：
+:::info
+
+[Vault 开发模式](https://developer.hashicorp.com/vault/docs/concepts/dev-server)将数据存储在内存中，并使用 root 令牌。此设置仅用于本地测试。在生产环境中，请部署生产级 Vault，并为 APISIX 配置一个只能读取所需密钥路径的令牌。
+
+:::
+
+将 `APISIX_CONTAINER` 设置为正在运行的 APISIX 容器名称。创建专用 Docker 网络，并将 APISIX 连接到该网络：
+
+```shell
+export APISIX_CONTAINER=replace-with-apisix-container-name
+
+docker network create apisix-vault-net
+docker network connect apisix-vault-net "$APISIX_CONTAINER"
+```
+
+在同一网络中启动 Vault 开发服务器：
 
 ```shell
 docker run -d \
-  --name vault \
-  -p 8200:8200 \
+  --name apisix-vault \
+  --network apisix-vault-net \
   --cap-add IPC_LOCK \
   -e VAULT_DEV_ROOT_TOKEN_ID=root \
   -e VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8200 \
-  vault:1.9.0 \
+  hashicorp/vault:1.21.4 \
   vault server -dev
 ```
 
-APISIX 目前支持 [Vault KV 引擎第 1 版](https://developer.hashicorp.com/vault/docs/secrets/kv#kv-version-1)。在 Vault 中启用它：
+APISIX 的 Vault Secret Provider 从 [Vault KV 版本 1](https://developer.hashicorp.com/vault/docs/secrets/kv/kv-v1)读取密钥。在 `kv/` 路径启用 KV 版本 1 密钥引擎：
 
 ```shell
-docker exec -i vault sh -c "VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault secrets enable -path=kv -version=1 kv"
+docker exec apisix-vault sh -c \
+  "VAULT_TOKEN='root' VAULT_ADDR='http://127.0.0.1:8200' vault secrets enable -path=kv -version=1 kv"
 ```
 
 你应收到类似如下的响应：
@@ -910,6 +926,35 @@ docker exec -i vault sh -c "VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' 
 ```text
 Success! Enabled the kv secrets engine at: kv/
 ```
+
+将签名密钥存储在 `kv/apisix/jack`：
+
+```shell
+docker exec apisix-vault sh -c \
+  "VAULT_TOKEN='root' VAULT_ADDR='http://127.0.0.1:8200' vault kv put kv/apisix/jack jwt-secret=vault-hs256-secret-that-is-very-long"
+```
+
+你应收到类似如下的响应：
+
+```text
+Success! Data written to: kv/apisix/jack
+```
+
+创建包含 Vault 连接信息的 APISIX [Secret](../terminology/secret.md) 资源。ADC 目前无法同步 Secret 资源，因此请通过 Admin API 创建该资源：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/secrets/vault/jwt" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "uri": "http://apisix-vault:8200",
+    "prefix": "kv/apisix",
+    "token": "root"
+  }'
+```
+
+Vault 容器与 APISIX 位于同一 Docker 网络中，因此 APISIX 可以通过容器名称访问 Vault。
+
+以下两种配置方式都需要此 Secret 资源。ADC 目前无法同步 Secret 资源，但可以同步引用现有 Secret 资源的凭据。
 
 <Tabs
 groupId="api"
@@ -920,18 +965,6 @@ values={[
 ]}>
 
 <TabItem value="dashboard">
-
-创建 [Secret](../terminology/secret.md) 并配置 Vault 地址及其他连接信息，请根据实际情况调整 Vault 地址：
-
-```shell
-curl "http://127.0.0.1:9180/apisix/admin/secrets/vault/jwt" -X PUT \
-  -H "X-API-KEY: ${admin_key}" \
-  -d '{
-    "uri": "http://127.0.0.1:8200",
-    "prefix": "kv/apisix",
-    "token": "root"
-  }'
-```
 
 创建消费者 `jack`：
 
@@ -983,23 +1016,18 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 
 <TabItem value="adc">
 
-创建 Secret 并配置 Vault 地址，请根据实际情况调整 Vault 地址：
+创建包含消费者、Vault 后端凭据和路由的 `adc.yaml`：
 
 ```yaml title="adc.yaml"
-secrets:
-  - name: vault-jwt
-    vault:
-      url: http://127.0.0.1:8200
-      prefix: kv/apisix
-      token: root
 consumers:
   - username: jack
     credentials:
-      - name: jwt-auth
+      - id: cred-jack-jwt-auth
+        name: jwt-auth
         type: jwt-auth
         config:
           key: jwt-vault-key
-          secret: $secret://vault-jwt/jack/jwt-secret
+          secret: $secret://vault/jwt/jack/jwt-secret
 services:
   - name: jwt-auth-service
     routes:
@@ -1016,7 +1044,7 @@ services:
           weight: 1
 ```
 
-将配置同步到网关：
+将配置同步到 APISIX：
 
 ```shell
 adc sync -f adc.yaml
@@ -1026,23 +1054,13 @@ adc sync -f adc.yaml
 
 </Tabs>
 
-在 Vault 中设置 `jwt-auth` 密钥值为 `vault-hs256-secret-that-is-very-long`：
+在两种配置方式中，该引用均使用 `jwt` Secret 资源读取 `kv/apisix/jack` 中的 `jwt-secret` 字段。
 
-```shell
-docker exec -i vault sh -c "VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault kv put kv/apisix/jack jwt-secret=vault-hs256-secret-that-is-very-long"
-```
+使用兼容的工具生成 JWT。如果使用 [JWT.io 的 JWT 编码器](https://jwt.io)，请按以下方式配置令牌：
 
-你应收到类似如下的响应：
-
-```text
-Success! Data written to: kv/apisix/jack
-```
-
-如需签发 JWT，可以使用 [JWT.io 的 JWT 编码器](https://jwt.io)或其他工具。若使用 [JWT.io 的 JWT 编码器](https://jwt.io)，请执行以下步骤：
-
-* 将算法填写为 `HS256`。
-* 在 __Valid secret__ 部分将密钥更新为 `vault-hs256-secret-that-is-very-long`。
-* 在 payload 中填入消费者密钥 `jwt-vault-key`，并以 UNIX 时间戳格式添加 `exp` 或 `nbf`。
+* 选择 `HS256` 算法。
+* 将 __Valid secret__ 设置为 `vault-hs256-secret-that-is-very-long`。
+* 将 `key` 声明设置为 `jwt-vault-key`，并添加使用有效 UNIX 时间戳的 `exp` 或 `nbf` 声明。
 
 payload 应类似如下所示：
 
@@ -1065,7 +1083,16 @@ export jwt_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJqd3QtdmF1bHQta2
 curl -i "http://127.0.0.1:9080/get" -H "Authorization: ${jwt_token}"
 ```
 
-你应收到 `HTTP/1.1 200 OK` 响应。
+你应收到 `HTTP/1.1 200 OK` 响应。响应正文应包含用于标识已认证消费者的请求头：
+
+```json
+{
+  "headers": {
+    "X-Consumer-Username": "jack",
+    "X-Credential-Identifier": "cred-jack-jwt-auth"
+  }
+}
+```
 
 ### 使用 RS256 算法签名 JWT
 
