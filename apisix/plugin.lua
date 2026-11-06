@@ -1335,7 +1335,7 @@ _M.encrypt_conf = encrypt_conf
 
 check_plugin_metadata = function(item)
     -- validate a decrypted copy and only commit it once the check passes,
-    -- so a rejected entry is logged with its values still marked
+    -- so a rejected entry is logged with its values still encrypted
     local conf = core.table.deepcopy(item)
     local marked, err = decrypt_marked_metadata(conf)
     if err then
