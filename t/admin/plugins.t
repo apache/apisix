@@ -114,6 +114,8 @@ ai-aws-content-moderation
 ai-rate-limiting
 ai-aliyun-content-moderation
 ai-lakera-guard
+soap-signer
+xml-signer
 proxy-mirror
 graphql-proxy-cache
 proxy-rewrite
