@@ -103,7 +103,6 @@ local function get_metadata(ctx)
         core.log.info("failed to read metadata for ", plugin_name)
         return nil
     end
-    core.log.debug(plugin_name, " metadata: ", core.json.delay_encode(metadata))
     metadata = metadata.value
     if not metadata.enable then
         return nil

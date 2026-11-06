@@ -291,10 +291,8 @@ function _M.check_schema(conf, schema_type)
 
         for _, field in ipairs(fields) do
             if not core.table.deep_eq(prev_conf[field], conf[field]) then
-                core.log.error("previous limit-count group ", prev_conf.group,
-                            " conf: ", core.json.encode(prev_conf))
-                core.log.error("current limit-count group ", conf.group,
-                            " conf: ", core.json.encode(conf))
+                core.log.error("limit-count group ", conf.group,
+                               " conf mismatched on field: ", field)
                 return false, "group conf mismatched"
             end
         end
@@ -662,7 +660,6 @@ local function run_rate_limit(conf, rule, ctx, name, cost, dry_run)
     else
         metadata = metadata_defaults
     end
-    core.log.info("limit-count plugin-metadata: ", core.json.delay_encode(metadata))
 
     local set_limit_headers = construct_rate_limiting_headers(conf, rule, metadata)
     local set_header = not is_log_phase

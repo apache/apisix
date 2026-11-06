@@ -761,8 +761,9 @@ end
 
 
 function _M.merge_service_route(service_conf, route_conf)
-    core.log.info("service conf: ", core.json.delay_encode(service_conf, true))
-    core.log.info("  route conf: ", core.json.delay_encode(route_conf, true))
+    -- the confs hold decrypted values, so log their ids only
+    core.log.info("merge service [", service_conf.value.id, "] into route [",
+                  route_conf.value.id, "]")
 
     local route_service_key = route_conf.value.id .. "#"
         .. route_conf.modifiedIndex .. "#" .. service_conf.modifiedIndex
@@ -803,8 +804,8 @@ end
 
 
 function _M.merge_service_stream_route(service_conf, route_conf)
-    core.log.info("service conf: ", core.json.delay_encode(service_conf, true))
-    core.log.info("  stream route conf: ", core.json.delay_encode(route_conf, true))
+    core.log.info("merge service [", service_conf.value.id, "] into stream route [",
+                  route_conf.value.id, "]")
 
     local version = route_conf.modifiedIndex .. "#" .. service_conf.modifiedIndex
     local route_service_key = route_conf.value.id .. "#"
@@ -869,8 +870,9 @@ end
 
 
 function _M.merge_consumer_route(route_conf, consumer_conf, consumer_group_conf, api_ctx)
-    core.log.info("route conf: ", core.json.delay_encode(route_conf))
-    core.log.info("consumer group conf: ", core.json.delay_encode(consumer_group_conf))
+    core.log.info("merge consumer [", consumer_conf.id, "] and consumer group [",
+                  consumer_group_conf and consumer_group_conf.value.id, "] into route [",
+                  route_conf.value.id, "]")
 
     local flag = route_conf.value.id .. "#" .. route_conf.modifiedIndex
                  .. "#" .. consumer_conf.id .. "#" .. consumer_conf.modifiedIndex
@@ -1000,7 +1002,7 @@ function _M.conf_version(conf)
     if not conf._version then
         local data = core.json.stably_encode(conf)
         conf._version = tostring(crc32(data))
-        core.log.info("init plugin-level conf version: ", conf._version, ", from ", data)
+        core.log.info("init plugin-level conf version: ", conf._version)
     end
 
     return conf._version
@@ -1266,8 +1268,7 @@ _M.check_schema = check_schema
 
 local function stream_check_schema(plugins_conf, schema_type, skip_disabled_plugin)
     for name, plugin_conf in pairs(plugins_conf) do
-        core.log.info("check stream plugin schema, name: ", name,
-                      ": ", core.json.delay_encode(plugin_conf, true))
+        core.log.info("check stream plugin schema, name: ", name)
         if type(plugin_conf) ~= "table" then
             return false, "invalid plugin conf " ..
                 core.json.encode(plugin_conf, true) ..

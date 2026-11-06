@@ -191,7 +191,7 @@ end
 
 
 function _M.access(conf, ctx)
-    core.log.info("proxy-cache plugin access phase, conf: ", core.json.delay_encode(conf))
+    core.log.info("proxy-cache plugin access phase")
 
     local value = util.generate_complex_value(conf.cache_key, ctx)
 
@@ -224,7 +224,7 @@ end
 
 
 function _M.header_filter(conf, ctx)
-    core.log.info("proxy-cache plugin header filter phase, conf: ", core.json.delay_encode(conf))
+    core.log.info("proxy-cache plugin header filter phase")
 
     local handler
     if conf.cache_strategy == STRATEGY_MEMORY then
@@ -238,7 +238,7 @@ end
 
 
 function _M.body_filter(conf, ctx)
-    core.log.info("proxy-cache plugin body filter phase, conf: ", core.json.delay_encode(conf))
+    core.log.info("proxy-cache plugin body filter phase")
 
     if conf.cache_strategy == STRATEGY_MEMORY then
         memory_handler.body_filter(conf, ctx)
