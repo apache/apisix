@@ -26,6 +26,7 @@ local os_date         = os.date
 local pcall           = pcall
 local type            = type
 local pairs           = pairs
+local ipairs          = ipairs
 
 local plugin_name = "elasticsearch-logger"
 local batch_processor_manager = bp_manager_mod.new(plugin_name)
@@ -132,6 +133,7 @@ local metadata_schema = {
 
 
 local _M = {
+    type = "logger",
     version = 0.1,
     priority = 413,
     name = plugin_name,
@@ -232,25 +234,23 @@ local function resolve_index_vars(index, var)
 end
 
 
-local function get_logger_entry(conf, ctx, index)
-    local entry = log_util.get_log_entry(plugin_name, conf, ctx)
+local function get_bulk_action(conf, index)
     local body = {
         index = {
             _index = index
         }
     }
     -- for older version type is required
-    if conf._version == "6" or conf._version == "5" then
+    if conf._es_version == "6" or conf._es_version == "5" then
         body.index._type = "_doc"
     end
-    return core.json.encode(body) .. "\n" ..
-        core.json.encode(entry) .. "\n"
+    return core.json.encode(body)
 end
 
 
 local function fetch_and_update_es_version(conf)
-    if conf._version then
-        return
+    if conf._es_version then
+        return true
     end
     local selected_endpoint_addr
     if conf.endpoint_addr then
@@ -260,10 +260,10 @@ local function fetch_and_update_es_version(conf)
     end
     local major_version, err = get_es_major_version(selected_endpoint_addr, conf)
     if err then
-        core.log.error("failed to get Elasticsearch version: ", err)
-        return
+        return nil, err
     end
-    conf._version = major_version
+    conf._es_version = major_version
+    return true
 end
 
 
@@ -272,7 +272,10 @@ local function send_to_elasticsearch(conf, entries)
     if not httpc then
         return false, str_format("create http error: %s", err)
     end
-    fetch_and_update_es_version(conf)
+    local ok, err = fetch_and_update_es_version(conf)
+    if not ok then
+        return false, "failed to get Elasticsearch version: " .. err
+    end
     local selected_endpoint_addr
     if conf.endpoint_addr then
         selected_endpoint_addr = conf.endpoint_addr
@@ -280,7 +283,15 @@ local function send_to_elasticsearch(conf, entries)
         selected_endpoint_addr = conf.endpoint_addrs[math_random(#conf.endpoint_addrs)]
     end
     local uri = selected_endpoint_addr .. "/_bulk"
-    local body = core.table.concat(entries, "")
+    local body = core.table.new(#entries * 4, 0)
+    for i, entry in ipairs(entries) do
+        local offset = (i - 1) * 4
+        body[offset + 1] = get_bulk_action(conf, entry.index)
+        body[offset + 2] = "\n"
+        body[offset + 3] = entry.body
+        body[offset + 4] = "\n"
+    end
+    body = core.table.concat(body, "")
     local headers = {
         ["Content-Type"] = "application/x-ndjson",
         ["Accept"] = "application/vnd.elasticsearch+json"
@@ -323,18 +334,23 @@ function _M.body_filter(conf, ctx)
 end
 
 
-function _M.access(conf, ctx)
-    -- fetch_and_update_es_version will call ES server only the first time
-    -- so this should not amount to considerable overhead
-    fetch_and_update_es_version(conf)
-
-    log_util.check_and_read_req_body(conf, ctx)
-end
+_M.access = log_util.check_and_read_req_body
 
 
 function _M.log(conf, ctx)
     local index = resolve_index_vars(conf.field.index, ctx.var)
-    local entry = get_logger_entry(conf, ctx, index)
+    local log_entry = log_util.get_log_entry(plugin_name, conf, ctx)
+    local body, err = core.json.encode(log_entry)
+    if not body then
+        core.log.error("failed to encode Elasticsearch log entry: ", err)
+        return
+    end
+    -- Snapshot request data before the batch timer runs. Bulk action metadata
+    -- is encoded after version discovery, outside the request's access phase.
+    local entry = {
+        index = index,
+        body = body
+    }
 
     if batch_processor_manager:add_entry(conf, entry) then
         return
