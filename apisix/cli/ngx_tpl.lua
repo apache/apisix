@@ -565,9 +565,9 @@ http {
     uninitialized_variable_warn off;
 
     {% if http.access_log_buffer then %}
-    access_log {* http.access_log *} main buffer={* http.access_log_buffer *} flush=3;
+    access_log {* http.access_log *} main buffer={* http.access_log_buffer *} flush=3{% if http.access_log_if then %} if={* http.access_log_if *}{% end %};
     {% else %}
-    access_log {* http.access_log *} main buffer=16384 flush=3;
+    access_log {* http.access_log *} main buffer=16384 flush=3{% if http.access_log_if then %} if={* http.access_log_if *}{% end %};
     {% end %}
     {% end %}
     open_file_cache  max=1000 inactive=60;
@@ -852,7 +852,7 @@ http {
         http3 on;
         {% end %}
         {% for _, item in ipairs(node_listen) do %}
-        listen {* item.ip *}:{* item.port *} default_server {% if enable_reuseport then %} reuseport {% end %};
+        listen {* item.ip *}:{* item.port *} default_server {% if enable_reuseport then %} reuseport {% end %}{% if item.backlog then %} backlog={* item.backlog *}{% end %};
         {% end %}
         {% if ssl.enable then %}
         {% for _, item in ipairs(ssl.listen) do %}
