@@ -23,6 +23,7 @@ local http = require("resty.http")
 local ngx = ngx
 local ipairs = ipairs
 local tostring = tostring
+local os_getenv = os.getenv
 
 local _M = {}
 
@@ -49,9 +50,20 @@ function _M.new(gateway_port)
         return res.status
     end
 
+    -- Kubernetes rejects loopback addresses in Endpoints, so the fake
+    -- backend is reached through a global address of this host, exported
+    -- by the test file as E2E_BACKEND_IP
+    function t.backend_ip()
+        local ip = os_getenv("E2E_BACKEND_IP")
+        if ip == nil or ip == "" then
+            return nil
+        end
+        return ip
+    end
+
     function t.port_subsets(port)
         return {{
-            addresses = {{ip = "127.0.0.1"}},
+            addresses = {{ip = t.backend_ip() or "127.0.0.1"}},
             ports = {{name = "p1", port = port}},
         }}
     end
@@ -82,6 +94,16 @@ function _M.new(gateway_port)
 
     function t.delete_endpoints()
         return k8s("DELETE", ep_path)
+    end
+
+    -- patch the subsets, or create the Endpoints object when it is gone
+    -- (a previous run may have deleted it); 200 or 201 on success
+    function t.ensure_endpoints(subsets)
+        local status = t.set_subsets(subsets)
+        if status == 404 then
+            return t.create_endpoints(subsets)
+        end
+        return status
     end
 
     function t.create_endpoints(subsets)

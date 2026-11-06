@@ -19,10 +19,16 @@
 # the Endpoints object is changed through the real apiserver (kubectl proxy
 # on 6445) and real requests are sent through APISIX to the fake backend on
 # 1980/1981, so every worker's cache is exercised, not just the shared dict.
+#
+# Kubernetes rejects loopback addresses in Endpoints, so the fake backend is
+# addressed through the first global IPv4 address of this host; the backend
+# listens on every interface.
 
 BEGIN {
     our $token_file = "/tmp/var/run/secrets/kubernetes.io/serviceaccount/token";
     our $token_value = eval {`cat $token_file 2>/dev/null`};
+    our $backend_ip = eval {`ip -4 -o addr show scope global 2>/dev/null | awk '{print \$4}' | cut -d/ -f1 | head -n 1`};
+    chomp($backend_ip) if defined $backend_ip;
 
     our $yaml_config = <<_EOC_;
 apisix:
@@ -85,6 +91,7 @@ env KUBERNETES_SERVICE_HOST=127.0.0.1;
 env KUBERNETES_SERVICE_PORT=6443;
 env KUBERNETES_CLIENT_TOKEN=$::token_value;
 env KUBERNETES_CLIENT_TOKEN_FILE=$::token_file;
+env E2E_BACKEND_IP=$::backend_ip;
 _EOC_
 
     $block->set_value("main_config", $main_config);
@@ -112,13 +119,16 @@ __DATA__
         content_by_lua_block {
             local t = require("lib.k8s_discovery_e2e").new(ngx.var.server_port)
 
-            ngx.say("patch: ", t.set_subsets(t.port_subsets(1980)))
+            ngx.say("backend ip known: ", t.backend_ip() ~= nil)
+            local status = t.ensure_endpoints(t.port_subsets(1980))
+            ngx.say("published: ", status == 200 or status == 201)
             ngx.say("serving 1980 within 5s: ", t.wait_for("1980", 5, 5) ~= nil)
             ngx.say("answers not from 1980 in 40 requests: ", t.count_other_than("1980", 40))
         }
     }
 --- response_body
-patch: 200
+backend ip known: true
+published: true
 serving 1980 within 5s: true
 answers not from 1980 in 40 requests: 0
 --- no_error_log
@@ -136,7 +146,7 @@ answers not from 1980 in 40 requests: 0
         content_by_lua_block {
             local t = require("lib.k8s_discovery_e2e").new(ngx.var.server_port)
 
-            t.set_subsets(t.port_subsets(1980))
+            t.ensure_endpoints(t.port_subsets(1980))
             ngx.say("serving 1980 within 5s: ", t.wait_for("1980", 5, 5) ~= nil)
 
             ngx.say("patch: ", t.set_subsets(t.port_subsets(1981)))
@@ -164,7 +174,7 @@ answers not from 1981 in 40 requests: 0
         content_by_lua_block {
             local t = require("lib.k8s_discovery_e2e").new(ngx.var.server_port)
 
-            t.set_subsets(t.port_subsets(1980))
+            t.ensure_endpoints(t.port_subsets(1980))
             ngx.say("serving 1980 within 5s: ", t.wait_for("1980", 5, 5) ~= nil)
 
             ngx.say("patch to empty: ", t.set_subsets({}))
@@ -192,7 +202,7 @@ failed to set upstream
         content_by_lua_block {
             local t = require("lib.k8s_discovery_e2e").new(ngx.var.server_port)
 
-            t.set_subsets(t.port_subsets(1980))
+            t.ensure_endpoints(t.port_subsets(1980))
             ngx.say("serving 1980 within 5s: ", t.wait_for("1980", 5, 5) ~= nil)
 
             ngx.say("delete: ", t.delete_endpoints())
@@ -220,7 +230,7 @@ failed to set upstream
         content_by_lua_block {
             local t = require("lib.k8s_discovery_e2e").new(ngx.var.server_port)
 
-            t.set_subsets(t.port_subsets(1980))
+            t.ensure_endpoints(t.port_subsets(1980))
             ngx.say("serving 1980 within 5s: ", t.wait_for("1980", 5, 5) ~= nil)
 
             ngx.say("unknown service: ", t.get("/hello"))
@@ -238,7 +248,8 @@ failed to set upstream
             end
             ngx.say("version keys in the shared dict: ", version_keys)
 
-            ngx.say("restore fixture: ", t.set_subsets(t.fixture_subsets()))
+            local status = t.ensure_endpoints(t.fixture_subsets())
+            ngx.say("fixture restored: ", status == 200 or status == 201)
         }
     }
 --- response_body
@@ -246,6 +257,6 @@ serving 1980 within 5s: true
 unknown service: 503
 dump has ns-a/ep: true
 version keys in the shared dict: 0
-restore fixture: 200
+fixture restored: true
 --- error_log
 failed to set upstream
