@@ -100,7 +100,7 @@ end
 local function add_endpoint_to_lrucache(servant)
     local endpoint_content, err = endpoint_dict:get_stale(servant)
     if not endpoint_content then
-        core.log.error("get empty endpoint content, servant: ", servant, ", err: ", err)
+        core.log.info("endpoint not found in tars DICT, servant: ", servant, ", err: ", err)
         return nil
     end
 

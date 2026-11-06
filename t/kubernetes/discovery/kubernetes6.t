@@ -61,12 +61,20 @@ routes:
       service_name: ns-a/ep:p1
       discovery_type: kubernetes
       type: roundrobin
+      timeout:
+        connect: 1
+        send: 1
+        read: 1
   -
     uri: /hello
     upstream:
       service_name: ns-a/no-such-ep:p1
       discovery_type: kubernetes
       type: roundrobin
+      timeout:
+        connect: 1
+        send: 1
+        read: 1
 #END
 _EOC_
 
@@ -95,6 +103,9 @@ run_tests();
 __DATA__
 
 === TEST 1: a Service published through the apiserver is served by every worker
+# The first probes may run before the initial list has finished or hit the
+# addresses a previous test file left behind, which logs an [error] for a
+# 503, so the default `no_error_log: [error]` would make this block flaky.
 --- yaml_config eval: $::yaml_config
 --- config
     location /t {
@@ -110,10 +121,15 @@ __DATA__
 patch: 200
 serving 1980 within 5s: true
 answers not from 1980 in 40 requests: 0
+--- no_error_log
+[alert]
 
 
 
 === TEST 2: a change of the Endpoints reaches every worker within the cache ttl
+# The first probes may run before the initial list has finished or hit the
+# addresses a previous test file left behind, which logs an [error] for a
+# 503, so the default `no_error_log: [error]` would make this block flaky.
 --- yaml_config eval: $::yaml_config
 --- config
     location /t {
@@ -136,6 +152,8 @@ patch: 200
 switched to 1981 within 5s: true
 answers that were neither 1980 nor 1981 during the switch: 0
 answers not from 1981 in 40 requests: 0
+--- no_error_log
+[alert]
 
 
 
@@ -162,6 +180,8 @@ patch to empty: 200
 503 within 5s: true
 patch back: 200
 serving 1980 again within 5s: true
+--- error_log
+failed to set upstream
 
 
 
@@ -188,6 +208,8 @@ delete: 200
 503 within 5s: true
 create: 201
 serving 1980 again within 5s: true
+--- error_log
+failed to set upstream
 
 
 
@@ -205,13 +227,16 @@ serving 1980 again within 5s: true
 
             local names = t.dump_names()
             ngx.say("dump has ns-a/ep: ", names["ns-a/ep"] == true)
+
+            -- the writer is the real privileged agent here, so look at the
+            -- shared dict itself, not at the dump, which filters version keys
             local version_keys = 0
-            for name in pairs(names) do
-                if name:find("#version", 1, true) then
+            for _, key in ipairs(ngx.shared["kubernetes"]:get_keys(0)) do
+                if key:sub(-8) == "#version" then
                     version_keys = version_keys + 1
                 end
             end
-            ngx.say("dump version keys: ", version_keys)
+            ngx.say("version keys in the shared dict: ", version_keys)
 
             ngx.say("restore fixture: ", t.set_subsets(t.fixture_subsets()))
         }
@@ -220,5 +245,7 @@ serving 1980 again within 5s: true
 serving 1980 within 5s: true
 unknown service: 503
 dump has ns-a/ep: true
-dump version keys: 0
+version keys in the shared dict: 0
 restore fixture: 200
+--- error_log
+failed to set upstream

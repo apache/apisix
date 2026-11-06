@@ -389,3 +389,30 @@ where application = 'A' and server_name = 'AServer' and node_name = '172.16.1.1'
 [
     "{ 1 0 1 1 }\n",
 ]
+
+
+
+=== TEST 12: the shared dict holds one key per servant and no version key
+--- timeout: 4
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.sleep(2)
+
+            local servants, version_keys = 0, 0
+            for _, key in ipairs(ngx.shared["tars"]:get_keys(0)) do
+                if key:sub(-8) == "#version" then
+                    version_keys = version_keys + 1
+                else
+                    servants = servants + 1
+                end
+            end
+            ngx.say("servants cached: ", servants > 0)
+            ngx.say("version keys: ", version_keys)
+        }
+    }
+--- request
+GET /t
+--- response_body
+servants cached: true
+version keys: 0

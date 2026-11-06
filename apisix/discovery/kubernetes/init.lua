@@ -174,9 +174,13 @@ end
 local function merge_cluster_nodes(endpoint_dicts, endpoint_key, endpoint_port)
     local nodes = {}
     local seen = {}
+    local found = false
     for _, endpoint_dict in ipairs(endpoint_dicts) do
         local cluster_nodes = k8s_core.create_endpoint_lrucache(endpoint_dict, endpoint_key,
                                                                 endpoint_port)
+        if cluster_nodes then
+            found = true
+        end
         for _, node in ipairs(cluster_nodes or {}) do
             local addr = node.host .. ":" .. tostring(node.port)
             if not seen[addr] then
@@ -184,6 +188,12 @@ local function merge_cluster_nodes(endpoint_dicts, endpoint_key, endpoint_port)
                 core.table.insert(nodes, node)
             end
         end
+    end
+
+    -- nil, not an empty table, when no selected cluster knows the service,
+    -- so that the miss is negative-cached like in single cluster mode
+    if not found then
+        return nil
     end
 
     return nodes

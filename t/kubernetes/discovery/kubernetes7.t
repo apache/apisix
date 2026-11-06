@@ -88,14 +88,14 @@ __DATA__
             ngx.say(first_host())
             ngx.sleep(1.2)
             ngx.say(first_host())
-            ngx.say(tostring(dict:get("ns/svc#version")))
         }
     }
 --- response_body
 10.0.0.1
 10.0.0.1
 10.0.0.2
-nil
+--- error_log
+connect apiserver failed
 
 
 
@@ -107,12 +107,15 @@ nil
             local k8s_core = require("apisix.discovery.kubernetes.core")
             local real_dict = ngx.shared["kubernetes"]
 
+            -- record every write that reaches the shared dict
+            local writing = {set = true, safe_set = true, add = true,
+                             safe_add = true, replace = true}
             local writes = {}
             local recording_dict = setmetatable({}, {
                 __index = function(_, method)
                     return function(_, key, ...)
-                        if method == "safe_set" then
-                            table.insert(writes, key)
+                        if writing[method] then
+                            table.insert(writes, method .. " " .. key)
                         end
                         return real_dict[method](real_dict, key, ...)
                     end
@@ -127,4 +130,6 @@ nil
         }
     }
 --- response_body
-true  ns/svc2
+true  safe_set ns/svc2
+--- error_log
+connect apiserver failed

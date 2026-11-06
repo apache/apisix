@@ -37,6 +37,7 @@ function _M.new(gateway_port)
 
     local function k8s(method, path, body, content_type)
         local httpc = http.new()
+        httpc:set_timeouts(5000, 5000, 5000)
         local res, err = httpc:request_uri(apiserver .. path, {
             method = method,
             body = body,
@@ -97,6 +98,8 @@ function _M.new(gateway_port)
     -- served by different workers; returns the body on 200, else the status
     function t.get(path)
         local httpc = http.new()
+        -- a probe proxied to a stale, unroutable address must fail fast
+        httpc:set_timeouts(2000, 2000, 2000)
         local res, err = httpc:request_uri(gateway .. path, {keepalive = false})
         if not res then
             return "err:" .. tostring(err)
@@ -126,6 +129,7 @@ function _M.new(gateway_port)
                 end
                 if got ~= expected then
                     ok = false
+                    break
                 end
             end
             ngx.update_time()

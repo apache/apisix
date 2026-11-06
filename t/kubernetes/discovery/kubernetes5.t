@@ -329,6 +329,8 @@ skip unknown kubernetes discovery cluster ids: third, service: ns-b/ep:p1
                 {host = "10.0.0.2", port = 80, weight = 50},
                 {host = "10.0.0.3", port = 80, weight = 50},
             }}, "2")
+            -- a worker re-reads the shared dicts once its cache entry expires
+            ngx.sleep(1.1)
             show("ns/svc:p1", {"first", "second"})
         }
     }
