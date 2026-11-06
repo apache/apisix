@@ -25,6 +25,10 @@
 # listens on every interface.
 
 BEGIN {
+    # listen with reuseport so that the probe connections are spread over
+    # the four workers instead of landing on whichever worker wakes first
+    $ENV{TEST_NGINX_REUSE_PORT} = 1;
+
     our $token_file = "/tmp/var/run/secrets/kubernetes.io/serviceaccount/token";
     our $token_value = eval {`cat $token_file 2>/dev/null`};
     our $backend_ip = eval {`ip -4 -o addr show scope global 2>/dev/null | awk '{print \$4}' | cut -d/ -f1 | head -n 1`};

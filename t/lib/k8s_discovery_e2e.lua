@@ -157,6 +157,10 @@ function _M.new(gateway_port)
             ngx.update_time()
             local elapsed = ngx.now() - start
             if ok then
+                -- the probes may not have reached every worker yet: give every
+                -- worker's one second cache entry time to expire before the
+                -- caller runs its strict checks
+                ngx.sleep(1.2)
                 return elapsed, unexpected
             end
             if elapsed > timeout then

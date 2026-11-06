@@ -325,7 +325,7 @@ A: 一般情况下，我们有三种方式可以完成与 Kubernetes APIServer �
 
 **Q: APISIX 继承了 NGINX 的多进程模型，是否意味着每个 APISIX 工作进程都会监听 Kubernetes Endpoints？**
 
-A: Kubernetes 服务发现只使用特权进程监听 Kubernetes Endpoints，然后将其值存储到 `ngx.shared.DICT` 中，工作进程通过查询 `ngx.shared.DICT` 来获取结果。每个工作进程会把一个服务的节点缓存 1 秒，到期后重新从 `ngx.shared.DICT` 读取，因此 Endpoints 的变化会在 1 秒内到达所有工作进程。
+A: Kubernetes 服务发现只使用特权进程监听 Kubernetes Endpoints，然后将其值存储到 `ngx.shared.DICT` 中，工作进程通过查询 `ngx.shared.DICT` 来获取结果。每个工作进程会把一个服务的节点缓存 1 秒，到期后重新从 `ngx.shared.DICT` 读取，因此一次变化会在特权进程写入 `ngx.shared.DICT` 后 1 秒内到达所有工作进程。
 
 **Q: [_ServiceAccount_](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/) 需要的权限有哪些？**
 

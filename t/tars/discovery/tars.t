@@ -399,20 +399,13 @@ where application = 'A' and server_name = 'AServer' and node_name = '172.16.1.1'
         content_by_lua_block {
             ngx.sleep(2)
 
-            local servants, version_keys = 0, 0
-            for _, key in ipairs(ngx.shared["tars"]:get_keys(0)) do
-                if key:sub(-8) == "#version" then
-                    version_keys = version_keys + 1
-                else
-                    servants = servants + 1
-                end
-            end
-            ngx.say("servants cached: ", servants > 0)
-            ngx.say("version keys: ", version_keys)
+            -- exactly the servants left by the tests above, nothing else
+            local keys = ngx.shared["tars"]:get_keys(0)
+            table.sort(keys)
+            ngx.say(table.concat(keys, ","))
         }
     }
 --- request
 GET /t
 --- response_body
-servants cached: true
-version keys: 0
+A.AServer.FirstObj,B.BServer.FirstObj,C.CServer.FirstObj
