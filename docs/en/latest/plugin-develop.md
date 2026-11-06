@@ -378,7 +378,7 @@ By default, APISIX has `data_encryption` enabled with [two default keys](https:/
 ```yaml
 apisix:
     data_encryption:
-        enable: true
+        enable_encrypt_fields: true
         keyring:
             - ...
 ```
@@ -388,6 +388,18 @@ Each key doubles as the IV, so its length selects the cipher: a key of 16 charac
 APISIX will try to decrypt the data with keys in the order of the keys in the keyring (only for parameters declared in `encrypt_fields`). If the decryption fails, the next key will be tried until the decryption succeeds.
 
 If none of the keys in `keyring` can decrypt the data, the original data is used.
+
+### Encryption marker
+
+The Admin API stores every value it encrypts in plugin configurations and plugin metadata with the `$ENC$v1$` prefix (the marker) followed by the ciphertext described above, so the stored value says by itself that it is encrypted.
+
+APISIX decrypts every string value carrying the marker in plugin configurations (routes, services, plugin configs, consumers, credentials, consumer groups, global rules and stream routes) and in plugin metadata, whether or not the field is declared in `encrypt_fields` and whatever `enable_encrypt_fields` is. The Admin API returns these values decrypted. If a marked value cannot be decrypted with the `keyring`, the error is logged and the value is used as it is, like a value declared in `encrypt_fields` that cannot be decrypted. Values without the marker go through `encrypt_fields` as before.
+
+:::warning
+
+A version of APISIX that does not recognize the marker uses a marked value as it is. Once resources are re-saved by a version that writes the marker, going back to a version without marker support requires restoring the data backed up before the upgrade, and this affects every encrypted field. Avoid writing through the Admin API during a rolling upgrade.
+
+:::
 
 ## Register public API
 
