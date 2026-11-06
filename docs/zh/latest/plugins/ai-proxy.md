@@ -7,7 +7,7 @@ keywords:
   - ai-proxy
   - AI
   - LLM
-description: ai-proxy 插件通过将插件配置转换为所需的请求格式，简化了对 LLM 和嵌入模型提供商的访问，支持 OpenAI、DeepSeek、Azure、AIMLAPI、Anthropic、OpenRouter、Gemini、Vertex AI、Amazon Bedrock 和其他 OpenAI 兼容的 API。
+description: ai-proxy 插件通过将插件配置转换为所需的请求格式，简化了对 LLM 和嵌入模型提供商的访问，支持 OpenAI、DeepSeek、Azure、AIMLAPI、Anthropic、OpenRouter、Gemini、Vertex AI、Amazon Bedrock、Eden AI 和其他 OpenAI 兼容的 API。
 ---
 
 <!--
@@ -67,7 +67,7 @@ import TabItem from '@theme/TabItem';
 
 | 名称               | 类型    | 必选项 | 默认值 | 有效值                              | 描述 |
 |--------------------|--------|----------|---------|------------------------------------------|-------------|
-| provider          | string  | 是     |         | [openai, deepseek, azure-openai, aimlapi, anthropic, openrouter, gemini, vertex-ai, bedrock, openai-compatible] | LLM 服务提供商。当设置为 `openai` 时，插件将代理请求到 `https://api.openai.com/chat/completions`。当设置为 `deepseek` 时，插件将代理请求到 `https://api.deepseek.com/chat/completions`。当设置为 `aimlapi` 时，插件使用 OpenAI 兼容驱动程序，默认将请求代理到 `https://api.aimlapi.com/v1/chat/completions`。当设置为 `anthropic` 时，插件将代理请求到 `https://api.anthropic.com/v1/chat/completions`。当设置为 `openrouter` 时，插件使用 OpenAI 兼容驱动程序，默认将请求代理到 `https://openrouter.ai/api/v1/chat/completions`。当设置为 `gemini` 时，插件使用 OpenAI 兼容驱动程序，默认将请求代理到 `https://generativelanguage.googleapis.com/v1beta/openai/chat/completions`。当设置为 `vertex-ai` 时，插件默认将请求代理到 `https://aiplatform.googleapis.com`，需要配置 `provider_conf` 或 `override`。当设置为 `bedrock` 时，插件将代理请求到 AWS Bedrock Converse API（`https://bedrock-runtime.<region>.amazonaws.com`），并使用 AWS SigV4 对请求进行签名。当设置为 `openai-compatible` 时，插件将代理请求到在 `override` 中配置的自定义端点。当设置为 `azure-openai` 时，插件同样将请求代理到 `override` 中配置的自定义端点，并会额外移除用户请求中的 `model` 参数。 |
+| provider          | string  | 是     |         | [openai, deepseek, azure-openai, aimlapi, anthropic, openrouter, gemini, vertex-ai, bedrock, edenai, openai-compatible] | LLM 服务提供商。当设置为 `openai` 时，插件将代理请求到 `https://api.openai.com/chat/completions`。当设置为 `deepseek` 时，插件将代理请求到 `https://api.deepseek.com/chat/completions`。当设置为 `aimlapi` 时，插件使用 OpenAI 兼容驱动程序，默认将请求代理到 `https://api.aimlapi.com/v1/chat/completions`。当设置为 `anthropic` 时，插件将代理请求到 `https://api.anthropic.com/v1/chat/completions`。当设置为 `openrouter` 时，插件使用 OpenAI 兼容驱动程序，默认将请求代理到 `https://openrouter.ai/api/v1/chat/completions`。当设置为 `gemini` 时，插件使用 OpenAI 兼容驱动程序，默认将请求代理到 `https://generativelanguage.googleapis.com/v1beta/openai/chat/completions`。当设置为 `vertex-ai` 时，插件默认将请求代理到 `https://aiplatform.googleapis.com`，需要配置 `provider_conf` 或 `override`。当设置为 `bedrock` 时，插件将代理请求到 AWS Bedrock Converse API（`https://bedrock-runtime.<region>.amazonaws.com`），并使用 AWS SigV4 对请求进行签名。当设置为 `edenai` 时，插件默认将 OpenAI Chat Completions 请求代理到 `https://api.edenai.run/v3/chat/completions`，并将 OpenAI Responses、OpenAI Embeddings 和 Anthropic Messages 请求分别转发到同一主机上的 `/v3/responses`、`/v3/embeddings` 和 `/v3/v1/messages`。当设置为 `openai-compatible` 时，插件将代理请求到在 `override` 中配置的自定义端点。当设置为 `azure-openai` 时，插件同样将请求代理到 `override` 中配置的自定义端点，并会额外移除用户请求中的 `model` 参数。 |
 | provider_conf     | object  | 否     |         |                                          | 特定提供商的配置。当 `provider` 设置为 `vertex-ai` 且未配置 `override` 时必填。当 `provider` 设置为 `bedrock` 时必填。 |
 | provider_conf.project_id | string | 是 |       |                                          | Google Cloud 项目 ID。 |
 | provider_conf.region | string | 视提供商而定 |         | minLength = 1（Bedrock 时）              | 当 `provider` 为 `vertex-ai` 时，此项为 Google Cloud 区域。当 `provider` 为 `bedrock` 时，此项为用于构造 Bedrock 端点并使用 SigV4 对请求进行签名的 AWS 区域（必填，不能为空）。 |
@@ -119,6 +119,7 @@ import TabItem from '@theme/TabItem';
 | `gemini`            | `max_completion_tokens`      | —                      | —                  |
 | `vertex-ai`         | `max_completion_tokens`      | —                      | —                  |
 | `anthropic`         | `max_tokens`                 | —                      | `max_tokens`       |
+| `edenai`            | `max_tokens`                 | `max_output_tokens`    | `max_tokens`       |
 
 ¹ 当 `provider` 为 `openai` 且目标为 Chat Completions 端点时，APISIX 始终改写为 `max_completion_tokens`，并删除请求体中已有的 `max_tokens` 字段——OpenAI 已弃用 `max_tokens`，改用 `max_completion_tokens`。
 
@@ -1346,6 +1347,229 @@ curl "http://127.0.0.1:9080/anything" -X POST \
   }
 }
 ```
+
+### 代理到 Eden AI
+
+以下示例演示了如何配置 `ai-proxy` 插件以将请求代理到 [Eden AI](https://www.edenai.co/docs)。Eden AI 通过一个 OpenAI 兼容的 API 聚合了多家 LLM 提供商，模型以 `provider/model` 形式命名，例如 `openai/gpt-latest` 或 `anthropic/claude-sonnet-latest`，可用模型请参考 [Eden AI 模型列表](https://www.edenai.co/docs/v3/llms/listing-models)。
+
+获取 Eden AI [API 密钥](https://app.edenai.run/)并保存到环境变量：
+
+```shell
+export EDENAI_API_KEY=<your-api-key>
+```
+
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
+
+创建路由并配置 `ai-proxy` 插件，将 `provider` 设置为 `edenai`，并在 `Authorization` 标头中以 Bearer 令牌形式附加 Eden AI API 密钥：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "ai-proxy-edenai-route",
+    "uri": "/anything",
+    "methods": ["POST"],
+    "plugins": {
+      "ai-proxy": {
+        "provider": "edenai",
+        "auth": {
+          "header": {
+            "Authorization": "Bearer '"$EDENAI_API_KEY"'"
+          }
+        },
+        "options": {
+          "model": "openai/gpt-latest"
+        }
+      }
+    }
+  }'
+```
+
+</TabItem>
+
+<TabItem value="adc">
+
+创建包含 `ai-proxy` 插件配置的路由，将 `provider` 设置为 `edenai`，并在 `Authorization` 标头中以 Bearer 令牌形式附加 Eden AI API 密钥：
+
+```yaml title="adc.yaml"
+services:
+  - name: edenai-service
+    routes:
+      - name: edenai-route
+        uris:
+          - /anything
+        methods:
+          - POST
+        plugins:
+          ai-proxy:
+            provider: edenai
+            auth:
+              header:
+                Authorization: "Bearer ${EDENAI_API_KEY}"
+            options:
+              model: openai/gpt-latest
+```
+
+将配置同步到网关：
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="edenai-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: ai-proxy-plugin-config
+spec:
+  plugins:
+    - name: ai-proxy
+      config:
+        provider: edenai
+        auth:
+          header:
+            Authorization: "Bearer your-api-key"
+        options:
+          model: openai/gpt-latest
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: edenai-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /anything
+          method: POST
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: ai-proxy-plugin-config
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="edenai-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: edenai-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: edenai-route
+      match:
+        paths:
+          - /anything
+        methods:
+          - POST
+      plugins:
+      - name: ai-proxy
+        enable: true
+        config:
+          provider: edenai
+          auth:
+            header:
+              Authorization: "Bearer your-api-key"
+          options:
+            model: openai/gpt-latest
+```
+
+</TabItem>
+
+</Tabs>
+
+将配置应用到集群：
+
+```shell
+kubectl apply -f edenai-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
+上述配置将 `provider` 设置为 `edenai`，插件会把 OpenAI Chat Completions 请求发送到 `https://api.edenai.run/v3/chat/completions`。
+
+向路由发送 POST 请求，在请求体中包含系统提示和示例用户问题：
+
+```shell
+curl "http://127.0.0.1:9080/anything" -X POST \
+  -H "Content-Type: application/json" \
+  -d '{
+    "messages": [
+      { "role": "system", "content": "You are a mathematician" },
+      { "role": "user", "content": "What is 1+1?" }
+    ]
+  }'
+```
+
+你应该收到 OpenAI Chat Completions 格式的响应，类似如下。Eden AI 会在 `model` 中返回实际解析到的上游模型，并额外添加 `provider` 和 `cost` 字段：
+
+```json
+{
+  "id": "chatcmpl-...",
+  "object": "chat.completion",
+  "model": "gpt-4o-mini-2024-07-18",
+  "provider": "openai",
+  "cost": 0.0,
+  "choices": [
+    {
+      "index": 0,
+      "message": { "role": "assistant", "content": "1 + 1 = 2." },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": { "prompt_tokens": 23, "completion_tokens": 8, "total_tokens": 31 }
+}
+```
+
+该 provider 同样支持插件能够识别的其他请求格式，每种格式都会不经转换地转发到对应的 Eden AI 端点：
+
+| 客户端请求格式 | 路由 URI 要求 | Eden AI 端点 |
+| -------------- | ------------- | ------------ |
+| OpenAI Chat Completions（请求体包含 `messages`） | 任意 | `/v3/chat/completions` |
+| OpenAI Responses（请求体包含 `input`） | 必须以 `/v1/responses` 结尾 | `/v3/responses` |
+| OpenAI Embeddings（请求体包含 `input`） | 其他任意 URI | `/v3/embeddings` |
+| Anthropic Messages | 必须以 `/v1/messages` 结尾 | `/v3/v1/messages` |
+
+Eden AI 特有的请求字段（如 `fallbacks`、`routing`、`tags`）会按客户端发送的内容原样转发，也可以通过 `override.request_body` 注入（参见 [Per-protocol request body override](#per-protocol-request-body-override)）。Eden AI 文档中其他未被这四种格式覆盖的功能（例如用于 OCR、翻译或音频任务的 `/v3/universal-ai` 端点）可以通过将路由 URI 设置为与 Eden AI 路径相同，借助插件的透传行为进行代理，但这类请求不会提取 token 用量，且本插件不支持 multipart 上传。
+
+对于流式的 Chat Completions 请求，当设置了 `stream_options.include_usage`（插件会自动设置）时，Eden AI 会在 `data: [DONE]` 之前的最后一个分块中返回 `usage` 对象，因此流式响应也能获取 token 用量。Eden AI 的 Responses API 流式响应仅在 JSON `data` 负载中携带事件类型，不发送 SSE `event:` 行；插件会将此类流原样转发给客户端，但不会从中提取 token 用量或响应文本，且只有在上游关闭流时才能判定响应结束。
 
 ### 将 Anthropic 请求转换为 OpenAI 兼容后端
 

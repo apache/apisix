@@ -7,7 +7,7 @@ keywords:
   - ai-proxy-multi
   - AI
   - LLM
-description: ai-proxy-multi 插件通过负载均衡、重试、故障转移和健康检查扩展了 ai-proxy 的功能，简化了与 OpenAI、DeepSeek、Azure、AIMLAPI、Anthropic、OpenRouter、Gemini、Vertex AI、Amazon Bedrock 和其他 OpenAI 兼容 API 的集成。
+description: ai-proxy-multi 插件通过负载均衡、重试、故障转移和健康检查扩展了 ai-proxy 的功能，简化了与 OpenAI、DeepSeek、Azure、AIMLAPI、Anthropic、OpenRouter、Gemini、Vertex AI、Amazon Bedrock、Eden AI 和其他 OpenAI 兼容 API 的集成。
 ---
 
 <!--
@@ -77,7 +77,7 @@ import TabItem from '@theme/TabItem';
 | balancer.key                       | string         | 否    |                                   |              | 当 `type` 为 `chash` 时使用。当 `hash_on` 设置为 `header` 或 `cookie` 时，需要 `key`。当 `hash_on` 设置为 `consumer` 时，不需要 `key`，因为消费者名称将自动用作键。 |
 | instances                          | array[object]  | 是     |                                   |              | LLM 实例配置。 |
 | instances.name                     | string         | 是     |                                   |              | LLM 服务实例的名称。该名称在 `instances` 中必须唯一，因为负载均衡、健康检查以及 `ai-rate-limiting` 等引用该实例的插件都以它作为实例标识。 |
-| instances.provider                 | string         | 是     |                                   | [openai, deepseek, azure-openai, aimlapi, anthropic, openrouter, gemini, vertex-ai, bedrock, openai-compatible] | LLM 服务提供商。设置为 `openai` 时，插件将代理请求到 `api.openai.com`。设置为 `deepseek` 时，插件将代理请求到 `api.deepseek.com`。设置为 `aimlapi` 时，插件使用 OpenAI 兼容驱动程序，默认将请求代理到 `api.aimlapi.com`。设置为 `anthropic` 时，插件使用 OpenAI 兼容驱动程序，默认将请求代理到 `api.anthropic.com`。设置为 `openrouter` 时，插件使用 OpenAI 兼容驱动程序，默认将请求代理到 `openrouter.ai`。设置为 `gemini` 时，插件使用 OpenAI 兼容驱动程序，默认将请求代理到 `generativelanguage.googleapis.com`。设置为 `vertex-ai` 时，插件默认将请求代理到 `aiplatform.googleapis.com`，且需要配置 `provider_conf` 或 `override`。设置为 `bedrock` 时，插件将代理请求到 AWS Bedrock Converse API（`bedrock-runtime.<region>.amazonaws.com`），并使用 AWS SigV4 对请求进行签名。设置为 `openai-compatible` 时，插件将代理请求到在 `override` 中配置的自定义端点。 |
+| instances.provider                 | string         | 是     |                                   | [openai, deepseek, azure-openai, aimlapi, anthropic, openrouter, gemini, vertex-ai, bedrock, edenai, openai-compatible] | LLM 服务提供商。设置为 `openai` 时，插件将代理请求到 `api.openai.com`。设置为 `deepseek` 时，插件将代理请求到 `api.deepseek.com`。设置为 `aimlapi` 时，插件使用 OpenAI 兼容驱动程序，默认将请求代理到 `api.aimlapi.com`。设置为 `anthropic` 时，插件使用 OpenAI 兼容驱动程序，默认将请求代理到 `api.anthropic.com`。设置为 `openrouter` 时，插件使用 OpenAI 兼容驱动程序，默认将请求代理到 `openrouter.ai`。设置为 `gemini` 时，插件使用 OpenAI 兼容驱动程序，默认将请求代理到 `generativelanguage.googleapis.com`。设置为 `vertex-ai` 时，插件默认将请求代理到 `aiplatform.googleapis.com`，且需要配置 `provider_conf` 或 `override`。设置为 `bedrock` 时，插件将代理请求到 AWS Bedrock Converse API（`bedrock-runtime.<region>.amazonaws.com`），并使用 AWS SigV4 对请求进行签名。设置为 `edenai` 时，插件默认将请求代理到 `api.edenai.run`，使用的 `/v3` 端点请参考 [`ai-proxy`](./ai-proxy.md#代理到-eden-ai) 文档。设置为 `openai-compatible` 时，插件将代理请求到在 `override` 中配置的自定义端点。 |
 | instances.provider_conf            | object         | 否     |                                   |              | 特定提供商的配置。当 `provider` 设置为 `vertex-ai` 且未配置 `override` 时必填。当 `provider` 设置为 `bedrock` 时必填。 |
 | instances.provider_conf.project_id | string         | 是     |                                   |              | Google Cloud 项目 ID。 |
 | instances.provider_conf.region     | string         | 视提供商而定 |                                   | minLength = 1（Bedrock 时） | 当 `provider` 为 `vertex-ai` 时，此项为 Google Cloud 区域。当 `provider` 为 `bedrock` 时，此项为用于构造 Bedrock 端点并使用 SigV4 对请求进行签名的 AWS 区域（必填，不能为空）。 |
@@ -109,7 +109,7 @@ import TabItem from '@theme/TabItem';
 | logging.payloads                    | boolean        | 否    | false                           |              | 如果为 true，记录请求和响应负载。 |
 | instances.override                    | object         | 否    |                                   |              | 覆盖设置。 |
 | instances.override.endpoint           | string         | 否    |                                   |              | 用于替换默认端点的 LLM 提供商端点。如果未配置，插件使用默认的 OpenAI 端点 `https://api.openai.com/v1/chat/completions`。 |
-| instances.checks                              | object         | 否    |                                   |              | 健康检查配置。请注意，目前 OpenAI、DeepSeek 和 AIMLAPI 不提供官方健康检查端点。您可以在 `openai-compatible` 提供商下配置的其他 LLM 服务可能有可用的健康检查端点。 |
+| instances.checks                              | object         | 否    |                                   |              | 健康检查配置。请注意，目前 OpenAI、DeepSeek 和 AIMLAPI 不提供官方健康检查端点。Eden AI 文档中提供了无需鉴权的 `GET /v3/models` 端点，可用作 `checks.active.http_path`。您可以在 `openai-compatible` 提供商下配置的其他 LLM 服务可能有可用的健康检查端点。 |
 | instances.checks.active                       | object         | 是     |                                   |              | 主动健康检查配置。 |
 | instances.checks.active.type                  | string         | 否    | http                            | [http, https, tcp] | 健康检查连接类型。 |
 | instances.checks.active.timeout               | number         | 否    | 1                               |              | 健康检查超时时间（秒）。 |
