@@ -80,6 +80,9 @@ function _M.access(conf, ctx)
         body = core.json.encode(body),
         headers = {
             ["Content-Type"] = "application/json",
+            -- propagate the trace context (injected by the tracing plugins
+            -- if enabled) so OPA spans join the request trace
+            ["traceparent"] = core.request.header(ctx, "traceparent"),
         },
         keepalive = conf.keepalive,
         ssl_verify = conf.ssl_verify

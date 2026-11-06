@@ -61,6 +61,8 @@ Once configured, the OPA engine will evaluate the client request to a protected 
 
 ### APISIX to OPA Service
 
+If the request has a W3C `traceparent` header, for example one injected by the [`opentelemetry`](./opentelemetry.md) Plugin, APISIX also sends it to OPA as a request header so that OPA's spans join the same trace.
+
 The JSON below shows the data sent to the OPA service by APISIX:
 
 ```json
