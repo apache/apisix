@@ -31,9 +31,19 @@ local k8s_core = require("apisix.discovery.kubernetes.core")
 
 local ctx
 
+-- The shared dict is the source of truth. A worker serves a cached node list
+-- for at most ENDPOINT_CACHE_TTL seconds and then re-reads it from the dict
+-- (invalid_stale: an expired entry is dropped, never handed back), so there
+-- is no version probe and no way to cache a torn pair (apache/apisix#14149).
+-- A miss is cached for the same time so an unknown service does not hit the
+-- dict on every request.
+local ENDPOINT_CACHE_TTL = 1
 local endpoint_lrucache = core.lrucache.new({
-    ttl = 300,
-    count = 1024
+    ttl = ENDPOINT_CACHE_TTL,
+    count = 1024,
+    invalid_stale = true,
+    neg_ttl = ENDPOINT_CACHE_TTL,
+    neg_count = 64,
 })
 
 
@@ -203,7 +213,6 @@ local function selected_clusters_nodes(service_name, cluster_ids)
     local endpoint_key, endpoint_port = match[1], match[2]
 
     local endpoint_dicts = core.table.new(#cluster_ids, 0)
-    local versions = core.table.new(#cluster_ids, 0)
     local unknown_ids
     for _, id in ipairs(cluster_ids) do
         local endpoint_dict = ctx[id]
@@ -211,11 +220,7 @@ local function selected_clusters_nodes(service_name, cluster_ids)
             unknown_ids = unknown_ids or {}
             core.table.insert(unknown_ids, id)
         else
-            local endpoint_version = endpoint_dict:get(endpoint_key .. "#version")
-            if endpoint_version then
-                core.table.insert(endpoint_dicts, endpoint_dict)
-                core.table.insert(versions, id .. "#" .. endpoint_version)
-            end
+            core.table.insert(endpoint_dicts, endpoint_dict)
         end
     end
 
@@ -225,12 +230,12 @@ local function selected_clusters_nodes(service_name, cluster_ids)
     end
 
     if #endpoint_dicts == 0 then
-        core.log.info("get empty endpoint version from selected clusters for ", service_name)
+        core.log.info("no known kubernetes discovery cluster selected for ", service_name)
         return nil
     end
 
-    return endpoint_lrucache(service_name .. "#" .. core.table.concat(cluster_ids, ","),
-                             core.table.concat(versions, ","),
+    -- merged from the selected dicts, refreshed when the cache entry expires
+    return endpoint_lrucache(service_name .. "#" .. core.table.concat(cluster_ids, ","), nil,
                              merge_cluster_nodes, endpoint_dicts, endpoint_key, endpoint_port)
 end
 

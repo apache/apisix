@@ -55,9 +55,15 @@ local default_weight
 local last_fetch_full_time = 0
 local last_db_error
 
+-- same model as the kubernetes discovery: the shared dict is the source of
+-- truth and a cached entry is re-read when it expires, no version probe
+local ENDPOINT_CACHE_TTL = 1
 local endpoint_lrucache = core.lrucache.new({
-    ttl = 300,
-    count = 1024
+    ttl = ENDPOINT_CACHE_TTL,
+    count = 1024,
+    invalid_stale = true,
+    neg_ttl = ENDPOINT_CACHE_TTL,
+    neg_count = 64,
 })
 
 local activated_buffer = core.table.new(10, 0)
@@ -77,25 +83,16 @@ local endpoints_pattern = core.table.concat(
 
 local function update_endpoint(servant, nodes)
     local endpoint_content = core.json.encode(nodes, true)
-    local endpoint_version = ngx.crc32_long(endpoint_content)
     core.log.debug("set servant ", servant, endpoint_content)
-    local _, err
-    _, err = endpoint_dict:safe_set(servant .. "#version", endpoint_version)
-    if err then
-        core.log.error("set endpoint version into nginx shared dict failed, ", err)
-        return
-    end
-    _, err = endpoint_dict:safe_set(servant, endpoint_content)
+    local _, err = endpoint_dict:safe_set(servant, endpoint_content)
     if err then
         core.log.error("set endpoint into nginx shared dict failed, ", err)
-        endpoint_dict:delete(servant .. "#version")
     end
 end
 
 
 local function delete_endpoint(servant)
     core.log.info("delete servant ", servant)
-    endpoint_dict:delete(servant .. "#version")
     endpoint_dict:delete(servant)
 end
 
@@ -129,14 +126,7 @@ local function get_endpoint(servant)
     so we must use endpoint_dict:get_stale() to get value instead endpoint_dict:get()
     --]]
 
-    local endpoint_version, err = endpoint_dict:get_stale(servant .. "#version")
-    if not endpoint_version  then
-        if err then
-            core.log.error("get empty endpoint version, servant: ", servant, ", err: ", err)
-        end
-        return nil
-    end
-    return endpoint_lrucache(servant, endpoint_version, add_endpoint_to_lrucache, servant)
+    return endpoint_lrucache(servant, nil, add_endpoint_to_lrucache, servant)
 end
 
 
