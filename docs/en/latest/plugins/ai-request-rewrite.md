@@ -69,7 +69,7 @@ The examples below demonstrate how you can configure `ai-request-rewrite` for di
 The examples use OpenAI as the LLM service. To follow along, obtain an OpenAI [API key](https://openai.com/blog/openai-api) and save it to an environment variable:
 
 ```shell
-export OPENAI_API_KEY=<your-api-key>
+export OPENAI_API_KEY='<your-api-key>'
 ```
 
 :::note

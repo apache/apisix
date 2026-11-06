@@ -52,10 +52,10 @@ import TabItem from '@theme/TabItem';
 
 ## 使用示例
 
-以下示例使用 OpenAI 作为上游服务提供商。开始之前，请先创建一个 [OpenAI 账户](https://openai.com)和一个 [API 密钥](https://openai.com/blog/openai-api)。你可以选择将密钥保存到环境变量中：
+以下示例使用 OpenAI 作为上游服务提供商。开始之前，请先创建一个 [OpenAI 账户](https://openai.com)和一个 [API 密钥](https://openai.com/blog/openai-api)。请将密钥保存到环境变量中，并将占位符替换为你的 API 密钥：
 
 ```shell
-export OPENAI_API_KEY=<YOUR_OPENAI_API_KEY>
+export OPENAI_API_KEY='<YOUR_OPENAI_API_KEY>'
 ```
 
 如果你正在使用其他 LLM 提供商，请参阅该提供商的文档以获取 API 密钥。
