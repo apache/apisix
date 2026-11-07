@@ -1325,3 +1325,45 @@ POST /anything
 --- response_body_like: upstream boom
 --- response_headers
 Content-Type: application/json
+
+
+
+=== TEST 40: construct_forward_headers strips transfer-encoding (body is not chunked)
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("apisix.plugins.ai-transport.http")
+            local headers = http.construct_forward_headers({
+                authorization = "Bearer x",
+            }, {
+                Host = "client.example",
+                ["Content-Length"] = "12",
+                ["Transfer-Encoding"] = "chunked",
+                ["Accept-Encoding"] = "gzip",
+                ["X-Request-Id"] = "abc",
+            })
+            local function has(name)
+                return headers[name] ~= nil
+            end
+            if has("host") or has("content-length") or has("transfer-encoding")
+               or has("accept-encoding") then
+                ngx.say("blacklist leak")
+                return
+            end
+            if headers["authorization"] ~= "Bearer x" then
+                ngx.say("auth missing")
+                return
+            end
+            if headers["x-request-id"] ~= "abc" then
+                ngx.say("x-request-id missing")
+                return
+            end
+            if headers["content-type"] ~= "application/json" then
+                ngx.say("content-type wrong")
+                return
+            end
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
