@@ -393,7 +393,7 @@ If none of the keys in `keyring` can decrypt the data, the original data is used
 
 The Admin API stores every value it encrypts in plugin configurations and plugin metadata with the `$ENC$v1$` prefix (the marker) followed by the ciphertext described above, so the stored value says by itself that it is encrypted.
 
-APISIX decrypts every string value carrying the marker in plugin configurations (routes, services, plugin configs, consumers, credentials, consumer groups, global rules and stream routes) and in plugin metadata, whether or not the field is declared in `encrypt_fields` and whatever `enable_encrypt_fields` is. The Admin API returns these values decrypted. If a marked value cannot be decrypted with the `keyring`, the error is logged and the value is used as it is, like a value declared in `encrypt_fields` that cannot be decrypted. Values without the marker go through `encrypt_fields` as before.
+When `enable_encrypt_fields` is on, APISIX decrypts every string value carrying the marker in plugin configurations (routes, services, plugin configs, consumers, credentials, consumer groups, global rules and stream routes) and in plugin metadata, whether or not the field is declared in `encrypt_fields`. The Admin API returns these values decrypted. When it is off, a marked value is used and returned as it is stored. If a marked value cannot be decrypted with the `keyring`, the error is logged and the value is used as it is, like a value declared in `encrypt_fields` that cannot be decrypted. Values without the marker go through `encrypt_fields` as before.
 
 :::warning
 

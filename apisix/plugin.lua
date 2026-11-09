@@ -1252,13 +1252,13 @@ end
 _M.decrypt_marked_conf = decrypt_marked_conf
 
 
--- Decrypt a stored plugin conf for the Admin API: the `encrypt_fields` when
--- data encryption is enabled, and the marked values always.
+-- Decrypt a stored plugin conf for the Admin API: the `encrypt_fields`, then
+-- the marked values, when data encryption is enabled.
 function _M.decrypt_stored_conf(name, conf, schema_type)
     if enable_gde() then
         decrypt_conf(name, conf, schema_type)
+        decrypt_marked_conf(name, conf)
     end
-    decrypt_marked_conf(name, conf)
 end
 
 
@@ -1290,10 +1290,10 @@ check_plugin_metadata = function(item)
     -- subsystems, while each of them only loads its own plugins.
     local ok, err = check_single_plugin_schema(item.id, item,
                                                core.schema.TYPE_METADATA, false, true)
-    -- the schema of an unloaded plugin is unavailable, so decrypting its
-    -- metadata would only produce a "failed to get schema" warning
-    if ok then
-        if enable_gde() and local_plugins_hash[item.id] then
+    if ok and enable_gde() then
+        -- the schema of an unloaded plugin is unavailable, so decrypting its
+        -- metadata would only produce a "failed to get schema" warning
+        if local_plugins_hash[item.id] then
             decrypt_conf(item.id, item, core.schema.TYPE_METADATA)
         end
         decrypt_marked_conf(item.id, item)
@@ -1365,10 +1365,8 @@ function _M.plugin_checker(item, schema_type)
             -- (e.g. ai-proxy service_account_json JSON parsing) see plaintext
             for name, conf in pairs(item.plugins) do
                 decrypt_conf(name, conf, schema_type)
+                decrypt_marked_conf(name, conf)
             end
-        end
-        for name, conf in pairs(item.plugins) do
-            decrypt_marked_conf(name, conf)
         end
 
         local skip_disabled_plugins = not (core.config.type == "yaml" or core.config.type == "json")
@@ -1388,8 +1386,10 @@ function _M.stream_plugin_checker(item, in_cp)
             skip_disabled_plugins = false
         end
 
-        for name, conf in pairs(item.plugins) do
-            decrypt_marked_conf(name, conf)
+        if enable_gde() then
+            for name, conf in pairs(item.plugins) do
+                decrypt_marked_conf(name, conf)
+            end
         end
         return stream_check_schema(item.plugins, nil, skip_disabled_plugins)
     end

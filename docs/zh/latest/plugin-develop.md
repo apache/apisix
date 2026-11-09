@@ -352,7 +352,7 @@ apisix:
 
 Admin API 在插件配置和插件元数据中存储加密后的值时，会加上 `$ENC$v1$` 前缀（即加密标记），后接上文所述的密文，使存储的值本身就能表明它已被加密。
 
-APISIX 会解密插件配置（路由、服务、插件配置、消费者、凭证、消费者组、全局规则和 Stream 路由）及插件元数据中所有带标记的字符串值，无论该字段是否在 `encrypt_fields` 中声明，也无论 `enable_encrypt_fields` 的取值。Admin API 返回这些值时会将其解密。如果带标记的值无法用 `keyring` 解密，会记录错误日志并按原值使用，与 `encrypt_fields` 中声明的字段解密失败时的处理一致。不带标记的值仍按 `encrypt_fields` 处理。
+当 `enable_encrypt_fields` 开启时，APISIX 会解密插件配置（路由、服务、插件配置、消费者、凭证、消费者组、全局规则和 Stream 路由）及插件元数据中所有带标记的字符串值，无论该字段是否在 `encrypt_fields` 中声明。Admin API 返回这些值时会将其解密。当其关闭时，带标记的值按存储的原值使用和返回。如果带标记的值无法用 `keyring` 解密，会记录错误日志并按原值使用，与 `encrypt_fields` 中声明的字段解密失败时的处理一致。不带标记的值仍按 `encrypt_fields` 处理。
 
 :::warning
 

@@ -255,8 +255,7 @@ local function run()
     end
 
     if code then
-        -- marked values are returned decrypted even with data encryption disabled
-        if code == 200 and method == "get" then
+        if code == 200 and method == "get" and plugin.enable_gde() then
             if seg_res == "consumers" or seg_res == "credentials" then
                 utils.decrypt_params(plugin.decrypt_stored_conf, data, core.schema.TYPE_CONSUMER)
             elseif seg_res == "plugin_metadata" then

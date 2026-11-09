@@ -199,7 +199,7 @@ true
 
 
 
-=== TEST 6: reads return plaintext for marked values outside encrypt_fields, encryption off
+=== TEST 6: reads return marked values as stored, encryption off
 --- yaml_config
 apisix:
     proxy_mode: http&stream
@@ -221,18 +221,29 @@ apisix:
             }))
             assert(core.etcd.set("/stream_routes/1", {
                 id = "1",
-                plugins = {["ip-restriction"] = {whitelist = {mark("127.0.0.1")}}},
+                plugins = {
+                    ["limit-conn"] = {
+                        conn = 1,
+                        burst = 0,
+                        default_conn_delay = 0.1,
+                        key = "remote_addr",
+                        policy = "redis",
+                        redis_host = "127.0.0.1",
+                        redis_password = mark("hdr"),
+                    },
+                },
                 upstream = {nodes = {["127.0.0.1:1995"] = 1}, type = "roundrobin"},
             }))
 
             local code, body = admin("/apisix/admin/routes/1", ngx.HTTP_GET)
-            ngx.say(body.value.plugins["proxy-rewrite"].headers.set["X-Secret"])
+            ngx.say(body.value.plugins["proxy-rewrite"].headers.set["X-Secret"] == mark("hdr"))
 
             code, body = admin("/apisix/admin/routes", ngx.HTTP_GET)
-            ngx.say(body.list[1].value.plugins["proxy-rewrite"].headers.set["X-Secret"])
+            ngx.say(body.list[1].value.plugins["proxy-rewrite"].headers.set["X-Secret"]
+                    == mark("hdr"))
 
             code, body = admin("/apisix/admin/stream_routes/1", ngx.HTTP_GET)
-            ngx.say(body.value.plugins["ip-restriction"].whitelist[1])
+            ngx.say(body.value.plugins["limit-conn"].redis_password == mark("hdr"))
 
             -- PATCH keeps the marked value it did not change encrypted at rest
             code = admin("/apisix/admin/routes/1", ngx.HTTP_PATCH, {desc = "patched"})
@@ -250,9 +261,9 @@ apisix:
         }
     }
 --- response_body
-hdr
-hdr
-127.0.0.1
+true
+true
+true
 200
 true
 200

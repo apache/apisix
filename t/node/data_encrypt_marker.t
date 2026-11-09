@@ -151,7 +151,7 @@ failed to decrypt the value of plugin [proxy-rewrite] key [headers.set.X-Secret]
 
 
 
-=== TEST 4: marked value is decrypted even when enable_encrypt_fields is off
+=== TEST 4: marked values are left as stored when enable_encrypt_fields is off
 --- yaml_config
 apisix:
     data_encryption:
@@ -164,22 +164,24 @@ apisix:
             put("/routes/1", {
                 uri = "/uri",
                 plugins = {
-                    ["proxy-rewrite"] = {
+                    ["response-rewrite"] = {
+                        body = mark("route-secret"),
                         headers = {
-                            set = {["X-Secret"] = mark("route-secret")},
+                            set = {["X-Bad"] = "$ENC$v1$not-a-ciphertext"},
                         },
                     },
                 },
                 upstream = {nodes = {["127.0.0.1:1980"] = 1}, type = "roundrobin"},
             })
             ngx.sleep(0.5)
-            ngx.say(get("/uri").body:match("x%-secret: [^\n]*"))
+            ngx.say(get("/uri").body == mark("route-secret"))
         }
     }
 --- response_body
-x-secret: route-secret
+true
 --- no_error_log
 [error]
+failed to decrypt the value
 
 
 
@@ -622,3 +624,59 @@ mmm
 held: 1, second rejected: true
 --- error_log
 limit-conn exits with status code 503
+
+
+
+=== TEST 24: stream route: a marked password is left as stored when the switch is off
+--- yaml_config
+apisix:
+    data_encryption:
+        enable_encrypt_fields: false
+        keyring:
+            - edd1c9f0985e76a2
+--- config
+    location /t {
+        content_by_lua_block {
+            create_redis_user()
+            put("/stream_routes/1", {
+                plugins = {
+                    ["limit-conn"] = {
+                        conn = 1,
+                        burst = 0,
+                        default_conn_delay = 0.1,
+                        key = "remote_addr",
+                        policy = "redis",
+                        redis_host = "127.0.0.1",
+                        redis_port = 6379,
+                        redis_database = 0,
+                        redis_timeout = 1000,
+                        key_ttl = 3600,
+                        redis_username = "enc-marker",
+                        redis_password = mark("enc-marker-pass"),
+                    },
+                },
+                upstream = {nodes = {["127.0.0.1:1995"] = 1}, type = "roundrobin"},
+            })
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 25: Redis rejects the password as stored
+--- yaml_config
+apisix:
+    data_encryption:
+        enable_encrypt_fields: false
+        keyring:
+            - edd1c9f0985e76a2
+--- stream_request
+mmm
+--- stream_response
+receive stream response error: connection reset by peer
+--- error_log
+failed to limit conn: WRONGPASS
+--- no_error_log
+failed to decrypt the value
