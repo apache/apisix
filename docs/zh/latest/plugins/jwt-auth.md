@@ -1021,6 +1021,8 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 ```yaml title="adc.yaml"
 consumers:
   - username: jack
+    labels:
+      docs-example: jwt-auth
     credentials:
       - id: cred-jack-jwt-auth
         name: jwt-auth
@@ -1030,6 +1032,8 @@ consumers:
           secret: $secret://vault/jwt/jack/jwt-secret
 services:
   - name: jwt-auth-service
+    labels:
+      docs-example: jwt-auth
     routes:
       - name: jwt-route
         uris:
@@ -1044,10 +1048,22 @@ services:
           weight: 1
 ```
 
-将配置同步到 APISIX：
+ADC 将所选顶层资源类型协调为期望状态。预览限定范围后的变更，并确认其中没有非预期的更新或删除：
 
 ```shell
-adc sync -f adc.yaml
+adc diff -f adc.yaml \
+  --include-resource-type service \
+  --include-resource-type consumer \
+  --label-selector docs-example=jwt-auth
+```
+
+同步已审核的配置：
+
+```shell
+adc sync -f adc.yaml \
+  --include-resource-type service \
+  --include-resource-type consumer \
+  --label-selector docs-example=jwt-auth
 ```
 
 </TabItem>
@@ -1056,25 +1072,30 @@ adc sync -f adc.yaml
 
 在两种配置方式中，该引用均使用 `jwt` Secret 资源读取 `kv/apisix/jack` 中的 `jwt-secret` 字段。
 
-使用兼容的工具生成 JWT。如果使用 [JWT.io 的 JWT 编码器](https://jwt.io)，请按以下方式配置令牌：
-
-* 选择 `HS256` 算法。
-* 将 __Valid secret__ 设置为 `vault-hs256-secret-that-is-very-long`。
-* 将 `key` 声明设置为 `jwt-vault-key`，并添加使用有效 UNIX 时间戳的 `exp` 或 `nbf` 声明。
-
-payload 应类似如下所示：
-
-```json
-{
-  "key": "jwt-vault-key",
-  "nbf": 1729132271
-}
-```
-
-复制生成的 JWT 并保存到变量：
+定义本地 HS256 签名辅助函数，然后使用 Vault 中存储的 key 和 secret 生成 JWT：
 
 ```shell
-export jwt_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJqd3QtdmF1bHQta2V5IiwibmJmIjoxNzI5MTMyMjcxfQ.i2pLj7QcQvnlSjB7iV5V522tIV43boQRtee7L0rwlkQ
+base64url() {
+  openssl base64 -A | tr '+/' '-_' | tr -d '='
+}
+
+sign_hs256() {
+  local secret="$1"
+  local payload="$2"
+  local encoded_header encoded_payload signature
+
+  encoded_header=$(printf '%s' '{"alg":"HS256","typ":"JWT"}' | base64url)
+  encoded_payload=$(printf '%s' "$payload" | base64url)
+  signature=$(printf '%s' "$encoded_header.$encoded_payload" | \
+    openssl dgst -sha256 -hmac "$secret" -binary | base64url)
+
+  printf '%s.%s.%s\n' "$encoded_header" "$encoded_payload" "$signature"
+}
+
+jwt_token=$(sign_hs256 \
+  'vault-hs256-secret-that-is-very-long' \
+  '{"key":"jwt-vault-key"}')
+export jwt_token
 ```
 
 携带令牌在请求头中发送请求：

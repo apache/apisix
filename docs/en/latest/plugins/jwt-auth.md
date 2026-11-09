@@ -1021,6 +1021,8 @@ Create `adc.yaml` with the Consumer, Vault-backed Credential, and Route:
 ```yaml title="adc.yaml"
 consumers:
   - username: jack
+    labels:
+      docs-example: jwt-auth
     credentials:
       - id: cred-jack-jwt-auth
         name: jwt-auth
@@ -1030,6 +1032,8 @@ consumers:
           secret: $secret://vault/jwt/jack/jwt-secret
 services:
   - name: jwt-auth-service
+    labels:
+      docs-example: jwt-auth
     routes:
       - name: jwt-route
         uris:
@@ -1044,10 +1048,22 @@ services:
           weight: 1
 ```
 
-Synchronize the configuration to APISIX:
+ADC reconciles the selected top-level resource types as desired state. Preview the scoped changes and confirm that they contain no unintended updates or deletions:
 
 ```shell
-adc sync -f adc.yaml
+adc diff -f adc.yaml \
+  --include-resource-type service \
+  --include-resource-type consumer \
+  --label-selector docs-example=jwt-auth
+```
+
+Synchronize the reviewed configuration:
+
+```shell
+adc sync -f adc.yaml \
+  --include-resource-type service \
+  --include-resource-type consumer \
+  --label-selector docs-example=jwt-auth
 ```
 
 </TabItem>
@@ -1056,25 +1072,30 @@ adc sync -f adc.yaml
 
 In both methods, the reference uses the `jwt` Secret resource to read the `jwt-secret` field from `kv/apisix/jack`.
 
-Generate a JWT with a compatible utility. If you use [JWT.io's JWT encoder](https://jwt.io), configure the token as follows:
-
-* Select `HS256` as the algorithm.
-* Set __Valid secret__ to `vault-hs256-secret-that-is-very-long`.
-* Set the `key` claim to `jwt-vault-key` and add an `exp` or `nbf` claim with a valid UNIX timestamp.
-
-Your payload should look similar to the following:
-
-```json
-{
-  "key": "jwt-vault-key",
-  "nbf": 1729132271
-}
-```
-
-Copy the generated JWT and save it to a variable:
+Define a local HS256 signing helper, then generate a JWT with the key and secret stored in Vault:
 
 ```shell
-export jwt_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJqd3QtdmF1bHQta2V5IiwibmJmIjoxNzI5MTMyMjcxfQ.i2pLj7QcQvnlSjB7iV5V522tIV43boQRtee7L0rwlkQ
+base64url() {
+  openssl base64 -A | tr '+/' '-_' | tr -d '='
+}
+
+sign_hs256() {
+  local secret="$1"
+  local payload="$2"
+  local encoded_header encoded_payload signature
+
+  encoded_header=$(printf '%s' '{"alg":"HS256","typ":"JWT"}' | base64url)
+  encoded_payload=$(printf '%s' "$payload" | base64url)
+  signature=$(printf '%s' "$encoded_header.$encoded_payload" | \
+    openssl dgst -sha256 -hmac "$secret" -binary | base64url)
+
+  printf '%s.%s.%s\n' "$encoded_header" "$encoded_payload" "$signature"
+}
+
+jwt_token=$(sign_hs256 \
+  'vault-hs256-secret-that-is-very-long' \
+  '{"key":"jwt-vault-key"}')
+export jwt_token
 ```
 
 Send a request with the token in the header:
