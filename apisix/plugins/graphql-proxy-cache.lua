@@ -154,7 +154,7 @@ local check_graphql_request = {
         local content_type = core.request.header(ctx, "Content-Type") or ""
         if core.string.has_prefix(content_type, GRAPHQL_REQ_MIME_JSON) then
             local res, err = core.json.decode(body, {null_as_nil = true})
-            if not res then
+            if err then
                 return false, "invalid graphql request, " .. err
             end
 

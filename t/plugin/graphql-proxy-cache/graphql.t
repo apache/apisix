@@ -550,3 +550,35 @@ Content-Type: application/json
 invalid graphql request, json body is not an object
 --- response_body eval
 qr/invalid graphql request, json body is not an object/
+
+
+
+=== TEST 23: invalid graphql request: json body is false
+--- request
+POST /graphql
+false
+--- more_headers
+Content-Type: application/json
+--- error_code: 400
+--- error_log
+invalid graphql request, json body is not an object
+--- no_error_log
+runtime error:
+--- response_body eval
+qr/invalid graphql request, json body is not an object/
+
+
+
+=== TEST 24: invalid graphql request: json body is null
+--- request
+POST /graphql
+null
+--- more_headers
+Content-Type: application/json
+--- error_code: 400
+--- error_log
+invalid graphql request, json body is not an object
+--- no_error_log
+runtime error:
+--- response_body eval
+qr/invalid graphql request, json body is not an object/
