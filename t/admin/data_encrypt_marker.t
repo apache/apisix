@@ -301,3 +301,66 @@ new-hdr
 200 $ENC$v1$bad
 --- error_log
 failed to decrypt the value of plugin [proxy-rewrite] key [headers.set.X-Secret]
+
+
+
+=== TEST 8: PATCH preserves marked fields outside encrypt_fields
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local original = mark("header-secret")
+            assert(core.etcd.set("/routes/1", {
+                id = "1",
+                uri = "/hello",
+                plugins = {
+                    ["proxy-rewrite"] = {headers = {set = {["X-Secret"] = original}}},
+                    ["limit-count"] = {
+                        count = 2,
+                        time_window = 60,
+                        policy = "redis",
+                        redis_host = "127.0.0.1",
+                        redis_password = mark("redis-secret"),
+                    },
+                },
+                upstream = {nodes = {["127.0.0.1:1980"] = 1}, type = "roundrobin"},
+            }))
+
+            local code = admin("/apisix/admin/routes/1", ngx.HTTP_PATCH, {desc = "patched"})
+            ngx.say(code)
+            local conf = stored("/routes/1")
+            ngx.say(conf.desc)
+            ngx.say(conf.plugins["proxy-rewrite"].headers.set["X-Secret"] == original)
+            ngx.say(conf.plugins["limit-count"].redis_password == mark("redis-secret"))
+
+            code = admin("/apisix/admin/routes/1/plugins/limit-count/redis_password",
+                         ngx.HTTP_PATCH, "new-redis-secret")
+            ngx.say(code)
+            conf = stored("/routes/1")
+            ngx.say(conf.plugins["proxy-rewrite"].headers.set["X-Secret"] == original)
+            ngx.say(conf.plugins["limit-count"].redis_password == mark("new-redis-secret"))
+
+            local body
+            code, body = admin("/apisix/admin/routes/1", ngx.HTTP_GET)
+            ngx.say(body.value.plugins["proxy-rewrite"].headers.set["X-Secret"])
+            ngx.say(body.value.plugins["limit-count"].redis_password)
+
+            -- An explicit replacement must not restore the previous ciphertext.
+            code = admin("/apisix/admin/routes/1/plugins/proxy-rewrite/headers/set/X-Secret",
+                         ngx.HTTP_PATCH, "replacement")
+            ngx.say(code)
+            ngx.say(stored("/routes/1").plugins["proxy-rewrite"].headers.set["X-Secret"])
+        }
+    }
+--- response_body
+200
+patched
+true
+true
+200
+true
+true
+header-secret
+new-redis-secret
+200
+replacement

@@ -1204,7 +1204,7 @@ local function decrypt_unmarked(value)
 end
 
 
-local function decrypt_conf(name, conf, schema_type)
+local function decrypt_conf(name, conf, schema_type, decrypt)
     if not enable_gde() then
         return
     end
@@ -1216,11 +1216,26 @@ local function decrypt_conf(name, conf, schema_type)
 
     if schema.encrypt_fields and not core.table.isempty(schema.encrypt_fields) then
         for _, key in ipairs(schema.encrypt_fields) do
-            process_encrypt_field(conf, key, decrypt_unmarked, name, "decrypt")
+            process_encrypt_field(conf, key, decrypt or decrypt_unmarked, name, "decrypt")
         end
     end
 end
 _M.decrypt_conf = decrypt_conf
+
+
+local function decrypt_field(value)
+    if core.data_encryption.has_marker(value) then
+        return core.data_encryption.decrypt_marked(value)
+    end
+    return core.data_encryption.decrypt(value)
+end
+
+
+-- PATCH only decrypts fields that encrypt_conf will encrypt again on write.
+-- Keep marked values outside encrypt_fields in their original stored form.
+function _M.decrypt_conf_for_patch(name, conf, schema_type)
+    decrypt_conf(name, conf, schema_type, decrypt_field)
+end
 
 
 -- Decrypt in place every string under `conf` that carries the encryption

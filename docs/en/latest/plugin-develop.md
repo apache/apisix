@@ -395,6 +395,8 @@ The Admin API stores every value it encrypts in plugin configurations and plugin
 
 When `enable_encrypt_fields` is on, APISIX decrypts every string value carrying the marker in plugin configurations (routes, services, plugin configs, consumers, credentials, consumer groups, global rules and stream routes) and in plugin metadata, whether or not the field is declared in `encrypt_fields`. The Admin API returns these values decrypted. When it is off, a marked value is used and returned as it is stored. If a marked value cannot be decrypted with the `keyring`, the error is logged and the value is used as it is, like a value declared in `encrypt_fields` that cannot be decrypted. Values without the marker go through `encrypt_fields` as before.
 
+PATCH preserves stored marked values outside the current plugin schema's `encrypt_fields` unless the request replaces or removes them. Fields in `encrypt_fields` are decrypted before merging and encrypted again before writing.
+
 :::warning
 
 A version of APISIX that does not recognize the marker uses a marked value as it is. Once resources are re-saved by a version that writes the marker, going back to a version without marker support requires restoring the data backed up before the upgrade, and this affects every encrypted field. Avoid writing through the Admin API during a rolling upgrade.
