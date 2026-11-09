@@ -69,9 +69,10 @@ rewrite phase:
 3. Parses the XML with external network access disabled.
 4. Rejects DTD and entity declarations and documents that already contain a
    `ds:Signature` element.
-5. Applies exclusive XML canonicalization to the document. Namespace
-   declarations that no element or attribute name uses are listed in an
-   `ec:InclusiveNamespaces` `PrefixList`, so that they are signed too.
+5. Applies exclusive XML canonicalization to the document. Declared prefixes
+   that text or attribute values refer to, such as `ns` in
+   `xsi:type="ns:Type"`, are listed in an `ec:InclusiveNamespaces`
+   `PrefixList`, so that their bindings are signed too.
 6. Calculates the reference digest selected by `signature.algorithm`.
 7. Creates an enveloped `ds:Signature` under the document root.
 8. Adds X.509 `ds:KeyInfo` unless `signature.key_info` is `none`.
@@ -79,9 +80,11 @@ rewrite phase:
 10. Replaces the upstream request body, updates `Content-Length`, and removes
    body-digest headers that no longer describe the signed body.
 
-The Plugin serializes the body as UTF-8 after signing. Insignificant formatting
-such as indentation or quote style can therefore differ from the original
-request. The Plugin rejects requests with an explicit non-UTF-8 `charset`.
+The Plugin only accepts UTF-8 encoded documents and serializes the body as
+UTF-8 after signing. Insignificant formatting such as indentation or quote
+style can therefore differ from the original request. The Plugin ignores the
+`encoding` in the XML declaration, rejects UTF-16, UTF-32, and other encodings
+with `invalid_xml`, and rejects requests with an explicit non-UTF-8 `charset`.
 
 Decode compressed request bodies before signing, for example with the
 [`request-decompress`](request-decompress.md) Plugin. The signing Plugin
@@ -353,7 +356,7 @@ before they reach the Plugin.
 | --- | --- | --- |
 | `401` | `unauthorized` | `request.require_consumer` is `true` and no authentication Plugin attributed the request to a Consumer. |
 | `400` | `empty_body` | The selected request has no body. |
-| `400` | `invalid_xml` | XML parsing failed, the document is not namespace well-formed (for example, it uses an undeclared prefix), the document has no root, a DTD/entity declaration is present, or the document exceeds the parser limits listed under [Limitations](#limitations). |
+| `400` | `invalid_xml` | XML parsing failed, the document is not UTF-8 encoded, the document is not namespace well-formed (for example, it uses an undeclared prefix), more than 8 declared prefixes are referenced in content, the document has no root, a DTD/entity declaration is present, or the document exceeds the parser limits listed under [Limitations](#limitations). |
 | `400` | `already_signed` | The document already contains a `ds:Signature`. |
 | `413` | `body_too_large` | The body exceeds the effective body size limit (see `request.max_body_bytes`). |
 | `415` | `unsupported_media_type` | Content-Type is missing, repeated, not listed in `request.content_types`, or declares a non-UTF-8 charset; or Content-Encoding is repeated or is not `identity`. |
@@ -377,12 +380,16 @@ The Plugin does not return detailed cryptographic or request content to clients.
   more than 128 namespace declarations are in scope at once. Real documents
   stay far below these limits.
 - Exclusive canonicalization only renders namespace declarations that element
-  and attribute names use. When a document declares a prefix that is used only
-  inside text or attribute values, such as `ns` in `xsi:type="ns:Type"`, the
-  Plugin lists it in the `ec:InclusiveNamespaces` `PrefixList` of the
-  canonicalization transform, so that changing its binding invalidates the
-  signature. The verifier must support this parameter, which is part of the
-  Exclusive XML Canonicalization specification.
+  and attribute names use. When text or an attribute value refers to a
+  declared prefix as `prefix:name`, such as `ns` in `xsi:type="ns:Type"`, the
+  Plugin lists the prefix in the `ec:InclusiveNamespaces` `PrefixList` of the
+  canonicalization transform, so that changing its binding, or adding a new
+  declaration for it on an intermediate element, invalidates the signature.
+  The verifier must support this parameter, which is part of the Exclusive XML
+  Canonicalization specification. Because libxml2 checks every listed prefix
+  on every element, a document that refers to more than 8 declared prefixes in
+  content is rejected. Unprefixed names in content, which would resolve
+  against the default namespace, are not protected this way.
 - The signing certificate's validity period is not enforced. APISIX logs a
   warning when it loads a certificate that has expired or is not yet valid,
   because verifiers reject such signatures.

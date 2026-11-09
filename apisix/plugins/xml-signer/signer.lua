@@ -50,7 +50,9 @@ local function build_signature(doc, root, runtime, algorithm, key_info_mode,
     local canonicalization = xml.new_child(transforms, ds_ns, "Transform")
     xml.set_property(canonicalization, "Algorithm", EXCLUSIVE_C14N)
     if #inclusive_prefixes > 0 then
-        local ec_ns = xml.new_namespace(canonicalization, EXCLUSIVE_C14N, "ec")
+        -- the document may already use "ec" for another namespace, or even
+        -- for the XML-DSig namespace that this Transform element is in
+        local ec_ns = xml.ensure_namespace(doc, canonicalization, "ec", EXCLUSIVE_C14N)
         local inclusive = xml.new_child(canonicalization, ec_ns, "InclusiveNamespaces")
         xml.set_property(inclusive, "PrefixList", xml.prefix_list(inclusive_prefixes))
     end
@@ -81,6 +83,7 @@ local function build_signature(doc, root, runtime, algorithm, key_info_mode,
 end
 
 
+-- `encoding` is accepted for compatibility; only UTF-8 bodies are parsed.
 function _M.sign(body, conf, encoding)
     local algorithm_name = conf.signature and conf.signature.algorithm or "rsa-sha256"
     local algorithm = algorithms.get(algorithm_name)
@@ -92,7 +95,7 @@ function _M.sign(body, conf, encoding)
         return nil, "signing_error", "unsupported KeyInfo mode"
     end
 
-    local doc, parse_err = xml.parse(body, encoding)
+    local doc, parse_err = xml.parse(body)
     if not doc then
         return nil, "invalid_xml", parse_err
     end
@@ -115,9 +118,13 @@ function _M.sign(body, conf, encoding)
         return nil, "credential_error", credential_err
     end
 
-    -- Computed before the ds namespace is added: declarations that no name
-    -- uses are signed through the InclusiveNamespaces PrefixList.
-    local inclusive_prefixes = xml.unused_namespace_prefixes(root)
+    -- Computed before the ds namespace is added: prefixes that content refers
+    -- to are signed through the InclusiveNamespaces PrefixList.
+    local inclusive_prefixes, prefixes_err = xml.content_namespace_prefixes(root)
+    if not inclusive_prefixes then
+        xml.free_document(doc)
+        return nil, "invalid_xml", prefixes_err
+    end
     xml.ensure_namespace(doc, root, "ds", DS)
     local canonical, canonical_err = xml.canonicalize_document(doc, inclusive_prefixes)
     if not canonical then

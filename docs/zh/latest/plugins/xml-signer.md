@@ -50,14 +50,14 @@ description: xml-signer 插件为 XML 请求体添加 enveloped XML 数字签名
 2. 将请求体缓冲到 `request.max_body_bytes` 限制以内。
 3. 在禁用外部网络访问的情况下解析 XML。
 4. 拒绝 DTD、实体声明以及已包含 `ds:Signature` 元素的文档。
-5. 对文档执行 exclusive XML canonicalization。没有被任何元素名或属性名使用的命名空间声明会列入 `ec:InclusiveNamespaces` 的 `PrefixList`，从而同样受签名保护。
+5. 对文档执行 exclusive XML canonicalization。文本或属性值中引用的已声明前缀（例如 `xsi:type="ns:Type"` 中的 `ns`）会列入 `ec:InclusiveNamespaces` 的 `PrefixList`，从而使其绑定同样受签名保护。
 6. 使用 `signature.algorithm` 指定的算法计算引用摘要。
 7. 在文档根元素下创建 enveloped `ds:Signature`。
 8. 除非 `signature.key_info` 为 `none`，否则添加 X.509 `ds:KeyInfo`。
 9. 对 `ds:SignedInfo` 执行 canonicalization，并使用配置的 RSA 私钥签名。
 10. 替换发往上游的请求体、更新 `Content-Length`，并移除不再对应签名后请求体的摘要标头。
 
-签名后的请求体会以 UTF-8 序列化，因此缩进、引号风格等无关格式可能与原请求不同。显式声明非 UTF-8 `charset` 的请求会被拒绝。
+插件只接受 UTF-8 编码的文档，签名后的请求体会以 UTF-8 序列化，因此缩进、引号风格等无关格式可能与原请求不同。插件会忽略 XML 声明中的 `encoding`，以 `invalid_xml` 拒绝 UTF-16、UTF-32 及其他编码，并拒绝显式声明非 UTF-8 `charset` 的请求。
 
 压缩的请求体必须先解压，例如使用 `request-decompress` 插件。残留的 Content-Encoding 如果不是 `identity`，则会被拒绝。
 
@@ -247,7 +247,7 @@ curl http://127.0.0.1:9080/signed-xml \
 | --- | --- | --- |
 | `401` | `unauthorized` | `request.require_consumer` 为 `true`，且请求未被认证插件关联到消费者。 |
 | `400` | `empty_body` | 被选中的请求没有请求体。 |
-| `400` | `invalid_xml` | XML 解析失败、文档的命名空间格式不正确（例如使用了未声明的前缀）、文档没有根元素、存在 DTD/实体声明，或文档超出[限制](#限制)中列出的解析器限制。 |
+| `400` | `invalid_xml` | XML 解析失败、文档不是 UTF-8 编码、文档的命名空间格式不正确（例如使用了未声明的前缀）、内容中引用的已声明前缀超过 8 个、文档没有根元素、存在 DTD/实体声明，或文档超出[限制](#限制)中列出的解析器限制。 |
 | `400` | `already_signed` | 文档已包含 `ds:Signature`。 |
 | `413` | `body_too_large` | 请求体超过生效的请求体大小限制（参见 `request.max_body_bytes`）。 |
 | `415` | `unsupported_media_type` | Content-Type 缺失、重复、未列入 `request.content_types` 或声明了非 UTF-8 字符集；或者 Content-Encoding 重复或不是 `identity`。 |
@@ -263,7 +263,7 @@ curl http://127.0.0.1:9080/signed-xml \
 - 不支持分离式签名、XPath 转换、ECDSA、RSA-PSS 或对已签名文档重新签名。
 - 签名前会将整个请求体缓冲到内存或临时请求体文件中；此操作不是流式转换。
 - 为了使解析时间保持线性，如果文档中某个元素的属性（包括命名空间声明）超过 256 个，或同时生效的命名空间声明超过 128 个，插件会拒绝该文档。实际文档远低于这些限制。
-- Exclusive canonicalization 只输出元素名和属性名使用的命名空间声明。如果文档声明的某个前缀只出现在文本或属性值中（例如 `xsi:type="ns:Type"` 中的 `ns`），插件会将其列入 canonicalization 转换的 `ec:InclusiveNamespaces` `PrefixList`，因此修改其绑定会使签名失效。验证方必须支持该参数，它属于 Exclusive XML Canonicalization 规范的一部分。
+- Exclusive canonicalization 只输出元素名和属性名使用的命名空间声明。当文本或属性值以 `prefix:name` 形式引用已声明的前缀时（例如 `xsi:type="ns:Type"` 中的 `ns`），插件会将该前缀列入 canonicalization 转换的 `ec:InclusiveNamespaces` `PrefixList`，因此修改其绑定或在中间元素上新增该前缀的声明都会使签名失效。验证方必须支持该参数，它属于 Exclusive XML Canonicalization 规范的一部分。由于 libxml2 会对每个元素检查列表中的每个前缀，内容中引用超过 8 个已声明前缀的文档会被拒绝。内容中不带前缀的名称（会按默认命名空间解析）不受此方式保护。
 - 插件不会强制检查签名证书的有效期。当 APISIX 加载已过期或尚未生效的证书时会记录警告，因为验证方会拒绝此类签名。
 
 ## 故障排查
