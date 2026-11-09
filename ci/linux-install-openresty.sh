@@ -82,18 +82,8 @@ else
     esac
 
     DEB_NAME="apisix-runtime-debug_${APISIX_RUNTIME}-0.debianbookworm-slim_${DEB_ARCH}.deb"
-    RELEASE_URL="https://github.com/api7/apisix-build-tools/releases/download/apisix-runtime/${APISIX_RUNTIME}/${DEB_NAME}"
-
-    if ! wget --verbose --tries=5 --timeout=60 --retry-connrefused \
-        "$RELEASE_URL" -O "/tmp/$DEB_NAME"; then
-        echo "Release download failed; retrying through the GitHub release asset API." >&2
-        RELEASE_API_URL="https://api.github.com/repos/api7/apisix-build-tools/releases/tags/apisix-runtime%2F${APISIX_RUNTIME}"
-        ASSET_URL=$(wget --verbose --tries=5 --timeout=60 --retry-connrefused \
-            "$RELEASE_API_URL" -O - | \
-            jq -er --arg name "$DEB_NAME" '.assets[] | select(.name == $name) | .url')
-        wget --verbose --tries=5 --timeout=60 --retry-connrefused \
-            --header="Accept: application/octet-stream" "$ASSET_URL" -O "/tmp/$DEB_NAME"
-    fi
+    download_github_release api7/apisix-build-tools "apisix-runtime/$APISIX_RUNTIME" \
+        "$DEB_NAME" "/tmp/$DEB_NAME"
     echo "$EXPECTED_SHA256  /tmp/$DEB_NAME" | sha256sum -c -
     sudo apt-get install -y "/tmp/$DEB_NAME"
     rm -f "/tmp/$DEB_NAME"
