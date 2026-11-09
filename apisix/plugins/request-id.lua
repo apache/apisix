@@ -17,10 +17,10 @@
 
 local ngx = ngx
 local core = require("apisix.core")
-local uuid = require("resty.jit-uuid")
 local resty_random = require("resty.random")
 local ksuid = require("resty.ksuid")
 local math_random = math.random
+local type = type
 local str_byte = string.byte
 local str_sub = string.sub
 local table_concat = table.concat
@@ -101,7 +101,7 @@ end
 
 local function get_request_id(conf)
     if conf.algorithm == "uuid" then
-        return uuid()
+        return core.utils.generate_uuid_v4()
     end
     if conf.algorithm == "uuidv7" then
         return core.utils.generate_uuid_v7()
@@ -118,19 +118,21 @@ local function get_request_id(conf)
         return ksuid.generate()
     end
 
-    return uuid()
+    return core.utils.generate_uuid_v4()
 end
 
 
 function _M.rewrite(conf, ctx)
-    local headers = ngx.req.get_headers()
     local uuid_val
-    local header_req_id = headers[conf.header_name]
+    local header_req_id = core.request.headers(ctx)[conf.header_name]
     if not header_req_id or header_req_id == "" then
         uuid_val = get_request_id(conf)
         core.request.set_header(ctx, conf.header_name, uuid_val)
+    elseif type(header_req_id) == "table" then
+        -- the cached header table is updated in place by later header changes
+        uuid_val = core.table.clone(header_req_id)
     else
-        uuid_val = headers[conf.header_name]
+        uuid_val = header_req_id
     end
 
     if conf.include_in_response then
@@ -146,8 +148,14 @@ function _M.header_filter(conf, ctx)
         return
     end
 
-    local headers = ngx.resp.get_headers()
-    local header_req_id = headers[conf.header_name]
+    local header_req_id
+    if core.string.find(conf.header_name, "_") then
+        -- unlike ngx.header, the table from ngx.resp.get_headers() maps "_" to
+        -- "-" even if lua_transform_underscores_in_response_headers is off
+        header_req_id = ngx.resp.get_headers()[conf.header_name]
+    else
+        header_req_id = ngx.header[conf.header_name]
+    end
     if not header_req_id or header_req_id == "" then
         core.response.set_header(conf.header_name, ctx["request-id-" .. conf.header_name])
     end

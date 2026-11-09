@@ -81,6 +81,23 @@ import TabItem from '@theme/TabItem';
 | allow_degradation | boolean | 否     | false   |                               | 如果为 true，则允许在插件或其依赖项不可用时，APISIX 继续处理请求而不使用该插件。                                                                                                                                                                           |
 | status_on_error   | integer | 否     | 403     | 200 到 599 之间（含）         | 与外部授权服务出现网络错误时返回给客户端的 HTTP 状态码。                                                                                                                                                                                                   |
 
+## 授权服务 HTTP 客户端
+
+发往授权服务的请求通过 `ngx_http_ffi_client` 发送。这是一个 C 实现的 HTTP 客户端，每个请求的 CPU 开销低于 `lua-resty-http`。
+
+在 `config.yaml` 中通过 `plugin_attr.forward-auth.http_client` 指定客户端：
+
+```yaml
+plugin_attr:
+  forward-auth:
+    http_client: ngx_http_ffi_client # 或 lua-resty-http
+```
+
+- `ngx_http_ffi_client`（默认）：C 客户端，要求 APISIX runtime 编译了该模块，`.requirements` 中固定的 runtime 已包含。在不含该模块的 runtime 上，鉴权请求会失败并返回 `status_on_error`，错误日志会指出缺失的模块；插件不会静默切换客户端。
+- `lua-resty-http`：Lua 客户端，适用于所有 runtime。
+
+两种客户端发出的鉴权请求略有不同：`ngx_http_ffi_client` 会发送 `Connection: keep-alive`（`keepalive` 为 `false` 时为 `close`），`GET` 请求会带 `Content-Length: 0`，且不发送默认的 `User-Agent`。它的 `timeout` 限制读取整个响应的总时长，而 `lua-resty-http` 对每次接收分别计时。
+
 ## 使用示例
 
 以下示例演示了如何针对不同场景使用 `forward-auth`。

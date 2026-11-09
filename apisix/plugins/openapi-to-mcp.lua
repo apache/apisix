@@ -127,6 +127,14 @@ local schema = {
             type = "boolean",
             default = false,
         },
+        allow_encoded_path_separators = {
+            description = "Whether path parameter values may contain slash " ..
+            "or backslash characters, which are percent-encoded before the " ..
+            "upstream request. Separator-delimited empty and dot components " ..
+            "remain forbidden.",
+            type = "boolean",
+            default = false,
+        },
     },
     required = { "openapi_url", "base_url" },
 }

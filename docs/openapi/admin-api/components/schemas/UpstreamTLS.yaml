@@ -1,0 +1,51 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+properties:
+  ca_certs:
+    items:
+      $ref: ./CertificatePem.yaml
+    description: CA certificates used to verify the upstream certificate
+    minItems: 1
+    type: array
+  client_cert_id:
+    anyOf:
+      - pattern: ^[a-zA-Z0-9-_.]+$
+        maxLength: 64
+        minLength: 1
+        type: string
+      - minimum: 1
+        type: integer
+  client_key:
+    $ref: ./PrivateKeyPem.yaml
+  client_cert:
+    $ref: ./CertificatePem.yaml
+  verify:
+    description: Enable or disable upstream certificate verification. When omitted, fall back to the NGINX verification setting.
+    type: boolean
+type: object
+dependentSchemas:
+  client_key:
+    required:
+      - client_cert
+  client_cert:
+    required:
+      - client_key
+  client_cert_id:
+    not:
+      required:
+        - client_cert
+        - client_key
