@@ -41,7 +41,7 @@ jobs:
       - name: Setup python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v6
         with:
-          python-version: '3.9'
+          python-version: '3.12'
 
       - name: Link check (critical, all files)
         run: |

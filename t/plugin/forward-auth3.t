@@ -105,3 +105,66 @@ GET /hello
 X-User-ID: injected-value
 --- response_body_unlike eval
 qr/x-user-id/
+
+
+
+=== TEST 3: setup route with an unavailable auth server and allow_degradation
+--- config
+    location /t {
+        content_by_lua_block {
+            local data = {
+                {
+                    url = "/apisix/admin/routes/crashed-auth",
+                    data = [[{
+                        "plugins": {
+                            "serverless-pre-function": {
+                                "phase": "rewrite",
+                                "functions" : ["return function() require(\"apisix.core\").response.exit(444); end"]
+                            }
+                        },
+                        "upstream_id": "u1",
+                        "uri": "/crashed-auth"
+                    }]],
+                },
+                {
+                    url = "/apisix/admin/routes/2",
+                    data = [[{
+                        "plugins": {
+                            "forward-auth": {
+                                "uri": "http://127.0.0.1:1984/crashed-auth",
+                                "upstream_headers": ["X-User-ID"],
+                                "allow_degradation": true
+                            },
+                            "serverless-post-function": {
+                                "phase": "access",
+                                "functions": [
+                                    "return function(conf, ctx) local core = require(\"apisix.core\"); core.response.exit(200, core.request.headers(ctx)); end"
+                                ]
+                            }
+                        },
+                        "upstream_id": "u1",
+                        "uri": "/degraded"
+                    }]],
+                }
+            }
+
+            local t = require("lib.test_admin").test
+
+            for _, data in ipairs(data) do
+                local code, body = t(data.url, ngx.HTTP_PUT, data.data)
+                ngx.say(body)
+            end
+        }
+    }
+--- response_body eval
+"passed\n" x 2
+
+
+
+=== TEST 4: client-supplied upstream_headers are cleared when the auth server is unavailable
+--- request
+GET /degraded
+--- more_headers
+X-User-ID: injected-value
+--- response_body_unlike eval
+qr/x-user-id/

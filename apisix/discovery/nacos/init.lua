@@ -98,7 +98,7 @@ local function fetch_full_registry(premature, reg)
         if not base_uri then
             log.warn("nacos host at index ", idx, " is invalid, skip")
         else
-            local nodes_cache, service_names, err = nacos_client.fetch_from_host(
+            local nodes_cache, configured_services, err = nacos_client.fetch_from_host(
                 base_uri,
                 username or reg.username,
                 password or reg.password,
@@ -120,10 +120,14 @@ local function fetch_full_registry(premature, reg)
                     dict:set(key, core.json.encode(nodes))
                 end
 
+                -- Only drop cached entries for services that are no longer
+                -- referenced by APISIX configuration. A service whose query
+                -- failed is still in configured_services, so its last
+                -- successful snapshot is kept until it is really removed.
                 local all_keys = dict:get_keys(0)
                 for _, key in ipairs(all_keys) do
                     if core.string.has_prefix(key, prefix)
-                            and not service_names[key] then
+                            and not configured_services[key] then
                         dict:delete(key)
                     end
                 end
