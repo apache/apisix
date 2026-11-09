@@ -930,7 +930,8 @@ done
                                 "producer_type": "sync",
                                 "timeout" : 1,
                                 "batch_max_size": 1,
-                                "api_version": 2
+                                "api_version": 2,
+                                "log_format": {"marker": "$http_x_kafka_test"}
                             }
                         },
                         "upstream": {
@@ -962,25 +963,37 @@ done
             end
             offset = tonumber(tostring(offset):match("^%-?%d+"))
 
-            -- hit the route to send the log to kafka
-            t('/hello', ngx.HTTP_GET)
-            ngx.sleep(2)
+            local marker = ngx.worker.pid() .. ":" .. ngx.now()
+            local code, body = t('/hello', ngx.HTTP_GET, nil, nil,
+                                 {["X-Kafka-Test"] = marker})
+            if code ~= 200 then
+                ngx.say("failed to trigger log: ", body)
+                return
+            end
 
-            local data, err = consumer:fetch("test2", 0, offset)
-            if not data then
-                ngx.say("failed to fetch message: ", err)
-                return
-            end
-            local message = data.records[1]
-            if not message then
-                ngx.say("no message fetched")
-                return
-            end
-            if tonumber(message.timestamp) > 0 then
-                ngx.say("message timestamp is stored")
-            else
-                ngx.say("invalid message timestamp: ", tostring(message.timestamp))
-            end
+            -- Batch processing and broker delivery can finish after the response.
+            local json = require("apisix.core").json
+            local deadline = ngx.now() + 5
+            repeat
+                local data, err = consumer:fetch("test2", 0, offset)
+                if not data then
+                    ngx.say("failed to fetch message: ", err)
+                    return
+                end
+                for _, message in ipairs(data.records) do
+                    local entry = json.decode(message.value)
+                    if entry and entry.marker == marker then
+                        if tonumber(message.timestamp) > 0 then
+                            ngx.say("message timestamp is stored")
+                        else
+                            ngx.say("invalid message timestamp: ", tostring(message.timestamp))
+                        end
+                        return
+                    end
+                end
+                ngx.sleep(0.05)
+            until ngx.now() >= deadline
+            ngx.say("matching log entry not fetched")
         }
     }
 --- timeout: 10

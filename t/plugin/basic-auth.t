@@ -907,12 +907,114 @@ Authorization: Basic Zm9vOg==
 === TEST 39: verify, whitespace-only password on the wire (foo: ) is rejected
 --- main_config
 env BASIC_AUTH_EMPTY_PASSWORD=;
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "foo",
+                    "plugins": {
+                        "basic-auth": {
+                            "username": "foo",
+                            "password": "$env://BASIC_AUTH_EMPTY_PASSWORD"
+                        }
+                    }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            code, body = t('/hello',
+                ngx.HTTP_GET,
+                nil,
+                nil,
+                {Authorization = "Basic Zm9vOiA="}
+            )
+            if code ~= 401 then
+                ngx.status = code
+                ngx.print(body)
+                return
+            end
+
+            code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "foo",
+                    "plugins": {
+                        "basic-auth": {
+                            "username": "foo",
+                            "password": "bar"
+                        }
+                    }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- error_log
+empty password configured for consumer: foo
+
+
+
+=== TEST 40: add consumer with colon in password
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "johndoe-colon",
+                    "plugins": {
+                        "basic-auth": {
+                            "username": "johndoe-colon",
+                            "password": "john:key"
+                        }
+                    }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 41: extra colon suffix after a colon-less password is rejected
 --- request
 GET /hello
 --- more_headers
-Authorization: Basic Zm9vOiA=
+Authorization: Basic Zm9vOmJhcjpleHRyYQ==
 --- error_code: 401
 --- response_body
 {"message":"Invalid user authorization"}
+
+
+
+=== TEST 42: verify password containing colon
+--- request
+GET /hello
+--- more_headers
+Authorization: Basic am9obmRvZS1jb2xvbjpqb2huOmtleQ==
+--- response_body
+hello world
 --- error_log
-empty password configured for consumer: foo
+find consumer johndoe-colon

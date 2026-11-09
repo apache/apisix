@@ -455,6 +455,12 @@ function _M.is_data_event(event)
 end
 
 
+function _M.is_error_event(event)
+    return event.type == "error" or event.type == "response.failed"
+           or event.type == "response.incomplete"
+end
+
+
 --- Check if an SSE event is the terminal/done event.
 function _M.is_done_event(event)
     return event.type == "response.completed"

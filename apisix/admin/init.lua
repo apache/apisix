@@ -82,8 +82,10 @@ local router
 local function check_token(ctx)
     local local_conf = core.config.local_conf()
 
-    -- check if admin_key is required
-    if local_conf.deployment.admin.admin_key_required == false then
+    -- check if admin_key is required; `admin:` written as YAML null makes
+    -- merge_conf drop the default table, so it cannot be indexed blindly
+    if core.table.try_read_attr(local_conf, "deployment", "admin",
+                                "admin_key_required") == false then
         return true
     end
 
@@ -347,6 +349,13 @@ end
 local function sync_local_conf_to_etcd(reset)
     local local_conf = core.config.local_conf()
 
+    if local_conf.deployment.config_provider == "yaml" then
+        -- standalone keeps its configuration in the shared dict, there is no
+        -- etcd to sync to. Guarded here rather than at the call sites so a new
+        -- caller cannot reintroduce the write.
+        return
+    end
+
     local plugins = {}
     for _, name in ipairs(local_conf.plugins) do
         core.table.insert(plugins, {
@@ -401,6 +410,16 @@ local function sync_local_conf_to_etcd(reset)
     local res, err = core.etcd.set("/plugins", plugins)
     if not res then
         core.log.error("failed to set plugins: ", err)
+    end
+end
+
+
+-- /v1/plugins/reload bumps the shared version and control/router.lua loads the
+-- plugins in its own handler for that event. Record the version it applied, or
+-- the reconciliation timer below sees a mismatch and loads them a second time.
+local function ack_plugins_reload()
+    if plugins_conf_ver_dict then
+        applied_plugins_conf_version = plugins_conf_ver_dict:get(PLUGINS_CONF_VERSION_KEY)
     end
 end
 
@@ -553,13 +572,18 @@ function _M.init_worker()
     -- register reload plugin handler
     events = require("apisix.events")
     events:register(reload_plugins, reload_event, "PUT")
+    events:register(ack_plugins_reload, require("apisix.control.v1").RELOAD_EVENT, "PUT")
 
-    if plugins_conf_ver_dict and not is_yaml_config_provider then
+    if plugins_conf_ver_dict then
         -- The events broadcast has no delivery guarantee: a process that is
         -- (re)connecting to the events broker loses the event for good, which
         -- leaves it running e.g. the timers of plugins that were removed.
         -- Reconcile against the version in the shared dict, the same pattern
         -- admin/standalone.lua uses for the same reason.
+        --
+        -- This is not gated on the config provider: /v1/plugins/reload bumps
+        -- the same version and stays reachable in standalone mode, so a worker
+        -- that missed its broadcast has to be able to converge there too.
         applied_plugins_conf_version =
             plugins_conf_ver_dict:get(PLUGINS_CONF_VERSION_KEY) or 0
 
@@ -579,8 +603,9 @@ function _M.init_worker()
     end
 
     if ngx_worker_id() == 0 then
-        -- check if admin_key is required
-        if local_conf.deployment.admin.admin_key_required == false then
+        -- see check_token for why this is not indexed blindly
+        if core.table.try_read_attr(local_conf, "deployment", "admin",
+                                    "admin_key_required") == false then
             core.log.warn("Admin key is bypassed! ",
                 "If you are deploying APISIX in a production environment, ",
                 "please enable `admin_key_required` and set a secure admin key!")

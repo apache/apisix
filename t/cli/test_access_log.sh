@@ -76,6 +76,37 @@ fi
 
 make stop
 
+# access log to /dev/stdout: `apisix start` must not hold the log stream
+
+echo '
+nginx_config:
+  http:
+    enable_access_log: true
+    access_log: /dev/stdout
+    access_log_format: "$remote_addr - $remote_user [$time_local] $http_host test_access_log_to_stdout"
+' > conf/config.yaml
+
+rm -f start_stdout.log
+if ! timeout 30 ./bin/apisix start > start_stdout.log; then
+    echo "failed: apisix start didn't return with access_log on /dev/stdout"
+    exit 1
+fi
+
+curl http://127.0.0.1:9080/hi
+# wait for the access log buffer to flush (flush=3)
+sleep 4
+
+if ! grep "test_access_log_to_stdout" start_stdout.log; then
+    echo "failed: access log not written to the stdout of apisix start"
+    cat start_stdout.log
+    exit 1
+fi
+
+make stop
+rm -f start_stdout.log
+
+echo "passed: apisix start returns and access log goes to its stdout"
+
 echo '
 nginx_config:
   http:

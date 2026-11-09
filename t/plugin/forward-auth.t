@@ -465,8 +465,8 @@ GET /nodegr
 --- more_headers
 Authorization: 111
 --- error_code: 403
---- error_log
-failed to process forward auth, err: closed
+--- error_log eval
+qr/failed to process forward auth, err: (?:closed|upstream closed before complete response)/
 
 
 
@@ -516,8 +516,8 @@ GET /crlf?user=guest%0d%0ax-user1:%20admin
 --- more_headers
 Authorization: 111
 --- error_code: 403
---- error_log
-failed to process forward auth, err: invalid characters found in header value,
+--- error_log eval
+qr/failed to process forward auth, err: (?:invalid characters found in header value|invalid request header),/
 
 
 

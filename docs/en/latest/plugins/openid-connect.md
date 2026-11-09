@@ -51,7 +51,7 @@ The `openid-connect` Plugin supports the integration with [OpenID Connect (OIDC)
 | bearer_only | boolean | False | false | | If true, strictly require bearer access token in requests for authentication. |
 | logout_path | string | False | /logout | | Path to activate the logout. |
 | post_logout_redirect_uri | string | False | | | URL to redirect users to after the `logout_path` receives a request to log out. |
-| redirect_uri | string | False | | | URI to redirect to after authentication with the OpenID provider. Note that the redirect URI should not be the same as the request URI, but a sub-path of the request URI. For example, if the `uri` of the Route is `/api/v1/*`, `redirect_uri` can be configured as `/api/v1/redirect`. If `redirect_uri` is not configured, APISIX will append `/.apisix/redirect` to the request URI to determine the value for `redirect_uri`. |
+| redirect_uri | string | False | | | URI to redirect to after authentication with the OpenID provider. Note that the redirect URI should not be the same as the request URI, but a sub-path of the request URI. For example, if the `uri` of the Route is `/api/v1/*`, `redirect_uri` can be configured as `/api/v1/redirect`. If `redirect_uri` is not configured, APISIX will append `/.apisix/redirect` to the request URI to determine the value for `redirect_uri`. It is recommended to set `redirect_uri` to an absolute URL (with scheme and host). This makes the value fixed instead of assembled from request headers, so a forged `Host` or `Forwarded` header cannot influence the redirect URI sent to the identity provider. |
 | timeout | integer | False | 3 | [1,...] | Request timeout time in seconds. |
 | ssl_verify | boolean | False | true | | If true, verify the OpenID provider's SSL certificates. Note: The default value was changed from `false` to `true` in APISIX 3.16.0. This is a breaking change. If you are upgrading from an earlier version, ensure your OpenID provider's SSL certificate is valid or explicitly set this to `false` to preserve previous behavior. |
 | introspection_endpoint | string | False | | | URL of the [token introspection](https://datatracker.ietf.org/doc/html/rfc7662) endpoint for the OpenID provider used to introspect access tokens. If this is unset, the introspection endpoint presented in the well-known discovery document is used [as a fallback](https://github.com/zmartzone/lua-resty-openidc/commit/cdaf824996d2b499de4c72852c91733872137c9c). |
@@ -76,6 +76,9 @@ The `openid-connect` Plugin supports the integration with [OpenID Connect (OIDC)
 | set_raw_id_token_header | boolean | False | false | | If true and if the raw signed ID token JWT is available, set the value in the `X-Raw-ID-Token` request header. Unlike `X-ID-Token`, this header contains the original RS256-signed JWT from the identity provider and can be verified against the provider's JWKS endpoint. The plugin automatically persists the raw JWT in the session when this option is enabled. |
 | set_userinfo_header | boolean | False | true | | If true and if user info data is available, set the value in the `X-Userinfo` request header. |
 | set_refresh_token_header | boolean | False | false | | If true and if the refresh token is available, set the value in the `X-Refresh-Token` request header. |
+| upstream_headers | array[object] | False | | | Claims to forward to the Upstream as request headers. The Plugin clears every declared header first, then sets it only from a verified claim, so a client cannot supply its own value, including on requests let through by `unauth_action` set to `pass`. With `bearer_only`, `public_key`, `use_jwks`, or introspection, claims come from the verified access token payload or the introspection response. In the authorization code flow, claims come from the ID token, then from the user info for claims the ID token does not contain. A claim set to `null` or `false` counts as not contained, so the next source is used. |
+| upstream_headers.header | string | True | | | Name of the Upstream request header. |
+| upstream_headers.path | array[string] | True | | | Keys leading to the claim, one key per nesting level, such as `["org", "id"]`. A key is matched literally, so a claim name containing `://`, `/`, or `.` is a single key. Strings are forwarded as is, numbers and `true` as text, and arrays and objects, including empty ones, as base64-encoded JSON. If the claim is missing, `null`, `false`, or an empty string, the header is not set. |
 | session | object | False | | | Session configuration used when `bearer_only` is `false` and the Plugin uses Authorization Code flow. |
 | session.secret | string | True | | 16 or more characters | Key used for session encryption and HMAC operation when `bearer_only` is `false`. |
 | session.cookie_name | string | False | | | Session cookie name. Forwarded to [lua-resty-session](https://github.com/bungle/lua-resty-session#configuration) 4.x as `cookie_name`. |
@@ -422,6 +425,8 @@ The introspection flow is defined in [RFC 7662](https://datatracker.ietf.org/doc
 
 In this flow, when a client presents an access token to the resource server, the resource server sends a request to the authorization server's introspection endpoint, which responds with token details if the token is active, including information like token expiration, associated scopes, and the user or client it belongs to.
 
+When introspection confirms that a token is inactive, the Plugin returns `401 Unauthorized` with an `invalid_token` challenge. If introspection cannot be completed because the endpoint is unavailable, times out, or returns an invalid response, the Plugin returns `503 Service Unavailable` without an `invalid_token` challenge. Concurrent cache misses for the same token are coalesced while introspection caching is enabled; if coordination times out, the request falls back to direct introspection.
+
 The following diagram illustrates the interaction between different entities when you implement the authorization code flow with token introspection:
 
 ![Client credential with introspection diagram](https://static.api7.ai/uploads/2026/04/21/LWQa6pFl_4-introspection-flow.webp)
@@ -460,6 +465,38 @@ The following diagram illustrates the interaction between different entities whe
 
 When `set_userinfo_header` is `true` (the default), the Plugin sets user info data in the `X-Userinfo` request header, which the Upstream can use for further processing.
 
+### Forward Claims to the Upstream
+
+The following example forwards selected claims of a verified bearer token to the Upstream as request headers, so that the Upstream does not need to parse the token.
+
+Configure `upstream_headers` in the Plugin, where each entry names a header and the `path` of keys leading to the claim:
+
+```json
+"openid-connect": {
+  "client_id": "api",
+  "discovery": "https://idp.example.com/.well-known/openid-configuration",
+  "bearer_only": true,
+  "use_jwks": true,
+  "upstream_headers": [
+    { "header": "X-Profile-Id", "path": ["https://example.com/claims/profile/id"] },
+    { "header": "X-Org-Id", "path": ["org", "id"] },
+    { "header": "X-Client-Scopes", "path": ["scope"] }
+  ]
+}
+```
+
+For a token with the payload `{"https://example.com/claims/profile/id": "profile-1", "org": {"id": 42}, "scope": ["read", "write"]}`, the Upstream receives the following headers:
+
+```text
+X-Profile-Id: profile-1
+X-Org-Id: 42
+X-Client-Scopes: WyJyZWFkIiwid3JpdGUiXQ==
+```
+
+The `scope` array is forwarded as base64-encoded JSON, which decodes to `["read","write"]`.
+
+If a claim is not in the token, the Upstream does not receive the header, even when the client sent one.
+
 ## Troubleshooting
 
 This section covers a few commonly seen issues when working with this Plugin to help you troubleshoot.
@@ -493,6 +530,8 @@ A common misconfiguration is to configure the `redirect_uri` the same as the URI
 To properly configure the redirection URI, make sure that the `redirect_uri` matches the Route where the Plugin is configured, without being fully identical. For instance, a correct configuration would be to configure `uri` of the Route to `/api/v1/*` and the path portion of the `redirect_uri` to `/api/v1/redirect`.
 
 You should also ensure that the `redirect_uri` includes the scheme, such as `http` or `https`.
+
+It is recommended to set `redirect_uri` to an absolute URL (scheme and host). When it is left unset or set to a relative path, the host is assembled from request headers, so a forged `Host` or `Forwarded` header can point the redirect URI at an attacker-controlled host. An absolute `redirect_uri` bypasses header-based host assembly entirely.
 
 #### 2. Missing Session Secret
 

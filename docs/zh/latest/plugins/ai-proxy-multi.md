@@ -2416,6 +2416,8 @@ kubectl apply -f ai-proxy-multi-ic.yaml
 
 为了验证，行为应与[主动健康检查](../tutorials/health-check.md)中的验证一致。
 
+这些健康检查产生的状态可以通过[控制接口](../control-api.md)获取：`GET /v1/healthcheck` 会为每个实例返回一个 entry，`GET /v1/healthcheck/routes/{id}/checkers` 则返回该路由拥有的全部检查器。每个 entry 通过 `meta.instance` 携带实例名。
+
 ### 发送请求日志到日志记录器
 
 以下示例演示了如何记录请求和响应信息（包括 LLM 模型、令牌和负载），并将其推送到日志记录器。在继续之前，您应该先设置一个日志记录器，例如 Kafka。有关更多信息，请参阅 [`kafka-logger`](./kafka-logger.md)。
@@ -2730,9 +2732,9 @@ curl "http://127.0.0.1:9080/anything" -X POST \
 * `request_type`：请求类型，值可能是 `traditional_http`、`ai_chat` 或 `ai_stream`。
 * `llm_time_to_first_token`：从发送请求到从 LLM 服务接收第一个令牌的持续时间（毫秒）。当 LLM 服务返回错误响应时，该值为收到错误响应为止的持续时间；当完全无法连接到 LLM 服务时，该值保持为 `0`。
 * `llm_model`：LLM 模型。
-* `llm_prompt_tokens`：提示中的令牌数量。
+* `llm_prompt_tokens`：提示中的令牌数量，包含从缓存读取和写入缓存的令牌。对于 Anthropic Messages API，其值为 `input_tokens + cache_read_input_tokens + cache_creation_input_tokens`，与 OpenAI 的 `prompt_tokens` 含义一致。
 * `llm_completion_tokens`：响应中的聊天完成令牌数量。
-* `llm_total_tokens`：使用的总令牌数（提示加完成）。
+* `llm_total_tokens`：使用的总令牌数（提示加完成，包含缓存令牌）。
 * `llm_cache_read_input_tokens`：从缓存读取的输入令牌数量。
 * `llm_cache_creation_input_tokens`：写入缓存的输入令牌数量。
 * `llm_reasoning_tokens`：生成的推理令牌数量。

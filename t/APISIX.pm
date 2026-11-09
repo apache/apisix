@@ -259,6 +259,18 @@ my $disable_proxy_buffering_location = <<_EOC_;
         }
 _EOC_
 
+my $websocket_location = <<_EOC_;
+        location \@websocket_pass {
+            content_by_lua_block {
+                apisix.websocket_content_phase()
+            }
+
+            log_by_lua_block {
+                apisix.websocket_log_phase()
+            }
+        }
+_EOC_
+
 my $a6_ngx_directives = "";
 if ($version =~ m/\/apisix-nginx-module/) {
     $a6_ngx_directives = <<_EOC_;
@@ -328,6 +340,7 @@ lua {
     lua_shared_dict prometheus-metrics 15m;
     lua_shared_dict prometheus-cache 10m;
     lua_shared_dict standalone-config 10m;
+    lua_shared_dict standalone-status 1m;
     lua_shared_dict status-report 1m;
     lua_shared_dict nacos 10m;
     lua_shared_dict consul 10m;
@@ -352,6 +365,9 @@ _EOC_
         if ($block->stream_sni) {
             $sni = '"' . $block->stream_sni . '"';
         }
+
+        # a bare `--- stream_tls_verify` section has an empty, false value
+        my $tls_verify = defined $block->stream_tls_verify ? "true" : "false";
         chomp $stream_tls_request;
 
         my $repeat = "1";
@@ -371,7 +387,7 @@ _EOC_
                             return
                         end
 
-                        sess, err = sock:sslhandshake(sess, $sni, false)
+                        sess, err = sock:sslhandshake(sess, $sni, $tls_verify)
                         if not sess then
                             ngx.say("failed to do SSL handshake: ", err)
                             return
@@ -590,6 +606,10 @@ $stream_config
     }
 }
 _EOC_
+        # the stream block lives in the main config here, so drop the block values
+        # or Test::Nginx renders a second, conflicting one
+        $block->set_value("stream_config");
+        $block->set_value("stream_server_config");
     }
 
     $block->set_value("main_config", $main_config);
@@ -649,9 +669,11 @@ _EOC_
     lua_shared_dict plugin-ai-rate-limiting-reset-header 10m;
     lua_shared_dict plugin-graphql-limit-count 10m;
     lua_shared_dict plugin-graphql-limit-count-reset-header 10m;
+    lua_shared_dict plugin-saml-auth-replay 10m;
     lua_shared_dict internal-status 10m;
     lua_shared_dict worker-events 10m;
     lua_shared_dict lrucache-lock 10m;
+    lua_shared_dict upstream-slow-start 10m;
     lua_shared_dict balancer-ewma 1m;
     lua_shared_dict balancer-ewma-locks 1m;
     lua_shared_dict balancer-ewma-last-touched-at 1m;
@@ -764,6 +786,20 @@ _EOC_
             }
 
             more_clear_headers Date;
+        }
+    }
+
+    # accepts a connection on any path but never writes a response, so a
+    # client waiting on it reliably times out instead of being refused or
+    # having to depend on an unroutable address actually hanging
+    server {
+        listen 1986;
+        server_tokens off;
+
+        location / {
+            content_by_lua_block {
+                ngx.sleep(30)
+            }
         }
     }
 
@@ -1000,6 +1036,7 @@ _EOC_
         $grpc_location
         $dubbo_location
         $disable_proxy_buffering_location
+        $websocket_location
 
         location = /proxy_mirror {
             internal;
