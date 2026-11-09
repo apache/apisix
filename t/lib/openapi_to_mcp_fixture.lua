@@ -61,6 +61,132 @@ local DOCUMENTS = {
         } } },
     },
 
+    -- a slash inside a template expression name, which the OpenAPI grammar
+    -- admits, so the template's segments have to be counted accordingly
+    ["/slashinname.json"] = {
+        openapi = "3.0.0",
+        info = { title = "SlashInName", version = "1" },
+        paths = {
+            ["/x/{scope/key}/{id}/.."] = { get = {
+                operationId = "literalDotTail",
+                parameters = {
+                    { name = "scope/key", ["in"] = "path", required = true,
+                      schema = { type = "string" } },
+                    { name = "id", ["in"] = "path", required = true,
+                      schema = { type = "string" } },
+                },
+            } },
+            ["/x/{a/b}/{c}"] = { get = {
+                operationId = "slashNameTail",
+                parameters = {
+                    { name = "a/b", ["in"] = "path", required = true,
+                      schema = { type = "string" } },
+                    { name = "c", ["in"] = "path", required = true,
+                      schema = { type = "string" } },
+                },
+            } },
+            ["/x/{a/b}/{c}/y"] = { get = {
+                operationId = "slashNameMiddle",
+                parameters = {
+                    { name = "a/b", ["in"] = "path", required = true,
+                      schema = { type = "string" } },
+                    { name = "c", ["in"] = "path", required = true,
+                      schema = { type = "string" } },
+                },
+            } },
+        },
+    },
+
+    -- a path parameter that fills only part of a segment
+    ["/partialsegment.json"] = {
+        openapi = "3.0.0",
+        info = { title = "Partial", version = "1" },
+        paths = { ["/files/{name}.json"] = { get = {
+            operationId = "getFile",
+            parameters = {
+                { name = "name", ["in"] = "path", required = true,
+                  schema = { type = "string" } },
+            },
+        } } },
+    },
+
+    -- path templates that exercise validation after every expression is filled
+    ["/path-safety.json"] = {
+        openapi = "3.0.0",
+        info = { title = "Path safety", version = "1" },
+        paths = {
+            ["/x/{a}{b}"] = { get = {
+                operationId = "adjacentPathParameters",
+                parameters = {
+                    { name = "a", ["in"] = "path", required = true,
+                      schema = { type = "string" } },
+                    { name = "b", ["in"] = "path", required = true,
+                      schema = { type = "string" } },
+                },
+            } },
+            ["/x/{a}.{b}"] = { get = {
+                operationId = "separatedPathParameters",
+                parameters = {
+                    { name = "a", ["in"] = "path", required = true,
+                      schema = { type = "string" } },
+                    { name = "b", ["in"] = "path", required = true,
+                      schema = { type = "string" } },
+                },
+            } },
+            ["/x/.{a}"] = { get = {
+                operationId = "prefixedPathParameter",
+                parameters = {
+                    { name = "a", ["in"] = "path", required = true,
+                      schema = { type = "string" } },
+                },
+            } },
+            ["/{Bucket}?acl"] = { get = {
+                operationId = "getBucketAcl",
+                parameters = {
+                    { name = "Bucket", ["in"] = "path", required = true,
+                      schema = { type = "string" } },
+                },
+            } },
+            ["/{Bucket}/{Key}#acl"] = { get = {
+                operationId = "getObjectAcl",
+                parameters = {
+                    { name = "Bucket", ["in"] = "path", required = true,
+                      schema = { type = "string" } },
+                    { name = "Key", ["in"] = "path", required = true,
+                      schema = { type = "string" } },
+                },
+            } },
+            ["/search?q={term}"] = { get = {
+                operationId = "searchByTerm",
+                parameters = {
+                    { name = "term", ["in"] = "path", required = true,
+                      schema = { type = "string" } },
+                },
+            } },
+            ["/search?url={u}"] = { get = {
+                operationId = "searchByUrl",
+                parameters = {
+                    { name = "u", ["in"] = "path", required = true,
+                      schema = { type = "string" } },
+                },
+            } },
+            ["/x#/{a}"] = { get = {
+                operationId = "discardFragmentExpression",
+                parameters = {
+                    { name = "a", ["in"] = "path", required = true,
+                      schema = { type = "string" } },
+                },
+            } },
+            ["/encoded/{path}"] = { get = {
+                operationId = "getEncodedPath",
+                parameters = {
+                    { name = "path", ["in"] = "path", required = true,
+                      schema = { type = "string" } },
+                },
+            } },
+        },
+    },
+
     -- a tool that declares one header parameter
     ["/headerparam.json"] = {
         openapi = "3.0.0",
