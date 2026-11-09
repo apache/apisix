@@ -266,7 +266,9 @@ function _M.read_yaml_conf(apisix_home)
 
     if not is_empty_file then
         local user_conf = yaml.load(user_conf_yaml)
-        if not user_conf then
+        -- lyaml returns a scalar for a document such as `foo`, which would blow
+        -- up in resolve_conf_var's pairs() below
+        if type(user_conf) ~= "table" then
             return nil, "invalid config.yaml file"
         end
 
@@ -290,7 +292,10 @@ function _M.read_yaml_conf(apisix_home)
         default_conf.deployment.config_provider = "etcd"
         if default_conf.deployment.role == "traditional" then
             default_conf.etcd = default_conf.deployment.etcd
-            if default_conf.deployment.role_traditional.config_provider == "yaml" then
+            -- `role_traditional:` written as YAML null makes merge_conf drop the
+            -- default table, so it cannot be indexed blindly
+            local role_traditional = default_conf.deployment.role_traditional
+            if role_traditional and role_traditional.config_provider == "yaml" then
                 default_conf.deployment.config_provider = "yaml"
             end
 

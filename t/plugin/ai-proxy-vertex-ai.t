@@ -471,8 +471,15 @@ request: GET /status/gpt4
                 ctx2
             )
 
-            -- ctx is nil (no model)
+            -- A model name remains one path segment.
+            local ctx3 = {var = {llm_model = "../../custom-model"}}
             local path3 = cap.path(
+                {project_id = "my-project", region = "us-central1"},
+                ctx3
+            )
+
+            -- ctx is nil (no model)
+            local path4 = cap.path(
                 {project_id = "my-project", region = "us-central1"},
                 nil
             )
@@ -480,11 +487,13 @@ request: GET /status/gpt4
             ngx.say(path1)
             ngx.say(path2)
             ngx.say(path3)
+            ngx.say(path4)
         }
     }
 --- response_body
 /v1/projects/my-project/locations/us-central1/publishers/google/models/text-embedding-004:predict
 /v1/projects/my-project/locations/us-central1/publishers/google/models/textembedding-gecko:predict
+/v1/projects/my-project/locations/us-central1/publishers/google/models/..%2F..%2Fcustom-model:predict
 nil
 
 

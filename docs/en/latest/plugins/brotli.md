@@ -38,9 +38,9 @@ This Plugin requires brotli shared libraries.
 The example commands to build and install brotli shared libraries:
 
 ``` shell
-wget https://github.com/google/brotli/archive/refs/tags/v1.1.0.zip
-unzip v1.1.0.zip
-cd brotli-1.1.0 && mkdir build && cd build
+wget https://github.com/google/brotli/archive/refs/tags/v1.2.1.zip
+unzip v1.2.1.zip
+cd brotli-1.2.1 && mkdir build && cd build
 cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local/brotli ..
 sudo cmake --build . --config Release --target install
 sudo sh -c "echo /usr/local/brotli/lib >> /etc/ld.so.conf.d/brotli.conf"

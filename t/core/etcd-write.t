@@ -1105,3 +1105,102 @@ deployment:
 GET /t
 --- no_error_log
 Data plane role should not write to etcd. This operation will be deprecated in future releases.
+
+
+
+=== TEST 34: an unreadable local config does not block the write
+--- yaml_config
+deployment:
+  role: control_plane
+  role_control_plane:
+    config_provider: etcd
+  etcd:
+    host:
+      - "http://127.0.0.1:2379"
+    prefix: "/apisix"
+    tls:
+      verify: false
+--- config
+    location /t {
+        content_by_lua_block {
+            local config_local = require("apisix.core.config_local")
+            local origin_local_conf = config_local.local_conf
+            local fail = false
+            config_local.local_conf = function(...)
+                if fail then
+                    return nil, "mocked local conf failure"
+                end
+                return origin_local_conf(...)
+            end
+
+            -- reload so that the module picks up the patched local_conf
+            package.loaded["apisix.core.etcd"] = nil
+            local etcd = require("apisix.core.etcd")
+
+            -- the first write caches the etcd client
+            local res, err = etcd.set("/foo", "bar")
+            if not res then
+                ngx.say("first set failed: ", err)
+                return
+            end
+
+            fail = true
+            res, err = etcd.set("/foo", "bar")
+            ngx.say("second set: ", res and "ok" or ("failed: " .. (err or "nil")))
+
+            fail = false
+            etcd.delete("/foo")
+            config_local.local_conf = origin_local_conf
+            package.loaded["apisix.core.etcd"] = nil
+        }
+    }
+--- request
+GET /t
+--- response_body
+second set: ok
+--- error_log
+failed to check data plane role: mocked local conf failure
+--- no_error_log
+Data plane role should not write to etcd. This operation will be deprecated in future releases.
+
+
+
+=== TEST 35: a client missing a wrapped method reports the reason
+--- yaml_config
+deployment:
+  role: control_plane
+  role_control_plane:
+    config_provider: etcd
+  etcd:
+    host:
+      - "http://127.0.0.1:2379"
+    prefix: "/apisix"
+    tls:
+      verify: false
+--- config
+    location /t {
+        content_by_lua_block {
+            local origin_etcd = package.loaded["resty.etcd"]
+            package.loaded["resty.etcd"] = {
+                new = function()
+                    -- every other wrapped method is missing
+                    return {set = function() end}
+                end,
+            }
+
+            package.loaded["apisix.core.etcd"] = nil
+            local etcd = require("apisix.core.etcd")
+
+            local res, err = etcd.set("/foo", "bar")
+            ngx.say("res: ", res and "ok" or "nil", ", err: ", err or "nil")
+
+            package.loaded["resty.etcd"] = origin_etcd
+            package.loaded["apisix.core.etcd"] = nil
+        }
+    }
+--- request
+GET /t
+--- response_body
+res: nil, err: method setnx not found in etcd client
+--- error_log
+method setnx not found in etcd client

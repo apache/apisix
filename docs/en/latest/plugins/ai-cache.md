@@ -61,6 +61,8 @@ By default the cache is isolated per route, so two routes never serve each other
 
 Even with `cache_key.share_across_routes` enabled, the cache key identifies the *effective* upstream request — the request `ai-proxy` actually sends after applying the AI instance's `provider`, `options` (model, temperature, and other model parameters) and `override`. Routes that would call the model differently therefore keep separate cache entries, so one route's response is never served for another.
 
+For the `passthrough` protocol, `ai-proxy` forwards the client's request method, path and query string verbatim, so the key includes them too: the same body sent to two different upstream paths, or with different query parameters, keeps separate entries.
+
 :::
 
 ## Attributes
@@ -87,6 +89,7 @@ Even with `cache_key.share_across_routes` enabled, the cache key identifies the 
 | redis_timeout | integer | False | 1000 | >= 1 | Redis timeout value in milliseconds. |
 | redis_ssl | boolean | False | false | | If true, use SSL to connect to Redis. |
 | redis_ssl_verify | boolean | False | false | | If true, verify the Redis server SSL certificate. |
+| redis_server_name | string | False | | | TLS SNI when `redis_ssl` is true. Defaults to `redis_host`. When `redis_ssl_verify` is true the certificate must also match this name, so set it when `redis_host` is an alias the certificate does not cover. |
 | redis_keepalive_timeout | integer | False | 10000 | >= 1000 | Keepalive timeout, in milliseconds, for the Redis connection pool. |
 | redis_keepalive_pool | integer | False | 100 | >= 1 | Maximum number of connections in the Redis keepalive pool. |
 

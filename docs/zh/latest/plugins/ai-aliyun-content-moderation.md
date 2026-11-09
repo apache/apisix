@@ -74,6 +74,18 @@ import TabItem from '@theme/TabItem';
 | ssl_verify | boolean | 否 | `true` | | 如果为 `true`，启用 SSL 证书验证。 |
 | fail_mode | string | 否 | `"skip"` | `skip`、`warn`、`error` | 当请求不是该插件可识别的 AI 请求时的处理行为（例如 Consumer 级别绑定时的普通 HTTP 流量，或未经过 `ai-proxy` 的请求）。`skip`：放行请求且不做检查；`warn`：放行并记录 warning 日志；`error`：拒绝请求。 |
 
+`final_packet` 模式在已汇总的响应正文可用后，在现有数据事件中同时追加 `risk_level` 和 `deny_message`。拒绝时使用最终实际拒绝文案，通过时为空字符串，保留事件原有正文和 token 用量。结果仅用于告知客户端，无法撤回已经发送的内容。
+
+上游未提供 `usage` 时，在流结束时执行审核：
+
+- **OpenAI Chat Completions：**在 `[DONE]` 前插入一个携带 `risk_level`、`deny_message` 和全零 `usage` 的 `chat.completion.chunk`。这是 `choices: []` 的空用量包，拒绝文案仅通过顶层 `deny_message` 字段返回，不追加正文，也不改变上游结束原因。
+- **Anthropic Messages：**在 `message_stop` 前补一个携带 `risk_level`、`deny_message`、全零 `usage` 和原始结束信息的 `message_delta`，不重放内容块或 `message_start`。
+- **OpenAI Responses：**在现有 `response.completed` 事件中附加 `risk_level` 和 `deny_message`，保留原始输出和用量。EOF 时若没有 `response.completed`，不合成完成响应。
+
+客户端需读取至流终止符才能获取注入结果。有用量的流只在原事件追加字段，不额外补结果包，因此客户端收到的用量不变。新结果事件使用零用量；网关计费仍使用上游用量。审核失败且没有返回风险等级时不伪造结果；上游错误事件保留，中断的流不合成终止符。
+
+请从 SSE 事件读取审核扩展字段。例如，OpenAI Python SDK 的 `responses.create(stream=True)` 会保留 Responses 扩展字段，但更高层的 `responses.stream()` 封装可能丢弃未知的顶层字段。
+
 ## 示例
 
 以下示例使用 OpenAI 作为上游服务提供商。在开始之前，请创建一个 [OpenAI 账号](https://openai.com) 并获取 [API 密钥](https://openai.com/blog/openai-api)。如果你使用其他 LLM 提供商，请参考相应提供商的文档获取 API 密钥。

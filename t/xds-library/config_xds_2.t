@@ -131,6 +131,7 @@ hello world
 --- config
     location /t {
         content_by_lua_block {
+            ngx.sleep(1.5)
             local core = require("apisix.core")
             ngx.shared["xds-config"]:flush_all()
             ngx.update_time()
