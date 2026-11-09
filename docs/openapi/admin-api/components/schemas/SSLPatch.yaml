@@ -1,0 +1,124 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+type: object
+properties:
+  snis:
+    anyOf:
+      - items:
+          pattern: ^\*$|^\*?[0-9a-zA-Z-._\[\]:]+$
+          type: string
+        minItems: 1
+        type: array
+      - type: "null"
+  ssl_protocols:
+    anyOf:
+      - items:
+          enum:
+            - TLSv1.1
+            - TLSv1.2
+            - TLSv1.3
+        maxItems: 3
+        description: set ssl protocols
+        uniqueItems: true
+        type: array
+      - type: "null"
+  key:
+    anyOf:
+      - $ref: ./PrivateKeyOrReference.yaml
+      - type: "null"
+    description: PEM-encoded private key, APISIX secret/environment reference, or null to remove the field.
+  labels:
+    anyOf:
+      - type: object
+      - type: "null"
+  status:
+    anyOf:
+      - description: ssl status, 1 to enable, 0 to disable
+        enum:
+          - 1
+          - 0
+        type: integer
+      - type: "null"
+  cert:
+    anyOf:
+      - $ref: ./CertificateOrReference.yaml
+      - type: "null"
+    description: PEM-encoded certificate, APISIX secret/environment reference, or null to remove the field.
+  client:
+    anyOf:
+      - type: object
+        properties:
+          ca:
+            anyOf:
+              - $ref: ./CertificateOrReference.yaml
+              - type: "null"
+            description: PEM-encoded CA certificate, APISIX secret/environment reference, or null to remove the field.
+          skip_mtls_uri_regex:
+            anyOf:
+              - uniqueItems: true
+                minItems: 1
+                items:
+                  type: string
+                  description: uri regular expression to skip mtls
+                type: array
+              - type: "null"
+          depth:
+            anyOf:
+              - minimum: 0
+                type: integer
+              - type: "null"
+      - type: "null"
+  sni:
+    anyOf:
+      - pattern: ^\*$|^\*?[0-9a-zA-Z-._\[\]:]+$
+        type: string
+      - type: "null"
+  certs:
+    anyOf:
+      - items:
+          $ref: ./CertificateOrReference.yaml
+        type: array
+      - type: "null"
+  keys:
+    anyOf:
+      - items:
+          $ref: ./PrivateKeyOrReference.yaml
+        type: array
+      - type: "null"
+  desc:
+    anyOf:
+      - maxLength: 256
+        type: string
+      - type: "null"
+  type:
+    anyOf:
+      - enum:
+          - server
+          - client
+        description: ssl certificate type, server to server certificate, client to client certificate for upstream
+        type: string
+      - type: "null"
+  id:
+    $ref: ./ResourceId.yaml
+  create_time:
+    type: integer
+    readOnly: true
+  update_time:
+    type: integer
+    readOnly: true
+additionalProperties: false
+description: Recursive merge fragment. Null deletes object fields; arrays are replaced. APISIX validates the resulting resource, including plugin and reference checks.

@@ -43,6 +43,8 @@ description:  本文将介绍 prometheus 插件，以及将 APISIX 与 Prometheu
 
 prompt token 和 completion token 直方图的默认桶边界为 `1`、`10`、`50`、`100`、`200`、`500`、`1000`、`2000`、`5000`、`10000`、`20000`、`50000`、`100000`、`200000`、`500000` 和 `1000000` 个 token。如果这些边界不适合实际负载，可通过 `llm_prompt_tokens_buckets` 和 `llm_completion_tokens_buckets` 自定义。
 
+`remove_expired_keys_interval` 控制 HTTP 和 stream worker 的过期指标清理间隔，默认 3600 秒；更大的值按 3600 秒处理，非正数关闭清理。间隔为正数时，自动回收保持开启。此配置与控制指标输出缓存的 `refresh_interval` 独立。缩短间隔可以更早回收过期条目，但会增加共享字典扫描频率。共享字典的实例使用相同间隔；reload 时缩短间隔后，回收仍可能等待原间隔结束。
+
 要自定义这些值，请将相应的配置添加到 config.yaml 中。例如：
 
 ```yaml
@@ -50,6 +52,7 @@ plugin_attr:
   prometheus:                               # 插件：prometheus 属性
     export_uri: /apisix/prometheus/metrics  # 设置 Prometheus 指标端点的 URI。
     metric_prefix: apisix_                  # 设置 APISIX 生成的 Prometheus 指标的前缀。
+    remove_expired_keys_interval: 3600       # 过期指标清理间隔，单位为秒。
     enable_export_server: true              # 启用 Prometheus 导出服务器。
     export_addr:                            # 设置 Prometheus 导出服务器的地址。
       ip: 127.0.0.1                         # 设置 IP。
@@ -258,6 +261,8 @@ UDP 没有关闭、FIN 或重置信号，因此只会出现其中一部分状态
 | type | 相对 APISIX 的方向，与 `apisix_bandwidth` 一致：`ingress` 表示 APISIX 接收的字节，`egress` 表示 APISIX 发送的字节。 |
 
 在普通转发中，`downstream`/`ingress` 通常对应 `upstream`/`egress`，`upstream`/`ingress` 通常对应 `downstream`/`egress`；持续不一致可能表示某一侧停止读取。
+
+每个 Service 从其第一个会话起计入，包括在下一个 `refresh_interval` 之前就已结束的会话。
 
 ### `apisix_bandwidth` 的标签
 

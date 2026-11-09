@@ -15,7 +15,7 @@
 -- limitations under the License.
 --
 local core         = require("apisix.core")
-local http         = require("resty.http")
+local fetch        = require("apisix.plugins.openapi-to-mcp.fetch")
 local json_pretty  = require("apisix.plugins.openapi-to-mcp.json_pretty")
 local pairs        = pairs
 local ipairs       = ipairs
@@ -27,6 +27,7 @@ local str_upper    = string.upper
 local str_gsub     = string.gsub
 local str_gmatch   = string.gmatch
 local str_find     = string.find
+local str_sub      = string.sub
 local table_concat = table.concat
 local table_sort   = table.sort
 local escape_uri   = ngx.escape_uri
@@ -34,6 +35,9 @@ local escape_uri   = ngx.escape_uri
 local _M = {}
 
 local DEFAULT_TIMEOUT = 30000
+
+-- How much of an upstream response is read before the call is failed.
+local DEFAULT_MAX_BODY = 1024 * 1024
 local NESTED_KEYS = { "pathParameters", "queryParameters", "headerParameters" }
 
 
@@ -71,7 +75,23 @@ end
 -- Whether the caller used the flat or the nested argument shape is decided by
 -- the arguments themselves, not by the plugin's flatten_parameters setting.
 -- A client that sends flat arguments to a nested tool therefore still works.
+local function container(arguments, key)
+    local value = arguments[key]
+    return type(value) == "table" and value or {}
+end
+
+
+-- Both shapes are filtered against what the operation declares. The generated
+-- input schema does not forbid extra properties, and an operation that declares
+-- no header parameter gets no headerParameters container to constrain either,
+-- so an argument the document never mentioned would otherwise reach the API --
+-- letting a caller add or replace request headers, the route's credentials
+-- among them.
 local function split_arguments(tool, arguments)
+    local path_names = path_param_names(tool.path_template)
+    local query_names = names_by_location(tool, "query")
+    local header_names = names_by_location(tool, "header")
+
     local nested = false
     for _, key in ipairs(NESTED_KEYS) do
         if arguments[key] ~= nil then
@@ -81,14 +101,14 @@ local function split_arguments(tool, arguments)
     end
 
     if nested then
-        return type(arguments.pathParameters) == "table" and arguments.pathParameters or {},
-               type(arguments.queryParameters) == "table" and arguments.queryParameters or {},
-               type(arguments.headerParameters) == "table" and arguments.headerParameters or {}
+        return pick(container(arguments, "pathParameters"), path_names),
+               pick(container(arguments, "queryParameters"), query_names),
+               pick(container(arguments, "headerParameters"), header_names)
     end
 
-    return pick(arguments, path_param_names(tool.path_template)),
-           pick(arguments, names_by_location(tool, "query")),
-           pick(arguments, names_by_location(tool, "header"))
+    return pick(arguments, path_names),
+           pick(arguments, query_names),
+           pick(arguments, header_names)
 end
 
 
@@ -105,12 +125,140 @@ local function apply_query_defaults(tool, query)
 end
 
 
-local function build_path(template, path_params)
+-- A separator in a path parameter is percent-encoded, but servers disagree on
+-- whether to preserve it as data or decode it into path syntax. The secure
+-- default is to reject it; a Route may opt in for an API that deliberately
+-- accepts encoded separators.
+local function has_separator(value)
+    -- core.string.find is a plain search; this is a pattern, so it needs
+    -- string.find itself. A backslash is a separator on some servers.
+    return str_find(value, "[/\\]") ~= nil
+end
+
+
+-- Even with encoded separators enabled, refuse values whose components would
+-- be resolved away after a server decodes them. Empty components cover leading,
+-- trailing and repeated separators. Both slash spellings are considered: a
+-- backslash is a separator on some servers.
+local function resolved_away(segment)
+    return segment == "" or segment == "." or segment == ".."
+end
+
+
+local function separator_creates_unsafe_component(value)
+    if not has_separator(value) then
+        return false
+    end
+
+    for component in str_gmatch(value .. "/", "([^/\\]*)[/\\]") do
+        if resolved_away(component) then
+            return true
+        end
+    end
+    return false
+end
+
+
+-- Return everything before one of the given URI delimiters. A template
+-- expression name may itself contain a delimiter, so only one outside braces
+-- counts. Parameter values cannot introduce one: escape_uri encodes them.
+local function before_uri_delimiter(value, delimiters)
+    local in_expression = false
+    for index = 1, #value do
+        local char = str_sub(value, index, index)
+        if char == "{" then
+            in_expression = true
+        elseif char == "}" then
+            in_expression = false
+        elseif not in_expression and str_find(delimiters, char, 1, true) then
+            return str_sub(value, 1, index - 1)
+        end
+    end
+    return value
+end
+
+
+local function uri_path(value)
+    return before_uri_delimiter(value, "?#")
+end
+
+
+local function without_fragment(value)
+    return before_uri_delimiter(value, "#")
+end
+
+
+-- The segments of a path, with the empty one a leading or trailing slash
+-- leaves: "/items/x" is { "", "items", "x" }.
+local function path_segments(value)
+    local segments = {}
+    local path = uri_path(value)
+    for segment in str_gmatch(path .. "/", "([^/]*)/") do
+        segments[#segments + 1] = segment
+    end
+    return segments
+end
+
+
+-- The segments of a path template. Only a slash outside braces separates them,
+-- because a template expression name may contain one: the OpenAPI grammar for
+-- the name admits every character except a brace, so "/x/{a/b}/{c}" declares
+-- two expressions rather than three segments. Splitting on every slash would
+-- shift every later entry, which both skips the segment "{c}" fills and
+-- attributes a literal segment of the template to an expression.
+--
+-- A parameter value cannot shift them: a separator in one is either refused or
+-- percent-encoded, so the substituted path keeps this segment count.
+local function template_segments(template)
+    local segments = {}
+    local path = uri_path(template)
+    local in_expression = false
+    local start = 1
+    for index = 1, #path do
+        local char = str_sub(path, index, index)
+        if char == "{" then
+            in_expression = true
+        elseif char == "}" then
+            in_expression = false
+        elseif char == "/" and not in_expression then
+            segments[#segments + 1] = str_sub(path, start, index - 1)
+            start = index + 1
+        end
+    end
+    segments[#segments + 1] = str_sub(path, start)
+    return segments
+end
+
+
+-- A server receiving the request resolves "." and ".." away, but only where
+-- one is a whole segment. A template expression may fill part of a segment,
+-- and "{name}.json" filled with ".." comes out as "...json", which addresses
+-- nothing else, so the value alone does not say whether it moves the request.
+-- The finished path does.
+--
+-- Only the segments an expression helped build are checked: one the template
+-- contributes by itself is not the caller's to shift. Encoded separators do
+-- not add a literal slash to the finished path, so the segment lists still
+-- line up by index when the Route opts in to them.
+local function build_path(template, path_params, allow_encoded_separators)
     local path = template
+    local declared_path = uri_path(template)
     for name, value in pairs(path_params) do
+        local text = tostring(value)
+        local expression = "{" .. name .. "}"
+        local is_in_path = str_find(declared_path, expression, 1, true) ~= nil
+        if is_in_path and has_separator(text) and not allow_encoded_separators then
+            return nil, "path parameter " .. name .. " cannot contain a path separator"
+        end
+        if is_in_path and allow_encoded_separators
+           and separator_creates_unsafe_component(text)
+        then
+            return nil, "path parameter " .. name ..
+                        " cannot contain an empty or dot path component"
+        end
         -- the name is a literal, so escape any pattern magic in it
         local pattern = "{" .. str_gsub(name, "([%^%$%(%)%%%.%[%]%*%+%-%?])", "%%%1") .. "}"
-        local escaped = escape_uri(tostring(value))
+        local escaped = escape_uri(text)
         -- The replacement has to be a function: percent-encoding produces "%2F"
         -- and friends, and gsub would read those as capture references in a
         -- string replacement and raise "invalid capture index".
@@ -118,7 +266,22 @@ local function build_path(template, path_params)
             return escaped
         end)
     end
-    return path
+
+    local declared = template_segments(template)
+    for index, segment in ipairs(path_segments(path)) do
+        local from_template = declared[index]
+        if from_template and str_find(from_template, "{", 1, true)
+           and resolved_away(segment)
+        then
+            return nil, "path parameter in segment " .. from_template ..
+                        " cannot produce an empty or dot path segment"
+        end
+    end
+
+    -- A URI fragment is client-side metadata and must not be sent in an HTTP
+    -- request target. A literal hash can only come from the template because
+    -- hashes in parameter values have already been percent-encoded.
+    return without_fragment(path)
 end
 
 
@@ -283,31 +446,99 @@ local function text_result(payload, is_error)
 end
 
 
-local function has_header(headers, lower_name)
-    for key in pairs(headers) do
-        if str_lower(key) == lower_name then
-            return true
-        end
+-- Headers a tool call may not contribute, whatever the document declares.
+--
+-- The framing ones decide where this request ends and the next one begins.
+-- resty.http drops Content-Length as soon as a Transfer-Encoding says chunked
+-- and then writes the body exactly as given, unchunked: the caller would be
+-- writing the frame boundaries of a request the gateway is sending, and the
+-- connection goes back to the pool afterwards for the next tool call to reuse.
+-- A short Content-Length does the same thing by leaving the rest of the body
+-- to be read as another request.
+--
+-- The rest are hop-by-hop, or belong to the connection the gateway opened
+-- rather than to the call: Host picks the virtual host, Connection and Upgrade
+-- decide what happens to the connection itself.
+--
+-- This applies to the arguments of a call, not to the Route's own headers: an
+-- operator naming one of these means it.
+local FORBIDDEN_PARAM_HEADERS = {
+    ["transfer-encoding"] = true,
+    ["content-length"] = true,
+    ["connection"] = true,
+    ["keep-alive"] = true,
+    ["host"] = true,
+    ["upgrade"] = true,
+    ["expect"] = true,
+    ["te"] = true,
+    ["trailer"] = true,
+    ["proxy-authenticate"] = true,
+    ["proxy-authorization"] = true,
+}
+
+
+-- Writes a header under one spelling per name.
+--
+-- Header names are case-insensitive, and the client normalises them at the
+-- end, so "Authorization" and "authorization" are the same header there but
+-- two keys in a plain Lua table. Both would survive to the client, which
+-- resolves the collision in pairs() order -- the caller's copy would win
+-- whenever the hash order put it last, and the Route's credential would be the
+-- one replaced. Keeping one entry per lowercased name makes the later write
+-- the one that counts, which is what "the Route's headers win" requires.
+local function put_header(headers, seen, name, value)
+    local lower = str_lower(name)
+    local spelling = seen[lower]
+    if spelling then
+        headers[spelling] = value
+        return
     end
-    return false
+    seen[lower] = name
+    headers[name] = value
 end
 
 
+-- Returns the tool result, or nil plus a message for an argument that cannot
+-- be sent at all.
 function _M.call(tool, arguments, opts)
     arguments = type(arguments) == "table" and arguments or {}
 
     local path_params, query_params, header_params = split_arguments(tool, arguments)
     apply_query_defaults(tool, query_params)
 
-    local path = build_path(tool.path_template, path_params)
+    local allow_encoded_separators = opts.conf and
+                                     opts.conf.allow_encoded_path_separators == true
+    local path, path_err = build_path(tool.path_template, path_params,
+                                      allow_encoded_separators)
+    if not path then
+        core.log.warn("rejected an openapi-to-mcp tool call: ", path_err)
+        return nil, path_err
+    end
     local query = build_query(tool, query_params)
 
-    local headers = {}
-    for key, value in pairs(opts.headers or {}) do
-        headers[key] = value
-    end
+    -- Header parameters are written first so that the route's own headers win:
+    -- they carry the credentials the gateway adds, and a tool call must not be
+    -- able to replace them. Both sources are checked: a route header is a
+    -- template resolved against the request, so its value is not fixed either.
+    local headers, seen = {}, {}
     for key, value in pairs(header_params) do
-        headers[key] = tostring(value)
+        if FORBIDDEN_PARAM_HEADERS[str_lower(key)] then
+            core.log.warn("dropped the header parameter ", key,
+                          ": a tool call cannot set this header")
+        elseif fetch.header_is_sane(key, value) then
+            put_header(headers, seen, key, tostring(value))
+        else
+            core.log.warn("dropped a header parameter whose name or value ",
+                          "cannot appear in a request header")
+        end
+    end
+    for key, value in pairs(opts.headers or {}) do
+        if fetch.header_is_sane(key, value) then
+            put_header(headers, seen, key, value)
+        else
+            core.log.warn("dropped a configured header whose resolved name or ",
+                          "value cannot appear in a request header")
+        end
     end
 
     local body = arguments.requestBody
@@ -317,8 +548,9 @@ function _M.call(tool, arguments, opts)
         end
         -- Label the body with the media type the operation declares, unless the
         -- route's headers or a header parameter already set one.
-        if not has_header(headers, "content-type") then
-            headers["Content-Type"] = tool.request_body_content_type or "application/json"
+        if not seen["content-type"] then
+            put_header(headers, seen, "Content-Type",
+                       tool.request_body_content_type or "application/json")
         end
     end
 
@@ -331,22 +563,12 @@ function _M.call(tool, arguments, opts)
         url = url .. "?" .. query
     end
 
-    local httpc, client_err = http.new()
-    if not httpc then
-        return text_result({
-            status = 0,
-            statusText = "Network Error",
-            headers = {},
-            data = core.json.null,
-            error = { message = tostring(client_err), code = "NETWORK_ERROR" },
-        })
-    end
-    httpc:set_timeout(opts.timeout or DEFAULT_TIMEOUT)
-
-    local res, req_err = httpc:request_uri(url, {
+    local res, req_err = fetch.request(url, {
         method = str_gsub(str_lower(tool.method), "^%l", str_upper),
         headers = headers,
         body = body,
+        timeout = opts.timeout or DEFAULT_TIMEOUT,
+        max_body_size = (opts.conf and opts.conf.max_response_body_size) or DEFAULT_MAX_BODY,
     })
 
     if not res then
@@ -359,6 +581,21 @@ function _M.call(tool, arguments, opts)
             data = core.json.null,
             error = { message = tostring(req_err), code = "NETWORK_ERROR" },
         })
+    end
+
+    if res.truncated then
+        local limit = (opts.conf and opts.conf.max_response_body_size) or DEFAULT_MAX_BODY
+        core.log.warn("upstream response exceeded max_response_body_size (", limit, " bytes)")
+        return text_result({
+            status = res.status,
+            statusText = res.reason or "",
+            headers = lower_headers(res.headers),
+            data = core.json.null,
+            error = {
+                message = "response body exceeds max_response_body_size (" .. limit .. " bytes)",
+                code = "RESPONSE_TOO_LARGE",
+            },
+        }, true)
     end
 
     return text_result({

@@ -40,6 +40,10 @@ The `ai-prompt-guard` Plugin safeguards your LLM endpoints by inspecting and val
 
 When both `allow_patterns` and `deny_patterns` are configured, the Plugin first ensures that at least one `allow_patterns` is matched. If none match, the request is rejected. If an allowed pattern is matched, it then checks for any occurrences of denied patterns.
 
+For Embeddings requests, the Plugin checks a string `input` or all strings in an `input` array. Batch items are joined with spaces and checked together, regardless of `match_all_conversation_history`. Allow patterns apply to this combined text; a denied pattern anywhere in the batch rejects the request.
+
+When no content is selected for inspection, the request continues upstream. This includes messages excluded by role filtering and Embeddings inputs containing only token IDs, which the Plugin does not decode into text. `fail_mode: "error"` applies to unrecognized protocols; it does not reject recognized requests solely because no text was selected.
+
 ## Plugin Attributes
 
 | Name | Type | Required | Default | Valid values | Description |
