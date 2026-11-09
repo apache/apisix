@@ -362,3 +362,37 @@ session.cookie.lifetime is deprecated
     }
 --- response_body_like
 .*cookie_same_site.*
+
+
+
+=== TEST 13: build_session_opts disables the revocation error cache with the lookup cache
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local build = plugin._build_session_opts
+            local secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK"
+
+            local opts = build({secret = secret, revocation = "redis",
+                                revocation_cache_ttl = 0,
+                                revocation_error_cache_ttl = 5})
+            ngx.say("ttl 0: ", opts.revocation_cache_ttl, " ", opts.revocation_error_cache_ttl)
+
+            opts = build({secret = secret, revocation = "redis",
+                          revocation_cache_ttl = 3,
+                          revocation_error_cache_ttl = 5})
+            ngx.say("ttl 3: ", opts.revocation_cache_ttl, " ", opts.revocation_error_cache_ttl)
+
+            opts = build({secret = secret, revocation = "redis"})
+            ngx.say("unset: ", tostring(opts.revocation_cache_ttl), " ",
+                    tostring(opts.revocation_error_cache_ttl))
+
+            opts = build({secret = secret, revocation_cache_ttl = 0})
+            ngx.say("no revocation: ", tostring(opts.revocation_error_cache_ttl))
+        }
+    }
+--- response_body
+ttl 0: 0 0
+ttl 3: 3 5
+unset: nil nil
+no revocation: nil
