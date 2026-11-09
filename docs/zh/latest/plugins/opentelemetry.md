@@ -37,9 +37,39 @@ description: opentelemetry 插件可用于根据 OpenTelemetry 协议规范上�
 
 ## 启用 opentelemetry 插件
 
-`opentelemetry` 插件默认处于禁用状态。在 `conf/config.yaml` 中保留部署使用的完整插件列表，并添加 `opentelemetry`。如果以 `conf/config.yaml.example` 为基础配置 APISIX，请取消注释已有的 `opentelemetry` 条目。
+`opentelemetry` 插件默认处于禁用状态。在配置插件元数据或使用该插件的路由之前，请先在 APISIX 静态配置中加载该插件。
+
+### 主机或 Docker
+
+在 `conf/config.yaml` 中保留部署使用的完整插件列表，并添加 `opentelemetry`。如果以 `conf/config.yaml.example` 为基础配置 APISIX，请取消注释已有的条目：
+
+```yaml title="config.yaml"
+plugins:
+  # 保留部署使用的完整插件列表。
+  - opentelemetry
+```
 
 重新加载 APISIX 以使更改生效。
+
+### 使用 Helm 的 Kubernetes
+
+`apisix.plugins` 会替换已加载的插件列表。请从部署使用的完整列表开始，并添加 `opentelemetry`：
+
+```yaml title="values.yaml"
+apisix:
+  plugins:
+    # 保留部署使用的完整插件列表。
+    - opentelemetry
+```
+
+使用 APISIX Helm Chart 应用 values 文件，并将占位符替换为已安装的发布名称和 Chart 版本：
+
+```shell
+helm upgrade <release-name> <chart-name> \
+  --version <chart-version> \
+  -n <namespace> \
+  -f values.yaml
+```
 
 ## 配置
 

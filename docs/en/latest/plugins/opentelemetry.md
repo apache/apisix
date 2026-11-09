@@ -38,9 +38,39 @@ The Plugin only supports binary-encoded [OTLP over HTTP](https://opentelemetry.i
 
 ## Enable `opentelemetry` Plugin
 
-The `opentelemetry` Plugin is disabled by default. In `conf/config.yaml`, keep the complete list of Plugins used by your deployment and add `opentelemetry`. If you are starting from `conf/config.yaml.example`, uncomment the existing `opentelemetry` entry.
+The `opentelemetry` Plugin is disabled by default. Load it in the APISIX static configuration before configuring Plugin Metadata or Routes that use it.
+
+### Host or Docker
+
+In `conf/config.yaml`, keep the complete Plugin list used by your deployment and add `opentelemetry`. If you are starting from `conf/config.yaml.example`, uncomment the existing entry:
+
+```yaml title="config.yaml"
+plugins:
+  # Keep the complete Plugin list used by your deployment.
+  - opentelemetry
+```
 
 Reload APISIX for the change to take effect.
+
+### Kubernetes with Helm
+
+The `apisix.plugins` value replaces the loaded Plugin list. Start from the complete list used by your deployment and add `opentelemetry`:
+
+```yaml title="values.yaml"
+apisix:
+  plugins:
+    # Keep the complete Plugin list used by your deployment.
+    - opentelemetry
+```
+
+Apply the values file with the APISIX Helm chart, replacing the placeholders with the installed release and chart version:
+
+```shell
+helm upgrade <release-name> <chart-name> \
+  --version <chart-version> \
+  -n <namespace> \
+  -f values.yaml
+```
 
 ## Configurations
 
