@@ -380,7 +380,7 @@ Cookie 会话存储在客户端，APISIX 通常无法单独将其失效。要启
 }
 ```
 
-`revocation_fail_mode` 默认为 `open`，即吊销存储不可用时继续接受会话。使用 `closed` 则会拒绝打开和销毁会话。`revocation_cache_ttl` 是成功查询的 worker 本地 TTL；`revocation_error_cache_ttl` 是存储错误的 TTL。省略 `revocation` 即不启用 Cookie 会话吊销。
+`revocation_fail_mode` 默认为 `open`，即吊销存储不可用时继续接受会话。使用 `closed` 则会拒绝打开和销毁会话。打开 Cookie 会话时会查询吊销存储，因此每个 worker 会缓存最近的查询结果，避免每个请求都访问一次 Redis。`revocation_cache_ttl` 是成功查询的 worker 本地 TTL，`revocation_error_cache_ttl` 是存储错误的 TTL。登出在处理该请求的 worker 上立即生效，在其他 worker 上则在其缓存条目过期后生效，因此 `revocation_cache_ttl` 也是已吊销会话在其他 worker 上仍可能被接受的最长时间。将 `revocation_cache_ttl` 设为 `0` 则每个请求都查询 Redis，此时错误缓存也会被禁用。省略 `revocation` 即不启用 Cookie 会话吊销。
 
 ### 使用 PAR 和 DPoP 的授权码流程
 

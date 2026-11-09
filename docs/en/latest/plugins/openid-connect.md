@@ -381,7 +381,7 @@ Cookie sessions are stored by the client and cannot normally be invalidated indi
 }
 ```
 
-`revocation_fail_mode` defaults to `open`, which continues accepting sessions if the revocation store is unavailable. Use `closed` to reject session open and destroy operations instead. `revocation_cache_ttl` is the worker-local TTL for successful lookups; `revocation_error_cache_ttl` is the TTL for store errors. Omit `revocation` to leave cookie-session revocation disabled.
+`revocation_fail_mode` defaults to `open`, which continues accepting sessions if the revocation store is unavailable. Use `closed` to reject session open and destroy operations instead. Opening a cookie session checks the revocation store, so each worker keeps a small cache of recent lookups to avoid one Redis call per request. `revocation_cache_ttl` is the worker-local TTL for successful lookups, and `revocation_error_cache_ttl` is the TTL for store errors. A logout takes effect immediately on the worker that handled it and on other workers once their cached entry expires, so `revocation_cache_ttl` is also the longest a revoked session can still be accepted elsewhere. Set `revocation_cache_ttl` to `0` to check Redis on every request; the error cache is then disabled as well. Omit `revocation` to leave cookie-session revocation disabled.
 
 ### Authorization Code Flow with PAR and DPoP
 
