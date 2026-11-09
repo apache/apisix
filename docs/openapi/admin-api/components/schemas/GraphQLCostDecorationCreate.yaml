@@ -1,0 +1,63 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+type: object
+description: Request to create a decoration with an automatically generated ID. Omit `id` and timestamps. Ownership comes from the service ID in the URL.
+properties:
+  service_id:
+    $ref: ./ResourceId.yaml
+    description: ID of the owning service, set from the URL. Omit when creating or replacing; cannot be patched.
+  field_path:
+    type: string
+    pattern: ^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)*$
+    description: Position in the GraphQL schema. A type name weights fields returning that type; a type and field name weights that field; further segments restrict the selection chain. `Query` or `Mutation` alone weights the whole operation.
+    examples:
+      - Query.products
+      - Product.reviews
+  add_value:
+    type: number
+    minimum: 0
+    default: 1
+    description: The node's own cost.
+  add_arguments:
+    type: array
+    items:
+      type: string
+      minLength: 1
+    description: Arguments whose values are added to `add_value`.
+  mul_value:
+    type: number
+    minimum: 0
+    default: 1
+    description: Multiplier applied to the cost of selected children.
+  mul_arguments:
+    type: array
+    items:
+      type: string
+      minLength: 1
+    description: Arguments whose values multiply `mul_value`. Under `node_quantifier`, these quantifiers carry to deeper quantified nodes.
+  name:
+    type: string
+    maxLength: 256
+    minLength: 1
+  desc:
+    type: string
+    maxLength: 256
+  labels:
+    $ref: ./Labels.yaml
+required:
+  - field_path
+additionalProperties: false

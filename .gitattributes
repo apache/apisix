@@ -1,1 +1,2 @@
 t/**/*.t linguist-vendored
+docs/en/latest/admin-api.json linguist-generated=true

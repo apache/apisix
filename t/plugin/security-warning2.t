@@ -568,10 +568,12 @@ Keeping tls disabled in tcp-logger configuration is a security risk
         content_by_lua_block {
             local plugin = require("apisix.plugins.wolf-rbac")
             local conf = {
+                appid = "wolf-rbac-app",
                 server = "http://127.0.0.1:12180"
             }
 
-            local ok, err = plugin.check_schema(conf)
+            local ok, err = plugin.check_schema(conf,
+                require("apisix.core").schema.TYPE_CONSUMER)
             if not ok then
                 ngx.say(err)
             end
@@ -580,7 +582,7 @@ Keeping tls disabled in tcp-logger configuration is a security risk
         }
     }
 --- response_body_like eval
-qr/\{"appid":"unset","header_prefix":"X-","server":"http:\/\/127\.0\.0\.1:12180"\}/
+qr/\{"appid":"wolf-rbac-app","server":"http:\/\/127\.0\.0\.1:12180"\}/
 --- error_log
 Using wolf-rbac server with no TLS is a security risk
 

@@ -79,11 +79,11 @@ passed
 --- timeout: 300
 --- max_size: 2048000
 --- exec
-cd t && pnpm test plugin/openapi-to-mcp-interop.spec.mts 2>&1
+cd t && pnpm test --no-color plugin/openapi-to-mcp-interop.spec.ts 2>&1
 --- no_error_log
 failed to execute the script with status
 --- response_body eval
-qr/Tests:\s+(\d+) passed, \1 total/
+qr/Tests\s+(\d+) passed \(\1\)/
 
 
 
