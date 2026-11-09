@@ -1063,7 +1063,7 @@ APISIX 支持两种不同的方式来代理 WebSocket 连接，二者不能混�
 - `scheme` 可以设置成 `tls`，表示 `TLS over TCP`。
 - `tls.client_cert/key` 可以用来跟上游进行 mTLS 通信。他们的格式和 SSL 对象的 `cert` 和 `key` 一样。
 - `tls.client_cert_id` 可以用来指定引用的 SSL 对象。只有当 SSL 对象的 `type` 字段为 client 时才能被引用，否则请求会被 APISIX 拒绝。另外，SSL 对象中只有 `cert` 和 `key` 会被使用。
-- `tls.verify` 设置为 `true` 时校验上游返回的证书；不设置时沿用 nginx 的行为，即只有开启了 `proxy_ssl_verify` 才会校验。校验使用 `tls.ca_certs` 中的 CA 证书，未设置 `tls.ca_certs` 时使用 `config.yaml` 中的 `ssl_trusted_certificate`：
+- `tls.verify` 设置为 `true` 时校验上游返回的证书；不设置时沿用 nginx 的行为，即只有开启了 `proxy_ssl_verify` 才会校验。校验使用 `tls.ca_certs` 中的 CA 证书，未设置 `tls.ca_certs` 时使用 `config.yaml` 中的 `ssl_trusted_certificate`，此时 nginx 中通过 `proxy_ssl_crl`（gRPC 为 `grpc_ssl_crl`）配置的 CRL 同样生效：
 
   ```json
   {
@@ -1344,7 +1344,7 @@ SSL 资源请求地址：/apisix/admin/ssls/{id}
 | keys        | 否   | 私钥字符串数组 | `certs` 对应的证书私钥，需要与 `certs` 一一对应。该字段支持使用 [APISIX Secret](./terminology/secret.md) 资源，将值保存在 Secret Manager 中。                                                          |                                                  |
 | client.ca   | 否   | 证书 |  设置将用于客户端证书校验的 `CA` 证书。该特性需要 OpenResty 为 1.19 及以上版本。  |                                                  |
 | client.depth | 否   | 辅助 |  设置客户端证书校验的深度，默认为 1。该特性需要 OpenResty 为 1.19 及以上版本。 |                                             |
-| client.skip_mtls_uri_regex | 否   | PCRE 正则表达式数组 |  用来匹配请求的 URI，如果匹配，则该请求将绕过客户端证书的检查，也就是跳过 MTLS。 | ["/hello[0-9]+", "/foobar"]                                            |
+| client.skip_mtls_uri_regex | 否   | PCRE 正则表达式数组 |  用来匹配请求的 URI，如果匹配，则该请求将绕过客户端证书的检查，也就是跳过 MTLS。启用 `match_uri_encoded_slash` 时，包含编码斜杠（`%2F`）的 URI 需要在解码形式和保留 `%2F` 的形式下都匹配。 | ["/hello[0-9]+", "/foobar"]                                            |
 | snis        | 是   | 匹配规则       | 非空数组形式，可以匹配多个 SNI。                                                                         |                                                  |
 | desc        | 否   | 辅助          | 证书描述。        | certs for production env                                               |
 | labels      | 否   | 匹配规则       | 标识附加属性的键值对。                                                                                   | {"version":"v2","build":"16","env":"production"} |

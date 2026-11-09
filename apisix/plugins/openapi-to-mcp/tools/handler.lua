@@ -27,6 +27,7 @@ local str_upper    = string.upper
 local str_gsub     = string.gsub
 local str_gmatch   = string.gmatch
 local str_find     = string.find
+local str_sub      = string.sub
 local table_concat = table.concat
 local table_sort   = table.sort
 local escape_uri   = ngx.escape_uri
@@ -124,12 +125,140 @@ local function apply_query_defaults(tool, query)
 end
 
 
-local function build_path(template, path_params)
+-- A separator in a path parameter is percent-encoded, but servers disagree on
+-- whether to preserve it as data or decode it into path syntax. The secure
+-- default is to reject it; a Route may opt in for an API that deliberately
+-- accepts encoded separators.
+local function has_separator(value)
+    -- core.string.find is a plain search; this is a pattern, so it needs
+    -- string.find itself. A backslash is a separator on some servers.
+    return str_find(value, "[/\\]") ~= nil
+end
+
+
+-- Even with encoded separators enabled, refuse values whose components would
+-- be resolved away after a server decodes them. Empty components cover leading,
+-- trailing and repeated separators. Both slash spellings are considered: a
+-- backslash is a separator on some servers.
+local function resolved_away(segment)
+    return segment == "" or segment == "." or segment == ".."
+end
+
+
+local function separator_creates_unsafe_component(value)
+    if not has_separator(value) then
+        return false
+    end
+
+    for component in str_gmatch(value .. "/", "([^/\\]*)[/\\]") do
+        if resolved_away(component) then
+            return true
+        end
+    end
+    return false
+end
+
+
+-- Return everything before one of the given URI delimiters. A template
+-- expression name may itself contain a delimiter, so only one outside braces
+-- counts. Parameter values cannot introduce one: escape_uri encodes them.
+local function before_uri_delimiter(value, delimiters)
+    local in_expression = false
+    for index = 1, #value do
+        local char = str_sub(value, index, index)
+        if char == "{" then
+            in_expression = true
+        elseif char == "}" then
+            in_expression = false
+        elseif not in_expression and str_find(delimiters, char, 1, true) then
+            return str_sub(value, 1, index - 1)
+        end
+    end
+    return value
+end
+
+
+local function uri_path(value)
+    return before_uri_delimiter(value, "?#")
+end
+
+
+local function without_fragment(value)
+    return before_uri_delimiter(value, "#")
+end
+
+
+-- The segments of a path, with the empty one a leading or trailing slash
+-- leaves: "/items/x" is { "", "items", "x" }.
+local function path_segments(value)
+    local segments = {}
+    local path = uri_path(value)
+    for segment in str_gmatch(path .. "/", "([^/]*)/") do
+        segments[#segments + 1] = segment
+    end
+    return segments
+end
+
+
+-- The segments of a path template. Only a slash outside braces separates them,
+-- because a template expression name may contain one: the OpenAPI grammar for
+-- the name admits every character except a brace, so "/x/{a/b}/{c}" declares
+-- two expressions rather than three segments. Splitting on every slash would
+-- shift every later entry, which both skips the segment "{c}" fills and
+-- attributes a literal segment of the template to an expression.
+--
+-- A parameter value cannot shift them: a separator in one is either refused or
+-- percent-encoded, so the substituted path keeps this segment count.
+local function template_segments(template)
+    local segments = {}
+    local path = uri_path(template)
+    local in_expression = false
+    local start = 1
+    for index = 1, #path do
+        local char = str_sub(path, index, index)
+        if char == "{" then
+            in_expression = true
+        elseif char == "}" then
+            in_expression = false
+        elseif char == "/" and not in_expression then
+            segments[#segments + 1] = str_sub(path, start, index - 1)
+            start = index + 1
+        end
+    end
+    segments[#segments + 1] = str_sub(path, start)
+    return segments
+end
+
+
+-- A server receiving the request resolves "." and ".." away, but only where
+-- one is a whole segment. A template expression may fill part of a segment,
+-- and "{name}.json" filled with ".." comes out as "...json", which addresses
+-- nothing else, so the value alone does not say whether it moves the request.
+-- The finished path does.
+--
+-- Only the segments an expression helped build are checked: one the template
+-- contributes by itself is not the caller's to shift. Encoded separators do
+-- not add a literal slash to the finished path, so the segment lists still
+-- line up by index when the Route opts in to them.
+local function build_path(template, path_params, allow_encoded_separators)
     local path = template
+    local declared_path = uri_path(template)
     for name, value in pairs(path_params) do
+        local text = tostring(value)
+        local expression = "{" .. name .. "}"
+        local is_in_path = str_find(declared_path, expression, 1, true) ~= nil
+        if is_in_path and has_separator(text) and not allow_encoded_separators then
+            return nil, "path parameter " .. name .. " cannot contain a path separator"
+        end
+        if is_in_path and allow_encoded_separators
+           and separator_creates_unsafe_component(text)
+        then
+            return nil, "path parameter " .. name ..
+                        " cannot contain an empty or dot path component"
+        end
         -- the name is a literal, so escape any pattern magic in it
         local pattern = "{" .. str_gsub(name, "([%^%$%(%)%%%.%[%]%*%+%-%?])", "%%%1") .. "}"
-        local escaped = escape_uri(tostring(value))
+        local escaped = escape_uri(text)
         -- The replacement has to be a function: percent-encoding produces "%2F"
         -- and friends, and gsub would read those as capture references in a
         -- string replacement and raise "invalid capture index".
@@ -137,7 +266,22 @@ local function build_path(template, path_params)
             return escaped
         end)
     end
-    return path
+
+    local declared = template_segments(template)
+    for index, segment in ipairs(path_segments(path)) do
+        local from_template = declared[index]
+        if from_template and str_find(from_template, "{", 1, true)
+           and resolved_away(segment)
+        then
+            return nil, "path parameter in segment " .. from_template ..
+                        " cannot produce an empty or dot path segment"
+        end
+    end
+
+    -- A URI fragment is client-side metadata and must not be sent in an HTTP
+    -- request target. A literal hash can only come from the template because
+    -- hashes in parameter values have already been percent-encoded.
+    return without_fragment(path)
 end
 
 
@@ -383,13 +527,22 @@ local function put_header(headers, seen, name, value)
 end
 
 
+-- Returns the tool result, or nil plus a message for an argument that cannot
+-- be sent at all.
 function _M.call(tool, arguments, opts)
     arguments = type(arguments) == "table" and arguments or {}
 
     local path_params, query_params, header_params = split_arguments(tool, arguments)
     apply_query_defaults(tool, query_params)
 
-    local path = build_path(tool.path_template, path_params)
+    local allow_encoded_separators = opts.conf and
+                                     opts.conf.allow_encoded_path_separators == true
+    local path, path_err = build_path(tool.path_template, path_params,
+                                      allow_encoded_separators)
+    if not path then
+        core.log.warn("rejected an openapi-to-mcp tool call: ", path_err)
+        return nil, path_err
+    end
     local query = build_query(tool, query_params)
 
     -- Header parameters are written first so that the route's own headers win:

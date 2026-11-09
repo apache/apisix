@@ -27,6 +27,7 @@ local get_phase = ngx.get_phase
 local ngx_now = ngx.now
 local math_floor = math.floor
 local str_format = string.format
+local setmetatable = setmetatable
 
 local NO_DELAYED_SYNC = -1
 -- Redis counter storage-format version, passed into the Redis backends and
@@ -58,6 +59,9 @@ local group_conf_lru = core.lrucache.new({
 })
 local group_limit_lru = core.lrucache.new({type = 'plugin'})
 local lrucache = core.lrucache.new({type = 'plugin', serial_creating = true})
+-- pureffi: once full, resty.lrucache rehashes its key table on most evictions
+local limit_headers_lru = require("resty.lrucache.pureffi").new(1024)
+local limit_key_prefix = setmetatable({}, {__mode = "k"})
 
 policy_to_additional_properties["redis-sentinel"] = {
     properties = {
@@ -372,8 +376,12 @@ local function gen_limit_key(conf, ctx, key)
         return nil
     end
 
-    local new_key = parent.resource_key .. ':' .. apisix_plugin.conf_version(conf)
-                    .. ':' .. key
+    local prefix = limit_key_prefix[conf]
+    if not prefix then
+        prefix = parent.resource_key .. ':' .. apisix_plugin.conf_version(conf) .. ':'
+        limit_key_prefix[conf] = prefix
+    end
+    local new_key = prefix .. key
     if conf._vid then
         -- conf has _vid means it's from workflow plugin, add _vid to the key
         -- so that the counter is unique per action.
@@ -425,6 +433,7 @@ local function get_rules(ctx, conf)
         end
         return {
             {
+                idx = 1,
                 count = count,
                 time_window = time_window,
                 key = conf.key,
@@ -451,6 +460,7 @@ local function get_rules(ctx, conf)
             return nil, err2
         end
         core.table.insert(rules, {
+            idx = index,
             count = count,
             time_window = time_window,
             key_type = "constant",
@@ -465,25 +475,43 @@ end
 
 
 
-local function construct_rate_limiting_headers(conf, rule, metadata)
-    if rule.header_prefix then
-        local base_limit = conf.limit_header or metadata.limit_header
-        local base_remaining = conf.remaining_header or metadata.remaining_header
-        local base_reset = conf.reset_header or metadata.reset_header
-        -- Insert rule prefix before "RateLimit-" to preserve any custom header base
-        -- e.g. "X-AI-RateLimit-Limit" + prefix "1" -> "X-AI-1-RateLimit-Limit"
-        local prefix = tostring(rule.header_prefix)
+local function gen_limit_headers(prefix, base_limit, base_remaining, base_reset)
+    if not prefix then
         return {
-            limit_header = base_limit:gsub("RateLimit%-", prefix .. "-RateLimit-", 1),
-            remaining_header = base_remaining:gsub("RateLimit%-", prefix .. "-RateLimit-", 1),
-            reset_header = base_reset:gsub("RateLimit%-", prefix .. "-RateLimit-", 1),
+            limit_header = base_limit,
+            remaining_header = base_remaining,
+            reset_header = base_reset,
         }
     end
-    return  {
-        limit_header = conf.limit_header or metadata.limit_header,
-        remaining_header = conf.remaining_header or metadata.remaining_header,
-        reset_header = conf.reset_header or metadata.reset_header,
+
+    -- Insert rule prefix before "RateLimit-" to preserve any custom header base
+    -- e.g. "X-AI-RateLimit-Limit" + prefix "1" -> "X-AI-1-RateLimit-Limit"
+    local repl = prefix .. "-RateLimit-"
+    return {
+        limit_header = base_limit:gsub("RateLimit%-", repl, 1),
+        remaining_header = base_remaining:gsub("RateLimit%-", repl, 1),
+        reset_header = base_reset:gsub("RateLimit%-", repl, 1),
     }
+end
+
+
+local function construct_rate_limiting_headers(conf, rule, metadata)
+    local base_limit = conf.limit_header or metadata.limit_header
+    local base_remaining = conf.remaining_header or metadata.remaining_header
+    local base_reset = conf.reset_header or metadata.reset_header
+    local key = base_limit .. "\0" .. base_remaining .. "\0" .. base_reset
+    local prefix
+    if rule.header_prefix then
+        prefix = tostring(rule.header_prefix)
+        key = prefix .. "\0" .. key
+    end
+
+    local headers = limit_headers_lru:get(key)
+    if not headers then
+        headers = gen_limit_headers(prefix, base_limit, base_remaining, base_reset)
+        limit_headers_lru:set(key, headers)
+    end
+    return headers
 end
 
 
@@ -603,7 +631,11 @@ local function run_rate_limit(conf, rule, ctx, name, cost, dry_run)
             lim:log_phase_incoming(key, commit_cost)
             return
         elseif enable_delayed_sync then
-            local extra_key = name .. '#' .. conf.policy
+            -- the delayed syncer flushes every queued key with its own limiter,
+            -- so each rule needs a separate syncer (queue and timer). Sharing one
+            -- per plugin instance would sync the keys of other rules through the
+            -- count/time_window of whichever rule started the timer.
+            local extra_key = name .. '#' .. conf.policy .. '#' .. rule.idx
             if conf._vid then
                 extra_key = extra_key .. '#' .. conf._vid
             end

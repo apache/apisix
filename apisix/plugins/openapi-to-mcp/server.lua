@@ -188,7 +188,13 @@ local function handle_tools_call(request, opts, tools)
                           "Invalid arguments for tool " .. name .. ": " .. tostring(err))
     end
 
-    return jsonrpc.result(request.id, handler.call(tool, arguments, opts))
+    local result, call_err = handler.call(tool, arguments, opts)
+    if not result then
+        return tool_error(request.id, "MCP error -32602: Input validation error: " ..
+                          "Invalid arguments for tool " .. name .. ": " .. tostring(call_err))
+    end
+
+    return jsonrpc.result(request.id, result)
 end
 
 

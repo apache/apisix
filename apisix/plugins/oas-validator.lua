@@ -62,7 +62,7 @@ local schema = {
         ssl_verify = {
             description = "whether to verify SSL certificate when fetching spec_url",
             type = "boolean",
-            default = false,
+            default = true,
         },
         timeout = {
             description = "HTTP request timeout in milliseconds for fetching spec_url",
@@ -156,7 +156,7 @@ local function fetch_and_compile(conf)
 
     local params = {
         method = "GET",
-        ssl_verify = conf.ssl_verify or false,
+        ssl_verify = conf.ssl_verify,
     }
     if conf.spec_url_request_headers then
         params.headers = conf.spec_url_request_headers
@@ -198,6 +198,8 @@ function _M.check_schema(conf, schema_type)
         return false, err
     end
 
+    core.utils.check_tls_bool({"ssl_verify"}, conf, plugin_name)
+
     if conf.spec and not secret.is_secret_ref(conf.spec) then
         local _, decode_err = core.json.decode(conf.spec)
         if decode_err then
@@ -223,8 +225,7 @@ local function get_validator(conf)
     end
 
     local lrucache = get_spec_url_lrucache()
-    local ssl_verify = conf.ssl_verify or false
-    local cache_key = conf.spec_url .. "#ssl_verify=" .. tostring(ssl_verify)
+    local cache_key = conf.spec_url .. "#ssl_verify=" .. tostring(conf.ssl_verify)
     if conf.spec_url_request_headers then
         local sorted_keys = {}
         for k in pairs(conf.spec_url_request_headers) do
