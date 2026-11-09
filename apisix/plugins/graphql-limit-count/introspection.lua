@@ -157,16 +157,22 @@ end
 -- discovery, a separate introspection path) set `introspection_endpoint`.
 local function first_node(nodes, scheme)
     local candidates = {}
+    local fallback_candidates = {}
     local default_port = (scheme == "https" or scheme == "grpcs") and 443 or 80
 
     if core.table.isarray(nodes) then
         for _, node in ipairs(nodes) do
-            if node.host and node.weight > 0 then
-                core.table.insert(candidates, node.host .. ":" .. (node.port or default_port))
+            if node.host then
+                local addr = node.host .. ":" .. (node.port or default_port)
+                core.table.insert(fallback_candidates, addr)
+                if node.weight > 0 then
+                    core.table.insert(candidates, addr)
+                end
             end
         end
     else
         for addr, weight in pairs(nodes) do
+            core.table.insert(fallback_candidates, addr)
             if weight > 0 then
                 core.table.insert(candidates, addr)
             end
@@ -174,7 +180,8 @@ local function first_node(nodes, scheme)
     end
 
     if #candidates == 0 then
-        return nil
+        -- Preserve the existing selection when every configured weight is zero.
+        candidates = fallback_candidates
     end
 
     tab_sort(candidates)
