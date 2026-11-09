@@ -254,9 +254,26 @@ def validate_source(document, root):
             return value
         if '$ref' in value:
             return constraints(resolve(document, value['$ref']))
-        return {k: constraints(v) for k, v in value.items()
-                if k not in {'description', 'title', 'readOnly', 'examples', 'example'}
-                and not k.startswith('x-')}
+        result = {k: constraints(v) for k, v in value.items()
+                  if k not in {'description', 'title', 'readOnly', 'examples', 'example'}
+                  and not k.startswith('x-')}
+
+        # APISIX's JSON Schema validator skips structural validation for
+        # $secret:// and $env:// values. OpenAPI models that runtime hook
+        # explicitly, either as an accepted union branch or as an exclusion
+        # where later runtime validation requires an inline PEM value.
+        secret_reference = {
+            'type': 'string',
+            'pattern': r'^\$(?:secret|[eE][nN][vV])://',
+        }
+        if result.get('not') == secret_reference:
+            result.pop('not')
+        if set(result) == {'anyOf'} and len(result['anyOf']) == 2:
+            branches = [branch for branch in result['anyOf']
+                        if branch != secret_reference]
+            if len(branches) == 1:
+                return branches[0]
+        return result
 
     names = {'ResourceId': 'id_schema', 'Route': 'route', 'Service': 'service',
              'Upstream': 'upstream', 'Consumer': 'consumer', 'Credential': 'credential',
