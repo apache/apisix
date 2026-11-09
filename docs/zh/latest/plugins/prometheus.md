@@ -262,6 +262,8 @@ UDP 没有关闭、FIN 或重置信号，因此只会出现其中一部分状态
 
 在普通转发中，`downstream`/`ingress` 通常对应 `upstream`/`egress`，`upstream`/`ingress` 通常对应 `downstream`/`egress`；持续不一致可能表示某一侧停止读取。
 
+每个 Service 从其第一个会话起计入，包括在下一个 `refresh_interval` 之前就已结束的会话。
+
 ### `apisix_bandwidth` 的标签
 
 以下标签用于区分 `apisix_bandwidth` 指标。

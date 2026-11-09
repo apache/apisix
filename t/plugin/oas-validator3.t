@@ -84,6 +84,21 @@ add_block_preprocessor(sub {
             }
         }
     }
+
+    # serves a certificate that is not in the trust store
+    server {
+        listen 1972 ssl;
+        ssl_certificate     cert/test2.crt;
+        ssl_certificate_key cert/test2.key;
+        location /spec.json {
+            content_by_lua_block {
+                local file = io.open("t/spec/spec.json", "r")
+                local content = file:read("*a")
+                file:close()
+                ngx.print(content)
+            }
+        }
+    }
 _EOC_
 
     $block->set_value("http_config", $http_config);
@@ -1163,3 +1178,135 @@ live: 51
 --- response_body
 fetches: 2
 --- timeout: 15
+
+
+
+=== TEST 31: ssl_verify defaults to true
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.oas-validator")
+            local conf = {spec_url = "https://127.0.0.1:1972/spec.json"}
+            local ok, err = plugin.check_schema(conf)
+            if not ok then
+                ngx.say(err)
+                return
+            end
+            ngx.say("ssl_verify: ", conf.ssl_verify)
+        }
+    }
+--- response_body
+ssl_verify: true
+
+
+
+=== TEST 32: opting out of ssl_verify is logged
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.oas-validator")
+            local ok, err = plugin.check_schema({
+                spec_url = "https://127.0.0.1:1972/spec.json",
+                ssl_verify = false,
+            })
+            if not ok then
+                ngx.say(err)
+                return
+            end
+            ngx.say("done")
+        }
+    }
+--- response_body
+done
+--- error_log
+Keeping ssl_verify disabled in oas-validator configuration is a security risk
+
+
+
+=== TEST 33: create route with an https spec_url served by an untrusted certificate
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin")
+            local code, body = t.test('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/*",
+                    "plugins": {
+                        "oas-validator": {
+                            "spec_url": "https://127.0.0.1:1972/spec.json"
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1970": 1
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 34: the spec fetch fails because the certificate is not trusted
+--- request
+GET /api/v3/pet/1
+--- error_code: 500
+--- response_body_like: failed to parse openapi spec
+--- error_log
+failed to fetch spec from URL
+
+
+
+=== TEST 35: ssl_verify false fetches the same spec_url
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin")
+            local code, body = t.test('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/*",
+                    "plugins": {
+                        "oas-validator": {
+                            "spec_url": "https://127.0.0.1:1972/spec.json",
+                            "ssl_verify": false
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1970": 1
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 36: request validation works with ssl_verify disabled
+--- request
+POST /api/v3/pet
+{"id": 10, "name": "doggie", "category": {"id": 1, "name": "Dogs"}, "photoUrls": ["string"], "tags": [{"id": 1, "name": "tag1"}], "status": "available"}
+--- more_headers
+Content-Type: application/json
+--- no_error_log
+[error]
