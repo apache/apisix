@@ -116,6 +116,12 @@ routes:
 #END
 ```
 
+For scalar types, multiline certificate values, and migration guidance for
+file-driven `conf/apisix.yaml`, see
+[Environment variables in standalone YAML](./deployment-modes.md#environment-variables-in-standalone-yaml).
+Those rules are specific to that file; the substitution behavior of
+`config.yaml`, standalone JSON, and Admin API request bodies is unchanged.
+
 ### Force Delete
 
 By default, the Admin API checks for references between resources and will refuse to delete resources in use.
