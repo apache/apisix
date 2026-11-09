@@ -56,9 +56,9 @@ local MAX_AUTH_FLOW_RESTARTS = 3
 -- Session config is passed as-is to resty.session.start(); the only
 -- translation is the legacy session.cookie.lifetime alias from the
 -- lua-resty-session 3.x schema, which is mapped to absolute_timeout
--- when the latter is unset. When the revocation lookup cache is disabled the
--- error cache is disabled with it: the session library only allocates its
--- cache when revocation_cache_ttl > 0, so an error TTL alone would index nil.
+-- when the latter is unset. The revocation error cache needs the lookup cache:
+-- the session library only allocates its cache when revocation_cache_ttl > 0,
+-- so with the lookup cache off the error TTL is set to 0 as well.
 local function build_session_opts(session_conf)
     if not session_conf then
         return nil
@@ -72,7 +72,8 @@ local function build_session_opts(session_conf)
     end
     if session_conf.revocation and session_conf.revocation_cache_ttl == 0 then
         local error_ttl = session_conf.revocation_error_cache_ttl
-        -- only a non-zero error TTL, set or defaulted by the library, breaks
+        -- the error cache needs the lookup cache, so a non-zero error TTL, set
+        -- or defaulted by the library, cannot apply without it
         if error_ttl == nil or error_ttl > 0 then
             if error_ttl then
                 core.log.warn("session.revocation_error_cache_ttl is ignored when ",
