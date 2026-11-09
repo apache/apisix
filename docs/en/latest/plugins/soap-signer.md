@@ -78,15 +78,18 @@ rewrite phase:
 8. Embeds the X.509 certificate in a `wsse:BinarySecurityToken` unless
    `signature.key_info` is `none`.
 9. Calculates a digest for both the Body and Timestamp using the algorithm
-   selected by `signature.algorithm`. Namespace declarations that no element
-   or attribute name in the Body uses are listed in an
-   `ec:InclusiveNamespaces` `PrefixList`, so that they are signed too.
+   selected by `signature.algorithm`. Declared prefixes that text or attribute
+   values in the Body refer to, such as `ns` in `xsi:type="ns:Type"`, are
+   listed in an `ec:InclusiveNamespaces` `PrefixList`, so that their bindings
+   are signed too.
 10. Signs canonicalized `ds:SignedInfo`, replaces the upstream request body,
    updates `Content-Length`, and removes body-digest headers that no longer
    describe the signed body.
 
-The Plugin serializes the body as UTF-8. It rejects requests with an explicit
-non-UTF-8 `charset`.
+The Plugin only accepts UTF-8 encoded messages and serializes the body as
+UTF-8. It ignores the `encoding` in the XML declaration, rejects UTF-16,
+UTF-32, and other encodings with `invalid_soap`, and rejects requests with an
+explicit non-UTF-8 `charset`.
 
 Decode compressed request bodies before signing, for example with the
 [`request-decompress`](request-decompress.md) Plugin. The signing Plugin
@@ -381,7 +384,7 @@ reach the Plugin.
 | --- | --- | --- |
 | `401` | `unauthorized` | `request.require_consumer` is `true` and no authentication Plugin attributed the request to a Consumer. |
 | `400` | `empty_body` | The selected request has no body. |
-| `400` | `invalid_soap` | XML parsing failed, Body is absent or duplicated, Header is duplicated or follows the Body, recognized XML ID values (`wsu:Id`, `xml:id`, and unqualified `Id`) are invalid or duplicated, the reused `wsse:Security` header already has content while `soap.allow_existing_security_content` is `false` or already contains a `wsu:Timestamp`, a DTD/entity declaration is present, or the message exceeds the parser limits listed under [Limitations](#limitations). |
+| `400` | `invalid_soap` | XML parsing failed, the message is not UTF-8 encoded, more than 8 declared prefixes are referenced in Body content, Body is absent or duplicated, Header is duplicated or follows the Body, recognized XML ID values (`wsu:Id`, `xml:id`, and unqualified `Id`) are invalid or duplicated, the reused `wsse:Security` header already has content while `soap.allow_existing_security_content` is `false` or already contains a `wsu:Timestamp`, a DTD/entity declaration is present, or the message exceeds the parser limits listed under [Limitations](#limitations). |
 | `400` | `not_soap` | The root is not a supported SOAP Envelope or does not match `soap.version`. |
 | `400` | `already_signed` | The message already contains a `ds:Signature`. |
 | `413` | `body_too_large` | The body exceeds the effective body size limit (see `request.max_body_bytes`). |
@@ -410,12 +413,16 @@ The Plugin does not return detailed cryptographic or request content to clients.
   `wsse:UsernameToken`, is not covered by the signature. Services must not
   treat such content as vouched for by APISIX.
 - Exclusive canonicalization only renders namespace declarations that element
-  and attribute names use. When the Body uses a prefix only inside text or
-  attribute values, such as `ns` in `xsi:type="ns:Type"`, the Plugin lists it
-  in the `ec:InclusiveNamespaces` `PrefixList` of the Body reference, so that
-  changing its binding invalidates the signature. The verifier must support
-  this parameter, which is part of the Exclusive XML Canonicalization
-  specification.
+  and attribute names use. When text or an attribute value in the Body refers
+  to a declared prefix as `prefix:name`, such as `ns` in `xsi:type="ns:Type"`,
+  the Plugin lists the prefix in the `ec:InclusiveNamespaces` `PrefixList` of
+  the Body reference, so that changing its binding, or adding a new
+  declaration for it on an intermediate element, invalidates the signature.
+  The verifier must support this parameter, which is part of the Exclusive XML
+  Canonicalization specification. Because libxml2 checks every listed prefix
+  on every element, a message whose Body refers to more than 8 declared
+  prefixes in content is rejected. Unprefixed names in content, which would
+  resolve against the default namespace, are not protected this way.
 - The signing certificate's validity period is not enforced. APISIX logs a
   warning when it loads a certificate that has expired or is not yet valid,
   because verifiers reject such signatures.

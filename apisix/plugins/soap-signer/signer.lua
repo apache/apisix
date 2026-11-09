@@ -252,7 +252,9 @@ local function add_reference(envelope, signed_info, target, algorithm, inclusive
     local transform = xml.new_child(transforms, envelope.ds_ns, "Transform")
     xml.set_property(transform, "Algorithm", EXCLUSIVE_C14N)
     if #inclusive_prefixes > 0 then
-        local ec_ns = xml.new_namespace(transform, EXCLUSIVE_C14N, "ec")
+        -- the message may already use "ec" for another namespace, or even
+        -- for the XML-DSig namespace that this Transform element is in
+        local ec_ns = xml.ensure_namespace(envelope.doc, transform, "ec", EXCLUSIVE_C14N)
         local inclusive = xml.new_child(transform, ec_ns, "InclusiveNamespaces")
         xml.set_property(inclusive, "PrefixList", xml.prefix_list(inclusive_prefixes))
     end
@@ -382,6 +384,15 @@ function _M.sign(body, conf, now)
         return nil, "invalid_soap", "wsse:Security already contains a wsu:Timestamp"
     end
 
+    -- Prefixes that Body content refers to, such as the prefix in
+    -- xsi:type="ns:Type", are signed through the PrefixList; the Timestamp
+    -- only contains generated content.
+    local body_prefixes, prefixes_err = xml.content_namespace_prefixes(envelope.body)
+    if not body_prefixes then
+        xml.free_document(doc)
+        return nil, "invalid_soap", prefixes_err
+    end
+
     local runtime, credential_err = credentials.load(conf.credentials,
                                                      algorithm.min_key_bits)
     if not runtime then
@@ -411,11 +422,7 @@ function _M.sign(body, conf, now)
 
     local signature, signature_err = build_signature(
         envelope, runtime, token_id, {
-            -- declarations that no name in the Body uses, such as the prefix
-            -- in xsi:type="ns:Type", are signed through the PrefixList; the
-            -- Timestamp only contains generated content
-            {node = envelope.body,
-             inclusive_prefixes = xml.unused_namespace_prefixes(envelope.body)},
+            {node = envelope.body, inclusive_prefixes = body_prefixes},
             {node = timestamp, inclusive_prefixes = {}},
         }, algorithm,
         key_info_mode)

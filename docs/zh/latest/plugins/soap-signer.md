@@ -54,10 +54,10 @@ description: soap-signer 插件使用 X.509 WS-Security 签名为 SOAP 请求体
 6. 如果 Body 尚无 `wsu:Id`，则为其分配 ID。
 7. 创建包含 `Created`、`Expires` 和唯一 `wsu:Id` 的 UTC Timestamp。
 8. 除非 `signature.key_info` 为 `none`，否则在 `wsse:BinarySecurityToken` 中嵌入 X.509 证书。
-9. 使用 `signature.algorithm` 指定的算法分别计算 Body 和 Timestamp 的摘要。Body 中没有被任何元素名或属性名使用的命名空间声明会列入 `ec:InclusiveNamespaces` 的 `PrefixList`，从而同样受签名保护。
+9. 使用 `signature.algorithm` 指定的算法分别计算 Body 和 Timestamp 的摘要。Body 中的文本或属性值引用的已声明前缀（例如 `xsi:type="ns:Type"` 中的 `ns`）会列入 `ec:InclusiveNamespaces` 的 `PrefixList`，从而使其绑定同样受签名保护。
 10. 对 canonicalized `ds:SignedInfo` 签名，替换发往上游的请求体、更新 `Content-Length`，并移除不再对应签名后请求体的摘要标头。
 
-请求体会以 UTF-8 序列化。显式声明非 UTF-8 `charset` 的请求会被拒绝。
+插件只接受 UTF-8 编码的消息，并以 UTF-8 序列化请求体。插件会忽略 XML 声明中的 `encoding`，以 `invalid_soap` 拒绝 UTF-16、UTF-32 及其他编码，并拒绝显式声明非 UTF-8 `charset` 的请求。
 
 压缩的请求体必须先解压，例如使用 `request-decompress` 插件。残留的 Content-Encoding 如果不是 `identity`，则会被拒绝。
 
@@ -272,7 +272,7 @@ curl http://127.0.0.1:9080/signed-soap \
 | --- | --- | --- |
 | `401` | `unauthorized` | `request.require_consumer` 为 `true`，且请求未被认证插件关联到消费者。 |
 | `400` | `empty_body` | 被选中的请求没有请求体。 |
-| `400` | `invalid_soap` | XML 解析失败、Body 缺失或重复、Header 重复或位于 Body 之后、XML ID（`wsu:Id`、`xml:id` 和无命名空间的 `Id`）无效或重复、被复用的 `wsse:Security` 标头在 `soap.allow_existing_security_content` 为 `false` 时已有内容或已包含 `wsu:Timestamp`、存在 DTD/实体声明，或消息超出[限制](#限制)中列出的解析器限制。 |
+| `400` | `invalid_soap` | XML 解析失败、消息不是 UTF-8 编码、Body 内容中引用的已声明前缀超过 8 个、Body 缺失或重复、Header 重复或位于 Body 之后、XML ID（`wsu:Id`、`xml:id` 和无命名空间的 `Id`）无效或重复、被复用的 `wsse:Security` 标头在 `soap.allow_existing_security_content` 为 `false` 时已有内容或已包含 `wsu:Timestamp`、存在 DTD/实体声明，或消息超出[限制](#限制)中列出的解析器限制。 |
 | `400` | `not_soap` | 根元素不是受支持的 SOAP Envelope，或与 `soap.version` 不匹配。 |
 | `400` | `already_signed` | 消息已包含 `ds:Signature`。 |
 | `413` | `body_too_large` | 请求体超过生效的请求体大小限制（参见 `request.max_body_bytes`）。 |
@@ -290,7 +290,7 @@ curl http://127.0.0.1:9080/signed-soap \
 - 签名前会缓冲整个请求体；此操作不是流式签名。
 - 为了使解析时间保持线性，如果消息中某个元素的属性（包括命名空间声明）超过 256 个，或同时生效的命名空间声明超过 128 个，插件会拒绝该消息。实际消息远低于这些限制。
 - 当 `soap.allow_existing_security_content` 为 `true` 时，被复用的 `wsse:Security` 标头中已有的内容（例如客户端提供的 `wsse:UsernameToken`）不受签名保护。服务不得将此类内容视为由 APISIX 担保。
-- Exclusive canonicalization 只输出元素名和属性名使用的命名空间声明。如果 Body 中的某个前缀只出现在文本或属性值中（例如 `xsi:type="ns:Type"` 中的 `ns`），插件会将其列入 Body 引用的 `ec:InclusiveNamespaces` `PrefixList`，因此修改其绑定会使签名失效。验证方必须支持该参数，它属于 Exclusive XML Canonicalization 规范的一部分。
+- Exclusive canonicalization 只输出元素名和属性名使用的命名空间声明。当 Body 中的文本或属性值以 `prefix:name` 形式引用已声明的前缀时（例如 `xsi:type="ns:Type"` 中的 `ns`），插件会将该前缀列入 Body 引用的 `ec:InclusiveNamespaces` `PrefixList`，因此修改其绑定或在中间元素上新增该前缀的声明都会使签名失效。验证方必须支持该参数，它属于 Exclusive XML Canonicalization 规范的一部分。由于 libxml2 会对每个元素检查列表中的每个前缀，Body 内容中引用超过 8 个已声明前缀的消息会被拒绝。内容中不带前缀的名称（会按默认命名空间解析）不受此方式保护。
 - 插件不会强制检查签名证书的有效期。当 APISIX 加载已过期或尚未生效的证书时会记录警告，因为验证方会拒绝此类签名。
 
 ## 故障排查

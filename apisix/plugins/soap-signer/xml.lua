@@ -22,9 +22,9 @@ local find = string.find
 local gmatch = string.gmatch
 local sub = string.sub
 local ipairs = ipairs
+local pairs = pairs
 local table_concat = table.concat
 local table_sort = table.sort
-local tonumber = tonumber
 local type = type
 
 
@@ -247,6 +247,17 @@ local MAX_NAMESPACES_IN_SCOPE = 128
 local MIN_SUSPICIOUS_SEGMENT = MAX_ATTRIBUTES_PER_ELEMENT * 5
 local ATTRIBUTE_PATTERN = "%s[^%s=<>\"']+%s*=%s*[\"']"
 local NAMESPACE_DECLARATION_PATTERN = "%sxmlns[%s:=]"
+-- Prefixes of QName-like content such as `xsi:type="ns:Type"` (ASCII or UTF-8
+-- NCName characters before a colon that is followed by a name start).
+local CONTENT_PREFIX_PATTERN = "([%a_\128-\255][%w_%.%-\128-\255]*):[%a_\128-\255]"
+-- libxml2 looks up every PrefixList entry for every canonicalized element, so
+-- the list must stay short: 8 entries cost at most about 0.8 s for 5 MB.
+local MAX_CONTENT_PREFIXES = 8
+-- Ignore the encoding declaration, so that the parser reads exactly the bytes
+-- the limit checks above scanned. An explicit "UTF-8" encoding argument is not
+-- used: it routes input through a conversion buffer limited to about 10 MB.
+local XML_PARSE_IGNORE_ENC = 2097152
+local UTF8_BOM = "\239\187\191"
 
 local _M = {}
 
@@ -269,12 +280,17 @@ local function copy_and_free(value)
 end
 
 
+-- Count occurrences of `needle` in value[first..last], stopping after
+-- `limit`. The search runs on the segment only: searching `value` from
+-- `first` would scan to the end of the document whenever the segment has no
+-- match, which makes the caller quadratic.
 local function count_plain(value, needle, first, last, limit)
     local count = 0
-    local position = first
+    local segment = sub(value, first, last)
+    local position = 1
     while count <= limit do
-        local found = find(value, needle, position, true)
-        if not found or found > last then
+        local found = find(segment, needle, position, true)
+        if not found then
             break
         end
         count = count + 1
@@ -446,7 +462,7 @@ local function read_memory(ctxt, value)
     ctxt.sax.serror = structured_error
     local doc = C.xmlCtxtReadMemory(
         ctxt, value, #value, "document.xml", nil,
-        XML_PARSE_NONET + XML_PARSE_NOERROR + XML_PARSE_NOWARNING)
+        XML_PARSE_NONET + XML_PARSE_NOERROR + XML_PARSE_NOWARNING + XML_PARSE_IGNORE_ENC)
     return doc, parse_failed
 end
 -- A C function that calls back into Lua must not be called from a
@@ -454,9 +470,18 @@ end
 jit.off(read_memory)
 
 
+-- Only UTF-8 is accepted; the encoding declaration is ignored.
 function _M.parse(value)
     if type(value) ~= "string" or value == "" then
         return nil, "XML body is empty"
+    end
+    -- libxml2 detects UTF-16, UTF-32 and EBCDIC from the first bytes, which
+    -- would hide markup from the byte-based limit checks. UTF-16 and UTF-32
+    -- markup contains NUL bytes, which XML never allows, and a UTF-8 document
+    -- starts with "<" after an optional byte order mark and whitespace.
+    local first = sub(value, 1, 3) == UTF8_BOM and 4 or 1
+    if find(value, "\0", 1, true) or not find(value, "^%s*<", first) then
+        return nil, "only UTF-8 encoded XML is supported"
     end
     local limit_err = check_parser_limits(value)
     if limit_err then
@@ -606,16 +631,6 @@ function _M.ensure_namespace(doc, node, prefix, href)
 end
 
 
-function _M.new_namespace(node, href, prefix)
-    return C.xmlNewNs(node, xml_char(href), xml_char(prefix))
-end
-
-
-local function pointer_key(pointer)
-    return tonumber(ffi.cast("intptr_t", pointer))
-end
-
-
 local function prefix_token(ns)
     if ns.prefix == nil then
         return "#default"
@@ -624,70 +639,66 @@ local function prefix_token(ns)
 end
 
 
--- Exclusive canonicalization only renders namespace declarations that an
--- element or attribute name uses. A prefix that appears only in content, such
--- as `xsi:type="ns:Type"`, would otherwise not be covered by the signature.
--- Returns, sorted, the prefixes ("#default" for the default namespace) of the
--- declarations in scope at `node` or inside it that no element or attribute
--- name inside `node` uses, for the InclusiveNamespaces PrefixList.
-function _M.unused_namespace_prefixes(node)
-    local declarations = {}
-    local in_scope = {}
-    local used = {}
+-- Exclusive canonicalization only renders the namespace declarations that
+-- element and attribute names use. A prefix that content refers to, such as
+-- `ns` in `xsi:type="ns:Type"`, would otherwise not be protected: its
+-- declaration can be changed, or a new one inserted on an intermediate
+-- element, without changing the digest. Returns, sorted, the declared
+-- prefixes that text or attribute values inside `node` refer to, for the
+-- InclusiveNamespaces PrefixList, or nil and an error when there are more
+-- than MAX_CONTENT_PREFIXES of them.
+function _M.content_namespace_prefixes(node)
+    local declared = {}
+    local referenced = {}
 
-    local function add(ns)
-        -- an undeclaration (xmlns="") binds nothing that could be changed
-        if ns.href ~= nil and ns.href[0] ~= 0 then
-            declarations[#declarations + 1] = ns
-        end
-    end
-
-    local function visit(element)
-        local ns = element.nsDef
+    local function declare(ns)
         while ns ~= nil do
-            add(ns)
+            if ns.prefix ~= nil and ns.href ~= nil and ns.href[0] ~= 0 then
+                declared[ffi.string(ns.prefix)] = true
+            end
             ns = ns.next
         end
-        if element.ns ~= nil then
-            used[pointer_key(element.ns)] = true
-        end
-        local attribute = element.properties
-        while attribute ~= nil do
-            if attribute.ns ~= nil then
-                used[pointer_key(attribute.ns)] = true
+    end
+
+    local function scan(child)
+        while child ~= nil do
+            if (child.type == XML_TEXT_NODE or child.type == XML_CDATA_SECTION_NODE)
+               and child.content ~= nil then
+                local text = ffi.string(child.content)
+                if find(text, ":", 1, true) then
+                    for prefix in gmatch(text, CONTENT_PREFIX_PATTERN) do
+                        referenced[prefix] = true
+                    end
+                end
             end
-            attribute = attribute.next
+            child = child.next
         end
     end
 
-    local ns = node.nsDef
-    while ns ~= nil do
-        in_scope[prefix_token(ns)] = true
-        ns = ns.next
-    end
     local ancestor = node.parent
     while ancestor ~= nil and ancestor.type == XML_ELEMENT_NODE do
-        ns = ancestor.nsDef
-        while ns ~= nil do
-            local token = prefix_token(ns)
-            if not in_scope[token] then
-                in_scope[token] = true
-                add(ns)
-            end
-            ns = ns.next
-        end
+        declare(ancestor.nsDef)
         ancestor = ancestor.parent
     end
-    _M.walk(node, visit)
-
-    local seen = {}
-    local prefixes = {}
-    for _, declaration in ipairs(declarations) do
-        local token = prefix_token(declaration)
-        if not used[pointer_key(declaration)] and not seen[token] then
-            seen[token] = true
-            prefixes[#prefixes + 1] = token
+    _M.walk(node, function(element)
+        declare(element.nsDef)
+        scan(element.children)
+        local attribute = element.properties
+        while attribute ~= nil do
+            scan(attribute.children)
+            attribute = attribute.next
         end
+    end)
+
+    local prefixes = {}
+    for prefix in pairs(referenced) do
+        if declared[prefix] and prefix ~= "xml" and prefix ~= "xmlns" then
+            prefixes[#prefixes + 1] = prefix
+        end
+    end
+    if #prefixes > MAX_CONTENT_PREFIXES then
+        return nil, "more than " .. MAX_CONTENT_PREFIXES
+                    .. " namespace prefixes are referenced in content"
     end
     table_sort(prefixes)
     return prefixes
