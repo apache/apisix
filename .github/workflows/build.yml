@@ -50,13 +50,17 @@ jobs:
         with:
           go-version: "1.17"
 
+      - name: Get runner image
+        id: runner_image
+        run: echo "os=${ImageOS}" >> "$GITHUB_OUTPUT"
+
       - name: Cache deps
         uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5
         env:
           cache-name: cache-deps
         with:
           path: deps
-          key: ${{ runner.os }}-${{ env.cache-name }}-${{ matrix.os_name }}-${{ hashFiles('apisix-master-0.rockspec') }}
+          key: ${{ runner.os }}-${{ steps.runner_image.outputs.os }}-${{ env.cache-name }}-${{ matrix.os_name }}-${{ hashFiles('apisix-master-0.rockspec') }}
 
       - name: Extract test type
         shell: bash
@@ -183,7 +187,8 @@ jobs:
       - name: Linux Script
         env:
           TEST_FILE_SUB_DIR: ${{ matrix.test_dir }}
-        run: sudo -E ./ci/${{ matrix.os_name }}_runner.sh script
+        # sudo-rs (Ubuntu 26.04) ignores -E, so pass what the script needs explicitly
+        run: sudo -E env TEST_FILE_SUB_DIR="$TEST_FILE_SUB_DIR" ./ci/${{ matrix.os_name }}_runner.sh script
 
       - if: ${{ steps.cache-images.outputs.cache-hit != 'true' }}
         name: Save docker images

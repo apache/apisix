@@ -22,6 +22,7 @@ local crc32 = ngx.crc32_long
 local _M = {}
 
 local tostring = tostring
+local tonumber = tonumber
 
 local commit_script = core.string.compress_script([=[
     assert(tonumber(ARGV[3]) >= 0, "cost must be at least 0")
@@ -183,6 +184,7 @@ function _M.redis_incoming(self, key, cost, keepalive)
 
     local remaining = limit - res[1]
     local ttl = res[2] / 1000.0
+    local info = {count = tonumber(res[1])}
 
     if keepalive then
         local conf = self.conf or {}
@@ -195,10 +197,10 @@ function _M.redis_incoming(self, key, cost, keepalive)
 
 
     if remaining < 0 then
-        return nil, "rejected", ttl
+        return nil, "rejected", ttl, info
     end
 
-    return 0, remaining, ttl
+    return 0, remaining, ttl, info
 end
 
 

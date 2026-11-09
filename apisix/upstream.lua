@@ -190,6 +190,8 @@ local scheme_to_port = {
     https = 443,
     grpc = 80,
     grpcs = 443,
+    ws = 80,
+    wss = 443,
 }
 
 
@@ -327,6 +329,55 @@ local function set_stream_upstream_client_cert(api_ctx, up_conf)
 end
 
 
+local function set_http_upstream_tls(api_ctx, up_conf)
+    local scheme = up_conf.scheme
+    if scheme == "https" then
+        -- grpcs applies these in `set_grpcs_upstream_param` instead, after the
+        -- internal redirect that drops the settings made here
+        local ok, err = set_upstream_ssl_opts(up_conf)
+        if not ok then
+            return 503, err
+        end
+    end
+
+    local tls_has_cert = up_conf.tls and (up_conf.tls.client_cert or up_conf.tls.client_cert_id)
+    if (scheme == "https" or scheme == "grpcs") and tls_has_cert then
+        local client_cert, client_key
+        if up_conf.tls.client_cert_id then
+            client_cert = api_ctx.upstream_ssl.cert
+            client_key = api_ctx.upstream_ssl.key
+        else
+            client_cert = up_conf.tls.client_cert
+            client_key = up_conf.tls.client_key
+        end
+
+        -- the sni here is just for logging
+        local sni = api_ctx.var.upstream_host
+        local cert, err = apisix_ssl.fetch_cert(sni, client_cert)
+        if not cert then
+            return 503, err
+        end
+
+        local key, err = apisix_ssl.fetch_pkey(sni, client_key)
+        if not key then
+            return 503, err
+        end
+
+        if scheme == "grpcs" then
+            api_ctx.upstream_grpcs_cert = cert
+            api_ctx.upstream_grpcs_key = key
+        else
+            local ok, err = set_upstream_tls_client_param(cert, key)
+            if not ok then
+                return 503, err
+            end
+        end
+    end
+
+    return
+end
+
+
 function _M.set_by_route(route, api_ctx)
     -- Ahead of the traffic-split short circuit below so its inline upstream is
     -- covered too. A second handshake would send the client's ClientHello as payload.
@@ -339,7 +390,7 @@ function _M.set_by_route(route, api_ctx)
 
     if api_ctx.upstream_conf then
         -- upstream_conf has been set by traffic-split plugin
-        return
+        return set_http_upstream_tls(api_ctx, api_ctx.upstream_conf)
     end
 
     local up_conf = api_ctx.matched_upstream
@@ -447,51 +498,8 @@ function _M.set_by_route(route, api_ctx)
                                                                   node_ver )
     local checker = healthcheck_manager.fetch_checker(up_conf.resource_key, resource_version)
     api_ctx.up_checker = checker
-    local scheme = up_conf.scheme
-    if scheme == "https" then
-        -- grpcs applies these in `set_grpcs_upstream_param` instead, after the
-        -- internal redirect that drops the settings made here
-        local ok, err = set_upstream_ssl_opts(up_conf)
-        if not ok then
-            return 503, err
-        end
-    end
 
-    local tls_has_cert = up_conf.tls and (up_conf.tls.client_cert or up_conf.tls.client_cert_id)
-    if (scheme == "https" or scheme == "grpcs") and tls_has_cert then
-        local client_cert, client_key
-        if up_conf.tls.client_cert_id then
-            client_cert = api_ctx.upstream_ssl.cert
-            client_key = api_ctx.upstream_ssl.key
-        else
-            client_cert = up_conf.tls.client_cert
-            client_key = up_conf.tls.client_key
-        end
-
-        -- the sni here is just for logging
-        local sni = api_ctx.var.upstream_host
-        local cert, err = apisix_ssl.fetch_cert(sni, client_cert)
-        if not cert then
-            return 503, err
-        end
-
-        local key, err = apisix_ssl.fetch_pkey(sni, client_key)
-        if not key then
-            return 503, err
-        end
-
-        if scheme == "grpcs" then
-            api_ctx.upstream_grpcs_cert = cert
-            api_ctx.upstream_grpcs_key = key
-        else
-            local ok, err = set_upstream_tls_client_param(cert, key)
-            if not ok then
-                return 503, err
-            end
-        end
-    end
-
-    return
+    return set_http_upstream_tls(api_ctx, up_conf)
 end
 
 
@@ -665,11 +673,28 @@ local function check_upstream_conf(in_dp, conf)
         end
     end
 
+    -- a discovery module may check discovery_args against its own configuration
+    local dis = conf.discovery_type and discovery and discovery[conf.discovery_type]
+    if dis and dis.check_discovery_args then
+        local ok, err = dis.check_discovery_args(conf.discovery_args, conf.service_name, in_dp)
+        if not ok then
+            return false, err
+        end
+    end
+
     if is_http then
         if conf.pass_host == "rewrite" and
             (conf.upstream_host == nil or conf.upstream_host == "")
         then
             return false, "`upstream_host` can't be empty when `pass_host` is `rewrite`"
+        end
+
+        -- the ws/wss client connects through a plain cosocket, which can only
+        -- trust the global lua_ssl_trusted_certificate, not a per-upstream store
+        if (conf.scheme == "ws" or conf.scheme == "wss")
+            and conf.tls and conf.tls.ca_certs
+        then
+            return false, "`tls.ca_certs` is not supported by the `ws`/`wss` scheme"
         end
     end
 

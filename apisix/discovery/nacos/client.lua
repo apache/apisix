@@ -190,8 +190,14 @@ end
 
 --- Fetch instances from a single nacos host for a list of services.
 ---
---- Returns: nodes_cache (table of key → nodes), service_names (set of key → true)
+--- Returns: nodes_cache (table of key → nodes),
+---          configured_services (set of key → true)
 ---          On failure: nil, nil, err_string
+---
+--- configured_services holds every service that was queried, including the
+--- services whose query failed. Callers use it to distinguish a service that
+--- is no longer referenced by APISIX configuration from one whose refresh
+--- merely failed, so a failed refresh does not drop a usable cached snapshot.
 ---
 --- options:
 ---   default_weight     (number)    default node weight
@@ -217,7 +223,7 @@ function _M.fetch_from_host(base_uri, username, password, services, options)
         return nil, nil, err
     end
 
-    local service_names = {}
+    local configured_services = {}
     local nodes_cache = {}
     local had_success = false
 
@@ -225,6 +231,18 @@ function _M.fetch_from_host(base_uri, username, password, services, options)
         local namespace_id = service_info.namespace_id
         local group_name = service_info.group_name
         local scheme = service_info.scheme or ''
+
+        local key
+        if key_builder then
+            key = key_builder(namespace_id, group_name, service_info.service_name)
+        else
+            key = namespace_id .. '.' .. group_name .. '.' .. service_info.service_name
+        end
+
+        -- Record the key before the query so a failing service is still
+        -- reported as configured by APISIX.
+        configured_services[key] = true
+
         local namespace_param = get_namespace_param(namespace_id)
         local group_name_param = get_group_name_param(group_name)
         local signature_param = _M.get_signed_param(
@@ -237,14 +255,6 @@ function _M.fetch_from_host(base_uri, username, password, services, options)
             log.error('get_url:', query_path, ' err:', req_err)
         else
             had_success = true
-
-            local key
-            if key_builder then
-                key = key_builder(namespace_id, group_name, service_info.service_name)
-            else
-                key = namespace_id .. '.' .. group_name .. '.' .. service_info.service_name
-            end
-            service_names[key] = true
 
             local hosts = data.hosts
             if type(hosts) ~= 'table' then
@@ -275,7 +285,7 @@ function _M.fetch_from_host(base_uri, username, password, services, options)
         return nil, nil, 'all nacos services fetch failed'
     end
 
-    return nodes_cache, service_names
+    return nodes_cache, configured_services
 end
 
 
