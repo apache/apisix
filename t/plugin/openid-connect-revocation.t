@@ -395,3 +395,51 @@ done
 OIDC session revocation store unavailable
 --- response_body
 done
+
+
+=== TEST 5: revocation lookups are cached per session, and a zero TTL disables the cache
+--- config
+    location /t {
+        content_by_lua_block {
+            local session = require("resty.session")
+            local plugin = require("apisix.plugins.openid-connect")
+
+            -- open one cookie session three times and count store lookups
+            local function lookups(name, conf)
+                local gets = 0
+                conf.secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK"
+                conf.cookie_name = name
+                conf.revocation = "redis"
+                local opts = plugin._build_session_opts(conf)
+                opts.revocation = {
+                    get = function() gets = gets + 1 end,
+                    set = function() return true end,
+                }
+
+                local s = session.new(opts)
+                s:set("k", "v")
+                assert(s:save())
+                local cookie = ngx.header["Set-Cookie"]
+                if type(cookie) == "table" then
+                    cookie = cookie[1]
+                end
+                ngx.req.set_header("Cookie", cookie:match("^[^;]+"))
+
+                for _ = 1, 3 do
+                    local _, err, exists = session.open(opts)
+                    assert(exists, err)
+                end
+                return gets
+            end
+
+            -- ttl 0 goes first: lua-resty-session allocates its cache lazily, and
+            -- only a fresh worker shows whether a zero TTL still works without it
+            ngx.say("ttl 0: ", lookups("cached_a", {revocation_cache_ttl = 0}))
+            ngx.say("default ttl: ", lookups("cached_b", {}))
+            ngx.say("ttl 5: ", lookups("cached_c", {revocation_cache_ttl = 5}))
+        }
+    }
+--- response_body
+ttl 0: 3
+default ttl: 1
+ttl 5: 1

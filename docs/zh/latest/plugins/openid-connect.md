@@ -94,7 +94,7 @@ import TabItem from '@theme/TabItem';
 | session.revocation | string | 否 | | ["redis"] | 会话吊销后端。设置为 `redis` 可为 Cookie 会话启用吊销功能。必须配置 `session.redis`，且不能在 `session.storage` 为 `redis` 时使用。 |
 | session.revocation_fail_mode | string | 否 | open | ["open", "closed"] | 当吊销存储不可用时，`open` 将会话视为未吊销，`closed` 则拒绝打开和销毁会话。 |
 | session.revocation_cache_ttl | integer | 否 | | | 成功吊销查询的 worker 本地缓存 TTL（秒）。`0` 禁用。lua-resty-session 默认为 `5`。 |
-| session.revocation_error_cache_ttl | integer | 否 | | | 吊销存储错误的 worker 本地缓存 TTL（秒）。`0` 禁用。lua-resty-session 默认为 `5`。 |
+| session.revocation_error_cache_ttl | integer | 否 | | | 吊销存储错误的 worker 本地缓存 TTL（秒）。`0` 禁用。lua-resty-session 默认为 `5`。当 `revocation_cache_ttl` 为 `0` 时强制为 `0`。 |
 | session.redis | object | 否 | | | Redis 连接配置。当 `storage` 为 `redis`，或 `revocation` 为 `redis` 时必填。 |
 | session.redis.host | string | 否 | 127.0.0.1 | | Redis 主机。 |
 | session.redis.port | integer | 否 | 6379 | | Redis 端口。 |

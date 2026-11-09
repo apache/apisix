@@ -56,7 +56,9 @@ local MAX_AUTH_FLOW_RESTARTS = 3
 -- Session config is passed as-is to resty.session.start(); the only
 -- translation is the legacy session.cookie.lifetime alias from the
 -- lua-resty-session 3.x schema, which is mapped to absolute_timeout
--- when the latter is unset.
+-- when the latter is unset. When the revocation lookup cache is disabled the
+-- error cache is disabled with it: lua-resty-session 4.3.0 only allocates its
+-- cache when revocation_cache_ttl > 0, so an error TTL alone would index nil.
 local function build_session_opts(session_conf)
     if not session_conf then
         return nil
@@ -67,6 +69,9 @@ local function build_session_opts(session_conf)
             core.log.warn("session.cookie.lifetime is deprecated; ",
                           "use session.absolute_timeout instead")
         end
+    end
+    if session_conf.revocation and session_conf.revocation_cache_ttl == 0 then
+        session_conf.revocation_error_cache_ttl = 0
     end
     return session_conf
 end

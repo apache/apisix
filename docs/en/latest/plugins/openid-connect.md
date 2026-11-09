@@ -95,7 +95,7 @@ The `openid-connect` Plugin supports the integration with [OpenID Connect (OIDC)
 | session.revocation | string | False | | ["redis"] | Session revocation backend. Set to `redis` to enable revocation for cookie sessions. Requires `session.redis` and cannot be used when `session.storage` is `redis`. |
 | session.revocation_fail_mode | string | False | open | ["open", "closed"] | When the revocation store is unreachable, `open` treats the session as not revoked, while `closed` rejects session open and destroy operations. |
 | session.revocation_cache_ttl | integer | False | | | Worker-local TTL in seconds for successful revocation lookups. `0` disables. lua-resty-session defaults to `5`. |
-| session.revocation_error_cache_ttl | integer | False | | | Worker-local TTL in seconds for revocation store errors. `0` disables. lua-resty-session defaults to `5`. |
+| session.revocation_error_cache_ttl | integer | False | | | Worker-local TTL in seconds for revocation store errors. `0` disables. lua-resty-session defaults to `5`. Forced to `0` when `revocation_cache_ttl` is `0`. |
 | session.redis | object | False | | | Redis connection. Required when `storage` is `redis`, or when `revocation` is `redis`. |
 | session.redis.host | string | False | 127.0.0.1 | | Redis host. |
 | session.redis.port | integer | False | 6379 | | Redis port. |
