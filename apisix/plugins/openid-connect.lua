@@ -57,7 +57,7 @@ local MAX_AUTH_FLOW_RESTARTS = 3
 -- translation is the legacy session.cookie.lifetime alias from the
 -- lua-resty-session 3.x schema, which is mapped to absolute_timeout
 -- when the latter is unset. When the revocation lookup cache is disabled the
--- error cache is disabled with it: lua-resty-session 4.3.0 only allocates its
+-- error cache is disabled with it: the session library only allocates its
 -- cache when revocation_cache_ttl > 0, so an error TTL alone would index nil.
 local function build_session_opts(session_conf)
     if not session_conf then
