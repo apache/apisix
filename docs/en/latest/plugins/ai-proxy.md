@@ -58,6 +58,12 @@ The Plugin detects the client request protocol before selecting a compatible ups
 
 The URI-specific rules run before the body-only rules. This prevents Bedrock Converse and Anthropic Messages requests containing `messages` from being identified as Chat Completions. Responses and Embeddings requests both use `input`, so a request containing `input` but not `messages` is identified as Embeddings unless its URI ends in `/v1/responses`. If no earlier rule matches, the Plugin treats a non-empty JSON object or array as passthrough. Empty or invalid request bodies are rejected.
 
+Requests that include `Content-Type` must use `application/json`. If the header is omitted, the Plugin treats the body as JSON. The request body cannot exceed `max_req_body_size`, which defaults to 67,108,864 bytes; a larger body is rejected with HTTP `413`.
+
+Passthrough does not provide a named AI protocol to downstream AI-aware Plugins. Usage extraction, prompt decoration, content-moderation text extraction, and protocol conversion therefore do not run for a passthrough body. The `ai-prompt-template` Plugin runs earlier in the rewrite phase and can replace the body before protocol detection, so the rendered body can match a named protocol or remain passthrough.
+
+For a named protocol, the Plugin uses it directly when the selected provider supports it. Otherwise, it uses a registered converter to a protocol supported by the provider. The request is rejected when neither native support nor a compatible converter is available.
+
 ### Chat Completions Request Format
 
 | Name               | Type   | Required | Description                                         |

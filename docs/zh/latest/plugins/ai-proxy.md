@@ -58,6 +58,12 @@ import TabItem from '@theme/TabItem';
 
 基于 URI 的规则在仅基于请求体的规则之前运行，以免包含 `messages` 的 Bedrock Converse 和 Anthropic Messages 请求被识别为 Chat Completions。Responses 和 Embeddings 请求都使用 `input`，因此包含 `input` 但不包含 `messages` 的请求会被识别为 Embeddings，除非其 URI 以 `/v1/responses` 结尾。如果之前的规则均未匹配，插件会将非空 JSON 对象或数组视为透传请求。空请求体或无效请求体会被拒绝。
 
+包含 `Content-Type` 的请求必须使用 `application/json`。如果省略该请求头，插件会将请求体视为 JSON。请求体不能超过 `max_req_body_size`，其默认值为 67,108,864 字节；超过该限制的请求会收到 HTTP `413` 响应。
+
+透传模式不会向下游 AI 感知插件提供具名 AI 协议。因此，透传请求体不会执行用量提取、提示词装饰、内容审核文本提取或协议转换。`ai-prompt-template` 插件在 rewrite 阶段更早运行，并可在协议检测前替换请求体，因此渲染后的请求体可以匹配具名协议，也可以保持透传模式。
+
+对于具名协议，如果所选提供商原生支持该协议，插件会直接使用它；否则，插件会使用已注册的转换器转换为提供商支持的协议。如果既不支持原生协议，也没有兼容的转换器，请求将被拒绝。
+
 ### Chat Completions 请求格式
 
 | 名称               | 类型   | 必选项 | 描述                                         |
