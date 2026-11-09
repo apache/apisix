@@ -71,7 +71,15 @@ local function build_session_opts(session_conf)
         end
     end
     if session_conf.revocation and session_conf.revocation_cache_ttl == 0 then
-        session_conf.revocation_error_cache_ttl = 0
+        local error_ttl = session_conf.revocation_error_cache_ttl
+        -- only a non-zero error TTL, set or defaulted by the library, breaks
+        if error_ttl == nil or error_ttl > 0 then
+            if error_ttl then
+                core.log.warn("session.revocation_error_cache_ttl is ignored when ",
+                              "session.revocation_cache_ttl is 0")
+            end
+            session_conf.revocation_error_cache_ttl = 0
+        end
     end
     return session_conf
 end

@@ -446,7 +446,7 @@ ttl 5: 1
 
 
 
-=== TEST 6: build_session_opts disables the revocation error cache with the lookup cache
+=== TEST 6: build_session_opts disables the revocation error cache only when the lookup cache is off
 --- config
     location /t {
         content_by_lua_block {
@@ -464,6 +464,10 @@ ttl 5: 1
                           revocation_error_cache_ttl = 5})
             ngx.say("ttl 3: ", opts.revocation_cache_ttl, " ", opts.revocation_error_cache_ttl)
 
+            opts = build({secret = secret, revocation = "redis",
+                          revocation_cache_ttl = 0})
+            ngx.say("ttl 0, error unset: ", tostring(opts.revocation_error_cache_ttl))
+
             opts = build({secret = secret, revocation = "redis"})
             ngx.say("unset: ", tostring(opts.revocation_cache_ttl), " ",
                     tostring(opts.revocation_error_cache_ttl))
@@ -475,5 +479,8 @@ ttl 5: 1
 --- response_body
 ttl 0: 0 0
 ttl 3: 3 5
+ttl 0, error unset: 0
 unset: nil nil
 no revocation: nil
+--- error_log
+session.revocation_error_cache_ttl is ignored
