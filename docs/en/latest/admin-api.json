@@ -9,6 +9,41 @@
       "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
     }
   },
+  "servers": [
+    {
+      "url": "{protocol}://{host}:{port}",
+      "description": "APISIX Admin API Server",
+      "variables": {
+        "protocol": {
+          "default": "http",
+          "enum": [
+            "http",
+            "https"
+          ],
+          "description": "Protocol scheme. Use `https` when `deployment.admin.https_admin` is enabled and `deployment.admin.admin_api_mtls.admin_ssl_cert` and `admin_ssl_cert_key` are configured."
+        },
+        "host": {
+          "default": "127.0.0.1",
+          "description": "Admin API host address. Configure via `deployment.admin.admin_listen` in `config.yaml`."
+        },
+        "port": {
+          "default": "9180",
+          "description": "Admin API port. Default is `9180`."
+        }
+      }
+    }
+  ],
+  "security": [
+    {
+      "adminKey": []
+    },
+    {
+      "apiKeyQuery": []
+    },
+    {
+      "apiKeyCookie": []
+    }
+  ],
   "tags": [
     {
       "name": "Routes",
@@ -993,16 +1028,16 @@
               }
             }
           },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": "Missing identifier or resource is still referenced (where dependency checks apply)."
+          },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
           "404": {
             "$ref": "#/components/responses/NotFound",
             "description": "Key not found"
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequest",
-            "description": "Missing identifier or resource is still referenced (where dependency checks apply)."
           },
           "503": {
             "$ref": "#/components/responses/BadRequest",
@@ -1630,16 +1665,16 @@
               }
             }
           },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": "Missing identifier or resource is still referenced (where dependency checks apply)."
+          },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
           "404": {
             "$ref": "#/components/responses/NotFound",
             "description": "Key not found"
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequest",
-            "description": "Missing identifier or resource is still referenced (where dependency checks apply)."
           },
           "503": {
             "$ref": "#/components/responses/BadRequest",
@@ -1688,7 +1723,7 @@
                           "description": "The unique identifier of the consumer.",
                           "type": "string",
                           "minLength": 1,
-                          "maxLength": 100,
+                          "maxLength": 256,
                           "pattern": "^[a-zA-Z0-9_-]+$"
                         },
                         "labels": {
@@ -1969,16 +2004,16 @@
               }
             }
           },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": "Missing identifier or resource is still referenced (where dependency checks apply)."
+          },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
           "404": {
             "$ref": "#/components/responses/NotFound",
             "description": "Key not found"
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequest",
-            "description": "Missing identifier or resource is still referenced (where dependency checks apply)."
           },
           "503": {
             "$ref": "#/components/responses/BadRequest",
@@ -2028,7 +2063,7 @@
                           "description": "The unique identifier of the consumer.",
                           "type": "string",
                           "minLength": 1,
-                          "maxLength": 100,
+                          "maxLength": 256,
                           "pattern": "^[a-zA-Z0-9_-]+$"
                         },
                         "labels": {
@@ -2924,16 +2959,16 @@
               }
             }
           },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": "Missing identifier or resource is still referenced (where dependency checks apply)."
+          },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
           "404": {
             "$ref": "#/components/responses/NotFound",
             "description": "Key not found"
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequest",
-            "description": "Missing identifier or resource is still referenced (where dependency checks apply)."
           },
           "503": {
             "$ref": "#/components/responses/BadRequest",
@@ -3417,16 +3452,16 @@
               }
             }
           },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": "Missing identifier or resource is still referenced (where dependency checks apply)."
+          },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
           "404": {
             "$ref": "#/components/responses/NotFound",
             "description": "Key not found"
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequest",
-            "description": "Missing identifier or resource is still referenced (where dependency checks apply)."
           },
           "503": {
             "$ref": "#/components/responses/BadRequest",
@@ -3906,16 +3941,16 @@
               }
             }
           },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": "Missing identifier or resource is still referenced (where dependency checks apply)."
+          },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
           "404": {
             "$ref": "#/components/responses/NotFound",
             "description": "Key not found"
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequest",
-            "description": "Missing identifier or resource is still referenced (where dependency checks apply)."
           },
           "503": {
             "$ref": "#/components/responses/BadRequest",
@@ -4408,16 +4443,16 @@
               }
             }
           },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": "Missing identifier or resource is still referenced (where dependency checks apply)."
+          },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
           "404": {
             "$ref": "#/components/responses/NotFound",
             "description": "Key not found"
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequest",
-            "description": "Missing identifier or resource is still referenced (where dependency checks apply)."
           },
           "503": {
             "$ref": "#/components/responses/BadRequest",
@@ -4907,16 +4942,16 @@
               }
             }
           },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": "Missing identifier or resource is still referenced (where dependency checks apply)."
+          },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
           "404": {
             "$ref": "#/components/responses/NotFound",
             "description": "Key not found"
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequest",
-            "description": "Missing identifier or resource is still referenced (where dependency checks apply)."
           },
           "503": {
             "$ref": "#/components/responses/BadRequest",
@@ -5209,16 +5244,16 @@
               }
             }
           },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": "Missing identifier or resource is still referenced (where dependency checks apply)."
+          },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
           "404": {
             "$ref": "#/components/responses/NotFound",
             "description": "Key not found"
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequest",
-            "description": "Missing identifier or resource is still referenced (where dependency checks apply)."
           },
           "503": {
             "$ref": "#/components/responses/BadRequest",
@@ -5265,9 +5300,6 @@
               }
             }
           },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
-          },
           "400": {
             "description": "Unsupported subsystem or missing schema. /plugins/list returns a JSON string; other plugin endpoints return an error object.",
             "content": {
@@ -5284,6 +5316,9 @@
                 }
               }
             }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
           }
         },
         "operationId": "listPluginNames"
@@ -5344,13 +5379,6 @@
               }
             }
           },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFound",
-            "description": "Key not found"
-          },
           "400": {
             "description": "Unsupported subsystem or missing schema. /plugins/list returns a JSON string; other plugin endpoints return an error object.",
             "content": {
@@ -5367,6 +5395,13 @@
                 }
               }
             }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound",
+            "description": "Key not found"
           }
         },
         "operationId": "getPluginSchema"
@@ -6038,16 +6073,16 @@
               }
             }
           },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": "Missing identifier or resource is still referenced (where dependency checks apply)."
+          },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
           "404": {
             "$ref": "#/components/responses/NotFound",
             "description": "Key not found"
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequest",
-            "description": "Missing identifier or resource is still referenced (where dependency checks apply)."
           },
           "503": {
             "$ref": "#/components/responses/BadRequest",
@@ -6514,16 +6549,16 @@
               }
             }
           },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": "Missing identifier or resource is still referenced (where dependency checks apply)."
+          },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
           "404": {
             "$ref": "#/components/responses/NotFound",
             "description": "Key not found"
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequest",
-            "description": "Missing identifier or resource is still referenced (where dependency checks apply)."
           },
           "503": {
             "$ref": "#/components/responses/BadRequest",
@@ -6914,16 +6949,16 @@
               }
             }
           },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": "Missing identifier or resource is still referenced (where dependency checks apply)."
+          },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
           "404": {
             "$ref": "#/components/responses/NotFound",
             "description": "Key not found"
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequest",
-            "description": "Missing identifier or resource is still referenced (where dependency checks apply)."
           },
           "503": {
             "$ref": "#/components/responses/BadRequest",
@@ -7368,16 +7403,16 @@
               }
             }
           },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": "Missing identifier or resource is still referenced (where dependency checks apply)."
+          },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
           "404": {
             "$ref": "#/components/responses/NotFound",
             "description": "Key not found"
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequest",
-            "description": "Missing identifier or resource is still referenced (where dependency checks apply)."
           },
           "503": {
             "$ref": "#/components/responses/BadRequest",
@@ -7461,6 +7496,9 @@
           }
         },
         "responses": {
+          "202": {
+            "description": "Configuration accepted; asynchronous worker update scheduled."
+          },
           "204": {
             "description": "Digest unchanged; no update."
           },
@@ -7486,9 +7524,6 @@
                 }
               }
             }
-          },
-          "202": {
-            "description": "Configuration accepted; asynchronous worker update scheduled."
           }
         },
         "parameters": [
@@ -8634,30 +8669,6 @@
       }
     }
   },
-  "servers": [
-    {
-      "url": "{protocol}://{host}:{port}",
-      "description": "APISIX Admin API Server",
-      "variables": {
-        "protocol": {
-          "default": "http",
-          "enum": [
-            "http",
-            "https"
-          ],
-          "description": "Protocol scheme. Use `https` when `deployment.admin.https_admin` is enabled and `deployment.admin.admin_api_mtls.admin_ssl_cert` and `admin_ssl_cert_key` are configured."
-        },
-        "host": {
-          "default": "127.0.0.1",
-          "description": "Admin API host address. Configure via `deployment.admin.admin_listen` in `config.yaml`."
-        },
-        "port": {
-          "default": "9180",
-          "description": "Admin API port. Default is `9180`."
-        }
-      }
-    }
-  ],
   "components": {
     "securitySchemes": {
       "adminKey": {
@@ -8800,6 +8811,53 @@
         },
         "type": "object",
         "x-source": "apisix/schema_def.lua"
+      },
+      "CertificatePem": {
+        "type": "string",
+        "minLength": 128,
+        "maxLength": 65536,
+        "description": "PEM-encoded certificate or certificate chain.",
+        "not": {
+          "$ref": "#/components/schemas/SecretOrEnvironmentReference"
+        }
+      },
+      "PrivateKeyPem": {
+        "type": "string",
+        "minLength": 64,
+        "maxLength": 65536,
+        "description": "PEM-encoded private key.",
+        "not": {
+          "$ref": "#/components/schemas/SecretOrEnvironmentReference"
+        }
+      },
+      "SecretOrEnvironmentReference": {
+        "type": "string",
+        "pattern": "^\\$(?:secret|[eE][nN][vV])://",
+        "description": "APISIX secret ($secret://...) or environment variable ($env://..., case-insensitive) reference."
+      },
+      "CertificateOrReference": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/CertificatePem"
+          },
+          {
+            "$ref": "#/components/schemas/SecretOrEnvironmentReference"
+          }
+        ]
+      },
+      "PrivateKeyOrReference": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/PrivateKeyPem"
+          },
+          {
+            "$ref": "#/components/schemas/SecretOrEnvironmentReference"
+          }
+        ]
+      },
+      "StoredPrivateKeyValue": {
+        "type": "string",
+        "description": "Stored private-key value returned by the Admin API. Depending on configuration, it can be plaintext PEM, encrypted ciphertext, or a preserved SSL secret/environment reference."
       },
       "HealthCheckActiveHealthy": {
         "properties": {
@@ -9144,22 +9202,94 @@
       },
       "UpstreamTLS": {
         "properties": {
-          "client_key": {
-            "minLength": 64,
-            "maxLength": 65536,
-            "type": "string"
-          },
-          "client_cert": {
-            "minLength": 128,
-            "maxLength": 65536,
-            "type": "string"
+          "ca_certs": {
+            "items": {
+              "$ref": "#/components/schemas/CertificatePem"
+            },
+            "description": "CA certificates used to verify the upstream certificate",
+            "minItems": 1,
+            "type": "array"
           },
           "client_cert_id": {
-            "$ref": "#/components/schemas/ResourceId"
+            "anyOf": [
+              {
+                "pattern": "^[a-zA-Z0-9-_.]+$",
+                "maxLength": 64,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "minimum": 1,
+                "type": "integer"
+              }
+            ]
+          },
+          "client_key": {
+            "$ref": "#/components/schemas/PrivateKeyPem"
+          },
+          "client_cert": {
+            "$ref": "#/components/schemas/CertificatePem"
           },
           "verify": {
-            "description": "Turn on server certificate verification, currently only kafka upstream is supported",
-            "default": false,
+            "description": "Enable or disable upstream certificate verification. When omitted, fall back to the NGINX verification setting.",
+            "type": "boolean"
+          }
+        },
+        "type": "object",
+        "dependentSchemas": {
+          "client_key": {
+            "required": [
+              "client_cert"
+            ]
+          },
+          "client_cert": {
+            "required": [
+              "client_key"
+            ]
+          },
+          "client_cert_id": {
+            "not": {
+              "required": [
+                "client_cert",
+                "client_key"
+              ]
+            }
+          }
+        }
+      },
+      "UpstreamTLSRead": {
+        "properties": {
+          "ca_certs": {
+            "items": {
+              "$ref": "#/components/schemas/CertificatePem"
+            },
+            "description": "CA certificates used to verify the upstream certificate",
+            "minItems": 1,
+            "type": "array"
+          },
+          "client_cert_id": {
+            "anyOf": [
+              {
+                "pattern": "^[a-zA-Z0-9-_.]+$",
+                "maxLength": 64,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "minimum": 1,
+                "type": "integer"
+              }
+            ]
+          },
+          "client_key": {
+            "$ref": "#/components/schemas/StoredPrivateKeyValue",
+            "description": "Stored client private-key value returned by the Admin API."
+          },
+          "client_cert": {
+            "$ref": "#/components/schemas/CertificatePem"
+          },
+          "verify": {
+            "description": "Enable or disable upstream certificate verification. When omitted, fall back to the NGINX verification setting.",
             "type": "boolean"
           }
         },
@@ -9184,7 +9314,7 @@
             }
           }
         },
-        "x-source": "apisix/schema_def.lua"
+        "description": "Stored upstream TLS configuration returned by the Admin API."
       },
       "KeepalivePool": {
         "properties": {
@@ -9214,9 +9344,7 @@
             "properties": {
               "ca_certs": {
                 "items": {
-                  "maxLength": 65536,
-                  "minLength": 128,
-                  "type": "string"
+                  "$ref": "#/components/schemas/CertificatePem"
                 },
                 "description": "CA certificates used to verify the upstream certificate",
                 "minItems": 1,
@@ -9237,17 +9365,13 @@
                 ]
               },
               "client_key": {
-                "maxLength": 65536,
-                "minLength": 64,
-                "type": "string"
+                "$ref": "#/components/schemas/PrivateKeyPem"
               },
               "client_cert": {
-                "maxLength": 65536,
-                "minLength": 128,
-                "type": "string"
+                "$ref": "#/components/schemas/CertificatePem"
               },
               "verify": {
-                "description": "enable or disable upstream certificate verification, fall back to the nginx configuration when not set",
+                "description": "Enable or disable upstream certificate verification. When omitted, fall back to the NGINX verification setting.",
                 "type": "boolean"
               }
             },
@@ -9616,7 +9740,7 @@
             "description": "mod of host passing"
           },
           "scheme": {
-            "description": "The scheme of the upstream. For L7 proxy, it can be one of grpc/grpcs/http/https. For L4 proxy, it can be one of tcp/tls/udp. For specific protocols, it can be kafka.",
+            "description": "The scheme of the upstream. For L7 proxy, it can be one of grpc/grpcs/http/https/ws/wss. For L4 proxy, it can be one of tcp/tls/udp. For specific protocols, it can be kafka.",
             "enum": [
               "grpc",
               "grpcs",
@@ -9811,6 +9935,552 @@
         ],
         "type": "object",
         "x-source": "apisix/schema_def.lua"
+      },
+      "UpstreamRead": {
+        "additionalProperties": false,
+        "properties": {
+          "tls": {
+            "$ref": "#/components/schemas/UpstreamTLSRead"
+          },
+          "checks": {
+            "anyOf": [
+              {
+                "required": [
+                  "active"
+                ]
+              },
+              {
+                "required": [
+                  "active",
+                  "passive"
+                ]
+              }
+            ],
+            "properties": {
+              "passive": {
+                "properties": {
+                  "unhealthy": {
+                    "properties": {
+                      "timeouts": {
+                        "minimum": 0,
+                        "maximum": 254,
+                        "default": 7,
+                        "type": "integer"
+                      },
+                      "tcp_failures": {
+                        "minimum": 0,
+                        "maximum": 254,
+                        "default": 2,
+                        "type": "integer"
+                      },
+                      "http_failures": {
+                        "minimum": 0,
+                        "maximum": 254,
+                        "default": 5,
+                        "type": "integer"
+                      },
+                      "http_statuses": {
+                        "type": "array",
+                        "uniqueItems": true,
+                        "items": {
+                          "minimum": 200,
+                          "maximum": 599,
+                          "type": "integer"
+                        },
+                        "minItems": 1,
+                        "default": [
+                          429,
+                          500,
+                          503
+                        ]
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "healthy": {
+                    "properties": {
+                      "successes": {
+                        "minimum": 0,
+                        "maximum": 254,
+                        "default": 5,
+                        "type": "integer"
+                      },
+                      "http_statuses": {
+                        "type": "array",
+                        "uniqueItems": true,
+                        "items": {
+                          "minimum": 200,
+                          "maximum": 599,
+                          "type": "integer"
+                        },
+                        "minItems": 1,
+                        "default": [
+                          200,
+                          201,
+                          202,
+                          203,
+                          204,
+                          205,
+                          206,
+                          207,
+                          208,
+                          226,
+                          300,
+                          301,
+                          302,
+                          303,
+                          304,
+                          305,
+                          306,
+                          307,
+                          308
+                        ]
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": {
+                    "default": "http",
+                    "enum": [
+                      "http",
+                      "https",
+                      "tcp"
+                    ],
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              },
+              "active": {
+                "properties": {
+                  "host": {
+                    "pattern": "^\\*$|^\\*?[0-9a-zA-Z-._\\[\\]:]+$",
+                    "type": "string"
+                  },
+                  "concurrency": {
+                    "default": 10,
+                    "type": "integer"
+                  },
+                  "timeout": {
+                    "default": 1,
+                    "type": "number"
+                  },
+                  "type": {
+                    "default": "http",
+                    "enum": [
+                      "http",
+                      "https",
+                      "tcp"
+                    ],
+                    "type": "string"
+                  },
+                  "unhealthy": {
+                    "properties": {
+                      "tcp_failures": {
+                        "minimum": 1,
+                        "maximum": 254,
+                        "default": 2,
+                        "type": "integer"
+                      },
+                      "http_statuses": {
+                        "type": "array",
+                        "uniqueItems": true,
+                        "items": {
+                          "minimum": 200,
+                          "maximum": 599,
+                          "type": "integer"
+                        },
+                        "minItems": 1,
+                        "default": [
+                          429,
+                          404,
+                          500,
+                          501,
+                          502,
+                          503,
+                          504,
+                          505
+                        ]
+                      },
+                      "interval": {
+                        "minimum": 1,
+                        "default": 1,
+                        "type": "integer"
+                      },
+                      "http_failures": {
+                        "minimum": 1,
+                        "maximum": 254,
+                        "default": 5,
+                        "type": "integer"
+                      },
+                      "timeouts": {
+                        "minimum": 1,
+                        "maximum": 254,
+                        "default": 3,
+                        "type": "integer"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "http_req_body": {
+                    "default": "",
+                    "type": "string"
+                  },
+                  "http_method": {
+                    "default": "GET",
+                    "enum": [
+                      "GET",
+                      "POST",
+                      "PUT",
+                      "DELETE",
+                      "PATCH",
+                      "HEAD",
+                      "OPTIONS",
+                      "CONNECT",
+                      "TRACE",
+                      "PURGE"
+                    ],
+                    "type": "string"
+                  },
+                  "http_path": {
+                    "default": "/",
+                    "type": "string"
+                  },
+                  "req_headers": {
+                    "items": {
+                      "uniqueItems": true,
+                      "type": "string"
+                    },
+                    "minItems": 1,
+                    "type": "array"
+                  },
+                  "healthy": {
+                    "properties": {
+                      "interval": {
+                        "minimum": 1,
+                        "default": 1,
+                        "type": "integer"
+                      },
+                      "successes": {
+                        "minimum": 1,
+                        "maximum": 254,
+                        "default": 2,
+                        "type": "integer"
+                      },
+                      "http_statuses": {
+                        "type": "array",
+                        "uniqueItems": true,
+                        "items": {
+                          "minimum": 200,
+                          "maximum": 599,
+                          "type": "integer"
+                        },
+                        "minItems": 1,
+                        "default": [
+                          200,
+                          302
+                        ]
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "https_verify_certificate": {
+                    "default": true,
+                    "type": "boolean"
+                  },
+                  "port": {
+                    "minimum": 1,
+                    "maximum": 65535,
+                    "type": "integer"
+                  }
+                },
+                "type": "object"
+              }
+            },
+            "type": "object"
+          },
+          "retries": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "create_time": {
+            "type": "integer",
+            "readOnly": true
+          },
+          "discovery_type": {
+            "type": "string",
+            "description": "discovery type"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "pattern": "^[a-zA-Z0-9-_.]+$",
+                "maxLength": 64,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "minimum": 1,
+                "type": "integer"
+              }
+            ]
+          },
+          "service_name": {
+            "minLength": 1,
+            "maxLength": 256,
+            "type": "string"
+          },
+          "labels": {
+            "patternProperties": {
+              ".*": {
+                "maxLength": 256,
+                "description": "value of label",
+                "minLength": 1,
+                "pattern": "^\\S+$",
+                "type": "string"
+              }
+            },
+            "type": "object",
+            "description": "key/value pairs to specify attributes"
+          },
+          "desc": {
+            "maxLength": 256,
+            "type": "string"
+          },
+          "timeout": {
+            "required": [
+              "connect",
+              "send",
+              "read"
+            ],
+            "properties": {
+              "connect": {
+                "exclusiveMinimum": 0,
+                "type": "number"
+              },
+              "send": {
+                "exclusiveMinimum": 0,
+                "type": "number"
+              },
+              "read": {
+                "exclusiveMinimum": 0,
+                "type": "number"
+              }
+            },
+            "type": "object"
+          },
+          "type": {
+            "default": "roundrobin",
+            "type": "string",
+            "description": "algorithms of load balancing"
+          },
+          "pass_host": {
+            "default": "pass",
+            "enum": [
+              "pass",
+              "node",
+              "rewrite"
+            ],
+            "type": "string",
+            "description": "mod of host passing"
+          },
+          "scheme": {
+            "description": "The scheme of the upstream. For L7 proxy, it can be one of grpc/grpcs/http/https/ws/wss. For L4 proxy, it can be one of tcp/tls/udp. For specific protocols, it can be kafka.",
+            "enum": [
+              "grpc",
+              "grpcs",
+              "http",
+              "https",
+              "tcp",
+              "tls",
+              "udp",
+              "kafka",
+              "ws",
+              "wss"
+            ],
+            "default": "http"
+          },
+          "upstream_host": {
+            "pattern": "^\\*$|^\\*?[0-9a-zA-Z-._\\[\\]:]+$",
+            "type": "string"
+          },
+          "discovery_args": {
+            "properties": {
+              "namespace_id": {
+                "type": "string",
+                "description": "namespace id"
+              },
+              "group_name": {
+                "type": "string",
+                "description": "group name"
+              },
+              "cluster_ids": {
+                "description": "ids of the kubernetes discovery clusters to get nodes from",
+                "uniqueItems": true,
+                "items": {
+                  "type": "string"
+                },
+                "minItems": 1,
+                "type": "array"
+              }
+            },
+            "type": "object"
+          },
+          "name": {
+            "minLength": 1,
+            "maxLength": 256,
+            "type": "string"
+          },
+          "warm_up_conf": {
+            "additionalProperties": false,
+            "required": [
+              "slow_start_time_seconds",
+              "min_weight_percent"
+            ],
+            "description": "slow start: ramp a newly observed node up to its configured weight",
+            "type": "object",
+            "properties": {
+              "min_weight_percent": {
+                "minimum": 1,
+                "maximum": 100,
+                "type": "integer",
+                "description": "lowest effective weight, as a percentage of the original weight"
+              },
+              "aggression": {
+                "minimum": 0.01,
+                "default": 1,
+                "type": "number",
+                "description": "shape of the ramp: 1 is linear, above 1 ramps up faster at the beginning, below 1 slower"
+              },
+              "startup_grace_period_seconds": {
+                "minimum": 0,
+                "default": 0,
+                "type": "integer",
+                "description": "seconds after the data plane started during which a node observed for the first time is considered mature"
+              },
+              "interval": {
+                "minimum": 1,
+                "default": 1,
+                "type": "integer",
+                "description": "seconds between two effective weight refreshes"
+              },
+              "slow_start_time_seconds": {
+                "minimum": 1,
+                "type": "integer",
+                "description": "seconds a new node takes to reach its full weight"
+              }
+            }
+          },
+          "key": {
+            "type": "string",
+            "description": "the key of chash for dynamic load balancing"
+          },
+          "hash_on": {
+            "enum": [
+              "vars",
+              "header",
+              "cookie",
+              "consumer",
+              "vars_combinations"
+            ],
+            "default": "vars",
+            "type": "string"
+          },
+          "keepalive_pool": {
+            "properties": {
+              "requests": {
+                "minimum": 1,
+                "default": 1000,
+                "type": "integer"
+              },
+              "idle_timeout": {
+                "minimum": 0,
+                "default": 60,
+                "type": "number"
+              },
+              "size": {
+                "minimum": 1,
+                "default": 320,
+                "type": "integer"
+              }
+            },
+            "type": "object"
+          },
+          "retry_timeout": {
+            "minimum": 0,
+            "type": "number"
+          },
+          "nodes": {
+            "anyOf": [
+              {
+                "patternProperties": {
+                  ".*": {
+                    "minimum": 0,
+                    "type": "integer",
+                    "description": "weight of node"
+                  }
+                },
+                "type": "object"
+              },
+              {
+                "items": {
+                  "required": [
+                    "host",
+                    "weight"
+                  ],
+                  "properties": {
+                    "host": {
+                      "pattern": "^\\*$|^\\*?[0-9a-zA-Z-._\\[\\]:]+$",
+                      "type": "string"
+                    },
+                    "metadata": {
+                      "type": "object",
+                      "description": "metadata of node"
+                    },
+                    "priority": {
+                      "default": 0,
+                      "type": "integer",
+                      "description": "priority of node"
+                    },
+                    "weight": {
+                      "minimum": 0,
+                      "type": "integer",
+                      "description": "weight of node"
+                    },
+                    "port": {
+                      "minimum": 1,
+                      "maximum": 65535,
+                      "type": "integer",
+                      "description": "port of node"
+                    }
+                  },
+                  "type": "object"
+                },
+                "type": "array"
+              }
+            ]
+          },
+          "update_time": {
+            "type": "integer",
+            "readOnly": true
+          }
+        },
+        "oneOf": [
+          {
+            "required": [
+              "nodes"
+            ]
+          },
+          {
+            "required": [
+              "service_name",
+              "discovery_type"
+            ]
+          }
+        ],
+        "type": "object",
+        "x-source": "apisix/schema_def.lua",
+        "description": "Stored upstream configuration returned by the Admin API."
       },
       "Plugins": {
         "type": "object",
@@ -10124,9 +10794,7 @@
                 "properties": {
                   "ca_certs": {
                     "items": {
-                      "maxLength": 65536,
-                      "minLength": 128,
-                      "type": "string"
+                      "$ref": "#/components/schemas/CertificatePem"
                     },
                     "description": "CA certificates used to verify the upstream certificate",
                     "minItems": 1,
@@ -10147,17 +10815,13 @@
                     ]
                   },
                   "client_key": {
-                    "maxLength": 65536,
-                    "minLength": 64,
-                    "type": "string"
+                    "$ref": "#/components/schemas/PrivateKeyPem"
                   },
                   "client_cert": {
-                    "maxLength": 65536,
-                    "minLength": 128,
-                    "type": "string"
+                    "$ref": "#/components/schemas/CertificatePem"
                   },
                   "verify": {
-                    "description": "enable or disable upstream certificate verification, fall back to the nginx configuration when not set",
+                    "description": "Enable or disable upstream certificate verification. When omitted, fall back to the NGINX verification setting.",
                     "type": "boolean"
                   }
                 },
@@ -10841,6 +11505,430 @@
         },
         "x-source": "apisix/schema_def.lua"
       },
+      "RouteRead": {
+        "additionalProperties": false,
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "script",
+                "plugins"
+              ]
+            },
+            {
+              "required": [
+                "script",
+                "plugin_config_id"
+              ]
+            }
+          ]
+        },
+        "type": "object",
+        "anyOf": [
+          {
+            "required": [
+              "plugins",
+              "uri"
+            ]
+          },
+          {
+            "required": [
+              "upstream",
+              "uri"
+            ]
+          },
+          {
+            "required": [
+              "upstream_id",
+              "uri"
+            ]
+          },
+          {
+            "required": [
+              "service_id",
+              "uri"
+            ]
+          },
+          {
+            "required": [
+              "plugins",
+              "uris"
+            ]
+          },
+          {
+            "required": [
+              "upstream",
+              "uris"
+            ]
+          },
+          {
+            "required": [
+              "upstream_id",
+              "uris"
+            ]
+          },
+          {
+            "required": [
+              "service_id",
+              "uris"
+            ]
+          },
+          {
+            "required": [
+              "script",
+              "uri"
+            ]
+          },
+          {
+            "required": [
+              "script",
+              "uris"
+            ]
+          }
+        ],
+        "allOf": [
+          {
+            "oneOf": [
+              {
+                "required": [
+                  "uri"
+                ]
+              },
+              {
+                "required": [
+                  "uris"
+                ]
+              }
+            ]
+          },
+          {
+            "oneOf": [
+              {
+                "not": {
+                  "anyOf": [
+                    {
+                      "required": [
+                        "host"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "hosts"
+                      ]
+                    }
+                  ]
+                }
+              },
+              {
+                "required": [
+                  "host"
+                ]
+              },
+              {
+                "required": [
+                  "hosts"
+                ]
+              }
+            ]
+          },
+          {
+            "oneOf": [
+              {
+                "not": {
+                  "anyOf": [
+                    {
+                      "required": [
+                        "remote_addr"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "remote_addrs"
+                      ]
+                    }
+                  ]
+                }
+              },
+              {
+                "required": [
+                  "remote_addr"
+                ]
+              },
+              {
+                "required": [
+                  "remote_addrs"
+                ]
+              }
+            ]
+          }
+        ],
+        "properties": {
+          "uri": {
+            "maxLength": 4096,
+            "minLength": 1,
+            "type": "string"
+          },
+          "remote_addr": {
+            "anyOf": [
+              {
+                "title": "IPv4",
+                "format": "ipv4",
+                "type": "string"
+              },
+              {
+                "title": "IPv4/CIDR",
+                "pattern": "^([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])/([12]?[0-9]|3[0-2])$",
+                "type": "string"
+              },
+              {
+                "title": "IPv6",
+                "format": "ipv6",
+                "type": "string"
+              },
+              {
+                "title": "IPv6/CIDR",
+                "pattern": "^([a-fA-F0-9]{0,4}:){1,8}(:[a-fA-F0-9]{0,4}){0,8}([a-fA-F0-9]{0,4})?/[0-9]{1,3}$",
+                "type": "string"
+              }
+            ],
+            "type": "string",
+            "description": "client IP"
+          },
+          "script": {
+            "maxLength": 102400,
+            "minLength": 10,
+            "type": "string"
+          },
+          "upstream_id": {
+            "anyOf": [
+              {
+                "pattern": "^[a-zA-Z0-9-_.]+$",
+                "maxLength": 64,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "minimum": 1,
+                "type": "integer"
+              }
+            ]
+          },
+          "create_time": {
+            "type": "integer",
+            "readOnly": true
+          },
+          "vars": {
+            "type": "array"
+          },
+          "plugins": {
+            "type": "object"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "pattern": "^[a-zA-Z0-9-_.]+$",
+                "maxLength": 64,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "minimum": 1,
+                "type": "integer"
+              }
+            ]
+          },
+          "status": {
+            "default": 1,
+            "enum": [
+              1,
+              0
+            ],
+            "type": "integer",
+            "description": "route status, 1 to enable, 0 to disable"
+          },
+          "enable_websocket": {
+            "type": "boolean",
+            "description": "enable websocket for request"
+          },
+          "labels": {
+            "patternProperties": {
+              ".*": {
+                "maxLength": 256,
+                "description": "value of label",
+                "minLength": 1,
+                "pattern": "^\\S+$",
+                "type": "string"
+              }
+            },
+            "type": "object",
+            "description": "key/value pairs to specify attributes"
+          },
+          "desc": {
+            "maxLength": 256,
+            "type": "string"
+          },
+          "timeout": {
+            "required": [
+              "connect",
+              "send",
+              "read"
+            ],
+            "properties": {
+              "connect": {
+                "exclusiveMinimum": 0,
+                "type": "number"
+              },
+              "send": {
+                "exclusiveMinimum": 0,
+                "type": "number"
+              },
+              "read": {
+                "exclusiveMinimum": 0,
+                "type": "number"
+              }
+            },
+            "type": "object"
+          },
+          "service_id": {
+            "anyOf": [
+              {
+                "pattern": "^[a-zA-Z0-9-_.]+$",
+                "maxLength": 64,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "minimum": 1,
+                "type": "integer"
+              }
+            ]
+          },
+          "upstream": {
+            "$ref": "#/components/schemas/UpstreamRead"
+          },
+          "hosts": {
+            "uniqueItems": true,
+            "minItems": 1,
+            "items": {
+              "pattern": "^\\*$|^\\*?[0-9a-zA-Z-._\\[\\]:]+$",
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "plugin_config_id": {
+            "anyOf": [
+              {
+                "pattern": "^[a-zA-Z0-9-_.]+$",
+                "maxLength": 64,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "minimum": 1,
+                "type": "integer"
+              }
+            ]
+          },
+          "methods": {
+            "uniqueItems": true,
+            "items": {
+              "enum": [
+                "GET",
+                "POST",
+                "PUT",
+                "DELETE",
+                "PATCH",
+                "HEAD",
+                "OPTIONS",
+                "CONNECT",
+                "TRACE",
+                "PURGE"
+              ],
+              "type": "string",
+              "description": "HTTP method"
+            },
+            "type": "array"
+          },
+          "name": {
+            "minLength": 1,
+            "maxLength": 256,
+            "type": "string"
+          },
+          "script_id": {
+            "anyOf": [
+              {
+                "pattern": "^[a-zA-Z0-9-_.]+$",
+                "maxLength": 64,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "minimum": 1,
+                "type": "integer"
+              }
+            ]
+          },
+          "filter_func": {
+            "pattern": "^function",
+            "minLength": 10,
+            "type": "string"
+          },
+          "remote_addrs": {
+            "uniqueItems": true,
+            "minItems": 1,
+            "items": {
+              "anyOf": [
+                {
+                  "title": "IPv4",
+                  "format": "ipv4",
+                  "type": "string"
+                },
+                {
+                  "title": "IPv4/CIDR",
+                  "pattern": "^([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])/([12]?[0-9]|3[0-2])$",
+                  "type": "string"
+                },
+                {
+                  "title": "IPv6",
+                  "format": "ipv6",
+                  "type": "string"
+                },
+                {
+                  "title": "IPv6/CIDR",
+                  "pattern": "^([a-fA-F0-9]{0,4}:){1,8}(:[a-fA-F0-9]{0,4}){0,8}([a-fA-F0-9]{0,4})?/[0-9]{1,3}$",
+                  "type": "string"
+                }
+              ],
+              "type": "string",
+              "description": "client IP"
+            },
+            "type": "array"
+          },
+          "uris": {
+            "uniqueItems": true,
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "description": "HTTP uri"
+            },
+            "type": "array"
+          },
+          "host": {
+            "pattern": "^\\*$|^\\*?[0-9a-zA-Z-._\\[\\]:]+$",
+            "type": "string"
+          },
+          "priority": {
+            "default": 0,
+            "type": "integer"
+          },
+          "update_time": {
+            "type": "integer",
+            "readOnly": true
+          }
+        },
+        "x-source": "apisix/schema_def.lua",
+        "description": "Stored Route configuration returned by the Admin API."
+      },
       "Service": {
         "additionalProperties": false,
         "properties": {
@@ -10926,9 +12014,7 @@
                 "properties": {
                   "ca_certs": {
                     "items": {
-                      "maxLength": 65536,
-                      "minLength": 128,
-                      "type": "string"
+                      "$ref": "#/components/schemas/CertificatePem"
                     },
                     "description": "CA certificates used to verify the upstream certificate",
                     "minItems": 1,
@@ -10949,17 +12035,13 @@
                     ]
                   },
                   "client_key": {
-                    "maxLength": 65536,
-                    "minLength": 64,
-                    "type": "string"
+                    "$ref": "#/components/schemas/PrivateKeyPem"
                   },
                   "client_cert": {
-                    "maxLength": 65536,
-                    "minLength": 128,
-                    "type": "string"
+                    "$ref": "#/components/schemas/CertificatePem"
                   },
                   "verify": {
-                    "description": "enable or disable upstream certificate verification, fall back to the nginx configuration when not set",
+                    "description": "Enable or disable upstream certificate verification. When omitted, fall back to the NGINX verification setting.",
                     "type": "boolean"
                   }
                 },
@@ -11529,6 +12611,96 @@
         "type": "object",
         "x-source": "apisix/schema_def.lua"
       },
+      "ServiceRead": {
+        "additionalProperties": false,
+        "properties": {
+          "labels": {
+            "patternProperties": {
+              ".*": {
+                "maxLength": 256,
+                "description": "value of label",
+                "minLength": 1,
+                "pattern": "^\\S+$",
+                "type": "string"
+              }
+            },
+            "type": "object",
+            "description": "key/value pairs to specify attributes"
+          },
+          "desc": {
+            "maxLength": 256,
+            "type": "string"
+          },
+          "enable_websocket": {
+            "type": "boolean",
+            "description": "enable websocket for request"
+          },
+          "script": {
+            "maxLength": 102400,
+            "minLength": 10,
+            "type": "string"
+          },
+          "name": {
+            "minLength": 1,
+            "maxLength": 256,
+            "type": "string"
+          },
+          "create_time": {
+            "type": "integer",
+            "readOnly": true
+          },
+          "hosts": {
+            "uniqueItems": true,
+            "minItems": 1,
+            "items": {
+              "pattern": "^\\*$|^\\*?[0-9a-zA-Z-._\\[\\]:]+$",
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "upstream_id": {
+            "anyOf": [
+              {
+                "pattern": "^[a-zA-Z0-9-_.]+$",
+                "maxLength": 64,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "minimum": 1,
+                "type": "integer"
+              }
+            ]
+          },
+          "plugins": {
+            "type": "object"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "pattern": "^[a-zA-Z0-9-_.]+$",
+                "maxLength": 64,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "minimum": 1,
+                "type": "integer"
+              }
+            ]
+          },
+          "upstream": {
+            "$ref": "#/components/schemas/UpstreamRead"
+          },
+          "update_time": {
+            "type": "integer",
+            "readOnly": true
+          }
+        },
+        "type": "object",
+        "x-source": "apisix/schema_def.lua",
+        "description": "Stored Service configuration returned by the Admin API."
+      },
       "Consumer": {
         "required": [
           "username"
@@ -11711,9 +12883,8 @@
             "type": "array"
           },
           "key": {
-            "minLength": 64,
-            "maxLength": 65536,
-            "type": "string"
+            "$ref": "#/components/schemas/PrivateKeyOrReference",
+            "description": "PEM-encoded private key or an APISIX secret/environment reference."
           },
           "create_time": {
             "type": "integer",
@@ -11732,9 +12903,8 @@
             "type": "integer"
           },
           "cert": {
-            "minLength": 128,
-            "maxLength": 65536,
-            "type": "string"
+            "$ref": "#/components/schemas/CertificateOrReference",
+            "description": "PEM-encoded certificate or an APISIX secret/environment reference."
           },
           "client": {
             "required": [
@@ -11742,9 +12912,8 @@
             ],
             "properties": {
               "ca": {
-                "minLength": 128,
-                "maxLength": 65536,
-                "type": "string"
+                "$ref": "#/components/schemas/CertificateOrReference",
+                "description": "PEM-encoded CA certificate or an APISIX secret/environment reference."
               },
               "skip_mtls_uri_regex": {
                 "uniqueItems": true,
@@ -11769,17 +12938,13 @@
           },
           "certs": {
             "items": {
-              "minLength": 128,
-              "maxLength": 65536,
-              "type": "string"
+              "$ref": "#/components/schemas/CertificateOrReference"
             },
             "type": "array"
           },
           "keys": {
             "items": {
-              "minLength": 64,
-              "maxLength": 65536,
-              "type": "string"
+              "$ref": "#/components/schemas/PrivateKeyOrReference"
             },
             "type": "array"
           },
@@ -11802,6 +12967,154 @@
         },
         "type": "object",
         "x-source": "apisix/schema_def.lua"
+      },
+      "SSLWrite": {
+        "additionalProperties": false,
+        "else": {
+          "required": [
+            "key",
+            "cert"
+          ]
+        },
+        "if": {
+          "properties": {
+            "type": {
+              "enum": [
+                "server"
+              ]
+            }
+          }
+        },
+        "then": {
+          "oneOf": [
+            {
+              "required": [
+                "sni",
+                "key",
+                "cert"
+              ]
+            },
+            {
+              "required": [
+                "snis",
+                "key",
+                "cert"
+              ]
+            }
+          ]
+        },
+        "properties": {
+          "snis": {
+            "items": {
+              "pattern": "^\\*$|^\\*?[0-9a-zA-Z-._\\[\\]:]+$",
+              "type": "string"
+            },
+            "minItems": 1,
+            "type": "array"
+          },
+          "update_time": {
+            "type": "integer",
+            "readOnly": true
+          },
+          "ssl_protocols": {
+            "items": {
+              "enum": [
+                "TLSv1.1",
+                "TLSv1.2",
+                "TLSv1.3"
+              ]
+            },
+            "maxItems": 3,
+            "description": "set ssl protocols",
+            "uniqueItems": true,
+            "type": "array"
+          },
+          "key": {
+            "$ref": "#/components/schemas/StoredPrivateKeyValue",
+            "description": "Stored private-key value returned by a write operation."
+          },
+          "create_time": {
+            "type": "integer",
+            "readOnly": true
+          },
+          "labels": {
+            "$ref": "#/components/schemas/Labels"
+          },
+          "status": {
+            "default": 1,
+            "description": "ssl status, 1 to enable, 0 to disable",
+            "enum": [
+              1,
+              0
+            ],
+            "type": "integer"
+          },
+          "cert": {
+            "$ref": "#/components/schemas/CertificateOrReference",
+            "description": "PEM-encoded certificate or an APISIX secret/environment reference."
+          },
+          "client": {
+            "required": [
+              "ca"
+            ],
+            "properties": {
+              "ca": {
+                "$ref": "#/components/schemas/CertificateOrReference",
+                "description": "PEM-encoded CA certificate or an APISIX secret/environment reference."
+              },
+              "skip_mtls_uri_regex": {
+                "uniqueItems": true,
+                "minItems": 1,
+                "items": {
+                  "type": "string",
+                  "description": "uri regular expression to skip mtls"
+                },
+                "type": "array"
+              },
+              "depth": {
+                "default": 1,
+                "minimum": 0,
+                "type": "integer"
+              }
+            },
+            "type": "object"
+          },
+          "sni": {
+            "pattern": "^\\*$|^\\*?[0-9a-zA-Z-._\\[\\]:]+$",
+            "type": "string"
+          },
+          "certs": {
+            "items": {
+              "$ref": "#/components/schemas/CertificateOrReference"
+            },
+            "type": "array"
+          },
+          "keys": {
+            "items": {
+              "$ref": "#/components/schemas/StoredPrivateKeyValue"
+            },
+            "type": "array"
+          },
+          "id": {
+            "$ref": "#/components/schemas/ResourceId"
+          },
+          "desc": {
+            "maxLength": 256,
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "server",
+              "client"
+            ],
+            "description": "ssl certificate type, server to server certificate, client to client certificate for upstream",
+            "default": "server",
+            "type": "string"
+          }
+        },
+        "type": "object",
+        "x-source": "apisix/schema_def.lua",
+        "description": "Stored SSL write-response representation. Private-key fields may contain plaintext PEM, encrypted values, or stored references."
       },
       "GlobalRule": {
         "required": [
@@ -12079,9 +13392,7 @@
                 "properties": {
                   "ca_certs": {
                     "items": {
-                      "maxLength": 65536,
-                      "minLength": 128,
-                      "type": "string"
+                      "$ref": "#/components/schemas/CertificatePem"
                     },
                     "description": "CA certificates used to verify the upstream certificate",
                     "minItems": 1,
@@ -12102,17 +13413,13 @@
                     ]
                   },
                   "client_key": {
-                    "maxLength": 65536,
-                    "minLength": 64,
-                    "type": "string"
+                    "$ref": "#/components/schemas/PrivateKeyPem"
                   },
                   "client_cert": {
-                    "maxLength": 65536,
-                    "minLength": 128,
-                    "type": "string"
+                    "$ref": "#/components/schemas/CertificatePem"
                   },
                   "verify": {
-                    "description": "enable or disable upstream certificate verification, fall back to the nginx configuration when not set",
+                    "description": "Enable or disable upstream certificate verification. When omitted, fall back to the NGINX verification setting.",
                     "type": "boolean"
                   }
                 },
@@ -12682,6 +13989,229 @@
         "type": "object",
         "x-source": "apisix/schema_def.lua"
       },
+      "StreamRouteRead": {
+        "additionalProperties": false,
+        "not": {
+          "required": [
+            "sni",
+            "snis"
+          ]
+        },
+        "properties": {
+          "remote_addr": {
+            "anyOf": [
+              {
+                "title": "IPv4",
+                "format": "ipv4",
+                "type": "string"
+              },
+              {
+                "title": "IPv4/CIDR",
+                "pattern": "^([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])/([12]?[0-9]|3[0-2])$",
+                "type": "string"
+              },
+              {
+                "title": "IPv6",
+                "format": "ipv6",
+                "type": "string"
+              },
+              {
+                "title": "IPv6/CIDR",
+                "pattern": "^([a-fA-F0-9]{0,4}:){1,8}(:[a-fA-F0-9]{0,4}){0,8}([a-fA-F0-9]{0,4})?/[0-9]{1,3}$",
+                "type": "string"
+              }
+            ],
+            "type": "string",
+            "description": "client IP"
+          },
+          "sni": {
+            "pattern": "^\\*$|^\\*?[0-9a-zA-Z-._\\[\\]:]+$",
+            "type": "string",
+            "description": "server name indication"
+          },
+          "upstream_id": {
+            "anyOf": [
+              {
+                "pattern": "^[a-zA-Z0-9-_.]+$",
+                "maxLength": 64,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "minimum": 1,
+                "type": "integer"
+              }
+            ]
+          },
+          "create_time": {
+            "type": "integer",
+            "readOnly": true
+          },
+          "service_id": {
+            "anyOf": [
+              {
+                "pattern": "^[a-zA-Z0-9-_.]+$",
+                "maxLength": 64,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "minimum": 1,
+                "type": "integer"
+              }
+            ]
+          },
+          "plugins": {
+            "type": "object"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "pattern": "^[a-zA-Z0-9-_.]+$",
+                "maxLength": 64,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "minimum": 1,
+                "type": "integer"
+              }
+            ]
+          },
+          "server_addr": {
+            "anyOf": [
+              {
+                "title": "IPv4",
+                "format": "ipv4",
+                "type": "string"
+              },
+              {
+                "title": "IPv4/CIDR",
+                "pattern": "^([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])/([12]?[0-9]|3[0-2])$",
+                "type": "string"
+              },
+              {
+                "title": "IPv6",
+                "format": "ipv6",
+                "type": "string"
+              },
+              {
+                "title": "IPv6/CIDR",
+                "pattern": "^([a-fA-F0-9]{0,4}:){1,8}(:[a-fA-F0-9]{0,4}){0,8}([a-fA-F0-9]{0,4})?/[0-9]{1,3}$",
+                "type": "string"
+              }
+            ],
+            "type": "string",
+            "description": "server IP"
+          },
+          "server_port": {
+            "minimum": 1,
+            "maximum": 65535,
+            "type": "integer",
+            "description": "server port"
+          },
+          "labels": {
+            "patternProperties": {
+              ".*": {
+                "maxLength": 256,
+                "description": "value of label",
+                "minLength": 1,
+                "pattern": "^\\S+$",
+                "type": "string"
+              }
+            },
+            "type": "object",
+            "description": "key/value pairs to specify attributes"
+          },
+          "desc": {
+            "maxLength": 256,
+            "type": "string"
+          },
+          "protocol": {
+            "required": [
+              "name"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "conf": {
+                "type": "object",
+                "description": "protocol-specific configuration"
+              },
+              "superior_id": {
+                "anyOf": [
+                  {
+                    "pattern": "^[a-zA-Z0-9-_.]+$",
+                    "maxLength": 64,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  {
+                    "minimum": 1,
+                    "type": "integer"
+                  }
+                ]
+              },
+              "logger": {
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "filter": {
+                      "type": "array",
+                      "description": "logger filter rules"
+                    },
+                    "conf": {
+                      "type": "object",
+                      "description": "logger plugin configuration"
+                    }
+                  },
+                  "dependentRequired": {
+                    "name": [
+                      "conf"
+                    ]
+                  }
+                },
+                "type": "array"
+              }
+            },
+            "type": "object"
+          },
+          "name": {
+            "minLength": 1,
+            "maxLength": 256,
+            "type": "string"
+          },
+          "snis": {
+            "description": "server name indications, matched as alternatives",
+            "uniqueItems": true,
+            "minItems": 1,
+            "items": {
+              "pattern": "^\\*$|^\\*?[0-9a-zA-Z-._\\[\\]:]+$",
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "tls_passthrough": {
+            "default": false,
+            "type": "boolean",
+            "description": "forward the TLS stream to the upstream untouched instead of terminating it here; only consulted on a mixed listen, one with both tls and tls_passthrough set"
+          },
+          "upstream": {
+            "$ref": "#/components/schemas/UpstreamRead"
+          },
+          "update_time": {
+            "type": "integer",
+            "readOnly": true
+          }
+        },
+        "type": "object",
+        "x-source": "apisix/schema_def.lua",
+        "description": "Stored StreamRoute configuration returned by the Admin API."
+      },
       "Proto": {
         "required": [
           "content"
@@ -12765,9 +14295,8 @@
             "type": "integer"
           },
           "cert": {
-            "minLength": 128,
-            "maxLength": 65536,
-            "type": "string"
+            "$ref": "#/components/schemas/CertificateOrReference",
+            "description": "Stored PEM certificate or APISIX secret/environment reference."
           },
           "client": {
             "required": [
@@ -12775,9 +14304,8 @@
             ],
             "properties": {
               "ca": {
-                "minLength": 128,
-                "maxLength": 65536,
-                "type": "string"
+                "$ref": "#/components/schemas/CertificateOrReference",
+                "description": "Stored PEM CA certificate or APISIX secret/environment reference."
               },
               "skip_mtls_uri_regex": {
                 "uniqueItems": true,
@@ -12802,9 +14330,7 @@
           },
           "certs": {
             "items": {
-              "minLength": 128,
-              "maxLength": 65536,
-              "type": "string"
+              "$ref": "#/components/schemas/CertificateOrReference"
             },
             "type": "array"
           },
@@ -12826,7 +14352,8 @@
           }
         },
         "type": "object",
-        "x-source": "apisix/schema_def.lua"
+        "x-source": "apisix/schema_def.lua",
+        "description": "SSL read-response representation. Private-key fields are omitted from GET responses."
       },
       "CredentialEnvelope": {
         "type": "object",
@@ -12871,13 +14398,13 @@
       },
       "RouteEnvelope": {
         "type": "object",
-        "description": "`Route` wrapped in the etcd-style envelope.",
+        "description": "`RouteRead` wrapped in the etcd-style envelope.",
         "properties": {
           "key": {
             "type": "string"
           },
           "value": {
-            "$ref": "#/components/schemas/Route"
+            "$ref": "#/components/schemas/RouteRead"
           },
           "createdIndex": {
             "type": "integer"
@@ -12912,13 +14439,13 @@
       },
       "ServiceEnvelope": {
         "type": "object",
-        "description": "`Service` wrapped in the etcd-style envelope.",
+        "description": "`ServiceRead` wrapped in the etcd-style envelope.",
         "properties": {
           "key": {
             "type": "string"
           },
           "value": {
-            "$ref": "#/components/schemas/Service"
+            "$ref": "#/components/schemas/ServiceRead"
           },
           "createdIndex": {
             "type": "integer"
@@ -12953,13 +14480,13 @@
       },
       "UpstreamEnvelope": {
         "type": "object",
-        "description": "`Upstream` wrapped in the etcd-style envelope.",
+        "description": "`UpstreamRead` wrapped in the etcd-style envelope.",
         "properties": {
           "key": {
             "type": "string"
           },
           "value": {
-            "$ref": "#/components/schemas/Upstream"
+            "$ref": "#/components/schemas/UpstreamRead"
           },
           "createdIndex": {
             "type": "integer"
@@ -13199,13 +14726,13 @@
       },
       "StreamRouteEnvelope": {
         "type": "object",
-        "description": "`StreamRoute` wrapped in the etcd-style envelope.",
+        "description": "`StreamRouteRead` wrapped in the etcd-style envelope.",
         "properties": {
           "key": {
             "type": "string"
           },
           "value": {
-            "$ref": "#/components/schemas/StreamRoute"
+            "$ref": "#/components/schemas/StreamRouteRead"
           },
           "createdIndex": {
             "type": "integer"
@@ -13295,9 +14822,7 @@
                           "client_key": {
                             "anyOf": [
                               {
-                                "minLength": 64,
-                                "maxLength": 65536,
-                                "type": "string"
+                                "$ref": "#/components/schemas/PrivateKeyPem"
                               },
                               {
                                 "type": "null"
@@ -13307,9 +14832,7 @@
                           "client_cert": {
                             "anyOf": [
                               {
-                                "minLength": 128,
-                                "maxLength": 65536,
-                                "type": "string"
+                                "$ref": "#/components/schemas/CertificatePem"
                               },
                               {
                                 "type": "null"
@@ -13350,8 +14873,23 @@
                           "verify": {
                             "anyOf": [
                               {
-                                "description": "Turn on server certificate verification, currently only kafka upstream is supported",
-                                "type": "boolean"
+                                "type": "boolean",
+                                "description": "Enable or disable upstream certificate verification. When omitted, fall back to the NGINX verification setting."
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "ca_certs": {
+                            "anyOf": [
+                              {
+                                "type": "array",
+                                "minItems": 1,
+                                "items": {
+                                  "$ref": "#/components/schemas/CertificatePem"
+                                },
+                                "description": "PEM-encoded CA certificates for upstream verification."
                               },
                               {
                                 "type": "null"
@@ -13389,7 +14927,7 @@
                   "scheme": {
                     "anyOf": [
                       {
-                        "description": "The scheme of the upstream. For L7 proxy, it can be one of grpc/grpcs/http/https. For L4 proxy, it can be one of tcp/tls/udp. For specific protocols, it can be kafka.",
+                        "description": "The scheme of the upstream. For L7 proxy, it can be one of grpc/grpcs/http/https/ws/wss. For L4 proxy, it can be one of tcp/tls/udp. For specific protocols, it can be kafka.",
                         "enum": [
                           "grpc",
                           "grpcs",
@@ -13398,8 +14936,11 @@
                           "tcp",
                           "tls",
                           "udp",
-                          "kafka"
-                        ]
+                          "kafka",
+                          "ws",
+                          "wss"
+                        ],
+                        "default": "http"
                       },
                       {
                         "type": "null"
@@ -14055,6 +15596,22 @@
                                 "type": "null"
                               }
                             ]
+                          },
+                          "cluster_ids": {
+                            "anyOf": [
+                              {
+                                "type": "array",
+                                "minItems": 1,
+                                "uniqueItems": true,
+                                "items": {
+                                  "type": "string"
+                                },
+                                "description": "Kubernetes service-discovery cluster IDs."
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
                           }
                         }
                       },
@@ -14138,6 +15695,16 @@
                       {
                         "description": "algorithms of load balancing",
                         "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "warm_up_conf": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/components/schemas/UpstreamWarmUpPatch"
                       },
                       {
                         "type": "null"
@@ -14650,9 +16217,7 @@
                           "client_key": {
                             "anyOf": [
                               {
-                                "minLength": 64,
-                                "maxLength": 65536,
-                                "type": "string"
+                                "$ref": "#/components/schemas/PrivateKeyPem"
                               },
                               {
                                 "type": "null"
@@ -14662,9 +16227,7 @@
                           "client_cert": {
                             "anyOf": [
                               {
-                                "minLength": 128,
-                                "maxLength": 65536,
-                                "type": "string"
+                                "$ref": "#/components/schemas/CertificatePem"
                               },
                               {
                                 "type": "null"
@@ -14705,8 +16268,23 @@
                           "verify": {
                             "anyOf": [
                               {
-                                "description": "Turn on server certificate verification, currently only kafka upstream is supported",
-                                "type": "boolean"
+                                "type": "boolean",
+                                "description": "Enable or disable upstream certificate verification. When omitted, fall back to the NGINX verification setting."
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "ca_certs": {
+                            "anyOf": [
+                              {
+                                "type": "array",
+                                "minItems": 1,
+                                "items": {
+                                  "$ref": "#/components/schemas/CertificatePem"
+                                },
+                                "description": "PEM-encoded CA certificates for upstream verification."
                               },
                               {
                                 "type": "null"
@@ -14744,7 +16322,7 @@
                   "scheme": {
                     "anyOf": [
                       {
-                        "description": "The scheme of the upstream. For L7 proxy, it can be one of grpc/grpcs/http/https. For L4 proxy, it can be one of tcp/tls/udp. For specific protocols, it can be kafka.",
+                        "description": "The scheme of the upstream. For L7 proxy, it can be one of grpc/grpcs/http/https/ws/wss. For L4 proxy, it can be one of tcp/tls/udp. For specific protocols, it can be kafka.",
                         "enum": [
                           "grpc",
                           "grpcs",
@@ -14753,8 +16331,11 @@
                           "tcp",
                           "tls",
                           "udp",
-                          "kafka"
-                        ]
+                          "kafka",
+                          "ws",
+                          "wss"
+                        ],
+                        "default": "http"
                       },
                       {
                         "type": "null"
@@ -15410,6 +16991,22 @@
                                 "type": "null"
                               }
                             ]
+                          },
+                          "cluster_ids": {
+                            "anyOf": [
+                              {
+                                "type": "array",
+                                "minItems": 1,
+                                "uniqueItems": true,
+                                "items": {
+                                  "type": "string"
+                                },
+                                "description": "Kubernetes service-discovery cluster IDs."
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
                           }
                         }
                       },
@@ -15493,6 +17090,16 @@
                       {
                         "description": "algorithms of load balancing",
                         "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "warm_up_conf": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/components/schemas/UpstreamWarmUpPatch"
                       },
                       {
                         "type": "null"
@@ -15636,9 +17243,7 @@
                   "client_key": {
                     "anyOf": [
                       {
-                        "minLength": 64,
-                        "maxLength": 65536,
-                        "type": "string"
+                        "$ref": "#/components/schemas/PrivateKeyPem"
                       },
                       {
                         "type": "null"
@@ -15648,9 +17253,7 @@
                   "client_cert": {
                     "anyOf": [
                       {
-                        "minLength": 128,
-                        "maxLength": 65536,
-                        "type": "string"
+                        "$ref": "#/components/schemas/CertificatePem"
                       },
                       {
                         "type": "null"
@@ -15691,8 +17294,23 @@
                   "verify": {
                     "anyOf": [
                       {
-                        "description": "Turn on server certificate verification, currently only kafka upstream is supported",
-                        "type": "boolean"
+                        "type": "boolean",
+                        "description": "Enable or disable upstream certificate verification. When omitted, fall back to the NGINX verification setting."
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "ca_certs": {
+                    "anyOf": [
+                      {
+                        "type": "array",
+                        "minItems": 1,
+                        "items": {
+                          "$ref": "#/components/schemas/CertificatePem"
+                        },
+                        "description": "PEM-encoded CA certificates for upstream verification."
                       },
                       {
                         "type": "null"
@@ -15720,7 +17338,7 @@
           "scheme": {
             "anyOf": [
               {
-                "description": "The scheme of the upstream. For L7 proxy, it can be one of grpc/grpcs/http/https. For L4 proxy, it can be one of tcp/tls/udp. For specific protocols, it can be kafka.",
+                "description": "The scheme of the upstream. For L7 proxy, it can be one of grpc/grpcs/http/https/ws/wss. For L4 proxy, it can be one of tcp/tls/udp. For specific protocols, it can be kafka.",
                 "enum": [
                   "grpc",
                   "grpcs",
@@ -15729,8 +17347,11 @@
                   "tcp",
                   "tls",
                   "udp",
-                  "kafka"
-                ]
+                  "kafka",
+                  "ws",
+                  "wss"
+                ],
+                "default": "http"
               },
               {
                 "type": "null"
@@ -16376,6 +17997,22 @@
                         "type": "null"
                       }
                     ]
+                  },
+                  "cluster_ids": {
+                    "anyOf": [
+                      {
+                        "type": "array",
+                        "minItems": 1,
+                        "uniqueItems": true,
+                        "items": {
+                          "type": "string"
+                        },
+                        "description": "Kubernetes service-discovery cluster IDs."
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
                   }
                 }
               },
@@ -16444,6 +18081,16 @@
           "update_time": {
             "type": "integer",
             "readOnly": true
+          },
+          "warm_up_conf": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UpstreamWarmUpPatch"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "additionalProperties": false,
@@ -16775,14 +18422,13 @@
           "key": {
             "anyOf": [
               {
-                "minLength": 64,
-                "maxLength": 65536,
-                "type": "string"
+                "$ref": "#/components/schemas/PrivateKeyOrReference"
               },
               {
                 "type": "null"
               }
-            ]
+            ],
+            "description": "PEM-encoded private key, APISIX secret/environment reference, or null to remove the field."
           },
           "labels": {
             "anyOf": [
@@ -16812,14 +18458,13 @@
           "cert": {
             "anyOf": [
               {
-                "minLength": 128,
-                "maxLength": 65536,
-                "type": "string"
+                "$ref": "#/components/schemas/CertificateOrReference"
               },
               {
                 "type": "null"
               }
-            ]
+            ],
+            "description": "PEM-encoded certificate, APISIX secret/environment reference, or null to remove the field."
           },
           "client": {
             "anyOf": [
@@ -16829,14 +18474,13 @@
                   "ca": {
                     "anyOf": [
                       {
-                        "minLength": 128,
-                        "maxLength": 65536,
-                        "type": "string"
+                        "$ref": "#/components/schemas/CertificateOrReference"
                       },
                       {
                         "type": "null"
                       }
-                    ]
+                    ],
+                    "description": "PEM-encoded CA certificate, APISIX secret/environment reference, or null to remove the field."
                   },
                   "skip_mtls_uri_regex": {
                     "anyOf": [
@@ -16887,9 +18531,7 @@
             "anyOf": [
               {
                 "items": {
-                  "minLength": 128,
-                  "maxLength": 65536,
-                  "type": "string"
+                  "$ref": "#/components/schemas/CertificateOrReference"
                 },
                 "type": "array"
               },
@@ -16902,9 +18544,7 @@
             "anyOf": [
               {
                 "items": {
-                  "minLength": 64,
-                  "maxLength": 65536,
-                  "type": "string"
+                  "$ref": "#/components/schemas/PrivateKeyOrReference"
                 },
                 "type": "array"
               },
@@ -17630,8 +19270,7 @@
             "type": "number"
           },
           "scheme": {
-            "default": "http",
-            "description": "The scheme of the upstream. For L7 proxy, it can be one of grpc/grpcs/http/https. For L4 proxy, it can be one of tcp/tls/udp. For specific protocols, it can be kafka.",
+            "description": "The scheme of the upstream. For L7 proxy, it can be one of grpc/grpcs/http/https/ws/wss. For L4 proxy, it can be one of tcp/tls/udp. For specific protocols, it can be kafka.",
             "enum": [
               "grpc",
               "grpcs",
@@ -17640,8 +19279,11 @@
               "tcp",
               "tls",
               "udp",
-              "kafka"
-            ]
+              "kafka",
+              "ws",
+              "wss"
+            ],
+            "default": "http"
           },
           "retries": {
             "minimum": 0,
@@ -17696,13 +19338,22 @@
           },
           "discovery_args": {
             "properties": {
+              "namespace_id": {
+                "type": "string",
+                "description": "namespace id"
+              },
               "group_name": {
                 "type": "string",
                 "description": "group name"
               },
-              "namespace_id": {
-                "type": "string",
-                "description": "namespace id"
+              "cluster_ids": {
+                "description": "ids of the kubernetes discovery clusters to get nodes from",
+                "uniqueItems": true,
+                "items": {
+                  "type": "string"
+                },
+                "minItems": 1,
+                "type": "array"
               }
             },
             "type": "object"
@@ -17736,6 +19387,9 @@
           },
           "modifiedIndex": {
             "type": "integer"
+          },
+          "warm_up_conf": {
+            "$ref": "#/components/schemas/UpstreamWarmUp"
           }
         },
         "oneOf": [
@@ -17859,9 +19513,8 @@
             "type": "array"
           },
           "key": {
-            "minLength": 64,
-            "maxLength": 65536,
-            "type": "string"
+            "$ref": "#/components/schemas/PrivateKeyOrReference",
+            "description": "PEM-encoded private key or an APISIX secret/environment reference."
           },
           "create_time": {
             "type": "integer",
@@ -17880,9 +19533,8 @@
             "type": "integer"
           },
           "cert": {
-            "minLength": 128,
-            "maxLength": 65536,
-            "type": "string"
+            "$ref": "#/components/schemas/CertificateOrReference",
+            "description": "PEM-encoded certificate or an APISIX secret/environment reference."
           },
           "client": {
             "required": [
@@ -17890,9 +19542,8 @@
             ],
             "properties": {
               "ca": {
-                "minLength": 128,
-                "maxLength": 65536,
-                "type": "string"
+                "$ref": "#/components/schemas/CertificateOrReference",
+                "description": "PEM-encoded CA certificate or an APISIX secret/environment reference."
               },
               "skip_mtls_uri_regex": {
                 "uniqueItems": true,
@@ -17917,17 +19568,13 @@
           },
           "certs": {
             "items": {
-              "minLength": 128,
-              "maxLength": 65536,
-              "type": "string"
+              "$ref": "#/components/schemas/CertificateOrReference"
             },
             "type": "array"
           },
           "keys": {
             "items": {
-              "minLength": 64,
-              "maxLength": 65536,
-              "type": "string"
+              "$ref": "#/components/schemas/PrivateKeyOrReference"
             },
             "type": "array"
           },
@@ -18253,13 +19900,13 @@
       },
       "SSLWriteEnvelope": {
         "type": "object",
-        "description": "SSL write response, which may contain encrypted private-key fields.",
+        "description": "SSL write response, which may contain plaintext or encrypted private-key fields or stored references.",
         "properties": {
           "key": {
             "type": "string"
           },
           "value": {
-            "$ref": "#/components/schemas/SSL"
+            "$ref": "#/components/schemas/SSLWrite"
           },
           "createdIndex": {
             "type": "integer"
@@ -18550,6 +20197,77 @@
           "slow_start_time_seconds",
           "min_weight_percent"
         ],
+        "additionalProperties": false
+      },
+      "UpstreamWarmUpPatch": {
+        "type": "object",
+        "description": "Partial update for upstream slow-start settings. Null removes an object field; the merged resource is validated against UpstreamWarmUp.",
+        "properties": {
+          "slow_start_time_seconds": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1,
+                "description": "Seconds for a new node to reach its configured weight."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "min_weight_percent": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 100,
+                "description": "Minimum percentage of the configured node weight. Effective positive weights are rounded down but never below 1."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "interval": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1,
+                "default": 1,
+                "description": "Seconds between weight refreshes. Cannot exceed `slow_start_time_seconds`."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "aggression": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.01,
+                "default": 1,
+                "description": "Ramp shape: 1 is linear, above 1 is faster initially, and below 1 is slower initially."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "startup_grace_period_seconds": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "default": 0,
+                "description": "Seconds after the gateway starts during which newly observed nodes are treated as already warmed."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
         "additionalProperties": false
       }
     },
@@ -20016,17 +21734,6 @@
       }
     }
   },
-  "security": [
-    {
-      "adminKey": []
-    },
-    {
-      "apiKeyQuery": []
-    },
-    {
-      "apiKeyCookie": []
-    }
-  ],
   "x-source-revision": "947d4b47d824657bba6508b1c0cb204a2ec01f82",
   "x-verification": {
     "source": "apache/apisix release/3.18",

@@ -1043,3 +1043,64 @@ GET /print%5Furi%5Fdetailed HTTP/1.1
 --- response_body
 ngx.var.uri: /print_uri_detailed
 ngx.var.request_uri: /print_uri_detailed
+
+
+
+=== TEST 44: use both a regex_uri capture and a variable in a header
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                      "uri": "/test/*",
+                      "plugins": {
+                        "proxy-rewrite": {
+                            "regex_uri": ["^/test/(.*)", "/echo"],
+                            "headers": {
+                                "add": {
+                                    "X-Request-ID": "$1-$http_x_tag"
+                                }
+                            }
+                        }
+                      },
+                      "upstream": {
+                          "nodes": {
+                              "127.0.0.1:1980": 1
+                          },
+                          "type": "roundrobin"
+                      }
+                 }]]
+                 )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 45: hit with one capture and variable
+--- request
+GET /test/a
+--- more_headers
+X-Tag: t1
+--- response_headers
+X-Request-ID: a-t1
+
+
+
+=== TEST 46: hit with another capture and variable
+--- request
+GET /test/b
+--- more_headers
+X-Tag: t2
+--- response_headers
+X-Request-ID: b-t2
