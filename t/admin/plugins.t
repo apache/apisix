@@ -74,6 +74,7 @@ ua-restriction
 referer-restriction
 csrf
 uri-blocker
+request-decompress
 request-validation
 chaitin-waf
 multi-auth
@@ -127,8 +128,9 @@ traffic-label
 traffic-split
 redirect
 response-rewrite
+openapi-to-mcp
 oas-validator
-mcp-bridge
+websocket-proxy
 degraphql
 kafka-proxy
 grpc-transcode
@@ -264,7 +266,7 @@ plugins:
                 ngx.HTTP_GET,
                 nil,
                 [[
-{"title":"work with consumer object","required":["username","password"],"properties":{"username":{"type":"string"},"password":{"type":"string"}},"type":"object"}
+{"title":"work with consumer object","required":["username","password"],"properties":{"username":{"type":"string"},"password":{"type":"string","minLength":1}},"type":"object"}
                 ]]
                 )
 
@@ -371,7 +373,7 @@ qr/\[\{"name":"multi-auth","priority":2600\},\{"name":"wolf-rbac","priority":255
         }
     }
 --- response_body eval
-qr/\{"encrypt_fields":\["password"\],"properties":\{"password":\{"type":"string"\},"username":\{"type":"string"\}\},"required":\["username","password"\],"title":"work with consumer object","type":"object"\}/
+qr/\{"encrypt_fields":\["password"\],"properties":\{"password":\{"minLength":1,"type":"string"\},"username":\{"type":"string"\}\},"required":\["username","password"\],"title":"work with consumer object","type":"object"\}/
 
 
 

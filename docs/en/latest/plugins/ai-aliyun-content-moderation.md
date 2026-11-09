@@ -74,6 +74,18 @@ The `ai-aliyun-content-moderation` Plugin should be used with either [`ai-proxy`
 | ssl_verify | boolean | False | `true` | | If `true`, enable SSL certificate verification. |
 | fail_mode | string | False | `"skip"` | `skip`, `warn`, `error` | Behavior when the request is not a recognized AI request that this plugin can inspect (for example, plain HTTP traffic on a Consumer-bound plugin, or a request that did not pass through `ai-proxy`). `skip`: let the request pass through unchecked; `warn`: pass through and log a warning; `error`: reject the request. |
 
+In `final_packet` mode, `risk_level` and `deny_message` are added together to existing data events after the assembled response text is available. Rejected responses use the actual denial message; allowed responses use an empty string. Existing response content and token usage are preserved. The result is informational and cannot retract content already sent to the client.
+
+When the upstream omits `usage`, moderation runs at the end of the stream:
+
+- **OpenAI Chat Completions:** an additional `chat.completion.chunk` with `risk_level`, `deny_message`, and zero-valued `usage` is inserted before `[DONE]`. This is an empty usage chunk with `choices: []`: the denial message appears only in the top-level `deny_message` field, without appending text or changing the upstream finish reason.
+- **Anthropic Messages:** an additional `message_delta` carries `risk_level`, `deny_message`, zero-valued `usage`, and the original stop information before `message_stop`. Content blocks and `message_start` are not replayed.
+- **OpenAI Responses:** the existing `response.completed` event carries `risk_level` and `deny_message`; its output and usage are preserved. EOF without `response.completed` does not produce a synthetic completed response.
+
+Clients must consume through the stream terminator to receive an injected result. Usage-bearing streams receive in-place fields without an additional result event, so their reported usage is unchanged. New result events report zero usage; gateway accounting continues to use upstream usage. If moderation fails without returning a risk level, no result is fabricated. Error events are preserved, and aborted streams do not receive a synthesized terminator.
+
+Read moderation extensions from the SSE events. For example, the OpenAI Python SDK exposes Responses extensions through `responses.create(stream=True)`, while its higher-level `responses.stream()` wrapper can discard unknown top-level fields.
+
 ## Examples
 
 The following examples use OpenAI as the Upstream service provider. Before proceeding, create an [OpenAI account](https://openai.com) and obtain an [API key](https://openai.com/blog/openai-api). If you are working with other LLM providers, please refer to the provider's documentation to obtain an API key.

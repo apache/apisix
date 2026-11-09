@@ -72,3 +72,9 @@ luarocks config variables.OPENSSL_DIR ${OPENSSL_PREFIX}
 luarocks config variables.OPENSSL_LIBDIR ${OPENSSL_PREFIX}/lib
 luarocks config variables.OPENSSL_INCDIR ${OPENSSL_PREFIX}/include
 luarocks config variables.YAML_DIR /usr
+
+# lrexlib-pcre needs PCRE1, which newer distributions (Ubuntu 26.04, Debian 13)
+# no longer ship; use the copy bundled with APISIX runtime instead.
+if [ -f "${OPENRESTY_PREFIX}/pcre/include/pcre.h" ]; then
+    luarocks config variables.PCRE_DIR "${OPENRESTY_PREFIX}/pcre"
+fi

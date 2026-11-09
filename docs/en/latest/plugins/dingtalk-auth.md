@@ -119,8 +119,8 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 
 Once you have enabled the Plugin, incoming requests to the Route are processed as follows:
 
-1. **No session and no code**: The user is redirected to `redirect_uri` (typically a DingTalk OAuth login page) with a `302` response.
-2. **Authorization code present** (in the `code` query parameter or `X-DingTalk-Code` header): The Plugin exchanges the code for an access token via `access_token_url`, then retrieves user information from `userinfo_url`. On success, the user information is stored in an encrypted cookie session and the original request proceeds.
+1. **No session and no code**: The Plugin generates a random `state`, stores it in the session cookie, and redirects the user to `redirect_uri` (typically a DingTalk OAuth login page) with a `302` response, appending `state` to the query string. Pass `state` through to DingTalk so that it is returned on the callback.
+2. **Authorization code present** (in the `code` query parameter or `X-DingTalk-Code` header): A code taken from the query parameter must arrive with the `state` bound to the session, otherwise the Plugin responds with `401`. This ties the code to the browser that started the flow. A code taken from the `X-DingTalk-Code` header is exempt, since such requests come from non-browser clients. The Plugin then exchanges the code for an access token via `access_token_url`, then retrieves user information from `userinfo_url`. On success, the user information is stored in an encrypted cookie session and the original request proceeds.
 3. **Valid session cookie**: Subsequent requests carrying the session cookie bypass DingTalk API calls entirely and proceed directly to the upstream.
 
 When `set_userinfo_header` is `true` (the default), the upstream receives the DingTalk user information in the `X-Userinfo` header as a Base64-encoded JSON object.

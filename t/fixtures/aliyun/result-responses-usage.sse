@@ -1,0 +1,24 @@
+event: response.created
+data: {"response":{"id":"resp_moderation","object":"response","created_at":1700000000,"status":"in_progress","error":null,"incomplete_details":null,"instructions":null,"max_output_tokens":null,"model":"test-model","output":[],"parallel_tool_calls":true,"previous_response_id":null,"reasoning":{"effort":null,"summary":null},"store":false,"temperature":1,"text":{"format":{"type":"text"}},"tool_choice":"auto","tools":[],"top_p":1,"truncation":"disabled","usage":null,"user":null,"metadata":{}},"type":"response.created","sequence_number":0}
+
+event: response.output_item.added
+data: {"output_index":0,"item":{"id":"msg_moderation","type":"message","role":"assistant","status":"in_progress","content":[]},"type":"response.output_item.added","sequence_number":1}
+
+event: response.content_part.added
+data: {"item_id":"msg_moderation","output_index":0,"content_index":0,"part":{"type":"output_text","text":"","annotations":[],"logprobs":[]},"type":"response.content_part.added","sequence_number":2}
+
+event: response.output_text.delta
+data: {"item_id":"msg_moderation","output_index":0,"content_index":0,"delta":"kill you","logprobs":[],"type":"response.output_text.delta","sequence_number":3}
+
+event: response.output_text.done
+data: {"item_id":"msg_moderation","output_index":0,"content_index":0,"text":"kill you","logprobs":[],"type":"response.output_text.done","sequence_number":4}
+
+event: response.content_part.done
+data: {"item_id":"msg_moderation","output_index":0,"content_index":0,"part":{"type":"output_text","text":"kill you","annotations":[],"logprobs":[]},"type":"response.content_part.done","sequence_number":5}
+
+event: response.output_item.done
+data: {"output_index":0,"item":{"id":"msg_moderation","type":"message","role":"assistant","status":"completed","content":[{"type":"output_text","text":"kill you","annotations":[],"logprobs":[]}]},"type":"response.output_item.done","sequence_number":6}
+
+event: response.completed
+data: {"response":{"id":"resp_moderation","object":"response","created_at":1700000000,"status":"completed","error":null,"incomplete_details":null,"instructions":null,"max_output_tokens":null,"model":"test-model","output":[{"id":"msg_moderation","type":"message","role":"assistant","status":"completed","content":[{"type":"output_text","text":"kill you","annotations":[],"logprobs":[]}]}],"parallel_tool_calls":true,"previous_response_id":null,"reasoning":{"effort":null,"summary":null},"store":false,"temperature":1,"text":{"format":{"type":"text"}},"tool_choice":"auto","tools":[],"top_p":1,"truncation":"disabled","usage":{"input_tokens":10,"output_tokens":8,"total_tokens":18,"input_tokens_details":{"cached_tokens":0},"output_tokens_details":{"reasoning_tokens":0}},"user":null,"metadata":{}},"type":"response.completed","sequence_number":7}
+
