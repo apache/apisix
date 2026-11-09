@@ -185,8 +185,7 @@ patched new-secret
             code, body = admin("/apisix/admin/plugin_metadata", ngx.HTTP_GET)
             for _, item in ipairs(body.list) do
                 if item.value.id == "azure-functions" then
-                    -- the list is returned as stored, as without the marker
-                    ngx.say(item.value.master_apikey == mark("master-key"))
+                    ngx.say(item.value.master_apikey)
                 end
             end
         }
@@ -195,7 +194,7 @@ patched new-secret
 201
 true
 master-key
-true
+master-key
 
 
 
@@ -245,6 +244,19 @@ apisix:
             code, body = admin("/apisix/admin/stream_routes/1", ngx.HTTP_GET)
             ngx.say(body.value.plugins["limit-conn"].redis_password == mark("hdr"))
 
+            assert(core.etcd.set("/plugin_metadata/azure-functions", {
+                id = "azure-functions",
+                master_apikey = mark("master-key"),
+            }))
+            code, body = admin("/apisix/admin/plugin_metadata/azure-functions", ngx.HTTP_GET)
+            ngx.say(body.value.master_apikey == mark("master-key"))
+            code, body = admin("/apisix/admin/plugin_metadata", ngx.HTTP_GET)
+            for _, item in ipairs(body.list) do
+                if item.value.id == "azure-functions" then
+                    ngx.say(item.value.master_apikey == mark("master-key"))
+                end
+            end
+
             -- PATCH keeps the marked value it did not change encrypted at rest
             code = admin("/apisix/admin/routes/1", ngx.HTTP_PATCH, {desc = "patched"})
             ngx.say(code)
@@ -261,6 +273,8 @@ apisix:
         }
     }
 --- response_body
+true
+true
 true
 true
 true
