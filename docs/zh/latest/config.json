@@ -106,6 +106,7 @@
             "plugins/mocking",
             "plugins/degraphql",
             "plugins/body-transformer",
+            "plugins/soap-signer",
             "plugins/attach-consumer-label",
             "plugins/exit-transformer"
           ]
