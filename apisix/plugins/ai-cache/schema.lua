@@ -37,6 +37,7 @@ local _M = {
             properties = {
                 share_across_routes = { type = "boolean", default = false },
                 include_consumer = { type = "boolean", default = false },
+                auth_isolation = { type = "boolean", default = true },
                 include_vars = {
                     type = "array",
                     items = { type = "string" },

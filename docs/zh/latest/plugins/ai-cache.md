@@ -59,6 +59,8 @@ import TabItem from '@theme/TabItem';
 
 默认情况下缓存按路由隔离，因此即使两个路由看到相同的协议、模型与消息，也不会相互返回对方的缓存条目。将 `cache_key.share_across_routes` 设为 `true` 可让多个路由共享同一个缓存空间。
 
+默认情况下也会按认证上下文隔离缓存。缓存作用域包含入站 `Authorization` 请求头、已解析消费者身份及所选 AI 实例认证配置的 SHA-256 摘要，这些值不会以明文形式出现在缓存键中。仅当响应是公共内容且在所有认证上下文中完全相同时，才应将 `cache_key.auth_isolation` 设为 `false`。
+
 即使开启 `cache_key.share_across_routes`，来自不同上游模型或 provider 的响应也会分别存储在各自的缓存条目中，因此某个模型的响应绝不会被返回给另一个模型。
 
 对于 `passthrough` 协议，`ai-proxy` 会原样转发客户端的请求方法、路径和查询字符串，因此缓存键也会包含它们：相同的请求体发送到两个不同的上游路径，或携带不同的查询参数时，会分别保存为独立的缓存条目。
@@ -72,6 +74,7 @@ import TabItem from '@theme/TabItem';
 | exact.ttl | integer | 否 | 3600 | >= 1 | 精确缓存条目的存活时间（TTL），单位为秒。 |
 | cache_key.share_across_routes | boolean | 否 | false | | 默认情况下缓存按路由隔离。如果为 true，则计算出相同缓存键的所有路由之间共享缓存条目。 |
 | cache_key.include_consumer | boolean | 否 | false | | 如果为 true，则按消费者隔离缓存，使缓存条目不会在不同消费者之间共享。 |
+| cache_key.auth_isolation | boolean | 否 | true | | 如果为 true，则根据入站 `Authorization` 请求头、已解析消费者身份及所选 AI 实例认证配置的摘要隔离缓存条目。仅对于可跨认证上下文共享的公共响应才设为 false。 |
 | cache_key.include_vars | array[string] | 否 | [] | | 加入缓存作用域的 NGINX 变量（例如 `["http_x_tenant"]`），按其取值隔离缓存条目。 |
 | max_cache_body_size | integer | 否 | 1048576 | >= 0 | 允许缓存的最大响应体大小，单位为字节。超过该大小的响应不会被缓存。 |
 | cache_headers | boolean | 否 | true | | 如果为 true，则输出以下响应头：`X-AI-Cache-Status`（始终输出），取值为 `MISS`、`HIT`（精确或语义缓存命中）或 `BYPASS`；`X-AI-Cache-Age`，表示缓存条目的存在时长（秒），在任意缓存命中时输出；`X-AI-Cache-Similarity`，表示请求提示词与命中条目之间的余弦相似度（0–1），仅在语义缓存命中时输出。 |
@@ -132,10 +135,10 @@ import TabItem from '@theme/TabItem';
 
 :::note 安全说明：多租户部署
 
-缓存条目默认按路由隔离。在多个消费者共用同一路由的多租户场景下，为某个消费者生成的缓存响应可能会被返回给其他消费者。为防止跨租户信息泄漏，请采取以下措施：
+缓存条目默认按路由和认证上下文隔离。认证上下文摘要包含入站 `Authorization` 请求头、已解析消费者身份及所选 AI 实例认证配置，同时不会在 Redis 键中存储这些值的明文。
 
-- 将 `cache_key.include_consumer` 设为 `true`，按消费者身份隔离缓存条目。
-- 使用 `cache_key.include_vars` 添加标识租户的 NGINX 变量（例如 `["http_x_tenant_id"]`）到缓存作用域。
+- 使用 `cache_key.include_vars` 添加默认认证上下文未涵盖的租户标识 NGINX 变量（例如 `["http_x_tenant_id"]`）。
+- 仅当所有响应都是公共内容且在不同认证上下文中完全相同时，才将 `cache_key.auth_isolation` 设为 `false`。在该模式下，仍可使用 `cache_key.include_consumer` 显式按消费者隔离。
 
 L1 与 L2 缓存条目均遵循相同的 `cache_key` 作用域规则。
 

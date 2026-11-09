@@ -59,6 +59,8 @@ Limitations: binary streaming formats without an SSE terminal event (for example
 
 By default the cache is isolated per route, so two routes never serve each other's entries even when they see the same protocol, model and messages. Set `cache_key.share_across_routes` to `true` to share one cache space across routes.
 
+Authentication isolation is also enabled by default. The cache scope includes a SHA-256 digest of the inbound `Authorization` header, the resolved consumer identity, and the selected AI instance's authentication configuration. These values never appear as plaintext in the cache key. Set `cache_key.auth_isolation` to `false` only when responses are public and identical across authentication contexts.
+
 Even with `cache_key.share_across_routes` enabled, the cache key identifies the *effective* upstream request — the request `ai-proxy` actually sends after applying the AI instance's `provider`, `options` (model, temperature, and other model parameters) and `override`. Routes that would call the model differently therefore keep separate cache entries, so one route's response is never served for another.
 
 For the `passthrough` protocol, `ai-proxy` forwards the client's request method, path and query string verbatim, so the key includes them too: the same body sent to two different upstream paths, or with different query parameters, keeps separate entries.
@@ -72,6 +74,7 @@ For the `passthrough` protocol, `ai-proxy` forwards the client's request method,
 | exact.ttl | integer | False | 3600 | >= 1 | Time-to-live, in seconds, of an exact-cache entry. |
 | cache_key.share_across_routes | boolean | False | false | | By default the cache is isolated per route. If true, entries are shared across every route that computes the same key. |
 | cache_key.include_consumer | boolean | False | false | | If true, scope the cache per consumer so entries are not shared across consumers. |
+| cache_key.auth_isolation | boolean | False | true | | If true, partition entries by a digest of the inbound `Authorization` header, resolved consumer identity, and selected AI instance authentication. Set to false only for public responses that can be shared across authentication contexts. |
 | cache_key.include_vars | array[string] | False | [] | | NGINX variables added to the cache scope (for example `["http_x_tenant"]`), isolating entries by their values. |
 | max_cache_body_size | integer | False | 1048576 | >= 0 | Maximum response body size, in bytes, to cache. Larger responses are not cached. |
 | cache_headers | boolean | False | true | | If true, emit the following response headers: `X-AI-Cache-Status` (always), one of `MISS`, `HIT` (exact or semantic cache hit), or `BYPASS`; `X-AI-Cache-Age`, the entry age in seconds, on any cache hit; `X-AI-Cache-Similarity`, the cosine similarity score (0–1) between the incoming prompt and the matched entry, on a semantic cache hit only. |
@@ -132,10 +135,10 @@ The `semantic` object is required when `"semantic"` is present in `layers`. It a
 
 :::note Security: multi-tenant deployments
 
-Cache entries are scoped per route by default. In a multi-tenant deployment where multiple consumers share a route, a cached response produced for one consumer could be served to another. To prevent cross-tenant leakage:
+Cache entries are scoped per route and authentication context by default. The authentication context digest covers the inbound `Authorization` header, the resolved consumer, and the selected AI instance authentication without storing those values in the Redis key.
 
-- Set `cache_key.include_consumer: true` to scope entries per consumer identity.
-- Use `cache_key.include_vars` to add tenant-identifying NGINX variables (for example `["http_x_tenant_id"]`) to the cache scope.
+- Use `cache_key.include_vars` to add tenant-identifying NGINX variables that are not represented by the default authentication context (for example `["http_x_tenant_id"]`).
+- Set `cache_key.auth_isolation: false` only when every response is public and identical across authentication contexts. `cache_key.include_consumer` can still provide explicit per-consumer scoping in that mode.
 
 Both L1 and L2 entries respect the same `cache_key` scoping rules.
 
