@@ -84,7 +84,8 @@ else
     DEB_NAME="apisix-runtime-debug_${APISIX_RUNTIME}-0.debianbookworm-slim_${DEB_ARCH}.deb"
     RELEASE_URL="https://github.com/api7/apisix-build-tools/releases/download/apisix-runtime%2F${APISIX_RUNTIME}/${DEB_NAME}"
 
-    wget --no-verbose --tries=3 --retry-connrefused "$RELEASE_URL" -O "/tmp/$DEB_NAME"
+    wget --verbose --tries=5 --timeout=60 --retry-connrefused \
+        "$RELEASE_URL" -O "/tmp/$DEB_NAME"
     echo "$EXPECTED_SHA256  /tmp/$DEB_NAME" | sha256sum -c -
     sudo apt-get install -y "/tmp/$DEB_NAME"
     rm -f "/tmp/$DEB_NAME"
