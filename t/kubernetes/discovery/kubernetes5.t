@@ -109,7 +109,7 @@ _EOC_
               local core = require("apisix.core")
               local d = require("apisix.discovery.kubernetes")
 
-              ngx.sleep(1)
+              ngx.sleep(1.1)
 
               ngx.req.read_body()
               local request_body = ngx.req.get_body_data()
@@ -285,10 +285,9 @@ skip unknown kubernetes discovery cluster ids: third, service: ns-b/ep:p1
     location /t {
         content_by_lua_block {
             local core = require("apisix.core")
-            local function set_endpoints(id, key, endpoints, version)
+            local function set_endpoints(id, key, endpoints)
                 local dict = ngx.shared["kubernetes-" .. id]
                 dict:set(key, core.json.encode(endpoints))
-                dict:set(key .. "#version", version)
             end
             local d = require("apisix.discovery.kubernetes")
 
@@ -309,14 +308,14 @@ skip unknown kubernetes discovery cluster ids: third, service: ns-b/ep:p1
             set_endpoints("first", "ns/svc", {p1 = {
                 {host = "10.0.0.1", port = 80, weight = 50},
                 {host = "10.0.0.9", port = 80, weight = 50},
-            }}, "1")
+            }})
             set_endpoints("second", "ns/svc", {p1 = {
                 {host = "10.0.0.2", port = 80, weight = 50},
                 {host = "10.0.0.9", port = 80, weight = 50},
-            }}, "1")
+            }})
             set_endpoints("first", "ns/only-first", {p1 = {
                 {host = "10.0.1.1", port = 80, weight = 50},
-            }}, "1")
+            }})
 
             show("ns/svc:p1", {"first", "second"})
             show("ns/svc:p1", {"first"})
@@ -328,7 +327,9 @@ skip unknown kubernetes discovery cluster ids: third, service: ns-b/ep:p1
             set_endpoints("second", "ns/svc", {p1 = {
                 {host = "10.0.0.2", port = 80, weight = 50},
                 {host = "10.0.0.3", port = 80, weight = 50},
-            }}, "2")
+            }})
+            -- a worker re-reads the shared dicts once its cache entry expires
+            ngx.sleep(1.1)
             show("ns/svc:p1", {"first", "second"})
         }
     }
@@ -386,22 +387,21 @@ routes:
     location /t {
         content_by_lua_block {
             local core = require("apisix.core")
-            local function set_endpoints(id, key, endpoints, version)
+            local function set_endpoints(id, key, endpoints)
                 local dict = ngx.shared["kubernetes-" .. id]
                 dict:set(key, core.json.encode(endpoints))
-                dict:set(key .. "#version", version)
             end
             local http = require("resty.http")
 
             set_endpoints("first", "ns/svc", {p1 = {
                 {host = "127.0.0.1", port = 1979, weight = 50},
-            }}, "1")
+            }})
             set_endpoints("second", "ns/svc", {p1 = {
                 {host = "127.0.0.1", port = 1980, weight = 50},
-            }}, "1")
+            }})
             set_endpoints("second", "ns/only-second", {p1 = {
                 {host = "127.0.0.1", port = 1980, weight = 50},
-            }}, "1")
+            }})
 
             local uri = "http://127.0.0.1:" .. ngx.var.server_port
             for _, path in ipairs({"/hello", "/hello", "/hello", "/hello1", "/hello_chunked"}) do
@@ -454,7 +454,6 @@ discovery:
             dict:set("ns/svc", core.json.encode({p1 = {
                 {host = "10.0.0.1", port = 80, weight = 50},
             }}))
-            dict:set("ns/svc#version", "1")
 
             local nodes = d.nodes("ns/svc:p1")
             ngx.say(#nodes)
@@ -511,7 +510,6 @@ routes:
             dict:set("ns/svc", core.json.encode({p1 = {
                 {host = "127.0.0.1", port = 1980, weight = 50},
             }}))
-            dict:set("ns/svc#version", "1")
 
             local uri = "http://127.0.0.1:" .. ngx.var.server_port
             for _, path in ipairs({"/hello", "/hello1"}) do
@@ -556,20 +554,19 @@ stream_routes:
     local core = require("apisix.core")
     local d = require("apisix.discovery.kubernetes")
 
-    local function set_endpoints(id, key, endpoints, version)
+    local function set_endpoints(id, key, endpoints)
         local dict = ngx.shared["kubernetes-" .. id .. "-stream"]
         dict:set(key, core.json.encode(endpoints))
-        dict:set(key .. "#version", version)
     end
 
     set_endpoints("first", "ns/svc", {p1 = {
         {host = "127.0.0.1", port = 1979, weight = 50},
         {host = "127.0.0.1", port = 1995, weight = 50},
-    }}, "1")
+    }})
     set_endpoints("second", "ns/svc", {p1 = {
         {host = "127.0.0.1", port = 1995, weight = 50},
         {host = "127.0.0.2", port = 1995, weight = 50},
-    }}, "1")
+    }})
 
     local nodes = d.nodes("ns/svc:p1", {cluster_ids = {"first", "second"}})
     local addrs = {}

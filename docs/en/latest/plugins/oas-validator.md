@@ -47,7 +47,7 @@ The OpenAPI spec can be provided as an inline JSON string or fetched from a remo
 | spec | string | No* | | | Inline OpenAPI 3.x specification in JSON format. Required if `spec_url` is not set. |
 | spec_url | string | No* | | `^https?://` | URL to fetch the OpenAPI specification from. Required if `spec` is not set. |
 | spec_url_request_headers | object | No | | | Custom HTTP request headers sent when fetching `spec_url`. Useful for authenticated specification endpoints. |
-| ssl_verify | boolean | No | false | | Whether to verify the TLS certificate when fetching `spec_url`. |
+| ssl_verify | boolean | No | true | | Whether to verify the TLS certificate when fetching `spec_url`. Disabling it lets an on-path attacker serve a permissive specification and receive any credential configured in `spec_url_request_headers`. |
 | timeout | integer | No | 10000 | [1000, 60000] | HTTP request timeout in milliseconds for fetching `spec_url`. |
 | verbose_errors | boolean | No | false | | When `true`, include detailed validation error messages in the response body. |
 | skip_request_body_validation | boolean | No | false | | Skip validation of the request body. |
@@ -147,7 +147,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     "plugins": {
       "oas-validator": {
         "spec_url": "https://petstore3.swagger.io/api/v3/openapi.json",
-        "ssl_verify": false,
         "verbose_errors": true
       }
     },

@@ -134,7 +134,7 @@ install_nodejs () {
 }
 
 install_brotli () {
-    local BORTLI_VERSION="1.1.0"
+    local BORTLI_VERSION="1.2.1"
     wget -q https://github.com/google/brotli/archive/refs/tags/v${BORTLI_VERSION}.zip
     unzip v${BORTLI_VERSION}.zip && cd ./brotli-${BORTLI_VERSION} && mkdir build && cd build
     local CMAKE=$(command -v cmake3 > /dev/null 2>&1 && echo cmake3 || echo cmake)
