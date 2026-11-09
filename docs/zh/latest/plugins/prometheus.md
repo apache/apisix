@@ -43,6 +43,8 @@ description:  本文将介绍 prometheus 插件，以及将 APISIX 与 Prometheu
 
 prompt token 和 completion token 直方图的默认桶边界为 `1`、`10`、`50`、`100`、`200`、`500`、`1000`、`2000`、`5000`、`10000`、`20000`、`50000`、`100000`、`200000`、`500000` 和 `1000000` 个 token。如果这些边界不适合实际负载，可通过 `llm_prompt_tokens_buckets` 和 `llm_completion_tokens_buckets` 自定义。
 
+`remove_expired_keys_interval` 控制 HTTP 和 stream worker 的过期指标清理间隔，默认 3600 秒；更大的值按 3600 秒处理，非正数关闭清理。间隔为正数时，自动回收保持开启。此配置与控制指标输出缓存的 `refresh_interval` 独立。缩短间隔可以更早回收过期条目，但会增加共享字典扫描频率。共享字典的实例使用相同间隔；reload 时缩短间隔后，回收仍可能等待原间隔结束。
+
 要自定义这些值，请将相应的配置添加到 config.yaml 中。例如：
 
 ```yaml
@@ -50,6 +52,7 @@ plugin_attr:
   prometheus:                               # 插件：prometheus 属性
     export_uri: /apisix/prometheus/metrics  # 设置 Prometheus 指标端点的 URI。
     metric_prefix: apisix_                  # 设置 APISIX 生成的 Prometheus 指标的前缀。
+    remove_expired_keys_interval: 3600       # 过期指标清理间隔，单位为秒。
     enable_export_server: true              # 启用 Prometheus 导出服务器。
     export_addr:                            # 设置 Prometheus 导出服务器的地址。
       ip: 127.0.0.1                         # 设置 IP。
@@ -170,6 +173,11 @@ Prometheus 中有不同类型的指标。要了解它们之间的区别，请参
 | apisix_node_info        | gauge     | APISIX 节点的信息，例如主机名和当前的 APISIX 版本号。                                                                                                                                       |
 | apisix_shared_dict_capacity_bytes | gauge     | [NGINX 共享字典](https://github.com/openresty/lua-nginx-module#ngxshareddict) 的总容量。                                                                                     |
 | apisix_shared_dict_free_space_bytes | gauge     | [NGINX 共享字典](https://github.com/openresty/lua-nginx-module#ngxshareddict) 中剩余的空间。                                                                                   |
+| apisix_nginx_timers      | gauge     | 每个 NGINX 进程中运行中和等待中的 Lua 定时器数量，按子系统区分。                                                                                                     |
+| apisix_nginx_timers_max  | gauge     | 每个进程允许的运行中和等待中 Lua 定时器的上限（`nginx_config.max_running_timers` 和 `nginx_config.max_pending_timers`）。                                            |
+| apisix_nginx_process_connections | gauge | 每个 NGINX 进程已占用的连接槽位数，包括监听套接字、客户端连接和 cosocket 发起的出站连接。                                                                           |
+| apisix_nginx_process_connections_max | gauge | 每个 NGINX 进程的连接槽位总数：worker 进程为 `worker_connections`，privileged agent 为 512。                                                                |
+| apisix_nginx_lua_memory_bytes | gauge | 每个 NGINX 进程中 Lua VM 分配的内存，按子系统区分。                                                                                                                  |
 | apisix_upstream_status   | gauge     | 上游节点的健康检查状态，如果在上游配置了健康检查，则可用。值为 `1` 表示健康，`0` 表示不健康。                                                                                   |
 | apisix_stream_connection_total | counter   | 每个 Stream Route 处理的总连接数。                                                                                                                                         |
 | apisix_stream_active_connections | gauge   | 当前正在代理的 Stream 会话数，按监听地址区分。同时覆盖 TCP 连接与 UDP 会话。                                                                                                 |
@@ -254,6 +262,8 @@ UDP 没有关闭、FIN 或重置信号，因此只会出现其中一部分状态
 
 在普通转发中，`downstream`/`ingress` 通常对应 `upstream`/`egress`，`upstream`/`ingress` 通常对应 `downstream`/`egress`；持续不一致可能表示某一侧停止读取。
 
+每个 Service 从其第一个会话起计入，包括在下一个 `refresh_interval` 之前就已结束的会话。
+
 ### `apisix_bandwidth` 的标签
 
 以下标签用于区分 `apisix_bandwidth` 指标。
@@ -320,6 +330,8 @@ APISIX 在开始 LLM 上游尝试时递增该 gauge，并在请求的日志阶�
 | llm_model          | AI 请求实际使用的目标模型。优先使用 AI 实例中配置的模型，否则使用客户端请求的模型。 |
 
 ### `apisix_llm_prompt_tokens` 的标签
+
+prompt token 数包含从缓存读取和写入缓存的 token 数。对于 Anthropic Messages API，其值为 `input_tokens + cache_read_input_tokens + cache_creation_input_tokens`，与 OpenAI 的 `prompt_tokens` 含义一致。
 
 | 名称 | 描述 |
 | ---------- | ----------------------------------------------------------------------------------------------------------------------------- |
@@ -425,6 +437,18 @@ APISIX 延迟
 | name   | 与健康检查配置的上游对应的资源 ID，例如 `/apisix/routes/1` 和 `/apisix/upstreams/1`。                              |
 | ip     | 上游节点的 IP 地址。                                                                                                   |
 | port   | 节点的端口号。                                                                                                         |
+
+### NGINX 进程指标的标签
+
+`apisix_nginx_timers`、`apisix_nginx_timers_max`、`apisix_nginx_process_connections`、`apisix_nginx_process_connections_max` 和 `apisix_nginx_lua_memory_bytes` 描述每个 NGINX 进程的内部状态，因此单个进程（例如 privileged agent）的资源即将耗尽时，可以在它引发错误之前被发现。每个进程每隔 `refresh_interval` 写入一次自己的数值，生成指标输出的进程会先刷新自己的数值。
+
+| 名称      | 描述                                                                                                                         |
+| --------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| process   | 数值所属的进程：worker 进程为 `worker-<id>`，privileged agent 为 `privileged-agent`。                                        |
+| subsystem | `http` 或 `stream`。每个子系统有独立的 Lua VM，定时器和内存也各自独立。仅用于 `apisix_nginx_timers` 和 `apisix_nginx_lua_memory_bytes`。 |
+| state     | `running` 或 `pending`。仅用于 `apisix_nginx_timers` 和 `apisix_nginx_timers_max`。                                          |
+
+连接相关指标读取自 NGINX 内部的 cycle 结构。如果某个 worker 读到的连接槽位数与配置中的 `worker_connections` 不一致，APISIX 会记录一条警告，并在所有进程中都不导出这两个连接指标，而不是导出错误的数值。
 
 ## 示例
 

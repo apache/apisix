@@ -71,9 +71,59 @@ _EOC_
     # while the exposition is built, so a block generated without a stream
     # block has nothing to read -- and the reload into it drops the zone, which
     # takes the running totals with it.
-    if ($block->request =~ m{/apisix/prometheus/metrics}) {
+    if ($block->request =~ m{/apisix/prometheus/metrics|/scrape}) {
         $block->set_value("stream_enable", 1);
     }
+
+    # A session's status and connection count reach the exposition only after
+    # its worker has synced them into the shared dict -- every second, or when
+    # the worker exits on the reload into the next block -- and the privileged
+    # agent has refilled the cache after that. On a reload the new privileged
+    # agent fills the cache as soon as it starts, racing the flush of the old
+    # workers, and the next refill is a whole refresh_interval later. So a
+    # scrape right after the block that ran the session can still miss it, and
+    # has to wait for the series to show up.
+    my $extra_init_by_lua = <<_EOC_;
+    function _G.scrape_until(pattern)
+        local body
+        local deadline = ngx.now() + 5
+        repeat
+            local sock = ngx.socket.tcp()
+            local ok, err = sock:connect("127.0.0.1", 1984)
+            if not ok then
+                ngx.say("scrape connect: ", err)
+                return
+            end
+
+            ok, err = sock:send("GET /apisix/prometheus/metrics HTTP/1.0\\r\\n"
+                                .. "Host: 127.0.0.1\\r\\n\\r\\n")
+            if not ok then
+                ngx.say("scrape send: ", err)
+                return
+            end
+
+            local rerr, partial
+            body, rerr, partial = sock:receive("*a")
+            sock:close()
+            body = body or partial
+            if not body then
+                ngx.say("scrape: ", rerr)
+                return
+            end
+
+            if ngx.re.find(body, pattern, "jom") then
+                ngx.say("matched")
+                return
+            end
+
+            ngx.sleep(0.1)
+        until ngx.now() > deadline
+
+        ngx.print(body)
+    end
+_EOC_
+
+    $block->set_value("extra_init_by_lua", $extra_init_by_lua);
 });
 
 run_tests;
@@ -136,10 +186,17 @@ hello world
 
 
 === TEST 3: the session is counted as a normal close, not as an error
+--- config
+    location /scrape {
+        content_by_lua_block {
+            scrape_until([[apisix_stream_status\{code="200",listen_addr="[^"]+",service="",service_id="",node="127\.0\.0\.1:1995"\} 1$]])
+        }
+    }
 --- request
-GET /apisix/prometheus/metrics
---- response_body eval
-qr/apisix_stream_status\{code="200",listen_addr="[^"]+",service="",service_id="",node="127.0.0.1:1995"\} 1$/m
+GET /scrape
+--- timeout: 10
+--- response_body
+matched
 
 
 
@@ -360,10 +417,17 @@ connect() failed
 
 
 === TEST 12: the failing node is still reported on a 502
+--- config
+    location /scrape {
+        content_by_lua_block {
+            scrape_until([[apisix_stream_status\{code="502",listen_addr="[^"]+",service="",service_id="",node="127\.0\.0\.1:1979"\} 1$]])
+        }
+    }
 --- request
-GET /apisix/prometheus/metrics
---- response_body eval
-qr/apisix_stream_status\{code="502",listen_addr="[^"]+",service="",service_id="",node="127.0.0.1:1979"\} 1$/m
+GET /scrape
+--- timeout: 10
+--- response_body
+matched
 
 
 
@@ -428,10 +492,17 @@ This is the point of the feature. nginx reports $status 200 for every failure
 after the upstream connection is up -- apisix-nginx-module's t/stream/metrics.t
 pins that for the same case -- so an idle timeout has to reach the metric as
 502 through $stream_session_reason, not as a success.
+--- config
+    location /scrape {
+        content_by_lua_block {
+            scrape_until([[apisix_stream_status\{code="502",listen_addr="0\.0\.0\.0:1985",service="",service_id="",node="127\.0\.0\.1:1993"\}]])
+        }
+    }
 --- request
-GET /apisix/prometheus/metrics
---- response_body_like eval
-qr/apisix_stream_status\{code="502",listen_addr="0\.0\.0\.0:1985",service="",service_id="",node="127\.0\.0\.1:1993"\}/
+GET /scrape
+--- timeout: 10
+--- response_body
+matched
 --- no_error_log
 [error]
 
@@ -482,10 +553,17 @@ hello world
 
 
 === TEST 18: the termination status carries the service
+--- config
+    location /scrape {
+        content_by_lua_block {
+            scrape_until([[apisix_stream_status\{code="200",listen_addr="0\.0\.0\.0:1985",service="svc-a",service_id="svc-a",node="127\.0\.0\.1:1995"\} 1$]])
+        }
+    }
 --- request
-GET /apisix/prometheus/metrics
---- response_body_like eval
-qr/apisix_stream_status\{code="200",listen_addr="0\.0\.0\.0:1985",service="svc-a",service_id="svc-a",node="127\.0\.0\.1:1995"\} 1$/m
+GET /scrape
+--- timeout: 10
+--- response_body
+matched
 
 
 
@@ -546,10 +624,17 @@ hello world
 
 === TEST 22: with prefer_name, service carries the name and service_id the id
 The same rule as the http metrics.
+--- config
+    location /scrape {
+        content_by_lua_block {
+            scrape_until([[apisix_stream_status\{code="200",listen_addr="0\.0\.0\.0:1985",service="Order TCP",service_id="svc-a",node="127\.0\.0\.1:1995"\} 1$]])
+        }
+    }
 --- request
-GET /apisix/prometheus/metrics
---- response_body_like eval
-qr/apisix_stream_status\{code="200",listen_addr="0\.0\.0\.0:1985",service="Order TCP",service_id="svc-a",node="127\.0\.0\.1:1995"\} 1$/m
+GET /scrape
+--- timeout: 10
+--- response_body
+matched
 
 
 
@@ -617,10 +702,17 @@ hello world
 
 
 === TEST 25: the session carries the service of the route
+--- config
+    location /scrape {
+        content_by_lua_block {
+            scrape_until([[apisix_stream_status\{code="200",listen_addr="0\.0\.0\.0:1985",service="Billing",service_id="svc-b",node="127\.0\.0\.1:1995"\} 1$]])
+        }
+    }
 --- request
-GET /apisix/prometheus/metrics
---- response_body_like eval
-qr/apisix_stream_status\{code="200",listen_addr="0\.0\.0\.0:1985",service="Billing",service_id="svc-b",node="127\.0\.0\.1:1995"\} 1$/m
+GET /scrape
+--- timeout: 10
+--- response_body
+matched
 
 
 
