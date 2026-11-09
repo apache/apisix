@@ -157,7 +157,13 @@ values={[
 
 <TabItem value="docker">
 
-Start Keycloak in development mode with the Admin Console bound to the loopback interface:
+If `apisix-keycloak` is already running from another guide, connect it to the APISIX quickstart network and skip the next command:
+
+```shell
+docker network connect apisix-quickstart-net apisix-keycloak
+```
+
+Otherwise, start Keycloak in development mode with the Admin Console bound to the loopback interface:
 
 ```shell
 docker run -d --name apisix-keycloak \
@@ -454,6 +460,8 @@ Create `adc.yaml` with the route configuration:
 ```yaml title="adc.yaml"
 services:
   - name: authz-keycloak-httpbin
+    labels:
+      docs-example: authz-keycloak
     routes:
       - name: authz-keycloak
         uris:
@@ -484,10 +492,20 @@ services:
           weight: 1
 ```
 
-Synchronize the configuration to APISIX:
+ADC reconciles services as desired state. Preview the scoped changes and confirm that they contain no unintended updates or deletions:
 
 ```shell
-adc sync -f adc.yaml
+adc diff -f adc.yaml \
+  --include-resource-type service \
+  --label-selector docs-example=authz-keycloak
+```
+
+Synchronize the reviewed configuration:
+
+```shell
+adc sync -f adc.yaml \
+  --include-resource-type service \
+  --label-selector docs-example=authz-keycloak
 ```
 
 </TabItem>
@@ -495,6 +513,8 @@ adc sync -f adc.yaml
 <TabItem value="aic">
 
 Configure the Plugin with either Gateway API or APISIX custom resources.
+
+Replace `replace-with-your-client-secret` with the Keycloak client secret before applying either manifest.
 
 <Tabs
 groupId="k8s-api"
@@ -817,6 +837,8 @@ Create `adc-static.yaml` with the route configuration:
 ```yaml title="adc-static.yaml"
 services:
   - name: authz-keycloak-static-httpbin
+    labels:
+      docs-example: authz-keycloak-static
     routes:
       - name: authz-keycloak-static
         uris:
@@ -845,10 +867,20 @@ services:
           weight: 1
 ```
 
-Synchronize the configuration to APISIX:
+ADC reconciles services as desired state. Preview the scoped changes and confirm that they contain no unintended updates or deletions:
 
 ```shell
-adc sync -f adc-static.yaml
+adc diff -f adc-static.yaml \
+  --include-resource-type service \
+  --label-selector docs-example=authz-keycloak-static
+```
+
+Synchronize the reviewed configuration:
+
+```shell
+adc sync -f adc-static.yaml \
+  --include-resource-type service \
+  --label-selector docs-example=authz-keycloak-static
 ```
 
 </TabItem>

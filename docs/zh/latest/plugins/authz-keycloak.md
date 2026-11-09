@@ -157,7 +157,13 @@ values={[
 
 <TabItem value="docker">
 
-以开发模式启动 Keycloak，并将管理控制台绑定到环回接口：
+如果其他指南已启动 `apisix-keycloak`，请将其连接到 APISIX 快速入门网络，并跳过下一条命令：
+
+```shell
+docker network connect apisix-quickstart-net apisix-keycloak
+```
+
+否则，请以开发模式启动 Keycloak，并将管理控制台绑定到环回接口：
 
 ```shell
 docker run -d --name apisix-keycloak \
@@ -454,6 +460,8 @@ EOF
 ```yaml title="adc.yaml"
 services:
   - name: authz-keycloak-httpbin
+    labels:
+      docs-example: authz-keycloak
     routes:
       - name: authz-keycloak
         uris:
@@ -484,10 +492,20 @@ services:
           weight: 1
 ```
 
-将配置同步到 APISIX：
+ADC 会将 Service 协调为期望状态。预览限定范围后的变更，并确认其中没有非预期的更新或删除：
 
 ```shell
-adc sync -f adc.yaml
+adc diff -f adc.yaml \
+  --include-resource-type service \
+  --label-selector docs-example=authz-keycloak
+```
+
+同步已审核的配置：
+
+```shell
+adc sync -f adc.yaml \
+  --include-resource-type service \
+  --label-selector docs-example=authz-keycloak
 ```
 
 </TabItem>
@@ -495,6 +513,8 @@ adc sync -f adc.yaml
 <TabItem value="aic">
 
 使用 Gateway API 或 APISIX 自定义资源配置插件。
+
+应用任一清单前，请将 `replace-with-your-client-secret` 替换为 Keycloak 客户端密钥。
 
 <Tabs
 groupId="k8s-api"
@@ -817,6 +837,8 @@ EOF
 ```yaml title="adc-static.yaml"
 services:
   - name: authz-keycloak-static-httpbin
+    labels:
+      docs-example: authz-keycloak-static
     routes:
       - name: authz-keycloak-static
         uris:
@@ -845,10 +867,20 @@ services:
           weight: 1
 ```
 
-将配置同步到 APISIX：
+ADC 会将 Service 协调为期望状态。预览限定范围后的变更，并确认其中没有非预期的更新或删除：
 
 ```shell
-adc sync -f adc-static.yaml
+adc diff -f adc-static.yaml \
+  --include-resource-type service \
+  --label-selector docs-example=authz-keycloak-static
+```
+
+同步已审核的配置：
+
+```shell
+adc sync -f adc-static.yaml \
+  --include-resource-type service \
+  --label-selector docs-example=authz-keycloak-static
 ```
 
 </TabItem>
