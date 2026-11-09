@@ -28,23 +28,19 @@ description: Plugin Metadata in Apache APISIX.
 
 ## Description
 
-In this document, you will learn the basic concept of plugin metadata in APISIX and why you may need them.
-
-Explore additional resources at the end of the document for more information on related topics.
+In this document, you will learn the basic concept of plugin metadata in APISIX and why you may need it.
 
 ## Overview
 
-In APISIX, a plugin metadata object is used to configure the common metadata field(s) of all plugin instances sharing the same plugin name. It is useful when a plugin is enabled across multiple objects and requires a universal update to their metadata fields.
+In APISIX, a plugin metadata object configures shared settings for all instances of the same plugin. It is useful for values, such as log-format templates, that should normally remain consistent wherever the plugin is enabled.
 
-The following diagram illustrates the concept of plugin metadata using two instances of [syslog](https://apisix.apache.org/docs/apisix/plugins/syslog/) plugins on two different routes, as well as a plugin metadata object setting a [global](https://apisix.apache.org/docs/apisix/plugins/syslog/) `log_format` for the syslog plugin:
+APISIX stores one plugin metadata object for each plugin name. Only plugins that define a metadata schema support plugin metadata. Fields and behavior depend on the plugin, so check the documentation for the specific plugin before configuring its metadata.
 
-![plugin_metadata](https://static.apiseven.com/uploads/2023/04/17/Z0OFRQhV_plugin%20metadata.svg)
+For example, plugin metadata can define a shared `log_format` for every instance of the `syslog` plugin. An instance without its own `log_format` uses the metadata value, while an instance-level `log_format` takes precedence when configured.
 
-Without otherwise specified, the `log_format` on plugin metadata object should apply the same log format uniformly to both `syslog` plugins. However, since the `syslog` plugin on the `/orders` route has a different `log_format`, requests visiting this route will generate logs in the `log_format` specified by the plugin in route.
+For logger plugins that support shared `log_format` metadata, this behavior also applies to plugins such as `http-logger`, `kafka-logger`, and `file-logger`.
 
-Metadata properties set at the plugin level is more granular and has a higher priority over the "global" metadata object.
-
-Plugin metadata objects should only be used for plugins that have metadata fields. Check the specific plugin documentation to know more.
+Plugin metadata is not merged with every plugin configuration by a universal precedence rule. Each plugin determines how its instances consume metadata and whether an instance-level field overrides a metadata field.
 
 ## Example usage
 
@@ -78,6 +74,6 @@ With this configuration, your logs would be formatted as shown below:
 {"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","route_id":"1"}
 ```
 
-## Additional Resource(s)
+## Additional resources
 
-Key Concepts - [Plugins](https://apisix.apache.org/docs/apisix/terminology/plugin/)
+[Plugins](./plugin.md)

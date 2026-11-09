@@ -30,7 +30,7 @@ Secrets refer to any sensitive information required during the running process o
 - API key
 - Sensitive plugin configuration fields, typically used for authentication, hashing, signing, or encryption
 
-APISIX Secret allows users to store secrets through some secrets management services (Vault, etc.) in APISIX, and read them according to the key when using them to ensure that **Secrets do not exist in plain text throughout the platform**.
+APISIX Secret allows APISIX to retrieve values from external secret managers such as HashiCorp Vault instead of storing those values directly in resource configuration. Connection credentials can still be configured as literal values. Where supported, use environment-variable references; for GCP, use `auth_file` when the service-account key should not be embedded in resource configuration.
 
 Its working principle is shown in the figure:
 ![secret](../../../assets/images/secret.png)

@@ -24,9 +24,12 @@ local core_str       = require("apisix.core.string")
 local rfind_char     = core_str.rfind_char
 local table          = require("apisix.core.table")
 local log            = require("apisix.core.log")
+local json           = require("apisix.core.json")
 local string         = require("apisix.core.string")
 local dns_client     = require("apisix.core.dns.client")
 local ngx_re         = require("ngx.re")
+local lrucache       = require("resty.lrucache.pureffi")
+local tablepool      = require("tablepool")
 local ipmatcher      = require("resty.ipmatcher")
 local ffi            = require("ffi")
 local base           = require("resty.core.base")
@@ -48,6 +51,7 @@ local exiting        = ngx.worker.exiting
 local ngx_sleep      = ngx.sleep
 local ipairs         = ipairs
 local str_format     = string.format
+local tab_concat     = table.concat
 local ngx_now        = ngx.now
 local ngx_update_time = ngx.update_time
 local math_random    = math.random
@@ -311,36 +315,59 @@ _M.sleep = sleep
 
 local resolve_var
 do
-    local _ctx
-    local n_resolved
     local pat = [[(?<!\\)\$(\{\s*([^}]+?)\s*\}|([\w\.]+))]]
-    local _escaper
+    -- pureffi: once full, resty.lrucache rehashes its key table on most
+    -- evictions, so a configuration with more templates than fit would pay
+    -- for a rehash on most calls
+    local tpl_cache = lrucache.new(1024)
 
-    local function resolve(m)
-        local variable = m[2] or m[3]
-        -- handle the default value with ?? operator
-        local segs, err = ngx_re.split(variable, [[\s*\?\?\s*]])
-        if not segs then
-            log.error("failed to split variable ", variable, ": ", err)
-            return ""
-        end
-        local v = _ctx[segs[1]]
-
-        if v == nil then
-            if #segs == 1 then
-                return ""
+    -- Split a template into literal strings and variables once, so resolving it
+    -- is a table walk instead of a regex gsub with a callback.
+    local function parse(tpl)
+        local segs = {}
+        local m_ctx = {pos = 1}
+        local last = 1
+        while true do
+            local m, err = re_match(tpl, pat, "jo", m_ctx)
+            if err then
+                return nil, err
             end
-            v = segs[2]
+            if not m then
+                break
+            end
+
+            local from = m_ctx.pos - #m[0]
+            if from > last then
+                segs[#segs + 1] = sub_str(tpl, last, from - 1)
+            end
+
+            local variable = m[2] or m[3]
+            local seg = {name = variable}
+            -- handle the default value with ?? operator
+            if core_str.find(variable, "??") then
+                local parts, err = ngx_re.split(variable, [[\s*\?\?\s*]], "jo")
+                if not parts then
+                    return nil, err
+                end
+                seg.name = parts[1]
+                -- "${a??}" splits into {"a"}, which means no default
+                seg.has_default = #parts ~= 1
+                seg.default = parts[2]
+            end
+            segs[#segs + 1] = seg
+            last = m_ctx.pos
         end
-        n_resolved = n_resolved + 1
-        if _escaper then
-            return _escaper(tostring(v))
+
+        if last <= #tpl then
+            segs[#segs + 1] = sub_str(tpl, last)
         end
-        return tostring(v)
+        return segs
     end
 
-    function resolve_var(tpl, ctx, escaper)
-        n_resolved = 0
+    -- no_cache: the template is built per request, so caching it would only
+    -- evict the configured templates
+    function resolve_var(tpl, ctx, escaper, no_cache)
+        local n_resolved = 0
         if not tpl then
             return tpl, nil, n_resolved
         end
@@ -350,16 +377,42 @@ do
             return tpl, nil, n_resolved
         end
 
-        -- avoid creating temporary function
-        _ctx = ctx
-        _escaper = escaper
-        local res, _, err = re_gsub(tpl, pat, resolve, "jo")
-        _ctx = nil
-        _escaper = nil
-        if not res then
-            return nil, err
+        local segs = not no_cache and tpl_cache:get(tpl)
+        if not segs then
+            local err
+            segs, err = parse(tpl)
+            if not segs then
+                return nil, err
+            end
+            if not no_cache then
+                tpl_cache:set(tpl, segs)
+            end
         end
 
+        local n = #segs
+        local buf = tablepool.fetch("resolve_var", n, 0)
+        for i = 1, n do
+            local seg = segs[i]
+            if type(seg) == "table" then
+                local v = ctx[seg.name]
+                if v == nil and not seg.has_default then
+                    seg = ""
+                else
+                    if v == nil then
+                        v = seg.default
+                    end
+                    n_resolved = n_resolved + 1
+                    seg = tostring(v)
+                    if escaper then
+                        seg = tostring(escaper(seg))
+                    end
+                end
+            end
+            buf[i] = seg
+        end
+
+        local res = tab_concat(buf, "", 1, n)
+        tablepool.release("resolve_var", buf)
         return res, nil, n_resolved
     end
 end
@@ -494,19 +547,130 @@ function _M.check_tls_bool(fields, conf, plugin_name)
 end
 
 
-function _M.set_var_rate_limiting_info(ctx, key, limit, remaining, reset)
+local function to_ms(seconds)
+    if seconds == nil then
+        return json.null
+    end
+    return math_floor(seconds * 1000 + 0.5)
+end
+
+
+local function round(value, scale)
+    return math_floor(value * scale + 0.5) / scale
+end
+
+
+local function or_null(value)
+    if value == nil then
+        return json.null
+    end
+    return value
+end
+
+
+local function current_window_info(detail)
+    local window_size = detail.window_size
+    if detail.window_type ~= "sliding" then
+        local window_end = detail.window_end
+        return {
+            start_ms = to_ms(window_end and window_end - window_size),
+            end_ms = to_ms(window_end),
+            count = or_null(detail.count),
+            created = or_null(detail.created),
+        }
+    end
+
+    -- sliding windows are aligned to the clock: the window containing
+    -- `window_now` is the id-th one since the epoch, and the previous window's
+    -- count is weighted by the share of it still inside the sliding range
+    local window_now = detail.window_now
+    local last_count = detail.last_count
+    local id, window_start, weight
+    if window_now then
+        id = math_floor(window_now / window_size)
+        window_start = id * window_size
+        weight = (window_size - window_now % window_size) / window_size
+    end
+
+    return {
+        id = or_null(id),
+        start_ms = to_ms(window_start),
+        end_ms = to_ms(window_start and window_start + window_size),
+        count = or_null(detail.count),
+    }, {
+        count = or_null(last_count),
+        weight = weight and round(weight, 1e6) or json.null,
+        weighted_count = (weight and last_count) and round(last_count * weight, 1e3)
+                         or json.null,
+    }
+end
+
+
+-- `detail` (optional) describes the window the request was counted in, see
+-- the $rate_limiting_info section of the limit-count plugin docs
+function _M.set_var_rate_limiting_info(ctx, key, limit, remaining, reset, detail)
     if not ctx then
         return
     end
-    key = key or ""
-    limit = limit or 0
-    remaining = tonumber(remaining) or 0
-    reset = reset or 0
 
-    ctx.var.rate_limiting_info = str_format(
-        '{"rate_limiting_key":"%s","rate_limiting_limit":%d,'
-        .. '"rate_limiting_remaining":%d,"rate_limiting_reset":%d}',
-            key, limit, remaining, reset)
+    local info = {
+        rate_limiting_key = tostring(key or ""),
+        rate_limiting_limit = math_floor(limit or 0),
+        rate_limiting_remaining = math_floor(tonumber(remaining) or 0),
+        rate_limiting_reset = math_floor(reset or 0),
+    }
+
+    if detail then
+        info.window_type = detail.window_type
+        info.window_size_ms = to_ms(detail.window_size)
+        info.decision = detail.decision
+        if detail.decision ~= "error" then
+            info.cost = detail.cost
+            info.evaluated_at_ms = to_ms(detail.now)
+            local delayed = detail.delayed_sync
+            if delayed then
+                info.delayed_sync = {
+                    synced_at_ms = to_ms(delayed.synced_at),
+                    synced_count = or_null(delayed.synced_count),
+                    local_delta = or_null(delayed.local_delta),
+                }
+            end
+            info.current_window, info.previous_window = current_window_info(detail)
+        end
+    end
+
+    ctx.var.rate_limiting_info = json.encode(info)
+end
+
+
+local hex_byte = {}
+for i = 0, 255 do
+    hex_byte[i] = str_format("%02x", i)
+end
+
+
+local function random_hex_byte()
+    return hex_byte[math_random(0, 255)]
+end
+
+
+---
+-- Generate a random UUID v4 string.
+--
+-- Draws the same bytes in the same order as resty.jit-uuid's generate_v4, so
+-- a given seed yields the same id, but encodes them through a lookup table.
+--
+-- @function core.utils.generate_uuid_v4
+-- @treturn string UUID v4 string, e.g. "1f3a9c2e-7b4d-4e8f-9a6b-2c1d0e5f7a3b"
+function _M.generate_uuid_v4()
+    return random_hex_byte() .. random_hex_byte() .. random_hex_byte()
+           .. random_hex_byte() .. "-" .. random_hex_byte() .. random_hex_byte() .. "-"
+           .. hex_byte[bit.bor(bit.band(math_random(0, 255), 0x0F), 0x40)]
+           .. random_hex_byte() .. "-"
+           .. hex_byte[bit.bor(bit.band(math_random(0, 255), 0x3F), 0x80)]
+           .. random_hex_byte() .. "-" .. random_hex_byte() .. random_hex_byte()
+           .. random_hex_byte() .. random_hex_byte() .. random_hex_byte()
+           .. random_hex_byte()
 end
 
 

@@ -110,7 +110,7 @@ local function get(conf, key)
 
     local ret = core.json.decode(res)
     if not ret or not ret.data then
-        return nil, "failed to decode result, res: " .. res
+        return nil, "failed to decode result, path: " .. main_key
     end
 
     return ret.data[sub_key]
