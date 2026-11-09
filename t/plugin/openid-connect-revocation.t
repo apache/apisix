@@ -397,46 +397,76 @@ OIDC session revocation store unavailable
 done
 
 
+
 === TEST 5: revocation lookups are cached per session, and a zero TTL disables the cache
 --- config
-    location /t {
+    location /session {
         content_by_lua_block {
             local session = require("resty.session")
             local plugin = require("apisix.plugins.openid-connect")
 
-            -- open one cookie session three times and count store lookups
-            local function lookups(name, conf)
-                local gets = 0
-                conf.secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK"
-                conf.cookie_name = name
-                conf.revocation = "redis"
-                local opts = plugin._build_session_opts(conf)
-                opts.revocation = {
-                    get = function() gets = gets + 1 end,
-                    set = function() return true end,
-                }
+            local probe = package.loaded.revocation_probe or {gets = 0}
+            package.loaded.revocation_probe = probe
 
+            local conf = {
+                secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
+                cookie_name = ngx.var.arg_name,
+                revocation = "redis",
+            }
+            if ngx.var.arg_ttl then
+                conf.revocation_cache_ttl = tonumber(ngx.var.arg_ttl)
+            end
+            local opts = plugin._build_session_opts(conf)
+            opts.revocation = {
+                get = function() probe.gets = probe.gets + 1 end,
+                set = function() return true end,
+            }
+
+            if ngx.var.arg_action == "save" then
                 local s = session.new(opts)
                 s:set("k", "v")
                 assert(s:save())
-                local cookie = ngx.header["Set-Cookie"]
+                ngx.say("saved")
+            else
+                local _, err, exists = session.open(opts)
+                assert(exists, err)
+                ngx.say("opened")
+            end
+        }
+    }
+
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local base = "http://127.0.0.1:" .. ngx.var.server_port .. "/session?"
+
+            -- open one cookie session three times and count store lookups; each
+            -- step is its own request, as the session reads its cookie from nginx
+            local function lookups(name, ttl)
+                local query = "name=" .. name .. (ttl and ("&ttl=" .. ttl) or "")
+                local httpc = http.new()
+                local res = assert(httpc:request_uri(base .. query .. "&action=save"))
+                local cookie = res.headers["Set-Cookie"]
                 if type(cookie) == "table" then
                     cookie = cookie[1]
                 end
-                ngx.req.set_header("Cookie", cookie:match("^[^;]+"))
+                cookie = cookie:match("^[^;]+")
 
+                local probe = package.loaded.revocation_probe
+                probe.gets = 0
                 for _ = 1, 3 do
-                    local _, err, exists = session.open(opts)
-                    assert(exists, err)
+                    res = assert(httpc:request_uri(base .. query .. "&action=open",
+                                                   {headers = {Cookie = cookie}}))
+                    assert(res.status == 200, res.body)
                 end
-                return gets
+                return probe.gets
             end
 
             -- ttl 0 goes first: lua-resty-session allocates its cache lazily, and
             -- only a fresh worker shows whether a zero TTL still works without it
-            ngx.say("ttl 0: ", lookups("cached_a", {revocation_cache_ttl = 0}))
-            ngx.say("default ttl: ", lookups("cached_b", {}))
-            ngx.say("ttl 5: ", lookups("cached_c", {revocation_cache_ttl = 5}))
+            ngx.say("ttl 0: ", lookups("cached_a", 0))
+            ngx.say("default ttl: ", lookups("cached_b"))
+            ngx.say("ttl 5: ", lookups("cached_c", 5))
         }
     }
 --- response_body
