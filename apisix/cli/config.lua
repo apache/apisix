@@ -49,6 +49,7 @@ local _M = {
     normalize_uri_like_servlet = false,
     match_uri_encoded_slash = false,
     max_post_args_readable_size = 64,
+    max_request_headers_readable = 100,
     router = {
       http = "radixtree_host_uri",
       ssl = "radixtree_sni"
@@ -217,6 +218,7 @@ local _M = {
     "referer-restriction",
     "csrf",
     "uri-blocker",
+    "request-decompress",
     "request-validation",
     "chaitin-waf",
     "multi-auth",
@@ -316,6 +318,9 @@ local _M = {
     ["ai-proxy"] = {
       http_client = "ngx_http_ffi_client"
     },
+    ["forward-auth"] = {
+      http_client = "ngx_http_ffi_client"
+    },
     ["log-rotate"] = {
       timeout = 10000,
       interval = 3600,
@@ -358,7 +363,8 @@ local _M = {
         ip = "127.0.0.1",
         port = 9091
       },
-      refresh_interval = 15
+      refresh_interval = 15,
+      remove_expired_keys_interval = 3600
     },
     ["server-info"] = {
       report_ttl = 60

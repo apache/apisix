@@ -327,7 +327,7 @@ Because lua-resty-http does not currently support mTLS, and basic authentication
 
 **Q: APISIX inherits Nginx's multiple process model, does it mean that each nginx worker process will [_List-Watch_](https://kubernetes.io/docs/reference/using-api/api-concepts/) kubernetes endpoints resources?**
 
-A: The Kubernetes service discovery only uses privileged processes to [_List-Watch_](https://kubernetes.io/docs/reference/using-api/api-concepts/) Kubernetes endpoints resources, then store theirs value into `ngx.shared.DICT`, worker processes get results by querying `ngx.shared.DICT`.
+A: The Kubernetes service discovery only uses privileged processes to [_List-Watch_](https://kubernetes.io/docs/reference/using-api/api-concepts/) Kubernetes endpoints resources, then store theirs value into `ngx.shared.DICT`, worker processes get results by querying `ngx.shared.DICT`. Each worker process caches the nodes of a service for one second and then reads them from `ngx.shared.DICT` again, so a change reaches every worker process within one second of the privileged process writing it to `ngx.shared.DICT`.
 
 **Q: What permissions do [_ServiceAccount_](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/) require?**
 

@@ -86,25 +86,18 @@ plugins:
 
 当一个请求通过 APISIX 时，插件的相应方法会在以下一个或多个阶段中执行： `rewrite`, `access`, `before_proxy`, `header_filter`, `body_filter`, and `log`。这些阶段在很大程度上受到[OpenResty 指令](https://openresty-reference.readthedocs.io/en/latest/Directives/)的影响。
 
-<br />
-<div style={{textAlign: 'center'}}>
-<img src="https://static.apiseven.com/uploads/2023/03/09/ZsH5C8Og_plugins-phases.png" alt="Routes Diagram" width="50%"/>
-</div>
-<br />
-
 ## 插件执行顺序
 
-通常情况下，插件按照以下顺序执行：
+对于匹配 HTTP Route 的请求，全局规则插件和局部绑定的插件会按阶段交错执行：
 
-1. [全局规则](./global-rule.md) 插件
-   1. rewrite 阶段的插件
-   2. access 阶段的插件
+1. 全局规则插件的 `rewrite` 阶段；
+2. 局部绑定插件的 `rewrite` 阶段；
+3. 全局规则插件的 `access` 阶段；
+4. 局部绑定插件的 `access` 阶段。
 
-2. 绑定到其他对象的插件
-   1. rewrite 阶段的插件
-   2. access 阶段的插件
+局部绑定插件的 `rewrite` 处理函数会先于所有全局规则插件的 `access` 处理函数执行。如果某个 `rewrite` 处理函数终止了请求，则排在它之后的 `access` 处理函数不会执行，但 `log` 处理函数仍会执行。
 
-在每个阶段内，你可以在插件的 `_meta.priority` 字段中可选地定义一个新的优先级数，该优先级数优先于默认插件优先级在执行期间。具有更高优先级数的插件首先执行。
+在上述每个分组内，你可以在插件的 `_meta.priority` 字段中定义新的优先级数，该优先级会在执行时覆盖插件的默认优先级。优先级数越高，插件越先执行。优先级不会使插件跨越阶段或全局、局部分组执行。
 
 例如，如果你想在请求到达路由时，让 `limit-count`（优先级 1002）先于 `ip-restriction`（优先级 3000）运行，可以通过将更高的优先级数传递给 `limit-count` 的 `_meta.priority` 字段来实现：
 
@@ -143,7 +136,7 @@ plugins:
 | disable        | boolean       | 当设置为 `true` 时，则禁用该插件。可选值为 `true` 和 `false`。 |
 | error_response | string/object | 自定义错误响应。 |
 | priority       | integer       | 自定义插件优先级。 |
-| filter         | array         | 根据请求的参数，在运行时控制插件是否执行。此配置由一个或多个 {var, operator, val} 元素组成列表，类似：`{{var, operator, val}, {var, operator, val}, ...}}`。例如 `{"arg_version", "==", "v2"}`，表示当前请求参数 `version` 是 `v2`。这里的 `var` 与 NGINX 内部自身变量命名是保持一致。操作符的使用方法，请参考 [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list)。|
+| filter         | array         | 根据请求的参数，在运行时控制插件是否执行。此配置由一个或多个 {var, operator, val} 元素组成列表，类似：`{{var, operator, val}, {var, operator, val}, ...}}`。例如 `{"arg_version", "==", "v2"}`，表示当前请求参数 `version` 是 `v2`。这里的 `var` 与 NGINX 内部自身变量命名保持一致。条件格式和支持的操作符请参考 [APISIX 表达式](../router-radixtree.md#如何通过-nginx-内置变量过滤路由)。|
 
 ### 禁用指定插件
 

@@ -577,3 +577,102 @@ x-mixed-case: old
 count: 1
 value: new
 header: new
+
+
+
+=== TEST 19: get_body marks a body over max_size as too_large
+--- config
+    location /read {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            ngx.ctx.api_ctx = {}
+            local body, err, kind = core.request.get_body(8, ngx.ctx.api_ctx)
+            ngx.say("body: ", body)
+            ngx.say("err: ", err)
+            ngx.say("kind: ", kind)
+        }
+    }
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local httpc = http.new()
+            local res, err = httpc:request_uri("http://127.0.0.1:1984/read", {
+                method = "POST",
+                body = [[{"name":"doggie"}]],
+            })
+            if not res then
+                ngx.say(err)
+                return
+            end
+            ngx.print(res.body)
+        }
+    }
+--- response_body
+body: nil
+err: request size 17 is greater than the maximum size 8 allowed
+kind: too_large
+
+
+
+=== TEST 20: plugins read the first 100 request headers by default
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            ngx.ctx.api_ctx = {}
+            local ctx = ngx.ctx.api_ctx
+            local count = 0
+            for _ in pairs(core.request.headers(ctx)) do
+                count = count + 1
+            end
+            ngx.say("count: ", count)
+            ngx.say("x-last: ", core.request.header(ctx, "X-Last"))
+        }
+    }
+--- more_headers eval
+CORE::join("", map { "X-Pad-$_: $_\n" } 1 .. 100) . "X-Last: yes\n"
+--- response_body
+count: 100
+x-last: nil
+
+
+
+=== TEST 21: max_request_headers_readable raises the limit
+--- yaml_config
+apisix:
+    node_listen: 1984
+    max_request_headers_readable: 200
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            ngx.ctx.api_ctx = {}
+            local ctx = ngx.ctx.api_ctx
+            ngx.say("x-last: ", core.request.header(ctx, "X-Last"))
+        }
+    }
+--- more_headers eval
+CORE::join("", map { "X-Pad-$_: $_\n" } 1 .. 100) . "X-Last: yes\n"
+--- response_body
+x-last: yes
+
+
+
+=== TEST 22: max_request_headers_readable 0 reads all headers
+--- yaml_config
+apisix:
+    node_listen: 1984
+    max_request_headers_readable: 0
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            ngx.ctx.api_ctx = {}
+            local ctx = ngx.ctx.api_ctx
+            ngx.say("x-last: ", core.request.header(ctx, "X-Last"))
+        }
+    }
+--- more_headers eval
+CORE::join("", map { "X-Pad-$_: $_\n" } 1 .. 300) . "X-Last: yes\n"
+--- response_body
+x-last: yes

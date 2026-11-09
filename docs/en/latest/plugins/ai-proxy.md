@@ -2100,9 +2100,9 @@ The following example demonstrates how you can log LLM request related informati
 * `request_type`: Type of request, where the value could be `traditional_http`, `ai_chat`, or `ai_stream`.
 * `llm_time_to_first_token`: Duration from request sending to the first token received from the LLM service, in milliseconds. For an error response from the LLM service, this is the duration until the error response was received. It stays `0` when the LLM service could not be reached at all.
 * `llm_model`: LLM model.
-* `llm_prompt_tokens`: Number of tokens in the prompt.
+* `llm_prompt_tokens`: Number of tokens in the prompt, including tokens read from and written to the prompt cache. For the Anthropic Messages API, this is `input_tokens + cache_read_input_tokens + cache_creation_input_tokens`, which matches the meaning of OpenAI's `prompt_tokens`.
 * `llm_completion_tokens`: Number of chat completion tokens in the response.
-* `llm_total_tokens`: Total number of tokens used (prompt plus completion).
+* `llm_total_tokens`: Total number of tokens used (prompt plus completion, including cache tokens).
 * `llm_cache_read_input_tokens`: Number of input tokens read from cache.
 * `llm_cache_creation_input_tokens`: Number of input tokens written to cache.
 * `llm_reasoning_tokens`: Number of reasoning tokens generated.

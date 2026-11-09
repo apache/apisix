@@ -108,10 +108,8 @@ end
 
 function _M.get_messages(body)
     local messages = {}
-    if body and body.input then
-        if type(body.input) == "string" then
-            core.table.insert(messages, {role = "user", content = body.input})
-        end
+    for i, content in ipairs(_M.extract_request_content(body)) do
+        messages[i] = {role = "user", content = content}
     end
     return messages
 end

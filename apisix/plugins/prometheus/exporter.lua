@@ -45,6 +45,7 @@ local get_protos = require("apisix.plugins.grpc-transcode.proto").protos
 local service_fetch = require("apisix.http.service").get
 local latency_details = require("apisix.utils.log-util").latency_details_in_ms
 local xrpc = require("apisix.stream.xrpc")
+local process_metrics = require("apisix.plugins.prometheus.process_metrics")
 local unpack = unpack
 local next = next
 local str_sub = string.sub
@@ -403,18 +404,11 @@ local function publish_stream_bytes(dict, listen_addr, service, service_id, dire
     local key = STREAM_PUBLISHED_PREFIX .. listen_addr .. "\31" .. service .. "\31"
                 .. service_id .. "\31" .. field
 
-    local published = dict:get(key)
-    if not published then
-        -- The zone counts from when nginx started while the counter outlives a
-        -- reload, so the first sight of a slot only takes a baseline;
-        -- replaying the whole total into a counter that survived would double
-        -- it. The cost is that traffic before the first read is not counted.
-        local ok, err = dict:set(key, total)
-        if not ok then
-            core.log.error("failed to baseline stream bandwidth for ", key, ": ", err)
-        end
-        return
-    end
+    -- Baselines outlive a reload like the zone, so a slot without one has had
+    -- nothing counted: it is new, or the process just started. The cost is
+    -- that a baseline evicted from a full dict replays the total of its slot
+    -- once.
+    local published = dict:get(key) or 0
 
     if total == published then
         return
@@ -500,12 +494,22 @@ local function collect_stream_zone_metrics()
 end
 
 
+local function get_refresh_interval()
+    local attr = plugin.plugin_attr("prometheus")
+    if attr and attr.refresh_interval then
+        return attr.refresh_interval
+    end
+    return DEFAULT_REFRESH_INTERVAL
+end
+
+
 function _M.http_init(prometheus_enabled_in_stream)
     -- todo: support hot reload, we may need to update the lua-prometheus
     -- library
     if ngx.get_phase() ~= "init" and ngx.get_phase() ~= "init_worker"  then
         if prometheus_bkp then
             prometheus = prometheus_bkp
+            process_metrics.start(get_refresh_interval())
         end
         return
     end
@@ -554,7 +558,10 @@ function _M.http_init(prometheus_enabled_in_stream)
     local ai_cache_embedding_latency_exptime = core.table.try_read_attr(attr, "metrics",
                                                             "ai_cache_embedding_latency", "expire")
 
-    prometheus = base_prometheus.init("prometheus-metrics", metric_prefix)
+    prometheus = base_prometheus.init("prometheus-metrics", {
+        prefix = metric_prefix,
+        remove_expired_keys_interval = attr and attr.remove_expired_keys_interval,
+    })
 
     metrics.connections = prometheus:gauge("nginx_http_current_connections",
             "Number of HTTP connections",
@@ -695,6 +702,8 @@ function _M.http_init(prometheus_enabled_in_stream)
             ai_cache_embedding_latency_buckets,
             ai_cache_embedding_latency_exptime)
 
+    process_metrics.init(prometheus)
+
     if prometheus_enabled_in_stream then
         init_stream_metrics()
     end
@@ -703,6 +712,7 @@ end
 
 function _M.stream_init()
     if ngx.get_phase() ~= "init" and ngx.get_phase() ~= "init_worker"  then
+        process_metrics.start(get_refresh_interval())
         return
     end
 
@@ -719,9 +729,15 @@ function _M.stream_init()
         metric_prefix = attr.metric_prefix
     end
 
-    prometheus = base_prometheus.init("prometheus-metrics", metric_prefix)
+    prometheus = base_prometheus.init("prometheus-metrics", {
+        prefix = metric_prefix,
+        remove_expired_keys_interval = attr and attr.remove_expired_keys_interval,
+    })
 
     init_stream_metrics()
+
+    process_metrics.init(prometheus)
+    process_metrics.start(get_refresh_interval())
 end
 
 
@@ -1186,6 +1202,9 @@ end
 
 
 local function collect(yieldable)
+    -- the other processes report their own values on a timer
+    process_metrics.refresh()
+
     -- collect ngx.shared.DICT status
     shared_dict_status()
 
@@ -1291,14 +1310,12 @@ end
 
 
 local function init_exporter_timer()
+    local refresh_interval = get_refresh_interval()
+
+    process_metrics.start(refresh_interval)
+
     if process.type() ~= "privileged agent" then
         return
-    end
-
-    local refresh_interval = DEFAULT_REFRESH_INTERVAL
-    local attr = plugin.plugin_attr("prometheus")
-    if attr and attr.refresh_interval then
-        refresh_interval = attr.refresh_interval
     end
 
     local cache_exptime = refresh_interval * 2
@@ -1457,6 +1474,8 @@ end
 
 
 function _M.destroy()
+    process_metrics.stop()
+
     if prometheus ~= nil then
         prometheus_bkp = prometheus
         prometheus = nil

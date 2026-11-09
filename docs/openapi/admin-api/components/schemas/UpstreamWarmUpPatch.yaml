@@ -1,0 +1,54 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+type: object
+description: Partial update for upstream slow-start settings. Null removes an object field; the merged resource is validated against UpstreamWarmUp.
+properties:
+  slow_start_time_seconds:
+    anyOf:
+      - type: integer
+        minimum: 1
+        description: Seconds for a new node to reach its configured weight.
+      - type: "null"
+  min_weight_percent:
+    anyOf:
+      - type: integer
+        minimum: 1
+        maximum: 100
+        description: Minimum percentage of the configured node weight. Effective positive weights are rounded down but never below 1.
+      - type: "null"
+  interval:
+    anyOf:
+      - type: integer
+        minimum: 1
+        default: 1
+        description: Seconds between weight refreshes. Cannot exceed `slow_start_time_seconds`.
+      - type: "null"
+  aggression:
+    anyOf:
+      - type: number
+        minimum: 0.01
+        default: 1
+        description: "Ramp shape: 1 is linear, above 1 is faster initially, and below 1 is slower initially."
+      - type: "null"
+  startup_grace_period_seconds:
+    anyOf:
+      - type: integer
+        minimum: 0
+        default: 0
+        description: Seconds after the gateway starts during which newly observed nodes are treated as already warmed.
+      - type: "null"
+additionalProperties: false
