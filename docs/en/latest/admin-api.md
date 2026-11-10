@@ -1581,7 +1581,7 @@ Stream Route resource request address:  /apisix/admin/stream_routes/{id}
 | protocol.name | False    | String | Name of the protocol proxyed by xRPC framework.                     | "redis"                    |
 | protocol.conf | False    | Configuration | Protocol-specific configuration.                             |                    |
 
-To learn more about filtering in stream proxies, check [this](./stream-proxy.md#more-route-match-options) document.
+To learn more about filtering in stream proxies, check [this](./stream-proxy.md#more-stream-route-filtering-options) document.
 
 ## Secret
 
@@ -1746,7 +1746,7 @@ Currently, the response is returned from etcd.
 
 Proto is used to store protocol buffers so that APISIX can communicate in gRPC.
 
-See [grpc-transcode plugin](./plugins/grpc-transcode.md#enabling-the-plugin) doc for more examples.
+See [grpc-transcode plugin](./plugins/grpc-transcode.md#examples) doc for more examples.
 
 ### Proto API
 
@@ -1766,7 +1766,7 @@ Proto resource request address: /apisix/admin/protos/{id}
 
 | Parameter | Required | Type      | Description                          | Example                       |
 |-----------|----------|-----------|--------------------------------------| ----------------------------- |
-| content   | True     | String    | Content of `.proto` or `.pb` files   | See [here](./plugins/grpc-transcode.md#enabling-the-plugin)         |
+| content   | True     | String    | Content of `.proto` or `.pb` files   | See [here](./plugins/grpc-transcode.md#examples)         |
 | name      | False    | Auxiliary | Identifier for the Protobuf definition. | user-proto                    |
 | desc      | False    | Auxiliary | Description of usage scenarios.      | protobuf for user service     |
 | labels    | False    | Match Rules | Attributes of the Proto specified as key-value pairs. | {"version":"v2","service":"user","env":"production"}     |
