@@ -57,6 +57,7 @@ import TabItem from '@theme/TabItem';
 | redis_password | string | 否 | | | 当 `policy` 为 `redis` 或 `redis-cluster` 时，Redis 节点的密码。|
 | redis_ssl | boolean | 否 | false | | 如果为 true，则在 `policy` 为 `redis` 时使用 SSL 连接到 Redis。|
 | redis_ssl_verify | boolean | 否 | false | | 如果为 true，则在 `policy` 为 `redis` 时验证服务器 SSL 证书。|
+| redis_server_name | string | 否 | | | 当 `policy` 为 `redis` 且 `redis_ssl` 为 true 时使用的 TLS SNI。默认使用 `redis_host`。当 `redis_ssl_verify` 为 true 时，证书还必须与该名称匹配，因此当 `redis_host` 是证书未覆盖的别名时请设置此项。|
 | redis_database | integer | 否 | 0 | >= 0 | 当 `policy` 为 `redis` 时，Redis 中的数据库编号。|
 | redis_timeout | integer | 否 | 1000 | >= 1 | 当 `policy` 为 `redis` 或 `redis-cluster` 时，Redis 超时值（以毫秒为单位）。|
 | redis_keepalive_timeout | integer | 否 | 10000 | >= 1000 | 当 `policy` 为 `redis` 或 `redis-cluster` 时，Redis 的空闲连接超时时间（以毫秒为单位）。|
@@ -70,6 +71,8 @@ import TabItem from '@theme/TabItem';
 | rules.conn | integer 或 string | 是 | | > 0 或 [lua-resty-expr](https://github.com/api7/lua-resty-expr) | 允许的最大并发请求数。超过配置的限制且低于 `conn + burst` 的请求将被延迟。该参数也支持 string 数据类型，并允许使用以美元符号（`$`）为前缀的内置变量。|
 | rules.burst | integer 或 string | 是 | | >= 0 或 [lua-resty-expr](https://github.com/api7/lua-resty-expr) | 允许延迟的过多并发请求数。超过 `conn + burst` 的请求将被立即拒绝。该参数也支持 string 数据类型，并允许使用以美元符号（`$`）为前缀的内置变量。|
 | rules.key | string | 是 | | | 用于计数请求的键。如果配置的键不存在，则不会执行该规则。`key` 被解释为变量的组合。所有变量都应以美元符号（`$`）为前缀。|
+
+注意：schema 中还定义了 `encrypt_fields = {"redis_password"}`，这意味着该字段将会被加密存储在 etcd 中。具体参考[加密存储字段](../plugin-develop.md#加密存储字段)。
 
 ## 示例
 

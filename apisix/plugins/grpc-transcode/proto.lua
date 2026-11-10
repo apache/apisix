@@ -109,6 +109,11 @@ local function compile_proto(content)
         end
     end
 
+    -- an empty repeated field is decoded into an empty Lua table, which cjson would
+    -- encode as `{}`. Tag it as an array so that it is encoded as `[]` instead.
+    -- The default is bound to the current pb state, so it has to be set per proto.
+    pb.defaults("*array", core.json.array_mt)
+
     -- fetch pb state
     compiled.pb_state = pb.state(old_pb_state)
     return compiled
@@ -237,6 +242,8 @@ local function init_status_pb_state()
             pb.state(old_pb_state)
             return "failed to load grpc status protocol: " .. err
         end
+
+        pb.defaults("*array", core.json.array_mt)
 
         status_pb_state = pb.state(old_pb_state)
     end

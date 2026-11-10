@@ -18,14 +18,13 @@ local core     = require("apisix.core")
 local log_util = require("apisix.utils.log-util")
 local producer = require ("resty.kafka.producer")
 local bp_manager_mod = require("apisix.utils.batch-processor-manager")
-local plugin = require("apisix.plugin")
 
 local math     = math
 local pairs    = pairs
 local type     = type
 
 local plugin_name = "kafka-logger"
-local batch_processor_manager = bp_manager_mod.new("kafka logger")
+local batch_processor_manager = bp_manager_mod.new("kafka logger", plugin_name)
 
 local lrucache = core.lrucache.new({
     type = "plugin",
@@ -40,6 +39,7 @@ local schema = {
             enum = {"default", "origin"},
         },
         log_format = {type = "object"},
+        log_format_extra = {type = "object"},
         -- deprecated, use "brokers" instead
         broker_list = {
             type = "object",
@@ -87,6 +87,16 @@ local schema = {
                 required = {"host", "port"},
             },
             uniqueItems = true,
+        },
+        tls = {
+            type = "object",
+            description = "tls config for connecting to kafka brokers",
+            properties = {
+                verify = {
+                    type = "boolean",
+                    default = false,
+                },
+            },
         },
         kafka_topic = {type = "string"},
         producer_type = {
@@ -146,13 +156,11 @@ local schema = {
 local metadata_schema = {
     type = "object",
     properties = {
-        log_format = {
+        log_format_extra = {
             type = "object"
         },
-        max_pending_entries = {
-            type = "integer",
-            description = "maximum number of pending entries in the batch processor",
-            minimum = 1,
+        log_format = {
+            type = "object"
         },
     },
 }
@@ -162,7 +170,7 @@ local _M = {
     priority = 403,
     name = plugin_name,
     schema = batch_processor_manager:wrap_schema(schema),
-    metadata_schema = metadata_schema,
+    metadata_schema = batch_processor_manager:wrap_metadata_schema(metadata_schema),
 }
 
 
@@ -175,6 +183,8 @@ function _M.check_schema(conf, schema_type)
     if not ok then
         return nil, err
     end
+
+    core.utils.check_tls_bool({"tls.verify"}, conf, plugin_name)
     return log_util.check_log_schema(conf)
 end
 
@@ -236,9 +246,6 @@ end
 
 
 function _M.log(conf, ctx)
-    local metadata = plugin.plugin_metadata(plugin_name)
-    local max_pending_entries = metadata and metadata.value and
-                                metadata.value.max_pending_entries or nil
     local entry
     if conf.meta_format == "origin" then
         entry = log_util.get_req_original(ctx, conf)
@@ -248,7 +255,7 @@ function _M.log(conf, ctx)
         entry = log_util.get_log_entry(plugin_name, conf, ctx)
     end
 
-    if batch_processor_manager:add_entry(conf, entry, max_pending_entries) then
+    if batch_processor_manager:add_entry(conf, entry) then
         return
     end
 
@@ -275,6 +282,10 @@ function _M.log(conf, ctx)
     broker_config["flush_time"] = conf.producer_time_linger * 1000
     broker_config["refresh_interval"] = conf.meta_refresh_interval * 1000
     broker_config["api_version"] = conf.api_version
+    if conf.tls then
+        broker_config["ssl"] = true
+        broker_config["ssl_verify"] = conf.tls.verify
+    end
 
     local prod, err = core.lrucache.plugin_ctx(lrucache, ctx, nil, create_producer,
                                                broker_list, broker_config, conf.cluster_name)
@@ -303,7 +314,7 @@ function _M.log(conf, ctx)
         return send_kafka_data(conf, data, prod)
     end
 
-    batch_processor_manager:add_entry_to_new_processor(conf, entry, ctx, func, max_pending_entries)
+    batch_processor_manager:add_entry_to_new_processor(conf, entry, ctx, func)
 end
 
 

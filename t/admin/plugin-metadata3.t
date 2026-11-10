@@ -60,7 +60,7 @@ __DATA__
                 ngx.HTTP_GET
             )
 
-            local_conf, err = core.config.local_conf(true)
+            local local_conf, err = core.config.local_conf(true)
             local enable_data_encryption =
             core.table.try_read_attr(local_conf, "apisix", "data_encryption",
                     "enable_encrypt_fields") and (core.config.type == "etcd")
@@ -228,3 +228,53 @@ GET /t
 --- response_body_like
 nil
 \{"message":"Key not found"\}
+
+
+
+=== TEST 8: first successful GET decrypts even when enable_data_encryption is not yet initialized
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local plugin = require("apisix.plugin")
+            local t = require("lib.test_admin").test
+
+            local code, body = t('/apisix/admin/plugin_metadata/azure-functions',
+                ngx.HTTP_PUT,
+                [[{
+                    "master_apikey": "foo"
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            ngx.sleep(0.1)
+
+            -- etcd keeps the field encrypted
+            local etcd = require("apisix.core.etcd")
+            local res = assert(etcd.get('/plugin_metadata/azure-functions'))
+            local encrypted = res.body.node.value.master_apikey
+            ngx.say("etcd encrypted: ",
+                    tostring(type(encrypted) == "string" and #encrypted > 0
+                             and encrypted ~= "foo"))
+
+            -- simulate a fresh worker: the flag has not been initialized yet
+            plugin.enable_data_encryption = nil
+
+            -- first GET must still decrypt because enable_gde() forces init
+            local code, message, res = t('/apisix/admin/plugin_metadata/azure-functions',
+                ngx.HTTP_GET
+            )
+            res = core.json.decode(res)
+            ngx.say("admin decrypted: ", res.value.master_apikey)
+
+            t('/apisix/admin/plugin_metadata/azure-functions', ngx.HTTP_DELETE)
+        }
+    }
+--- request
+GET /t
+--- response_body
+etcd encrypted: true
+admin decrypted: foo

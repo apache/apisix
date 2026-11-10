@@ -249,6 +249,10 @@ passed
                                 "time_window": 10,
                                 "key_type": "var",
                                 "key": "http_host"
+                            },
+                            "serverless-post-function": {
+                                "phase": "log",
+                                "functions": ["return function() require('lib.rate_limiting_info').log_quota() end"]
                             }
                         },
                         "upstream": {
@@ -272,15 +276,231 @@ passed
 
 
 
-=== TEST 8: check access log contains rate_limiting_info
+=== TEST 8: rate_limiting_info carries the quota and the decision
 --- request
 GET /hello
 --- more_headers
 host: test.com
---- extra_yaml_config
-nginx_config:
-    http:
-        access_log_format: main '$rate_limiting_info';
 --- error_code: 200
---- access_log eval
-qr/\{\\x22rate_limiting_key\\x22:\\x22\/apisix\/routes\/1:\d+:test\.com\\x22,\\x22rate_limiting_limit\\x22:2,\\x22rate_limiting_remaining\\x22:1,\\x22rate_limiting_reset\\x22:10}/
+--- error_log eval
+qr/rate limiting quota: key=\/apisix\/routes\/1:\d+:test\.com limit=2 remaining=1 reset=10 window_type=fixed window_size_ms=10000 decision=allowed cost=1/
+
+
+
+=== TEST 9: set up route with count/time_window from request variables
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET"],
+                        "plugins": {
+                            "limit-count": {
+                                "count": "${http_count ?? 2}",
+                                "time_window": "${http_time_window ?? 5}",
+                                "rejected_code": 503,
+                                "key_type": "var",
+                                "key": "remote_addr",
+                                "policy": "local"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 10: a client-supplied 0/negative/fractional count is rejected, not bypassed
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local httpc = http.new()
+            for _, count in ipairs({"0", "-1", "1.5", "9999999999999999"}) do
+                local res = httpc:request_uri(uri, {method = "GET",
+                                                    headers = {["count"] = count}})
+                if res.status ~= 500 then
+                    ngx.say("count=", count, " should be rejected with 500, got ", res.status)
+                    return
+                end
+            end
+            ngx.say("passed")
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- error_log
+resolved value must be a positive number
+resolved value must be an integer
+resolved value exceeds safe integer range
+
+
+
+=== TEST 11: a client-supplied 0/negative/fractional time_window is rejected, not bypassed
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local httpc = http.new()
+            for _, time_window in ipairs({"0", "-1", "1.5", "9999999999999999"}) do
+                local res = httpc:request_uri(uri, {method = "GET",
+                                                    headers = {["time_window"] = time_window}})
+                if res.status ~= 500 then
+                    ngx.say("time_window=", time_window, " should be rejected with 500, got ",
+                            res.status)
+                    return
+                end
+            end
+            ngx.say("passed")
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- error_log
+resolved value must be a positive number
+resolved value must be an integer
+resolved value exceeds safe integer range
+
+
+
+=== TEST 12: set up rules-mode route with count from a request variable
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET"],
+                        "plugins": {
+                            "limit-count": {
+                                "rejected_code": 503,
+                                "rules": [
+                                    {
+                                        "key": "${http_user}",
+                                        "count": "${http_count ?? 2}",
+                                        "time_window": 60
+                                    }
+                                ]
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 13: rules-mode invalid count rejects, not silently skips the rule
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local httpc = http.new()
+            -- the rule's key resolves (user header present), so without bounds
+            -- validation a count of 0 would drop the rule and let the request pass
+            local res = httpc:request_uri(uri, {method = "GET",
+                                headers = {["user"] = "jack", ["count"] = "0"}})
+            if res.status ~= 500 then
+                ngx.say("invalid rule count should be rejected with 500, got ", res.status)
+                return
+            end
+            ngx.say("passed")
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- error_log
+resolved value must be a positive number
+
+
+
+=== TEST 14: set up route keyed on a request header, decoding rate_limiting_info in log phase
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "limit-count": {
+                                "count": 2,
+                                "time_window": 60,
+                                "key_type": "var",
+                                "key": "http_x_client"
+                            },
+                            "serverless-post-function": {
+                                "phase": "log",
+                                "functions": ["return function(conf, ctx) local info = require('cjson.safe').decode(ngx.var.rate_limiting_info) ngx.log(ngx.WARN, 'decoded rate limiting key: ', info and info.rate_limiting_key) end"]
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 15: rate_limiting_info stays valid JSON when the key has quotes and backslashes
+--- request
+GET /hello
+--- more_headers
+x-client: a"b\c
+--- error_code: 200
+--- error_log eval
+qr/decoded rate limiting key: \/apisix\/routes\/1:\d+:a"b\\c/

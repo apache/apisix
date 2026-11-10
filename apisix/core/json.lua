@@ -24,15 +24,20 @@ local json_encode = cjson.encode
 local json_decode = cjson.decode
 local cjson_null = cjson.null
 local clear_tab = require("table.clear")
+local require = require
 local ngx = ngx
 local tostring = tostring
 local type = type
 local pairs = pairs
+local ipairs = ipairs
+local getmetatable = getmetatable
 local cached_tab = {}
 
+local rapidjson
+local rapidjson_null
+local rapidjson_encode_opts = { sort_keys = true }
 
-cjson.encode_escape_forward_slash(false)
-cjson.decode_array_with_array_mt(true)
+
 local _M = {
     version = 0.1,
     array_mt = cjson.array_mt,
@@ -121,6 +126,47 @@ local function encode(data, force)
     return json_encode(data)
 end
 _M.encode = encode
+
+
+local function to_rapidjson_value(data)
+    if data == cjson_null then
+        return rapidjson_null
+    end
+
+    if type(data) ~= "table" then
+        return data
+    end
+
+    if getmetatable(data) == cjson.array_mt then
+        local arr = {}
+        for i, v in ipairs(data) do
+            arr[i] = to_rapidjson_value(v)
+        end
+        return rapidjson.array(arr)
+    end
+
+    local obj = {}
+    for k, v in pairs(data) do
+        obj[k] = to_rapidjson_value(v)
+    end
+    return obj
+end
+
+
+--- Encode a Lua value to a canonical JSON string with sorted object keys.
+-- Unlike core.json.encode, object keys are emitted in a stable (sorted) order,
+-- so the same logical value always produces the same string -- suitable for
+-- hashing, cache keys and signatures. cjson null / array_mt markers are
+-- preserved. Backed by rapidjson, which is loaded on first use.
+-- @tparam table data The value to encode.
+-- @treturn string The canonically-encoded JSON string.
+function _M.canonical_encode(data)
+    if not rapidjson then
+        rapidjson = require("rapidjson")
+        rapidjson_null = rapidjson.null
+    end
+    return rapidjson.encode(to_rapidjson_value(data), rapidjson_encode_opts)
+end
 
 local max_delay_encode_items = 16
 local delay_tab_idx = 0

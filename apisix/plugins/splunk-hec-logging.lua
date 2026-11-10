@@ -21,10 +21,10 @@ local ngx_now         = ngx.now
 local http            = require("resty.http")
 local log_util        = require("apisix.utils.log-util")
 local bp_manager_mod  = require("apisix.utils.batch-processor-manager")
-local plugin          = require("apisix.plugin")
 local table_insert    = core.table.insert
 local table_concat    = core.table.concat
 local ipairs          = ipairs
+local pairs           = pairs
 
 
 local DEFAULT_SPLUNK_HEC_ENTRY_SOURCE = "apache-apisix-splunk-hec-logging"
@@ -67,6 +67,7 @@ local schema = {
             default = true
         },
         log_format = {type = "object"},
+        log_format_extra = {type = "object"},
     },
     encrypt_fields = {"endpoint.token"},
     required = { "endpoint" },
@@ -75,14 +76,12 @@ local schema = {
 local metadata_schema = {
     type = "object",
     properties = {
+        log_format_extra = {
+            type = "object"
+        },
         log_format = {
             type = "object"
         },
-        max_pending_entries = {
-            type = "integer",
-            description = "maximum number of pending entries in the batch processor",
-            minimum = 1,
-        }
     },
 }
 
@@ -90,7 +89,7 @@ local _M = {
     version = 0.1,
     priority = 409,
     name = plugin_name,
-    metadata_schema = metadata_schema,
+    metadata_schema = batch_processor_manager:wrap_metadata_schema(metadata_schema),
     schema = batch_processor_manager:wrap_schema(schema),
 }
 
@@ -105,7 +104,7 @@ end
 
 
 local function get_logger_entry(conf, ctx)
-    local entry, customized = log_util.get_log_entry(plugin_name, conf, ctx)
+    local entry, customized, extra = log_util.get_log_entry(plugin_name, conf, ctx)
     local splunk_entry = {
         time = ngx_now(),
         source = DEFAULT_SPLUNK_HEC_ENTRY_SOURCE,
@@ -126,6 +125,14 @@ local function get_logger_entry(conf, ctx)
             latency = entry.latency,
             upstream = entry.upstream,
         }
+        -- the fixed event above drops everything else, so add log_format_extra
+        if extra then
+            for k, v in pairs(extra) do
+                if splunk_entry.event[k] == nil then
+                    splunk_entry.event[k] = v
+                end
+            end
+        end
     else
         splunk_entry.host = core.utils.gethostname()
         splunk_entry.event = entry
@@ -176,12 +183,9 @@ end
 
 
 function _M.log(conf, ctx)
-    local metadata = plugin.plugin_metadata(plugin_name)
-    local max_pending_entries = metadata and metadata.value and
-                                metadata.value.max_pending_entries or nil
     local entry = get_logger_entry(conf, ctx)
 
-    if batch_processor_manager:add_entry(conf, entry, max_pending_entries) then
+    if batch_processor_manager:add_entry(conf, entry) then
         return
     end
 
@@ -189,8 +193,7 @@ function _M.log(conf, ctx)
         return send_to_splunk(conf, entries)
     end
 
-    batch_processor_manager:add_entry_to_new_processor(conf, entry, ctx,
-                                                        process, max_pending_entries)
+    batch_processor_manager:add_entry_to_new_processor(conf, entry, ctx, process)
 end
 
 

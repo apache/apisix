@@ -22,10 +22,60 @@
 local core = require("apisix.core")
 local uuid = require("resty.jit-uuid")
 local table = table
+local setmetatable = setmetatable
 local type = type
 local ipairs = ipairs
+local ngx_time = ngx.time
 
 local _M = {}
+
+
+-- prompt_tokens_details keys that carry cache-write tokens, in LiteLLM's
+-- order, followed by the cache_creation_input_tokens shape some upstreams use.
+local CACHE_CREATION_DETAIL_KEYS = {
+    "cache_creation_tokens",
+    "cache_write_tokens",
+    "cache_creation_input_tokens",
+}
+
+
+-- Shared by usage extraction and the Anthropic converter so that both
+-- report the same cache counts for an OpenAI-compatible usage object.
+function _M.cache_read_tokens(usage)
+    if type(usage) ~= "table" then
+        return 0
+    end
+    local details = usage.prompt_tokens_details
+    if type(details) == "table" and type(details.cached_tokens) == "number" then
+        return details.cached_tokens
+    end
+    -- DeepSeek
+    if type(usage.prompt_cache_hit_tokens) == "number" then
+        return usage.prompt_cache_hit_tokens
+    end
+    return 0
+end
+
+
+function _M.cache_creation_tokens(usage)
+    if type(usage) ~= "table" then
+        return 0
+    end
+    local v = usage.cache_creation_input_tokens
+    if type(v) == "number" and v > 0 then
+        return v
+    end
+    local details = usage.prompt_tokens_details
+    if type(details) == "table" then
+        for _, key in ipairs(CACHE_CREATION_DETAIL_KEYS) do
+            v = details[key]
+            if type(v) == "number" and v > 0 then
+                return v
+            end
+        end
+    end
+    return 0
+end
 
 
 --- Detect whether the request body matches OpenAI Chat Completions format.
@@ -101,16 +151,14 @@ function _M.parse_sse_event(event, ctx, state)
         -- Extract usage (null for non-final chunks; cjson decodes null as userdata)
         if type(data.usage) == "table" then
             local u = data.usage
-            local pd = type(u.prompt_tokens_details) == "table" and u.prompt_tokens_details
             local cd = type(u.completion_tokens_details) == "table" and u.completion_tokens_details
             result.type = "usage"
             result.usage = {
                 prompt_tokens = u.prompt_tokens or 0,
                 completion_tokens = u.completion_tokens or 0,
                 total_tokens = u.total_tokens or 0,
-                cache_read_input_tokens = pd and pd.cached_tokens
-                                          or u.prompt_cache_hit_tokens or 0,
-                cache_creation_input_tokens = pd and pd.cache_creation_input_tokens or 0,
+                cache_read_input_tokens = _M.cache_read_tokens(u),
+                cache_creation_input_tokens = _M.cache_creation_tokens(u),
                 reasoning_tokens = cd and cd.reasoning_tokens or 0,
             }
             result.raw_usage = u
@@ -171,17 +219,14 @@ function _M.extract_usage(res_body)
         return nil, nil
     end
     local raw = res_body.usage
-    local pdetails = type(raw.prompt_tokens_details) == "table" and raw.prompt_tokens_details
     local cdetails = type(raw.completion_tokens_details) == "table"
                      and raw.completion_tokens_details
-    -- OpenAI uses prompt_tokens_details.cached_tokens; DeepSeek uses prompt_cache_hit_tokens
-    local cache_read = pdetails and pdetails.cached_tokens or raw.prompt_cache_hit_tokens or 0
     return {
         prompt_tokens = raw.prompt_tokens or 0,
         completion_tokens = raw.completion_tokens or 0,
         total_tokens = raw.total_tokens or (raw.prompt_tokens or 0) + (raw.completion_tokens or 0),
-        cache_read_input_tokens = cache_read,
-        cache_creation_input_tokens = pdetails and pdetails.cache_creation_input_tokens or 0,
+        cache_read_input_tokens = _M.cache_read_tokens(raw),
+        cache_creation_input_tokens = _M.cache_creation_tokens(raw),
         reasoning_tokens = cdetails and cdetails.reasoning_tokens or 0,
     }, raw
 end
@@ -218,20 +263,96 @@ function _M.extract_end_user_id(body)
 end
 
 
+-- Append a single message's text (string content or text parts) into `contents`.
+local function append_message_text(contents, message)
+    if type(message) ~= "table" then
+        return
+    end
+    if type(message.content) == "string" then
+        core.table.insert(contents, message.content)
+    elseif type(message.content) == "table" then
+        for _, part in ipairs(message.content) do
+            if type(part) == "table" and part.type == "text"
+                    and type(part.text) == "string" then
+                core.table.insert(contents, part.text)
+            end
+        end
+    end
+end
+
+
 --- Extract all text content from a request body for moderation.
 function _M.extract_request_content(body)
     local contents = {}
     if type(body.messages) == "table" then
         for _, message in ipairs(body.messages) do
-            if type(message.content) == "string" then
-                core.table.insert(contents, message.content)
-            elseif type(message.content) == "table" then
-                for _, part in ipairs(message.content) do
-                    if type(part) == "table" and part.type == "text"
-                            and type(part.text) == "string" then
-                        core.table.insert(contents, part.text)
-                    end
-                end
+            append_message_text(contents, message)
+        end
+    end
+    return contents
+end
+
+
+-- Roles carrying the system prompt. `developer` is what OpenAI renamed `system`
+-- to on o1 and later models; both land in the same prompt slot, so the two are
+-- extracted together and the `system` role selector covers both.
+local SYSTEM_ROLES = {
+    system = true,
+    developer = true,
+}
+
+
+local function is_turn_role(message, roles)
+    return type(message) == "table" and message.role ~= nil and roles[message.role]
+end
+
+
+-- Extract text from turn-role messages (user/tool) for request moderation.
+-- `roles` is a set such as {user = true, tool = true} selecting which roles to
+-- collect. mode "last" (default): only the last consecutive block of messages
+-- whose role is in `roles` -- the latest turn, i.e. a fresh user message or the
+-- tool results appended in the current agent round, so history is not re-checked.
+-- mode "all": every such message. The system role is handled separately by
+-- extract_system_content because it is not subject to the last-turn rule.
+function _M.extract_turn_content(body, mode, roles)
+    local contents = {}
+    if type(body.messages) ~= "table" then
+        return contents
+    end
+    local messages = body.messages
+    local start_idx = 1
+    if mode ~= "all" then
+        start_idx = nil
+        for i = #messages, 1, -1 do
+            if is_turn_role(messages[i], roles) then
+                start_idx = i
+            else
+                break
+            end
+        end
+        if not start_idx then
+            return contents
+        end
+    end
+    for i = start_idx, #messages do
+        if is_turn_role(messages[i], roles) then
+            append_message_text(contents, messages[i])
+        end
+    end
+    return contents
+end
+
+
+-- Extract system-role text (see SYSTEM_ROLES) for request moderation. Unlike
+-- turn content, the system prompt is checked on every request (it can be
+-- poisoned by malicious ToolCall arguments), so the last-turn rule does not
+-- apply here.
+function _M.extract_system_content(body)
+    local contents = {}
+    if type(body.messages) == "table" then
+        for _, message in ipairs(body.messages) do
+            if type(message) == "table" and SYSTEM_ROLES[message.role] then
+                append_message_text(contents, message)
             end
         end
     end
@@ -240,8 +361,24 @@ end
 
 
 --- Get messages in canonical {role, content} format.
+-- OpenAI Chat content may be a plain string or an array of typed parts
+-- (e.g. {type = "text", text = "..."}); the text parts are flattened so
+-- consumers always receive string content, consistent with the other adapters.
 function _M.get_messages(body)
-    return body.messages or {}
+    local messages = {}
+    if type(body.messages) == "table" then
+        for _, message in ipairs(body.messages) do
+            local texts = {}
+            append_message_text(texts, message)
+            if #texts > 0 then
+                core.table.insert(messages, {
+                    role = message.role,
+                    content = table.concat(texts, " "),
+                })
+            end
+        end
+    end
+    return messages
 end
 
 
@@ -318,9 +455,30 @@ function _M.empty_usage()
 end
 
 
+--- Build a final moderation chunk without ending or replacing the original stream.
+function _M.build_moderation_event(opts)
+    local data = {
+        id = uuid.generate_v4(),
+        object = "chat.completion.chunk",
+        created = ngx_time(),
+        model = opts.model,
+        choices = setmetatable({}, core.json.array_mt),
+        usage = _M.empty_usage(),
+        risk_level = opts.risk_level,
+        deny_message = opts.deny_message or "",
+    }
+    return { type = "message", data = core.json.encode(data) }
+end
+
+
 --- Check if an SSE event is a data event (contains parseable content).
 function _M.is_data_event(event)
     return event.type == "message" and event.data ~= "[DONE]"
+end
+
+
+function _M.is_error_event(event, data)
+    return type(data) == "table" and type(data.error) == "table"
 end
 
 

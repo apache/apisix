@@ -61,11 +61,11 @@ install_dependencies() {
     # install test::nginx
     cpanm --notest Test::Nginx IPC::Run > build.log 2>&1 || (cat build.log && exit 1)
 
-    # add go1.15 binary to the path
+    # add go binary to the path
     mkdir build-cache
     pushd build-cache/
-    # Go is required inside the container.
-    wget -q https://golang.org/dl/go1.17.linux-amd64.tar.gz && tar -xf go1.17.linux-amd64.tar.gz
+    # Go is required inside the container to build the test gRPC servers.
+    wget -q https://golang.org/dl/go1.25.1.linux-amd64.tar.gz && tar -xf go1.25.1.linux-amd64.tar.gz
     export PATH=$PATH:$(pwd)/go/bin
     popd
     # install and start grpc_server_example

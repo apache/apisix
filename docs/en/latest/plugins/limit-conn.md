@@ -57,6 +57,7 @@ The `limit-conn` Plugin limits the rate of requests by the number of concurrent 
 | redis_password | string | False | | | The password of the Redis node when `policy` is `redis` or `redis-cluster`. |
 | redis_ssl | boolean | False | false | | If true, use SSL to connect to Redis when `policy` is `redis`. |
 | redis_ssl_verify | boolean | False | false | | If true, verify the server SSL certificate when `policy` is `redis`. |
+| redis_server_name | string | False | | | TLS SNI when `policy` is `redis` and `redis_ssl` is true. Defaults to `redis_host`. When `redis_ssl_verify` is true the certificate must also match this name, so set it when `redis_host` is an alias the certificate does not cover. |
 | redis_database | integer | False | 0 | >= 0 | The database number in Redis when `policy` is `redis`. |
 | redis_timeout | integer | False | 1000 | >= 1 | The Redis timeout value in milliseconds when `policy` is `redis` or `redis-cluster`. |
 | redis_keepalive_timeout | integer | False | 10000 | >= 1000 | Keepalive timeout in milliseconds for Redis when `policy` is `redis` or `redis-cluster`. |
@@ -70,6 +71,8 @@ The `limit-conn` Plugin limits the rate of requests by the number of concurrent 
 | rules.conn | integer or string | True | | > 0 or [lua-resty-expr](https://github.com/api7/lua-resty-expr) | The maximum number of concurrent requests allowed. Requests exceeding the configured limit and below `conn + burst` will be delayed. This parameter also supports the string data type and allows the use of built-in variables prefixed with a dollar sign (`$`). |
 | rules.burst | integer or string | True | | >= 0 or [lua-resty-expr](https://github.com/api7/lua-resty-expr) | The number of excessive concurrent requests allowed to be delayed. Requests exceeding `conn + burst` will be rejected immediately. This parameter also supports the string data type and allows the use of built-in variables prefixed with a dollar sign (`$`). |
 | rules.key | string | True | | | The key to count requests by. If the configured key does not exist, the rule will not be executed. The `key` is interpreted as a combination of variables. All variables should be prefixed by dollar signs (`$`). |
+
+NOTE: `encrypt_fields = {"redis_password"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
 
 ## Examples
 

@@ -52,12 +52,14 @@ local schema = {
         max_resp_body_bytes = {type = "integer", minimum = 1, default = 524288},
         timeout = {type = "integer", minimum = 1, default= 5000},
         log_format = {type = "object"},
+        log_format_extra = {type = "object"},
         host = {type = "string"},
         port = {type = "integer"},
         project = {type = "string"},
         logstore = {type = "string"},
         access_key_id = {type = "string"},
-        access_key_secret = {type ="string"}
+        access_key_secret = {type ="string"},
+        ssl_verify = {type = "boolean", default = true}
     },
     encrypt_fields = {"access_key_secret"},
     required = {"host", "port", "project", "logstore", "access_key_id", "access_key_secret"}
@@ -66,6 +68,9 @@ local schema = {
 local metadata_schema = {
     type = "object",
     properties = {
+        log_format_extra = {
+            type = "object"
+        },
         log_format = {
             type = "object"
         }
@@ -77,7 +82,7 @@ local _M = {
     priority = 406,
     name = plugin_name,
     schema = batch_processor_manager:wrap_schema(schema),
-    metadata_schema = metadata_schema,
+    metadata_schema = batch_processor_manager:wrap_metadata_schema(metadata_schema),
 }
 
 function _M.check_schema(conf,schema_type)
@@ -104,7 +109,7 @@ local function send_tcp_data(route_conf, log_message)
                       .. "] port[" .. tostring(route_conf.port) .. "] err: " .. err
     end
 
-    ok, err = sock:sslhandshake(true, nil, false)
+    ok, err = sock:sslhandshake(true, route_conf.host, route_conf.ssl_verify)
     if not ok then
         return false, "failed to perform TLS handshake to TCP server: host["
                       .. route_conf.host .. "] port[" .. tostring(route_conf.port)

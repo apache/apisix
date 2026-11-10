@@ -16,8 +16,8 @@
 --
 
 local core            = require("apisix.core")
-local plugin          = require("apisix.plugin")
 local tostring        = tostring
+local pairs           = pairs
 local http            = require("resty.http")
 local log_util        = require("apisix.utils.log-util")
 local bp_manager_mod  = require("apisix.utils.batch-processor-manager")
@@ -98,6 +98,7 @@ local schema = {
             default = "apisix.apache.org%2Flogs"
         },
         log_format = {type = "object"},
+        log_format_extra = {type = "object"},
     },
     oneOf = {
         { required = { "auth_config" } },
@@ -109,13 +110,11 @@ local schema = {
 local metadata_schema = {
     type = "object",
     properties = {
-        log_format = {
+        log_format_extra = {
             type = "object"
         },
-        max_pending_entries = {
-            type = "integer",
-            description = "maximum number of pending entries in the batch processor",
-            minimum = 1,
+        log_format = {
+            type = "object"
         },
     },
 }
@@ -190,7 +189,7 @@ end
 
 
 local function get_logger_entry(conf, ctx, oauth)
-    local entry, customized = log_util.get_log_entry(plugin_name, conf, ctx)
+    local entry, customized, extra = log_util.get_log_entry(plugin_name, conf, ctx)
     local google_entry
     if not customized then
         google_entry = {
@@ -210,6 +209,14 @@ local function get_logger_entry(conf, ctx, oauth)
                 service_id = entry.service_id,
             },
         }
+        -- the fixed payload above drops everything else, so add log_format_extra
+        if extra then
+            for k, v in pairs(extra) do
+                if google_entry.jsonPayload[k] == nil then
+                    google_entry.jsonPayload[k] = v
+                end
+            end
+        end
     else
         google_entry = {
             jsonPayload = entry,
@@ -232,7 +239,7 @@ local _M = {
     version = 0.1,
     priority = 407,
     name = plugin_name,
-    metadata_schema = metadata_schema,
+    metadata_schema = batch_processor_manager:wrap_metadata_schema(metadata_schema),
     schema = batch_processor_manager:wrap_schema(schema),
 }
 
@@ -247,9 +254,6 @@ end
 
 
 function _M.log(conf, ctx)
-    local metadata = plugin.plugin_metadata(plugin_name)
-    local max_pending_entries = metadata and metadata.value and
-                                metadata.value.max_pending_entries or nil
     local oauth, err = core.lrucache.plugin_ctx(lrucache, ctx, nil,
                                                 create_oauth_object, conf)
     if not oauth then
@@ -259,7 +263,7 @@ function _M.log(conf, ctx)
 
     local entry = get_logger_entry(conf, ctx, oauth)
 
-    if batch_processor_manager:add_entry(conf, entry, max_pending_entries) then
+    if batch_processor_manager:add_entry(conf, entry) then
         return
     end
 
@@ -267,8 +271,7 @@ function _M.log(conf, ctx)
         return send_to_google(oauth, entries)
     end
 
-    batch_processor_manager:add_entry_to_new_processor(conf, entry, ctx,
-                                                       process, max_pending_entries)
+    batch_processor_manager:add_entry_to_new_processor(conf, entry, ctx, process)
 end
 
 

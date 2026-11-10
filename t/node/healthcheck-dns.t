@@ -140,6 +140,5 @@ First request status: 200
 Second request status: 200
 --- error_log
 create new checker
-releasing existing checker
-create new checker
+reused checker with incremental targets
 --- timeout: 10

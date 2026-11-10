@@ -1,0 +1,17 @@
+{
+    "payload": [],
+    "flagged": false,
+    "metadata": {
+        "request_uuid": "b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e"
+    },
+    "breakdown": [
+        {
+            "project_id": "project-7539648934",
+            "policy_id": "policy-a2412e48-42eb-4e39-b6d8-8591171d48f2",
+            "detector_id": "detector-lakera-default-prompt-attack",
+            "detector_type": "prompt_attack",
+            "detected": false,
+            "message_id": 0
+        }
+    ]
+}

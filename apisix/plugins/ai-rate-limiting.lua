@@ -19,12 +19,14 @@ local setmetatable = setmetatable
 local ipairs = ipairs
 local type = type
 local pairs = pairs
+local rawget = rawget
 local pcall = pcall
 local load = load
 local math_floor = math.floor
 local math_huge = math.huge
 local core = require("apisix.core")
 local limit_count = require("apisix.plugins.limit-count.init")
+local policy_to_additional_properties = limit_count.policy_to_additional_properties
 
 local plugin_name = "ai-rate-limiting"
 
@@ -90,6 +92,12 @@ local schema = {
         rejected_msg = {
             type = "string", minLength = 1
         },
+        policy = {
+            type = "string",
+            enum = {"local", "redis", "redis-cluster", "redis-sentinel"},
+            default = "local",
+        },
+        allow_degradation = {type = "boolean", default = false},
         rules = {
             type = "array",
             items = {
@@ -135,7 +143,32 @@ local schema = {
         {
             required = {"rules"},
         }
-    }
+    },
+    ["if"] = {
+        properties = {
+            policy = {
+                enum = {"redis"},
+            },
+        },
+    },
+    ["then"] = policy_to_additional_properties.redis,
+    ["else"] = {
+        ["if"] = {
+            properties = {
+                policy = {
+                    enum = {"redis-cluster"},
+                },
+            },
+        },
+        ["then"] = policy_to_additional_properties["redis-cluster"],
+        ["else"] = {
+            ["if"] = {
+                properties = { policy = { enum = { "redis-sentinel" } } },
+            },
+            ["then"] = policy_to_additional_properties["redis-sentinel"],
+        },
+    },
+    encrypt_fields = {"redis_password", "sentinel_password"},
 }
 
 local _M = {
@@ -191,43 +224,49 @@ end
 
 local function transform_limit_conf(plugin_conf, instance_conf, instance_name)
     local limit_conf = {
+        _meta = plugin_conf._meta,
         rejected_code = plugin_conf.rejected_code,
         rejected_msg = plugin_conf.rejected_msg,
         show_limit_quota_header = plugin_conf.show_limit_quota_header,
 
-        -- we may expose those fields to ai-rate-limiting later
-        policy = "local",
+        -- counters can be shared across nodes via redis policies
+        policy = plugin_conf.policy or "local",
         key_type = "constant",
-        allow_degradation = false,
+        allow_degradation = plugin_conf.allow_degradation,
         sync_interval = -1,
         limit_header = "X-AI-RateLimit-Limit",
         remaining_header = "X-AI-RateLimit-Remaining",
         reset_header = "X-AI-RateLimit-Reset",
     }
+    local name = instance_name or ""
     if plugin_conf.rules and #plugin_conf.rules > 0 then
         limit_conf.rules = plugin_conf.rules
-        limit_conf._meta = plugin_conf._meta
-        return limit_conf
+    else
+        local key = plugin_name .. "#global"
+        local limit = plugin_conf.limit
+        local time_window = plugin_conf.time_window
+        if instance_conf then
+            name = instance_conf.name
+            key = instance_conf.name
+            limit = instance_conf.limit
+            time_window = instance_conf.time_window
+        end
+        limit_conf._vid = key
+        limit_conf.key = key
+        limit_conf.count = limit
+        limit_conf.time_window = time_window
+        limit_conf.limit_header = "X-AI-RateLimit-Limit-" .. name
+        limit_conf.remaining_header = "X-AI-RateLimit-Remaining-" .. name
+        limit_conf.reset_header = "X-AI-RateLimit-Reset-" .. name
     end
 
-    local key = plugin_name .. "#global"
-    local limit = plugin_conf.limit
-    local time_window = plugin_conf.time_window
-    local name = instance_name or ""
-    if instance_conf then
-        name = instance_conf.name
-        key = instance_conf.name
-        limit = instance_conf.limit
-        time_window = instance_conf.time_window
+    -- copy the redis fields straight from the policy's schema so no field is missed
+    local extra = policy_to_additional_properties[plugin_conf.policy]
+    if extra then
+        for k in pairs(extra.properties) do
+            limit_conf[k] = plugin_conf[k]
+        end
     end
-    limit_conf._vid = key
-    limit_conf.key = key
-    limit_conf._meta = plugin_conf._meta
-    limit_conf.count = limit
-    limit_conf.time_window = time_window
-    limit_conf.limit_header = "X-AI-RateLimit-Limit-" .. name
-    limit_conf.remaining_header = "X-AI-RateLimit-Remaining-" .. name
-    limit_conf.reset_header = "X-AI-RateLimit-Reset-" .. name
     return limit_conf
 end
 
@@ -312,6 +351,31 @@ function _M.check_instance_status(conf, ctx, instance_name)
 end
 
 
+-- expose nested usage fields as parent__child, shallower keys win
+local function inject_usage_vars(env, raw)
+    local level = {{raw, nil}}
+    while #level > 0 do
+        local next_level = {}
+        for _, item in ipairs(level) do
+            local tab, prefix = item[1], item[2]
+            for k, v in pairs(tab) do
+                if type(k) == "string" then
+                    local path = prefix and (prefix .. "__" .. k) or k
+                    if type(v) == "number" then
+                        if rawget(env, path) == nil and not expr_safe_env[path] then
+                            env[path] = v
+                        end
+                    elseif type(v) == "table" then
+                        next_level[#next_level + 1] = {v, path}
+                    end
+                end
+            end
+        end
+        level = next_level
+    end
+end
+
+
 local function eval_cost_expr(conf_cost_expr, raw)
     local fn_code = "return " .. conf_cost_expr
     -- build environment: safe math + usage variables (missing vars default to 0)
@@ -324,11 +388,7 @@ local function eval_cost_expr(conf_cost_expr, raw)
             return 0
         end
     })
-    for k, v in pairs(raw) do
-        if type(v) == "number" and not expr_safe_env[k] then
-            env[k] = v
-        end
-    end
+    inject_usage_vars(env, raw)
     local fn, err = load(fn_code, "cost_expr", "t", env)
     if not fn then
         return nil, "failed to compile cost_expr: " .. err

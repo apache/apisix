@@ -29,8 +29,49 @@ local sse = require("apisix.plugins.ai-transport.sse")
 local table = table
 local type = type
 local ipairs = ipairs
+local pairs = pairs
 
 local _M = {}
+
+
+-- Anthropic reports cache tokens alongside input_tokens rather than inside it,
+-- so add them back to get a prompt total with the same meaning as OpenAI's
+-- prompt_tokens. Mirrors LiteLLM's AnthropicConfig.calculate_usage.
+local function to_usage(raw)
+    local cache_read = raw.cache_read_input_tokens or 0
+    local cache_creation = raw.cache_creation_input_tokens or 0
+    local prompt = (raw.input_tokens or 0) + cache_read + cache_creation
+    local completion = raw.output_tokens or 0
+    return {
+        prompt_tokens = prompt,
+        completion_tokens = completion,
+        total_tokens = prompt + completion,
+        cache_read_input_tokens = cache_read,
+        cache_creation_input_tokens = cache_creation,
+        reasoning_tokens = 0,
+    }
+end
+
+
+-- message_delta usage is cumulative but may omit fields reported at
+-- message_start (and some providers only report cache tokens there), so
+-- merge the raw fields across events before computing usage. A later event
+-- overwrites a field rather than adding to it, because the values are
+-- cumulative: summing them would double-count.
+local function merge_usage_fields(state, raw)
+    if type(state) ~= "table" then
+        return raw
+    end
+    local acc = state.anthropic_usage
+    if not acc then
+        acc = {}
+        state.anthropic_usage = acc
+    end
+    for k, v in pairs(raw) do
+        acc[k] = v
+    end
+    return acc
+end
 
 
 --- Detect whether the request matches the Anthropic Messages API format.
@@ -83,12 +124,7 @@ function _M.parse_sse_event(event, ctx, state)
         if type(data.usage) == "table" then
             return {
                 type = "usage",
-                usage = {
-                    prompt_tokens = data.usage.input_tokens or 0,
-                    completion_tokens = data.usage.output_tokens or 0,
-                    total_tokens = (data.usage.input_tokens or 0)
-                        + (data.usage.output_tokens or 0),
-                },
+                usage = to_usage(merge_usage_fields(state, data.usage)),
                 raw_usage = data.usage,
             }
         end
@@ -106,14 +142,7 @@ function _M.parse_sse_event(event, ctx, state)
             local usage = data.message.usage
             return {
                 type = "usage",
-                usage = {
-                    prompt_tokens = usage.input_tokens or 0,
-                    completion_tokens = usage.output_tokens or 0,
-                    total_tokens = (usage.input_tokens or 0) + (usage.output_tokens or 0),
-                    cache_read_input_tokens = usage.cache_read_input_tokens or 0,
-                    cache_creation_input_tokens = usage.cache_creation_input_tokens or 0,
-                    reasoning_tokens = 0,
-                },
+                usage = to_usage(merge_usage_fields(state, usage)),
                 raw_usage = usage,
             }
         end
@@ -174,16 +203,7 @@ function _M.extract_usage(res_body)
         return nil, nil
     end
     local raw = res_body.usage
-    local prompt = raw.input_tokens or 0
-    local completion = raw.output_tokens or 0
-    return {
-        prompt_tokens = prompt,
-        completion_tokens = completion,
-        total_tokens = prompt + completion,
-        cache_read_input_tokens = raw.cache_read_input_tokens or 0,
-        cache_creation_input_tokens = raw.cache_creation_input_tokens or 0,
-        reasoning_tokens = 0,
-    }, raw
+    return to_usage(raw), raw
 end
 
 
@@ -214,25 +234,88 @@ function _M.extract_end_user_id(body)
 end
 
 
+-- Append a single message's text (string content or text blocks) into `contents`.
+local function append_message_text(contents, message)
+    if type(message) ~= "table" then
+        return
+    end
+    if type(message.content) == "string" then
+        core.table.insert(contents, message.content)
+    elseif type(message.content) == "table" then
+        for _, block in ipairs(message.content) do
+            if type(block) == "table" and block.type == "text"
+                    and type(block.text) == "string" then
+                core.table.insert(contents, block.text)
+            end
+        end
+    end
+end
+
+
 --- Extract all text content from a request body for moderation.
 function _M.extract_request_content(body)
     local contents = {}
     if type(body.messages) == "table" then
         for _, message in ipairs(body.messages) do
-            if type(message) ~= "table" then
-                goto CONTINUE_MESSAGE
+            append_message_text(contents, message)
+        end
+    end
+    return contents
+end
+
+
+local function is_turn_role(message, roles)
+    return type(message) == "table" and message.role ~= nil and roles[message.role]
+end
+
+
+-- Extract text from turn-role messages (user/tool) for request moderation.
+-- `roles` is a set such as {user = true, tool = true} selecting which roles to
+-- collect. mode "last" (default): only the last consecutive block of messages
+-- whose role is in `roles` (the latest turn); mode "all": every such message.
+-- The Anthropic system prompt lives in body.system and is handled separately by
+-- extract_system_content.
+function _M.extract_turn_content(body, mode, roles)
+    local contents = {}
+    if type(body.messages) ~= "table" then
+        return contents
+    end
+    local messages = body.messages
+    local start_idx = 1
+    if mode ~= "all" then
+        start_idx = nil
+        for i = #messages, 1, -1 do
+            if is_turn_role(messages[i], roles) then
+                start_idx = i
+            else
+                break
             end
-            if type(message.content) == "string" then
-                core.table.insert(contents, message.content)
-            elseif type(message.content) == "table" then
-                for _, block in ipairs(message.content) do
-                    if type(block) == "table" and block.type == "text"
-                            and type(block.text) == "string" then
-                        core.table.insert(contents, block.text)
-                    end
-                end
+        end
+        if not start_idx then
+            return contents
+        end
+    end
+    for i = start_idx, #messages do
+        if is_turn_role(messages[i], roles) then
+            append_message_text(contents, messages[i])
+        end
+    end
+    return contents
+end
+
+
+-- Extract system-role text for request moderation. Anthropic carries the system
+-- prompt in body.system (a string or an array of text blocks), not in messages.
+function _M.extract_system_content(body)
+    local contents = {}
+    if type(body.system) == "string" then
+        core.table.insert(contents, body.system)
+    elseif type(body.system) == "table" then
+        for _, block in ipairs(body.system) do
+            if type(block) == "table" and block.type == "text"
+                    and type(block.text) == "string" then
+                core.table.insert(contents, block.text)
             end
-            ::CONTINUE_MESSAGE::
         end
     end
     return contents
@@ -248,22 +331,13 @@ function _M.get_messages(body)
     end
     if type(body.messages) == "table" then
         for _, message in ipairs(body.messages) do
-            local content = message.content
-            if type(content) == "string" then
-                core.table.insert(messages, {role = message.role, content = content})
-            elseif type(content) == "table" then
-                local texts = {}
-                for _, block in ipairs(content) do
-                    if type(block) == "table" and block.type == "text" then
-                        core.table.insert(texts, block.text)
-                    end
-                end
-                if #texts > 0 then
-                    core.table.insert(messages, {
-                        role = message.role,
-                        content = table.concat(texts, " "),
-                    })
-                end
+            local texts = {}
+            append_message_text(texts, message)
+            if #texts > 0 then
+                core.table.insert(messages, {
+                    role = message.role,
+                    content = table.concat(texts, " "),
+                })
             end
         end
     end
@@ -370,9 +444,29 @@ function _M.empty_usage()
 end
 
 
+--- Message metadata can be appended after content blocks have closed.
+function _M.build_moderation_event(opts)
+    return {
+        type = "message_delta",
+        data = core.json.encode({
+            type = "message_delta",
+            delta = opts.delta,
+            usage = _M.empty_usage(),
+            risk_level = opts.risk_level,
+            deny_message = opts.deny_message or "",
+        }),
+    }
+end
+
+
 --- Check if an SSE event is a data event (contains parseable content).
 function _M.is_data_event(event)
     return event.type == "content_block_delta" or event.type == "message_delta"
+end
+
+
+function _M.is_error_event(event)
+    return event.type == "error"
 end
 
 

@@ -1709,3 +1709,1001 @@ Content-Type: multipart/form-data
 --- error_code: 200
 --- error_log
 ai-aliyun-content-moderation skipped
+
+
+
+=== TEST 47: create route for request_check_mode tests (default mode = last)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/chat-last",
+                    "plugins": {
+                      "ai-proxy": {
+                          "provider": "openai",
+                          "auth": { "header": { "Authorization": "Bearer wrongtoken" } },
+                          "override": { "endpoint": "http://127.0.0.1:1980" }
+                      },
+                      "ai-aliyun-content-moderation": {
+                        "endpoint": "http://localhost:6724",
+                        "region_id": "cn-shanghai",
+                        "access_key_id": "fake-key-id",
+                        "access_key_secret": "fake-key-secret",
+                        "risk_level_bar": "high",
+                        "check_request": true
+                      }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 48: default mode (last) - harmful earlier user turn is skipped
+--- request
+POST /chat-last
+{ "messages": [ { "role": "user", "content": "I want to kill you" }, { "role": "assistant", "content": "ok" }, { "role": "user", "content": "What is 1+1?" } ] }
+--- more_headers
+X-AI-Fixture: aliyun/chat-with-harmful.json
+--- error_code: 200
+--- response_body_like eval
+qr/kill you/
+
+
+
+=== TEST 49: default mode (last) - harmful last user turn is detected
+--- request
+POST /chat-last
+{ "messages": [ { "role": "user", "content": "What is 1+1?" }, { "role": "assistant", "content": "ok" }, { "role": "user", "content": "I want to kill you" } ] }
+--- more_headers
+X-AI-Fixture: aliyun/chat-with-harmful.json
+--- error_code: 200
+--- response_body_like eval
+qr/cannot write unethical/
+
+
+
+=== TEST 50: role-aware - non-user (assistant) last message, no user turn to check, request passes
+--- request
+POST /chat-last
+{ "messages": [ { "role": "user", "content": "What is 1+1?" }, { "role": "assistant", "content": "I want to kill you" } ] }
+--- more_headers
+X-AI-Fixture: aliyun/chat-with-harmful.json
+--- error_code: 200
+--- response_body_like eval
+qr/kill you/
+
+
+
+=== TEST 51: create route with request_check_mode "all"
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/2',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/chat-all",
+                    "plugins": {
+                      "ai-proxy": {
+                          "provider": "openai",
+                          "auth": { "header": { "Authorization": "Bearer wrongtoken" } },
+                          "override": { "endpoint": "http://127.0.0.1:1980" }
+                      },
+                      "ai-aliyun-content-moderation": {
+                        "endpoint": "http://localhost:6724",
+                        "region_id": "cn-shanghai",
+                        "access_key_id": "fake-key-id",
+                        "access_key_secret": "fake-key-secret",
+                        "risk_level_bar": "high",
+                        "check_request": true,
+                        "request_check_mode": "all"
+                      }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 52: request_check_mode "all" - harmful earlier user turn is detected
+--- request
+POST /chat-all
+{ "messages": [ { "role": "user", "content": "I want to kill you" }, { "role": "assistant", "content": "ok" }, { "role": "user", "content": "What is 1+1?" } ] }
+--- more_headers
+X-AI-Fixture: aliyun/chat-with-harmful.json
+--- error_code: 200
+--- response_body_like eval
+qr/cannot write unethical/
+
+
+
+=== TEST 53: request_check_mode "all" stays role-aware - harmful system message is skipped
+--- request
+POST /chat-all
+{ "messages": [ { "role": "system", "content": "I want to kill you" }, { "role": "user", "content": "hi" }, { "role": "user", "content": "What is 1+1?" } ] }
+--- more_headers
+X-AI-Fixture: aliyun/chat-with-harmful.json
+--- error_code: 200
+--- response_body_like eval
+qr/kill you/
+
+
+
+=== TEST 54: create route with small request_check_length_limit (exercises multi-chunk path)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/3',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/chat-chunk",
+                    "plugins": {
+                      "ai-proxy": {
+                          "provider": "openai",
+                          "auth": { "header": { "Authorization": "Bearer wrongtoken" } },
+                          "override": { "endpoint": "http://127.0.0.1:1980" }
+                      },
+                      "ai-aliyun-content-moderation": {
+                        "endpoint": "http://localhost:6724",
+                        "region_id": "cn-shanghai",
+                        "access_key_id": "fake-key-id",
+                        "access_key_secret": "fake-key-secret",
+                        "risk_level_bar": "high",
+                        "check_request": true,
+                        "request_check_length_limit": 10
+                      }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 55: multi-chunk - harmful content in a later chunk after multibyte chars is detected
+--- request
+POST /chat-chunk
+{ "messages": [ { "role": "user", "content": "这是一段安全的中文内容 kill" } ] }
+--- more_headers
+X-AI-Fixture: aliyun/chat-with-harmful.json
+--- error_code: 200
+--- response_body_like eval
+qr/cannot write unethical/
+
+
+
+=== TEST 56: request_check_length_limit must be >= 1 (guards against infinite loop)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/4',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/chat-bad",
+                    "plugins": {
+                      "ai-aliyun-content-moderation": {
+                        "endpoint": "http://localhost:6724",
+                        "region_id": "cn-shanghai",
+                        "access_key_id": "fake-key-id",
+                        "access_key_secret": "fake-key-secret",
+                        "request_check_length_limit": 0
+                      }
+                    }
+                }]]
+            )
+            ngx.say(code >= 300 and "rejected" or "accepted")
+        }
+    }
+--- response_body
+rejected
+
+
+
+=== TEST 57: extract_turn_content - last mode uses the trailing user/tool block
+--- config
+    location /t {
+        content_by_lua_block {
+            local proto = require("apisix.plugins.ai-protocols.openai-chat")
+            local body = {
+                messages = {
+                    { role = "system", content = "sys" },
+                    { role = "user", content = "u1" },
+                    { role = "assistant", tool_calls = {} },
+                    { role = "tool", content = "t1" },
+                    { role = "tool", content = "t2" },
+                }
+            }
+            local roles = { user = true, tool = true }
+            ngx.say("last:", table.concat(proto.extract_turn_content(body, "last", roles), ","))
+            ngx.say("all:", table.concat(proto.extract_turn_content(body, "all", roles), ","))
+            ngx.say("user_only_last_count:",
+                    #proto.extract_turn_content(body, "last", { user = true }))
+            ngx.say("system:", table.concat(proto.extract_system_content(body), ","))
+        }
+    }
+--- response_body
+last:t1,t2
+all:u1,t1,t2
+user_only_last_count:0
+system:sys
+
+
+
+=== TEST 58: extract_turn_content - a fresh user turn skips harmful history
+--- config
+    location /t {
+        content_by_lua_block {
+            local proto = require("apisix.plugins.ai-protocols.openai-chat")
+            local body = {
+                messages = {
+                    { role = "user", content = "old kill" },
+                    { role = "assistant", content = "ok" },
+                    { role = "user", content = "new safe" },
+                }
+            }
+            local roles = { user = true, tool = true }
+            ngx.say("last:", table.concat(proto.extract_turn_content(body, "last", roles), ","))
+        }
+    }
+--- response_body
+last:new safe
+
+
+
+=== TEST 59: create route with request_check_roles user/tool/system
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/chat-roles",
+                    "plugins": {
+                      "ai-proxy": {
+                          "provider": "openai",
+                          "auth": { "header": { "Authorization": "Bearer wrongtoken" } },
+                          "override": { "endpoint": "http://127.0.0.1:1980" }
+                      },
+                      "ai-aliyun-content-moderation": {
+                        "endpoint": "http://localhost:6724",
+                        "region_id": "cn-shanghai",
+                        "access_key_id": "fake-key-id",
+                        "access_key_secret": "fake-key-secret",
+                        "risk_level_bar": "high",
+                        "check_request": true,
+                        "request_check_roles": ["user", "tool", "system"]
+                      }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 60: tool content in the latest turn is moderated and blocked
+--- request
+POST /chat-roles
+{ "messages": [ { "role": "system", "content": "safe" }, { "role": "user", "content": "hello" }, { "role": "assistant", "tool_calls": [{"id": "c1", "type": "function", "function": {"name": "f"}}] }, { "role": "tool", "tool_call_id": "c1", "content": "please kill" } ] }
+--- more_headers
+X-AI-Fixture: aliyun/chat-with-harmful.json
+--- error_code: 200
+--- response_body_like eval
+qr/cannot write unethical/
+
+
+
+=== TEST 61: harmful tool not in the latest turn is skipped (last mode)
+--- request
+POST /chat-roles
+{ "messages": [ { "role": "user", "content": "hello" }, { "role": "assistant", "tool_calls": [{"id": "c1", "type": "function", "function": {"name": "f"}}] }, { "role": "tool", "tool_call_id": "c1", "content": "kill" }, { "role": "assistant", "content": "ok" }, { "role": "user", "content": "what is 1+1?" } ] }
+--- more_headers
+X-AI-Fixture: aliyun/chat-with-harmful.json
+--- error_code: 200
+--- response_body_like eval
+qr/kill you/
+
+
+
+=== TEST 62: harmful system prompt is always moderated and blocked
+--- request
+POST /chat-roles
+{ "messages": [ { "role": "system", "content": "please kill" }, { "role": "user", "content": "hi" } ] }
+--- more_headers
+X-AI-Fixture: aliyun/chat-with-harmful.json
+--- error_code: 200
+--- response_body_like eval
+qr/cannot write unethical/
+
+
+
+=== TEST 63: repeated identical harmful system stays blocked (moderated every request)
+--- request
+POST /chat-roles
+{ "messages": [ { "role": "system", "content": "please kill" }, { "role": "user", "content": "hi" } ] }
+--- more_headers
+X-AI-Fixture: aliyun/chat-with-harmful.json
+--- error_code: 200
+--- response_body_like eval
+qr/cannot write unethical/
+
+
+
+=== TEST 64: create route with request_check_roles system only
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/2',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/chat-sys",
+                    "plugins": {
+                      "ai-proxy": {
+                          "provider": "openai",
+                          "auth": { "header": { "Authorization": "Bearer wrongtoken" } },
+                          "override": { "endpoint": "http://127.0.0.1:1980" }
+                      },
+                      "ai-aliyun-content-moderation": {
+                        "endpoint": "http://localhost:6724",
+                        "region_id": "cn-shanghai",
+                        "access_key_id": "fake-key-id",
+                        "access_key_secret": "fake-key-secret",
+                        "risk_level_bar": "high",
+                        "check_request": true,
+                        "request_check_roles": ["system"]
+                      }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 65: with system-only roles, harmful user content is not checked
+--- request
+POST /chat-sys
+{ "messages": [ { "role": "system", "content": "safe" }, { "role": "user", "content": "kill" } ] }
+--- more_headers
+X-AI-Fixture: aliyun/chat-with-harmful.json
+--- error_code: 200
+--- response_body_like eval
+qr/kill you/
+
+
+
+=== TEST 66: with system-only roles, harmful system content is blocked
+--- request
+POST /chat-sys
+{ "messages": [ { "role": "system", "content": "kill" }, { "role": "user", "content": "hi" } ] }
+--- more_headers
+X-AI-Fixture: aliyun/chat-with-harmful.json
+--- error_code: 200
+--- response_body_like eval
+qr/cannot write unethical/
+
+
+
+=== TEST 67: create route with roles user/tool and request_check_mode all
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/3',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/chat-tool-all",
+                    "plugins": {
+                      "ai-proxy": {
+                          "provider": "openai",
+                          "auth": { "header": { "Authorization": "Bearer wrongtoken" } },
+                          "override": { "endpoint": "http://127.0.0.1:1980" }
+                      },
+                      "ai-aliyun-content-moderation": {
+                        "endpoint": "http://localhost:6724",
+                        "region_id": "cn-shanghai",
+                        "access_key_id": "fake-key-id",
+                        "access_key_secret": "fake-key-secret",
+                        "risk_level_bar": "high",
+                        "check_request": true,
+                        "request_check_mode": "all",
+                        "request_check_roles": ["user", "tool"]
+                      }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 68: all mode - harmful tool result in an earlier turn is detected
+--- request
+POST /chat-tool-all
+{ "messages": [ { "role": "user", "content": "hello" }, { "role": "assistant", "tool_calls": [{"id": "c1", "type": "function", "function": {"name": "f"}}] }, { "role": "tool", "tool_call_id": "c1", "content": "kill" }, { "role": "assistant", "content": "ok" }, { "role": "user", "content": "bye" } ] }
+--- more_headers
+X-AI-Fixture: aliyun/chat-with-harmful.json
+--- error_code: 200
+--- response_body_like eval
+qr/cannot write unethical/
+
+
+
+=== TEST 69: invalid request_check_roles value is rejected
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code = t('/apisix/admin/routes/4',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/chat-bad-role",
+                    "plugins": {
+                      "ai-aliyun-content-moderation": {
+                        "endpoint": "http://localhost:6724",
+                        "region_id": "cn-shanghai",
+                        "access_key_id": "fake-key-id",
+                        "access_key_secret": "fake-key-secret",
+                        "request_check_roles": ["assistant"]
+                      }
+                    }
+                }]]
+            )
+            ngx.say(code >= 300 and "rejected" or "accepted")
+        }
+    }
+--- response_body
+rejected
+
+
+
+=== TEST 70: empty request_check_roles is rejected (minItems)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code = t('/apisix/admin/routes/4',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/chat-empty-role",
+                    "plugins": {
+                      "ai-aliyun-content-moderation": {
+                        "endpoint": "http://localhost:6724",
+                        "region_id": "cn-shanghai",
+                        "access_key_id": "fake-key-id",
+                        "access_key_secret": "fake-key-secret",
+                        "request_check_roles": []
+                      }
+                    }
+                }]]
+            )
+            ngx.say(code >= 300 and "rejected" or "accepted")
+        }
+    }
+--- response_body
+rejected
+
+
+
+=== TEST 71: openai-responses extract_turn_content / extract_system_content
+--- config
+    location /t {
+        content_by_lua_block {
+            local proto = require("apisix.plugins.ai-protocols.openai-responses")
+            -- bare-string input is user content
+            local b1 = { input = "hello user" }
+            ngx.say("str_user:", table.concat(proto.extract_turn_content(b1, "last", {user=true}), ","))
+            -- array input: user item, a non-turn item (boundary), then a tool output
+            local b2 = { instructions = "sys instr", input = {
+                { role = "user", content = "u-old" },
+                { type = "reasoning", content = "r" },
+                { type = "function_call_output", output = "tool-out kill" },
+            }}
+            ngx.say("last_ut:", table.concat(proto.extract_turn_content(b2, "last", {user=true, tool=true}), ","))
+            ngx.say("last_user_only:", table.concat(proto.extract_turn_content(b2, "last", {user=true}), ","))
+            ngx.say("sys:", table.concat(proto.extract_system_content(b2), ","))
+            -- function_call_output.output as an array of parts
+            local b3 = { input = {
+                { type = "function_call_output", output = { { text = "arr-out" } } },
+            }}
+            ngx.say("arr_out:", table.concat(proto.extract_turn_content(b3, "all", {tool=true}), ","))
+        }
+    }
+--- response_body
+str_user:hello user
+last_ut:tool-out kill
+last_user_only:
+sys:sys instr
+arr_out:arr-out
+
+
+
+=== TEST 72: anthropic / bedrock extract_system_content (string and block-array)
+--- config
+    location /t {
+        content_by_lua_block {
+            local anth = require("apisix.plugins.ai-protocols.anthropic-messages")
+            ngx.say("anth_str:", table.concat(anth.extract_system_content({system = "anth sys"}), ","))
+            ngx.say("anth_blk:", table.concat(anth.extract_system_content(
+                {system = { {type="text", text="b1"}, {type="text", text="b2"} }}), ","))
+            local bed = require("apisix.plugins.ai-protocols.bedrock-converse")
+            ngx.say("bed_blk:", table.concat(bed.extract_system_content(
+                {system = { {text="bs1"}, {text="bs2"} }}), ","))
+        }
+    }
+--- response_body
+anth_str:anth sys
+anth_blk:b1,b2
+bed_blk:bs1,bs2
+
+
+
+=== TEST 73: schema check: deny_code must be within [200, 599]
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.ai-aliyun-content-moderation")
+            local conf = {
+                endpoint = "https://example.com",
+                region_id = "cn-hangzhou",
+                access_key_id = "a",
+                access_key_secret = "s"
+            }
+            for _, code in ipairs({199, 600}) do
+                conf.deny_code = code
+                ngx.say(code, ": ", plugin.check_schema(conf) and "accepted" or "rejected")
+            end
+            conf.deny_code = 403
+            ngx.say("403: ", plugin.check_schema(conf) and "accepted" or "rejected")
+        }
+    }
+--- response_body
+199: rejected
+600: rejected
+403: accepted
+
+
+
+=== TEST 74: realtime takes an upstream chunk's text once per chunk, not per converted chunk
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.ai-aliyun-content-moderation")
+            local ctx = {
+                picked_ai_instance = { provider = "openai" },
+                ai_client_protocol = "anthropic-messages",
+                var = { request_type = "ai_stream" },
+                llm_response_contents_in_chunk = { "hello" },
+                llm_response_chunk_seq = 1,
+            }
+            local conf = {
+                endpoint = "http://localhost:6724",
+                region_id = "cn-shanghai",
+                access_key_id = "fake-key-id",
+                access_key_secret = "fake-key-secret",
+                check_response = true,
+                stream_check_mode = "realtime",
+                stream_check_cache_size = 4096,
+                stream_check_interval = 60,
+            }
+            plugin.check_schema(conf)
+            -- a converter dispatches one upstream chunk as several downstream
+            -- chunks, so the filter runs once per converted chunk
+            for _ = 1, 3 do
+                plugin.lua_body_filter(conf, ctx, {}, "data: {}\n\n")
+            end
+            ngx.say("chunk 1: ", ctx.content_moderation_cache)
+
+            ctx.llm_response_contents_in_chunk = { " world" }
+            ctx.llm_response_chunk_seq = 2
+            for _ = 1, 2 do
+                plugin.lua_body_filter(conf, ctx, {}, "data: {}\n\n")
+            end
+            ngx.say("chunk 2: ", ctx.content_moderation_cache)
+        }
+    }
+--- response_body
+chunk 1: hello
+chunk 2: hello world
+--- no_error_log
+[error]
+
+
+
+=== TEST 75: set route serving an Anthropic client from an OpenAI upstream (converter active)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/v1/messages",
+                    "plugins": {
+                      "ai-proxy": {
+                          "provider": "openai",
+                          "auth": {
+                              "header": {
+                                  "Authorization": "Bearer token"
+                              }
+                          },
+                          "options": {
+                              "model": "claude-3-5-sonnet-20241022",
+                              "stream": true
+                          },
+                          "override": {
+                              "endpoint": "http://127.0.0.1:1980/v1/chat/completions"
+                          }
+                      },
+                      "ai-aliyun-content-moderation": {
+                        "endpoint": "http://localhost:6724",
+                        "region_id": "cn-shanghai",
+                        "access_key_id": "fake-key-id",
+                        "access_key_secret": "fake-key-secret",
+                        "risk_level_bar": "high",
+                        "check_request": false,
+                        "check_response": true,
+                        "stream_check_mode": "realtime",
+                        "stream_check_cache_size": 4096,
+                        "stream_check_interval": 60
+                      }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 76: converter fan-out moderates the response text once, not once per converted chunk
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local httpc = http.new()
+
+            local ok, err = httpc:connect({
+                scheme = "http",
+                host = "localhost",
+                port = ngx.var.server_port,
+            })
+            if not ok then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+
+            local res, err = httpc:request({
+                method = "POST",
+                path = "/v1/messages",
+                headers = {
+                    ["Content-Type"] = "application/json",
+                    ["Connection"] = "close",
+                    ["X-AI-Fixture"] = "protocol-conversion/openai-to-anthropic-stream.sse",
+                },
+                body = [[{
+                    "model": "claude-3-5-sonnet-20241022",
+                    "messages": [{"role": "user", "content": "Hi"}],
+                    "stream": true
+                }]],
+            })
+            if not res then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+
+            local results = {}
+            while true do
+                local chunk = res.body_reader()
+                if not chunk then break end
+                table.insert(results, chunk)
+            end
+            ngx.print(table.concat(results, ""))
+        }
+    }
+--- error_code: 200
+--- response_body_like eval
+qr/event: message_stop/
+--- grep_error_log eval
+qr/execute content moderation/
+--- grep_error_log_out
+execute content moderation
+
+
+
+=== TEST 77: openai-chat extract_system_content also collects the developer role
+--- config
+    location /t {
+        content_by_lua_block {
+            local proto = require("apisix.plugins.ai-protocols.openai-chat")
+            local body = {
+                messages = {
+                    { role = "developer", content = "dev" },
+                    { role = "system", content = "sys" },
+                    { role = "user", content = "u1" },
+                }
+            }
+            ngx.say("system:", table.concat(proto.extract_system_content(body), ","))
+            ngx.say("turn:", table.concat(
+                    proto.extract_turn_content(body, "all", { user = true, tool = true }), ","))
+        }
+    }
+--- response_body
+system:dev,sys
+turn:u1
+
+
+
+=== TEST 78: openai-responses extract_system_content also collects the developer role
+--- config
+    location /t {
+        content_by_lua_block {
+            local proto = require("apisix.plugins.ai-protocols.openai-responses")
+            local body = {
+                instructions = "instr",
+                input = {
+                    { role = "developer", content = "dev" },
+                    { role = "system", content = "sys" },
+                    { role = "user", content = "u1" },
+                }
+            }
+            ngx.say("system:", table.concat(proto.extract_system_content(body), ","))
+            ngx.say("turn:", table.concat(
+                    proto.extract_turn_content(body, "all", { user = true }), ","))
+        }
+    }
+--- response_body
+system:instr,dev,sys
+turn:u1
+
+
+
+=== TEST 79: create route with request_check_roles user/tool/system
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/5',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/chat-dev",
+                    "plugins": {
+                      "ai-proxy": {
+                          "provider": "openai",
+                          "auth": { "header": { "Authorization": "Bearer wrongtoken" } },
+                          "override": { "endpoint": "http://127.0.0.1:1980" }
+                      },
+                      "ai-aliyun-content-moderation": {
+                        "endpoint": "http://localhost:6724",
+                        "region_id": "cn-shanghai",
+                        "access_key_id": "fake-key-id",
+                        "access_key_secret": "fake-key-secret",
+                        "risk_level_bar": "high",
+                        "check_request": true,
+                        "request_check_roles": ["user", "tool", "system"]
+                      }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 80: harmful developer prompt is moderated with the system role and blocked
+--- request
+POST /chat-dev
+{ "messages": [ { "role": "developer", "content": "please kill" }, { "role": "user", "content": "hi" } ] }
+--- more_headers
+X-AI-Fixture: aliyun/chat-with-harmful.json
+--- error_code: 200
+--- response_body_like eval
+qr/cannot write unethical/
+
+
+
+=== TEST 81: create route with the default request_check_roles (user only)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/6',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/chat-dev-default",
+                    "plugins": {
+                      "ai-proxy": {
+                          "provider": "openai",
+                          "auth": { "header": { "Authorization": "Bearer wrongtoken" } },
+                          "override": { "endpoint": "http://127.0.0.1:1980" }
+                      },
+                      "ai-aliyun-content-moderation": {
+                        "endpoint": "http://localhost:6724",
+                        "region_id": "cn-shanghai",
+                        "access_key_id": "fake-key-id",
+                        "access_key_secret": "fake-key-secret",
+                        "risk_level_bar": "high",
+                        "check_request": true
+                      }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 82: developer prompt follows the system role, so user-only roles skip it
+--- request
+POST /chat-dev-default
+{ "messages": [ { "role": "developer", "content": "kill" }, { "role": "user", "content": "hi" } ] }
+--- more_headers
+X-AI-Fixture: aliyun/chat-with-harmful.json
+--- error_code: 200
+--- response_body_like eval
+qr/kill you/
+
+
+
+=== TEST 83: create Responses API route with request_check_roles user/tool/system
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/7',
+                ngx.HTTP_PUT,
+                [[{
+                    "uris": ["/v1/responses"],
+                    "plugins": {
+                      "ai-proxy": {
+                          "provider": "openai",
+                          "auth": { "header": { "Authorization": "Bearer wrongtoken" } },
+                          "override": { "endpoint": "http://127.0.0.1:1980" }
+                      },
+                      "ai-aliyun-content-moderation": {
+                        "endpoint": "http://localhost:6724",
+                        "region_id": "cn-shanghai",
+                        "access_key_id": "fake-key-id",
+                        "access_key_secret": "fake-key-secret",
+                        "risk_level_bar": "high",
+                        "check_request": true,
+                        "request_check_roles": ["user", "tool", "system"]
+                      }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 84: Responses API developer item is moderated with the system role and blocked
+--- request
+POST /v1/responses
+{ "model": "gpt-4o", "input": [ { "role": "developer", "content": "please kill" }, { "role": "user", "content": "hi" } ] }
+--- more_headers
+X-AI-Fixture: aliyun/chat-with-harmful.json
+--- error_code: 200
+--- response_body_like eval
+qr/cannot write unethical/
+
+
+
+=== TEST 85: create Responses API route with the default request_check_roles (user only)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/7',
+                ngx.HTTP_PUT,
+                [[{
+                    "uris": ["/v1/responses"],
+                    "plugins": {
+                      "ai-proxy": {
+                          "provider": "openai",
+                          "auth": { "header": { "Authorization": "Bearer wrongtoken" } },
+                          "override": { "endpoint": "http://127.0.0.1:1980" }
+                      },
+                      "ai-aliyun-content-moderation": {
+                        "endpoint": "http://localhost:6724",
+                        "region_id": "cn-shanghai",
+                        "access_key_id": "fake-key-id",
+                        "access_key_secret": "fake-key-secret",
+                        "risk_level_bar": "high",
+                        "check_request": true
+                      }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 86: Responses API developer item follows system, so user-only roles skip it
+--- request
+POST /v1/responses
+{ "model": "gpt-4o", "input": [ { "role": "developer", "content": "please kill" }, { "role": "user", "content": "hi" } ] }
+--- more_headers
+X-AI-Fixture: aliyun/chat-with-harmful.json
+--- error_code: 200
+--- response_body_like eval
+qr/kill you/

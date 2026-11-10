@@ -90,7 +90,7 @@ discovery:
       first="a",second="b"
 
     # reserved lua shared memory size,1m memory can store about 1000 pieces of endpoint
-    shared_size: 1m #default 1m
+    shared_size: 64m #default 64m
 
     # if watch_endpoint_slices setting true, watch apiserver with endpointslices instead of endpoints
     watch_endpoint_slices: false #default false
@@ -222,7 +222,7 @@ discovery:
       first="a",second="b"
 
     # reserved lua shared memory size,1m memory can store about 1000 pieces of endpoint
-    shared_size: 1m #default 1m
+    shared_size: 64m #default 64m
 
     # if watch_endpoint_slices setting true, watch apiserver with endpointslices instead of endpoints
     watch_endpoint_slices: false #default false
@@ -284,6 +284,35 @@ a nodes("release/default/plat-dev:port") call will get follow result:
    }
   ```
 
+### Select Clusters with `cluster_ids`
+
+In multi-cluster mode, an upstream can get its nodes from several clusters at once by listing their `id`s in `discovery_args.cluster_ids`. The `service_name` then uses the single-cluster pattern _[namespace]/[name]:[portName]_, without the `id` prefix:
+
+```json
+{
+    "type": "roundrobin",
+    "discovery_type": "kubernetes",
+    "service_name": "default/plat-dev:port",
+    "discovery_args": {
+        "cluster_ids": ["release", "staging"]
+    }
+}
+```
+
+The upstream nodes are the union of the matching endpoints in the listed clusters, and they follow the endpoint changes in those clusters. When the same `host:port` is found in more than one listed cluster, it is used once.
+
++ `cluster_ids` is a non-empty array of unique strings. It only applies to multi-cluster mode. The Admin API rejects `cluster_ids` when Kubernetes service discovery is configured in single-cluster mode. If such an upstream reaches the data plane in another way, it gets no nodes and an error is logged.
+
++ Clusters that are not listed, including clusters added to the configuration later, never contribute nodes.
+
++ When `cluster_ids` is set, `service_name` must match _[namespace]/[name]:[portName]_, so it cannot carry an `id` prefix. Any other value is rejected, and the error shows the `service_name` value.
+
++ The Admin API rejects an `id` that is not defined in the Kubernetes service discovery configuration of the APISIX instance that serves the Admin API, and the error lists all unknown `id`s. When a configuration with an unknown `id` still reaches the data plane, for example because it was written before a cluster was removed from the configuration, or because it comes from a standalone configuration file, the unknown `id`s are skipped and a warning that lists them is logged.
+
++ When none of the listed clusters has matching endpoints, the upstream has no valid nodes. Nodes from other clusters are never used instead.
+
+Without `cluster_ids`, the query interface described above is unchanged.
+
 ## Q&A
 
 **Q: Why only support configuration token to access _Kubernetes APIServer_?**
@@ -298,7 +327,7 @@ Because lua-resty-http does not currently support mTLS, and basic authentication
 
 **Q: APISIX inherits Nginx's multiple process model, does it mean that each nginx worker process will [_List-Watch_](https://kubernetes.io/docs/reference/using-api/api-concepts/) kubernetes endpoints resources?**
 
-A: The Kubernetes service discovery only uses privileged processes to [_List-Watch_](https://kubernetes.io/docs/reference/using-api/api-concepts/) Kubernetes endpoints resources, then store theirs value into `ngx.shared.DICT`, worker processes get results by querying `ngx.shared.DICT`.
+A: The Kubernetes service discovery only uses privileged processes to [_List-Watch_](https://kubernetes.io/docs/reference/using-api/api-concepts/) Kubernetes endpoints resources, then store theirs value into `ngx.shared.DICT`, worker processes get results by querying `ngx.shared.DICT`. Each worker process caches the nodes of a service for one second and then reads them from `ngx.shared.DICT` again, so a change reaches every worker process within one second of the privileged process writing it to `ngx.shared.DICT`.
 
 **Q: What permissions do [_ServiceAccount_](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/) require?**
 
@@ -402,7 +431,7 @@ Which will yield the following response:
         "port": "6443",
         "schema": "https"
       },
-      "shared_size": "1m"
+      "shared_size": "64m"
     }
   ]
 }

@@ -17,7 +17,8 @@
 use t::APISIX 'no_plan';
 
 repeat_each(1);
-log_level('warn');
+# the reuse path logs "reused checker with incremental targets" at info level
+log_level('info');
 no_root_location();
 no_shuffle();
 
@@ -25,7 +26,7 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: ensure the old check is cleared after configuration updated
+=== TEST 1: reuse the checker without clearing it on a version-only change
 --- extra_init_worker_by_lua
     local healthcheck = require("resty.healthcheck")
     local new = healthcheck.new
@@ -103,6 +104,9 @@ location /t {
         t('/hello', ngx.HTTP_GET)
         ngx.sleep(2)
         assert(t('/apisix/admin/routes/1', ngx.HTTP_PUT, cfg) < 300)
+        -- re-route a request so fetch_checker observes the new version and the
+        -- manager reconciles the existing checker's targets incrementally
+        t('/hello', ngx.HTTP_GET)
         ngx.sleep(2)
     }
 }
@@ -110,5 +114,7 @@ location /t {
 --- request
 GET /t
 --- error_log
+reused checker with incremental targets
+--- no_error_log
 clear checker
 --- timeout: 7

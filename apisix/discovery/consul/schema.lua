@@ -27,9 +27,10 @@ return {
         shared_size = {
             type = "string",
             pattern = [[^[1-9][0-9]*m$]],
-            default = "1m",
+            default = "64m",
         },
         token = {type = "string", default = ""},
+        ssl_verify = {type = "boolean", default = true},
         fetch_interval = {type = "integer", minimum = 1, default = 3},
         keepalive = {
             type = "boolean",

@@ -22,6 +22,23 @@ local config_util = require("apisix.core.config_util")
 local require = require
 
 local _M = {}
+
+
+-- resource types whose config may attach plugins via `_meta.parent`
+-- (set by plugin.set_plugins_meta_parent) and thus reach fetch_latest_conf.
+-- Every type maps to its own "/<type>" top-level config key.
+local SUPPORTED_RESOURCE_TYPES = {
+    upstreams = true,
+    routes = true,
+    services = true,
+    stream_routes = true,
+    plugin_configs = true,
+    global_rules = true,
+    consumers = true,
+    consumer_groups = true,
+}
+
+
 local function remove_etcd_prefix(key)
     local prefix = ""
     local local_conf =  require("apisix.core.config_local").local_conf()
@@ -50,19 +67,13 @@ local function fetch_latest_conf(resource_path)
         return nil
     end
 
-    local key
-    if resource_type == "upstreams" then
-        key = "/upstreams"
-    elseif resource_type == "routes" then
-        key = "/routes"
-    elseif resource_type == "services" then
-        key = "/services"
-    elseif resource_type == "stream_routes" then
-        key = "/stream_routes"
-    else
+    -- all resource types that can carry plugins (and thus reach here via
+    -- _meta.parent) map their type to their own top-level config key
+    if not SUPPORTED_RESOURCE_TYPES[resource_type] then
         log.error("unsupported resource type: ", resource_type)
         return nil
     end
+    local key = "/" .. resource_type
 
     local data = core.config.fetch_created_obj(key)
     if not data then
@@ -83,6 +94,10 @@ end
 
 function _M.get_nodes_ver(resource_path)
     local res_conf = fetch_latest_conf(resource_path)
+    if not res_conf then
+        return nil
+    end
+
     local upstream = res_conf.value.upstream or res_conf.value
     return upstream._nodes_ver
 end
@@ -90,6 +105,10 @@ end
 
 function _M.set_nodes_ver_and_nodes(resource_path, nodes_ver, nodes)
     local res_conf = fetch_latest_conf(resource_path)
+    if not res_conf then
+        return
+    end
+
     local upstream = res_conf.value.upstream or res_conf.value
     upstream._nodes_ver = nodes_ver
     upstream.nodes = nodes

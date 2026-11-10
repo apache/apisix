@@ -19,7 +19,7 @@ FROM ubuntu:20.04
 
 # Install Test::Nginx
 RUN apt update
-RUN apt install -y cpanminus make
+RUN apt install -y cpanminus make libwww-perl
 RUN cpanm --notest Test::Nginx
 
 # Install development utils

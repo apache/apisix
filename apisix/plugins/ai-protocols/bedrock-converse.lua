@@ -30,6 +30,31 @@ local table = table
 local _M = {}
 
 
+local function cache_token_count(raw, key, alias)
+    local value = raw[key]
+    if type(value) ~= "number" then
+        value = raw[alias]
+    end
+    return type(value) == "number" and value or 0
+end
+
+
+local function normalize_usage(raw)
+    local cache_read = cache_token_count(raw, "cacheReadInputTokens", "cacheReadInputTokenCount")
+    local cache_write = cache_token_count(raw, "cacheWriteInputTokens", "cacheWriteInputTokenCount")
+    -- Bedrock inputTokens excludes cached tokens; normalized prompt usage includes them.
+    local prompt_tokens = (raw.inputTokens or 0) + cache_read + cache_write
+    local completion_tokens = raw.outputTokens or 0
+    return {
+        prompt_tokens = prompt_tokens,
+        completion_tokens = completion_tokens,
+        total_tokens = raw.totalTokens or prompt_tokens + completion_tokens,
+        cache_read_input_tokens = cache_read,
+        cache_creation_input_tokens = cache_write,
+    }
+end
+
+
 --- Detect whether the request matches the Bedrock Converse API format.
 -- Uses URI suffix (/converse) and body (valid JSON table with messages).
 function _M.matches(body, ctx)
@@ -117,12 +142,7 @@ function _M.parse_sse_event(event, ctx, state)
         local raw = data.usage
         return {
             type = "usage_and_done",
-            usage = {
-                prompt_tokens = raw.inputTokens or 0,
-                completion_tokens = raw.outputTokens or 0,
-                total_tokens = raw.totalTokens
-                    or (raw.inputTokens or 0) + (raw.outputTokens or 0),
-            },
+            usage = normalize_usage(raw),
             raw_usage = raw,
         }
     end
@@ -140,12 +160,20 @@ function _M.extract_usage(res_body)
         return nil, nil
     end
     local raw = res_body.usage
-    return {
-        prompt_tokens = raw.inputTokens or 0,
-        completion_tokens = raw.outputTokens or 0,
-        total_tokens = raw.totalTokens
-            or (raw.inputTokens or 0) + (raw.outputTokens or 0),
-    }, raw
+    return normalize_usage(raw), raw
+end
+
+
+-- Append the text of each Bedrock content block ({text = "..."}) into `texts`.
+local function append_block_texts(texts, blocks)
+    if type(blocks) ~= "table" then
+        return
+    end
+    for _, block in ipairs(blocks) do
+        if type(block) == "table" and type(block.text) == "string" then
+            core.table.insert(texts, block.text)
+        end
+    end
 end
 
 
@@ -160,11 +188,7 @@ function _M.extract_response_text(res_body)
         return nil
     end
     local texts = {}
-    for _, block in ipairs(message.content) do
-        if type(block) == "table" and type(block.text) == "string" then
-            core.table.insert(texts, block.text)
-        end
-    end
+    append_block_texts(texts, message.content)
     if #texts > 0 then
         return table.concat(texts, " ")
     end
@@ -175,26 +199,66 @@ end
 --- Extract all text content from a request body for moderation.
 function _M.extract_request_content(body)
     local contents = {}
+    append_block_texts(contents, body.system)
+    if type(body.messages) == "table" then
+        for _, message in ipairs(body.messages) do
+            if type(message) == "table" then
+                append_block_texts(contents, message.content)
+            end
+        end
+    end
+    return contents
+end
+
+
+local function is_turn_role(message, roles)
+    return type(message) == "table" and message.role ~= nil and roles[message.role]
+end
+
+
+-- Extract text from turn-role messages (user/tool) for request moderation.
+-- `roles` is a set such as {user = true, tool = true} selecting which roles to
+-- collect. mode "last" = the latest consecutive block of selected-role messages,
+-- "all" = every such message. Bedrock `system` blocks are handled separately by
+-- extract_system_content.
+function _M.extract_turn_content(body, mode, roles)
+    local contents = {}
+    if type(body.messages) ~= "table" then
+        return contents
+    end
+    local messages = body.messages
+    local start_idx = 1
+    if mode ~= "all" then
+        start_idx = nil
+        for i = #messages, 1, -1 do
+            if is_turn_role(messages[i], roles) then
+                start_idx = i
+            else
+                break
+            end
+        end
+        if not start_idx then
+            return contents
+        end
+    end
+    for i = start_idx, #messages do
+        if is_turn_role(messages[i], roles) then
+            append_block_texts(contents, messages[i].content)
+        end
+    end
+    return contents
+end
+
+
+-- Extract system-role text for request moderation. Bedrock carries the system
+-- prompt in body.system (an array of text blocks), not in messages.
+function _M.extract_system_content(body)
+    local contents = {}
     if type(body.system) == "table" then
         for _, block in ipairs(body.system) do
             if type(block) == "table" and type(block.text) == "string" then
                 core.table.insert(contents, block.text)
             end
-        end
-    end
-    if type(body.messages) == "table" then
-        for _, message in ipairs(body.messages) do
-            if type(message) ~= "table" then
-                goto CONTINUE_MESSAGE
-            end
-            if type(message.content) == "table" then
-                for _, block in ipairs(message.content) do
-                    if type(block) == "table" and type(block.text) == "string" then
-                        core.table.insert(contents, block.text)
-                    end
-                end
-            end
-            ::CONTINUE_MESSAGE::
         end
     end
     return contents
@@ -205,32 +269,19 @@ end
 -- Bedrock content blocks [{text: "..."}] are flattened to plain text.
 function _M.get_messages(body)
     local messages = {}
-    if type(body.system) == "table" then
-        local texts = {}
-        for _, block in ipairs(body.system) do
-            if type(block) == "table" and type(block.text) == "string" then
-                core.table.insert(texts, block.text)
-            end
-        end
-        if #texts > 0 then
-            core.table.insert(messages, {
-                role = "system",
-                content = table.concat(texts, " "),
-            })
-        end
+    local system_texts = {}
+    append_block_texts(system_texts, body.system)
+    if #system_texts > 0 then
+        core.table.insert(messages, {
+            role = "system",
+            content = table.concat(system_texts, " "),
+        })
     end
     if type(body.messages) == "table" then
         for _, message in ipairs(body.messages) do
-            if type(message) ~= "table" then
-                goto CONTINUE
-            end
-            if type(message.content) == "table" then
+            if type(message) == "table" then
                 local texts = {}
-                for _, block in ipairs(message.content) do
-                    if type(block) == "table" and type(block.text) == "string" then
-                        core.table.insert(texts, block.text)
-                    end
-                end
+                append_block_texts(texts, message.content)
                 if #texts > 0 then
                     core.table.insert(messages, {
                         role = message.role,
@@ -238,7 +289,6 @@ function _M.get_messages(body)
                     })
                 end
             end
-            ::CONTINUE::
         end
     end
     return messages

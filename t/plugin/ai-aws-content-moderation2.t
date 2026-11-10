@@ -41,7 +41,7 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: sanity
+=== TEST 1: sanity, ai-proxy + moderation (no Comprehend server listening)
 --- config
     location /t {
         content_by_lua_block {
@@ -49,22 +49,20 @@ __DATA__
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
                 [[{
-                    "uri": "/echo",
+                    "uri": "/chat",
                     "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": { "header": { "Authorization": "Bearer token" } },
+                            "override": { "endpoint": "http://127.0.0.1:1980/v1/chat/completions" }
+                        },
                         "ai-aws-content-moderation": {
                             "comprehend": {
                                 "access_key_id": "access",
                                 "secret_access_key": "ea+secret",
                                 "region": "us-east-1",
                                 "endpoint": "http://localhost:2668"
-                            },
-                            "llm_provider": "openai"
-                        }
-                    },
-                    "upstream": {
-                        "type": "roundrobin",
-                        "nodes": {
-                            "127.0.0.1:1980": 1
+                            }
                         }
                     }
                 }]]
@@ -81,12 +79,12 @@ passed
 
 
 
-=== TEST 2: request should fail
+=== TEST 2: request fails when Comprehend is unreachable
 --- request
-POST /echo
-toxic
+POST /chat
+{ "messages": [ { "role": "user", "content": "toxic" } ] }
 --- error_code: 500
 --- response_body chomp
-Comprehend:detectToxicContent() failed to connect to 'http://localhost:2668': connection refused
+failed to send request to http://localhost: Comprehend:detectToxicContent() failed to connect to 'http://localhost:2668': connection refused
 --- error_log
 failed to send request to http://localhost: Comprehend:detectToxicContent() failed to connect to 'http://localhost:2668': connection refused

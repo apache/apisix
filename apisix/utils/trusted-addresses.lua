@@ -49,4 +49,10 @@ function _M.is_trusted(address)
     return trusted_addresses_matcher:match(address)
 end
 
+
+-- whether a trust boundary is configured via `apisix.trusted_addresses`.
+function _M.is_configured()
+    return trusted_addresses_matcher ~= nil
+end
+
 return _M

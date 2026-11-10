@@ -65,9 +65,8 @@ _EOC_
             end
         end
 
-        if 0 == ngx.worker.id() then
-            -- patch: skywalking2
-            -- Ensure that it is executed only once
+        -- patch: skywalking2
+        if metadata_buffer:add("backend_timer_started", true) then
             ngx.log(ngx.INFO, "start skywalking backend timer")
             local ok, err = new_timer(self.backendTimerDelay, check)
             if not ok then
@@ -149,12 +148,6 @@ passed
             local http = require "resty.http"
             local uri = "http://127.0.0.1:" .. ngx.var.server_port
                         .. "/opentracing"
-            local ports_count = {}
-            -- The patched startBackendTimer only logs when ngx.worker.id()==0,
-            -- so we need at least one connection to land on worker 0. With
-            -- workers(4) and keepalive=false, 12 requests gave a ~3% chance
-            -- of missing worker 0 entirely; bump to 50 to make that vanishingly
-            -- unlikely (~0.0006%).
             for i = 1, 50 do
                 local httpc = http.new()
                 local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})

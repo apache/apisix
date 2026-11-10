@@ -46,6 +46,8 @@ The `redirect` Plugin can be used to configure redirects.
 
 * Only one of `http_to_https`, `uri` and `regex_uri` can be configured.
 * Only one of `http_to_https` and `append_query_string` can be configured.
+* When `http_to_https` is enabled, whether the request already used HTTPS is decided by the `X-Forwarded-Proto` header when it is present, and by the scheme of the connection to APISIX otherwise. The value is compared case-insensitively, since a URI scheme is case-insensitive as per [RFC 3986](https://datatracker.ietf.org/doc/html/rfc3986#section-3.1).
+* An inbound `X-Forwarded-Proto` is only preserved when the request comes from an address listed in `apisix.trusted_addresses`. Otherwise APISIX overwrites it with the scheme it observes, so a request that reached a TLS-terminating proxy over HTTPS and was forwarded to APISIX over HTTP is treated as HTTP here. See [real-ip](real-ip.md) for the trust boundary.
 * When enabling `http_to_https`, the ports in the redirect URL will pick a value in the following order (in descending order of priority)
   * Read `plugin_attr.redirect.https_port` from the configuration file (`conf/config.yaml`).
   * If `apisix.ssl` is enabled, read `apisix.ssl.listen` and select a port randomly from it.

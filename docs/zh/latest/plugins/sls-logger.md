@@ -42,6 +42,7 @@ title: sls-logger
 | logstore | 必须的 | 日志服务 Logstore 名称，请提前在阿里云日志服务中创建 Logstore。|
 | access_key_id | 必须的 | AccessKey ID。建议使用阿里云子账号 AK，详情请参见 [授权](https://help.aliyun.com/document_detail/47664.html?spm=a2c4g.11186623.2.15.49301b47lfvxXP#task-xsk-ttc-ry)。|
 | access_key_secret | 必须的 | AccessKey Secret。建议使用阿里云子账号 AK，详情请参见 [授权](https://help.aliyun.com/document_detail/47664.html?spm=a2c4g.11186623.2.15.49301b47lfvxXP#task-xsk-ttc-ry)。|
+| ssl_verify        | 否   | 设置为 `true` 时校验日志服务器的 TLS 证书。默认为 `true`。 |
 | include_req_body | 可选的 | 是否包含请求体。|
 | include_req_body_expr   | 可选的 | 当 `include_req_body` 属性设置为 `true` 时的过滤器。只有当此处设置的表达式求值为 `true` 时，才会记录请求体。有关更多信息，请参阅 [lua-resty-expr](https://github.com/api7/lua-resty-expr) 。    |
 | include_resp_body       | 可选的 | 当设置为 `true` 时，日志中将包含响应体。                                                     |
@@ -84,6 +85,7 @@ title: sls-logger
 | 名称             | 类型    | 必选项 | 默认值        | 有效值  | 描述                                             |
 | ---------------- | ------- | ------ | ------------- | ------- | ------------------------------------------------ |
 | log_format       | object  | 可选   |  |         | 日志格式以 JSON 的键值对声明。值支持字符串和嵌套对象（最多五层，超出部分将被截断）。字符串中可通过在前面加上 `$` 来引用 [APISIX 变量](../../../en/latest/apisix-variable.md) 或 [Nginx 内置变量](http://nginx.org/en/docs/varindex.html)。特别的，**该设置是全局生效的**，意味着指定 log_format 后，将对所有绑定 sls-logger 的 Route 或 Service 生效。 |
+| max_pending_entries | integer | 可选 | 8192 | >= 1 | 待处理条目数的上限。积压超过该值后新条目会被丢弃，避免日志服务变慢或不可达时 worker 内存无限增长。该上限对应的内存开销参见 [批处理器](../batch-processor.md#限制积压条目数)。 |
 
 ### 设置日志格式示例
 

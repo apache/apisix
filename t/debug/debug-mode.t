@@ -180,33 +180,17 @@ passed
 
 
 
-=== TEST 5: hit routes
+=== TEST 5: hit routes, the header lists the executed plugins in the execution order
 --- debug_config eval: $::debug_config
---- config
-    location /t {
-        content_by_lua_block {
-            local json = require("toolkit.json")
-            local ngx_re = require("ngx.re")
-            local http = require "resty.http"
-            local httpc = http.new()
-            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
-            local res, err = httpc:request_uri(uri, {
-                    method = "GET",
-                })
-            local debug_header = res.headers["Apisix-Plugins"]
-            local arr = ngx_re.split(debug_header, ", ")
-            local hash = {}
-            for i, v in ipairs(arr) do
-                hash[v] = true
-            end
-            ngx.status = res.status
-            ngx.say(json.encode(hash))
-        }
-    }
 --- request
-GET /t
+GET /hello
 --- response_body
-{"limit-conn":true,"limit-count":true}
+hello world
+--- response_headers
+Apisix-Plugins: limit-conn#access, limit-count#access, limit-conn#log
+--- no_error_log
+Apisix-Plugins: limit-conn#log
+[error]
 
 
 
@@ -240,35 +224,16 @@ passed
 
 
 
-=== TEST 7: hit routes
+=== TEST 7: phases which can be neither traced nor inferred are logged as warn
 --- debug_config eval: $::debug_config
---- config
-    location /t {
-        content_by_lua_block {
-            local json = require("toolkit.json")
-            local ngx_re = require("ngx.re")
-            local http = require "resty.http"
-            local httpc = http.new()
-            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
-            local res, err = httpc:request_uri(uri, {
-                    method = "GET",
-                })
-            local debug_header = res.headers["Apisix-Plugins"]
-            local arr = ngx_re.split(debug_header, ", ")
-            local hash = {}
-            for i, v in ipairs(arr) do
-                hash[v] = true
-            end
-            ngx.status = res.status
-            ngx.say(json.encode(hash))
-        }
-    }
 --- request
-GET /t
+GET /hello
 --- response_body
-{"limit-conn":true,"limit-count":true,"response-rewrite":true}
+yes
+--- response_headers
+Apisix-Plugins: limit-conn#access, limit-count#access, response-rewrite#header_filter, limit-conn#log
 --- error_log
-Apisix-Plugins: response-rewrite
+Apisix-Plugins: response-rewrite#body_filter
 
 
 

@@ -26,7 +26,6 @@ local unpack        = unpack
 local string        = string
 local tonumber      = tonumber
 local tostring      = tostring
-local os            = os
 local pcall         = pcall
 local setmetatable  = setmetatable
 
@@ -68,7 +67,11 @@ function _M.read_env(key)
             local last = string.byte(key, #key)
             if last == string.byte('}') then
                 local env = string.sub(key, 3, #key - 1)
-                local value = os.getenv(env)
+                -- Use core.env.get for exact-match lookup, avoiding the
+                -- os.getenv prefix-collision bug in the worker init phase
+                -- (e.g. KUBERNETES_CLIENT_TOKEN vs KUBERNETES_CLIENT_TOKEN_FILE).
+                -- See apache/apisix#13055.
+                local value = core.env.get(env)
                 if not value then
                     return nil, "not found environment variable " .. env
                 end
@@ -233,16 +236,12 @@ end
 -- ─── endpoint dict operations (exported) ──────────────────────────────
 
 function _M.update_endpoint_dict(handle, endpoints, endpoint_key)
+    -- one key per service, written by a single atomic safe_set: workers
+    -- re-read it when their cache entry expires, so there is no version key
+    -- that could be observed before the content (apache/apisix#14149)
     local endpoint_content = core.json.encode(endpoints, true)
-    local endpoint_version = ngx.crc32_long(endpoint_content)
-    local _, err
-    _, err = handle.endpoint_dict:safe_set(endpoint_key .. "#version", endpoint_version)
+    local _, err = handle.endpoint_dict:safe_set(endpoint_key, endpoint_content)
     if err then
-        return false, "set endpoint version into discovery DICT failed, " .. err
-    end
-    _, err = handle.endpoint_dict:safe_set(endpoint_key, endpoint_content)
-    if err then
-        handle.endpoint_dict:delete(endpoint_key .. "#version")
         return false, "set endpoint into discovery DICT failed, " .. err
     end
     return true
@@ -252,8 +251,7 @@ end
 function _M.create_endpoint_lrucache(endpoint_dict, endpoint_key, endpoint_port)
     local endpoint_content = endpoint_dict:get(endpoint_key)
     if not endpoint_content then
-        core.log.error("get empty endpoint content from discovery DIC, this should not happen ",
-                endpoint_key)
+        core.log.info("endpoint not found in discovery DICT, key: ", endpoint_key)
         return nil
     end
 
@@ -406,7 +404,6 @@ function _M.create_endpoint_callbacks(options)
         end
         if operate == "list" then
             handle.current_keys_hash[endpoint_key] = true
-            handle.current_keys_hash[endpoint_key .. "#version"] = true
         end
     end
 
@@ -505,7 +502,6 @@ function _M.create_endpoint_callbacks(options)
         end
         if operate == "list" then
             handle.current_keys_hash[endpoint_key] = true
-            handle.current_keys_hash[endpoint_key .. "#version"] = true
         end
     end
 
@@ -525,7 +521,6 @@ function _M.create_endpoint_callbacks(options)
         core.log.debug(core.json.delay_encode(endpoint))
         local endpoint_key = build_endpoint_key(
             key_prefix, endpoint.metadata.namespace, endpoint.metadata.name)
-        handle.endpoint_dict:delete(endpoint_key .. "#version")
         handle.endpoint_dict:delete(endpoint_key)
     end
 
@@ -708,13 +703,9 @@ function _M.resolve_nodes(endpoint_lrucache, service_name, pattern, dict_resolve
         return nil
     end
 
-    local endpoint_version = endpoint_dict:get(endpoint_key .. "#version")
-    if not endpoint_version then
-        core.log.info("get empty endpoint version from discovery DICT ", endpoint_key)
-        return nil
-    end
-
-    return endpoint_lrucache(service_name, endpoint_version,
+    -- no version probe: the entry is re-read from the shared dict when its
+    -- ttl expires (see the lrucache options in init.lua)
+    return endpoint_lrucache(service_name, nil,
             _M.create_endpoint_lrucache, endpoint_dict, endpoint_key, endpoint_port)
 end
 

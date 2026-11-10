@@ -28,6 +28,13 @@ local plugin_name = "ai-prompt-guard"
 local schema = {
     type = "object",
     properties = {
+        max_req_body_size = {
+            type = "integer",
+            minimum = 1,
+            default = 67108864,
+            description = "maximum request body size in bytes buffered into "
+                       .. "memory; larger request bodies are rejected",
+        },
         match_all_roles = {
             type = "boolean",
             default = false,
@@ -98,7 +105,7 @@ end
 
 
 function _M.access(conf, ctx)
-    local body = core.request.get_body()
+    local body = core.request.get_body(conf.max_req_body_size)
     if not body then
         core.log.error("Empty request body")
         return 400, {message = "Empty request body"}
@@ -137,9 +144,9 @@ function _M.access(conf, ctx)
 
     local messages = protocols.get_messages(json_body, ctx)
 
-    -- Responses API: instructions + input are parallel fields, not conversation history,
-    -- so skip the "last message only" filtering of get_content_to_check.
-    if proto_name ~= "openai-responses" then
+    -- Responses fields and Embeddings batch items are not conversation history,
+    -- so check all of them instead of keeping only the last message.
+    if proto_name ~= "openai-responses" and proto_name ~= "openai-embeddings" then
         messages = get_content_to_check(conf, messages)
     end
     if not conf.match_all_roles then
@@ -153,7 +160,7 @@ function _M.access(conf, ctx)
         messages = new_messages
     end
     if #messages == 0 then --nothing to check
-        return 200
+        return
     end
     -- extract only messages
     local content = {}

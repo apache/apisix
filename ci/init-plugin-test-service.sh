@@ -16,12 +16,35 @@
 # limitations under the License.
 #
 
+# A broker that is not registered in ZooKeeper yet rejects topic creation with
+# "Replication factor: 1 larger than available brokers: 0". The failure used to be
+# silent, and the topic was then auto-created with the broker's default partition
+# count, which quietly broke tests that expect a specific partition layout.
+create_kafka_topic() {
+    local container="$1"
+    local zookeeper="$2"
+    local partitions="$3"
+    local topic="$4"
+
+    for _ in $(seq 30); do
+        if docker exec -i "$container" /opt/bitnami/kafka/bin/kafka-topics.sh --create \
+            --zookeeper "$zookeeper" --replication-factor 1 \
+            --partitions "$partitions" --topic "$topic"; then
+            return 0
+        fi
+        sleep 2
+    done
+
+    echo "failed to create kafka topic $topic on $container"
+    exit 1
+}
+
 after() {
-    docker exec -i apache-apisix-kafka-server1-1 /opt/bitnami/kafka/bin/kafka-topics.sh --create --zookeeper zookeeper-server1:2181 --replication-factor 1 --partitions 1 --topic test2
-    docker exec -i apache-apisix-kafka-server1-1 /opt/bitnami/kafka/bin/kafka-topics.sh --create --zookeeper zookeeper-server1:2181 --replication-factor 1 --partitions 3 --topic test3
-    docker exec -i apache-apisix-kafka-server2-1 /opt/bitnami/kafka/bin/kafka-topics.sh --create --zookeeper zookeeper-server2:2181 --replication-factor 1 --partitions 1 --topic test4
-    docker exec -i apache-apisix-kafka-server3-scram-1 /opt/bitnami/kafka/bin/kafka-topics.sh --create --zookeeper zookeeper-server3:2181 --replication-factor 1 --partitions 1 --topic test-scram-256
-    docker exec -i apache-apisix-kafka-server3-scram-1 /opt/bitnami/kafka/bin/kafka-topics.sh --create --zookeeper zookeeper-server3:2181 --replication-factor 1 --partitions 1 --topic test-scram-512
+    create_kafka_topic apache-apisix-kafka-server1-1 zookeeper-server1:2181 1 test2
+    create_kafka_topic apache-apisix-kafka-server1-1 zookeeper-server1:2181 3 test3
+    create_kafka_topic apache-apisix-kafka-server2-1 zookeeper-server2:2181 1 test4
+    create_kafka_topic apache-apisix-kafka-server3-scram-1 zookeeper-server3:2181 1 test-scram-256
+    create_kafka_topic apache-apisix-kafka-server3-scram-1 zookeeper-server3:2181 1 test-scram-512
     # Create user with SCRAM-SHA-512
     docker exec apache-apisix-kafka-server3-scram-1 /opt/bitnami/kafka/bin/kafka-configs.sh \
         --zookeeper zookeeper-server3:2181 \
@@ -30,16 +53,20 @@ after() {
         --entity-type users \
         --entity-name admin
     # prepare openwhisk env
-    docker pull openwhisk/action-nodejs-v14:1.20.0
-    docker run --rm -d --name openwhisk -p 3233:3233 -p 3232:3232 -v /var/run/docker.sock:/var/run/docker.sock openwhisk/standalone:1.0.0
+    # nodejs:20 is the default runtime of this standalone build and is prewarmed;
+    # nodejs:14 is no longer offered
+    docker pull openwhisk/action-nodejs-v20:nightly
+    # the image bundles docker 18.06 (API 1.38), which Docker 29 refuses; pin
+    # the API version it claims so every docker call it spawns is accepted
+    docker run --rm -d --name openwhisk -e DOCKER_API_VERSION=1.40 -p 3233:3233 -p 3232:3232 -v /var/run/docker.sock:/var/run/docker.sock openwhisk/standalone:7ef091c
     docker exec -i openwhisk waitready
     docker exec -i openwhisk bash -c "wsk package create pkg"
-    docker exec -i openwhisk bash -c "wsk action update /guest/pkg/testpkg <(echo 'function main(args){return {\"hello\": \"world\"}}') --kind nodejs:14"
-    docker exec -i openwhisk bash -c "wsk action update test <(echo 'function main(args){return {\"hello\": \"test\"}}') --kind nodejs:14"
-    docker exec -i openwhisk bash -c "wsk action update test-params <(echo 'function main(args){return {\"hello\": args.name || \"test\"}}') --kind nodejs:14"
-    docker exec -i openwhisk bash -c "wsk action update test-statuscode <(echo 'function main(args){return {\"statusCode\": 407}}') --kind nodejs:14"
-    docker exec -i openwhisk bash -c "wsk action update test-headers <(echo 'function main(args){return {\"headers\": {\"test\":\"header\"}}}') --kind nodejs:14"
-    docker exec -i openwhisk bash -c "wsk action update test-body <(echo 'function main(args){return {\"body\": {\"test\":\"body\"}}}') --kind nodejs:14"
+    docker exec -i openwhisk bash -c "wsk action update /guest/pkg/testpkg <(echo 'function main(args){return {\"hello\": \"world\"}}') --kind nodejs:20"
+    docker exec -i openwhisk bash -c "wsk action update test <(echo 'function main(args){return {\"hello\": \"test\"}}') --kind nodejs:20"
+    docker exec -i openwhisk bash -c "wsk action update test-params <(echo 'function main(args){return {\"hello\": args.name || \"test\"}}') --kind nodejs:20"
+    docker exec -i openwhisk bash -c "wsk action update test-statuscode <(echo 'function main(args){return {\"statusCode\": 407}}') --kind nodejs:20"
+    docker exec -i openwhisk bash -c "wsk action update test-headers <(echo 'function main(args){return {\"headers\": {\"test\":\"header\"}}}') --kind nodejs:20"
+    docker exec -i openwhisk bash -c "wsk action update test-body <(echo 'function main(args){return {\"body\": {\"test\":\"body\"}}}') --kind nodejs:20"
 
 
     docker exec -i rmqnamesrv rm /home/rocketmq/rocketmq-4.6.0/conf/tools.yml
@@ -94,6 +121,9 @@ after() {
 before() {
     # download keycloak cas provider
     sudo wget -q https://github.com/jacekkow/keycloak-protocol-cas/releases/download/18.0.2/keycloak-protocol-cas-18.0.2.jar -O /opt/keycloak-protocol-cas-18.0.2.jar
+
+    # generating SSL certificates for Kafka
+    sudo keytool -genkeypair -keyalg RSA -dname "CN=127.0.0.1" -alias 127.0.0.1 -keystore ./ci/pod/kafka/kafka-server/selfsigned.jks -validity 365 -keysize 2048 -storepass changeit
 }
 
 case $1 in

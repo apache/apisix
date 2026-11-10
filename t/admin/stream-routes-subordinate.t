@@ -259,3 +259,88 @@ passed
 GET /t
 --- response_body
 passed
+
+
+
+=== TEST 8: superior_id references itself (should fail)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local json = require("toolkit.json")
+            local code, body = t('/apisix/admin/stream_routes/10',
+                ngx.HTTP_PUT,
+                [[{
+                    "protocol": {"name": "redis", "superior_id": "10"},
+                    "upstream": {
+                        "nodes": {"127.0.0.1:6379": 1},
+                        "type": "roundrobin"
+                    }
+                }]]
+            )
+            if code ~= 400 then
+                ngx.say("failed: expected 400, got ", code)
+                return
+            end
+            local data = json.decode(body)
+            if not data or not data.error_msg then
+                ngx.say("failed: unexpected body: ", body)
+                return
+            end
+            if not string.find(data.error_msg, "itself as superior_id", 1, true) then
+                ngx.say("failed: unexpected body: ", body)
+                return
+            end
+            ngx.say("passed")
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 9: force delete a referenced superior route (should succeed)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code = t('/apisix/admin/stream_routes/20',
+                ngx.HTTP_PUT,
+                [[{
+                    "protocol": {"name": "redis"},
+                    "upstream": {"nodes": {"127.0.0.1:6379": 1}, "type": "roundrobin"}
+                }]]
+            )
+            if code >= 300 then
+                ngx.say("failed to create superior: ", code)
+                return
+            end
+            code = t('/apisix/admin/stream_routes/21',
+                ngx.HTTP_PUT,
+                [[{
+                    "protocol": {"name": "redis", "superior_id": "20"},
+                    "upstream": {"nodes": {"127.0.0.1:6380": 1}, "type": "roundrobin"}
+                }]]
+            )
+            if code >= 300 then
+                ngx.say("failed to create subordinate: ", code)
+                return
+            end
+            -- force bypasses the reference check
+            local dcode, body = t('/apisix/admin/stream_routes/20?force=true',
+                ngx.HTTP_DELETE
+            )
+            if dcode >= 300 then
+                ngx.say("failed to force delete: ", dcode, " ", body)
+                return
+            end
+            t('/apisix/admin/stream_routes/21', ngx.HTTP_DELETE)
+            ngx.say("passed")
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed

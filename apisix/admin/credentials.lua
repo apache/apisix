@@ -18,10 +18,12 @@ local core     = require("apisix.core")
 local plugins  = require("apisix.admin.plugins")
 local plugin   = require("apisix.plugin")
 local resource = require("apisix.admin.resource")
+local apisix_consumer = require("apisix.consumer")
 local plugins_encrypt_conf = require("apisix.admin.plugins").encrypt_conf
 local pairs    = pairs
 
-local function check_conf(_id, conf, _need_id, schema)
+local function check_conf(id, conf, _need_id, schema, opts)
+    opts = opts or {}
     local ok, err = core.schema.check(schema, conf)
     if not ok then
         return nil, {error_msg = "invalid configuration: " .. err}
@@ -40,6 +42,16 @@ local function check_conf(_id, conf, _need_id, schema)
             end
             if plugin_obj.type ~= "auth" then
                 return nil, {error_msg = "only supports auth type plugins in consumer credential"}
+            end
+        end
+
+        -- opts.sub_path is in the form of {consumer_name}/credentials or
+        -- {consumer_name}/credentials/{credential_id}
+        if opts.sub_path then
+            local consumer_name = core.utils.split_uri(opts.sub_path)[1]
+            ok, err = apisix_consumer.check_duplicate_key(conf.plugins, consumer_name, id)
+            if not ok then
+                return nil, {error_msg = err}
             end
         end
     end

@@ -65,4 +65,6 @@ return {
     math        = require("apisix.core.math"),
     event       = require("apisix.core.event"),
     env         = require("apisix.core.env"),
+    data_encryption = require("apisix.core.data_encryption"),
+    websocket   = require("apisix.core.websocket"),
 }

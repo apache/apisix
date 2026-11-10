@@ -16,7 +16,6 @@
 --
 local core = require("apisix.core")
 local log_util = require("apisix.utils.log-util")
-local plugin = require("apisix.plugin")
 local bp_manager_mod = require("apisix.utils.batch-processor-manager")
 local plugin_name = "udp-logger"
 local tostring = tostring
@@ -24,7 +23,7 @@ local ngx = ngx
 local udp = ngx.socket.udp
 
 
-local batch_processor_manager = bp_manager_mod.new("udp logger")
+local batch_processor_manager = bp_manager_mod.new("udp logger", plugin_name)
 local schema = {
     type = "object",
     properties = {
@@ -32,6 +31,7 @@ local schema = {
         port = {type = "integer", minimum = 0},
         timeout = {type = "integer", minimum = 1, default = 3},
         log_format = {type = "object"},
+        log_format_extra = {type = "object"},
         include_req_body = {type = "boolean", default = false},
         include_req_body_expr = {
             type = "array",
@@ -57,13 +57,11 @@ local schema = {
 local metadata_schema = {
     type = "object",
     properties = {
-        log_format = {
+        log_format_extra = {
             type = "object"
         },
-        max_pending_entries = {
-            type = "integer",
-            description = "maximum number of pending entries in the batch processor",
-            minimum = 1,
+        log_format = {
+            type = "object"
         },
     },
 }
@@ -72,7 +70,7 @@ local _M = {
     version = 0.1,
     priority = 400,
     name = plugin_name,
-    metadata_schema = metadata_schema,
+    metadata_schema = batch_processor_manager:wrap_metadata_schema(metadata_schema),
     schema = batch_processor_manager:wrap_schema(schema),
 }
 
@@ -127,12 +125,9 @@ end
 
 
 function _M.log(conf, ctx)
-    local metadata = plugin.plugin_metadata(plugin_name)
-    local max_pending_entries = metadata and metadata.value and
-                                metadata.value.max_pending_entries or nil
     local entry = log_util.get_log_entry(plugin_name, conf, ctx)
 
-    if batch_processor_manager:add_entry(conf, entry, max_pending_entries) then
+    if batch_processor_manager:add_entry(conf, entry) then
         return
     end
 
@@ -152,7 +147,7 @@ function _M.log(conf, ctx)
         return send_udp_data(conf, data)
     end
 
-    batch_processor_manager:add_entry_to_new_processor(conf, entry, ctx, func, max_pending_entries)
+    batch_processor_manager:add_entry_to_new_processor(conf, entry, ctx, func)
 end
 
 return _M

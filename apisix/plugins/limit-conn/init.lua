@@ -16,6 +16,7 @@
 --
 local limit_conn_new = require("resty.limit.conn").new
 local core = require("apisix.core")
+local apisix_plugin = require("apisix.plugin")
 local is_http = ngx.config.subsystem == "http"
 local sleep = core.sleep
 local tonumber = tonumber
@@ -128,6 +129,24 @@ local function get_rules(ctx, conf)
 end
 
 
+local function gen_limit_key(conf, ctx, key)
+    local parent = conf._meta and conf._meta.parent
+    if not parent or not parent.resource_key then
+        core.log.error("failed to generate key invalid parent: ", core.json.encode(parent))
+        return nil
+    end
+
+    local new_key = parent.resource_key .. ':' .. apisix_plugin.conf_version(conf) .. ':' .. key
+    if conf._vid then
+        -- conf has _vid means it's from workflow plugin, add _vid to the key
+        -- so that the counter is unique per action.
+        return new_key .. ':' .. conf._vid
+    end
+
+    return new_key
+end
+
+
 local function create_limit_obj(conf, rule, default_conn_delay)
     core.log.info("create new limit-conn plugin instance")
 
@@ -190,7 +209,13 @@ local function run_limit_conn(conf, rule, ctx)
         key = ctx.var["remote_addr"]
     end
 
-    key = key .. ctx.conf_type .. ctx.conf_version
+    key = gen_limit_key(conf, ctx, key)
+    if not key then
+        if conf.allow_degradation then
+            return
+        end
+        return 500
+    end
     core.log.info("limit key: ", key)
 
     local delay, err = lim:incoming(key, true)
@@ -224,8 +249,6 @@ end
 
 
 function _M.increase(conf, ctx)
-    core.log.info("ver: ", ctx.conf_version)
-
     local rules, err = get_rules(ctx, conf)
     if not rules or #rules == 0 then
         core.log.error("failed to get limit conn rules: ", err)

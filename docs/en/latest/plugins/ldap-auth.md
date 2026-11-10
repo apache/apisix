@@ -44,6 +44,8 @@ For Consumer:
 | ------- | ------ | -------- | -------------------------------------------------------------------------------- |
 | user_dn | string | True     | User dn of the LDAP client. For example, `cn=user01,ou=users,dc=example,dc=org`. This field supports saving the value in Secret Manager using the [APISIX Secret](../terminology/secret.md) resource. |
 
+The Plugin builds the user dn as `<uid>=<username>,<base_dn>`, taking the username from the `Authorization` header. Characters that carry structural meaning in a distinguished name (`,` `+` `=` `<` `>` `;` `"` `\`) are escaped per [RFC 4514](https://datatracker.ietf.org/doc/html/rfc4514#section-2.4), so `user_dn` must use the escaped form to match. A user named `comma,user` under `ou=users,dc=example,dc=org` is configured as `cn=comma\,user,ou=users,dc=example,dc=org`.
+
 For Route:
 
 | Name     | Type    | Required | Default | Description                                                            |
@@ -53,6 +55,7 @@ For Route:
 | use_tls  | boolean | False    | `false` | If set to `true` uses TLS.                                             |
 | tls_verify| boolean  | False     | `false`        | Whether to verify the server certificate when `use_tls` is enabled; If set to `true`, you must set `ssl_trusted_certificate` in `config.yaml`, and make sure the host of `ldap_uri` matches the host in server certificate. |
 | uid      | string  | False    | `cn`    | uid attribute.                                                         |
+| hide_credentials | boolean | False | `false` | If true, do not pass the `Authorization` request header to the Upstream service. The header carries the directory password, which is usually reusable beyond this API. |
 | realm    | string  | False    | ldap    | The realm to include in the `WWW-Authenticate` header when authentication fails.                 |
 
 ## Enable plugin

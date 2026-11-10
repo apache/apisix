@@ -19,9 +19,7 @@
 -- Provides HTTP client lifecycle management for AI provider requests.
 
 local core = require("apisix.core")
-local http = require("resty.http")
-local rapidjson = require("rapidjson")
-local getmetatable = getmetatable
+local http_client = require("apisix.utils.http")
 local ngx_now = ngx.now
 local pairs = pairs
 local ipairs = ipairs
@@ -30,9 +28,40 @@ local type = type
 local str_lower = string.lower
 local tostring = tostring
 
+local attr_schema = {
+    type = "object",
+    properties = {
+        http_client = http_client.client_schema,
+    },
+}
+
 local _M = {}
-local rapidjson_encode_opts = {sort_keys = true}
-local rapidjson_null = rapidjson.null
+
+local client_name
+
+
+--- Which client this transport should use.
+-- `plugin_attr.ai-proxy.http_client` names it; the shared module owns the
+-- names, validation and loading. Read on first request, because local_conf is
+-- not readable while this module is still loading.
+local function resolve_client_name()
+    if client_name then
+        return client_name
+    end
+
+    local local_conf = core.config.local_conf()
+    local attr = core.table.try_read_attr(local_conf, "plugin_attr", "ai-proxy") or {}
+
+    local ok, err = core.schema.check(attr_schema, attr)
+    if not ok then
+        core.log.error("invalid plugin_attr.ai-proxy: ", err)
+        return nil, "invalid plugin_attr.ai-proxy: " .. err
+    end
+
+    client_name = attr.http_client or http_client.DEFAULT_CLIENT
+
+    return client_name
+end
 
 
 --- Map network errors to HTTP status codes.
@@ -47,9 +76,14 @@ end
 
 
 --- Build forwarded headers from client request + extra headers.
--- Copies client headers, merges ext_opts_headers (lowercased),
+-- Copies `client_headers`, merges ext_opts_headers (lowercased),
 -- forces Content-Type to application/json, removes host/content-length.
-function _M.construct_forward_headers(ext_opts_headers, ctx)
+-- `client_headers` is the downstream request's headers to forward (proxy path),
+-- or nil for a self-contained internal request (e.g. ai-request-rewrite calling
+-- an LLM to rewrite the body), which must not leak the client's Authorization,
+-- Cookie or other headers to a third-party endpoint. The caller passes them in
+-- explicitly, so the transport carries no `ctx` / downstream-request coupling.
+function _M.construct_forward_headers(ext_opts_headers, client_headers)
     local blacklist = {
         "host",
         "content-length",
@@ -57,7 +91,7 @@ function _M.construct_forward_headers(ext_opts_headers, ctx)
     }
 
     local headers = {}
-    for k, v in pairs(core.request.headers(ctx) or {}) do
+    for k, v in pairs(client_headers or {}) do
         headers[str_lower(k)] = v
     end
     for k, v in pairs(ext_opts_headers or {}) do
@@ -73,38 +107,8 @@ function _M.construct_forward_headers(ext_opts_headers, ctx)
 end
 
 
-local function to_rapidjson_value(data)
-    if data == core.json.null then
-        return rapidjson_null
-    end
-
-    if type(data) ~= "table" then
-        return data
-    end
-
-    if getmetatable(data) == core.json.array_mt then
-        local arr = {}
-        for i, v in ipairs(data) do
-            arr[i] = to_rapidjson_value(v)
-        end
-        return rapidjson.array(arr)
-    end
-
-    local obj = {}
-    for k, v in pairs(data) do
-        obj[k] = to_rapidjson_value(v)
-    end
-    return obj
-end
-
-
-local function rapidjson_encode(body)
-    return rapidjson.encode(to_rapidjson_value(body), rapidjson_encode_opts)
-end
-
-
 local function encode_body(body)
-    local ok, encoded = pcall(rapidjson_encode, body)
+    local ok, encoded = pcall(core.json.canonical_encode, body)
     if ok and encoded then
         return encoded
     end
@@ -129,7 +133,12 @@ end
 -- @return string|nil Error message
 -- @return table|nil Upstream metadata on failure (for recording failed attempts)
 function _M.request(params, timeout)
-    local httpc, err = http.new()
+    local name, name_err = resolve_client_name()
+    if not name then
+        return nil, "failed to create http client: " .. name_err
+    end
+
+    local httpc, err = http_client.new(name)
     if not httpc then
         return nil, "failed to create http client: " .. (err or "unknown")
     end

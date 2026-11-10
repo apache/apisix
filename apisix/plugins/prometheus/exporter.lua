@@ -14,6 +14,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local require         = require
 local base_prometheus = require("prometheus")
 local tonumber        = tonumber
 local core      = require("apisix.core")
@@ -27,6 +28,7 @@ local C         = ffi.C
 local pcall = pcall
 local select = select
 local type = type
+local tostring = tostring
 local prometheus
 local prometheus_bkp
 local router = require("apisix.router")
@@ -43,8 +45,10 @@ local get_protos = require("apisix.plugins.grpc-transcode.proto").protos
 local service_fetch = require("apisix.http.service").get
 local latency_details = require("apisix.utils.log-util").latency_details_in_ms
 local xrpc = require("apisix.stream.xrpc")
+local process_metrics = require("apisix.plugins.prometheus.process_metrics")
 local unpack = unpack
 local next = next
+local str_sub = string.sub
 local process = require("ngx.process")
 local tonumber = tonumber
 local shdict_prometheus_cache = ngx.shared["prometheus-cache"]
@@ -64,6 +68,25 @@ local DEFAULT_BUCKETS = {1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 1
 -- sizes) with the upper bound raised to 1M to cover large-context models.
 local DEFAULT_TOKEN_BUCKETS = {1, 10, 50, 100, 200, 500, 1000, 2000, 5000, 10000,
                                20000, 50000, 100000, 200000, 500000, 1000000}
+
+-- Max byte length for model-name labels. Model names are client-supplied, so
+-- cap them to stop arbitrarily long strings from exhausting the metrics shm.
+-- Non-scalar values become "<non-scalar>" so pointer strings never enter the index.
+local MAX_MODEL_LABEL_LEN = 128
+
+local function model_to_label(val)
+    if val == nil then
+        return nil
+    end
+    local t = type(val)
+    if t == "string" then
+        return str_sub(val, 1, MAX_MODEL_LABEL_LEN)
+    elseif t == "number" then
+        return str_sub(tostring(val), 1, MAX_MODEL_LABEL_LEN)
+    else
+        return "<non-scalar>"
+    end
+end
 -- Default refresh interval
 local DEFAULT_REFRESH_INTERVAL = 15
 
@@ -137,6 +160,14 @@ local metric_label_map = {
         "request_type", "request_llm_model", "llm_model"},
     llm_completion_tokens_dist = {"route_id", "service_id", "consumer", "node",
         "request_type", "request_llm_model", "llm_model"},
+    ai_cache_hits_total = {"layer", "route", "route_id", "service", "service_id",
+        "consumer", "node", "request_type", "request_llm_model", "llm_model"},
+    ai_cache_misses_total = {"route", "route_id", "service", "service_id",
+        "consumer", "node", "request_type", "request_llm_model", "llm_model"},
+    ai_cache_bypasses_total = {"route", "route_id", "service", "service_id",
+        "consumer", "node", "request_type", "request_llm_model", "llm_model"},
+    ai_cache_embedding_latency = {"route", "route_id", "service", "service_id",
+        "consumer", "node", "request_type", "request_llm_model", "llm_model"},
 }
 
 
@@ -208,11 +239,267 @@ local _M = {
 
 
 local function init_stream_metrics()
+    -- service and service_id follow the http metrics: both hold the id unless
+    -- prefer_name puts the name in service, and both are empty for a session
+    -- that never got as far as a route with a service
     metrics.stream_connection_total = prometheus:counter("stream_connection_total",
         "Total number of connections handled per stream route in APISIX",
-        {"route"})
+        {"route", "service", "service_id"})
+
+    -- Keyed by listen_addr rather than by route: a session can end before any
+    -- stream route is matched, and the byte counters come from nginx, which
+    -- only knows the listening address. service and service_id split that
+    -- total further.
+    metrics.stream_active_connections = prometheus:gauge(
+        "stream_active_connections",
+        "Number of stream sessions currently being proxied per listening address and service",
+        {"listen_addr", "service", "service_id"})
+
+    metrics.stream_status = prometheus:counter("stream_status",
+        "Stream sessions per termination status in APISIX",
+        {"code", "listen_addr", "service", "service_id", "node"})
+
+    metrics.stream_bandwidth = prometheus:counter("stream_bandwidth",
+        "Total bandwidth in bytes proxied by the stream subsystem in APISIX",
+        {"listen_addr", "service", "service_id", "type", "side"})
 
     xrpc.init_metrics(prometheus)
+end
+
+
+-- src/stream/ngx_stream.h; 403 is reachable through ngx_stream_access_module
+-- and the stream ip-restriction plugin
+local STREAM_NGINX_CODES = {
+    [200] = true, [400] = true, [403] = true,
+    [500] = true, [502] = true, [503] = true,
+}
+
+-- $stream_session_reason carries the fine grained termination reason; the
+-- metric aggregates it onto the status codes nginx itself uses for stream
+-- sessions, so no synthetic code ever shows up in apisix_stream_status.
+local STREAM_REASON_TO_CODE = {
+    closed = "200",
+    -- a worker going away is a gateway side action, not a failed session
+    shutdown = "200",
+    client_rst = "400",
+    client_read_error = "400",
+    client_error = "400",
+    upstream_rst = "502",
+    upstream_read_error = "502",
+    upstream_error = "502",
+    connect_timeout = "502",
+    connect_failed = "502",
+    recv_timeout = "502",
+    send_timeout = "502",
+    upstream_timeout = "502",
+}
+
+
+-- Active session counts and byte counters are maintained by nginx in a shared
+-- memory zone (apisix_stream_metrics_zone) so that they keep moving during a
+-- long-lived session instead of only landing when it ends. The zone holds
+-- process wide totals, so it is read while the exposition is built rather than
+-- on a timer of its own -- which means once per refresh_interval, in the
+-- privileged agent that fills the metrics cache.
+local STREAM_BANDWIDTH_DIRECTIONS = {
+    {"downstream_ingress", "ingress", "downstream"},
+    {"downstream_egress", "egress", "downstream"},
+    {"upstream_egress", "egress", "upstream"},
+    {"upstream_ingress", "ingress", "upstream"},
+}
+
+-- How much of each zone total has already been added to the counter. This
+-- lives in the metric dict rather than in worker memory so that every worker
+-- reads the same value, and so that it is dropped together with the counters
+-- it describes whenever that dict is flushed.
+local STREAM_PUBLISHED_PREFIX = "stream_bytes_published:"
+
+-- Advancing a baseline is a read-modify-write and shdict has no
+-- compare-and-set, so only one reader converts totals to deltas at a time.
+-- Whoever loses the race leaves the baselines alone and the delta it skipped
+-- is picked up by the next read. The expiry keeps a worker that dies mid
+-- publish from wedging the metric.
+local STREAM_PUBLISH_LOCK = "stream_bytes_publishing"
+local STREAM_PUBLISH_LOCK_TTL = 10
+
+
+-- The same rule as the http metrics: the id, or the name with prefer_name.
+-- Resolved once per session: preread labels the zone with it and the log
+-- phase reuses it, so all four metrics name a session the same way even if
+-- its service is renamed while it is open.
+local function stream_service_labels(conf, ctx)
+    local labels = ctx.prometheus_stream_service
+    if labels then
+        return labels[1], labels[2]
+    end
+
+    local service, service_id = "", ""
+    local id = ctx.service_id
+    local name = ctx.service_name
+    if not id then
+        -- a route with an upstream_id keeps its service_id without the service
+        -- being merged in, and the http metrics still label it with it
+        id = ctx.matched_route.value.service_id
+        if id then
+            local fetched = conf.prefer_name == true and service_fetch(id)
+            name = fetched and fetched.value.name
+        end
+    end
+
+    if id then
+        service_id = tostring(id)
+        service = conf.prefer_name == true and name or service_id
+    end
+
+    ctx.prometheus_stream_service = {service, service_id}
+    return service, service_id
+end
+
+
+-- The zone is read where neither the session nor the plugin conf is at hand,
+-- so a session carries its label values into the zone itself; "" on a slot
+-- that was never labelled.
+local function stream_zone_labels(entry)
+    local labels = entry.labels
+    return labels[1] or "", labels[2] or ""
+end
+
+local stream_metrics_lib
+local stream_metrics_lib_checked = false
+local stream_zone_unavailable = false
+
+
+-- Only the runtime check is latched. Whether the zone itself is readable is
+-- decided per read: it comes and goes with the configuration, and caching a
+-- miss would leave the worker silently blind once it came back.
+local function stream_metrics_zone()
+    if stream_metrics_lib_checked then
+        return stream_metrics_lib
+    end
+    stream_metrics_lib_checked = true
+
+    local ok, lib = pcall(require, "resty.apisix.stream.metrics")
+    if not ok then
+        core.log.warn("stream bandwidth and active connection metrics need a ",
+                      "runtime providing resty.apisix.stream.metrics")
+        return nil
+    end
+
+    stream_metrics_lib = lib
+    return lib
+end
+
+
+local function publish_stream_bytes(dict, listen_addr, service, service_id, direction,
+                                    total)
+    local field = direction[1]
+
+    if type(total) ~= "number" then
+        core.log.error("stream metrics zone reported no ", field, " for ",
+                       listen_addr, " service ", service_id)
+        return
+    end
+
+    -- a service name can hold any character but this one
+    local key = STREAM_PUBLISHED_PREFIX .. listen_addr .. "\31" .. service .. "\31"
+                .. service_id .. "\31" .. field
+
+    -- Baselines outlive a reload like the zone, so a slot without one has had
+    -- nothing counted: it is new, or the process just started. The cost is
+    -- that a baseline evicted from a full dict replays the total of its slot
+    -- once.
+    local published = dict:get(key) or 0
+
+    if total == published then
+        return
+    end
+
+    -- Advance the baseline before counting: a write that failed while the
+    -- delta was counted would re-count the same range on every later read.
+    local ok, err = dict:set(key, total)
+    if not ok then
+        core.log.error("failed to advance the stream bandwidth baseline for ",
+                       key, ": ", err)
+        return
+    end
+
+    -- a total below what was published means the zone was recreated, which
+    -- rebaselines rather than emitting a negative delta
+    if total > published then
+        metrics.stream_bandwidth:inc(total - published,
+            gen_arr(listen_addr, service, service_id, direction[2], direction[3]))
+    end
+end
+
+
+local function collect_stream_zone_metrics()
+    if not metrics.stream_active_connections then
+        return
+    end
+
+    local lib = stream_metrics_zone()
+    if not lib then
+        return
+    end
+
+    local dict = prometheus.dict
+
+    -- Taken before the zone is sampled, not after: two readers that sampled at
+    -- different instants would otherwise serialize in the opposite order, and
+    -- the older sample would pull the baseline back over a range the fresher
+    -- one had already counted. shdict has no compare-and-set, so this is an
+    -- expiring key rather than a real mutex.
+    local publishing, add_err = dict:add(STREAM_PUBLISH_LOCK, true,
+                                         STREAM_PUBLISH_LOCK_TTL)
+    if not publishing and add_err ~= "exists" then
+        core.log.error("failed to take the stream bandwidth lock: ", add_err)
+    end
+
+    local entries, err = lib.dump()
+    if not entries then
+        if publishing then
+            dict:delete(STREAM_PUBLISH_LOCK)
+        end
+
+        -- report the transition, not every read: without the zone in the
+        -- configuration this is a steady state, not an incident
+        if not stream_zone_unavailable then
+            stream_zone_unavailable = true
+            core.log.warn("stream bandwidth and active connection metrics are off: ", err)
+        end
+        return
+    end
+    stream_zone_unavailable = false
+
+    for _, entry in ipairs(entries) do
+        local listen_addr = entry.listen_addr
+        local service, service_id = stream_zone_labels(entry)
+
+        -- the gauge carries no baseline and every reader writes the same
+        -- value, so it is published whether or not this one took the lock
+        metrics.stream_active_connections:set(entry.active,
+            gen_arr(listen_addr, service, service_id))
+
+        if publishing then
+            for _, direction in ipairs(STREAM_BANDWIDTH_DIRECTIONS) do
+                publish_stream_bytes(dict, listen_addr, service, service_id, direction,
+                                     entry[direction[1]])
+            end
+        end
+    end
+
+    if publishing then
+        dict:delete(STREAM_PUBLISH_LOCK)
+    end
+end
+
+
+local function get_refresh_interval()
+    local attr = plugin.plugin_attr("prometheus")
+    if attr and attr.refresh_interval then
+        return attr.refresh_interval
+    end
+    return DEFAULT_REFRESH_INTERVAL
 end
 
 
@@ -222,6 +509,7 @@ function _M.http_init(prometheus_enabled_in_stream)
     if ngx.get_phase() ~= "init" and ngx.get_phase() ~= "init_worker"  then
         if prometheus_bkp then
             prometheus = prometheus_bkp
+            process_metrics.start(get_refresh_interval())
         end
         return
     end
@@ -261,8 +549,19 @@ function _M.http_init(prometheus_enabled_in_stream)
                                                             "llm_prompt_tokens_dist", "expire")
     local llm_completion_tokens_dist_exptime = core.table.try_read_attr(attr, "metrics",
                                                             "llm_completion_tokens_dist", "expire")
+    local ai_cache_hits_exptime = core.table.try_read_attr(attr, "metrics",
+                                                            "ai_cache_hits_total", "expire")
+    local ai_cache_misses_exptime = core.table.try_read_attr(attr, "metrics",
+                                                            "ai_cache_misses_total", "expire")
+    local ai_cache_bypasses_exptime = core.table.try_read_attr(attr, "metrics",
+                                                            "ai_cache_bypasses_total", "expire")
+    local ai_cache_embedding_latency_exptime = core.table.try_read_attr(attr, "metrics",
+                                                            "ai_cache_embedding_latency", "expire")
 
-    prometheus = base_prometheus.init("prometheus-metrics", metric_prefix)
+    prometheus = base_prometheus.init("prometheus-metrics", {
+        prefix = metric_prefix,
+        remove_expired_keys_interval = attr and attr.remove_expired_keys_interval,
+    })
 
     metrics.connections = prometheus:gauge("nginx_http_current_connections",
             "Number of HTTP connections",
@@ -374,6 +673,37 @@ function _M.http_init(prometheus_enabled_in_stream)
         llm_completion_tokens_buckets,
         llm_completion_tokens_dist_exptime)
 
+    metrics.ai_cache_hits_total = prometheus:counter("ai_cache_hits_total",
+            "Total AI cache hits served, per cache layer",
+            append_tables(metric_label_map.ai_cache_hits_total,
+                          extra_labels("ai_cache_hits_total")),
+            ai_cache_hits_exptime)
+
+    metrics.ai_cache_misses_total = prometheus:counter("ai_cache_misses_total",
+            "Total AI cache misses",
+            append_tables(metric_label_map.ai_cache_misses_total,
+                          extra_labels("ai_cache_misses_total")),
+            ai_cache_misses_exptime)
+
+    metrics.ai_cache_bypasses_total = prometheus:counter("ai_cache_bypasses_total",
+            "Total AI cache bypassed requests",
+            append_tables(metric_label_map.ai_cache_bypasses_total,
+                          extra_labels("ai_cache_bypasses_total")),
+            ai_cache_bypasses_exptime)
+
+    local ai_cache_embedding_latency_buckets = DEFAULT_BUCKETS
+    if attr and attr.ai_cache_embedding_latency_buckets then
+        ai_cache_embedding_latency_buckets = attr.ai_cache_embedding_latency_buckets
+    end
+    metrics.ai_cache_embedding_latency = prometheus:histogram("ai_cache_embedding_latency",
+            "Latency of AI cache embedding calls in milliseconds",
+            append_tables(metric_label_map.ai_cache_embedding_latency,
+                          extra_labels("ai_cache_embedding_latency")),
+            ai_cache_embedding_latency_buckets,
+            ai_cache_embedding_latency_exptime)
+
+    process_metrics.init(prometheus)
+
     if prometheus_enabled_in_stream then
         init_stream_metrics()
     end
@@ -382,6 +712,7 @@ end
 
 function _M.stream_init()
     if ngx.get_phase() ~= "init" and ngx.get_phase() ~= "init_worker"  then
+        process_metrics.start(get_refresh_interval())
         return
     end
 
@@ -398,9 +729,64 @@ function _M.stream_init()
         metric_prefix = attr.metric_prefix
     end
 
-    prometheus = base_prometheus.init("prometheus-metrics", metric_prefix)
+    prometheus = base_prometheus.init("prometheus-metrics", {
+        prefix = metric_prefix,
+        remove_expired_keys_interval = attr and attr.remove_expired_keys_interval,
+    })
 
     init_stream_metrics()
+
+    process_metrics.init(prometheus)
+    process_metrics.start(get_refresh_interval())
+end
+
+
+local AI_CACHE_STATUS_METRICS = {
+    HIT    = "ai_cache_hits_total",
+    MISS   = "ai_cache_misses_total",
+    BYPASS = "ai_cache_bypasses_total",
+}
+
+
+-- `layer` is only registered on ai_cache_hits_total, where it leads the label list
+local function ai_cache_label_values(name, ctx, layer)
+    local vars = ctx.var
+
+    local route_id = ""
+    local route_name = ""
+    local balancer_ip = ctx.balancer_ip or ""
+    local service_id = ""
+    local service_name = ""
+    local consumer_name = ctx.consumer_name or ""
+
+    local matched_route = ctx.matched_route and ctx.matched_route.value
+    if matched_route then
+        route_id = matched_route.id
+        route_name = matched_route.name or ""
+        service_id = matched_route.service_id or ""
+        if service_id ~= "" then
+            local fetched_service = service_fetch(service_id)
+            service_name = fetched_service and fetched_service.value.name or ""
+        end
+    end
+
+    local disabled_label_metric_map = get_disabled_label_metric_map()
+
+    if layer then
+        return get_enabled_label_values_for_metric(name, disabled_label_metric_map,
+            layer, route_name, route_id, service_name, service_id,
+            consumer_name, balancer_ip,
+            vars.request_type, model_to_label(vars.request_llm_model),
+            model_to_label(vars.llm_model),
+            unpack(extra_labels(name, ctx)))
+    end
+
+    return get_enabled_label_values_for_metric(name, disabled_label_metric_map,
+        route_name, route_id, service_name, service_id,
+        consumer_name, balancer_ip,
+        vars.request_type, model_to_label(vars.request_llm_model),
+        model_to_label(vars.llm_model),
+        unpack(extra_labels(name, ctx)))
 end
 
 
@@ -435,11 +821,17 @@ function _M.http_log(conf, ctx)
 
     local response_source = core.response.get_response_source(ctx)
 
+    -- Truncate model names before they become label values. vars.request_llm_model /
+    -- vars.llm_model keep their full values for other consumers; only the metrics path
+    -- is capped.
+    local request_llm_model_label = model_to_label(vars.request_llm_model)
+    local llm_model_label = model_to_label(vars.llm_model)
+
     metrics.status:inc(1,
         get_enabled_label_values_for_metric("http_status", disabled_label_metric_map,
             vars.status, route_id, matched_uri, matched_host,
             service_id, consumer_name, balancer_ip,
-            vars.request_type, vars.request_llm_model, vars.llm_model,
+            vars.request_type, request_llm_model_label, llm_model_label,
             response_source,
             unpack(extra_labels("http_status", ctx))))
 
@@ -450,21 +842,21 @@ function _M.http_log(conf, ctx)
     metrics.latency:observe(latency,
         get_enabled_label_values_for_metric("http_latency", disabled_label_metric_map,
             "request", route_id, service_id, consumer_name, balancer_ip,
-            vars.request_type, vars.request_llm_model, vars.llm_model,
+            vars.request_type, request_llm_model_label, llm_model_label,
             unpack(latency_extra_label_values)))
 
     if upstream_latency then
         metrics.latency:observe(upstream_latency,
             get_enabled_label_values_for_metric("http_latency", disabled_label_metric_map,
                 "upstream", route_id, service_id, consumer_name, balancer_ip,
-                vars.request_type, vars.request_llm_model, vars.llm_model,
+                vars.request_type, request_llm_model_label, llm_model_label,
                 unpack(latency_extra_label_values)))
     end
 
     metrics.latency:observe(apisix_latency,
         get_enabled_label_values_for_metric("http_latency", disabled_label_metric_map,
             "apisix", route_id, service_id, consumer_name, balancer_ip,
-            vars.request_type, vars.request_llm_model, vars.llm_model,
+            vars.request_type, request_llm_model_label, llm_model_label,
             unpack(latency_extra_label_values)))
 
     local bandwidth_extra_label_values = extra_labels("bandwidth", ctx)
@@ -472,18 +864,21 @@ function _M.http_log(conf, ctx)
     metrics.bandwidth:inc(vars.request_length,
         get_enabled_label_values_for_metric("bandwidth", disabled_label_metric_map,
             "ingress", route_id, service_id, consumer_name, balancer_ip,
-            vars.request_type, vars.request_llm_model, vars.llm_model,
+            vars.request_type, request_llm_model_label, llm_model_label,
             unpack(bandwidth_extra_label_values)))
 
     metrics.bandwidth:inc(vars.bytes_sent,
         get_enabled_label_values_for_metric("bandwidth", disabled_label_metric_map,
             "egress", route_id, service_id, consumer_name, balancer_ip,
-            vars.request_type, vars.request_llm_model, vars.llm_model,
+            vars.request_type, request_llm_model_label, llm_model_label,
             unpack(bandwidth_extra_label_values)))
 
     if vars.request_type == "ai_stream" or vars.request_type == "ai_chat" then
         local llm_time_to_first_token = vars.llm_time_to_first_token
-        if llm_time_to_first_token ~= "0" then
+        -- error responses (429/5xx) also carry a real millisecond value in
+        -- llm_time_to_first_token, so filter them out here: llm_latency has no
+        -- status label and must keep measuring served responses only.
+        if llm_time_to_first_token ~= "0" and (tonumber(vars.status) or 0) < 400 then
             -- type="total": full response latency. For non-streaming this equals
             -- llm_time_to_first_token; for streaming, that var holds only the
             -- TTFT, so use apisix_upstream_response_time (refreshed on every
@@ -491,7 +886,7 @@ function _M.http_log(conf, ctx)
             metrics.llm_latency:observe(tonumber(vars.apisix_upstream_response_time),
                 get_enabled_label_values_for_metric("llm_latency", disabled_label_metric_map,
                     "total", route_id, service_id, consumer_name, balancer_ip,
-                    vars.request_type, vars.request_llm_model, vars.llm_model,
+                    vars.request_type, request_llm_model_label, llm_model_label,
                     unpack(extra_labels("llm_latency", ctx))))
 
             -- type="ttft": time to first token, only streaming exposes a real one.
@@ -499,7 +894,7 @@ function _M.http_log(conf, ctx)
                 metrics.llm_latency:observe(tonumber(llm_time_to_first_token),
                     get_enabled_label_values_for_metric("llm_latency", disabled_label_metric_map,
                         "ttft", route_id, service_id, consumer_name, balancer_ip,
-                        vars.request_type, vars.request_llm_model, vars.llm_model,
+                        vars.request_type, request_llm_model_label, llm_model_label,
                         unpack(extra_labels("llm_latency", ctx))))
             end
         end
@@ -507,29 +902,103 @@ function _M.http_log(conf, ctx)
         metrics.llm_prompt_tokens:inc(tonumber(vars.llm_prompt_tokens),
             get_enabled_label_values_for_metric("llm_prompt_tokens", disabled_label_metric_map,
                 route_id, service_id, consumer_name, balancer_ip,
-                vars.request_type, vars.request_llm_model, vars.llm_model,
+                vars.request_type, request_llm_model_label, llm_model_label,
                 unpack(extra_labels("llm_prompt_tokens", ctx))))
 
         metrics.llm_prompt_tokens_dist:observe(tonumber(vars.llm_prompt_tokens),
             get_enabled_label_values_for_metric("llm_prompt_tokens_dist",
                 disabled_label_metric_map,
                 route_id, service_id, consumer_name, balancer_ip,
-                vars.request_type, vars.request_llm_model, vars.llm_model,
+                vars.request_type, request_llm_model_label, llm_model_label,
                 unpack(extra_labels("llm_prompt_tokens_dist", ctx))))
 
         metrics.llm_completion_tokens:inc(tonumber(vars.llm_completion_tokens),
             get_enabled_label_values_for_metric("llm_completion_tokens", disabled_label_metric_map,
                 route_id, service_id, consumer_name, balancer_ip,
-                vars.request_type, vars.request_llm_model, vars.llm_model,
+                vars.request_type, request_llm_model_label, llm_model_label,
                 unpack(extra_labels("llm_completion_tokens", ctx))))
 
         metrics.llm_completion_tokens_dist:observe(tonumber(vars.llm_completion_tokens),
             get_enabled_label_values_for_metric("llm_completion_tokens_dist",
                 disabled_label_metric_map,
                 route_id, service_id, consumer_name, balancer_ip,
-                vars.request_type, vars.request_llm_model, vars.llm_model,
+                vars.request_type, request_llm_model_label, llm_model_label,
                 unpack(extra_labels("llm_completion_tokens_dist", ctx))))
     end
+
+    local ai_cache_metric = ctx.ai_cache_status
+                            and AI_CACHE_STATUS_METRICS[ctx.ai_cache_status]
+    if ai_cache_metric then
+        if ctx.ai_cache_status == "HIT" then
+            metrics[ai_cache_metric]:inc(1,
+                ai_cache_label_values(ai_cache_metric, ctx,
+                                      ctx.ai_cache_hit_layer or "exact"))
+        else
+            metrics[ai_cache_metric]:inc(1,
+                ai_cache_label_values(ai_cache_metric, ctx))
+        end
+    end
+
+    if ctx.ai_cache_embedding_latency then
+        metrics.ai_cache_embedding_latency:observe(ctx.ai_cache_embedding_latency,
+            ai_cache_label_values("ai_cache_embedding_latency", ctx))
+    end
+end
+
+
+-- Keeps the label inside the set of codes nginx itself uses for stream
+-- sessions. A rejecting plugin can return anything -- limit-conn's
+-- rejected_code is operator supplied -- and letting that through would put an
+-- unbounded, user controlled value on the metric.
+local function stream_reject_code(code)
+    -- a rejection is never a success, whatever the plugin was configured to
+    -- return; 200 has to keep meaning "the peer closed"
+    if type(code) ~= "number" or code < 400 then
+        return "500"
+    end
+
+    if STREAM_NGINX_CODES[code] then
+        return tostring(code)
+    end
+
+    if code < 500 then
+        return "400"
+    end
+
+    return "500"
+end
+
+
+local function stream_status_code(ctx)
+    -- stream plugins reject by closing the session (plugin.lua run_plugin
+    -- calls ngx_exit(1)), so the code they returned never reaches $status
+    if ctx.stream_rejected_code then
+        return stream_reject_code(ctx.stream_rejected_code)
+    end
+
+    local status = ctx.var.status
+
+    -- nginx reports every post-connect failure as 200, so only a 200 needs
+    -- the reason to tell a normal close from a timeout or a reset
+    if status ~= "200" then
+        return status or "200"
+    end
+
+    return STREAM_REASON_TO_CODE[ctx.var.stream_session_reason] or "200"
+end
+
+
+-- The metrics zone keys its slots by the configured listening address, so the
+-- status metric has to use the same one. $server_addr is the address the
+-- connection was accepted on, which differs on a wildcard listen; it is only
+-- a fallback for a runtime without the apisix-nginx-module variable.
+local function stream_listen_addr(ctx)
+    local listen_addr = ctx.var.stream_listen_addr
+    if listen_addr then
+        return listen_addr
+    end
+
+    return ctx.var.server_addr .. ":" .. ctx.var.server_port
 end
 
 
@@ -543,7 +1012,53 @@ function _M.stream_log(conf, ctx)
         end
     end
 
-    metrics.stream_connection_total:inc(1, gen_arr(route_id))
+    -- empty when the session ended before a route with a service matched
+    local service, service_id = stream_service_labels(conf, ctx)
+
+    metrics.stream_connection_total:inc(1, gen_arr(route_id, service, service_id))
+
+    -- empty when the session ended before a node was picked
+    local node = ""
+    if ctx.balancer_ip and ctx.balancer_port then
+        node = ctx.balancer_ip .. ":" .. ctx.balancer_port
+    end
+
+    metrics.stream_status:inc(1, gen_arr(stream_status_code(ctx),
+        stream_listen_addr(ctx), service, service_id, node))
+end
+
+
+-- logged once per worker, it would otherwise repeat on every session
+local stream_label_error_logged = false
+
+
+-- Labels the session in the metrics zone as it starts, so that its active
+-- count and every byte it moves from now on are accounted under its service
+-- while it is still open. A session that never gets here -- it ended before
+-- routing, its route has no service, or a plugin running before this one
+-- rejected it -- stays in the unlabelled total of its listen_addr.
+function _M.stream_preread(conf, ctx)
+    local service, service_id = stream_service_labels(conf, ctx)
+    if service_id == "" then
+        return
+    end
+
+    local lib = stream_metrics_zone()
+    if not lib then
+        return
+    end
+
+    -- "not accounted" is a listening address the zone does not count, such as
+    -- a unix socket. Anything else -- a full zone, or labels too long for it --
+    -- leaves the session in the unlabelled total, while apisix_stream_status
+    -- still has its service.
+    local ok, err = lib.set_labels({service, service_id})
+    if not ok and err ~= "not accounted" and not stream_label_error_logged then
+        stream_label_error_logged = true
+        core.log.warn("failed to label stream sessions, first seen on service ",
+                      service_id, ", they are only counted in the listen_addr ",
+                      "total: ", err)
+    end
 end
 
 
@@ -687,8 +1202,15 @@ end
 
 
 local function collect(yieldable)
+    -- the other processes report their own values on a timer
+    process_metrics.refresh()
+
     -- collect ngx.shared.DICT status
     shared_dict_status()
+
+    -- the stream zone is process wide, reading it here keeps the exposition
+    -- exact at the moment of the scrape
+    collect_stream_zone_metrics()
 
     -- across all services
     nginx_status()
@@ -788,14 +1310,12 @@ end
 
 
 local function init_exporter_timer()
+    local refresh_interval = get_refresh_interval()
+
+    process_metrics.start(refresh_interval)
+
     if process.type() ~= "privileged agent" then
         return
-    end
-
-    local refresh_interval = DEFAULT_REFRESH_INTERVAL
-    local attr = plugin.plugin_attr("prometheus")
-    if attr and attr.refresh_interval then
-        refresh_interval = attr.refresh_interval
     end
 
     local cache_exptime = refresh_interval * 2
@@ -931,7 +1451,8 @@ local function inc_llm_active_connections(ctx, value)
         get_enabled_label_values_for_metric("llm_active_connections", disabled_label_metric_map,
             route_name, route_id, matched_uri,
             matched_host, service_name, service_id, consumer_name, balancer_ip,
-            vars.request_type, vars.request_llm_model, vars.llm_model,
+            vars.request_type, model_to_label(vars.request_llm_model),
+            model_to_label(vars.llm_model),
             unpack(extra_labels("llm_active_connections", ctx)))
     )
 end
@@ -946,12 +1467,15 @@ function _M.dec_llm_active_connections(ctx)
     inc_llm_active_connections(ctx, -1)
 end
 
+
 function _M.get_prometheus()
     return prometheus
 end
 
 
 function _M.destroy()
+    process_metrics.stop()
+
     if prometheus ~= nil then
         prometheus_bkp = prometheus
         prometheus = nil

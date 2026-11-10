@@ -35,16 +35,16 @@ add_block_preprocessor(sub {
             core.log.info("collect_data:", data)
         end
         local _orig_add = bp_manager.add_entry
-        bp_manager.add_entry = function(self, conf, entry, max_pending_entries)
-            local ok = _orig_add(self, conf, entry, max_pending_entries)
+        bp_manager.add_entry = function(self, conf, entry)
+            local ok = _orig_add(self, conf, entry)
             if ok then
                 log_collect_data(entry)
             end
             return ok
         end
         local _orig_new = bp_manager.add_entry_to_new_processor
-        bp_manager.add_entry_to_new_processor = function(self, conf, entry, ctx, func, max_pending_entries)
-            local ok = _orig_new(self, conf, entry, ctx, func, max_pending_entries)
+        bp_manager.add_entry_to_new_processor = function(self, conf, entry, ctx, func)
+            local ok = _orig_new(self, conf, entry, ctx, func)
             if ok then
                 log_collect_data(entry)
             end
@@ -687,3 +687,80 @@ GET /t
 GET /t
 --- error_log
 "body":"hello world\n"
+
+
+
+=== TEST 22: add syslog plugin for the failure tests
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            t('/apisix/admin/plugin_metadata/syslog', ngx.HTTP_DELETE)
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "syslog": {
+                                "batch_max_size": 1,
+                                "flush_limit": 1,
+                                "host" : "127.0.0.1",
+                                "port" : 5140
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 23: hit route, send failure is reported with a separator before the cause
+--- extra_init_by_lua
+    local logger_socket = require("resty.logger.socket")
+    logger_socket.new = function()
+        return {
+            log = function()
+                return nil, "mocked send failure"
+            end
+        }
+    end
+--- request
+GET /hello
+--- response_body
+hello world
+--- wait: 0.5
+--- error_log
+failed to log message: mocked send failure
+
+
+
+=== TEST 24: hit route, logger init failure is reported instead of crashing
+--- extra_init_by_lua
+    local logger_socket = require("resty.logger.socket")
+    logger_socket.new = function()
+        return nil, "mocked connection failure"
+    end
+--- request
+GET /hello
+--- response_body
+hello world
+--- wait: 0.5
+--- error_log
+failed when initiating the sys logger processor: mocked connection failure
+--- no_error_log
+attempt to index

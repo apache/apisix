@@ -116,9 +116,11 @@ apikey: 123
 {"message":"Authorization Failed"}
 --- error_log
 basic-auth failed to authenticate the request, code: 401. error: Missing authorization in request
-key-auth failed to authenticate the request, code: 401. error: Invalid API key in request
+key-auth failed to authenticate the request, code: 401. error: failed to find consumer: invalid api key
 jwt-auth failed to authenticate the request, code: 401. error: Missing JWT token in request
 hmac-auth failed to authenticate the request, code: 401. error: client request can't be validated: missing Authorization header
+--- no_error_log
+error: Invalid API key in request
 
 
 

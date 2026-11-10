@@ -1,0 +1,168 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+parameters:
+  - name: service_id
+    in: path
+    required: true
+    description: ID of the owning service.
+    schema:
+      $ref: ../components/schemas/ResourceId.yaml
+  - name: decoration_id
+    in: path
+    required: true
+    description: Decoration ID, unique within the service.
+    schema:
+      $ref: ../components/schemas/ResourceId.yaml
+get:
+  tags:
+    - Services
+  summary: Get a GraphQL Cost Decoration
+  operationId: getGraphQLCostDecoration
+  responses:
+    "200":
+      description: Decoration found.
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/GraphQLCostDecorationEnvelope.yaml
+    "401":
+      $ref: ../components/responses/Unauthorized.yaml
+    "404":
+      description: The decoration does not exist.
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ErrorResponse.yaml
+    "503":
+      description: The configuration store is unavailable.
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ErrorResponse.yaml
+  parameters: []
+put:
+  tags:
+    - Services
+  summary: Create or Replace a GraphQL Cost Decoration
+  description: Replace the complete decoration or create it if absent. The service must exist. Ownership is taken from the URL; a conflicting `service_id` in the body is rejected. Keep `field_path` unique within a service, and serialize concurrent writes for the service.
+  operationId: replaceGraphQLCostDecoration
+  parameters: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/GraphQLCostDecoration.yaml
+        example:
+          field_path: Query.products
+          add_value: 1
+          mul_value: 1
+          mul_arguments:
+            - first
+  responses:
+    "200":
+      description: Decoration replaced.
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/GraphQLCostDecorationEnvelope.yaml
+    "201":
+      description: Decoration created.
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/GraphQLCostDecorationEnvelope.yaml
+    "400":
+      description: Invalid configuration, conflicting service ID, or duplicate `field_path`.
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ErrorResponse.yaml
+    "401":
+      $ref: ../components/responses/Unauthorized.yaml
+    "404":
+      description: The owning service does not exist.
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ErrorResponse.yaml
+    "503":
+      description: The configuration store is unavailable.
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ErrorResponse.yaml
+patch:
+  tags:
+    - Services
+  summary: Update a GraphQL Cost Decoration
+  description: Merge fields into an existing decoration. `service_id` cannot be patched, even to its existing value. A changed `field_path` must not duplicate another decoration on the service. JSON subpath patching is not supported for this subresource.
+  operationId: updateGraphQLCostDecoration
+  requestBody:
+    $ref: ../components/requestBodies/GraphQLCostDecorationPatchBody.yaml
+  responses:
+    "200":
+      description: Decoration updated.
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/GraphQLCostDecorationEnvelope.yaml
+    "400":
+      description: Invalid configuration, conflicting service ID, or duplicate `field_path`.
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ErrorResponse.yaml
+    "401":
+      $ref: ../components/responses/Unauthorized.yaml
+    "404":
+      description: The decoration does not exist.
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ErrorResponse.yaml
+    "503":
+      description: The configuration store is unavailable.
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ErrorResponse.yaml
+  parameters: []
+delete:
+  tags:
+    - Services
+  summary: Delete a GraphQL Cost Decoration
+  operationId: deleteGraphQLCostDecoration
+  responses:
+    "200":
+      description: Decoration deleted.
+    "401":
+      $ref: ../components/responses/Unauthorized.yaml
+    "404":
+      description: The decoration does not exist.
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ErrorResponse.yaml
+    "503":
+      description: The configuration store is unavailable.
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ErrorResponse.yaml
+  parameters:
+    - $ref: ../components/parameters/Force.yaml
