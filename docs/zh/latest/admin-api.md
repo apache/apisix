@@ -85,6 +85,8 @@ deployment:
 
 然后在 `make init` 之前运行 `export ADMIN_KEY=$your_admin_key`.
 
+APISIX 会保留环境变量中 Admin API 密钥的原始文本，包括前导零。
+
 如果找不到配置的环境变量，将抛出错误。
 
 此外，如果要在未设置环境变量时使用默认值，请改用 `${{VAR:=default_value}}`。例如：
