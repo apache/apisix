@@ -5,18 +5,37 @@ on:
     paths:
       - "docs/**"
       - "**/*.md"
+      - "Makefile"
+      - "utils/bundle-admin-api-spec.sh"
       - ".github/workflows/doc-lint.yml"
   pull_request:
     branches: [master, "release/**"]
     paths:
       - "docs/**"
       - "**/*.md"
+      - "Makefile"
+      - "utils/bundle-admin-api-spec.sh"
       - ".github/workflows/doc-lint.yml"
 
 permissions:
   contents: read
 
 jobs:
+  admin-api-openapi:
+    name: Admin API OpenAPI
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Use Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "22.12.0"
+      - name: Bundle Admin API OpenAPI document
+        run: make bundle-admin-api-spec
+      - name: Check generated bundle
+        run: git diff --exit-code -- docs/en/latest/admin-api.json
+
   markdownlint:
     name: 🍇 Markdown
     runs-on: ubuntu-latest
@@ -24,7 +43,7 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: 🚀 Use Node.js
-        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: "12.x"
       - run: npm install -g markdownlint-cli@0.25.0

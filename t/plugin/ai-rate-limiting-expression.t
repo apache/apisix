@@ -1027,3 +1027,73 @@ X-AI-Fixture: openai/chat-usage-deep.json
 ]
 --- no_error_log
 [error]
+
+
+
+=== TEST 29: set route with expression on Anthropic client converted to OpenAI upstream
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/v1/messages",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": {
+                                "header": {
+                                    "Authorization": "Bearer token"
+                                }
+                            },
+                            "options": {
+                                "model": "gpt-4o-mini"
+                            },
+                            "override": {
+                                "endpoint": "http://127.0.0.1:1980"
+                            },
+                            "ssl_verify": false
+                        },
+                        "ai-rate-limiting": {
+                            "limit": 500,
+                            "time_window": 60,
+                            "limit_strategy": "expression",
+                            "cost_expr": "input_tokens + cache_read_input_tokens + cache_creation_input_tokens"
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "canbeanything.com": 1
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 30: converted non-streaming usage is in Anthropic shape, cache tokens not double-counted - cost = 15 + 10 + 5 = 30 (upstream prompt_tokens) per request
+--- pipelined_requests eval
+[
+    "POST /v1/messages\n" . '{"model":"claude-sonnet-4-20250514","max_tokens":1024,"messages":[{"role":"user","content":"Hello"}]}',
+    "POST /v1/messages\n" . '{"model":"claude-sonnet-4-20250514","max_tokens":1024,"messages":[{"role":"user","content":"Hello"}]}',
+]
+--- more_headers
+X-AI-Fixture: openai/chat-with-reasoning.json
+--- response_headers_like eval
+[
+    "X-AI-RateLimit-Remaining-ai-proxy-openai: 500",
+    "X-AI-RateLimit-Remaining-ai-proxy-openai: 470",
+]
+--- no_error_log
+[error]

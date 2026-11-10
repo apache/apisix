@@ -23,11 +23,14 @@ local lru_new = require("resty.lrucache").new
 local resty_lock = require("resty.lock")
 local log = require("apisix.core.log")
 local pairs = pairs
+local ipairs = ipairs
 local pcall = pcall
 local unpack = unpack
 local tostring = tostring
+local setmetatable = setmetatable
 local ngx = ngx
 local get_phase = ngx.get_phase
+local ngx_now = ngx.now
 local timer_every = ngx.timer.every
 local exiting = ngx.worker.exiting
 
@@ -47,7 +50,13 @@ local can_yield_phases = {
     timer = true
 }
 
-local stale_obj_pool = {}
+-- weak keys: an lrucache dropped by its owner (e.g. rebuilt with a new ttl)
+-- must not be kept alive by its pending refresh entries
+local stale_obj_pool = setmetatable({}, {__mode = "k"})
+
+-- lru_obj -> {inactive = seconds, access_times = {key -> last access time}}
+-- for the lrucaches created with `inactive`; weak keys for the same reason
+local inactive_lru_pool = setmetatable({}, {__mode = "k"})
 
 local GLOBAL_ITEMS_COUNT = 1024
 local GLOBAL_TTL         = 60 * 60          -- 60 min
@@ -70,12 +79,22 @@ local function fetch_valid_cache(lru_obj, invalid_stale, refresh_stale, item_ttl
         end
 
         if refresh_stale then
-            stale_obj_pool[lru_obj][key] = {
-                fn = create_obj_fun,
-                args = {...},
-                ver = version,
-                ttl = item_ttl,
-            }
+            -- update a pending refresh in place: refresh_stale_objs writes
+            -- back only while the pending entry is still the one it ran
+            local pending = stale_obj_pool[lru_obj][key]
+            if pending then
+                pending.fn = create_obj_fun
+                pending.args = {...}
+                pending.ver = version
+                pending.ttl = item_ttl
+            else
+                stale_obj_pool[lru_obj][key] = {
+                    fn = create_obj_fun,
+                    args = {...},
+                    ver = version,
+                    ttl = item_ttl,
+                }
+            end
             return stale_obj
         end
     end
@@ -106,6 +125,17 @@ local function new_lru_fun(opts)
 
     stale_obj_pool[lru_obj] = {}
 
+    -- `inactive`: drop an item not accessed for this many seconds, so an
+    -- expired item nobody asks for anymore is not kept until count eviction
+    local access_times
+    if opts and opts.inactive then
+        access_times = {}
+        inactive_lru_pool[lru_obj] = {
+            inactive = opts.inactive,
+            access_times = access_times,
+        }
+    end
+
     return function (key, version, create_obj_fun, ...)
         -- check negative cache first
         if neg_lru_obj then
@@ -119,12 +149,18 @@ local function new_lru_fun(opts)
             local cache_obj = fetch_valid_cache(lru_obj, invalid_stale, refresh_stale,
                                 item_ttl, key, version, create_obj_fun, ...)
             if cache_obj then
+                if access_times then
+                    access_times[key] = ngx_now()
+                end
                 return cache_obj.val
             end
 
             local obj, err = create_obj_fun(...)
             if obj ~= nil then
                 lru_obj:set(key, {val = obj, ver = version}, item_ttl)
+                if access_times then
+                    access_times[key] = ngx_now()
+                end
             elseif neg_lru_obj then
                 -- cache the failure in negative cache
                 neg_lru_obj:set(key, {err = err, ver = version}, opts.neg_ttl)
@@ -136,6 +172,9 @@ local function new_lru_fun(opts)
         local cache_obj = fetch_valid_cache(lru_obj, invalid_stale, refresh_stale, item_ttl,
                             key, version, create_obj_fun, ...)
         if cache_obj then
+            if access_times then
+                access_times[key] = ngx_now()
+            end
             return cache_obj.val
         end
 
@@ -157,12 +196,18 @@ local function new_lru_fun(opts)
         if cache_obj then
             lock:unlock()
             log.info("unlock with key ", key_s)
+            if access_times then
+                access_times[key] = ngx_now()
+            end
             return cache_obj.val
         end
 
         local obj, err = create_obj_fun(...)
         if obj ~= nil then
             lru_obj:set(key, {val = obj, ver = version}, item_ttl)
+            if access_times then
+                access_times[key] = ngx_now()
+            end
         elseif neg_lru_obj then
             -- cache the failure in negative cache
             neg_lru_obj:set(key, {err = err, ver = version}, opts.neg_ttl)
@@ -218,38 +263,83 @@ end
 
 
 local function refresh_stale_objs()
+    -- snapshot first: creating an object may yield, and the pool can change
+    -- meanwhile (new stale hits, purge_inactive_objs)
+    local pending = {}
     for lru_obj, keys in pairs(stale_obj_pool) do
         for key, new_obj in pairs(keys) do
-            local obj, err = new_obj.fn(unpack(new_obj.args))
-            if obj ~= nil then
-                lru_obj:set(key, {val = obj, ver = new_obj.ver}, new_obj.ttl)
+            pending[#pending + 1] = {lru_obj, keys, key, new_obj}
+        end
+    end
+
+    for _, item in ipairs(pending) do
+        local lru_obj, keys, key, new_obj = item[1], item[2], item[3], item[4]
+        if keys[key] ~= new_obj then
+            goto continue
+        end
+
+        local ver, ttl = new_obj.ver, new_obj.ttl
+        local obj, err = new_obj.fn(unpack(new_obj.args))
+        if obj ~= nil then
+            -- the item may have been purged while refreshing; writing it back
+            -- then would resurrect it without an access record
+            if keys[key] == new_obj then
+                lru_obj:set(key, {val = obj, ver = ver}, ttl)
                 keys[key] = nil
                 log.info("successfully refresh stale obj for key ",
-                            tostring(key), " to ver ", new_obj.ver)
-            else
-                log.error("failed to refresh stale obj for key ", key, ": ", err)
+                            tostring(key), " to ver ", ver)
+            end
+        else
+            log.error("failed to refresh stale obj for key ", key, ": ", err)
+        end
+
+        ::continue::
+    end
+end
+
+
+local function purge_inactive_objs()
+    local now = ngx_now()
+    for lru_obj, inactive_lru in pairs(inactive_lru_pool) do
+        local access_times = inactive_lru.access_times
+        local inactive = inactive_lru.inactive
+        local pending = stale_obj_pool[lru_obj]
+        for key, access_time in pairs(access_times) do
+            if now - access_time > inactive then
+                lru_obj:delete(key)
+                access_times[key] = nil
+                if pending then
+                    pending[key] = nil
+                end
             end
         end
     end
 end
 
 
-local function init_worker()
+local function run_every_second(name, fn)
     local running = false
     timer_every(1, function ()
         if not exiting() then
             if running then
-                log.info("timer_refresh_stale is already running, skipping this iteration")
+                log.info(name, " is already running, skipping this iteration")
                 return
             end
             running = true
-            local ok, err = pcall(refresh_stale_objs)
+            local ok, err = pcall(fn)
             if not ok then
-                log.error("failed to run timer_refresh_stale: ", err)
+                log.error("failed to run ", name, ": ", err)
             end
             running = false
         end
     end)
+end
+
+
+local function init_worker()
+    run_every_second("timer_refresh_stale", refresh_stale_objs)
+    -- a separate timer, so a slow refresh does not hold up purging
+    run_every_second("timer_purge_inactive", purge_inactive_objs)
 end
 
 

@@ -117,6 +117,7 @@
             "plugins/mocking",
             "plugins/degraphql",
             "plugins/body-transformer",
+            "plugins/request-decompress",
             "plugins/attach-consumer-label",
             "plugins/exit-transformer"
           ]
@@ -256,7 +257,6 @@
             "plugins/kafka-proxy",
             "plugins/websocket-proxy",
             "plugins/http-dubbo",
-            "plugins/mcp-bridge",
             "plugins/openapi-to-mcp"
           ]
         }

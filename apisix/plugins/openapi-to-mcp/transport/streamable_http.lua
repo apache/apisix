@@ -132,7 +132,6 @@ function _M.handle(ctx, opts)
     -- have paid for anyway; it only costs anything when the build fails.
     local _, tools_err = cache.get_tools(opts.conf)
     if tools_err then
-        core.log.error("failed to build the MCP tool list: ", tools_err)
         return stateless_internal_error(tools_err)
     end
 

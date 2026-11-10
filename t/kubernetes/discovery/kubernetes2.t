@@ -105,7 +105,7 @@ _EOC_
               local core = require("apisix.core")
               local d = require("apisix.discovery.kubernetes")
 
-              ngx.sleep(1)
+              ngx.sleep(1.1)
 
               ngx.req.read_body()
               local request_body = ngx.req.get_body_data()

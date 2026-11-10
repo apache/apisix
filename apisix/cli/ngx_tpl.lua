@@ -90,6 +90,15 @@ http {
                       .. [=[$prefix/deps/lib/lua/5.1/?.so;;]=]
                       .. [=[{*lua_cpath*};";
 
+    # the same limits as the stream subsystem, which nginx_timers_max
+    # reports for every Lua VM
+    {% if max_pending_timers then %}
+    lua_max_pending_timers {* max_pending_timers *};
+    {% end %}
+    {% if max_running_timers then %}
+    lua_max_running_timers {* max_running_timers *};
+    {% end %}
+
     {% if enabled_stream_plugins["prometheus"] then %}
 
     init_by_lua_block {
@@ -512,7 +521,7 @@ http {
     lua_shared_dict ext-plugin {* http.lua_shared_dict["ext-plugin"] *}; # cache for ext-plugin
     {% end %}
 
-    {% if enabled_plugins["mcp-bridge"] or enabled_plugins["openapi-to-mcp"] then %}
+    {% if enabled_plugins["openapi-to-mcp"] then %}
     lua_shared_dict mcp-session {* http.lua_shared_dict["mcp-session"] *}; # cache for mcp-session
     {% end %}
 
@@ -888,6 +897,7 @@ http {
 
         {% if ssl.ssl_trusted_certificate ~= nil then %}
         proxy_ssl_trusted_certificate {* ssl.ssl_trusted_certificate *};
+        grpc_ssl_trusted_certificate {* ssl.ssl_trusted_certificate *};
         {% end %}
 
         # opentelemetry_set_ngx_var starts
