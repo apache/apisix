@@ -691,4 +691,4 @@ apisix:
     }
 --- response_body
 bar
-77+NmbYqNfN+oLm0aX5akg==
+$ENC$v1$77+NmbYqNfN+oLm0aX5akg==

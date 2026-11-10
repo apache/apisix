@@ -1196,7 +1196,17 @@ end
 _M.process_encrypt_field = process_encrypt_field
 
 
-local function decrypt_conf(name, conf, schema_type)
+-- marked values are left to `decrypt_marked_conf`
+local function decrypt_unmarked(value)
+    if core.data_encryption.has_marker(value) then
+        return value
+    end
+
+    return core.data_encryption.decrypt(value)
+end
+
+
+local function decrypt_conf(name, conf, schema_type, decrypt)
     if not enable_gde() then
         return
     end
@@ -1208,11 +1218,65 @@ local function decrypt_conf(name, conf, schema_type)
 
     if schema.encrypt_fields and not core.table.isempty(schema.encrypt_fields) then
         for _, key in ipairs(schema.encrypt_fields) do
-            process_encrypt_field(conf, key, core.data_encryption.decrypt, name, "decrypt")
+            process_encrypt_field(conf, key, decrypt or decrypt_unmarked, name, "decrypt")
         end
     end
 end
 _M.decrypt_conf = decrypt_conf
+
+
+local function decrypt_field(value)
+    if core.data_encryption.has_marker(value) then
+        return core.data_encryption.decrypt_marked(value)
+    end
+    return core.data_encryption.decrypt(value)
+end
+
+
+-- PATCH only decrypts fields that encrypt_conf will encrypt again on write.
+-- Keep marked values outside encrypt_fields in their original stored form.
+function _M.decrypt_conf_for_patch(name, conf, schema_type)
+    decrypt_conf(name, conf, schema_type, decrypt_field)
+end
+
+
+-- Decrypt in place every string under `conf` that carries the encryption
+-- marker, whatever the `encrypt_fields` of the plugin. A value that fails to
+-- decrypt is logged and kept as it is.
+local function decrypt_marked_conf(name, conf, path)
+    if type(conf) ~= "table" then
+        return
+    end
+
+    for k, v in pairs(conf) do
+        local tv = type(v)
+        if tv == "string" then
+            if core.data_encryption.has_marker(v) then
+                local plain, err = core.data_encryption.decrypt_marked(v)
+                if plain then
+                    conf[k] = plain
+                else
+                    core.log.warn("failed to decrypt the value of plugin [", name, "] key [",
+                                  path and path .. "." .. tostring(k) or tostring(k), "]: ", err)
+                end
+            end
+
+        elseif tv == "table" then
+            decrypt_marked_conf(name, v, path and path .. "." .. tostring(k) or tostring(k))
+        end
+    end
+end
+_M.decrypt_marked_conf = decrypt_marked_conf
+
+
+-- Decrypt a stored plugin conf for the Admin API: the `encrypt_fields`, then
+-- the marked values, when data encryption is enabled.
+function _M.decrypt_stored_conf(name, conf, schema_type)
+    if enable_gde() then
+        decrypt_conf(name, conf, schema_type)
+        decrypt_marked_conf(name, conf)
+    end
+end
 
 
 local function encrypt_conf(name, conf, schema_type)
@@ -1227,7 +1291,8 @@ local function encrypt_conf(name, conf, schema_type)
 
     if schema.encrypt_fields and not core.table.isempty(schema.encrypt_fields) then
         for _, key in ipairs(schema.encrypt_fields) do
-            process_encrypt_field(conf, key, core.data_encryption.encrypt, name, "encrypt")
+            process_encrypt_field(conf, key, core.data_encryption.encrypt_with_marker, name,
+                                  "encrypt")
         end
     end
 end
@@ -1242,10 +1307,13 @@ check_plugin_metadata = function(item)
     -- subsystems, while each of them only loads its own plugins.
     local ok, err = check_single_plugin_schema(item.id, item,
                                                core.schema.TYPE_METADATA, false, true)
-    -- the schema of an unloaded plugin is unavailable, so decrypting its
-    -- metadata would only produce a "failed to get schema" warning
-    if ok and enable_gde() and local_plugins_hash[item.id] then
-        decrypt_conf(item.id, item, core.schema.TYPE_METADATA)
+    if ok and enable_gde() then
+        -- the schema of an unloaded plugin is unavailable, so decrypting its
+        -- metadata would only produce a "failed to get schema" warning
+        if local_plugins_hash[item.id] then
+            decrypt_conf(item.id, item, core.schema.TYPE_METADATA)
+        end
+        decrypt_marked_conf(item.id, item)
     end
 
     return ok, err
@@ -1313,6 +1381,7 @@ function _M.plugin_checker(item, schema_type)
             -- (e.g. ai-proxy service_account_json JSON parsing) see plaintext
             for name, conf in pairs(item.plugins) do
                 decrypt_conf(name, conf, schema_type)
+                decrypt_marked_conf(name, conf)
             end
         end
 
@@ -1331,6 +1400,12 @@ function _M.stream_plugin_checker(item, in_cp)
         local skip_disabled_plugins = in_cp ~= true
         if core.config.type == "yaml" or core.config.type == "json" then
             skip_disabled_plugins = false
+        end
+
+        if enable_gde() then
+            for name, conf in pairs(item.plugins) do
+                decrypt_marked_conf(name, conf)
+            end
         end
         return stream_check_schema(item.plugins, nil, skip_disabled_plugins)
     end

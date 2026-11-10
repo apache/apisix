@@ -146,7 +146,7 @@ local function modify_header(ctx, header_name, header_value, override)
         -- after 'header_value', but the style is too ugly!
         header_value = header_name
         header_name = ctx
-        ctx = nil
+        ctx = ngx.ctx.api_ctx
 
         if override then
             log.warn("DEPRECATED: use set_header(ctx, header_name, header_value) instead")
