@@ -51,8 +51,8 @@ importers:
         specifier: ^1.26.0
         version: 1.27.1
       simple-git:
-        specifier: ^3.27.0
-        version: 3.27.0
+        specifier: ^4.0.1
+        version: 4.0.1
       vitest:
         specifier: ^5.0.2
         version: 5.0.2(@types/node@22.14.1)(vite@8.3.1(@types/node@22.14.1)(yaml@2.7.1))
@@ -247,6 +247,12 @@ packages:
 
   '@rolldown/pluginutils@1.0.1':
     resolution: {integrity: sha512-2j9bGt5Jh8hj+vPtgzPtl72j0yRxHAyumoo6TNfAjsLB04UtpSvPbPcDcBMxz7n+9CYB0c1GxQFxYRg2jimqGw==}
+
+  '@simple-git/args-pathspec@1.0.4':
+    resolution: {integrity: sha512-EtMX6XjRWSastG2SdkmSQByPtJ9dx/NIjnHbpQPCYt62j4RmSx5rgLTGpw0YCjF5h191gZOmBfheOT23cRSFdw==}
+
+  '@simple-git/argv-parser@2.0.0':
+    resolution: {integrity: sha512-wr5b8akZQKNXiShOfPA1wRECrG1X7IAwNRKiU24g4CxSxDHgNcc5c5tdfGuA3NEOyAwta5iAQ5b7UjyrqyRFtg==}
 
   '@trivago/prettier-plugin-sort-imports@5.2.2':
     resolution: {integrity: sha512-fYDQA9e6yTNmA13TLVSA+WMQRc5Bn/c0EUBditUHNfMMxN7M82c38b1kEggVE3pLpZ0FwkwJkUEKMiOi52JXFA==}
@@ -857,8 +863,8 @@ packages:
     resolution: {integrity: sha512-6x6dK6zJdpTzF4sQeNYxwtvBzf6Eg4GtlesS94HOvTudUeyK2WXAaIfmDgsyslYrRBeFIlsi54AYsFGUuhmvrQ==}
     engines: {node: '>= 0.4'}
 
-  simple-git@3.27.0:
-    resolution: {integrity: sha512-ivHoFS9Yi9GY49ogc6/YAi3Fl9ROnF4VyubNylgCkA+RVqLaKWnDSzXOVzya8csELIaWaYNutsEuAhZrtOjozA==}
+  simple-git@4.0.1:
+    resolution: {integrity: sha512-3OXqp9MDRL+IlkJz0qUkm7dZoxVi61xdX2RF8fOA2OHHA8BNAVD+UdiXZ+5VYkrYZZ31OCIcAm8F8xnHOSRmrg==}
 
   source-map-js@1.2.2:
     resolution: {integrity: sha512-KGj/8Y43x35aZVDtt+J4mK1hoLGHULMYfSkODJNQjNDC3oW1PqPoxMwo0pLUsWM/UEGzON/NxeHywEfNXNP3Vw==}
@@ -1185,6 +1191,12 @@ snapshots:
     optional: true
 
   '@rolldown/pluginutils@1.0.1': {}
+
+  '@simple-git/args-pathspec@1.0.4': {}
+
+  '@simple-git/argv-parser@2.0.0':
+    dependencies:
+      '@simple-git/args-pathspec': 1.0.4
 
   '@trivago/prettier-plugin-sort-imports@5.2.2(prettier@3.5.3)':
     dependencies:
@@ -1777,11 +1789,13 @@ snapshots:
       side-channel-map: 1.0.1
       side-channel-weakmap: 1.0.2
 
-  simple-git@3.27.0:
+  simple-git@4.0.1:
     dependencies:
       '@kwsites/file-exists': 1.1.1
       '@kwsites/promise-deferred': 1.1.1
-      debug: 4.4.0
+      '@simple-git/args-pathspec': 1.0.4
+      '@simple-git/argv-parser': 2.0.0
+      debug: 4.4.3
     transitivePeerDependencies:
       - supports-color
 
