@@ -101,7 +101,7 @@ passed
                     "value":{
                         "id":"the-first-one",
                         "plugins":{
-                            "key-auth": {"key": "fsFPtg7BtXMXkvSnS9e1zw=="}
+                            "key-auth": {"key": "$ENC$v1$fsFPtg7BtXMXkvSnS9e1zw=="}
                         }
                     },
                     "key":"/apisix/consumers/jack/credentials/the-first-one"
@@ -135,7 +135,7 @@ passed
                     "value":{
                         "id":"the-second-one",
                         "plugins":{
-                            "key-auth": {"key": "QwGua2GjZjOiq+Mj3Mef2g=="}
+                            "key-auth": {"key": "$ENC$v1$QwGua2GjZjOiq+Mj3Mef2g=="}
                         }
                     },
                     "key":"/apisix/consumers/jack/credentials/the-second-one"

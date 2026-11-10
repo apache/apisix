@@ -99,7 +99,7 @@ passed
                     "value":{
                         "id":"34010989-ce4e-4d61-9493-b54cca8edb31",
                         "plugins":{
-                            "key-auth": {"key": "fsFPtg7BtXMXkvSnS9e1zw=="}
+                            "key-auth": {"key": "$ENC$v1$fsFPtg7BtXMXkvSnS9e1zw=="}
                         }
                     },
                     "key":"/apisix/consumers/jack/credentials/34010989-ce4e-4d61-9493-b54cca8edb31"

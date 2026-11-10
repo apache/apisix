@@ -102,7 +102,7 @@ passed
                     "value":{
                         "id":"34010989-ce4e-4d61-9493-b54cca8edb31",
                         "plugins":{
-                            "key-auth": {"key": "fsFPtg7BtXMXkvSnS9e1zw=="}
+                            "key-auth": {"key": "$ENC$v1$fsFPtg7BtXMXkvSnS9e1zw=="}
                         },
                         "labels": {
                             "custom_id": "271fc4a264bb"
@@ -213,7 +213,7 @@ GET /t
                         "username": "jack",
                         "plugins": {
                             "key-auth": {
-                                "key": "fsFPtg7BtXMXkvSnS9e1zw=="
+                                "key": "$ENC$v1$fsFPtg7BtXMXkvSnS9e1zw=="
                             }
                         }
                     },

@@ -84,7 +84,9 @@ function _M.decrypt_params(decrypt_func, body, schema_type)
     -- list
     if body.list then
         for _, route in ipairs(body.list) do
-            if route.value and route.value.plugins then
+            if route.value and schema_type == core.schema.TYPE_METADATA then
+                decrypt_func(route.value.id, route.value, schema_type)
+            elseif route.value and route.value.plugins then
                 for name, conf in pairs(route.value.plugins) do
                     decrypt_func(name, conf, schema_type)
                 end

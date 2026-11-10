@@ -337,7 +337,7 @@ apisix:
     }
 --- response_body
 your_access_key_secret
-1T6nR0fz4yhz/zTuRTvt7Xu3c9ASelDXG2//e/A5OiA=
+$ENC$v1$1T6nR0fz4yhz/zTuRTvt7Xu3c9ASelDXG2//e/A5OiA=
 
 
 

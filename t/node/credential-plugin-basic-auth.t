@@ -99,7 +99,7 @@ passed
                     "value":{
                         "id":"34010989-ce4e-4d61-9493-b54cca8edb31",
                         "plugins":{
-                            "basic-auth":{"username":"foo","password":"+kOEVUuRc5rC5ZwvvAMLwg=="}
+                            "basic-auth":{"username":"foo","password":"$ENC$v1$+kOEVUuRc5rC5ZwvvAMLwg=="}
                         }
                     },
                     "key":"/apisix/consumers/jack/credentials/34010989-ce4e-4d61-9493-b54cca8edb31"
