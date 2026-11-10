@@ -38,6 +38,10 @@ import TabItem from '@theme/TabItem';
 
 `ai-prompt-decorator` 插件通过在用户输入提示前后添加预设提示来修改用户输入，以在内容生成中设定上下文。这种做法有助于模型在交互过程中按照预期的指导方针运行。
 
+该插件使用每种协议的原生提示结构修饰 Chat Completions、Responses API、Anthropic Messages 和 Bedrock Converse 请求。对于 Responses，`prepend` 中的内容会添加到 `instructions`，`append` 中的内容会添加到 `input`。Embeddings 和透传请求没有可前置或追加的提示角色，因此插件不会修改这两类请求。
+
+检测顺序和 URI 要求参见[请求协议检测](./ai-proxy.md#请求协议检测)。
+
 ## 插件属性
 
 | 名称 | 类型 | 必选项 | 默认值 | 有效值 | 描述 |
