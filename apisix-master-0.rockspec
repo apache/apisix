@@ -37,7 +37,7 @@ dependencies = {
     "lyaml = 6.2.8-1",
     "api7-lua-resty-dns-client = 7.1.2-0",
     "lua-resty-template = 2.0-1",
-    "lua-resty-etcd = 1.10.6-0",
+    "lua-resty-etcd = 1.10.7-0",
     "api7-lua-resty-http = 0.2.4-0",
     "lua-resty-balancer = 0.05-0",
     "lua-resty-ngxvar = 0.5.2-0",
@@ -86,7 +86,7 @@ dependencies = {
     "lua-ffi-zlib = 0.6-0",
     "jsonpath = 1.0-1",
     "api7-lua-resty-aws == 2.0.2-1",
-    "multipart = 0.5.11-1",
+    "multipart = 0.6.0-1",
     "luautf8 = 0.2.0-1",
     "api7-lua-rapidjson = 0.7.2-0",
 }
