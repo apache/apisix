@@ -414,8 +414,8 @@ updating an existing configuration:
 
 - Write lists, mappings, and fields in the YAML file itself, and place variables
   in their scalar values. A variable containing `[a, b]` or `{a: 1}` remains a
-  string; characters such as `#`, `: `, and newlines do not create comments or
-  additional fields.
+  string; characters such as `#`, a colon followed by a space, and newlines do not
+  create comments or additional fields.
 - Use quoted placeholders for strings in flow collections, for example
   `snis: ["${{SERVER_NAME}}"]`. A bare placeholder such as
   `[${{NUM}}]` is not valid YAML before substitution. For an inferred numeric
