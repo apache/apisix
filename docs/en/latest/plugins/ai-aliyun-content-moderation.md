@@ -45,15 +45,9 @@ Please ensure that the `access_key_secret` is correctly configured in the Plugin
 
 The `ai-aliyun-content-moderation` Plugin should be used with either [`ai-proxy`](./ai-proxy.md) or [`ai-proxy-multi`](./ai-proxy-multi.md) Plugin for proxying LLM requests.
 
-The Plugin moderates Chat Completions, Responses API, Embeddings, Anthropic Messages, and Bedrock Converse requests using each protocol's native content structure. For Responses, it moderates `input` and returns blocked non-streaming or streaming requests in Responses API format. For Embeddings, it moderates a string or an array of strings in `input` and returns rejected requests as OpenAI-style errors.
+The Plugin moderates Chat Completions, Responses API, Embeddings, Anthropic Messages, and Bedrock Converse requests using each protocol's native content structure. For Responses, it moderates `input` and returns blocked non-streaming or streaming requests in Responses API format. For Embeddings, it moderates a string or an array of strings in `input` and returns rejected requests as OpenAI-style errors. Other non-empty JSON bodies use passthrough, from which the Plugin extracts no format-specific text.
 
-APISIX checks URI-specific formats before body-only formats:
-
-- Bedrock Converse requires a URI ending in `/converse` and a `messages` array.
-- Anthropic Messages requires a URI ending in `/v1/messages`.
-- Responses API requires a URI ending in `/v1/responses` and an `input` field.
-- Chat Completions uses a `messages` array.
-- Embeddings uses `input` after the earlier rules do not match.
+See [request protocol detection](./ai-proxy.md#request-protocol-detection) for the detection order and URI requirements.
 
 ## Attributes
 
@@ -75,7 +69,7 @@ APISIX checks URI-specific formats before body-only formats:
 | response_check_service | string | False | `"llm_response_moderation"` | | Aliyun service for response moderation. |
 | response_check_length_limit | number | False | `5000` | >= 1 | Response content length limit. If exceeded, the content is sent to Aliyun in chunks. For instance, if the response content is 250 characters and `response_check_length_limit` is set to `100`, the content is sent in 3 requests to Aliyun. |
 | risk_level_bar | string | False | `"high"` | `none`, `low`, `medium`, `high`, `max` | If the evaluated risk level is lower than the `risk_level_bar`, the request or response will be passed through to Upstream LLM or client respectively. |
-| deny_code | integer | False | `200` | [200, 599] | Rejection HTTP status code. Defaults to `200` so the provider-compatible refusal parses as a normal completion in client SDKs; set a 4xx to surface denies as HTTP errors instead. |
+| deny_code | integer | False | `200` | [200, 599] | Rejection HTTP status code. The default `200` returns the denial in the detected protocol's response shape. Set a 4xx value to surface denials as HTTP errors instead. |
 | deny_message | string | False | | | Rejection message. |
 | timeout | integer | False | `10000` | >= 1 | Timeout in milliseconds. |
 | keepalive | boolean | False | `true` | | If `true`, enable HTTP connection keepalive to Aliyun. |

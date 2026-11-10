@@ -677,7 +677,7 @@ curl "http://127.0.0.1:9080/template/v1/responses" -X POST \
 }
 ```
 
-APISIX 根据渲染后请求中的 `input` 字段和路由 URI 后缀将其识别为 Responses API 请求。你应该会收到 HTTP `200` 响应，其中的 `output` 包含已完成的 Web 搜索调用和带有 URL 引用的消息：
+APISIX 根据渲染后请求中的 `input` 字段和路由 URI 后缀将其识别为 Responses API 请求。你应该会收到 HTTP `200` 响应，其中的 `output` 包含已完成的 Web 搜索调用和带有 URL 引用的消息。生成的文本、搜索详情和引用偏移量会随请求变化；响应结构类似如下：
 
 ```json
 {
@@ -687,11 +687,7 @@ APISIX 根据渲染后请求中的 `input` 字段和路由 URI 后缀将其识�
       "type": "web_search_call",
       "status": "completed",
       "action": {
-        "type": "search",
-        "queries": [
-          "site:apisix.apache.org what is Apache APISIX"
-        ],
-        "query": "site:apisix.apache.org what is Apache APISIX"
+        "type": "search"
       }
     },
     {
@@ -701,14 +697,12 @@ APISIX 根据渲染后请求中的 `input` 字段和路由 URI 后缀将其识�
       "content": [
         {
           "type": "output_text",
-          "text": "Apache APISIX is an open-source, high-performance API and AI gateway for managing traffic at scale through dynamic routing, load balancing, authentication, observability, rate limiting, and over 100 plugins. ([apisix.apache.org](https://apisix.apache.org/?utm_source=openai))",
+          "text": "<带有引用的生成摘要>",
           "annotations": [
             {
               "type": "url_citation",
-              "start_index": 208,
-              "end_index": 275,
-              "title": "Apache APISIX - Open Source API Gateway & AI Gateway",
-              "url": "https://apisix.apache.org/?utm_source=openai"
+              "title": "Apache APISIX",
+              "url": "https://apisix.apache.org/"
             }
           ]
         }

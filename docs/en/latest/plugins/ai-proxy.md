@@ -964,7 +964,7 @@ The following example configures the `ai-proxy` Plugin to proxy OpenAI Responses
 Obtain an [OpenAI API key](https://platform.openai.com/api-keys) and save it to an environment variable:
 
 ```shell
-export OPENAI_API_KEY=<your-api-key>
+export OPENAI_API_KEY="<your-api-key>"
 ```
 
 Create a Route with the `/v1/responses` URI:

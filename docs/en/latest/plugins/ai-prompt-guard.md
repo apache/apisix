@@ -42,13 +42,7 @@ When both `allow_patterns` and `deny_patterns` are configured, the Plugin first 
 
 The Plugin checks Chat Completions, Responses API, Embeddings, Anthropic Messages, and Bedrock Converse requests using each protocol's native content structure. For Responses, it checks user content in `input` and, when `match_all_roles` is `true`, system content in `instructions`.
 
-APISIX checks URI-specific formats before body-only formats:
-
-- Bedrock Converse requires a URI ending in `/converse` and a `messages` array.
-- Anthropic Messages requires a URI ending in `/v1/messages`.
-- Responses API requires a URI ending in `/v1/responses` and an `input` field.
-- Chat Completions uses a `messages` array.
-- Embeddings uses `input` after the earlier rules do not match.
+See [request protocol detection](./ai-proxy.md#request-protocol-detection) for the detection order and URI requirements. Other non-empty JSON bodies use passthrough and are handled according to `fail_mode` rather than inspected as a supported AI request.
 
 For Embeddings requests, the Plugin checks a string `input` or all strings in an `input` array. Batch items are joined with spaces and checked together, regardless of `match_all_conversation_history`. Allow patterns apply to this combined text; a denied pattern anywhere in the batch rejects the request.
 

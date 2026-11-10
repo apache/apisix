@@ -678,7 +678,7 @@ Before `ai-proxy` processes the request, `ai-prompt-template` replaces the incom
 }
 ```
 
-APISIX identifies the rendered request as Responses API from its `input` field and the Route URI suffix. You should receive an HTTP `200` response whose `output` contains a completed web search call and a message with URL citations:
+APISIX identifies the rendered request as Responses API from its `input` field and the Route URI suffix. You should receive an HTTP `200` response whose `output` contains a completed web search call and a message with URL citations. The generated text, search details, and citation offsets vary by request; the response shape is similar to the following:
 
 ```json
 {
@@ -688,11 +688,7 @@ APISIX identifies the rendered request as Responses API from its `input` field a
       "type": "web_search_call",
       "status": "completed",
       "action": {
-        "type": "search",
-        "queries": [
-          "site:apisix.apache.org what is Apache APISIX"
-        ],
-        "query": "site:apisix.apache.org what is Apache APISIX"
+        "type": "search"
       }
     },
     {
@@ -702,14 +698,12 @@ APISIX identifies the rendered request as Responses API from its `input` field a
       "content": [
         {
           "type": "output_text",
-          "text": "Apache APISIX is an open-source, high-performance API and AI gateway for managing traffic at scale through dynamic routing, load balancing, authentication, observability, rate limiting, and over 100 plugins. ([apisix.apache.org](https://apisix.apache.org/?utm_source=openai))",
+          "text": "<generated summary with a citation>",
           "annotations": [
             {
               "type": "url_citation",
-              "start_index": 208,
-              "end_index": 275,
-              "title": "Apache APISIX - Open Source API Gateway & AI Gateway",
-              "url": "https://apisix.apache.org/?utm_source=openai"
+              "title": "Apache APISIX",
+              "url": "https://apisix.apache.org/"
             }
           ]
         }

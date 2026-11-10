@@ -42,13 +42,7 @@ import TabItem from '@theme/TabItem';
 
 该插件使用每种协议的原生内容结构检查 Chat Completions、Responses API、Embeddings、Anthropic Messages 和 Bedrock Converse 请求。对于 Responses，它会检查 `input` 中的用户内容；当 `match_all_roles` 为 `true` 时，还会检查 `instructions` 中的系统内容。
 
-APISIX 会先检查基于 URI 的格式，再检查仅基于请求体的格式：
-
-- Bedrock Converse 要求 URI 以 `/converse` 结尾且请求体包含 `messages` 数组。
-- Anthropic Messages 要求 URI 以 `/v1/messages` 结尾。
-- Responses API 要求 URI 以 `/v1/responses` 结尾且请求体包含 `input`。
-- Chat Completions 使用 `messages` 数组。
-- 之前的规则均未匹配时，包含 `input` 的请求会被识别为 Embeddings。
+检测顺序和 URI 要求参见[请求协议检测](./ai-proxy.md#请求协议检测)。其他非空 JSON 请求体使用透传模式，不会作为受支持的 AI 请求接受检查，而是根据 `fail_mode` 处理。
 
 对于 Embeddings 请求，插件会检查字符串形式的 `input`，或 `input` 数组中的所有字符串。批量输入会用空格连接后一起检查，不受 `match_all_conversation_history` 影响。允许模式作用于连接后的文本；批量输入中任何位置匹配拒绝模式都会导致请求被拒绝。
 

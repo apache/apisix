@@ -46,23 +46,7 @@ In addition, the Plugin also supports logging LLM request information in the acc
 
 ### Request Protocol Detection
 
-The Plugin detects the client request protocol before selecting a compatible upstream endpoint. It checks the following rules in order:
-
-| Client protocol | Detection | Route URI |
-| --- | --- | --- |
-| Bedrock Converse | The request body contains a `messages` array and the request URI ends in `/converse`. | The URI can have a custom prefix, but it must keep the `/converse` suffix. |
-| Anthropic Messages | The request body is a JSON object or array and the request URI ends in `/v1/messages`. | The URI can have a custom prefix, but it must keep the `/v1/messages` suffix. |
-| OpenAI Responses | The request body contains `input` and the request URI ends in `/v1/responses`. | The URI can have a custom prefix, but it must keep the `/v1/responses` suffix. |
-| OpenAI Chat Completions | The request body contains a `messages` array. | Any URI matched by the Route. |
-| OpenAI Embeddings | The request body contains `input`, and no earlier rule matched. | Any URI matched by the Route. |
-
-The URI-specific rules run before the body-only rules. This prevents Bedrock Converse and Anthropic Messages requests containing `messages` from being identified as Chat Completions. Responses and Embeddings requests both use `input`, so a request containing `input` but not `messages` is identified as Embeddings unless its URI ends in `/v1/responses`. If no earlier rule matches, the Plugin treats a non-empty JSON object or array as passthrough. Empty or invalid request bodies are rejected.
-
-Requests that include `Content-Type` must use `application/json`. If the header is omitted, the Plugin treats the body as JSON. The request body cannot exceed `max_req_body_size`, which defaults to 67,108,864 bytes; a larger body is rejected with HTTP `413`.
-
-Passthrough does not provide a named AI protocol to downstream AI-aware Plugins. Usage extraction, prompt decoration, content-moderation text extraction, and protocol conversion therefore do not run for a passthrough body. The `ai-prompt-template` Plugin runs earlier in the rewrite phase and can replace the body before protocol detection, so the rendered body can match a named protocol or remain passthrough.
-
-For a named protocol, the Plugin uses it directly when the selected instance supports it. Otherwise, it uses a registered converter to a protocol supported by the instance. The request is rejected when neither native support nor a compatible converter is available.
+`ai-proxy-multi` uses the same request validation, protocol detection, passthrough, and conversion behavior as `ai-proxy`. See [request protocol detection](./ai-proxy.md#request-protocol-detection) for the complete rules and URI requirements.
 
 ### Chat Completions Request Format
 
@@ -2116,7 +2100,7 @@ The following example configures `ai-proxy-multi` to distribute Responses API re
 Obtain an [OpenAI API key](https://platform.openai.com/api-keys) and save it to an environment variable:
 
 ```shell
-export OPENAI_API_KEY=<your-api-key>
+export OPENAI_API_KEY="<your-api-key>"
 ```
 
 ```shell

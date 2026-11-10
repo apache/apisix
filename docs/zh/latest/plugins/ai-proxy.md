@@ -940,7 +940,7 @@ curl "http://127.0.0.1:9080/bedrock/converse" -X POST \
 获取 [OpenAI API 密钥](https://platform.openai.com/api-keys)并保存到环境变量：
 
 ```shell
-export OPENAI_API_KEY=<your-api-key>
+export OPENAI_API_KEY="<your-api-key>"
 ```
 
 创建 URI 为 `/v1/responses` 的路由：
