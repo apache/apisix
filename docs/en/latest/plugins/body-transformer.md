@@ -69,37 +69,58 @@ The transformation template uses [lua-resty-template](https://github.com/bungle/
 
 You can also use auxiliary functions `_escape_json()` and `_escape_xml()` to escape special characters such as double quotes, `_body` to access request body, and `_ctx` to access context variables.
 
-In all cases, you should ensure that the transformation template is a valid JSON string.
+When you embed a template directly in an Admin API JSON document, encode it as a valid JSON string. For complex templates, base64-encode the content and set `template_is_base64` to `true`.
 
-### Transform between JSON and XML SOAP
+### Transform Between JSON and SOAP XML
 
-The following example demonstrates how to transform the request body from JSON to XML and the response body from XML to JSON when working with a SOAP Upstream service.
+The following example accepts JSON from a client, sends SOAP XML upstream, and returns the SOAP response as JSON. It assumes APISIX is running in the `apisix-quickstart-net` Docker network created by the quickstart script.
 
-Start the sample SOAP service:
+Clone the Spring sample service and check out the revision tested in this example:
 
 ```shell
-cd /tmp
-git clone https://github.com/spring-guides/gs-soap-service.git
-cd gs-soap-service/complete
-./mvnw spring-boot:run
+git clone "https://github.com/spring-guides/gs-producing-web-service.git"
+cd gs-producing-web-service/complete
+git switch --detach c9c88ea61cfbcef0de6275c7b6c8b1320549017a
 ```
 
-Create the request and response transformation templates:
+Run the sample in the same network as APISIX:
 
 ```shell
-req_template=$(cat <<EOF | awk '{gsub(/"/,"\\\"");};1' | awk '{$1=$1};1' | tr -d '\r\n'
+docker volume create soap-maven-cache
+docker rm -f quickstart-soap-service 2>/dev/null || true
+
+docker run -d \
+  --rm \
+  --name quickstart-soap-service \
+  --network apisix-quickstart-net \
+  -v "$PWD:/workspace" \
+  -v soap-maven-cache:/root/.m2 \
+  -w /workspace \
+  eclipse-temurin:17-jdk@sha256:420933bf319e6aff4bec22eff8d2a31c824df5d853432e3dc0f46d6ea8dd5919 \
+  ./mvnw spring-boot:run
+```
+
+Run `docker logs -f quickstart-soap-service` and wait for `Started ProducingWebServiceApplication`. Press `Ctrl+C` after startup; the service continues running in the background.
+
+Create the SOAP request template:
+
+```shell title="request-template.xml"
+cat > request-template.xml <<'EOF'
 <?xml version="1.0"?>
 <soap-env:Envelope xmlns:soap-env="http://schemas.xmlsoap.org/soap/envelope/">
- <soap-env:Body>
-  <ns0:getCountryRequest xmlns:ns0="http://spring.io/guides/gs-producing-web-service">
-   <ns0:name>{{_escape_xml(name)}}</ns0:name>
-  </ns0:getCountryRequest>
- </soap-env:Body>
+  <soap-env:Body>
+    <ns0:getCountryRequest xmlns:ns0="https://spring.io/guides/gs-producing-web-service">
+      <ns0:name>{{_escape_xml(name)}}</ns0:name>
+    </ns0:getCountryRequest>
+  </soap-env:Body>
 </soap-env:Envelope>
 EOF
-)
+```
 
-rsp_template=$(cat <<EOF | awk '{gsub(/"/,"\\\"");};1' | awk '{$1=$1};1' | tr -d '\r\n'
+Create the JSON response template:
+
+```shell title="response-template.json"
+cat > response-template.json <<'EOF'
 {% if Envelope.Body.Fault == nil then %}
 {
   "status":"{{_ctx.var.status}}",
@@ -118,74 +139,74 @@ rsp_template=$(cat <<EOF | awk '{gsub(/"/,"\\\"");};1' | awk '{$1=$1};1' | tr -d
 }
 {% end %}
 EOF
-)
 ```
 
-`awk` and `tr` are used above to manipulate the template such that the template would be a valid JSON string.
+Encode the templates for insertion into the Admin API JSON document:
 
-Create a Route with `body-transformer` using the templates created previously. In the Plugin, set the request input format as JSON, the response input format as XML, and the `Content-Type` header to `text/xml` for the Upstream service to respond properly:
+```shell
+export REQUEST_TEMPLATE_BASE64="$(base64 < request-template.xml | tr -d '\r\n')"
+export RESPONSE_TEMPLATE_BASE64="$(base64 < response-template.json | tr -d '\r\n')"
+```
+
+Create a route that decodes the client request as JSON, sends SOAP XML to the sample service's `/services` endpoint, decodes the XML response, and returns JSON:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
-  -d '{
-    "id": "body-transformer-route",
-    "methods": ["POST"],
-    "uri": "/ws",
-    "plugins": {
-      "body-transformer": {
-        "request": {
-          "template": "'"$req_template"'",
-          "input_format": "json"
-        },
-        "response": {
-          "template": "'"$rsp_template"'",
-          "input_format": "xml"
-        }
+  -H "Content-Type: application/json" \
+  --data-binary @- <<EOF
+{
+  "id": "body-transformer-route",
+  "methods": ["POST"],
+  "uri": "/ws",
+  "plugins": {
+    "body-transformer": {
+      "request": {
+        "template": "$REQUEST_TEMPLATE_BASE64",
+        "template_is_base64": true,
+        "input_format": "json"
       },
-      "proxy-rewrite": {
-        "headers": {
-          "set": {
-            "Content-Type": "text/xml"
-          }
+      "response": {
+        "template": "$RESPONSE_TEMPLATE_BASE64",
+        "template_is_base64": true,
+        "input_format": "xml"
+      }
+    },
+    "proxy-rewrite": {
+      "uri": "/services",
+      "headers": {
+        "set": {
+          "Content-Type": "text/xml"
         }
       }
     },
-    "upstream": {
-      "type": "roundrobin",
-      "nodes": {
-        "localhost:8080": 1
+    "response-rewrite": {
+      "headers": {
+        "set": {
+          "Content-Type": "application/json"
+        }
       }
     }
-  }'
-```
-
-:::tip
-
-If it is cumbersome to adjust complex text files to be valid transformation templates, you can use the base64 utility to encode the files, such as the following:
-
-```json
-"body-transformer": {
-  "request": {
-    "template": "'"$(base64 -w0 /path/to/request_template_file)"'"
   },
-  "response": {
-    "template": "'"$(base64 -w0 /path/to/response_template_file)"'"
+  "upstream": {
+    "type": "roundrobin",
+    "nodes": {
+      "quickstart-soap-service:8080": 1
+    }
   }
 }
+EOF
 ```
 
-:::
-
-Send a request with a valid JSON body:
+Send a JSON request to the route:
 
 ```shell
-curl "http://127.0.0.1:9080/ws" -X POST -d '{"name": "Spain"}'
+curl "http://127.0.0.1:9080/ws" -X POST \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Spain"}'
 ```
 
-The JSON body sent in the request will be transformed into XML before being forwarded to the Upstream SOAP service, and the response body will be transformed back from XML to JSON.
-
-You should see a response similar to the following:
+You should receive a response similar to the following:
 
 ```json
 {

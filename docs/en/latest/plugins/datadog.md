@@ -51,7 +51,7 @@ This Plugin provides the ability to push metrics as a batch to the external Data
 | retry_delay    | integer | False    | 1       | [0,...]        | Time interval in seconds to retry sending the batch if the previous attempt failed.                                      |
 | max_retry_count | integer | False   | 0       | [0,...]        | Maximum number of unsuccessful retries before dropping the metric entries.                                               |
 
-This Plugin supports using batch processors to aggregate and process metric data in a batch. This avoids the need to submit data too frequently. The batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. See [Batch Processor](../batch-processor.md#configuration) for more information or to customize the configuration.
+This Plugin supports using batch processors to aggregate and process metric data in a batch. This avoids the need to submit data too frequently. The batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. See [Batch Processor](../batch-processor.md#configurations) for more information or to customize the configuration.
 
 ## Plugin Metadata
 
