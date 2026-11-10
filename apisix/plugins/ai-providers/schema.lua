@@ -21,7 +21,7 @@ local _M = {}
 _M.providers = {
     "openai", "deepseek", "aimlapi", "anthropic",
     "openai-compatible", "azure-openai", "openrouter",
-    "gemini", "vertex-ai", "bedrock",
+    "gemini", "vertex-ai", "bedrock", "anthropic-compatible",
 }
 
 return  _M
