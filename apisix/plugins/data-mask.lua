@@ -22,6 +22,8 @@ local t_remove  = table.remove
 local re_sub    = ngx.re.sub
 local str_lower = string.lower
 local str_gsub  = string.gsub
+local str_find  = string.find
+local str_sub   = string.sub
 local core      = require("apisix.core")
 local jp        = require("jsonpath")
 
@@ -232,11 +234,26 @@ function _M.log(conf, ctx)
     local body_masked = false
     local masked_headers
 
+    local upstream_args
+    local upstream_path
+    if ctx.var.upstream_uri and ctx.var.upstream_uri ~= "" then
+        local idx = str_find(ctx.var.upstream_uri, "?", 1, true)
+        if idx then
+            upstream_path = str_sub(ctx.var.upstream_uri, 1, idx - 1)
+            local raw_query = str_sub(ctx.var.upstream_uri, idx + 1)
+            upstream_args = core.string.decode_args(raw_query)
+        end
+    end
+    local upstream_query_masked = false
+
     if conf.request then
         for _, item in ipairs(conf.request) do
             if item.type == "query" then
                 if mask_table(args, item) then
                     query_masked = true
+                end
+                if upstream_args and mask_table(upstream_args, item) then
+                    upstream_query_masked = true
                 end
             end
 
@@ -327,7 +344,14 @@ function _M.log(conf, ctx)
         -- for access log
         ctx.var.request_line = core.request.get_method() .. " " .. ctx.var.request_uri
                                     .. " HTTP/" .. core.request.get_http_version()
-        -- TODO: handle upstream_uri in access log when enable proxy-rewrite
+    end
+
+    if upstream_query_masked then
+        if next(upstream_args) then
+            ctx.var.upstream_uri = upstream_path .. "?" .. core.string.encode_args(upstream_args)
+        else
+            ctx.var.upstream_uri = upstream_path
+        end
     end
 
     if post_args_masked then
