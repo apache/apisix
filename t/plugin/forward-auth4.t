@@ -44,6 +44,7 @@ add_block_preprocessor(sub {
                 ngx.header["X-Auth-Args"] = ngx.var.args or "none"
                 ngx.header["X-Auth-Body"] = ngx.req.get_body_data() or "none"
                 ngx.header["X-Auth-Conn-Requests"] = ngx.var.connection_requests
+                ngx.header["X-Auth-Connection"] = ngx.var.http_connection or "none"
                 ngx.header["X-User-ID"] = "user-1"
                 ngx.header["X-Multi"] = {"a", "b"}
                 ngx.header["x-lower"] = "l"
@@ -85,7 +86,8 @@ __DATA__
     location /t {
         content_by_lua_block {
             local up = {"X-Auth-Content-Length", "X-Auth-Host", "X-Auth-UA", "X-Auth-Method",
-                        "X-Auth-Args", "X-Auth-Body", "X-Auth-Conn-Requests", "X-User-ID",
+                        "X-Auth-Args", "X-Auth-Body", "X-Auth-Conn-Requests",
+                        "X-Auth-Connection", "X-User-ID",
                         "X-Multi", "X-Lower", "X-Absent"}
             local echo = {
                 phase = "access",
@@ -158,6 +160,7 @@ qr/^(?!.*"x-auth-ua")
    (?=.*"x-auth-content-length":"0")
    (?=.*"x-auth-host":"127\.0\.0\.1:1986")
    (?=.*"x-auth-method":"GET")
+   (?=.*"x-auth-connection":"keep-alive")
    (?=.*"x-user-id":"user-1")
    (?=.*"x-multi":\["a","b"\])
    (?=.*"x-lower":"l")/sx
@@ -257,13 +260,13 @@ reused
                     return
                 end
                 local headers = require("cjson").decode(res.body)
-                ngx.say(headers["x-auth-conn-requests"])
+                ngx.say(headers["x-auth-conn-requests"], " ", headers["x-auth-connection"])
             end
         }
     }
 --- response_body
-1
-1
+1 close
+1 close
 
 
 
@@ -297,6 +300,7 @@ Authorization: token-1
 --- response_body_like eval
 qr/(?=.*"x-auth-content-length":"none")
    (?=.*"x-auth-ua":"lua-resty-http\/[\d.]+[ ]\(Lua\)[ ]ngx_lua\/\d+")
+   (?=.*"x-auth-connection":"none")
    (?=.*"x-auth-host":"127\.0\.0\.1:1986")
    (?=.*"x-user-id":"user-1")
    (?=.*"x-multi":\["a","b"\])/sx
@@ -466,3 +470,30 @@ GET /fa-empty-host
 --- error_code: 400
 --- no_error_log
 [error]
+
+
+
+=== TEST 22: lua-resty-http with keepalive false sends no Connection header and closes
+--- extra_yaml_config
+plugin_attr:
+  forward-auth:
+    http_client: lua-resty-http
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            for i = 1, 2 do
+                local httpc = http.new()
+                local res, err = httpc:request_uri("http://127.0.0.1:1984/fa-no-keepalive")
+                if not res then
+                    ngx.say("request failed: ", err)
+                    return
+                end
+                local headers = require("cjson").decode(res.body)
+                ngx.say(headers["x-auth-conn-requests"], " ", headers["x-auth-connection"])
+            end
+        }
+    }
+--- response_body
+1 none
+1 none

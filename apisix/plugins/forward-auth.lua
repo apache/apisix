@@ -208,6 +208,12 @@ local function request_auth(conf, headers, body)
         return nil, err
     end
 
+    -- ngx_http_ffi_client announces keep-alive unless the caller sends its own
+    -- Connection header; lua-resty-http sends none either way
+    if not conf.keepalive and name == http_client.FFI_CLIENT then
+        headers["Connection"] = "close"
+    end
+
     local res
     res, err = httpc:request({
         method = conf.request_method,
