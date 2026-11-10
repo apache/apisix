@@ -279,8 +279,9 @@ qr/.*Content-Disposition: form-data; name=\"status\"\r\n\r\nmajor.*/
             local http = require("resty.http")
 
             local code = t.test('/apisix/admin/routes/1', ngx.HTTP_PUT, {
-                uri = "/echo",
+                uri = "/multipart-dependency-regression",
                 plugins = {
+                    ["proxy-rewrite"] = { uri = "/echo" },
                     ["body-transformer"] = {
                         request = {
                             template = "{*_escape_json(_multipart:get_all_with_arrays())*}"
@@ -311,6 +312,14 @@ qr/.*Content-Disposition: form-data; name=\"status\"\r\n\r\nmajor.*/
                     value = "larry123"
                 },
                 {
+                    label = "quoted field name whitespace",
+                    boundary = "AaB03x",
+                    content_type = "multipart/form-data; boundary=AaB03x",
+                    disposition = 'form-data; name="user "',
+                    name = "user ",
+                    value = "larry123"
+                },
+                {
                     label = "delimiter prefix in content",
                     boundary = "AaB03x",
                     content_type = "multipart/form-data; boundary=AaB03x",
@@ -321,7 +330,8 @@ qr/.*Content-Disposition: form-data; name=\"status\"\r\n\r\nmajor.*/
             }
 
             local httpc = http.new()
-            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/echo"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+                        .. "/multipart-dependency-regression"
             for i, case in ipairs(cases) do
                 local body = table.concat({
                     "--" .. case.boundary,
@@ -362,6 +372,7 @@ qr/.*Content-Disposition: form-data; name=\"status\"\r\n\r\nmajor.*/
 --- response_body
 unquoted field name: passed
 quoted parameters: passed
+quoted field name whitespace: passed
 delimiter prefix in content: passed
 --- no_error_log
 [error]
