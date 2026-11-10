@@ -211,7 +211,7 @@ The following example demonstrates how you can configure the API key, model, and
 Obtain the OpenAI [API key](https://openai.com/blog/openai-api) and save it to an environment variable:
 
 ```shell
-export OPENAI_API_KEY=<your-api-key>
+export OPENAI_API_KEY='<your-api-key>'
 ```
 
 <Tabs
@@ -422,7 +422,7 @@ The following example demonstrates how you can configure the `ai-proxy` Plugin t
 Obtain the DeepSeek API key and save it to an environment variable:
 
 ```shell
-export DEEPSEEK_API_KEY=<your-api-key>
+export DEEPSEEK_API_KEY='<your-api-key>'
 ```
 
 <Tabs
@@ -636,7 +636,7 @@ The following example demonstrates how you can configure the `ai-proxy` Plugin t
 Obtain the Azure OpenAI API key and save it to an environment variable:
 
 ```shell
-export AZ_OPENAI_API_KEY=<your-api-key>
+export AZ_OPENAI_API_KEY='<your-api-key>'
 ```
 
 <Tabs
@@ -862,8 +862,8 @@ The following example demonstrates how you can configure the `ai-proxy` Plugin t
 Save your AWS credentials to environment variables:
 
 ```shell
-export AWS_ACCESS_KEY_ID=<your-aws-access-key-id>
-export AWS_SECRET_ACCESS_KEY=<your-aws-secret-access-key>
+export AWS_ACCESS_KEY_ID='<your-aws-access-key-id>'
+export AWS_SECRET_ACCESS_KEY='<your-aws-secret-access-key>'
 ```
 
 Create a Route and configure the `ai-proxy` Plugin as such:
@@ -1011,7 +1011,7 @@ The following example demonstrates how you can configure the `ai-proxy` Plugin t
 Obtain the OpenAI [API key](https://openai.com/blog/openai-api) and save it to an environment variable:
 
 ```shell
-export OPENAI_API_KEY=<your-api-key>
+export OPENAI_API_KEY='<your-api-key>'
 ```
 
 <Tabs
@@ -1228,7 +1228,7 @@ The following example demonstrates how you can configure the `ai-proxy` Plugin t
 Obtain an Anthropic [API key](https://console.anthropic.com/settings/keys) and save it to an environment variable:
 
 ```shell
-export ANTHROPIC_API_KEY=<your-api-key>
+export ANTHROPIC_API_KEY='<your-api-key>'
 ```
 
 <Tabs
@@ -1442,7 +1442,7 @@ The protocol conversion is triggered automatically when the Route URI is set to 
 Obtain an API key for your chosen OpenAI-compatible backend service and save it to an environment variable. This example uses OpenAI:
 
 ```shell
-export BACKEND_API_KEY=<your-api-key>
+export BACKEND_API_KEY='<your-api-key>'
 ```
 
 <Tabs
@@ -1659,8 +1659,8 @@ The following example demonstrates how you can proxy requests to different model
 The example will use OpenAI and DeepSeek as the example LLM services. Obtain the OpenAI and DeepSeek API keys and save them to environment variables:
 
 ```shell
-export OPENAI_API_KEY=<your-api-key>
-export DEEPSEEK_API_KEY=<your-api-key>
+export OPENAI_API_KEY='<your-api-key>'
+export DEEPSEEK_API_KEY='<your-api-key>'
 ```
 
 <Tabs

@@ -106,6 +106,8 @@ docker run -d \
   moul/grpcbin
 ```
 
+下面的路由使用 `127.0.0.1:9000` 作为上游地址，并假设 APISIX 运行在 Docker 宿主机上。如果 APISIX 运行在容器中，请将两个容器连接到同一个[用户自定义 Docker 网络](https://docs.docker.com/engine/network/drivers/bridge/)，并在路由中使用 `grpcbin:9000`。在 APISIX 容器内，`127.0.0.1` 指向 APISIX 自身；Docker 会在共享网络中解析 `grpcbin`。
+
 #### 生成 gRPC-Web 客户端代码
 
 下载 Protocol Buffer 定义文件 `hello.proto`：
