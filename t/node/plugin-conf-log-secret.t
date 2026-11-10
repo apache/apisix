@@ -30,8 +30,35 @@ add_block_preprocessor(sub {
     }
 
     if (!$block->no_error_log) {
-        $block->set_value("no_error_log", "plaintext-redis-secret");
+        $block->set_value("no_error_log", "plaintext-redis-secret\nmarked-redis-secret");
     }
+
+    # the marked cases enable data encryption so that the marked value is decrypted on load
+    if ($block->name =~ /marked/ && !$block->yaml_config) {
+        $block->set_value("yaml_config", <<_EOC_);
+apisix:
+    data_encryption:
+        enable_encrypt_fields: true
+        keyring:
+            - edd1c9f0985e76a2
+_EOC_
+    }
+
+    # write the resources straight to etcd, the way the control plane does
+    my $extra_init_by_lua = <<_EOC_;
+    function _G.mark(v)
+        local de = require("apisix.core").data_encryption
+        local keyring = de.init_iv_tbl({"edd1c9f0985e76a2"})
+        return "\$ENC\$v1\$" .. assert(de.aes_cbc_encrypt(keyring, v))
+    end
+    function _G.put(key, value)
+        assert(require("apisix.core").etcd.set(key, value))
+    end
+    function _G.del(key)
+        assert(require("apisix.core").etcd.delete(key))
+    end
+_EOC_
+    $block->set_value("extra_init_by_lua", $extra_init_by_lua);
 });
 
 run_tests;
@@ -179,6 +206,100 @@ key: /apisix/routes/1
                 ngx.say(body)
                 return
             end
+            ngx.say("done")
+        }
+    }
+--- response_body
+done
+--- error_log
+failed to check item data of [/apisix/routes] err:failed to check the configuration of plugin response-rewrite
+key: /apisix/routes/1
+
+
+
+=== TEST 5: stream route with a marked secret in its plugin conf, merged with a service
+--- config
+    location /t {
+        content_by_lua_block {
+            put("/services/1", {
+                upstream = {nodes = {["127.0.0.1:1995"] = 1}, type = "roundrobin"},
+            })
+            put("/stream_routes/1", {
+                service_id = "1",
+                plugins = {
+                    ["limit-conn"] = {
+                        conn = 100,
+                        burst = 50,
+                        default_conn_delay = 0.1,
+                        key = "remote_addr",
+                        policy = "redis",
+                        redis_host = "127.0.0.1",
+                        redis_port = 1,
+                        redis_password = mark("marked-redis-secret"),
+                        allow_degradation = true,
+                    },
+                },
+            })
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 6: load the stream route with the marked secret on start and hit it
+--- stream_request
+mmm
+--- stream_response
+hello world
+--- error_log
+check stream plugin schema, name: limit-conn
+merge service [1] into stream route [1]
+init plugin-level conf version
+
+
+
+=== TEST 7: marked secret, plugin checker fails on an unrelated field, watch update
+--- config
+    location /t {
+        content_by_lua_block {
+            -- let the initial full load finish so that the route arrives through the watch
+            ngx.sleep(1)
+            del("/stream_routes/1")
+            del("/services/1")
+            put("/routes/1", {
+                uri = "/hello",
+                plugins = {
+                    ["limit-count"] = {
+                        count = 2,
+                        time_window = 60,
+                        policy = "redis",
+                        redis_host = "127.0.0.1",
+                        redis_password = mark("marked-redis-secret"),
+                    },
+                    ["response-rewrite"] = {status_code = 1},
+                },
+                upstream = {nodes = {["127.0.0.1:1980"] = 1}, type = "roundrobin"},
+            })
+            ngx.sleep(1)
+            ngx.say("done")
+        }
+    }
+--- response_body
+done
+--- error_log
+failed to check item data of [/apisix/routes] err:failed to check the configuration of plugin response-rewrite
+key: /apisix/routes/1
+
+
+
+=== TEST 8: marked secret, plugin checker fails on an unrelated field, full load
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.sleep(1)
+            del("/routes/1")
             ngx.say("done")
         }
     }
