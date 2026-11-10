@@ -162,7 +162,7 @@ apisix:
     }
 --- response_body
 60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa
-xMlerg8pE2lPSDlQdPi+MsAwBnzqpyLRar3lUhP2Tdc2oXnWmit92p8cannhDYkBPc6P/Hlx0wSA0T2wle9QyHaW2oqw3bXDQSWWk8Vqq0o=
+$ENC$v1$xMlerg8pE2lPSDlQdPi+MsAwBnzqpyLRar3lUhP2Tdc2oXnWmit92p8cannhDYkBPc6P/Hlx0wSA0T2wle9QyHaW2oqw3bXDQSWWk8Vqq0o=
 
 
 

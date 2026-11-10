@@ -449,7 +449,7 @@ function _M:patch(id, conf, sub_path, args)
     -- them before merging, otherwise the check_conf below will encrypt them
     -- again, resulting in fields that are encrypted multiple times
     if apisix_plugin.enable_gde() then
-        utils.decrypt_params(apisix_plugin.decrypt_conf, res_old.body)
+        utils.decrypt_params(apisix_plugin.decrypt_conf_for_patch, res_old.body)
     end
 
     if sub_path and sub_path ~= "" then

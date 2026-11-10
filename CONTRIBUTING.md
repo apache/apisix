@@ -140,9 +140,11 @@ Once we've discussed your changes and you've got your code ready, make sure that
 
 ## API Contracts
 
-When changing Admin API routes, schemas, validation, or responses, review and update
-`docs/en/latest/admin-api.json` in the same PR. Implementation and tests are authoritative.
-Keep the contract explicit; do not fetch or generate it from downstream documentation.
+When changing Admin API routes, schemas, validation, or responses, edit the modular
+source under `docs/openapi/admin-api/`, run `make bundle-admin-api-spec`, and commit
+the regenerated `docs/en/latest/admin-api.json` in the same PR. Do not edit the
+generated JSON directly. Implementation and tests are authoritative. Keep the
+contract explicit; do not fetch or generate it from downstream documentation.
 Plugin-specific schemas remain available through the schema endpoints.
 
 When changing Control API routes or responses, also review

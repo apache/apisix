@@ -48,17 +48,15 @@ properties:
       - 0
     type: integer
   cert:
-    minLength: 128
-    maxLength: 65536
-    type: string
+    $ref: ./CertificateOrReference.yaml
+    description: Stored PEM certificate or APISIX secret/environment reference.
   client:
     required:
       - ca
     properties:
       ca:
-        minLength: 128
-        maxLength: 65536
-        type: string
+        $ref: ./CertificateOrReference.yaml
+        description: Stored PEM CA certificate or APISIX secret/environment reference.
       skip_mtls_uri_regex:
         uniqueItems: true
         minItems: 1
@@ -76,9 +74,7 @@ properties:
     type: string
   certs:
     items:
-      minLength: 128
-      maxLength: 65536
-      type: string
+      $ref: ./CertificateOrReference.yaml
     type: array
   id:
     $ref: ./ResourceId.yaml
@@ -94,3 +90,4 @@ properties:
     type: string
 type: object
 x-source: apisix/schema_def.lua
+description: SSL read-response representation. Private-key fields are omitted from GET responses.

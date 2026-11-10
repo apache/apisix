@@ -25,8 +25,7 @@ properties:
     minimum: 0
     type: number
   scheme:
-    default: http
-    description: The scheme of the upstream. For L7 proxy, it can be one of grpc/grpcs/http/https. For L4 proxy, it can be one of tcp/tls/udp. For specific protocols, it can be kafka.
+    description: The scheme of the upstream. For L7 proxy, it can be one of grpc/grpcs/http/https/ws/wss. For L4 proxy, it can be one of tcp/tls/udp. For specific protocols, it can be kafka.
     enum:
       - grpc
       - grpcs
@@ -36,6 +35,9 @@ properties:
       - tls
       - udp
       - kafka
+      - ws
+      - wss
+    default: http
   retries:
     minimum: 0
     type: integer
@@ -76,12 +78,19 @@ properties:
     description: the key of chash for dynamic load balancing
   discovery_args:
     properties:
-      group_name:
-        type: string
-        description: group name
       namespace_id:
         type: string
         description: namespace id
+      group_name:
+        type: string
+        description: group name
+      cluster_ids:
+        description: ids of the kubernetes discovery clusters to get nodes from
+        uniqueItems: true
+        items:
+          type: string
+        minItems: 1
+        type: array
     type: object
   name:
     minLength: 1
@@ -106,6 +115,8 @@ properties:
     type: string
   modifiedIndex:
     type: integer
+  warm_up_conf:
+    $ref: ./UpstreamWarmUp.yaml
 oneOf:
   - required:
       - nodes

@@ -15,12 +15,12 @@
 # limitations under the License.
 #
 type: object
-description: SSL write response, which may contain encrypted private-key fields.
+description: SSL write response, which may contain plaintext or encrypted private-key fields or stored references.
 properties:
   key:
     type: string
   value:
-    $ref: ./SSL.yaml
+    $ref: ./SSLWrite.yaml
   createdIndex:
     type: integer
   modifiedIndex:

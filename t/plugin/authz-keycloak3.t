@@ -175,7 +175,7 @@ apisix:
     }
 --- response_body
 d1ec69e9-55d2-4109-a3ea-befa071579d5
-Fz1juZEEvh9PPXOmWFdMMJkREt3ZSzEVWcUZPxNP6achk3fosEvn37oN0qH4YgKB
+$ENC$v1$Fz1juZEEvh9PPXOmWFdMMJkREt3ZSzEVWcUZPxNP6achk3fosEvn37oN0qH4YgKB
 
 
 

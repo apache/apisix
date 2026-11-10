@@ -23,7 +23,7 @@ import axios from 'axios';
 import * as compose from 'docker-compose';
 import { gql, request } from 'graphql-request';
 import { Api as LagoApi, Client as LagoClient } from 'lago-javascript-client';
-import simpleGit from 'simple-git';
+import { simpleGit } from 'simple-git';
 import * as YAML from 'yaml';
 
 import { request as requestAdminAPI } from '../ts/admin_api';
