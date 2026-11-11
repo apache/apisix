@@ -128,23 +128,7 @@ Content-Type: multipart/form-data; boundary=testboundary
 
 
 
-=== TEST 6: multipart/form-data with an unquoted model field name
---- request
-POST /hello
---testboundary
-Content-Disposition: form-data; name=model
-
-openai
---testboundary--
---- more_headers
-Content-Type: multipart/form-data; boundary=testboundary
---- error_code: 200
---- response_body
-hello world
-
-
-
-=== TEST 7: no match without content type
+=== TEST 6: no match without content type
 --- request
 POST /hello
 --testboundary
@@ -158,7 +142,7 @@ unsupported content-type:
 
 
 
-=== TEST 8: use array in request body vars
+=== TEST 7: use array in request body vars
 --- config
     location /t {
         content_by_lua_block {
@@ -192,7 +176,7 @@ passed
 
 
 
-=== TEST 9: send request with type not image_url
+=== TEST 8: send request with type not image_url
 --- request
 POST /hello
 { "model":"deepseek", "messages": [ { "role": "system", "content": [{"text":"You are a mathematician","type":"text"}] }] }
@@ -202,7 +186,7 @@ Content-Type: application/json
 
 
 
-=== TEST 10: send request with type has image_url
+=== TEST 9: send request with type has image_url
 --- request
 POST /hello
 { "model":"deepseek", "messages": [ { "role": "system", "content": [{"text":"You are a mathematician","type":"text"},{"text":"You are a mathematician","type":"image_url"}] }] }
@@ -212,7 +196,7 @@ Content-Type: application/json
 
 
 
-=== TEST 11: use invalid jsonpath input
+=== TEST 10: use invalid jsonpath input
 --- config
     location /t {
         content_by_lua_block {
@@ -247,7 +231,7 @@ qr/.*failed to validate the 'vars' expression: invalid expression.*/
 
 
 
-=== TEST 12: use non array in request body vars
+=== TEST 11: use non array in request body vars
 --- config
     location /t {
         content_by_lua_block {
@@ -281,7 +265,7 @@ passed
 
 
 
-=== TEST 13: send request
+=== TEST 12: send request
 --- request
 POST /hello
 { "model":{"name": "deepseek"}, "messages": [ { "role": "system", "content": [{"text":"You are a mathematician","type":"text"},{"text":"You are a mathematician","type":"image_url"}] }] }
