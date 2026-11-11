@@ -531,3 +531,83 @@ GET /t
 --- response_body
 done
 --- wait: 2
+
+
+
+=== TEST 14: a callback that raises is retried and then dropped like one that returns false
+--- config
+    location /t {
+        content_by_lua_block {
+            local Batch = require("apisix.utils.batch-processor")
+            local config = {
+                max_retry_count  = 1,
+                batch_max_size = 1,
+                retry_delay  = 0,
+            }
+            local calls = 0
+            local func_to_send = function(elements)
+                calls = calls + 1
+                error("callback raised on call " .. calls)
+            end
+            local log_buffer, err = Batch:new(func_to_send, config)
+
+            if not log_buffer then
+                ngx.say(err)
+                return
+            end
+
+            log_buffer:push({hello='world'})
+            ngx.sleep(0.5)
+            ngx.say("calls: ", calls)
+            ngx.say("processed: ", log_buffer.processed_entries)
+        }
+    }
+--- request
+GET /t
+--- response_body
+calls: 2
+processed: 1
+--- error_log eval
+[qr/Batch Processor\[log buffer\] failed to process entries: .*callback raised on call 1/,
+qr/Batch Processor\[log buffer\] failed to process entries: .*callback raised on call 2/,
+qr/Batch Processor\[log buffer\] exceeded the max_retry_count\[2\] dropping the entries/]
+--- no_error_log
+lua entry thread aborted
+
+
+
+=== TEST 15: a batch dropped because its timer cannot be created still counts as processed
+--- config
+    location /t {
+        content_by_lua_block {
+            -- load a fresh copy of the module so that it captures a failing timer
+            package.loaded["apisix.utils.batch-processor"] = nil
+            local timer_at = ngx.timer.at
+            ngx.timer.at = function()
+                return nil, "too many pending timers"
+            end
+            local Batch = require("apisix.utils.batch-processor")
+            ngx.timer.at = timer_at
+
+            local config = {
+                max_retry_count  = 0,
+                batch_max_size = 1,
+                retry_delay  = 0,
+            }
+            local log_buffer, err = Batch:new(function() return true end, config)
+
+            if not log_buffer then
+                ngx.say(err)
+                return
+            end
+
+            log_buffer:push({hello='world'})
+            ngx.say("processed: ", log_buffer.processed_entries)
+        }
+    }
+--- request
+GET /t
+--- response_body
+processed: 1
+--- error_log
+failed to create process timer: too many pending timers

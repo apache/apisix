@@ -21,6 +21,8 @@ local ipairs = ipairs
 local table = table
 local now = ngx.now
 local type = type
+local pcall = pcall
+local tostring = tostring
 local exiting = ngx.worker.exiting
 local batch_processor = {}
 local batch_processor_mt = {
@@ -49,6 +51,14 @@ local schema = {
 batch_processor.schema = schema
 
 
+-- The backlog limit in batch-processor-manager counts an entry as pending until it
+-- is added to processed_entries, so every batch that is given up on, not only the
+-- ones that ran, must be added; otherwise it stays pending for the worker's lifetime.
+local function drop_batch(self, batch)
+    self.processed_entries = self.processed_entries + #batch.entries
+end
+
+
 local function schedule_func_exec(self, delay, batch)
     local hdl, err = timer_at(delay, execute_func, self, batch)
     if not hdl then
@@ -57,10 +67,12 @@ local function schedule_func_exec(self, delay, batch)
             if not hdl2 then
                 core.log.error("failed to create fallback process timer ",
                                "while exiting: ", err2)
+                drop_batch(self, batch)
                 return
             end
         else
             core.log.error("failed to create process timer: ", err)
+            drop_batch(self, batch)
             return
         end
     end
@@ -91,7 +103,14 @@ function execute_func(premature, self, batch)
     -- In case of "err" and a valid "first_fail" batch processor considers, all first_fail-1
     -- entries have been successfully consumed and hence reschedule the job for entries with
     -- index first_fail to #entries based on the current retry policy.
-    local ok, err, first_fail = self.func(batch.entries, self.batch_max_size)
+    local call_ok, ok, err, first_fail = pcall(self.func, batch.entries,
+                                               self.batch_max_size)
+    if not call_ok then
+        -- a callback that raises has failed the batch, so it takes the same retry
+        -- and drop path as one that returns false
+        ok, err, first_fail = false, tostring(ok), nil
+    end
+
     if not ok then
         if first_fail then
             core.log.error("Batch Processor[", self.name, "] failed to process entries [",
@@ -108,7 +127,7 @@ function execute_func(premature, self, batch)
             schedule_func_exec(self, self.retry_delay,
                                batch)
         else
-            self.processed_entries = self.processed_entries + #batch.entries
+            drop_batch(self, batch)
             core.log.error("Batch Processor[", self.name,"] exceeded ",
                            "the max_retry_count[", batch.retry_count,
                            "] dropping the entries")

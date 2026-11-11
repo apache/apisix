@@ -372,3 +372,56 @@ passed
 --- error_log
 max pending entries limit exceeded. discarding entry
 --- timeout: 5
+
+
+
+=== TEST 8: entries whose callback raised no longer count against the backlog
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugin")
+            plugin.plugin_metadatas = {
+                get = function(self, name)
+                    return {value = {max_pending_entries = 2}}
+                end
+            }
+
+            local bp_manager_mod = require("apisix.utils.batch-processor-manager")
+            local bp_manager = bp_manager_mod.new("test logger", "test-logger")
+            local conf = {
+                name = "test logger",
+                batch_max_size = 1,
+                inactive_timeout = 300,
+                buffer_duration = 300,
+                max_retry_count = 0,
+                retry_delay = 0,
+            }
+            local ctx = {var = {route_id = "1", server_addr = "127.0.0.1"}}
+            local func = function()
+                error("unexpected reply from the log server")
+            end
+
+            local push = function(n)
+                for i = 1, n do
+                    if not bp_manager:add_entry(conf, i) then
+                        bp_manager:add_entry_to_new_processor(conf, i, ctx, func)
+                    end
+                end
+            end
+
+            -- every entry is a batch of its own, and every batch fails by raising
+            push(2)
+            ngx.sleep(0.2)
+            -- the failed entries were dropped, so these fit under the limit again
+            push(2)
+            ngx.say("pushed: ", bp_manager.total_pushed_entries)
+        }
+    }
+--- request
+GET /t
+--- response_body
+pushed: 4
+--- error_log eval
+qr/Batch Processor\[test logger\] failed to process entries: .*unexpected reply from the log server/
+--- no_error_log
+max pending entries limit exceeded
