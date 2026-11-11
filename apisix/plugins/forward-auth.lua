@@ -25,6 +25,7 @@ local type         = type
 local tostring     = tostring
 local unpack       = unpack
 local str_byte     = string.byte
+local str_lower    = string.lower
 
 local plugin_name = "forward-auth"
 
@@ -211,6 +212,11 @@ local function request_auth(conf, headers, body)
     -- ngx_http_ffi_client announces keep-alive unless the caller sends its own
     -- Connection header; lua-resty-http sends none either way
     if not conf.keepalive and name == http_client.FFI_CLIENT then
+        for header in pairs(headers) do
+            if str_lower(header) == "connection" then
+                headers[header] = nil
+            end
+        end
         headers["Connection"] = "close"
     end
 

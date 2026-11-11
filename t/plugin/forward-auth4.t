@@ -112,6 +112,9 @@ __DATA__
                                      upstream_headers = up}},
                 {"fa-no-keepalive", {uri = "http://127.0.0.1:1986/auth", keepalive = false,
                                      upstream_headers = up}},
+                {"fa-no-keepalive-fwd", {uri = "http://127.0.0.1:1986/auth", keepalive = false,
+                                         request_headers = {"connection"},
+                                         upstream_headers = up}},
                 {"fa-timeout", {uri = "http://127.0.0.1:1986/slow", timeout = 200,
                                 upstream_headers = up}},
                 {"fa-dns-fail", {uri = "http://forward-auth.invalid:1986/auth",
@@ -497,3 +500,24 @@ plugin_attr:
 --- response_body
 1 none
 1 none
+
+
+
+=== TEST 23: keepalive false sends close even when the client Connection header is forwarded
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local httpc = http.new()
+            local res, err = httpc:request_uri("http://127.0.0.1:1984/fa-no-keepalive-fwd",
+                                               {headers = {connection = "keep-alive"}})
+            if not res then
+                ngx.say("request failed: ", err)
+                return
+            end
+            local headers = require("cjson").decode(res.body)
+            ngx.say(headers["x-auth-conn-requests"], " ", headers["x-auth-connection"])
+        }
+    }
+--- response_body
+1 close
