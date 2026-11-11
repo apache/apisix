@@ -270,7 +270,7 @@ slow start finished for node 127.0.0.1:1981
 
 
 
-=== TEST 5: a node that comes back inside the tombstone window keeps its progress
+=== TEST 5: a node that leaves mid-ramp and comes back inside the window ramps again
 --- timeout: 30
 --- config
     location /t {
@@ -286,9 +286,9 @@ slow start finished for node 127.0.0.1:1981
                         "type": "roundrobin",
                         "nodes": ]] .. nodes .. [[,
                         "warm_up_conf": {
-                            "slow_start_time_seconds": 10,
+                            "slow_start_time_seconds": 20,
                             "min_weight_percent": 1,
-                            "interval": 10
+                            "interval": 20
                         }
                     }]]
                 )
@@ -342,7 +342,7 @@ slow start finished for node 127.0.0.1:1981
             ngx.sleep(0.5)
             split(1)
 
-            -- it leaves, and comes back well inside the 10s tombstone window
+            -- it leaves, and comes back well inside the 20s window
             set_upstream(one)
             ngx.sleep(0.5)
             split(1)
@@ -356,12 +356,12 @@ slow start finished for node 127.0.0.1:1981
                 return
             end
 
-            -- the ramp continued while it was away, so 1981 is about half way
-            -- through the window: a real share of the traffic, still below 1980.
-            -- Restarting the ramp would have put it back at a tenth of the weight
+            -- whatever answers on 1981 now may have just started, so it ramps
+            -- from the first bucket again, a twentieth of the weight. Resuming
+            -- the ramp it had would have given it about a quarter
             local mature, warming = ports["1980"] or 0, ports["1981"] or 0
-            ngx.log(ngx.WARN, "tombstone split: 1980=", mature, " 1981=", warming)
-            if warming >= 15 and warming < mature then
+            ngx.log(ngx.WARN, "re-added split: 1980=", mature, " 1981=", warming)
+            if warming >= 1 and warming <= 10 then
                 ngx.say("passed")
             else
                 ngx.say("failed: 1980=", mature, " 1981=", warming)
@@ -373,6 +373,7 @@ passed
 --- grep_error_log eval
 qr/slow start began for node \S+/
 --- grep_error_log_out
+slow start began for node 127.0.0.1:1981
 slow start began for node 127.0.0.1:1981
 
 
@@ -775,14 +776,15 @@ slow start began for node 10.0.0.2:8080
             slow_start.effective_weights(up_conf, {n1})
             up_conf.nodes = {n1, n2}
             slow_start.effective_weights(up_conf, {n1})
-            ngx.say("pending: ", dict:get(key))
+            local pending = dict:get(key)
+            ngx.say("pending: ", pending < 0)
 
             -- both workers see n2 enter the picker; the other one elects first
             local elected = ngx.now() - 50
             local weights
             run(function()
                 race(key, function()
-                    assert(dict:add(key .. "@-1", elected, 10))
+                    assert(dict:add(key .. "@" .. pending, elected, 10))
                     assert(dict:set(key, elected))
                 end)
                 weights = slow_start.effective_weights(up_conf, {n1, n2})
@@ -803,13 +805,179 @@ slow start began for node 10.0.0.2:8080
         }
     }
 --- response_body
-pending: -1
+pending: true
 adopted the elected start: true, weight 50
 refresh left the change alone: 0
 
 
 
-=== TEST 12: clean up
+=== TEST 12: a node taken out by a health check ramps again however short the outage
+--- config
+    location /t {
+        content_by_lua_block {
+            local slow_start = require("apisix.slow_start")
+            local dict = ngx.shared["upstream-slow-start"]
+            local n1 = {host = "10.0.2.1", port = 80, weight = 100, priority = 0}
+            local n2 = {host = "10.0.2.2", port = 80, weight = 100, priority = 0}
+            local function upstream(scope)
+                return {
+                    resource_key = scope,
+                    type = "roundrobin",
+                    nodes = {n1, n2},
+                    warm_up_conf = {
+                        slow_start_time_seconds = 100,
+                        min_weight_percent = 1,
+                        interval = 1,
+                        aggression = 1,
+                    },
+                }
+            end
+
+            -- a mature node
+            local up_conf = upstream("/upstreams/unhealthy-mature")
+            local weights = slow_start.effective_weights(up_conf, {n1, n2})
+            ngx.say("mature: ", weights[2])
+            slow_start.effective_weights(up_conf, {n1})
+            weights = slow_start.effective_weights(up_conf, {n1, n2})
+            ngx.say("mature, back: ", weights[2])
+
+            -- a node half way through its ramp
+            up_conf = upstream("/upstreams/unhealthy-ramping")
+            up_conf.nodes = {n1}
+            slow_start.effective_weights(up_conf, {n1})
+            up_conf.nodes = {n1, n2}
+            slow_start.effective_weights(up_conf, {n1, n2})
+            dict:set(up_conf.resource_key .. "|10.0.2.2:80", ngx.now() - 50)
+            weights = slow_start.effective_weights(up_conf, {n1, n2})
+            ngx.say("ramping: ", weights[2])
+            slow_start.effective_weights(up_conf, {n1})
+            weights = slow_start.effective_weights(up_conf, {n1, n2})
+            ngx.say("ramping, back: ", weights[2])
+        }
+    }
+--- response_body
+mature: 100
+mature, back: 1
+ramping: 50
+ramping, back: 1
+--- error_log
+slow start interrupted for node 10.0.2.2:80 of upstream /upstreams/unhealthy-mature
+slow start interrupted for node 10.0.2.2:80 of upstream /upstreams/unhealthy-ramping
+
+
+
+=== TEST 13: a node removed and added back ramps again however short the absence
+--- config
+    location /t {
+        content_by_lua_block {
+            local slow_start = require("apisix.slow_start")
+            local dict = ngx.shared["upstream-slow-start"]
+            local n1 = {host = "10.0.3.1", port = 80, weight = 100, priority = 0}
+            local n2 = {host = "10.0.3.2", port = 80, weight = 100, priority = 0}
+            local function upstream(scope)
+                return {
+                    resource_key = scope,
+                    type = "roundrobin",
+                    nodes = {n1, n2},
+                    warm_up_conf = {
+                        slow_start_time_seconds = 100,
+                        min_weight_percent = 1,
+                        interval = 1,
+                        aggression = 1,
+                    },
+                }
+            end
+
+            local function remove_and_add_back(up_conf)
+                up_conf.nodes = {n1}
+                slow_start.effective_weights(up_conf, {n1})
+                up_conf.nodes = {n1, n2}
+                return slow_start.effective_weights(up_conf, {n1, n2})
+            end
+
+            -- a mature node
+            local up_conf = upstream("/upstreams/removed-mature")
+            local weights = slow_start.effective_weights(up_conf, {n1, n2})
+            ngx.say("mature: ", weights[2])
+            weights = remove_and_add_back(up_conf)
+            ngx.say("mature, back: ", weights[2])
+
+            -- a node half way through its ramp
+            up_conf = upstream("/upstreams/removed-ramping")
+            up_conf.nodes = {n1}
+            slow_start.effective_weights(up_conf, {n1})
+            up_conf.nodes = {n1, n2}
+            slow_start.effective_weights(up_conf, {n1, n2})
+            dict:set(up_conf.resource_key .. "|10.0.3.2:80", ngx.now() - 50)
+            weights = slow_start.effective_weights(up_conf, {n1, n2})
+            ngx.say("ramping: ", weights[2])
+            weights = remove_and_add_back(up_conf)
+            ngx.say("ramping, back: ", weights[2])
+
+            -- nothing of a node that left lingers in the shared dict
+            up_conf.nodes = {n1}
+            slow_start.effective_weights(up_conf, {n1})
+            ngx.say("forgotten: ", dict:get(up_conf.resource_key .. "|10.0.3.2:80") == nil)
+        }
+    }
+--- response_body
+mature: 100
+mature, back: 1
+ramping: 50
+ramping, back: 1
+forgotten: true
+
+
+
+=== TEST 14: inside the startup grace period only a node seen for the first time is mature
+--- config
+    location /t {
+        content_by_lua_block {
+            local slow_start = require("apisix.slow_start")
+            local n1 = {host = "10.0.4.1", port = 80, weight = 100, priority = 0}
+            local n2 = {host = "10.0.4.2", port = 80, weight = 100, priority = 0}
+            local n3 = {host = "10.0.4.3", port = 80, weight = 100, priority = 0}
+            local up_conf = {
+                resource_key = "/upstreams/grace",
+                type = "roundrobin",
+                nodes = {n1, n2},
+                warm_up_conf = {
+                    slow_start_time_seconds = 100,
+                    min_weight_percent = 1,
+                    interval = 1,
+                    aggression = 1,
+                    startup_grace_period_seconds = 3600,
+                },
+            }
+
+            slow_start.effective_weights(up_conf, {n1, n2})
+
+            -- observed for the first time: mature
+            up_conf.nodes = {n1, n2, n3}
+            local weights = slow_start.effective_weights(up_conf, {n1, n2, n3})
+            ngx.say("first seen: ", weights[3])
+
+            -- seen, then removed, then back: ramps
+            up_conf.nodes = {n1, n2}
+            slow_start.effective_weights(up_conf, {n1, n2})
+            up_conf.nodes = {n1, n2, n3}
+            weights = slow_start.effective_weights(up_conf, {n1, n2, n3})
+            ngx.say("removed, back: ", weights[3])
+
+            -- seen, then unhealthy, then back: ramps
+            slow_start.effective_weights(up_conf, {n1, n3})
+            weights = slow_start.effective_weights(up_conf, {n1, n2, n3})
+            ngx.say("unhealthy, back: ", weights[2])
+        }
+    }
+--- response_body
+first seen: 100
+removed, back: 1
+unhealthy, back: 1
+
+
+
+=== TEST 15: clean up
 --- config
     location /t {
         content_by_lua_block {
