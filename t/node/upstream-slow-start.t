@@ -977,7 +977,59 @@ unhealthy, back: 1
 
 
 
-=== TEST 15: clean up
+=== TEST 15: a node away for longer than a window ramps from when it is back, not from when it left
+--- timeout: 15
+--- config
+    location /t {
+        content_by_lua_block {
+            local slow_start = require("apisix.slow_start")
+            local n1 = {host = "10.0.5.1", port = 80, weight = 100, priority = 0}
+            local n2 = {host = "10.0.5.2", port = 80, weight = 100, priority = 0}
+            local function upstream(scope)
+                -- the floor is above the first bucket of a 2s window, so a ramp
+                -- that started now reads exactly the floor
+                return {
+                    resource_key = scope,
+                    type = "roundrobin",
+                    nodes = {n1, n2},
+                    warm_up_conf = {
+                        slow_start_time_seconds = 2,
+                        min_weight_percent = 60,
+                        interval = 1,
+                        aggression = 1,
+                    },
+                }
+            end
+
+            local function away_longer_than_the_window()
+                ngx.sleep(2.5)
+                ngx.update_time()
+            end
+
+            local up_conf = upstream("/upstreams/excluded-long")
+            slow_start.effective_weights(up_conf, {n1, n2})
+            slow_start.effective_weights(up_conf, {n1})
+            away_longer_than_the_window()
+            local weights = slow_start.effective_weights(up_conf, {n1, n2})
+            ngx.say("excluded, back: ", weights[2])
+
+            up_conf = upstream("/upstreams/removed-long")
+            slow_start.effective_weights(up_conf, {n1, n2})
+            up_conf.nodes = {n1}
+            slow_start.effective_weights(up_conf, {n1})
+            away_longer_than_the_window()
+            up_conf.nodes = {n1, n2}
+            weights = slow_start.effective_weights(up_conf, {n1, n2})
+            ngx.say("removed, back: ", weights[2])
+        }
+    }
+--- response_body
+excluded, back: 60
+removed, back: 60
+
+
+
+=== TEST 16: clean up
 --- config
     location /t {
         content_by_lua_block {
