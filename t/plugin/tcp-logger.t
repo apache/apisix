@@ -30,9 +30,10 @@ add_block_preprocessor(sub {
         my $extra_init_by_lua = <<_EOC_;
     local bp_manager = require("apisix.utils.batch-processor-manager")
     local core = require("apisix.core")
+    local json_encode = core.json.encode
     local old_f = bp_manager.add_entry_to_new_processor
     bp_manager.add_entry_to_new_processor = function(self, conf, entry, ctx, func)
-        ngx.log(ngx.INFO, "batch_entry: ", core.json.encode(entry))
+        ngx.log(ngx.INFO, "batch_entry: ", json_encode(entry))
         return old_f(self, conf, entry, ctx, func)
     end
 _EOC_
@@ -647,6 +648,9 @@ GET /t
                 host = "127.0.0.1",
                 port = 43000,
                 batch_max_size = 1,
+                log_format = {
+                    host = "$host",
+                },
             }
 
             local ctx = {
@@ -661,8 +665,13 @@ GET /t
                 }
             }
 
-            plugin.log(conf, ctx)
+            local ok, call_err = pcall(plugin.log, conf, ctx)
+            ngx.sleep(0.1)
             core.json.encode = orig_encode
+
+            if not ok then
+                error(call_err)
+            end
             ngx.say("done")
         }
     }
