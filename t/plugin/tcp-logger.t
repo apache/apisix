@@ -681,6 +681,4 @@ GET /t
 done
 --- wait: 0.5
 --- error_log
-error occurred while encoding the data: mocked encoding error
---- no_error_log
-bad argument #1 to 'send'
+Batch Processor[log buffer] failed to process entries: error occurred while encoding the data: mocked encoding error
