@@ -1653,6 +1653,11 @@ function _M.error_json_no_text()
     ngx.say([[{"message":"Forbidden: missing permissions"}]])
 end
 
+function _M.error_json_null_text()
+    ngx.status = 403
+    ngx.say([[{"text":null}]])
+end
+
 
 -- Please add your fake upstream above
 function _M.go()

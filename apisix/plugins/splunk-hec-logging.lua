@@ -172,15 +172,11 @@ local function send_to_splunk(conf, entries)
 
     if res.status ~= 200 then
         local body = core.json.decode(res.body)
-        local err_msg
-        if type(body) == "table" and (body.text or body.message) then
-            err_msg = body.text or body.message
-        elseif res.body and res.body ~= "" then
-            err_msg = res.body
-        else
-            err_msg = "http status code: " .. res.status
+        if type(body) == "table" and type(body.text) == "string" then
+            return false, "failed to send splunk, " .. body.text
         end
-        return false, "failed to send splunk, " .. err_msg
+        return false, "failed to send splunk, http status code: " .. res.status
+                      .. ", body: " .. (res.body or "")
     end
 
     return true
