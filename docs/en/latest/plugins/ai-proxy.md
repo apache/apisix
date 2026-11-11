@@ -67,7 +67,7 @@ When `provider` is set to `bedrock`, the Plugin expects requests in the [Bedrock
 
 | Name               | Type    | Required | Default | Valid values                              | Description |
 |--------------------|--------|----------|---------|------------------------------------------|-------------|
-| provider          | string  | True     |         | [openai, deepseek, azure-openai, aimlapi, anthropic, openrouter, gemini, vertex-ai, bedrock, edenai, openai-compatible] | LLM service provider. When set to `openai`, the Plugin will proxy the request to `https://api.openai.com/chat/completions`. When set to `deepseek`, the Plugin will proxy the request to `https://api.deepseek.com/chat/completions`. When set to `aimlapi`, the Plugin uses the OpenAI-compatible driver and proxies the request to `https://api.aimlapi.com/v1/chat/completions` by default. When set to `anthropic`, the Plugin will proxy the request to `https://api.anthropic.com/v1/chat/completions` by default. When set to `openrouter`, the Plugin uses the OpenAI-compatible driver and proxies the request to `https://openrouter.ai/api/v1/chat/completions` by default. When set to `gemini`, the Plugin uses the OpenAI-compatible driver and proxies the request to `https://generativelanguage.googleapis.com/v1beta/openai/chat/completions` by default. When set to `vertex-ai`, the Plugin will proxy the request to `https://aiplatform.googleapis.com` by default and requires `provider_conf` or `override`. When set to `bedrock`, the Plugin will proxy the request to the AWS Bedrock Converse API (`https://bedrock-runtime.<region>.amazonaws.com`) and signs the request with AWS SigV4. When set to `edenai`, the Plugin proxies OpenAI Chat Completions requests to `https://api.edenai.run/v3/chat/completions` by default, and routes OpenAI Responses, OpenAI Embeddings and Anthropic Messages requests to `/v3/responses`, `/v3/embeddings` and `/v3/v1/messages` on the same host. When set to `openai-compatible`, the Plugin will proxy the request to the custom endpoint configured in `override`. |
+| provider          | string  | True     |         | [openai, deepseek, azure-openai, aimlapi, anthropic, openrouter, gemini, vertex-ai, bedrock, edenai, openai-compatible] | LLM service provider. When set to `openai`, the Plugin will proxy the request to `https://api.openai.com/chat/completions`. When set to `deepseek`, the Plugin will proxy the request to `https://api.deepseek.com/chat/completions`. When set to `aimlapi`, the Plugin uses the OpenAI-compatible driver and proxies the request to `https://api.aimlapi.com/v1/chat/completions` by default. When set to `anthropic`, the Plugin will proxy the request to `https://api.anthropic.com/v1/chat/completions` by default. When set to `openrouter`, the Plugin uses the OpenAI-compatible driver and proxies the request to `https://openrouter.ai/api/v1/chat/completions` by default. When set to `gemini`, the Plugin uses the OpenAI-compatible driver and proxies the request to `https://generativelanguage.googleapis.com/v1beta/openai/chat/completions` by default. When set to `vertex-ai`, the Plugin will proxy the request to `https://aiplatform.googleapis.com` by default and requires `provider_conf` or `override`. When set to `bedrock`, the Plugin will proxy the request to the AWS Bedrock Converse API (`https://bedrock-runtime.<region>.amazonaws.com`) and signs the request with AWS SigV4. When set to `edenai`, the Plugin proxies Chat Completions requests to `https://api.edenai.run/v3/chat/completions` by default. When set to `openai-compatible`, the Plugin will proxy the request to the custom endpoint configured in `override`. |
 | provider_conf      | object  | False    |         |                                          | Configuration for the specific provider. Required when `provider` is set to `vertex-ai` and `override` is not configured. Required when `provider` is set to `bedrock`. |
 | provider_conf.project_id | string | True |       |                                          | Google Cloud Project ID.  |
 | provider_conf.region | string | True (depending on provider) |         | minLength = 1 (for Bedrock)              | When `provider` is `vertex-ai`, this is the Google Cloud Region. When `provider` is `bedrock`, this is the AWS region used to construct the Bedrock endpoint and to sign the request with SigV4 (required, must be non-empty). |
@@ -120,7 +120,7 @@ The table below shows, for each `provider` and target API endpoint, the upstream
 | `gemini`            | `max_completion_tokens`      | —                      | —                  |
 | `vertex-ai`         | `max_completion_tokens`      | —                      | —                  |
 | `anthropic`         | `max_tokens`                 | —                      | `max_tokens`       |
-| `edenai`            | `max_tokens`                 | `max_output_tokens`    | `max_tokens`       |
+| `edenai`            | `max_tokens`                 | —                      | —                  |
 
 ¹ When `provider` is `openai` and the target is the Chat Completions endpoint, APISIX always rewrites to `max_completion_tokens` and removes any `max_tokens` field from the request body — `max_tokens` has been deprecated in favor of `max_completion_tokens` by OpenAI.
 
@@ -1376,7 +1376,7 @@ You should receive a response similar to the following:
 
 ### Proxy to Eden AI
 
-The following example demonstrates how you can configure the `ai-proxy` Plugin to proxy requests to [Eden AI](https://www.edenai.co/docs), a gateway that exposes many LLM providers behind one OpenAI-compatible API. Models are addressed as `provider/model` strings, for example `openai/gpt-latest` or `anthropic/claude-sonnet-latest`; see the [Eden AI model list](https://www.edenai.co/docs/v3/llms/listing-models) for available names.
+The following example demonstrates how you can configure the `ai-proxy` Plugin to proxy Chat Completions requests to [Eden AI](https://www.edenai.co/docs), a gateway that exposes many LLM providers behind one OpenAI-compatible API. Models are addressed as `provider/model` strings, for example `openai/gpt-4o` or `anthropic/claude-sonnet-latest`; see the [Eden AI model list](https://www.edenai.co/docs/v3/llms/listing-models) for available names.
 
 Obtain an Eden AI [API key](https://app.edenai.run/) and save it to an environment variable:
 
@@ -1413,7 +1413,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
           }
         },
         "options": {
-          "model": "openai/gpt-latest"
+          "model": "openai/gpt-4o"
         }
       }
     }
@@ -1442,7 +1442,7 @@ services:
               header:
                 Authorization: "Bearer ${EDENAI_API_KEY}"
             options:
-              model: openai/gpt-latest
+              model: openai/gpt-4o
 ```
 
 Synchronize the configuration to the gateway:
@@ -1480,7 +1480,7 @@ spec:
           header:
             Authorization: "Bearer your-api-key"
         options:
-          model: openai/gpt-latest
+          model: openai/gpt-4o
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
@@ -1532,7 +1532,7 @@ spec:
             header:
               Authorization: "Bearer your-api-key"
           options:
-            model: openai/gpt-latest
+            model: openai/gpt-4o
 ```
 
 </TabItem>
@@ -1570,9 +1570,9 @@ You should receive a response in the OpenAI Chat Completions format, similar to 
 {
   "id": "chatcmpl-...",
   "object": "chat.completion",
-  "model": "gpt-4o-mini-2024-07-18",
+  "model": "gpt-4o-2024-08-06",
   "provider": "openai",
-  "cost": 0.0,
+  "cost": 0.000123,
   "choices": [
     {
       "index": 0,
@@ -1584,18 +1584,11 @@ You should receive a response in the OpenAI Chat Completions format, similar to 
 }
 ```
 
-The same provider also serves the other request formats the Plugin detects. Each is forwarded to the matching Eden AI endpoint without conversion:
+To stream the answer, add `"stream": true` to the request body. Eden AI returns the `usage` object in the final chunk before `data: [DONE]` when `stream_options.include_usage` is set, which the Plugin sets automatically, so token usage is also available for streamed responses.
 
-| Client request format | Route URI requirement | Eden AI endpoint |
-| --------------------- | --------------------- | ---------------- |
-| OpenAI Chat Completions (body has `messages`) | any | `/v3/chat/completions` |
-| OpenAI Responses (body has `input`) | must end with `/v1/responses` | `/v3/responses` |
-| OpenAI Embeddings (body has `input`) | any other URI | `/v3/embeddings` |
-| Anthropic Messages | must end with `/v1/messages` | `/v3/v1/messages` |
+Eden AI specific request fields such as `fallbacks`, `routing` or `tags` are forwarded as sent by the client, or can be injected with `override.request_body` (see [Per-protocol request body override](#per-protocol-request-body-override)).
 
-Eden AI specific request fields such as `fallbacks`, `routing` or `tags` are forwarded as sent by the client, or can be injected with `override.request_body` (see [Per-protocol request body override](#per-protocol-request-body-override)). Features documented by Eden AI but not covered by these four formats, for example the `/v3/universal-ai` endpoint for OCR, translation or audio tasks, can still be proxied through the catch-all passthrough behavior by giving the Route the same URI as the Eden AI path, but they do not get token usage extraction, and multipart uploads are not supported by this Plugin.
-
-For streamed Chat Completions, Eden AI returns the `usage` object in the final chunk before `data: [DONE]` when `stream_options.include_usage` is set, which the Plugin sets automatically, so token usage is available for streamed responses. Eden AI's Responses API stream carries the event type only inside the JSON `data` payload and sends no SSE `event:` lines; the Plugin forwards such streams to the client unchanged, but it does not extract token usage or response text from them, and the end of the response is only detected when the upstream closes the stream.
+The `edenai` provider currently maps the Chat Completions format only (request bodies with `messages`). Requests in the OpenAI Responses or Embeddings format are rejected with `400`, and Anthropic Messages requests are converted to Chat Completions as for any other OpenAI-compatible provider. Other Eden AI endpoints may be added to the provider in the future.
 
 ### Convert Anthropic Requests to OpenAI-Compatible Backend
 

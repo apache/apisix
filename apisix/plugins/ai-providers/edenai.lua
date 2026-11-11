@@ -16,35 +16,15 @@
 --
 
 --- Eden AI provider.
--- Eden AI exposes its LLM gateway under https://api.edenai.run/v3 with
--- OpenAI-compatible Chat Completions, Responses and Embeddings endpoints and
--- an Anthropic Messages pass-through endpoint. Models are addressed as
--- "provider/model" strings (e.g. "openai/gpt-latest") and authenticated with
+-- Eden AI exposes an OpenAI-compatible Chat Completions endpoint under
+-- https://api.edenai.run/v3. Models are addressed as "provider/model"
+-- strings (e.g. "openai/gpt-4o") and authenticated with
 -- "Authorization: Bearer <key>", which the generic auth.header option covers.
--- Every protocol below is served natively, so no request conversion is
--- needed; only the per-protocol output token field is mapped here.
+-- The endpoint is served natively, so no request conversion is needed; only
+-- the output token field is mapped here. Eden AI accepts both max_tokens and
+-- max_completion_tokens; max_tokens is the field its own documentation uses.
 
 local function rewrite_chat_request_body(body, override, force)
-    -- Eden AI accepts both max_tokens and max_completion_tokens on the chat
-    -- endpoint; max_tokens is the field its own documentation uses.
-    if override.max_tokens then
-        if force or body.max_tokens == nil then
-            body.max_tokens = override.max_tokens
-        end
-    end
-end
-
-
-local function rewrite_responses_request_body(body, override, force)
-    if override.max_tokens then
-        if force or body.max_output_tokens == nil then
-            body.max_output_tokens = override.max_tokens
-        end
-    end
-end
-
-
-local function rewrite_messages_request_body(body, override, force)
     if override.max_tokens then
         if force or body.max_tokens == nil then
             body.max_tokens = override.max_tokens
@@ -57,18 +37,9 @@ return require("apisix.plugins.ai-providers.base").new(
         host = "api.edenai.run",
         port = 443,
         capabilities = {
-            ["openai-chat"]        = {
+            ["openai-chat"] = {
                 path = "/v3/chat/completions",
                 rewrite_request_body = rewrite_chat_request_body,
-            },
-            ["openai-responses"]   = {
-                path = "/v3/responses",
-                rewrite_request_body = rewrite_responses_request_body,
-            },
-            ["openai-embeddings"]  = { path = "/v3/embeddings" },
-            ["anthropic-messages"] = {
-                path = "/v3/v1/messages",
-                rewrite_request_body = rewrite_messages_request_body,
             },
         },
     }
