@@ -132,3 +132,115 @@ POST /echo
     }
 --- response_body
 Unauthorized
+
+
+
+=== TEST 4: body transformer with input_format json
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin")
+
+            local code, body = t.test('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/echo_prim",
+                    "plugins": {
+                        "body-transformer": {
+                            "request": {
+                                "input_format": "json",
+                                "template": "hello"
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 5: reject JSON number primitive with 400
+--- request
+POST /echo_prim
+123
+--- more_headers
+Content-Type: application/json
+--- error_code: 400
+--- response_body
+{"message":"request body decode: expected JSON object or array"}
+--- no_error_log
+[error]
+attempt to index local 'out'
+
+
+
+=== TEST 6: reject JSON string primitive with 400
+--- request
+POST /echo_prim
+"hello"
+--- more_headers
+Content-Type: application/json
+--- error_code: 400
+--- response_body
+{"message":"request body decode: expected JSON object or array"}
+--- no_error_log
+[error]
+attempt to index local 'out'
+
+
+
+=== TEST 7: reject JSON boolean primitive with 400
+--- request
+POST /echo_prim
+true
+--- more_headers
+Content-Type: application/json
+--- error_code: 400
+--- response_body
+{"message":"request body decode: expected JSON object or array"}
+--- no_error_log
+[error]
+attempt to index local 'out'
+
+
+
+=== TEST 8: reject JSON null primitive with 400
+--- request
+POST /echo_prim
+null
+--- more_headers
+Content-Type: application/json
+--- error_code: 400
+--- response_body
+{"message":"request body decode: expected JSON object or array"}
+--- no_error_log
+[error]
+attempt to index local 'out'
+
+
+
+=== TEST 9: accept valid JSON array
+--- request
+POST /echo_prim
+[1, 2, 3]
+--- more_headers
+Content-Type: application/json
+--- error_code: 200
+--- response_body
+hello
+--- no_error_log
+[error]

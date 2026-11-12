@@ -132,7 +132,14 @@ local decoders = {
         end
     end,
     json = function(data)
-        return core.json.decode(data)
+        local val, err = core.json.decode(data)
+        if err then
+            return nil, err
+        end
+        if type(val) ~= "table" then
+            return nil, "expected JSON object or array"
+        end
+        return val
     end,
     encoded = function(data)
         return decode_args(data)
