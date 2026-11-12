@@ -54,7 +54,7 @@ description: response-rewrite 插件提供了重写 APISIX 及其上游服务返
 | status_code     | integer | 否     |        | [200, 598]      | 修改上游返回状态码，默认保留原始响应代码。                                                                                                                                                                                |
 | body            | string  | 否     |        |                 | 修改上游返回的 `body` 内容，如果设置了新内容，header 里面的 `Content-Length` 字段也会被去掉。                                                                                                                               |
 | body_base64     | boolean | 否     | false  |                 | 如果为 true，则在发送到客户端之前解码`body` 中配置的响应主体，这对于图像和 protobuf 解码很有用。请注意，此配置不能用于解码上游响应。                                                                                                                                 |
-| headers | object | 否 | | | 按照 `add`、`remove` 和 `set` 的顺序执行的操作。 |
+| headers | object | 否 | | | 按照 `add`、`set`、`remove` 的顺序执行的操作。对于同名标头，`set` 会覆盖 `add` 添加的值，`remove` 会在这两个操作之后删除该标头。 |
 | headers.add | array[string] | 否 | | | 要附加到请求的标头。如果请求中已经存在标头，则会附加标头值。标头值可以设置为常量，也可以设置为一个或多个 [Nginx 变量](https://nginx.org/en/docs/http/ngx_http_core_module.html)。 |
 | headers.set | object | 否 | | | 要设置到请求的标头。如果请求中已经存在标头，则会覆盖标头值。标头值可以设置为常量，也可以设置为一个或多个 [Nginx 变量](https://nginx.org/en/docs/http/ngx_http_core_module.html)。 |
 | headers.remove | array[string] | 否 | | | 要从请求中删除的标头。 |
