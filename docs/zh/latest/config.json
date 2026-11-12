@@ -241,7 +241,8 @@
             "plugins/mqtt-proxy",
             "plugins/websocket-proxy",
             "plugins/http-dubbo",
-            "plugins/openapi-to-mcp"
+            "plugins/openapi-to-mcp",
+            "plugins/mcp-tools-acl"
           ]
         }
       ]
