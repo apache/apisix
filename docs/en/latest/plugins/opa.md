@@ -910,7 +910,10 @@ role_permissions := {
 
 # Get JWT authorization token
 bearer_token := t if {
-  t := input.request.headers.authorization
+  parts := split(input.request.headers.authorization, " ")
+  count(parts) == 2
+  lower(parts[0]) == "bearer"
+  t := parts[1]
 }
 
 # Decode the token to get role and permission

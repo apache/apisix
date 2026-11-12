@@ -318,6 +318,9 @@ local _M = {
     ["ai-proxy"] = {
       http_client = "ngx_http_ffi_client"
     },
+    ["forward-auth"] = {
+      http_client = "ngx_http_ffi_client"
+    },
     ["log-rotate"] = {
       timeout = 10000,
       interval = 3600,

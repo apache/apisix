@@ -15,12 +15,25 @@
 -- limitations under the License.
 --
 
-local ipairs   = ipairs
-local core     = require("apisix.core")
-local http     = require("resty.http")
-local pairs    = pairs
-local type     = type
-local tostring = tostring
+local ipairs       = ipairs
+local core         = require("apisix.core")
+local http         = require("resty.http")
+local http_client  = require("apisix.utils.http")
+local pairs        = pairs
+local setmetatable = setmetatable
+local type         = type
+local tostring     = tostring
+local unpack       = unpack
+local str_byte     = string.byte
+
+local plugin_name = "forward-auth"
+
+local attr_schema = {
+    type = "object",
+    properties = {
+        http_client = http_client.client_schema,
+    },
+}
 
 local schema = {
     type = "object",
@@ -97,7 +110,7 @@ local schema = {
 local _M = {
     version = 0.1,
     priority = 2002,
-    name = "forward-auth",
+    name = plugin_name,
     schema = schema,
 }
 
@@ -108,6 +121,128 @@ function _M.check_schema(conf)
     core.utils.check_tls_bool({"ssl_verify"}, conf, _M.name)
 
     return core.schema.check(schema, conf)
+end
+
+
+local client_name
+
+
+-- `plugin_attr.forward-auth.http_client` names the client. Read on first
+-- request, because local_conf is not readable while this module is loading.
+local function resolve_client_name()
+    if client_name then
+        return client_name
+    end
+
+    local local_conf = core.config.local_conf()
+    local attr = core.table.try_read_attr(local_conf, "plugin_attr", plugin_name) or {}
+
+    local ok, err = core.schema.check(attr_schema, attr)
+    if not ok then
+        core.log.error("invalid plugin_attr.", plugin_name, ": ", err)
+        return nil, "invalid plugin_attr." .. plugin_name .. ": " .. err
+    end
+
+    client_name = attr.http_client or http_client.DEFAULT_CLIENT
+
+    return client_name
+end
+
+
+local SLASH = str_byte("/")
+local parsed_uris = setmetatable({}, {__mode = "k"})
+
+
+local function parse_uri(conf)
+    local parsed = parsed_uris[conf]
+    if parsed then
+        return parsed
+    end
+
+    local err
+    parsed, err = http.parse_uri(nil, conf.uri, false)
+    if not parsed then
+        return nil, err
+    end
+
+    -- a scheme-relative uri takes the scheme of the current request
+    if str_byte(conf.uri, 1) ~= SLASH then
+        parsed_uris[conf] = parsed
+    end
+
+    return parsed
+end
+
+
+-- What resty.http's request_uri does, on the object API both clients share.
+local function request_auth(conf, headers, body)
+    local name, err = resolve_client_name()
+    if not name then
+        return nil, err
+    end
+
+    local parsed
+    parsed, err = parse_uri(conf)
+    if not parsed then
+        return nil, err
+    end
+
+    local httpc
+    httpc, err = http_client.new(name)
+    if not httpc then
+        return nil, err
+    end
+
+    httpc:set_timeout(conf.timeout)
+
+    local scheme, host, port, path, query = unpack(parsed)
+    local ok
+    ok, err = httpc:connect({
+        scheme = scheme,
+        host = host,
+        port = port,
+        ssl_verify = conf.ssl_verify,
+        ssl_server_name = host,
+    })
+    if not ok then
+        return nil, err
+    end
+
+    local res
+    res, err = httpc:request({
+        method = conf.request_method,
+        path = path,
+        query = query,
+        headers = headers,
+        body = body,
+        -- ngx_http_ffi_client reads the whole body in the same resume
+        preread_body = true,
+    })
+    if not res then
+        httpc:close()
+        return nil, err
+    end
+
+    local res_body
+    res_body, err = res:read_body()
+    if not res_body then
+        httpc:close()
+        return nil, err
+    end
+
+    res.body = res_body
+
+    if conf.keepalive then
+        ok, err = httpc:set_keepalive(conf.keepalive_timeout, conf.keepalive_pool)
+        if not ok then
+            -- e.g. the auth service answered with "Connection: close"
+            core.log.info("failed to set keepalive for the auth connection: ", err)
+        end
+    else
+        httpc:close()
+    end
+
+    return res
 end
 
 
@@ -152,31 +287,17 @@ function _M.access(conf, ctx)
         end
     end
 
-    local params = {
-        headers = auth_headers,
-        keepalive = conf.keepalive,
-        ssl_verify = conf.ssl_verify,
-        method = conf.request_method
-    }
-
-    if params.method == "POST" then
-        local body, err = core.request.get_body(conf.max_req_body_size)
+    local body
+    if conf.request_method == "POST" then
+        local err
+        body, err = core.request.get_body(conf.max_req_body_size)
         if err then
             core.log.error("failed to read request body: ", err)
             return 413
         end
-        params.body = body
     end
 
-    if conf.keepalive then
-        params.keepalive_timeout = conf.keepalive_timeout
-        params.keepalive_pool = conf.keepalive_pool
-    end
-
-    local httpc = http.new()
-    httpc:set_timeout(conf.timeout)
-
-    local res, err = httpc:request_uri(conf.uri, params)
+    local res, err = request_auth(conf, auth_headers, body)
     if not res and conf.allow_degradation then
         -- drop client-supplied copies of the configured upstream headers
         for _, header in ipairs(conf.upstream_headers) do

@@ -226,7 +226,7 @@ passed
 curl -iv --location 'http://127.0.0.1:1984/grpc/web/a6.RouteService/GetRoute' \
 --header 'Origin: http://test.com' \
 --header 'Content-Type: application/grpc-web-text' \
---data-raw 'AAAAAAcKBXdvcmxkCgo='
+--data-raw 'AAAAAAcKBXdvcmxk'
 --- response_body eval
 qr/HTTP\/1.1 200 OK/ and qr/Access-Control-Allow-Origin: http:\/\/test.com/
 
@@ -237,7 +237,7 @@ qr/HTTP\/1.1 200 OK/ and qr/Access-Control-Allow-Origin: http:\/\/test.com/
 curl -iv --location 'http://127.0.0.1:1984/grpc/web/a6.RouteService/GetRoute' \
 --header 'Origin: http://test.com' \
 --header 'Content-Type: application/grpc-web-text' \
---data-raw 'AAAAAAcKBXdvcmxkCgo='
+--data-raw 'AAAAAAcKBXdvcmxk'
 --- response_body eval
 qr/Access-Control-Expose-Headers: grpc-message,grpc-status/ and qr/Access-Control-Allow-Origin: http:\/\/test.com/
 
@@ -368,7 +368,7 @@ Status: 13, Details: execpted error
 === TEST 18: check gRPC metadata when empty resp body (check empty resp body and metadatas in header)
 --- request
 POST /grpc/web/a6.RouteService/GetError HTTP/1.1
-AAAAAAcKBXdvcmxkCgo=
+AAAAAAcKBXdvcmxk
 --- more_headers
 Content-Type: application/grpc-web-text
 --- response_headers

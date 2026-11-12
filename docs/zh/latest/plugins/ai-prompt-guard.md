@@ -40,6 +40,10 @@ import TabItem from '@theme/TabItem';
 
 当同时配置了 `allow_patterns` 和 `deny_patterns` 时，插件首先确保至少匹配一个 `allow_patterns`。如果没有匹配，请求将被拒绝。如果匹配了允许的模式，它会继续检查是否存在任何拒绝模式的匹配。
 
+该插件使用每种协议的原生内容结构检查 Chat Completions、Responses API、Embeddings、Anthropic Messages 和 Bedrock Converse 请求。对于 Responses，它会检查 `input` 中的用户内容；当 `match_all_roles` 为 `true` 时，还会检查 `instructions` 中的系统内容。
+
+检测顺序和 URI 要求参见[请求协议检测](./ai-proxy.md#请求协议检测)。其他非空 JSON 请求体使用透传模式，不会作为受支持的 AI 请求接受检查，而是根据 `fail_mode` 处理。
+
 对于 Embeddings 请求，插件会检查字符串形式的 `input`，或 `input` 数组中的所有字符串。批量输入会用空格连接后一起检查，不受 `match_all_conversation_history` 影响。允许模式作用于连接后的文本；批量输入中任何位置匹配拒绝模式都会导致请求被拒绝。
 
 当没有选中需要检查的内容时，请求会继续转发到上游。这包括被角色过滤排除的消息，以及仅包含 token ID 的 Embeddings 输入；插件不会将 token ID 解码为文本。`fail_mode: "error"` 适用于未识别的协议，不会仅因已识别请求没有选中文本而拒绝请求。
@@ -56,10 +60,10 @@ import TabItem from '@theme/TabItem';
 
 ## 使用示例
 
-以下示例将使用 OpenAI 作为上游服务提供商。在继续之前，请创建一个 [OpenAI 账户](https://openai.com)和一个 [API 密钥](https://openai.com/blog/openai-api)。你可以选择将密钥保存到环境变量中：
+以下示例将使用 OpenAI 作为上游服务提供商。在继续之前，请创建一个 [OpenAI 账户](https://openai.com)和一个 [API 密钥](https://openai.com/blog/openai-api)。请将密钥保存到环境变量中，并将占位符替换为你的 API 密钥：
 
 ```shell
-export OPENAI_API_KEY=<YOUR_OPENAI_API_KEY>
+export OPENAI_API_KEY='<YOUR_OPENAI_API_KEY>'
 ```
 
 如果你使用其他 LLM 提供商，请参阅提供商的文档以获取 API 密钥。
