@@ -118,6 +118,9 @@ http {
 
     server {
         listen {* prometheus_server_addr *} reuseport;
+        {% if prometheus_server_ipv6 then %}
+        listen {* prometheus_server_ipv6 *} reuseport;
+        {% end %}
 
         access_log off;
 
@@ -695,6 +698,9 @@ http {
     {% if enable_control then %}
     server {
         listen {* control_server_addr *};
+        {% if control_server_ipv6 then %}
+        listen {* control_server_ipv6 *};
+        {% end %}
 
         access_log off;
 
@@ -709,6 +715,9 @@ http {
     {% if status then %}
     server {
         listen {* status_server_addr *} enable_process=privileged_agent;
+        {% if status_server_ipv6 then %}
+        listen {* status_server_ipv6 *} enable_process=privileged_agent;
+        {% end %}
         access_log off;
         location /status {
             content_by_lua_block {
@@ -726,6 +735,9 @@ http {
     {% if enabled_plugins["prometheus"] and prometheus_server_addr then %}
     server {
         listen {* prometheus_server_addr *} reuseport;
+        {% if prometheus_server_ipv6 then %}
+        listen {* prometheus_server_ipv6 *} reuseport;
+        {% end %}
 
         access_log off;
 
@@ -748,6 +760,9 @@ http {
     server {
         {%if https_admin then%}
         listen {* admin_server_addr *} ssl;
+        {% if admin_server_ipv6 then %}
+        listen {* admin_server_ipv6 *} ssl;
+        {% end %}
 
         ssl_certificate      {* admin_api_mtls.admin_ssl_cert *};
         ssl_certificate_key  {* admin_api_mtls.admin_ssl_cert_key *};
@@ -768,6 +783,9 @@ http {
 
         {% else %}
         listen {* admin_server_addr *};
+        {% if admin_server_ipv6 then %}
+        listen {* admin_server_ipv6 *};
+        {% end %}
         {%end%}
         log_not_found off;
 
