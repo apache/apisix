@@ -120,6 +120,24 @@ func (s *server) GetErrResp(ctx context.Context, in *pb.HelloRequest) (*pb.Hello
 }
 
 func (s *server) SayHelloAfterDelay(ctx context.Context, in *pb.HelloRequest) (*pb.HelloReply, error) {
+	// With recent grpc-go, when a deadline expires the transport layer sends
+	// RST_STREAM(CANCEL) before the handler can return a response, so nginx
+	// logs "upstream rejected request with error 8" and returns 502 instead of
+	// 504. Return DeadlineExceeded slightly before the deadline fires, which
+	// leaves the framework time to send a proper gRPC trailer instead.
+	const preemptBuffer = 100 * time.Millisecond
+
+	if deadline, ok := ctx.Deadline(); ok {
+		sleepTime := time.Until(deadline) - preemptBuffer
+		if sleepTime > 0 {
+			select {
+			case <-time.After(sleepTime):
+			case <-ctx.Done():
+			}
+		}
+		return nil, status.Error(codes.DeadlineExceeded, "deadline exceeded")
+	}
+
 	select {
 	case <-time.After(1 * time.Second):
 		fmt.Println("overslept")
