@@ -404,18 +404,11 @@ local function publish_stream_bytes(dict, listen_addr, service, service_id, dire
     local key = STREAM_PUBLISHED_PREFIX .. listen_addr .. "\31" .. service .. "\31"
                 .. service_id .. "\31" .. field
 
-    local published = dict:get(key)
-    if not published then
-        -- The zone counts from when nginx started while the counter outlives a
-        -- reload, so the first sight of a slot only takes a baseline;
-        -- replaying the whole total into a counter that survived would double
-        -- it. The cost is that traffic before the first read is not counted.
-        local ok, err = dict:set(key, total)
-        if not ok then
-            core.log.error("failed to baseline stream bandwidth for ", key, ": ", err)
-        end
-        return
-    end
+    -- Baselines outlive a reload like the zone, so a slot without one has had
+    -- nothing counted: it is new, or the process just started. The cost is
+    -- that a baseline evicted from a full dict replays the total of its slot
+    -- once.
+    local published = dict:get(key) or 0
 
     if total == published then
         return
@@ -565,7 +558,10 @@ function _M.http_init(prometheus_enabled_in_stream)
     local ai_cache_embedding_latency_exptime = core.table.try_read_attr(attr, "metrics",
                                                             "ai_cache_embedding_latency", "expire")
 
-    prometheus = base_prometheus.init("prometheus-metrics", metric_prefix)
+    prometheus = base_prometheus.init("prometheus-metrics", {
+        prefix = metric_prefix,
+        remove_expired_keys_interval = attr and attr.remove_expired_keys_interval,
+    })
 
     metrics.connections = prometheus:gauge("nginx_http_current_connections",
             "Number of HTTP connections",
@@ -733,7 +729,10 @@ function _M.stream_init()
         metric_prefix = attr.metric_prefix
     end
 
-    prometheus = base_prometheus.init("prometheus-metrics", metric_prefix)
+    prometheus = base_prometheus.init("prometheus-metrics", {
+        prefix = metric_prefix,
+        remove_expired_keys_interval = attr and attr.remove_expired_keys_interval,
+    })
 
     init_stream_metrics()
 

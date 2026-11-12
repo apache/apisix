@@ -44,6 +44,28 @@ import TabItem from '@theme/TabItem';
 
 ## 请求格式
 
+### 请求协议检测
+
+插件会先检测客户端请求协议，再选择兼容的上游端点。插件按以下顺序检查规则：
+
+| 客户端协议 | 检测条件 | 路由 URI |
+| --- | --- | --- |
+| Bedrock Converse | 请求体包含 `messages` 数组，并且请求 URI 以 `/converse` 结尾。 | URI 可以包含自定义前缀，但必须保留 `/converse` 后缀。 |
+| Anthropic Messages | 请求体为 JSON 对象或数组，并且请求 URI 以 `/v1/messages` 结尾。 | URI 可以包含自定义前缀，但必须保留 `/v1/messages` 后缀。 |
+| OpenAI Responses | 请求体包含 `input`，并且请求 URI 以 `/v1/responses` 结尾。 | URI 可以包含自定义前缀，但必须保留 `/v1/responses` 后缀。 |
+| OpenAI Chat Completions | 请求体包含 `messages` 数组。 | 路由匹配的任意 URI。 |
+| OpenAI Embeddings | 请求体包含 `input`，并且之前的规则均未匹配。 | 路由匹配的任意 URI。 |
+
+基于 URI 的规则在仅基于请求体的规则之前运行，以免包含 `messages` 的 Bedrock Converse 和 Anthropic Messages 请求被识别为 Chat Completions。Responses 和 Embeddings 请求都使用 `input`，因此包含 `input` 但不包含 `messages` 的请求会被识别为 Embeddings，除非其 URI 以 `/v1/responses` 结尾。如果之前的规则均未匹配，插件会将非空 JSON 对象或数组视为透传请求。空请求体或无效请求体会被拒绝。
+
+包含 `Content-Type` 的请求必须使用 `application/json`。如果省略该请求头，插件会将请求体视为 JSON。请求体不能超过 `max_req_body_size`，其默认值为 67,108,864 字节；超过该限制的请求会收到 HTTP `413` 响应。
+
+透传模式不会向下游 AI 感知插件提供具名 AI 协议。因此，透传请求体不会执行用量提取、提示词装饰、内容审核文本提取或协议转换。`ai-prompt-template` 插件在 rewrite 阶段更早运行，并可在协议检测前替换请求体，因此渲染后的请求体可以匹配具名协议，也可以保持透传模式。
+
+对于具名协议，如果所选提供商原生支持该协议，插件会直接使用它；否则，插件会使用已注册的转换器转换为提供商支持的协议。如果既不支持原生协议，也没有兼容的转换器，请求将被拒绝。
+
+### Chat Completions 请求格式
+
 | 名称               | 类型   | 必选项 | 描述                                         |
 | ------------------ | ------ | -------- | --------------------------------------------------- |
 | `messages`         | Array  | 是      | 消息对象数组。                        |
@@ -166,7 +188,7 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 获取 OpenAI [API 密钥](https://openai.com/blog/openai-api)并保存到环境变量：
 
 ```shell
-export OPENAI_API_KEY=<your-api-key>
+export OPENAI_API_KEY='<your-api-key>'
 ```
 
 <Tabs
@@ -377,7 +399,7 @@ curl "http://127.0.0.1:9080/anything" -X POST \
 获取 DeepSeek API 密钥并保存到环境变量：
 
 ```shell
-export DEEPSEEK_API_KEY=<your-api-key>
+export DEEPSEEK_API_KEY='<your-api-key>'
 ```
 
 <Tabs
@@ -591,7 +613,7 @@ curl "http://127.0.0.1:9080/anything" -X POST \
 获取 Azure OpenAI API 密钥并保存到环境变量：
 
 ```shell
-export AZ_OPENAI_API_KEY=<your-api-key>
+export AZ_OPENAI_API_KEY='<your-api-key>'
 ```
 
 <Tabs
@@ -817,8 +839,8 @@ curl "http://127.0.0.1:9080/anything" -X POST \
 将您的 AWS 凭证保存到环境变量：
 
 ```shell
-export AWS_ACCESS_KEY_ID=<your-aws-access-key-id>
-export AWS_SECRET_ACCESS_KEY=<your-aws-secret-access-key>
+export AWS_ACCESS_KEY_ID='<your-aws-access-key-id>'
+export AWS_SECRET_ACCESS_KEY='<your-aws-secret-access-key>'
 ```
 
 创建路由并配置 `ai-proxy` 插件：
@@ -912,14 +934,61 @@ curl "http://127.0.0.1:9080/bedrock/converse" -X POST \
   }' --output -
 ```
 
+### 代理 OpenAI Responses API
+
+以下示例配置 `ai-proxy` 插件以代理 OpenAI Responses API 请求。Responses 和 Embeddings 请求都包含 `input`，因此路由 URI 必须以 `/v1/responses` 结尾，插件才能将请求识别为 Responses。
+
+获取 [OpenAI API 密钥](https://platform.openai.com/api-keys)并保存到环境变量：
+
+```shell
+export OPENAI_API_KEY="<your-api-key>"
+```
+
+创建 URI 为 `/v1/responses` 的路由：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "ai-proxy-responses-route",
+    "uri": "/v1/responses",
+    "methods": ["POST"],
+    "plugins": {
+      "ai-proxy": {
+        "provider": "openai",
+        "auth": {
+          "header": {
+            "Authorization": "Bearer '"$OPENAI_API_KEY"'"
+          }
+        },
+        "options": {
+          "model": "gpt-4.1"
+        }
+      }
+    }
+  }'
+```
+
+使用 Responses API 格式发送请求：
+
+```shell
+curl "http://127.0.0.1:9080/v1/responses" -X POST \
+  -H "Content-Type: application/json" \
+  -d '{
+    "input": "用一句话解释 API 网关。"
+  }'
+```
+
+插件会将请求发送到 OpenAI Responses 端点，并以 Responses API 格式返回响应。如需流式响应，请在请求体中添加 `"stream": true`，并使用 `curl --no-buffer`。
+
 ### 代理到 OpenAI 嵌入模型
 
-以下示例演示了如何配置 `ai-proxy` 插件以将请求代理到嵌入模型。此示例将使用 OpenAI 嵌入模型端点。
+以下示例演示如何配置 `ai-proxy` 插件以代理对 OpenAI 嵌入模型的请求。插件会检测 `input` 字段并选择 OpenAI Embeddings 端点。
 
 获取 OpenAI [API 密钥](https://openai.com/blog/openai-api)并保存到环境变量：
 
 ```shell
-export OPENAI_API_KEY=<your-api-key>
+export OPENAI_API_KEY='<your-api-key>'
 ```
 
 <Tabs
@@ -933,7 +1002,7 @@ values={[
 
 <TabItem value="admin-api">
 
-创建路由并配置 `ai-proxy` 插件，将 `provider` 设置为 `openai`，指定嵌入模型名称，添加 `encoding_format` 参数以配置返回的嵌入向量为浮点数列表，并使用 `override` 将默认端点覆盖为 [嵌入 API 端点](https://platform.openai.com/docs/api-reference/embeddings)：
+创建路由并配置 `ai-proxy` 插件，将 `provider` 设置为 `openai`，指定嵌入模型名称，并添加 `encoding_format` 参数，将返回的嵌入向量配置为浮点数列表：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -953,9 +1022,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
         "options":{
           "model": "text-embedding-3-small",
           "encoding_format": "float"
-        },
-        "override": {
-          "endpoint": "https://api.openai.com/v1/embeddings"
         }
       }
     }
@@ -966,7 +1032,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 
 <TabItem value="adc">
 
-创建包含 `ai-proxy` 插件配置的路由，将 `provider` 设置为 `openai`，指定嵌入模型名称，添加 `encoding_format` 参数，并使用 `override` 将默认端点覆盖为 [嵌入 API 端点](https://platform.openai.com/docs/api-reference/embeddings)：
+创建包含 `ai-proxy` 插件配置的路由，将 `provider` 设置为 `openai`，指定嵌入模型名称，并添加 `encoding_format` 参数：
 
 ```yaml title="adc.yaml"
 services:
@@ -986,8 +1052,6 @@ services:
             options:
               model: text-embedding-3-small
               encoding_format: float
-            override:
-              endpoint: "https://api.openai.com/v1/embeddings"
 ```
 
 将配置同步到网关：
@@ -1027,8 +1091,6 @@ spec:
         options:
           model: text-embedding-3-small
           encoding_format: float
-        override:
-          endpoint: "https://api.openai.com/v1/embeddings"
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
@@ -1082,8 +1144,6 @@ spec:
           options:
             model: text-embedding-3-small
             encoding_format: float
-          override:
-            endpoint: "https://api.openai.com/v1/embeddings"
 ```
 
 </TabItem>
@@ -1145,7 +1205,7 @@ curl "http://127.0.0.1:9080/embeddings" -X POST \
 获取 Anthropic [API 密钥](https://console.anthropic.com/settings/keys)并保存到环境变量：
 
 ```shell
-export ANTHROPIC_API_KEY=<your-api-key>
+export ANTHROPIC_API_KEY='<your-api-key>'
 ```
 
 <Tabs
@@ -1573,7 +1633,7 @@ Eden AI 特有的请求字段（如 `fallbacks`、`routing`、`tags`）会按客
 获取你选择的 OpenAI 兼容后端服务的 API 密钥并保存到环境变量。此示例使用 OpenAI：
 
 ```shell
-export BACKEND_API_KEY=<your-api-key>
+export BACKEND_API_KEY='<your-api-key>'
 ```
 
 <Tabs
@@ -1788,8 +1848,8 @@ curl "http://127.0.0.1:9080/v1/messages" -X POST \
 此示例将使用 OpenAI 和 DeepSeek 作为示例 LLM 服务。获取 OpenAI 和 DeepSeek API 密钥并保存到环境变量：
 
 ```shell
-export OPENAI_API_KEY=<your-api-key>
-export DEEPSEEK_API_KEY=<your-api-key>
+export OPENAI_API_KEY='<your-api-key>'
+export DEEPSEEK_API_KEY='<your-api-key>'
 ```
 
 <Tabs

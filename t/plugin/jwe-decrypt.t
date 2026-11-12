@@ -226,8 +226,8 @@ passed
         }
     }
 --- response_body
-XU29sA3FEVF68hGcdPo7sg==
-f9pGB0Dt4gYNCLKiINPfVSviKjQs2zfkBCT4+XZ3mDABZkJTr0orzYRD5CptDKMc
+$ENC$v1$XU29sA3FEVF68hGcdPo7sg==
+$ENC$v1$f9pGB0Dt4gYNCLKiINPfVSviKjQs2zfkBCT4+XZ3mDABZkJTr0orzYRD5CptDKMc
 --- no_error_log
 12345678901234567890123456789012
 
@@ -929,3 +929,55 @@ status: 200
     }
 --- response_body
 status: 400 body: {"message":"unsupported alg or enc in JWE token"}
+
+
+
+=== TEST 38: enable jwe-decrypt with strict=false and a separate forward_header
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/12',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "jwe-decrypt": {
+                            "header": "Authorization",
+                            "forward_header": "X-Decrypted-Auth",
+                            "strict": false
+                        },
+                        "serverless-post-function": {
+                            "phase": "access",
+                            "functions": [
+                                "return function(conf, ctx) local core = require(\"apisix.core\"); core.response.exit(200, core.request.headers(ctx)); end"
+                            ]
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello-forward-header"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 39: client-supplied forward_header is dropped when the token is missing
+--- request
+GET /hello-forward-header
+--- more_headers
+X-Decrypted-Auth: client-value
+--- response_body_unlike eval
+qr/x-decrypted-auth/

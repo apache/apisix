@@ -1036,7 +1036,7 @@ APISIX 的 Upstream 除了基本的负载均衡算法选择外，还支持对上
 |warm_up_conf.min_weight_percent | 设置 `warm_up_conf` 时必填 | 整型 | 爬坡期间有效权重的下限，以配置权重的百分比表示，取值范围 1 到 100。 |
 |warm_up_conf.interval | 否 | 整型 | 两次刷新有效权重之间的间隔，单位为秒。默认为 `1`，不能大于 `slow_start_time_seconds`。 |
 |warm_up_conf.aggression | 否 | 数值 | 爬坡曲线。`1`（默认）为线性，大于 `1` 前期增长更快，小于 `1` 前期增长更慢。最小值为 `0.01`。 |
-|warm_up_conf.startup_grace_period_seconds | 否 | 整型 | 网关启动后的宽限时间，单位为秒。在此期间首次观察到的节点直接视为已完成预热，避免重启后整组节点重新爬坡。默认为 `0`。 |
+|warm_up_conf.startup_grace_period_seconds | 否 | 整型 | 网关启动后的宽限时间，单位为秒。在此期间首次观察到的节点直接视为已完成预热，避免重启后整组节点重新爬坡。已经观察到的节点变为不可用后再回来，即使在此期间内也会重新爬坡。默认为 `0`。 |
 
 `type` 详细信息如下：
 
@@ -1063,7 +1063,7 @@ APISIX 支持两种不同的方式来代理 WebSocket 连接，二者不能混�
 - `scheme` 可以设置成 `tls`，表示 `TLS over TCP`。
 - `tls.client_cert/key` 可以用来跟上游进行 mTLS 通信。他们的格式和 SSL 对象的 `cert` 和 `key` 一样。
 - `tls.client_cert_id` 可以用来指定引用的 SSL 对象。只有当 SSL 对象的 `type` 字段为 client 时才能被引用，否则请求会被 APISIX 拒绝。另外，SSL 对象中只有 `cert` 和 `key` 会被使用。
-- `tls.verify` 设置为 `true` 时校验上游返回的证书；不设置时沿用 nginx 的行为，即只有开启了 `proxy_ssl_verify` 才会校验。校验使用 `tls.ca_certs` 中的 CA 证书，未设置 `tls.ca_certs` 时使用 `config.yaml` 中的 `ssl_trusted_certificate`：
+- `tls.verify` 设置为 `true` 时校验上游返回的证书；不设置时沿用 nginx 的行为，即只有开启了 `proxy_ssl_verify` 才会校验。校验使用 `tls.ca_certs` 中的 CA 证书，未设置 `tls.ca_certs` 时使用 `config.yaml` 中的 `ssl_trusted_certificate`，此时 nginx 中通过 `proxy_ssl_crl`（gRPC 为 `grpc_ssl_crl`）配置的 CRL 同样生效：
 
   ```json
   {
@@ -1083,7 +1083,7 @@ APISIX 支持两种不同的方式来代理 WebSocket 连接，二者不能混�
 - `warm_up_conf` 为 `roundrobin` 类型的 Upstream 开启节点慢启动。节点是否为新节点由网关根据自己观察到的节点集合判断，每次爬坡的起点记录在本地的 `upstream-slow-start` 共享字典中：
   - 网关首次为 Upstream 构建负载均衡器时已有的节点视为已完成预热，开启 `warm_up_conf` 时 Upstream 已有的节点同样如此。
   - 之后新增的节点从 `min_weight_percent` 开始，在 `slow_start_time_seconds` 内逐步恢复到配置的权重。被健康检查挡在负载均衡器之外的节点，从它首次可用时开始爬坡。
-  - 节点离开 Upstream 后在 `slow_start_time_seconds` 内回来，会继续原来的爬坡；更晚回来，或被健康检查排除超过该时长，会重新开始爬坡。
+  - 节点一旦不可用，无论是被健康检查排除出负载均衡器，还是离开了 Upstream，其爬坡或已完成预热的状态都会结束。再次可用时，无论不可用的时间多短，都会从 `min_weight_percent` 重新开始爬坡，因为该地址上响应的进程可能刚刚重启。修改节点权重（包括改为 `0`）不算不可用。
   - 每个 APISIX 实例独立计时，起点为该实例观察到节点的时刻。
   - `warm_up_conf` 仅支持节点优先级一致的 `roundrobin` 类型 Upstream，`traffic-split` 插件中的 Upstream 每请求重建，不允许配置。与其他只对 HTTP 生效的 Upstream 字段一样，该字段在 stream route 使用的 Upstream 上会被忽略。爬坡只在节点之间调整流量：单节点 Upstream，或所有节点都是新节点时，请求仍会全部发往这些节点。
 
@@ -1344,7 +1344,7 @@ SSL 资源请求地址：/apisix/admin/ssls/{id}
 | keys        | 否   | 私钥字符串数组 | `certs` 对应的证书私钥，需要与 `certs` 一一对应。该字段支持使用 [APISIX Secret](./terminology/secret.md) 资源，将值保存在 Secret Manager 中。                                                          |                                                  |
 | client.ca   | 否   | 证书 |  设置将用于客户端证书校验的 `CA` 证书。该特性需要 OpenResty 为 1.19 及以上版本。  |                                                  |
 | client.depth | 否   | 辅助 |  设置客户端证书校验的深度，默认为 1。该特性需要 OpenResty 为 1.19 及以上版本。 |                                             |
-| client.skip_mtls_uri_regex | 否   | PCRE 正则表达式数组 |  用来匹配请求的 URI，如果匹配，则该请求将绕过客户端证书的检查，也就是跳过 MTLS。 | ["/hello[0-9]+", "/foobar"]                                            |
+| client.skip_mtls_uri_regex | 否   | PCRE 正则表达式数组 |  用来匹配请求的 URI，如果匹配，则该请求将绕过客户端证书的检查，也就是跳过 MTLS。启用 `match_uri_encoded_slash` 时，包含编码斜杠（`%2F`）的 URI 需要在解码形式和保留 `%2F` 的形式下都匹配。 | ["/hello[0-9]+", "/foobar"]                                            |
 | snis        | 是   | 匹配规则       | 非空数组形式，可以匹配多个 SNI。                                                                         |                                                  |
 | desc        | 否   | 辅助          | 证书描述。        | certs for production env                                               |
 | labels      | 否   | 匹配规则       | 标识附加属性的键值对。                                                                                   | {"version":"v2","build":"16","env":"production"} |

@@ -897,6 +897,7 @@ http {
 
         {% if ssl.ssl_trusted_certificate ~= nil then %}
         proxy_ssl_trusted_certificate {* ssl.ssl_trusted_certificate *};
+        grpc_ssl_trusted_certificate {* ssl.ssl_trusted_certificate *};
         {% end %}
 
         # opentelemetry_set_ngx_var starts

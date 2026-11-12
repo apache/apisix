@@ -44,6 +44,12 @@ import TabItem from '@theme/TabItem';
 
 ## 请求格式
 
+### 请求协议检测
+
+`ai-proxy-multi` 与 `ai-proxy` 使用相同的请求验证、协议检测、透传和转换行为。完整规则和 URI 要求参见[请求协议检测](./ai-proxy.md#请求协议检测)。
+
+### Chat Completions 请求格式
+
 | 名称               | 类型   | 必选项 | 描述                                         |
 | ------------------ | ------ | -------- | --------------------------------------------------- |
 | `messages`         | Array  | 是      | 消息对象数组。                        |
@@ -146,6 +152,7 @@ import TabItem from '@theme/TabItem';
 | keepalive                           | boolean        | 否    | true                            |              | 如果为 true，在请求 LLM 服务时保持连接活跃。 |
 | keepalive_timeout                   | integer        | 否    | 60000                           | 大于或等于 1000 | 请求 LLM 服务时的请求超时时间（毫秒）。 |
 | keepalive_pool                      | integer        | 否    | 30                              |              | 连接 LLM 服务时的保活池大小。 |
+| streaming_flush_interval_ms         | integer        | 否    | 10                              | 大于或等于 0 | 流式响应的后台刷新间隔，单位为毫秒。正值会定期刷新缓冲输出，以限制上游突发发送 token 时的客户端延迟。设置为 `0` 时同步刷新每个数据块。 |
 | ssl_verify                          | boolean        | 否    | true                            |              | 如果为 true，验证 LLM 服务的证书。 |
 
 ## 请求头转发
@@ -1765,8 +1772,8 @@ curl "http://127.0.0.1:9080/anything" -X POST \
 将您的 AWS 凭证保存到环境变量：
 
 ```shell
-export AWS_ACCESS_KEY_ID=<your-aws-access-key-id>
-export AWS_SECRET_ACCESS_KEY=<your-aws-secret-access-key>
+export AWS_ACCESS_KEY_ID='<your-aws-access-key-id>'
+export AWS_SECRET_ACCESS_KEY='<your-aws-secret-access-key>'
 ```
 
 创建路由：
@@ -1872,6 +1879,70 @@ https://bedrock-runtime.us-east-1.amazonaws.com/model/arn%3Aaws%3Abedrock%3Aus-e
 
 要启用流式响应，请使用相同的 Converse 请求体，并在其中加上 `"stream": true`。插件会将请求路由到 Bedrock 的 `/model/<model>/converse-stream` 接口，并将 AWS EventStream 帧原样转发给客户端。响应的 `Content-Type` 为 `application/vnd.amazon.eventstream`，客户端需自行解析二进制帧（多数 AWS SDK 已自动处理）。
 
+### 对 Responses API 请求进行负载均衡
+
+以下示例配置 `ai-proxy-multi`，在两个 OpenAI 模型之间分配 Responses API 请求。Responses 和 Embeddings 请求都包含 `input`，因此路由 URI 必须以 `/v1/responses` 结尾，插件才能将请求识别为 Responses。
+
+获取 [OpenAI API 密钥](https://platform.openai.com/api-keys)并保存到环境变量：
+
+```shell
+export OPENAI_API_KEY="<your-api-key>"
+```
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "ai-proxy-multi-responses-route",
+    "uri": "/v1/responses",
+    "methods": ["POST"],
+    "plugins": {
+      "ai-proxy-multi": {
+        "instances": [
+          {
+            "name": "openai-responses-primary",
+            "provider": "openai",
+            "weight": 1,
+            "auth": {
+              "header": {
+                "Authorization": "Bearer '"$OPENAI_API_KEY"'"
+              }
+            },
+            "options": {
+              "model": "gpt-4.1"
+            }
+          },
+          {
+            "name": "openai-responses-secondary",
+            "provider": "openai",
+            "weight": 1,
+            "auth": {
+              "header": {
+                "Authorization": "Bearer '"$OPENAI_API_KEY"'"
+              }
+            },
+            "options": {
+              "model": "gpt-4.1-mini"
+            }
+          }
+        ]
+      }
+    }
+  }'
+```
+
+使用 Responses API 格式发送请求：
+
+```shell
+curl "http://127.0.0.1:9080/v1/responses" -X POST \
+  -H "Content-Type: application/json" \
+  -d '{
+    "input": "用一句话解释 API 网关。"
+  }'
+```
+
+请求会被转发到其中一个已配置的 OpenAI 实例，并以 Responses API 格式返回响应。
+
 ### 代理到嵌入模型
 
 以下示例演示了如何配置 `ai-proxy-multi` 插件以代理请求并在嵌入模型之间进行负载均衡。
@@ -1910,9 +1981,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
             },
             "options": {
               "model": "text-embedding-3-small"
-            },
-            "override": {
-              "endpoint": "https://api.openai.com/v1/embeddings"
             }
           },
           {
@@ -1921,7 +1989,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
             "weight": 0,
             "auth": {
               "header": {
-                "Authorization": "Bearer '"$AZ_OPENAI_API_KEY"'"
+                "api-key": "'"$AZ_OPENAI_API_KEY"'"
               }
             },
             "options": {
@@ -1961,8 +2029,6 @@ services:
                     Authorization: "Bearer ${OPENAI_API_KEY}"
                 options:
                   model: text-embedding-3-small
-                override:
-                  endpoint: "https://api.openai.com/v1/embeddings"
               - name: az-openai-instance
                 provider: openai-compatible
                 weight: 0
@@ -2014,8 +2080,6 @@ spec:
                 Authorization: "Bearer your-api-key"
             options:
               model: text-embedding-3-small
-            override:
-              endpoint: "https://api.openai.com/v1/embeddings"
           - name: az-openai-instance
             provider: openai-compatible
             weight: 0
@@ -2081,8 +2145,6 @@ spec:
                     Authorization: "Bearer your-api-key"
                 options:
                   model: text-embedding-3-small
-                override:
-                  endpoint: "https://api.openai.com/v1/embeddings"
               - name: az-openai-instance
                 provider: openai-compatible
                 weight: 0
@@ -2487,7 +2549,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
         "kafka_topic": "test2",
         "key": "key1",
         "batch_max_size": 1
-        }
       }
     }
   }'

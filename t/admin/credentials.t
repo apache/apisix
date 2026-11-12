@@ -81,7 +81,7 @@ GET /t
                         "plugins": {
                             "basic-auth": {
                                 "username": "the-user",
-                                "password": "WvF5kpaLvIzjuk4GNIMTJg=="
+                                "password": "$ENC$v1$WvF5kpaLvIzjuk4GNIMTJg=="
                             }
                         }
                     }
@@ -119,7 +119,7 @@ passed
                     "value":{
                         "desc":"basic-auth for jack",
                         "id":"credential_a",
-                        "plugins":{"basic-auth":{"username":"the-new-user","password":"WvF5kpaLvIzjuk4GNIMTJg=="}}
+                        "plugins":{"basic-auth":{"username":"the-new-user","password":"$ENC$v1$WvF5kpaLvIzjuk4GNIMTJg=="}}
                     },
                     "key":"/apisix/consumers/jack/credentials/credential_a"
                 }]]
@@ -155,7 +155,7 @@ passed
                     "value":{
                         "desc":"key-auth for jack",
                         "id":"credential_b",
-                        "plugins":{"key-auth":{"key":"JCX7x1qN5e9kHt0GuJfWpw=="}}
+                        "plugins":{"key-auth":{"key":"$ENC$v1$JCX7x1qN5e9kHt0GuJfWpw=="}}
                     },
                     "key":"/apisix/consumers/jack/credentials/credential_b"
                 }]]
@@ -296,7 +296,7 @@ passed
                          "desc": "new description",
                          "plugins": {
                              "key-auth": {
-                                 "key": "523EisB/dvqlIT9RzfF3ZQ=="
+                                 "key": "$ENC$v1$523EisB/dvqlIT9RzfF3ZQ=="
                              }
                          }
                      }
@@ -449,7 +449,7 @@ passed
                     "value":{
                         "desc":"key-auth for jack",
                         "id":"d79a5aa3",
-                        "plugins":{"key-auth":{"key":"JCX7x1qN5e9kHt0GuJfWpw=="}}
+                        "plugins":{"key-auth":{"key":"$ENC$v1$JCX7x1qN5e9kHt0GuJfWpw=="}}
                     },
                     "key":"/apisix/consumers/jack/credentials/d79a5aa3"
                 }]]

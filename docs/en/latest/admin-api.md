@@ -917,17 +917,17 @@ Credential resource request address：/apisix/admin/consumers/{username}/credent
 
 | Method | Request URI                        | Request Body | Description                                    |
 | ------ |----------------------------------------------------------------|--------------|------------------------------------------------|
-| GET    | /apisix/admin/consumers/{username}/credentials                 | NUll         | Fetches list of all credentials of the Consumer |
-| GET    | /apisix/admin/consumers/{username}/credentials/{credential_id} | NUll         | Fetches the Credential by `credential_id`      |
-| PUT    | /apisix/admin/consumers/{username}/credentials/{credential_id} | {...}        | Create or update a Creddential                 |
-| DELETE | /apisix/admin/consumers/{username}/credentials/{credential_id} | NUll         | Delete the Credential                          |
+| GET    | /apisix/admin/consumers/{username}/credentials                 | NULL         | Fetches list of all credentials of the Consumer |
+| GET    | /apisix/admin/consumers/{username}/credentials/{credential_id} | NULL         | Fetches the Credential by `credential_id`      |
+| PUT    | /apisix/admin/consumers/{username}/credentials/{credential_id} | {...}        | Create or update a Credential                  |
+| DELETE | /apisix/admin/consumers/{username}/credentials/{credential_id} | NULL         | Delete the Credential                          |
 
 ### Request Body Parameters
 
 | Parameter   | Required | Type        | Description                                                | Example                                         |
 | ----------- |-----| ------- |------------------------------------------------------------|-------------------------------------------------|
 | plugins     | False    | Plugin      | Auth plugins configuration.                                |                                                 |
-| name        | False    | Auxiliary   | Identifier for the Credential.                             | credential_primary                              |
+| name        | False    | Auxiliary   | Name of the Consumer Credential.                           | credential_primary                              |
 | desc        | False    | Auxiliary   | Description of usage scenarios.                            | credential xxxx                                 |
 | labels      | False    | Match Rules | Attributes of the Credential specified as key-value pairs. | {"version":"v2","build":"16","env":"production"} |
 
@@ -1028,7 +1028,7 @@ In addition to the equalization algorithm selections, Upstream also supports pas
 | warm_up_conf.min_weight_percent | True, when `warm_up_conf` is set | Integer | Lowest effective weight during the ramp, as a percentage of the configured weight, from 1 to 100. | 1 |
 | warm_up_conf.interval | False | Integer | Seconds between two effective weight refreshes. Defaults to `1`, and cannot be greater than `slow_start_time_seconds`. | 1 |
 | warm_up_conf.aggression | False | Number | Shape of the ramp. `1` (default) is linear, above `1` ramps up faster at the beginning, below `1` slower. At least `0.01`. | 1 |
-| warm_up_conf.startup_grace_period_seconds | False | Integer | Seconds after the gateway starts during which a node observed for the first time is treated as already warmed up, so that a restart does not ramp the whole node set again. Defaults to `0`. | 180 |
+| warm_up_conf.startup_grace_period_seconds | False | Integer | Seconds after the gateway starts during which a node observed for the first time is treated as already warmed up, so that a restart does not ramp the whole node set again. A node that was already observed and then becomes unavailable still ramps when it comes back, also during this period. Defaults to `0`. | 180 |
 
 An Upstream can be one of the following `types`:
 
@@ -1059,7 +1059,7 @@ To use mTLS to communicate with Upstream, you can use the `tls.client_cert/key` 
 
 Or you can reference SSL object by `tls.client_cert_id` to set SSL cert and key. The SSL object can be referenced only if the `type` field is `client`, otherwise the request will be rejected by APISIX. In addition, only `cert` and `key` will be used in the SSL object.
 
-To verify the certificate presented by the Upstream, set `tls.verify` to `true`. Leaving it unset keeps the behaviour configured in nginx, which is off unless `proxy_ssl_verify` is turned on. The certificate is checked against the CA certificates in `tls.ca_certs`, or against `ssl_trusted_certificate` from `config.yaml` when `tls.ca_certs` is not set:
+To verify the certificate presented by the Upstream, set `tls.verify` to `true`. Leaving it unset keeps the behaviour configured in nginx, which is off unless `proxy_ssl_verify` is turned on. The certificate is checked against the CA certificates in `tls.ca_certs`, or against `ssl_trusted_certificate` from `config.yaml` when `tls.ca_certs` is not set. In the latter case, a CRL configured in nginx with `proxy_ssl_crl` (`grpc_ssl_crl` for gRPC) is also checked:
 
 ```json
 {
@@ -1081,7 +1081,7 @@ To allow Upstream to have a separate connection pool, use `keepalive_pool`. It c
 
 - The node set an Upstream has when the gateway first builds a load balancer for it is treated as warmed up. So is the node set it already has when `warm_up_conf` is turned on.
 - A node added afterwards ramps from `min_weight_percent` back to its configured weight over `slow_start_time_seconds`. A node held out of the load balancer by a health check starts its ramp when it first becomes available.
-- A node that leaves the Upstream and comes back within `slow_start_time_seconds` resumes its ramp. One that comes back later, or that a health check kept out for longer than that, ramps again from the start.
+- A node that becomes unavailable, either because a health check takes it out of the load balancer or because it leaves the Upstream, ends its ramp, or its warmed-up state. When it is available again it ramps from `min_weight_percent` from the start, however short the unavailability was, because the process answering on that address may have just restarted. Changing the weight of a node, including to `0`, does not count as unavailability.
 - Every APISIX instance ramps independently, from the moment it observed the node.
 
 `warm_up_conf` is only supported by `roundrobin` Upstreams whose nodes share a single priority, and it is rejected in the Upstreams of the `traffic-split` Plugin, which are rebuilt per request. Like the other Upstream fields that only apply to HTTP, it is ignored when the Upstream is used by a stream route. A ramp only shifts traffic between nodes: a single-node Upstream, or one whose nodes are all new, keeps sending every request to them.
@@ -1347,7 +1347,7 @@ For notes on ID syntax please refer to: [ID Syntax](#quick-note-on-id-syntax)
 | keys         | False    | An array of private keys | Private keys to pair with the `certs`. This field supports saving the value in Secret Manager using the [APISIX Secret](./terminology/secret.md) resource.                                                                   |                                                  |
 | client.ca    | False    | Certificate              | Sets the CA certificate that verifies the client. Requires OpenResty 1.19+.                                    |                                                  |
 | client.depth | False    | Certificate              | Sets the verification depth in client certificate chains. Defaults to 1. Requires OpenResty 1.19+.             |                                                  |
-| client.skip_mtls_uri_regex | False    | An array of regular expressions, in PCRE format              | Used to match URI, if matched, this request bypasses the client certificate checking, i.e. skip the MTLS.             | ["/hello[0-9]+", "/foobar"]                                                |
+| client.skip_mtls_uri_regex | False    | An array of regular expressions, in PCRE format              | Used to match URI, if matched, this request bypasses the client certificate checking, i.e. skip the MTLS. When `match_uri_encoded_slash` is enabled, a URI containing an encoded slash (`%2F`) must match in both its decoded and its `%2F`-kept form. | ["/hello[0-9]+", "/foobar"]                                                |
 | snis         | True, only if `type` is `server`     | Match Rules              | A non-empty array of HTTPS SNI                                                                                 |                                                  |
 | desc         | False    | Auxiliary                | Description of usage scenarios. | certs for production env |
 | labels       | False    | Match Rules              | Attributes of the resource specified as key-value pairs.                                                       | {"version":"v2","build":"16","env":"production"} |
@@ -1581,7 +1581,7 @@ Stream Route resource request address:  /apisix/admin/stream_routes/{id}
 | protocol.name | False    | String | Name of the protocol proxyed by xRPC framework.                     | "redis"                    |
 | protocol.conf | False    | Configuration | Protocol-specific configuration.                             |                    |
 
-To learn more about filtering in stream proxies, check [this](./stream-proxy.md#more-route-match-options) document.
+To learn more about filtering in stream proxies, check [this](./stream-proxy.md#more-stream-route-filtering-options) document.
 
 ## Secret
 
@@ -1746,7 +1746,7 @@ Currently, the response is returned from etcd.
 
 Proto is used to store protocol buffers so that APISIX can communicate in gRPC.
 
-See [grpc-transcode plugin](./plugins/grpc-transcode.md#enabling-the-plugin) doc for more examples.
+See [grpc-transcode plugin](./plugins/grpc-transcode.md#examples) doc for more examples.
 
 ### Proto API
 
@@ -1766,7 +1766,7 @@ Proto resource request address: /apisix/admin/protos/{id}
 
 | Parameter | Required | Type      | Description                          | Example                       |
 |-----------|----------|-----------|--------------------------------------| ----------------------------- |
-| content   | True     | String    | Content of `.proto` or `.pb` files   | See [here](./plugins/grpc-transcode.md#enabling-the-plugin)         |
+| content   | True     | String    | Content of `.proto` or `.pb` files   | See [here](./plugins/grpc-transcode.md#examples)         |
 | name      | False    | Auxiliary | Identifier for the Protobuf definition. | user-proto                    |
 | desc      | False    | Auxiliary | Description of usage scenarios.      | protobuf for user service     |
 | labels    | False    | Match Rules | Attributes of the Proto specified as key-value pairs. | {"version":"v2","service":"user","env":"production"}     |

@@ -44,6 +44,12 @@ In addition, the Plugin also supports logging LLM request information in the acc
 
 ## Request Format
 
+### Request Protocol Detection
+
+`ai-proxy-multi` uses the same request validation, protocol detection, passthrough, and conversion behavior as `ai-proxy`. See [request protocol detection](./ai-proxy.md#request-protocol-detection) for the complete rules and URI requirements.
+
+### Chat Completions Request Format
+
 | Name               | Type   | Required | Description                                         |
 | ------------------ | ------ | -------- | --------------------------------------------------- |
 | `messages`         | Array  | True      | An array of message objects.                        |
@@ -145,6 +151,7 @@ When an instance's `provider` is set to `bedrock`, the Plugin expects requests i
 | keepalive                           | boolean        | False    | true                            |              | If true, keep the connection alive when requesting the LLM service. |
 | keepalive_timeout                   | integer        | False    | 60000                           | greater than or equal to 1000 | Request timeout in milliseconds when requesting the LLM service. |
 | keepalive_pool                      | integer        | False    | 30                              |              | Keepalive pool size for when connecting with the LLM service. |
+| streaming_flush_interval_ms         | integer        | False    | 10                              | greater than or equal to 0 | Background flush interval in milliseconds for streaming responses. A positive value periodically flushes buffered output to bound client latency when the upstream sends tokens in bursts. Set to `0` to flush each chunk synchronously. |
 | ssl_verify                          | boolean        | False    | true                            |              | If true, verify the LLM service's certificate. |
 
 ## Request Header Forwarding
@@ -1790,8 +1797,8 @@ The following example demonstrates how you can configure two [Amazon Bedrock](ht
 Save your AWS credentials to environment variables:
 
 ```shell
-export AWS_ACCESS_KEY_ID=<your-aws-access-key-id>
-export AWS_SECRET_ACCESS_KEY=<your-aws-secret-access-key>
+export AWS_ACCESS_KEY_ID='<your-aws-access-key-id>'
+export AWS_SECRET_ACCESS_KEY='<your-aws-secret-access-key>'
 ```
 
 Create a Route as such:
@@ -2086,6 +2093,70 @@ If `auth.aws.session_token` is set, it is used for temporary credentials (e.g., 
 
 To enable streaming, send the same Converse request body with `"stream": true`. The Plugin routes the request to Bedrock's `/model/<model>/converse-stream` endpoint and forwards each AWS EventStream frame to the client unchanged. The response `Content-Type` is `application/vnd.amazon.eventstream`; clients must parse the binary framing themselves (most AWS SDKs do this automatically).
 
+### Load Balance Responses API Requests
+
+The following example configures `ai-proxy-multi` to distribute Responses API requests across two OpenAI models. Responses and Embeddings requests both contain `input`, so the Route URI must end in `/v1/responses` for the Plugin to identify the request as Responses.
+
+Obtain an [OpenAI API key](https://platform.openai.com/api-keys) and save it to an environment variable:
+
+```shell
+export OPENAI_API_KEY="<your-api-key>"
+```
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "ai-proxy-multi-responses-route",
+    "uri": "/v1/responses",
+    "methods": ["POST"],
+    "plugins": {
+      "ai-proxy-multi": {
+        "instances": [
+          {
+            "name": "openai-responses-primary",
+            "provider": "openai",
+            "weight": 1,
+            "auth": {
+              "header": {
+                "Authorization": "Bearer '"$OPENAI_API_KEY"'"
+              }
+            },
+            "options": {
+              "model": "gpt-4.1"
+            }
+          },
+          {
+            "name": "openai-responses-secondary",
+            "provider": "openai",
+            "weight": 1,
+            "auth": {
+              "header": {
+                "Authorization": "Bearer '"$OPENAI_API_KEY"'"
+              }
+            },
+            "options": {
+              "model": "gpt-4.1-mini"
+            }
+          }
+        ]
+      }
+    }
+  }'
+```
+
+Send a request using the Responses API format:
+
+```shell
+curl "http://127.0.0.1:9080/v1/responses" -X POST \
+  -H "Content-Type: application/json" \
+  -d '{
+    "input": "Explain API gateways in one sentence."
+  }'
+```
+
+The request is forwarded to one of the configured OpenAI instances and the response is returned in the Responses API format.
+
 ### Proxy to Embedding Models
 
 The following example demonstrates how you can configure the `ai-proxy-multi` Plugin to proxy requests and load balance between embedding models.
@@ -2124,9 +2195,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
             },
             "options": {
               "model": "text-embedding-3-small"
-            },
-            "override": {
-              "endpoint": "https://api.openai.com/v1/embeddings"
             }
           },
           {
@@ -2135,7 +2203,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
             "weight": 0,
             "auth": {
               "header": {
-                "Authorization": "Bearer '"$AZ_OPENAI_API_KEY"'"
+                "api-key": "'"$AZ_OPENAI_API_KEY"'"
               }
             },
             "options": {
@@ -2175,8 +2243,6 @@ services:
                     Authorization: "Bearer ${OPENAI_API_KEY}"
                 options:
                   model: text-embedding-3-small
-                override:
-                  endpoint: "https://api.openai.com/v1/embeddings"
               - name: az-openai-instance
                 provider: azure-openai
                 weight: 0
@@ -2228,8 +2294,6 @@ spec:
                 Authorization: "Bearer your-api-key"
             options:
               model: text-embedding-3-small
-            override:
-              endpoint: "https://api.openai.com/v1/embeddings"
           - name: az-openai-instance
             provider: azure-openai
             weight: 0
@@ -2295,8 +2359,6 @@ spec:
                     Authorization: "Bearer your-api-key"
                 options:
                   model: text-embedding-3-small
-                override:
-                  endpoint: "https://api.openai.com/v1/embeddings"
               - name: az-openai-instance
                 provider: azure-openai
                 weight: 0
@@ -2776,7 +2838,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
         "kafka_topic": "test2",
         "key": "key1",
         "batch_max_size": 1
-        }
       }
     }
   }'

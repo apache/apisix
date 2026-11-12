@@ -1,0 +1,51 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+get:
+  summary: List Plugin Names
+  description: Returns successfully loaded configured plugins in the selected subsystem, sorted by descending priority. The installed plugin inventory is deployment-dependent.
+  tags:
+    - Plugins
+  parameters:
+    - $ref: ../components/parameters/Subsystem.yaml
+  responses:
+    "200":
+      description: Successful response.
+      content:
+        application/json:
+          schema:
+            type: array
+            description: An array of plugin names.
+            items:
+              type: string
+          examples:
+            configuredSubset:
+              summary: An instance configured with key-auth, proxy-rewrite and limit-count, sorted by priority
+              value:
+                - key-auth
+                - proxy-rewrite
+                - limit-count
+    "400":
+      description: Unsupported subsystem or missing schema. /plugins/list returns a JSON string; other plugin endpoints return an error object.
+      content:
+        application/json:
+          schema:
+            anyOf:
+              - type: string
+              - $ref: ../components/schemas/ErrorResponse.yaml
+    "401":
+      $ref: ../components/responses/Unauthorized.yaml
+  operationId: listPluginNames

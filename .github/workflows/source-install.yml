@@ -48,9 +48,13 @@ jobs:
 
     steps:
       - name: Check out code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
+
+      - name: Get runner image
+        id: runner_image
+        run: echo "os=${ImageOS}" >> "$GITHUB_OUTPUT"
 
       - name: Cache deps
         uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5
@@ -58,7 +62,7 @@ jobs:
           cache-name: cache-deps
         with:
           path: deps
-          key: ${{ runner.os }}-${{ env.cache-name }}-${{ matrix.os_platform }}-${{ hashFiles('apisix-master-0.rockspec') }}
+          key: ${{ runner.os }}-${{ steps.runner_image.outputs.os }}-${{ env.cache-name }}-${{ matrix.os_platform }}-${{ hashFiles('apisix-master-0.rockspec') }}
 
       - name: Install and start apisix on ${{ matrix.os_platform }}
         env:
