@@ -7,7 +7,7 @@ keywords:
   - ai-rag
   - AI
   - LLM
-description: The ai-rag Plugin retrieves context with Azure OpenAI embeddings and Azure AI Search before an LLM request is proxied.
+description: The ai-rag Plugin retrieves context with Azure OpenAI embeddings and Azure AI Search or Qdrant before an LLM request is proxied.
 ---
 
 <!--
@@ -40,7 +40,7 @@ import TabItem from '@theme/TabItem';
 
 The `ai-rag` Plugin implements the retrieval step of a Retrieval-Augmented Generation (RAG) request flow. It generates an embedding from the request, performs a vector search, adds the retrieved content to the protocol-specific LLM request input, and removes the `ai_rag` request object before the request is proxied.
 
-The current implementation supports [Azure OpenAI](https://azure.microsoft.com/en-us/products/ai-services/openai-service) for embeddings and [Azure AI Search](https://azure.microsoft.com/en-us/products/ai-services/ai-search) for vector search. Use the [`ai-proxy`](./ai-proxy.md) Plugin in the same request flow to proxy the augmented request to the LLM provider. The Plugin does not create or populate a search index; prepare the index and its content before sending requests through APISIX.
+The current implementation supports [Azure OpenAI](https://azure.microsoft.com/en-us/products/ai-services/openai-service) for embeddings, and [Azure AI Search](https://azure.microsoft.com/en-us/products/ai-services/ai-search) or [Qdrant](https://qdrant.tech/documentation/) for vector search. Use the [`ai-proxy`](./ai-proxy.md) Plugin in the same request flow to proxy the augmented request to the LLM provider. Create and fill the search index or collection before you send requests through APISIX. The Plugin only reads from it.
 
 The Plugin enriches Chat Completions, Responses API, Anthropic Messages, and Bedrock Converse requests using each protocol's native prompt structure. For Responses, it appends retrieved context to `input`. It leaves direct Embeddings API and passthrough requests unchanged. The nested `ai_rag.embeddings` object configures the embedding input used internally for retrieval and is distinct from a top-level Embeddings request.
 
@@ -55,9 +55,13 @@ See [request protocol detection](./ai-proxy.md#request-protocol-detection) for t
 | `embeddings_provider.azure_openai.endpoint` | string | True | | | Azure OpenAI embedding model endpoint. |
 | `embeddings_provider.azure_openai.api_key` | string | True | | | Azure OpenAI API key. |
 | `vector_search_provider` | object | True | | | Vector search provider configurations. |
-| `vector_search_provider.azure_ai_search` | object | True | | | Configurations of [Azure AI Search](https://azure.microsoft.com/en-us/products/ai-services/ai-search). |
+| `vector_search_provider.azure_ai_search` | object | False | | | Configurations of [Azure AI Search](https://azure.microsoft.com/en-us/products/ai-services/ai-search). Configure exactly one of `azure_ai_search` and `qdrant`. |
 | `vector_search_provider.azure_ai_search.endpoint` | string | True | | | Azure AI Search endpoint. |
 | `vector_search_provider.azure_ai_search.api_key` | string | True | | | Azure AI Search API key. |
+| `vector_search_provider.qdrant` | object | False | | | Configurations of [Qdrant](https://qdrant.tech/documentation/). Configure exactly one of `azure_ai_search` and `qdrant`. |
+| `vector_search_provider.qdrant.endpoint` | string | True | | | URL of the Qdrant instance, such as `http://127.0.0.1:6333`. It can include a path prefix. The Plugin sends search requests to the [Query API](https://qdrant.tech/documentation/concepts/search/) at `{endpoint}/collections/{collection_name}/points/query`. |
+| `vector_search_provider.qdrant.collection_name` | string | True | | | Name of the [collection](https://qdrant.tech/documentation/concepts/collections/) to search. |
+| `vector_search_provider.qdrant.api_key` | string | False | | | Qdrant [API key](https://qdrant.tech/documentation/guides/security/). The Plugin sends it in the `api-key` header. Configure it when the Qdrant instance requires an API key. |
 
 ## Request Body Format
 
@@ -92,7 +96,24 @@ The following fields must be present in the request body.
 
   For other parameters please refer to the [Azure AI Search documentation](https://learn.microsoft.com/en-us/rest/api/searchservice/documents/search-post). In addition, [these vector query parameters](https://learn.microsoft.com/en-us/rest/api/searchservice/documents/search-post?view=rest-searchservice-2024-07-01&tabs=HTTP#vectorizabletextquery) are also supported.
 
-Example request body:
+  - Qdrant
+
+  All fields are optional. Send an empty `vector_search` object to use the Qdrant defaults. The Plugin rejects other fields with a `400` response.
+
+  | Field | Required | Type | Description |
+  | --- | --- | --- | --- |
+  | `limit` | False | integer | Maximum number of points to return, from 1 to 100. Defaults to 10. |
+  | `using` | False | string | Name of the vector to search, for a collection with [named vectors](https://qdrant.tech/documentation/concepts/vectors/#named-vectors). |
+  | `filter` | False | object | [Filter](https://qdrant.tech/documentation/concepts/filtering/) conditions on the payload of the points. |
+  | `params` | False | object | [Search parameters](https://qdrant.tech/documentation/concepts/search/#search-api), such as `hnsw_ef` and `exact`. |
+  | `score_threshold` | False | number | Minimum score of a returned point. |
+  | `with_payload` | False | array | Names of the [payload fields](https://qdrant.tech/documentation/concepts/search/#payload-and-vector-in-the-result) to return. Defaults to the full payload. |
+
+  The Plugin adds the payloads of the matched points to the LLM request as a JSON array, such as `[{"text":"..."}]`. It skips points without a payload. When no point has a payload, the Plugin adds no message to the LLM request.
+
+  When Qdrant rejects the query, for example because of an invalid `filter`, the Plugin returns a `400` response. When the Plugin cannot reach Qdrant, or Qdrant returns another error, the Plugin returns a `502` response. The Plugin writes the Qdrant error details to the APISIX error log, not to the response.
+
+Example request body for Azure AI Search:
 
 ```json
 {
@@ -101,6 +122,24 @@ Example request body:
     "embeddings": {
       "input": "which service is good for devops",
       "dimensions": 1024
+    }
+  }
+}
+```
+
+Example request body for Qdrant:
+
+```json
+{
+  "ai_rag": {
+    "vector_search": {
+      "limit": 3,
+      "filter": {
+        "must": [{ "key": "category", "match": { "value": "devops" } }]
+      }
+    },
+    "embeddings": {
+      "input": "which service is good for devops"
     }
   }
 }
@@ -177,7 +216,9 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
           "api-key": "'"$AZ_OPENAI_API_KEY"'"
         }
       },
-      "model": "gpt-4o",
+      "options": {
+        "model": "gpt-4o"
+      },
       "override": {
         "endpoint": "'"$AZ_CHAT_ENDPOINT"'"
       }
@@ -215,7 +256,8 @@ services:
             auth:
               header:
                 api-key: "${AZ_OPENAI_API_KEY}"
-            model: gpt-4o
+            options:
+              model: gpt-4o
             override:
               endpoint: "${AZ_CHAT_ENDPOINT}"
 ```
@@ -258,7 +300,8 @@ spec:
         auth:
           header:
             api-key: "your-azure-openai-api-key"
-        model: gpt-4o
+        options:
+          model: gpt-4o
         override:
           endpoint: "https://your-openai-resource.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-02-15-preview"
 ---
@@ -323,7 +366,8 @@ spec:
             auth:
               header:
                 api-key: "your-azure-openai-api-key"
-            model: gpt-4o
+            options:
+              model: gpt-4o
             override:
               endpoint: "https://your-openai-resource.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-02-15-preview"
 ```
@@ -394,3 +438,131 @@ You should receive an `HTTP/1.1 200 OK` response similar to the following:
   }
 }
 ```
+
+### Integrate with Qdrant for RAG-Enhanced Responses
+
+The following example uses [Qdrant](https://qdrant.tech/documentation/) for vector search. It uses Azure OpenAI for embeddings and for the chat model, as in the previous example.
+
+Complete the following steps before you create the Route:
+
+* Start a Qdrant instance. For a local instance, run `docker run -p 6333:6333 qdrant/qdrant`. For a managed instance, create a cluster in [Qdrant Cloud](https://cloud.qdrant.io) and obtain its URL and API key.
+* [Create a collection](https://qdrant.tech/documentation/concepts/collections/#create-a-collection) and [upload points](https://qdrant.tech/documentation/concepts/points/#upload-points). Generate the vectors with the same embedding model that the Plugin uses, and set the vector size of the collection to the dimensions of that model. Store the text of each document in the payload, such as in a `text` field.
+
+Save the Qdrant settings to environment variables:
+
+```shell
+# replace with your values
+
+QDRANT_URL=http://127.0.0.1:6333
+QDRANT_API_KEY=your-qdrant-api-key
+QDRANT_COLLECTION=azure-services
+```
+
+<Tabs groupId="api">
+<TabItem value="admin-api" label="Admin API">
+
+Create a Route as such:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+  "uri": "/rag",
+  "plugins": {
+    "ai-rag": {
+      "embeddings_provider": {
+        "azure_openai": {
+          "endpoint": "'"$AZ_EMBEDDINGS_ENDPOINT"'",
+          "api_key": "'"$AZ_OPENAI_API_KEY"'"
+        }
+      },
+      "vector_search_provider": {
+        "qdrant": {
+          "endpoint": "'"$QDRANT_URL"'",
+          "api_key": "'"$QDRANT_API_KEY"'",
+          "collection_name": "'"$QDRANT_COLLECTION"'"
+        }
+      }
+    },
+    "ai-proxy": {
+      "provider": "openai",
+      "auth": {
+        "header": {
+          "api-key": "'"$AZ_OPENAI_API_KEY"'"
+        }
+      },
+      "options": {
+        "model": "gpt-4o"
+      },
+      "override": {
+        "endpoint": "'"$AZ_CHAT_ENDPOINT"'"
+      }
+    }
+  }
+}'
+```
+
+</TabItem>
+<TabItem value="adc" label="ADC">
+
+Create a Route with the `ai-rag` and [`ai-proxy`](./ai-proxy.md) Plugins configured as such:
+
+```yaml title="adc.yaml"
+services:
+  - name: ai-rag-service
+    routes:
+      - name: ai-rag-route
+        uris:
+          - /rag
+        methods:
+          - POST
+        plugins:
+          ai-rag:
+            embeddings_provider:
+              azure_openai:
+                endpoint: "${AZ_EMBEDDINGS_ENDPOINT}"
+                api_key: "${AZ_OPENAI_API_KEY}"
+            vector_search_provider:
+              qdrant:
+                endpoint: "${QDRANT_URL}"
+                api_key: "${QDRANT_API_KEY}"
+                collection_name: "${QDRANT_COLLECTION}"
+          ai-proxy:
+            provider: openai
+            auth:
+              header:
+                api-key: "${AZ_OPENAI_API_KEY}"
+            options:
+              model: gpt-4o
+            override:
+              endpoint: "${AZ_CHAT_ENDPOINT}"
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+</Tabs>
+
+Send a POST request to the Route with the search parameters and an input prompt in the request body:
+
+```shell
+curl "http://127.0.0.1:9080/rag" -X POST \
+  -H "Content-Type: application/json" \
+  -d '{
+    "ai_rag":{
+      "vector_search":{
+        "limit":3,
+        "with_payload":["text"]
+      },
+      "embeddings":{
+        "input":"Which Azure services are good for DevOps?"
+      }
+    }
+  }'
+```
+
+The Plugin finds the three nearest points in the collection and adds their `text` payload fields to the LLM request. You should receive an `HTTP/1.1 200 OK` response with an answer from the model that uses the retrieved text.

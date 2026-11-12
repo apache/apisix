@@ -24,6 +24,7 @@ local protocols = require("apisix.plugins.ai-protocols")
 
 local azure_openai_embeddings = require("apisix.plugins.ai-rag.embeddings.azure_openai").schema
 local azure_ai_search_schema = require("apisix.plugins.ai-rag.vector-search.azure_ai_search").schema
+local qdrant_schema = require("apisix.plugins.ai-rag.vector-search.qdrant").schema
 
 local HTTP_INTERNAL_SERVER_ERROR = ngx.HTTP_INTERNAL_SERVER_ERROR
 local HTTP_BAD_REQUEST = ngx.HTTP_BAD_REQUEST
@@ -48,34 +49,43 @@ local schema = {
         vector_search_provider = {
             type = "object",
             properties = {
-                azure_ai_search = azure_ai_search_schema
+                azure_ai_search = azure_ai_search_schema,
+                qdrant = qdrant_schema,
             },
-            -- ensure only one provider can be configured while implementing support for
-            -- other providers
-            required = { "azure_ai_search" },
-            maxProperties = 1
+            minProperties = 1,
+            maxProperties = 1,
+            additionalProperties = false,
         },
     },
     required = { "embeddings_provider", "vector_search_provider" },
     encrypt_fields = {
         "embeddings_provider.azure_openai.api_key",
         "vector_search_provider.azure_ai_search.api_key",
+        "vector_search_provider.qdrant.api_key",
     },
 }
 
-local request_schema = {
-    type = "object",
-    properties = {
-        ai_rag = {
+-- core.schema.check caches validators per table, so each provider pair needs its own
+local request_schemas = {}
+
+local function get_request_schema(key, embeddings_driver, vector_search_driver)
+    if not request_schemas[key] then
+        request_schemas[key] = {
             type = "object",
             properties = {
-                vector_search = {},
-                embeddings = {},
-            },
-            required = { "vector_search", "embeddings" }
+                ai_rag = {
+                    type = "object",
+                    properties = {
+                        vector_search = vector_search_driver.request_schema,
+                        embeddings = embeddings_driver.request_schema,
+                    },
+                    required = { "vector_search", "embeddings" }
+                }
+            }
         }
-    }
-}
+    end
+    return request_schemas[key]
+end
 
 local _M = {
     version = 0.1,
@@ -90,6 +100,7 @@ function _M.check_schema(conf)
     core.utils.check_https({
         "embeddings_provider.azure_openai.endpoint",
         "vector_search_provider.azure_ai_search.endpoint",
+        "vector_search_provider.qdrant.endpoint",
     }, conf, _M.name)
     return core.schema.check(schema, conf)
 end
@@ -116,12 +127,8 @@ function _M.access(conf, ctx)
     local vector_search_driver = require("apisix.plugins.ai-rag.vector-search." ..
                                         vector_search_provider)
 
-    local vs_req_schema = vector_search_driver.request_schema
-    local emb_req_schema = embeddings_driver.request_schema
-
-    request_schema.properties.ai_rag.properties.vector_search = vs_req_schema
-    request_schema.properties.ai_rag.properties.embeddings = emb_req_schema
-
+    local request_schema = get_request_schema(embeddings_provider .. "#" .. vector_search_provider,
+                                              embeddings_driver, vector_search_driver)
     local ok, err = core.schema.check(request_schema, body_tab)
     if not ok then
         core.log.error("request body fails schema check: ", err)
@@ -149,7 +156,9 @@ function _M.access(conf, ctx)
     -- also, these values will cause failure when proxying requests to LLM.
     body_tab["ai_rag"] = nil
 
-    protocols.append_messages(body_tab, ctx, {{role = "user", content = res}})
+    if res ~= "" then
+        protocols.append_messages(body_tab, ctx, {{role = "user", content = res}})
+    end
 
     local req_body_json, err = core.json.encode(body_tab)
     if not req_body_json then

@@ -40,7 +40,7 @@ import TabItem from '@theme/TabItem';
 
 `ai-rag` 插件为 LLM 提供检索增强生成（Retrieval-Augmented Generation，RAG）功能。它促进从外部数据源高效检索相关文档或信息，这些信息用于增强 LLM 响应，从而提高生成输出的准确性和上下文相关性。
 
-该插件支持使用 [Azure OpenAI](https://azure.microsoft.com/en-us/products/ai-services/openai-service) 和 [Azure AI Search](https://azure.microsoft.com/en-us/products/ai-services/ai-search) 服务来生成嵌入和执行向量搜索。欢迎提交 PR 以引入对其他服务提供商的支持。
+该插件支持使用 [Azure OpenAI](https://azure.microsoft.com/en-us/products/ai-services/openai-service) 生成嵌入，并支持使用 [Azure AI Search](https://azure.microsoft.com/en-us/products/ai-services/ai-search) 或 [Qdrant](https://qdrant.tech/documentation/) 执行向量搜索。欢迎提交 PR 以引入对其他服务提供商的支持。
 
 该插件使用每种协议的原生提示结构增强 Chat Completions、Responses API、Anthropic Messages 和 Bedrock Converse 请求。对于 Responses，它会将检索到的上下文追加到 `input`。它不会增强直接的 Embeddings API 请求或透传请求。嵌套的 `ai_rag.embeddings` 对象用于配置检索过程中内部使用的嵌入输入，与顶层 Embeddings 请求不同。
 
@@ -55,9 +55,13 @@ import TabItem from '@theme/TabItem';
 | `embeddings_provider.azure_openai.endpoint` | string | 是 | | | Azure OpenAI 嵌入模型端点。 |
 | `embeddings_provider.azure_openai.api_key` | string | 是 | | | Azure OpenAI API 密钥。 |
 | `vector_search_provider` | object | 是 | | | 向量搜索提供商的配置。 |
-| `vector_search_provider.azure_ai_search` | object | 是 | | | [Azure AI Search](https://azure.microsoft.com/en-us/products/ai-services/ai-search) 的配置。 |
+| `vector_search_provider.azure_ai_search` | object | 否 | | | [Azure AI Search](https://azure.microsoft.com/en-us/products/ai-services/ai-search) 的配置。`azure_ai_search` 和 `qdrant` 必须且只能配置其中一个。 |
 | `vector_search_provider.azure_ai_search.endpoint` | string | 是 | | | Azure AI Search 端点。 |
 | `vector_search_provider.azure_ai_search.api_key` | string | 是 | | | Azure AI Search API 密钥。 |
+| `vector_search_provider.qdrant` | object | 否 | | | [Qdrant](https://qdrant.tech/documentation/) 的配置。`azure_ai_search` 和 `qdrant` 必须且只能配置其中一个。 |
+| `vector_search_provider.qdrant.endpoint` | string | 是 | | | Qdrant 实例的 URL，例如 `http://127.0.0.1:6333`。URL 可以包含路径前缀。插件将搜索请求发送到 `{endpoint}/collections/{collection_name}/points/query` 的 [Query API](https://qdrant.tech/documentation/concepts/search/)。 |
+| `vector_search_provider.qdrant.collection_name` | string | 是 | | | 要搜索的 [collection](https://qdrant.tech/documentation/concepts/collections/) 名称。 |
+| `vector_search_provider.qdrant.api_key` | string | 否 | | | Qdrant [API 密钥](https://qdrant.tech/documentation/guides/security/)。插件在 `api-key` 请求头中发送该密钥。如果 Qdrant 实例要求 API 密钥，请配置此项。 |
 
 ## 请求体格式
 
@@ -92,7 +96,24 @@ import TabItem from '@theme/TabItem';
 
   有关其他参数，请参阅 [Azure AI Search 文档](https://learn.microsoft.com/en-us/rest/api/searchservice/documents/search-post)。此外，还支持[这些向量查询参数](https://learn.microsoft.com/en-us/rest/api/searchservice/documents/search-post?view=rest-searchservice-2024-07-01&tabs=HTTP#vectorizabletextquery)。
 
-示例请求体：
+  - Qdrant
+
+  所有字段均为可选。发送空的 `vector_search` 对象即可使用 Qdrant 的默认值。插件会以 `400` 响应拒绝其他字段。
+
+  | 字段 | 必选项 | 类型 | 描述 |
+  | --- | --- | --- | --- |
+  | `limit` | 否 | Integer | 返回的 point 的最大数量，取值范围为 1 到 100。默认为 10。 |
+  | `using` | 否 | String | 要搜索的向量名称，用于包含[命名向量](https://qdrant.tech/documentation/concepts/vectors/#named-vectors)的 collection。 |
+  | `filter` | 否 | Object | 针对 point payload 的[过滤](https://qdrant.tech/documentation/concepts/filtering/)条件。 |
+  | `params` | 否 | Object | [搜索参数](https://qdrant.tech/documentation/concepts/search/#search-api)，例如 `hnsw_ef` 和 `exact`。 |
+  | `score_threshold` | 否 | Number | 返回的 point 的最低分数。 |
+  | `with_payload` | 否 | Array | 要返回的 [payload 字段](https://qdrant.tech/documentation/concepts/search/#payload-and-vector-in-the-result)名称。默认返回完整的 payload。 |
+
+  插件将匹配的 point 的 payload 以 JSON 数组的形式添加到 LLM 请求中，例如 `[{"text":"..."}]`。插件会跳过没有 payload 的 point。如果没有任何 point 包含 payload，插件不会向 LLM 请求添加消息。
+
+  如果 Qdrant 拒绝查询（例如 `filter` 无效），插件返回 `400` 响应。如果插件无法连接 Qdrant，或 Qdrant 返回其他错误，插件返回 `502` 响应。插件将 Qdrant 的错误详情写入 APISIX 错误日志，而不是响应。
+
+Azure AI Search 的示例请求体：
 
 ```json
 {
@@ -101,6 +122,24 @@ import TabItem from '@theme/TabItem';
     "embeddings": {
       "input": "which service is good for devops",
       "dimensions": 1024
+    }
+  }
+}
+```
+
+Qdrant 的示例请求体：
+
+```json
+{
+  "ai_rag": {
+    "vector_search": {
+      "limit": 3,
+      "filter": {
+        "must": [{ "key": "category", "match": { "value": "devops" } }]
+      }
+    },
+    "embeddings": {
+      "input": "which service is good for devops"
     }
   }
 }
@@ -177,7 +216,9 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
           "api-key": "'"$AZ_OPENAI_API_KEY"'"
         }
       },
-      "model": "gpt-4o",
+      "options": {
+        "model": "gpt-4o"
+      },
       "override": {
         "endpoint": "'"$AZ_CHAT_ENDPOINT"'"
       }
@@ -215,7 +256,8 @@ services:
             auth:
               header:
                 api-key: "${AZ_OPENAI_API_KEY}"
-            model: gpt-4o
+            options:
+              model: gpt-4o
             override:
               endpoint: "${AZ_CHAT_ENDPOINT}"
 ```
@@ -258,7 +300,8 @@ spec:
         auth:
           header:
             api-key: "Bearer your-api-key"
-        model: gpt-4o
+        options:
+          model: gpt-4o
         override:
           endpoint: "https://your-openai-resource.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-02-15-preview"
 ---
@@ -323,7 +366,8 @@ spec:
             auth:
               header:
                 api-key: "Bearer your-api-key"
-            model: gpt-4o
+            options:
+              model: gpt-4o
             override:
               endpoint: "https://your-openai-resource.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-02-15-preview"
 ```
@@ -394,3 +438,131 @@ curl "http://127.0.0.1:9080/rag" -X POST \
   }
 }
 ```
+
+### 与 Qdrant 集成以获得 RAG 增强响应
+
+以下示例使用 [Qdrant](https://qdrant.tech/documentation/) 执行向量搜索。与上一个示例相同，它使用 Azure OpenAI 生成嵌入并作为聊天模型。
+
+创建路由之前，请完成以下步骤：
+
+* 启动 Qdrant 实例。对于本地实例，运行 `docker run -p 6333:6333 qdrant/qdrant`。对于托管实例，在 [Qdrant Cloud](https://cloud.qdrant.io) 中创建集群，并获取其 URL 和 API 密钥。
+* [创建 collection](https://qdrant.tech/documentation/concepts/collections/#create-a-collection) 并[上传 point](https://qdrant.tech/documentation/concepts/points/#upload-points)。使用与插件相同的嵌入模型生成向量，并将 collection 的向量维度设置为该模型的维数。将每个文档的文本存储在 payload 中，例如 `text` 字段。
+
+将 Qdrant 设置保存到环境变量中：
+
+```shell
+# 替换为你的值
+
+QDRANT_URL=http://127.0.0.1:6333
+QDRANT_API_KEY=your-qdrant-api-key
+QDRANT_COLLECTION=azure-services
+```
+
+<Tabs groupId="api">
+<TabItem value="admin-api" label="Admin API">
+
+创建路由：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+  "uri": "/rag",
+  "plugins": {
+    "ai-rag": {
+      "embeddings_provider": {
+        "azure_openai": {
+          "endpoint": "'"$AZ_EMBEDDINGS_ENDPOINT"'",
+          "api_key": "'"$AZ_OPENAI_API_KEY"'"
+        }
+      },
+      "vector_search_provider": {
+        "qdrant": {
+          "endpoint": "'"$QDRANT_URL"'",
+          "api_key": "'"$QDRANT_API_KEY"'",
+          "collection_name": "'"$QDRANT_COLLECTION"'"
+        }
+      }
+    },
+    "ai-proxy": {
+      "provider": "openai",
+      "auth": {
+        "header": {
+          "api-key": "'"$AZ_OPENAI_API_KEY"'"
+        }
+      },
+      "options": {
+        "model": "gpt-4o"
+      },
+      "override": {
+        "endpoint": "'"$AZ_CHAT_ENDPOINT"'"
+      }
+    }
+  }
+}'
+```
+
+</TabItem>
+<TabItem value="adc" label="ADC">
+
+创建配置了 `ai-rag` 和 [`ai-proxy`](./ai-proxy.md) 插件的路由：
+
+```yaml title="adc.yaml"
+services:
+  - name: ai-rag-service
+    routes:
+      - name: ai-rag-route
+        uris:
+          - /rag
+        methods:
+          - POST
+        plugins:
+          ai-rag:
+            embeddings_provider:
+              azure_openai:
+                endpoint: "${AZ_EMBEDDINGS_ENDPOINT}"
+                api_key: "${AZ_OPENAI_API_KEY}"
+            vector_search_provider:
+              qdrant:
+                endpoint: "${QDRANT_URL}"
+                api_key: "${QDRANT_API_KEY}"
+                collection_name: "${QDRANT_COLLECTION}"
+          ai-proxy:
+            provider: openai
+            auth:
+              header:
+                api-key: "${AZ_OPENAI_API_KEY}"
+            options:
+              model: gpt-4o
+            override:
+              endpoint: "${AZ_CHAT_ENDPOINT}"
+```
+
+将配置同步到网关：
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+</Tabs>
+
+向路由发送 POST 请求，在请求体中包含搜索参数和输入提示：
+
+```shell
+curl "http://127.0.0.1:9080/rag" -X POST \
+  -H "Content-Type: application/json" \
+  -d '{
+    "ai_rag":{
+      "vector_search":{
+        "limit":3,
+        "with_payload":["text"]
+      },
+      "embeddings":{
+        "input":"Which Azure services are good for DevOps?"
+      }
+    }
+  }'
+```
+
+插件在 collection 中查找最近的三个 point，并将它们的 `text` payload 字段添加到 LLM 请求中。你应该收到 `HTTP/1.1 200 OK` 响应，其中包含模型基于检索到的文本给出的回答。
