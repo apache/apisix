@@ -66,6 +66,7 @@ passed
 [error]
 
 
+
 === TEST 2: add, set and remove operate on the complete upstream query
 --- config
     location /t {
@@ -92,6 +93,7 @@ GET /t
 passed
 --- no_error_log
 [error]
+
 
 
 === TEST 3: encoding, flags, empty values and literal OData expressions
@@ -122,6 +124,7 @@ passed
 [error]
 
 
+
 === TEST 4: remove wins conflicts and an empty query has no question mark
 --- config
     location /t {
@@ -140,6 +143,7 @@ GET /t
 passed
 --- no_error_log
 [error]
+
 
 
 === TEST 5: more than 100 arguments are retained
@@ -165,6 +169,7 @@ GET /t
 passed
 --- no_error_log
 [error]
+
 
 
 === TEST 6: regex URI and unsafe URI queries are processed once
@@ -195,6 +200,7 @@ GET /t
 passed
 --- no_error_log
 [error]
+
 
 
 === TEST 7: actual upstream receives rewritten parameters on repeated requests
@@ -239,6 +245,7 @@ passed
 [error]
 
 
+
 === TEST 8: add without an incoming query, set wins add, and keys are case-sensitive
 --- config
     location /t {
@@ -263,6 +270,7 @@ GET /t
 passed
 --- no_error_log
 [error]
+
 
 
 === TEST 9: encoded names cannot retain removed arguments in actual upstream requests
@@ -337,6 +345,7 @@ passed: 32 upstream requests
 [error]
 
 
+
 === TEST 10: remove covers repeated arguments beyond the first hundred upstream
 --- config
     location /t {
@@ -373,6 +382,7 @@ passed
 [error]
 
 
+
 === TEST 11: reject malformed JSON operation shapes
 --- config
     location /t {
@@ -401,6 +411,7 @@ GET /t
 passed: 13 invalid configurations rejected
 --- no_error_log
 [error]
+
 
 
 === TEST 12: remove all arguments upstream without a dangling query separator
@@ -432,6 +443,7 @@ GET /t
 passed
 --- no_error_log
 [error]
+
 
 
 === TEST 13: preserve same-name order and configuration arrays across requests
