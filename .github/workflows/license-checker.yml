@@ -35,6 +35,6 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Check License Header
-        uses: apache/skywalking-eyes@61275cc80d0798a405cb070f7d3a8aaf7cf2c2c1 # v0.8.0
+        uses: apache/skywalking-eyes@a196742f472feaffafea537ce5a2a4c3c53a8de4 # v0.9.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
