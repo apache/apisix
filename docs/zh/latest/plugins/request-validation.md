@@ -54,6 +54,12 @@ import TabItem from '@theme/TabItem';
 
 :::
 
+:::note
+
+`header_schema` 仅校验前 100 个请求头，这是 [`ngx.req.get_headers()`](https://github.com/openresty/lua-nginx-module#ngxreqget_headers) 的默认上限。第 100 个之后的请求头不会被校验，但仍会被转发到上游。如需阻止某个请求头到达上游，请使用 [`proxy-rewrite`](./proxy-rewrite.md) 插件的 `headers.remove` 属性将其移除。
+
+:::
+
 ## 示例
 
 以下示例演示了如何针对不同场景配置 `request-validation`。
