@@ -507,7 +507,10 @@ deployment:
         role: Admin
 ' > conf/config.yaml
 
-make init > output.log 2>&1 || true
+if make init > output.log 2>&1; then
+    echo "failed: make init should refuse an Admin API key whose role is Admin"
+    exit 1
+fi
 
 if ! grep -F "ERROR: the role of Admin API key ops must be admin or viewer." output.log > /dev/null; then
     echo "failed: should refuse an Admin API key whose role is Admin"
@@ -525,7 +528,10 @@ deployment:
         key: ops-key-for-the-role-check
 ' > conf/config.yaml
 
-make init > output.log 2>&1 || true
+if make init > output.log 2>&1; then
+    echo "failed: make init should refuse an Admin API key without a role"
+    exit 1
+fi
 
 if ! grep -F "ERROR: the role of Admin API key ops must be admin or viewer." output.log > /dev/null; then
     echo "failed: should refuse an Admin API key without a role"
