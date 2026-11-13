@@ -19,12 +19,14 @@
 local core         = require("apisix.core")
 local http         = require("resty.http")
 local google_oauth = require("apisix.utils.google-cloud-oauth")
+local secret       = require("apisix.secret")
 
 local str_sub       = core.string.sub
 local str_find      = core.string.find
 local decode_base64 = ngx.decode_base64
 
 local lrucache = core.lrucache.new({ ttl = 300, count = 8 })
+local container_cache = secret.new_container_cache()
 
 local schema = {
     type = "object",
@@ -181,7 +183,8 @@ function _M.get(conf, key)
 
     core.log.info("main: ", main_key, sub_key and ", sub: " .. sub_key or "")
 
-    local res, err = make_request_to_gcp(conf, main_key)
+    -- requests to gcp use the default cosocket timeout of 60s
+    local res, err = container_cache(main_key, conf, 60, make_request_to_gcp, conf, main_key)
     if not res then
         return nil, "failed to retrtive data from gcp secret manager: " .. err
     end
