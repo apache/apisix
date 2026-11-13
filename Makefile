@@ -390,6 +390,9 @@ install: runtime
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/ai-providers
 	$(ENV_INSTALL) apisix/plugins/ai-providers/*.lua $(ENV_INST_LUADIR)/apisix/plugins/ai-providers
 
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/ai-prompt
+	$(ENV_INSTALL) apisix/plugins/ai-prompt/*.lua $(ENV_INST_LUADIR)/apisix/plugins/ai-prompt
+
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/ai-protocols
 	$(ENV_INSTALL) apisix/plugins/ai-protocols/*.lua $(ENV_INST_LUADIR)/apisix/plugins/ai-protocols
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/ai-protocols/converters

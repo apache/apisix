@@ -44,13 +44,14 @@ import TabItem from '@theme/TabItem';
 
 | 名称 | 类型 | 必选项 | 默认值 | 有效值 | 描述 |
 | --- | --- | --- | --- | --- | --- |
+| `max_req_body_size` | integer | 否 | 67108864 | >= 1 | 缓存在内存中的最大请求体大小（字节）。超过该大小的请求将被拒绝。 |
 | `templates` | array | 是 | | | 模板对象数组。 |
 | `templates.name` | string | 是 | | | 模板的名称。在请求路由时，请求中应包含与所配置模板相对应的模板名称。 |
 | `templates.template` | object | 是 | | | JSON 请求体模板。它可以包含下游插件接受的任意字段。 |
 | `templates.template.model` | string | 否 | | | LLM 模型的名称，例如 `gpt-4` 或 `gpt-3.5`。更多可用模型请参阅 LLM 提供商的 API 文档。 |
 | `templates.template.messages` | array[object] | 否 | | | 模板消息规范。 |
 | `templates.template.messages.role` | string | 是 | | [`system`, `user`, `assistant`] | 消息的角色。 |
-| `templates.template.messages.content` | string | 是 | | | 消息（提示词）的内容。使用 `{{variable_name}}` 语法定义模板变量，这些变量将从请求体中填充。 |
+| `templates.template.messages.content` | string | 是 | | 长度 >= 1 | 消息（提示词）的内容。使用 `{{variable_name}}` 语法定义模板变量，这些变量将从请求体中填充。变量值会按 JSON 字符串编码，因此引号、换行符和标记内容不会破坏请求体。 |
 
 ## 使用示例
 
