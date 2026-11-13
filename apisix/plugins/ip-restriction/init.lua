@@ -36,6 +36,12 @@ local schema = {
             maximum = 404,
             default = 403
         },
+        -- HTTP only, unset means "access". "rewrite" runs the check before
+        -- rewrite-phase auth plugins such as openid-connect.
+        phase = {
+            type = "string",
+            enum = {"rewrite", "access"},
+        },
         whitelist = {
             type = "array",
             items = {anyOf = core.schema.ip_def},

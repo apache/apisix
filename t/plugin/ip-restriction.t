@@ -845,3 +845,270 @@ location /t {
 GET /t
 --- response_body_like eval
 qr/property \\"response_code\\" validation failed: expected 409 to be at most 404/
+
+
+
+=== TEST 36: set whitelist with key-auth, default phase
+--- config
+location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "uri": "/hello",
+                        "upstream": {
+                            "type": "roundrobin",
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            }
+                        },
+                        "plugins": {
+                            "key-auth": {},
+                            "ip-restriction": {
+                                 "whitelist": [
+                                     "127.0.0.0/24"
+                                 ]
+                            }
+                        }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 37: default phase runs in access, so key-auth rejects first
+--- http_config
+set_real_ip_from 127.0.0.1;
+real_ip_header X-Forwarded-For;
+--- more_headers
+X-Forwarded-For: 114.114.114.114
+--- request
+GET /hello
+--- error_code: 401
+--- response_body
+{"message":"Missing API key in request"}
+
+
+
+=== TEST 38: set whitelist with key-auth, phase rewrite
+--- config
+location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "uri": "/hello",
+                        "upstream": {
+                            "type": "roundrobin",
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            }
+                        },
+                        "plugins": {
+                            "key-auth": {},
+                            "ip-restriction": {
+                                 "whitelist": [
+                                     "127.0.0.0/24"
+                                 ],
+                                 "phase": "rewrite"
+                            }
+                        }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 39: phase rewrite runs before key-auth, so ip-restriction rejects first
+--- http_config
+set_real_ip_from 127.0.0.1;
+real_ip_header X-Forwarded-For;
+--- more_headers
+X-Forwarded-For: 114.114.114.114
+--- request
+GET /hello
+--- error_code: 403
+--- response_body
+{"message":"Your IP address is not allowed"}
+--- error_log
+ip-restriction exits with http status code 403
+
+
+
+=== TEST 40: invalid phase
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.ip-restriction")
+            local ok, err = plugin.check_schema({
+                whitelist = {"127.0.0.0/24"},
+                phase = "header_filter",
+            })
+            if not ok then
+                ngx.say(err)
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body_like eval
+qr/property "phase" validation failed: matches none of the enum values/
+
+
+
+=== TEST 41: set whitelist with phase rewrite and no other plugin
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "uri": "/hello",
+                        "upstream": {
+                            "type": "roundrobin",
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            }
+                        },
+                        "plugins": {
+                            "ip-restriction": {
+                                 "whitelist": [
+                                     "127.0.0.0/24"
+                                 ],
+                                 "phase": "rewrite"
+                            }
+                        }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 42: phase rewrite lets an allowed ip through
+--- request
+GET /hello
+--- response_body
+hello world
+--- no_error_log
+ip-restriction exits with http status code
+
+
+
+=== TEST 43: global rule with phase rewrite, route with key-auth
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/global_rules/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "ip-restriction": {
+                            "whitelist": [
+                                "127.0.0.0/24"
+                            ],
+                            "phase": "rewrite"
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "uri": "/hello",
+                        "upstream": {
+                            "type": "roundrobin",
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            }
+                        },
+                        "plugins": {
+                            "key-auth": {}
+                        }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 44: global rule with phase rewrite rejects before the route's key-auth
+--- http_config
+set_real_ip_from 127.0.0.1;
+real_ip_header X-Forwarded-For;
+--- more_headers
+X-Forwarded-For: 114.114.114.114
+--- request
+GET /hello
+--- error_code: 403
+--- response_body
+{"message":"Your IP address is not allowed"}
+--- error_log
+ip-restriction exits with http status code 403
+
+
+
+=== TEST 45: delete the global rule
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/global_rules/1', ngx.HTTP_DELETE)
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
