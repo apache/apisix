@@ -994,11 +994,24 @@ function _M.get_all(attrs)
 end
 
 
+-- A JSON null in a conf, such as the operand of ["http_x", "==", null] in an
+-- expression, is cjson.null, which dkjson does not encode on its own.
+local function encode_json_null(_, value, _, defaultmessage)
+    if value == core.json.null then
+        return "null"
+    end
+    return nil, defaultmessage
+end
+
+
 -- conf_version returns a version which only depends on the value of conf,
 -- instead of where this plugin conf belongs to
 function _M.conf_version(conf)
     if not conf._version then
-        local data = core.json.stably_encode(conf)
+        local data = core.json.stably_encode(conf, {
+            sortkey = true,
+            exception = encode_json_null,
+        })
         conf._version = tostring(crc32(data))
         core.log.info("init plugin-level conf version: ", conf._version, ", from ", data)
     end

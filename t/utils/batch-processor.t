@@ -731,3 +731,49 @@ partial: 2
 qr/Batch Processor\[log buffer\] failed to process entries \[1\/2\]: table: 0x/]
 --- no_error_log
 lua entry thread aborted
+
+
+
+=== TEST 18: a callback that raises a table is retried and then dropped as well
+--- config
+    location /t {
+        content_by_lua_block {
+            local Batch = require("apisix.utils.batch-processor")
+            local config = {
+                max_retry_count  = 1,
+                batch_max_size = 1,
+                retry_delay  = 0,
+            }
+            local calls = 0
+            local func_to_send = function(elements)
+                calls = calls + 1
+                error({call = calls})
+            end
+            local log_buffer, err = Batch:new(func_to_send, config)
+
+            if not log_buffer then
+                ngx.say(err)
+                return
+            end
+
+            log_buffer:push({hello='world'})
+            -- wait for the call, its retry and the drop
+            for _ = 1, 200 do
+                if calls == 2 and log_buffer.processed_entries == 1 then
+                    break
+                end
+                ngx.sleep(0.01)
+            end
+            ngx.say("calls: ", calls)
+            ngx.say("processed: ", log_buffer.processed_entries)
+        }
+    }
+--- request
+GET /t
+--- response_body
+calls: 2
+processed: 1
+--- error_log eval
+qr/Batch Processor\[log buffer\] failed to process entries: runtime error: table: 0x/
+--- no_error_log
+lua entry thread aborted

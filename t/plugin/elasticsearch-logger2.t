@@ -611,6 +611,13 @@ uri: http://127.0.0.1:9201/_bulk, body: {"index":{"_index":"route-b-logs"}}
 uri: http://127.0.0.1:9200/_bulk, body: {"index":{"_index":"route-b-logs"}}
 failed to get Elasticsearch version
 failed to process entries
+--- grep_error_log eval
+qr/uri: http:\/\/127\.0\.0\.1:920[01], body:/
+--- grep_error_log_out
+uri: http://127.0.0.1:9200, body:
+uri: http://127.0.0.1:9201, body:
+uri: http://127.0.0.1:9200, body:
+uri: http://127.0.0.1:9201, body:
 --- timeout: 8
 
 
@@ -731,9 +738,9 @@ passed
 === TEST 16: requests that come while the first version probe is in flight are logged with `_type`
 --- config
     location = /es6 {
-        # the version probe answers after a second
+        # the version probe answers after two seconds
         access_by_lua_block {
-            ngx.sleep(1)
+            ngx.sleep(2)
         }
         proxy_pass http://127.0.0.1:9501/;
     }
@@ -761,12 +768,12 @@ passed
                 end
             end
             ngx.update_time()
-            if ngx.now() - start >= 1 then
+            if ngx.now() - start >= 2 then
                 ngx.say("the requests waited for the version probe")
                 return
             end
             -- Elasticsearch 6 rejects a bulk request whose action line lacks `_type`
-            ngx.sleep(3)
+            ngx.sleep(4)
             ngx.say("done")
         }
     }
@@ -782,8 +789,8 @@ successfully processed the entries
 "_type":"_doc"
 --- no_error_log
 failed to process entries
-/_bulk, body: {"index":{"_index":"services"}}
---- timeout: 10
+{"index":{"_index":"services"}}
+--- timeout: 12
 
 
 
@@ -839,7 +846,7 @@ successfully processed the entries
 "_type":"_doc"
 --- no_error_log
 failed to process entries
-/_bulk, body: {"index":{"_index":"services"}}
+{"index":{"_index":"services"}}
 
 
 
@@ -888,14 +895,17 @@ passed
 
 
 
-=== TEST 20: such a route is logged, and the rest of the log phase runs
+=== TEST 20: such a route is logged with both bodies, and the rest of the log phase runs
 --- request
-GET /hello
+POST /hello
+ipv6-expr-req-body
 --- response_body
 hello world
 --- wait: 2
 --- error_log
 successfully processed the entries
+"body":"ipv6-expr-req-body"
+"body":"hello world\n"
 --- no_error_log
 failed to run log_by_lua
 attempt to compare
@@ -969,4 +979,130 @@ qr/uri: http:\/\/127.0.0.1:9200\/_bulk/
 --- grep_error_log_out
 uri: http://127.0.0.1:9200/_bulk
 --- no_error_log
+failed to process entries
+
+
+
+=== TEST 23: a route on Elasticsearch 6 that sends three entries per batch
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, {
+                uri = "/hello",
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:1980"] = 1
+                    }
+                },
+                plugins = {
+                    ["elasticsearch-logger"] = {
+                        endpoint_addrs = {"http://127.0.0.1:9501"},
+                        field = {
+                            index = "services"
+                        },
+                        auth = {
+                            username = "elastic",
+                            password = "123456"
+                        },
+                        batch_max_size = 3,
+                    }
+                }
+            })
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 24: every action line of a batch of three carries `_type`
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            for _ = 1, 3 do
+                local res, err = http.new():request_uri(uri)
+                if not res or res.status ~= 200 then
+                    ngx.say("request failed: ", err or res.status)
+                    return
+                end
+            end
+            ngx.sleep(2)
+            ngx.say("done")
+        }
+    }
+--- response_body
+done
+--- grep_error_log eval
+qr/successfully processed the entries/
+--- grep_error_log_out
+successfully processed the entries
+--- no_error_log
+failed to process entries
+{"index":{"_index":"services"}}
+
+
+
+=== TEST 25: a route whose conf holds a JSON null
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            -- the null is the operand of the expression: read the body only when the
+            -- request has an X-Debug header
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, [=[{
+                "uri": "/hello",
+                "upstream": {
+                    "type": "roundrobin",
+                    "nodes": {
+                        "127.0.0.1:1980": 1
+                    }
+                },
+                "plugins": {
+                    "elasticsearch-logger": {
+                        "endpoint_addrs": ["http://127.0.0.1:9200"],
+                        "field": {
+                            "index": "services"
+                        },
+                        "include_req_body": true,
+                        "include_req_body_expr": [["http_x_debug", "~=", null]],
+                        "batch_max_size": 1
+                    }
+                }
+            }]=])
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 26: such a route is logged, and the rest of the log phase runs
+--- request
+GET /hello
+--- response_body
+hello world
+--- wait: 2
+--- error_log
+successfully processed the entries
+--- no_error_log
+failed to run log_by_lua
+is not supported by JSON
 failed to process entries
