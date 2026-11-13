@@ -539,3 +539,31 @@ if ! grep -F "ERROR: the role of Admin API key ops must be admin or viewer." out
 fi
 
 echo "pass: refuse an Admin API key whose role is not admin or viewer"
+
+# an empty key of another role than admin is reported, also with the default allow_admin
+
+git checkout conf/config.yaml
+
+echo '
+deployment:
+  admin:
+    admin_key:
+      - name: admin
+        key: admin-key-for-the-empty-key-check
+        role: admin
+      - name: viewer
+        key: ""
+        role: viewer
+' > conf/config.yaml
+
+if ! make init > output.log 2>&1; then
+    echo "failed: make init should accept an empty viewer key"
+    exit 1
+fi
+
+if ! grep -F "WARNING: Admin API key viewer is empty, so it does not match any request." output.log > /dev/null; then
+    echo "failed: should warn about the empty viewer key"
+    exit 1
+fi
+
+echo "pass: warn about an empty key of the viewer role"
