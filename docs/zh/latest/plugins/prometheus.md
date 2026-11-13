@@ -163,7 +163,7 @@ Prometheus 中有不同类型的指标。要了解它们之间的区别，请参
 | apisix_llm_latency      | histogram | LLM 请求延迟（毫秒），包括总延迟和首 token 延迟。                                                                                                                    |
 | apisix_llm_prompt_tokens | counter  | LLM 请求消耗的 prompt token 总数。                                                                                                                                    |
 | apisix_llm_completion_tokens | counter | LLM 请求生成的 completion token 总数。                                                                                                                             |
-| apisix_llm_active_connections | gauge | 记录 LLM 上游活动的 gauge。没有回退重试时，它反映活跃请求数；`ai-proxy-multi` 回退重试可能导致失败实例的序列被高估。详情请参见[标签说明](#apisix_llm_active_connections-的标签)。 |
+| apisix_llm_active_connections | gauge | 当前活跃的 LLM 上游请求数。`ai-proxy-multi` 重试时，会在切换到下一实例前递减失败尝试的计数。详情请参见[标签说明](#apisix_llm_active_connections-的标签)。 |
 | apisix_llm_prompt_tokens_dist | histogram | 每个 LLM 请求消耗的 prompt token 数量分布。                                                                                                                       |
 | apisix_llm_completion_tokens_dist | histogram | 每个 LLM 请求生成的 completion token 数量分布。                                                                                                                 |
 | apisix_ai_cache_hits_total | counter | AI 缓存命中总数，按缓存层区分。                                                                                                                                       |
@@ -301,7 +301,7 @@ UDP 没有关闭、FIN 或重置信号，因此只会出现其中一部分状态
 
 ### `apisix_llm_active_connections` 的标签
 
-APISIX 在开始 LLM 上游尝试时递增该 gauge，并在请求的日志阶段递减一次。没有回退重试时，它反映活跃的 LLM 上游请求。当 `ai-proxy-multi` 发生回退重试时，每次重试都会递增新的实例序列，但该请求只会使用最终标签递减一次。因此，失败实例的序列可能高于实际活跃数，而且在默认不过期的指标配置下，该数值可能一直保留到指标存储被重置。发生回退重试时，应将该 gauge 视为近似值。
+APISIX 在每次 LLM 上游尝试的处理开始前递增该 gauge。`ai-proxy-multi` 回退到其他实例时，会先递减失败尝试的计数，再切换实例；下一次尝试会递增新选中实例的计数。最终尝试的计数在请求日志阶段递减，无论请求成功还是失败。不进行重试时，计数同样在请求日志阶段递减。
 
 | 名称 | 描述 |
 | ---------- | ----------------------------------------------------------------------------------------------------------------------------- |
