@@ -494,3 +494,94 @@ failed to parse time format
 ok
 --- error_log
 failed to parse time format
+
+
+
+=== TEST 11: two routes whose clusters run the same Elasticsearch major version
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local function put_route(id, uri, es_conf)
+                return t('/apisix/admin/routes/' .. id, ngx.HTTP_PUT, {
+                    uri = uri,
+                    upstream = {
+                        type = "roundrobin",
+                        nodes = {
+                            ["127.0.0.1:1980"] = 1
+                        }
+                    },
+                    plugins = {
+                        ["elasticsearch-logger"] = es_conf
+                    }
+                })
+            end
+
+            -- both clusters are Elasticsearch 8, the second one with authentication
+            local code, body = put_route(1, "/hello", {
+                endpoint_addrs = {"http://127.0.0.1:9200"},
+                field = {
+                    index = "route-a-logs"
+                },
+                batch_max_size = 1,
+                inactive_timeout = 1,
+            })
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            code, body = put_route(2, "/hello1", {
+                endpoint_addrs = {"http://127.0.0.1:9201"},
+                field = {
+                    index = "route-b-logs"
+                },
+                auth = {
+                    username = "elastic",
+                    password = "123456"
+                },
+                batch_max_size = 1,
+                inactive_timeout = 1,
+            })
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 12: each route sends its logs to its own cluster with its own credentials
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local base = "http://127.0.0.1:" .. ngx.var.server_port
+            -- the first route's batch processor exists by the time the second logs
+            for _, uri in ipairs({"/hello", "/hello1"}) do
+                local httpc = http.new()
+                local res, err = httpc:request_uri(base .. uri)
+                if not res then
+                    ngx.say("request failed: ", err)
+                    return
+                end
+                ngx.sleep(0.5)
+            end
+            ngx.sleep(1)
+            ngx.say("done")
+        }
+    }
+--- response_body
+done
+--- error_log
+uri: http://127.0.0.1:9201/_bulk, body: {"index":{"_index":"route-b-logs"}}
+--- no_error_log
+uri: http://127.0.0.1:9200/_bulk, body: {"index":{"_index":"route-b-logs"}}
+--- timeout: 5

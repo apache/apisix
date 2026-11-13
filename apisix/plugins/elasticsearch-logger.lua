@@ -240,7 +240,7 @@ local function get_logger_entry(conf, ctx, index)
         }
     }
     -- for older version type is required
-    if conf._version == "6" or conf._version == "5" then
+    if conf._es_version == "6" or conf._es_version == "5" then
         body.index._type = "_doc"
     end
     return core.json.encode(body) .. "\n" ..
@@ -248,8 +248,13 @@ local function get_logger_entry(conf, ctx, index)
 end
 
 
+-- The major version is kept in conf._es_version, not conf._version: the latter is
+-- where plugin.conf_version() caches the conf's own version, which the batch
+-- processor manager uses as the key of the conf's processor. Sharing it made every
+-- conf with the same Elasticsearch major version share the first conf's processor,
+-- and so its endpoints and credentials.
 local function fetch_and_update_es_version(conf)
-    if conf._version then
+    if conf._es_version then
         return
     end
     local selected_endpoint_addr
@@ -263,7 +268,7 @@ local function fetch_and_update_es_version(conf)
         core.log.error("failed to get Elasticsearch version: ", err)
         return
     end
-    conf._version = major_version
+    conf._es_version = major_version
 end
 
 
