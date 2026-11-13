@@ -64,6 +64,9 @@ echo "passed: resolve env var used as config key"
 
 git checkout conf/config.yaml
 
+# The plugin list in config.yaml is only the boot-time default: /apisix/plugins
+# in etcd replaces it while APISIX runs, and a shared dict cannot be added
+# without a reload. So the dicts are rendered whatever the config file lists.
 echo "
 plugins:
     - ip-restriction
@@ -71,21 +74,9 @@ plugins:
 
 make init
 
-if grep "plugin-limit-conn" conf/nginx.conf > /dev/null; then
-    echo "failed: enable shdict on demand"
-    exit 1
-fi
-
-echo "
-plugins:
-    - limit-conn
-" > conf/config.yaml
-
-make init
-
 if ! grep "plugin-limit-conn" conf/nginx.conf > /dev/null; then
-    echo "failed: enable shdict on demand"
+    echo "failed: shdict gated on the config file plugin list"
     exit 1
 fi
 
-echo "passed: enable shdict on demand"
+echo "passed: shdict does not depend on the config file plugin list"

@@ -417,6 +417,18 @@ local function get_plugin_names(config)
 end
 
 
+-- Whether the stream subsystem runs, which decides if the exporter has to
+-- carry the L4 metrics. Deliberately not `stream_plugins` from config.yaml:
+-- that list is only the boot-time default, and /apisix/plugins in etcd can
+-- turn the stream prometheus plugin on later, by which time the metrics have
+-- to already exist.
+local function stream_subsystem_enabled()
+    local conf = core.config.local_conf()
+    local proxy_mode = conf.apisix.proxy_mode
+    return proxy_mode == "stream" or proxy_mode == "http&stream"
+end
+
+
 function _M.load(config)
     local ignored, http_plugin_names, stream_plugin_names = get_plugin_names(config)
     if ignored then
@@ -445,6 +457,25 @@ function _M.load(config)
         local ok, err = load_stream(stream_plugin_names)
         if not ok then
             core.log.error("failed to load stream plugins: ", err)
+        end
+    end
+
+    -- The HTTP exporter also serves stream metrics. Reconcile it only after
+    -- both effective plugin lists have been loaded.
+    if ngx.shared["prometheus-cache"] then
+        local exporter = require("apisix.plugins.prometheus.exporter")
+        local enabled = stream_subsystem_enabled() and stream_local_plugins_hash["prometheus"]
+        if is_http then
+            enabled = enabled or local_plugins_hash["prometheus"]
+        end
+        if not enabled then
+            exporter.destroy()
+        elseif not exporter.get_prometheus() then
+            if is_http then
+                exporter.http_init(stream_subsystem_enabled())
+            else
+                exporter.stream_init()
+            end
         end
     end
 
@@ -922,20 +953,30 @@ end
 
 
 function _M.init_prometheus()
-    local _, http_plugin_names, stream_plugin_names = get_plugin_names()
-    local enabled_in_http = core.table.array_find(http_plugin_names, "prometheus")
-    local enabled_in_stream = core.table.array_find(stream_plugin_names, "prometheus")
-
+    -- Not gated on the plugin list either: /apisix/plugins can enable
+    -- prometheus after this has run, and nothing would start the timer then.
+    -- It returns at once while the exporter is destroyed, which is the state
+    -- load() leaves it in when prometheus is not enabled.
     -- For stream-only mode, there are separate calls in ngx_tpl.lua.
-    -- And for other modes, whether in stream or http plugins,
-    -- the prometheus exporter needs to be initialized.
-    if is_http and (enabled_in_http or enabled_in_stream) then
+    if is_http and ngx.shared["prometheus-cache"] then
         require("apisix.plugins.prometheus.exporter").init_exporter_timer()
     end
 end
 
 
 function _M.init_worker()
+    -- Prepare the registry before hot loads, which cannot create it outside
+    -- init_worker. load() then applies the effective plugin lists.
+    -- Stock OpenResty has no shared metrics cache in the stream subsystem.
+    if ngx.shared["prometheus-cache"] then
+        local exporter = require("apisix.plugins.prometheus.exporter")
+        if is_http then
+            exporter.http_init(stream_subsystem_enabled())
+        else
+            exporter.stream_init()
+        end
+    end
+
     -- someone's plugin needs to be initialized after prometheus
     -- see https://github.com/apache/apisix/issues/3286
     _M.load()
