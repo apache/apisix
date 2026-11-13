@@ -17,6 +17,9 @@
 
 local ngx = ngx
 local yaml = require("lyaml")
+local implicit = require("lyaml.implicit")
+local explicit = require("lyaml.explicit")
+local functional = require("lyaml.functional")
 local profile = require("apisix.core.profile")
 local util = require("apisix.cli.util")
 local schema = require("apisix.cli.schema")
@@ -32,9 +35,28 @@ local str_gmatch = string.gmatch
 local str_find = string.find
 local str_sub = string.sub
 local print = print
+local error = error
+local pcall = pcall
+local tostring = tostring
 
 local _M = {}
 local exported_vars
+
+-- Keep the same conversion order as lyaml's default implicit scalar resolver.
+local default_implicit = functional.anyof {
+    implicit.null,
+    implicit.octal,
+    implicit.decimal,
+    implicit.float,
+    implicit.bool,
+    implicit.inf,
+    implicit.nan,
+    implicit.hexadecimal,
+    implicit.binary,
+    implicit.sexagesimal,
+    implicit.sexfloat,
+    functional.id,
+}
 
 
 function _M.get_exported_vars()
@@ -90,14 +112,99 @@ local function var_sub(val)
 end
 
 
--- Substitute env vars in raw text before parsing. YAML parser then infers
--- types naturally: `"${{VAR}}"` stays string, `${{VAR}}` infers from value.
-local function resolve_conf_var_in_text(text)
-    local new_text, _, err = var_sub(text)
-    if err then
-        return nil, err
+-- Quoted and block scalars bypass implicit conversion, so resolve them after parsing.
+local function resolve_rest(conf, seen, resolved, substitute)
+    if conf == yaml.null or seen[conf] then
+        return true
     end
-    return new_text
+
+    seen[conf] = true
+    local renamed_keys
+    for key, val in pairs(conf) do
+        if resolved[val] then
+            conf[key] = resolved[val]
+        elseif type(val) == "table" then
+            resolve_rest(val, seen, resolved, substitute)
+        elseif type(val) == "string" then
+            conf[key] = substitute(val)
+        end
+
+        local new_key = resolved[key]
+        if not new_key and type(key) == "string" then
+            new_key = substitute(key)
+        end
+        if new_key and new_key ~= key then
+            renamed_keys = renamed_keys or {}
+            renamed_keys[key] = {new_key, conf[key]}
+        end
+    end
+
+    if renamed_keys then
+        -- Preserve the values before removing keys, including overlapping renames.
+        for key in pairs(renamed_keys) do
+            conf[key] = nil
+        end
+        for _, renamed in pairs(renamed_keys) do
+            conf[renamed[1]] = renamed[2]
+        end
+    end
+
+    return true
+end
+
+
+function _M.load_yaml(text)
+    local resolved = {}
+    local scalars = {}
+    local function substitute(value)
+        local new_value, _, err = var_sub(value)
+        if err then
+            error(err, 0)
+        end
+        return new_value
+    end
+
+    local function sub_then(convert)
+        return function(value)
+            local new_value = convert(substitute(value))
+            if type(new_value) == "string" and str_find(new_value, "${{", 1, true) then
+                -- Only hook results get tokens; unrelated quoted/block strings still expand.
+                -- Reuse equal scalar keys for merges, without posing as mergeable tables.
+                local scalar = scalars[new_value]
+                if not scalar then
+                    scalar = function() return new_value end
+                    scalars[new_value] = scalar
+                    resolved[scalar] = new_value
+                end
+                return scalar
+            end
+            return new_value
+        end
+    end
+
+    local ok, conf = pcall(yaml.load, text, {
+        implicit_scalar = sub_then(default_implicit),
+        explicit_scalar = {
+            ["tag:yaml.org,2002:bool"] = sub_then(explicit.bool),
+            ["tag:yaml.org,2002:float"] = sub_then(explicit.float),
+            ["tag:yaml.org,2002:int"] = sub_then(explicit.int),
+            ["tag:yaml.org,2002:null"] = sub_then(explicit.null),
+            ["tag:yaml.org,2002:str"] = sub_then(explicit.str),
+        },
+    })
+    if not ok then
+        return nil, tostring(conf)
+    end
+
+    if type(conf) ~= "table" or conf == yaml.null then
+        return nil, "invalid apisix.yaml file"
+    end
+
+    local ok, err = pcall(resolve_rest, conf, {}, resolved, substitute)
+    if not ok then
+        return nil, tostring(err)
+    end
+    return conf
 end
 
 
@@ -157,7 +264,6 @@ end
 
 
 _M.resolve_conf_var = resolve_conf_var
-_M.resolve_conf_var_in_text = resolve_conf_var_in_text
 
 
 local function replace_by_reserved_env_vars(conf)
@@ -322,14 +428,9 @@ function _M.read_yaml_conf(apisix_home)
         local apisix_conf_path = profile:yaml_path("apisix")
         local apisix_conf_yaml, _ = util.read_file(apisix_conf_path)
         if apisix_conf_yaml then
-            -- Pre-parse substitution: `"${{VAR}}"` stays string, `${{VAR}}` infers type from value.
-            local resolved, err = resolve_conf_var_in_text(apisix_conf_yaml)
-            if not resolved then
-                return nil, err
-            end
-            local apisix_conf = yaml.load(resolved)
+            local apisix_conf, err = _M.load_yaml(apisix_conf_yaml)
             if not apisix_conf then
-                return nil, "invalid apisix.yaml file"
+                return nil, err
             end
         end
     end
