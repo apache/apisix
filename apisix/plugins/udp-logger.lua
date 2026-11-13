@@ -67,6 +67,7 @@ local metadata_schema = {
 }
 
 local _M = {
+    type = "logger",
     version = 0.1,
     priority = 400,
     name = plugin_name,
