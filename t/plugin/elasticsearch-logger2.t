@@ -563,6 +563,27 @@ passed
     location /t {
         content_by_lua_block {
             local http = require("resty.http")
+            local json = require("toolkit.json")
+
+            -- the routes only shared a processor when both clusters reported the
+            -- same major version, so check that this still holds for the CI services
+            local function major_version(uri, headers)
+                local res, err = http.new():request_uri(uri, {headers = headers})
+                if not res or res.status ~= 200 then
+                    return nil, err or res.status
+                end
+                return json.decode(res.body).version.number:match("^(%d+)%.")
+            end
+            local version_a, err_a = major_version("http://127.0.0.1:9200")
+            local version_b, err_b = major_version("http://127.0.0.1:9201", {
+                Authorization = "Basic " .. ngx.encode_base64("elastic:123456")
+            })
+            if not version_a or version_a ~= version_b then
+                ngx.say("the clusters do not run the same major version: ",
+                        version_a or err_a, " and ", version_b or err_b)
+                return
+            end
+
             local base = "http://127.0.0.1:" .. ngx.var.server_port
             -- the first route's batch processor exists by the time the second logs
             for _, uri in ipairs({"/hello", "/hello1"}) do
@@ -581,6 +602,7 @@ passed
 --- response_body
 done
 --- error_log
+uri: http://127.0.0.1:9200/_bulk, body: {"index":{"_index":"route-a-logs"}}
 uri: http://127.0.0.1:9201/_bulk, body: {"index":{"_index":"route-b-logs"}}
 --- no_error_log
 uri: http://127.0.0.1:9200/_bulk, body: {"index":{"_index":"route-b-logs"}}
@@ -644,9 +666,10 @@ passed
                     ngx.say("request failed: ", err or res.status)
                     return
                 end
+                -- each entry is sent in a batch of its own, from a timer; let it end
+                -- before the next one starts
+                ngx.sleep(0.5)
             end
-            -- each request's entry is sent in a batch of its own, from a timer
-            ngx.sleep(1)
             ngx.say("done")
         }
     }
@@ -657,3 +680,148 @@ qr/failed to get Elasticsearch version/
 --- grep_error_log_out
 failed to get Elasticsearch version
 --- timeout: 10
+
+
+
+=== TEST 15: a route on Elasticsearch 6 whose version probe takes a while
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, {
+                uri = "/hello",
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:1980"] = 1
+                    }
+                },
+                plugins = {
+                    ["elasticsearch-logger"] = {
+                        -- Elasticsearch 6 behind the locations of the next block
+                        endpoint_addrs = {"http://127.0.0.1:1984/es6"},
+                        field = {
+                            index = "services"
+                        },
+                        auth = {
+                            username = "elastic",
+                            password = "123456"
+                        },
+                        batch_max_size = 1,
+                    }
+                }
+            })
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 16: requests that come while the first version probe is in flight are logged with `_type`
+--- config
+    location = /es6 {
+        # the version probe answers after half a second
+        access_by_lua_block {
+            ngx.sleep(0.5)
+        }
+        proxy_pass http://127.0.0.1:9501/;
+    }
+    location /es6/ {
+        proxy_pass http://127.0.0.1:9501/;
+    }
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local threads = {}
+            for i = 1, 3 do
+                threads[i] = ngx.thread.spawn(function()
+                    local res, err = http.new():request_uri(uri)
+                    return res and res.status, err
+                end)
+            end
+            for i = 1, 3 do
+                local _, status, err = ngx.thread.wait(threads[i])
+                if status ~= 200 then
+                    ngx.say("request failed: ", status or err)
+                    return
+                end
+            end
+            -- Elasticsearch 6 rejects a bulk request whose action line lacks `_type`
+            ngx.sleep(2)
+            ngx.say("done")
+        }
+    }
+--- response_body
+done
+--- grep_error_log eval
+qr/successfully processed the entries/
+--- grep_error_log_out
+successfully processed the entries
+successfully processed the entries
+successfully processed the entries
+--- no_error_log
+failed to process entries
+--- timeout: 10
+
+
+
+=== TEST 17: a route on Elasticsearch 6 that rejects requests before elasticsearch-logger's access phase
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, {
+                uri = "/hello",
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:1980"] = 1
+                    }
+                },
+                plugins = {
+                    ["key-auth"] = {},
+                    ["elasticsearch-logger"] = {
+                        endpoint_addrs = {"http://127.0.0.1:9501"},
+                        field = {
+                            index = "services"
+                        },
+                        auth = {
+                            username = "elastic",
+                            password = "123456"
+                        },
+                        batch_max_size = 1,
+                    }
+                }
+            })
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 18: a request rejected before the access phase is logged with `_type`
+--- request
+GET /hello
+--- error_code: 401
+--- wait: 2
+--- error_log
+successfully processed the entries
+--- no_error_log
+failed to process entries
