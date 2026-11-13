@@ -696,6 +696,7 @@ sweep armed on the next entry: true
         content_by_lua_block {
             local core = require("apisix.core")
             local plugin = require("apisix.plugin")
+            local crc = function(s) return tostring(ngx.crc32_short(s)) end
             local conf = core.json.decode([=[{
                 "uri": "http://127.0.0.1:1980/log",
                 "batch_max_size": 10,
@@ -703,20 +704,33 @@ sweep armed on the next entry: true
                 "headers": {"b": "2", "a": "1"},
                 "include_req_body_expr": [["arg_debug", "==", "1"]]
             }]=])
-            -- the version this conf got before: the crc of the default encoding
-            local expected = tostring(ngx.crc32_short(core.json.stably_encode(conf)))
-            ngx.say("unchanged: ", plugin.conf_version(conf) == expected)
+            -- the version this conf got before: the crc of the default encoding, whose
+            -- keys are sorted
+            local expected = crc(core.json.stably_encode(conf))
+            local version = plugin.conf_version(conf)
+            ngx.say("unchanged: ", version == expected)
+            ngx.say("sorted: ", version == crc('{"auth_header":"Bearer token",'
+                .. '"batch_max_size":10,"headers":{"a":"1","b":"2"},'
+                .. '"include_req_body_expr":[["arg_debug","==","1"]],'
+                .. '"uri":"http://127.0.0.1:1980/log"}'))
 
             local json = [=[{"include_req_body_expr": [["http_x_debug", "~=", null]]}]=]
-            local ok, version = pcall(plugin.conf_version, core.json.decode(json))
-            ngx.say("null encoded: ", ok and type(version) == "string")
-            ngx.say("same content, same version: ",
-                    plugin.conf_version(core.json.decode(json)) == version)
+            local ok, null_version = pcall(plugin.conf_version, core.json.decode(json))
+            ngx.say("null encoded as null: ", ok and null_version
+                    == crc('{"include_req_body_expr":[["http_x_debug","~=",null]]}'))
+
+            -- a conf that dkjson cannot encode still raises, and leaves nothing behind
+            -- that breaks the next one
+            ngx.say("function rejected: ", not pcall(plugin.conf_version, {f = function() end}))
+            local ok2, next_version = pcall(plugin.conf_version, core.json.decode('{"a": 1}'))
+            ngx.say("next conf: ", ok2 and next_version == crc('{"a":1}'))
         }
     }
 --- request
 GET /t
 --- response_body
 unchanged: true
-null encoded: true
-same content, same version: true
+sorted: true
+null encoded as null: true
+function rejected: true
+next conf: true
