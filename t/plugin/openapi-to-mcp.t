@@ -2206,6 +2206,19 @@ qr/seen_path.*x\/v\/ok/
             }, {
                 base_url = "http://127.0.0.1:11460",
             })
+            handler.call({
+                method = "GET",
+                path_template = "/{Bucket}?prefix=static",
+                parameters = {
+                    { name = "Bucket", ["in"] = "path" },
+                    { name = "prefix", ["in"] = "query" },
+                },
+            }, {
+                pathParameters = { Bucket = "b" },
+                queryParameters = { prefix = "dynamic" },
+            }, {
+                base_url = "http://127.0.0.1:11460",
+            })
 
             fetch.request = real_request
         }
@@ -2213,3 +2226,4 @@ qr/seen_path.*x\/v\/ok/
 --- response_body
 http://127.0.0.1:11460/b?prefix=logs
 http://127.0.0.1:11460/b?acl&prefix=logs
+http://127.0.0.1:11460/b?prefix=static&prefix=dynamic
