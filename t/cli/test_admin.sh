@@ -554,6 +554,8 @@ deployment:
       - name: viewer
         key: ""
         role: viewer
+      - name: viewer2
+        role: viewer
 ' > conf/config.yaml
 
 if ! make init > output.log 2>&1; then
@@ -566,4 +568,9 @@ if ! grep -F "WARNING: Admin API key viewer is empty, so it does not match any r
     exit 1
 fi
 
-echo "pass: warn about an empty key of the viewer role"
+if ! grep -F "WARNING: Admin API key viewer2 is empty, so it does not match any request." output.log > /dev/null; then
+    echo "failed: should warn about a viewer entry without a key"
+    exit 1
+fi
+
+echo "pass: warn about an empty or missing key of the viewer role"
