@@ -30,9 +30,10 @@ add_block_preprocessor(sub {
         my $extra_init_by_lua = <<_EOC_;
     local bp_manager = require("apisix.utils.batch-processor-manager")
     local core = require("apisix.core")
+    local json_encode = core.json.encode
     local old_f = bp_manager.add_entry_to_new_processor
     bp_manager.add_entry_to_new_processor = function(self, conf, entry, ctx, func)
-        ngx.log(ngx.INFO, "batch_entry: ", core.json.encode(entry))
+        ngx.log(ngx.INFO, "batch_entry: ", json_encode(entry))
         return old_f(self, conf, entry, ctx, func)
     end
 _EOC_
@@ -629,3 +630,55 @@ GET /t
 GET /t
 --- error_log
 "body":"opentracing\n"
+
+
+
+=== TEST 18: json encode failure in batch processor callback returns error gracefully
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local plugin = require("apisix.plugins.tcp-logger")
+            local orig_encode = core.json.encode
+            core.json.encode = function()
+                return nil, "mocked encoding error"
+            end
+
+            local conf = {
+                host = "127.0.0.1",
+                port = 43000,
+                batch_max_size = 1,
+                log_format = {
+                    host = "$host",
+                },
+            }
+
+            local ctx = {
+                var = {
+                    host = "127.0.0.1",
+                    remote_addr = "127.0.0.1",
+                    uri = "/t",
+                    request_uri = "/t",
+                    scheme = "http",
+                    request_method = "GET",
+                    status = 200,
+                }
+            }
+
+            local ok, call_err = pcall(plugin.log, conf, ctx)
+            ngx.sleep(0.1)
+            core.json.encode = orig_encode
+
+            if not ok then
+                error(call_err)
+            end
+            ngx.say("done")
+        }
+    }
+--- request
+GET /t
+--- response_body
+done
+--- wait: 0.5
+--- error_log
+Batch Processor[log buffer] failed to process entries: error occurred while encoding the data: mocked encoding error
