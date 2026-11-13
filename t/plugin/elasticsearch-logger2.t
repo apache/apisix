@@ -568,8 +568,8 @@ passed
             for _, uri in ipairs({"/hello", "/hello1"}) do
                 local httpc = http.new()
                 local res, err = httpc:request_uri(base .. uri)
-                if not res then
-                    ngx.say("request failed: ", err)
+                if not res or res.status ~= 200 then
+                    ngx.say("request to ", uri, " failed: ", err or res.status)
                     return
                 end
                 ngx.sleep(0.5)
@@ -584,4 +584,76 @@ done
 uri: http://127.0.0.1:9201/_bulk, body: {"index":{"_index":"route-b-logs"}}
 --- no_error_log
 uri: http://127.0.0.1:9200/_bulk, body: {"index":{"_index":"route-b-logs"}}
+failed to get Elasticsearch version
+failed to process entries
 --- timeout: 5
+
+
+
+=== TEST 13: a route whose credentials the cluster rejects
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, {
+                uri = "/hello",
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:1980"] = 1
+                    }
+                },
+                plugins = {
+                    ["elasticsearch-logger"] = {
+                        endpoint_addrs = {"http://127.0.0.1:9201"},
+                        field = {
+                            index = "services"
+                        },
+                        auth = {
+                            username = "elastic",
+                            password = "wrong-password"
+                        },
+                        batch_max_size = 1,
+                    }
+                }
+            })
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 14: a version probe that failed is not repeated for every request and batch
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            for _ = 1, 3 do
+                local httpc = http.new()
+                local res, err = httpc:request_uri(uri)
+                if not res or res.status ~= 200 then
+                    ngx.say("request failed: ", err or res.status)
+                    return
+                end
+            end
+            -- each request's entry is sent in a batch of its own, from a timer
+            ngx.sleep(1)
+            ngx.say("done")
+        }
+    }
+--- response_body
+done
+--- grep_error_log eval
+qr/failed to get Elasticsearch version/
+--- grep_error_log_out
+failed to get Elasticsearch version
+--- timeout: 10

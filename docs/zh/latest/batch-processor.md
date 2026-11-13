@@ -88,8 +88,8 @@ local _M = {
 function _M.log(conf, ctx)
     local entry = {...} -- data to log
 
-    -- 返回 true 表示该条目已无需调用方再处理：要么已推入现有处理器，
-    -- 要么因积压超过 max_pending_entries 而被丢弃
+    -- 返回 true 表示该条目已无需调用方再处理：已推入现有处理器、
+    -- 因积压超过 max_pending_entries 而被丢弃，或因条目为 nil（没有要记录的内容）而被跳过
     if batch_processor_manager:add_entry(conf, entry) then
         return
     end

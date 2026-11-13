@@ -596,6 +596,10 @@ removing batch processor stale object
                 max_retry_count = 0,
                 retry_delay = 1,
             }
+            -- cloned before conf is used, so that it does not carry the processor key
+            -- that plugin.conf_version() caches in conf._version
+            local other_conf = require("apisix.core").table.clone(conf)
+            other_conf.name = "other logger"
             local ctx = {var = {route_id = "1", server_addr = "127.0.0.1"}}
             local func = function() return true end
 
@@ -614,8 +618,6 @@ removing batch processor stale object
             add({msg = "second"})
 
             -- a caller that goes straight to add_entry_to_new_processor()
-            local other_conf = require("apisix.core").table.clone(conf)
-            other_conf.name = "other logger"
             bp_manager:add_entry_to_new_processor(other_conf, nil, ctx, func)
 
             local buffered = 0

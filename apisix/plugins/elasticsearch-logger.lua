@@ -26,6 +26,7 @@ local os_date         = os.date
 local pcall           = pcall
 local type            = type
 local pairs           = pairs
+local setmetatable    = setmetatable
 
 local plugin_name = "elasticsearch-logger"
 local batch_processor_manager = bp_manager_mod.new(plugin_name)
@@ -232,6 +233,14 @@ local function resolve_index_vars(index, var)
 end
 
 
+-- The Elasticsearch major version of each conf, or false once its probe has started
+-- and has not succeeded. It is not kept in the conf: plugin.conf_version() caches in
+-- conf._version the version that keys the conf's batch processor, so a major version
+-- stored there made every conf with that major version share one processor, and so
+-- its endpoints and credentials.
+local es_versions = setmetatable({}, {__mode = "k"})
+
+
 local function get_logger_entry(conf, ctx, index)
     local entry = log_util.get_log_entry(plugin_name, conf, ctx)
     local body = {
@@ -240,7 +249,8 @@ local function get_logger_entry(conf, ctx, index)
         }
     }
     -- for older version type is required
-    if conf._es_version == "6" or conf._es_version == "5" then
+    local es_version = es_versions[conf]
+    if es_version == "6" or es_version == "5" then
         body.index._type = "_doc"
     end
     return core.json.encode(body) .. "\n" ..
@@ -248,15 +258,16 @@ local function get_logger_entry(conf, ctx, index)
 end
 
 
--- The major version is kept in conf._es_version, not conf._version: the latter is
--- where plugin.conf_version() caches the conf's own version, which the batch
--- processor manager uses as the key of the conf's processor. Sharing it made every
--- conf with the same Elasticsearch major version share the first conf's processor,
--- and so its endpoints and credentials.
+-- Each conf is probed once. A probe that failed is not repeated: while the cluster
+-- cannot be reached, or refuses GET / (it needs the `monitor` cluster privilege),
+-- every request would otherwise wait for another probe in its access phase.
 local function fetch_and_update_es_version(conf)
-    if conf._es_version then
+    if es_versions[conf] ~= nil then
         return
     end
+    -- set before the probe yields, so that concurrent requests do not probe as well
+    es_versions[conf] = false
+
     local selected_endpoint_addr
     if conf.endpoint_addr then
         selected_endpoint_addr = conf.endpoint_addr
@@ -268,7 +279,7 @@ local function fetch_and_update_es_version(conf)
         core.log.error("failed to get Elasticsearch version: ", err)
         return
     end
-    conf._es_version = major_version
+    es_versions[conf] = major_version
 end
 
 

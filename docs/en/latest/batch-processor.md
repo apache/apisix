@@ -90,9 +90,9 @@ local _M = {
 function _M.log(conf, ctx)
     local entry = {...} -- data to log
 
-    -- a true return means the entry needs nothing further from you: it was either
-    -- pushed to an existing processor, or discarded because the backlog is over
-    -- max_pending_entries
+    -- a true return means the entry needs nothing further from you: it was pushed
+    -- to an existing processor, discarded because the backlog is over
+    -- max_pending_entries, or skipped because it is nil (nothing to log)
     if batch_processor_manager:add_entry(conf, entry) then
         return
     end

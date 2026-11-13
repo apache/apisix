@@ -168,17 +168,13 @@ end
 
 function create_buffer_timer(self)
     local hdl, err = timer_at(self.inactive_timeout, flush_buffer, self)
-    if not hdl and err == "process exiting" then
-        hdl, err = timer_at(0, flush_buffer, self)
-    end
-
     if not hdl then
-        core.log.error("failed to create buffer timer: ", err)
-        -- leave it to the next push to arm one: flush_buffer extends the timer
-        -- through here while the flag is still set, and a flag left set with no
-        -- timer behind it would stop the buffer from ever being flushed by time
-        self.is_timer_running = false
-        return
+        if err == "process exiting" then
+            timer_at(0, flush_buffer, self)
+        else
+            core.log.error("failed to create buffer timer: ", err)
+            return
+        end
     end
     self.is_timer_running = true
 end

@@ -724,7 +724,9 @@ Batch Processor[log buffer] failed to process entries: error occurred while enco
 
             local http = require("resty.http")
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
-            for _, query in ipairs({"", "", "", "?log=yes"}) do
+            -- the first request builds the batch processor, so the three that `match`
+            -- leaves out arrive while it exists, as they do on a route in use
+            for _, query in ipairs({"?log=yes", "", "", "", "?log=yes"}) do
                 local httpc = http.new()
                 local res, err = httpc:request_uri(uri .. query)
                 if not res then
@@ -733,6 +735,8 @@ Batch Processor[log buffer] failed to process entries: error occurred while enco
                 end
             end
             ngx.sleep(1)
+
+            t('/apisix/admin/plugin_metadata/tcp-logger', ngx.HTTP_DELETE)
             ngx.say("passed")
         }
     }
@@ -743,6 +747,7 @@ passed
 --- grep_error_log eval
 qr/sending a batch logs to 127.0.0.1:43000/
 --- grep_error_log_out
+sending a batch logs to 127.0.0.1:43000
 sending a batch logs to 127.0.0.1:43000
 --- no_error_log
 max pending entries limit exceeded
