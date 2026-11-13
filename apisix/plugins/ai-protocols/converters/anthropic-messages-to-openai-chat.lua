@@ -876,6 +876,8 @@ local function openai_to_anthropic_sse(openai_chunk, state, tool_name_map)
         state.current_open_block = nil
         state.current_block_type = nil
         state.tool_call_indices = {}
+        state.unindexed_tool_calls = 0
+        state.last_unindexed_tool_call = nil
     end
 
     -- Normalize finish_reason: nil, empty, "null", whitespace → no finish
@@ -943,7 +945,18 @@ local function openai_to_anthropic_sse(openai_chunk, state, tool_name_map)
             end
             local tc_idx = tc_delta.index
             if tc_idx == nil then
-                goto continue_tc
+                -- Some OpenAI-compatible backends (Gemini, Mistral) omit "index".
+                -- A delta carrying an id or a function name opens a new call;
+                -- one carrying only arguments continues the previous call.
+                local tc_fn = tc_delta["function"]
+                local opens_call = (type(tc_delta.id) == "string" and tc_delta.id ~= "")
+                    or (type(tc_fn) == "table" and type(tc_fn.name) == "string"
+                        and tc_fn.name ~= "")
+                if opens_call or not state.last_unindexed_tool_call then
+                    state.unindexed_tool_calls = (state.unindexed_tool_calls or 0) + 1
+                    state.last_unindexed_tool_call = "unindexed-" .. state.unindexed_tool_calls
+                end
+                tc_idx = state.last_unindexed_tool_call
             end
 
             if not state.tool_call_indices[tc_idx] then
