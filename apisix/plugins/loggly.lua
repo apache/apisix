@@ -311,7 +311,7 @@ end
 
 local function handle_log(entries, conf)
     local metadata = plugin.plugin_metadata(plugin_name)
-    core.log.info("metadata: ", core.json.delay_encode(metadata))
+    core.log.info("metadata of plugin ", plugin_name, " found: ", metadata ~= nil)
 
     if not metadata then
         core.log.info("received nil metadata: using metadata defaults: ",

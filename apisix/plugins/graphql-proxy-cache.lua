@@ -289,8 +289,7 @@ function _M.header_filter(conf, ctx)
     end
 
     local cache_conf = graphql_cache_conf(ctx, conf)
-    core.log.debug("graphql-proxy-cache plugin header filter phase, conf: ",
-                    core.json.delay_encode(cache_conf))
+    core.log.debug("graphql-proxy-cache plugin header filter phase")
 
     local handler
     if ctx.graphql_cache_conf.cache_strategy == STRATEGY_MEMORY then
@@ -309,8 +308,7 @@ function _M.body_filter(conf, ctx)
     end
 
     local cache_conf = graphql_cache_conf(ctx, conf)
-    core.log.debug("graphql-proxy-cache plugin body filter phase, conf: ",
-                        core.json.delay_encode(cache_conf))
+    core.log.debug("graphql-proxy-cache plugin body filter phase")
 
     if ctx.graphql_cache_conf.cache_strategy == STRATEGY_MEMORY then
         memory_handler.body_filter(cache_conf, ctx)

@@ -140,7 +140,7 @@ end
 
 
 function _M.rewrite(conf, ctx)
-    core.log.info("plugin rewrite phase, conf: ", core.json.delay_encode(conf))
+    core.log.info("plugin rewrite phase")
 
     local abort_vars = true
     if conf.abort and conf.abort.vars then
