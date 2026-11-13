@@ -582,7 +582,7 @@ removing batch processor stale object
             local plugin = require("apisix.plugin")
             plugin.plugin_metadatas = {
                 get = function(self, name)
-                    return {value = {max_pending_entries = 1}}
+                    return {value = {max_pending_entries = 3}}
                 end
             }
 
@@ -606,21 +606,82 @@ removing batch processor stale object
             end
 
             -- log_util.get_log_entry returns nil for a request that the logger does
-            -- not log, e.g. one that its `match` excludes
+            -- not log, e.g. one that its `match` excludes; here they arrive while the
+            -- processor already exists, so add_entry() is the one that sees them
+            add({msg = "first"})
             add(nil)
             add(nil)
-            add({msg = "logged"})
+            add({msg = "second"})
+
+            -- a caller that goes straight to add_entry_to_new_processor()
+            local other_conf = require("apisix.core").table.clone(conf)
+            other_conf.name = "other logger"
+            bp_manager:add_entry_to_new_processor(other_conf, nil, ctx, func)
 
             local buffered = 0
             for _, buffer in pairs(bp_manager.buffers) do
                 buffered = buffered + #buffer.entry_buffer.entries
             end
             ngx.say("buffered: ", buffered)
+            ngx.say("pushed: ", bp_manager.total_pushed_entries)
         }
     }
 --- request
 GET /t
 --- response_body
-buffered: 1
+buffered: 2
+pushed: 2
 --- no_error_log
 max pending entries limit exceeded
+
+
+
+=== TEST 12: the stale sweep is armed again when its timer could not be created
+--- config
+    location /t {
+        content_by_lua_block {
+            -- load a private copy of the manager whose timers fail until `fail` is
+            -- cleared, and put the shared copy back for everything else
+            local shared = package.loaded["apisix.utils.batch-processor-manager"]
+            package.loaded["apisix.utils.batch-processor-manager"] = nil
+            local timer_at = ngx.timer.at
+            local fail = true
+            ngx.timer.at = function(...)
+                if fail then
+                    return nil, "too many pending timers"
+                end
+                return timer_at(...)
+            end
+            local bp_manager_mod = require("apisix.utils.batch-processor-manager")
+            ngx.timer.at = timer_at
+            package.loaded["apisix.utils.batch-processor-manager"] = shared
+
+            local bp_manager = bp_manager_mod.new("test logger", "test-logger")
+            local conf = {
+                name = "test logger",
+                batch_max_size = 10000000,
+                inactive_timeout = 300,
+                buffer_duration = 300,
+                max_retry_count = 0,
+                retry_delay = 1,
+            }
+            local ctx = {var = {route_id = "1", server_addr = "127.0.0.1"}}
+            local func = function() return true end
+            local add = function(entry)
+                if not bp_manager:add_entry(conf, entry) then
+                    bp_manager:add_entry_to_new_processor(conf, entry, ctx, func)
+                end
+            end
+
+            add({msg = 1})
+            ngx.say("sweep armed after a failed timer: ", bp_manager.stale_timer_running)
+            fail = false
+            add({msg = 2})
+            ngx.say("sweep armed on the next entry: ", bp_manager.stale_timer_running)
+        }
+    }
+--- request
+GET /t
+--- response_body
+sweep armed after a failed timer: false
+sweep armed on the next entry: true

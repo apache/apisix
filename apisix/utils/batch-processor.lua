@@ -67,12 +67,14 @@ local function schedule_func_exec(self, delay, batch)
             local hdl2, err2 = timer_at(0, execute_func, self, batch)
             if not hdl2 then
                 core.log.error("failed to create fallback process timer ",
-                               "while exiting: ", err2)
+                               "while exiting: ", err2, ", dropped entries: ",
+                               #batch.entries)
                 drop_batch(self, batch)
                 return
             end
         else
-            core.log.error("failed to create process timer: ", err)
+            core.log.error("failed to create process timer: ", err,
+                           ", dropped entries: ", #batch.entries)
             drop_batch(self, batch)
             return
         end
@@ -108,8 +110,9 @@ function execute_func(premature, self, batch)
                                                 batch.entries, self.batch_max_size)
     if not call_ok then
         -- a callback that raises has failed the batch, so it takes the same retry
-        -- and drop path as one that returns false
-        ok, err, first_fail = false, ok, nil
+        -- and drop path as one that returns false; "runtime error" is what the log
+        -- said when the raise used to abort the timer
+        ok, err, first_fail = false, "runtime error: " .. tostring(ok), nil
     end
 
     -- err goes through tostring: ngx.log raises on a table without __tostring, and a
@@ -165,13 +168,17 @@ end
 
 function create_buffer_timer(self)
     local hdl, err = timer_at(self.inactive_timeout, flush_buffer, self)
+    if not hdl and err == "process exiting" then
+        hdl, err = timer_at(0, flush_buffer, self)
+    end
+
     if not hdl then
-        if err == "process exiting" then
-            timer_at(0, flush_buffer, self)
-        else
-            core.log.error("failed to create buffer timer: ", err)
-            return
-        end
+        core.log.error("failed to create buffer timer: ", err)
+        -- leave it to the next push to arm one: flush_buffer extends the timer
+        -- through here while the flag is still set, and a flag left set with no
+        -- timer behind it would stop the buffer from ever being flushed by time
+        self.is_timer_running = false
+        return
     end
     self.is_timer_running = true
 end

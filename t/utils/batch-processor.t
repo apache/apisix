@@ -574,8 +574,8 @@ GET /t
 calls: 2
 processed: 1
 --- error_log eval
-[qr/Batch Processor\[log buffer\] failed to process entries: .*callback raised on call 1/,
-qr/Batch Processor\[log buffer\] failed to process entries: .*callback raised on call 2/,
+[qr/Batch Processor\[log buffer\] failed to process entries: runtime error: .*callback raised on call 1/,
+qr/Batch Processor\[log buffer\] failed to process entries: runtime error: .*callback raised on call 2/,
 qr/\[C\]: in function 'xpcall'/,
 qr/Batch Processor\[log buffer\] exceeded the max_retry_count\[2\] dropping the entries/]
 --- no_error_log
@@ -620,7 +620,7 @@ GET /t
 --- response_body
 processed: 1
 --- error_log
-failed to create process timer: too many pending timers
+failed to create process timer: too many pending timers, dropped entries: 1
 
 
 
@@ -629,58 +629,34 @@ failed to create process timer: too many pending timers
     location /t {
         content_by_lua_block {
             -- load a private copy of the module so that it captures a failing timer,
-            -- and put the shared copy back for everything else
+            -- and put the shared copy back for everything else. The first timer runs
+            -- the batch; its retry then asks for a delayed timer while the worker is
+            -- exiting, which is refused with "process exiting", and the zero-delay
+            -- fallback fails for lack of timer slots.
             local shared = package.loaded["apisix.utils.batch-processor"]
             package.loaded["apisix.utils.batch-processor"] = nil
             local timer_at = ngx.timer.at
-            ngx.timer.at = function()
-                return nil, "process exiting"
+            local timer_calls = 0
+            ngx.timer.at = function(delay, ...)
+                timer_calls = timer_calls + 1
+                if timer_calls == 1 then
+                    return timer_at(delay, ...)
+                end
+                if delay > 0 then
+                    return nil, "process exiting"
+                end
+                return nil, "too many pending timers"
             end
             local Batch = require("apisix.utils.batch-processor")
             ngx.timer.at = timer_at
             package.loaded["apisix.utils.batch-processor"] = shared
 
             local config = {
-                max_retry_count  = 0,
+                max_retry_count  = 1,
                 batch_max_size = 1,
-                retry_delay  = 0,
+                retry_delay  = 1,
             }
-            local log_buffer, err = Batch:new(function() return true end, config)
-
-            if not log_buffer then
-                ngx.say(err)
-                return
-            end
-
-            log_buffer:push({hello='world'})
-            ngx.say("processed: ", log_buffer.processed_entries)
-        }
-    }
---- request
-GET /t
---- response_body
-processed: 1
---- error_log
-failed to create fallback process timer while exiting: process exiting
-
-
-
-=== TEST 17: a callback that returns a table as its error is still counted
---- config
-    location /t {
-        content_by_lua_block {
-            local Batch = require("apisix.utils.batch-processor")
-            local config = {
-                max_retry_count  = 0,
-                batch_max_size = 1,
-                retry_delay  = 0,
-            }
-            local calls = 0
-            local func_to_send = function(elements)
-                calls = calls + 1
-                return false, {reason = "rejected by the log server"}
-            end
-            local log_buffer, err = Batch:new(func_to_send, config)
+            local log_buffer, err = Batch:new(function() return false, "rejected" end, config)
 
             if not log_buffer then
                 ngx.say(err)
@@ -694,16 +670,138 @@ failed to create fallback process timer while exiting: process exiting
                 end
                 ngx.sleep(0.01)
             end
-            ngx.say("calls: ", calls)
+            ngx.say("timer requests: ", timer_calls)
             ngx.say("processed: ", log_buffer.processed_entries)
         }
     }
 --- request
 GET /t
 --- response_body
-calls: 1
+timer requests: 3
 processed: 1
+--- error_log
+failed to create fallback process timer while exiting: too many pending timers, dropped entries: 1
+
+
+
+=== TEST 17: a callback that returns a table as its error is still counted
+--- config
+    location /t {
+        content_by_lua_block {
+            local Batch = require("apisix.utils.batch-processor")
+            -- one callback fails the whole batch, the other fails from its second
+            -- entry on (first_fail = 2); both return an error that ngx.log cannot print
+            local whole, err = Batch:new(function(elements)
+                return false, {reason = "rejected by the log server"}
+            end, {max_retry_count = 0, batch_max_size = 1, retry_delay = 0})
+            if not whole then
+                ngx.say(err)
+                return
+            end
+
+            local partial
+            partial, err = Batch:new(function(elements)
+                return false, {reason = "rejected after the first entry"}, 2
+            end, {max_retry_count = 0, batch_max_size = 2, retry_delay = 0})
+            if not partial then
+                ngx.say(err)
+                return
+            end
+
+            whole:push({hello='world'})
+            partial:push({hello='world'})
+            partial:push({hello='again'})
+            for _ = 1, 200 do
+                if whole.processed_entries == 1 and partial.processed_entries == 2 then
+                    break
+                end
+                ngx.sleep(0.01)
+            end
+            ngx.say("whole: ", whole.processed_entries)
+            ngx.say("partial: ", partial.processed_entries)
+        }
+    }
+--- request
+GET /t
+--- response_body
+whole: 1
+partial: 2
 --- error_log eval
-qr/Batch Processor\[log buffer\] failed to process entries: table: 0x/
+[qr/Batch Processor\[log buffer\] failed to process entries: table: 0x/,
+qr/Batch Processor\[log buffer\] failed to process entries \[1\/2\]: table: 0x/]
 --- no_error_log
 lua entry thread aborted
+
+
+
+=== TEST 18: a buffer timer that cannot be extended is armed again by the next push
+--- config
+    location /t {
+        content_by_lua_block {
+            -- load a private copy of the module whose second timer request fails: the
+            -- first one arms the buffer timer, the second is flush_buffer extending
+            -- that timer because entries keep arriving
+            local shared = package.loaded["apisix.utils.batch-processor"]
+            package.loaded["apisix.utils.batch-processor"] = nil
+            local timer_at = ngx.timer.at
+            local timer_calls = 0
+            ngx.timer.at = function(...)
+                timer_calls = timer_calls + 1
+                if timer_calls == 2 then
+                    return nil, "too many pending timers"
+                end
+                return timer_at(...)
+            end
+            local Batch = require("apisix.utils.batch-processor")
+            ngx.timer.at = timer_at
+            package.loaded["apisix.utils.batch-processor"] = shared
+
+            local delivered = 0
+            local log_buffer, err = Batch:new(function(elements)
+                delivered = delivered + #elements
+                return true
+            end, {
+                max_retry_count = 0,
+                batch_max_size = 1000,
+                inactive_timeout = 1,
+                buffer_duration = 60,
+                retry_delay = 0,
+            })
+            if not log_buffer then
+                ngx.say(err)
+                return
+            end
+
+            local wait_for = function(cond)
+                for _ = 1, 400 do
+                    if cond() then
+                        return true
+                    end
+                    ngx.sleep(0.01)
+                end
+                return false
+            end
+
+            log_buffer:push({msg = 1})
+            -- keep the buffer active, so that flush_buffer extends its timer
+            ngx.sleep(0.5)
+            log_buffer:push({msg = 2})
+            if not wait_for(function() return timer_calls >= 2 end) then
+                ngx.say("flush_buffer did not run")
+                return
+            end
+
+            -- this push must arm a new buffer timer, or nothing flushes the buffer
+            -- until it reaches batch_max_size
+            log_buffer:push({msg = 3})
+            wait_for(function() return delivered == 3 end)
+            ngx.say("delivered: ", delivered)
+        }
+    }
+--- request
+GET /t
+--- response_body
+delivered: 3
+--- error_log
+failed to create buffer timer: too many pending timers
+--- timeout: 8

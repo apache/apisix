@@ -114,9 +114,11 @@ do
 
     function check_stale(self)
         if not self.stale_timer_running then
-            -- run the timer every 30 mins if any log is present
-            timer_at(interval, remove_stale_objects, self)
-            self.stale_timer_running = true
+            -- run the timer every 30 mins if any log is present; when the timer
+            -- cannot be created, the next entry tries again
+            if timer_at(interval, remove_stale_objects, self) then
+                self.stale_timer_running = true
+            end
         end
     end
 
@@ -176,16 +178,18 @@ end
 
 
 -- Returns true once the entry needs nothing further from the caller, which covers
--- both pushing it to an existing processor and discarding it over the backlog
--- limit; false means there is no processor yet and the caller should build one.
+-- pushing it to an existing processor, discarding it over the backlog limit, and a
+-- nil entry, which is skipped; false means there is no processor yet and the caller
+-- should build one.
 -- Reporting a discard as handled matters on the path where it happens: the caller
 -- would otherwise build the batch-processing closure and take the backlog check a
 -- second time, for every request, throughout the outage that caused the discards.
 function _M:add_entry(conf, entry)
-    -- log_util.get_log_entry returns nil for a request that is not to be logged (one
-    -- that `match` excludes, or whose request body could not be read). A processor
-    -- stores nothing for it and so never counts it as processed: counting it as
-    -- pushed would hold a pending slot for the worker's lifetime.
+    -- log_util.get_log_entry returns nil when a request is not logged: one that
+    -- `match` leaves out, and one whose request body could not be read. There is
+    -- nothing to send for it, and a processor would store nothing and so never count
+    -- it as processed: counting it as pushed would hold a pending slot for the
+    -- worker's lifetime.
     if entry == nil then
         return true
     end
