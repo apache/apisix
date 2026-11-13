@@ -357,6 +357,9 @@ install: runtime
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/secret
 	$(ENV_INSTALL) apisix/secret/*.lua $(ENV_INST_LUADIR)/apisix/secret/
 
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/xml-signer
+	$(ENV_INSTALL) apisix/plugins/xml-signer/*.lua $(ENV_INST_LUADIR)/apisix/plugins/xml-signer/
+
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/zipkin
 	$(ENV_INSTALL) apisix/plugins/zipkin/*.lua $(ENV_INST_LUADIR)/apisix/plugins/zipkin/
 
