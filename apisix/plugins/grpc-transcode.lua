@@ -15,6 +15,9 @@
 -- limitations under the License.
 --
 local ngx         = ngx
+local error       = error
+local tonumber    = tonumber
+local tostring    = tostring
 local core        = require("apisix.core")
 local schema_def  = require("apisix.schema_def")
 local proto       = require("apisix.plugins.grpc-transcode.proto")
@@ -47,12 +50,39 @@ local pb_option_def = {
 local schema = {
     type = "object",
     properties = {
+        protojson = {
+            type = "boolean",
+            default = false,
+            description = "map request and response with the ProtoJSON rules; "
+                       .. "false keeps the original field mapping of this plugin",
+        },
+        any_empty_format = {
+            type = "string",
+            enum = {"spec", "go"},
+            default = "spec",
+            description = "protojson output for google.protobuf.Any holding Empty: "
+                       .. "spec omits `value`, go writes `value: {}`; "
+                       .. "both forms are accepted as input",
+        },
+        error_response_format = {
+            type = "string",
+            enum = {"legacy", "flat"},
+            default = "legacy",
+            description = "shape of the error body when show_status_in_body is true: "
+                       .. "legacy {error: {code, message}} or flat {code, message}",
+        },
+        max_req_body_size = {
+            type = "integer",
+            minimum = 1,
+            description = "maximum request body size in bytes read for transcoding; "
+                       .. "unlimited when not set",
+        },
         max_resp_body_size = {
             type = "integer",
             minimum = 1,
             default = 67108864,
             description = "maximum response body size in bytes buffered into "
-                       .. "memory for transcoding; larger responses are truncated",
+                       .. "memory for transcoding; larger responses are rejected",
         },
         proto_id  = schema_def.id_schema,
         service = {
@@ -145,25 +175,25 @@ end
 
 
 function _M.access(conf, ctx)
-    core.log.info("conf: ", core.json.delay_encode(conf))
-
     local proto_id = conf.proto_id
     if not proto_id then
-        core.log.error("proto id miss: ", proto_id)
-        return
+        core.log.error("grpc-transcode: proto_id missing")
+        return 500, {message = "transcoder configuration error"}
     end
 
     local proto_obj, err = proto.fetch(proto_id)
-    if err then
+    if not proto_obj then
         core.log.error("proto load error: ", err)
-        return
+        return 503, {message = "protobuf descriptor unavailable"}
     end
 
     local ok, err, err_code = request(proto_obj, conf.service,
-                                      conf.method, conf.pb_option, conf.deadline)
+                                      conf.method, conf.pb_option, conf.deadline,
+                                      nil, conf.max_req_body_size, ctx,
+                                      conf.protojson)
     if not ok then
         core.log.error("transform request error: ", err)
-        return err_code
+        return err_code or 400, {message = "transcode request failed"}
     end
 
     ctx.proto_obj = proto_obj
@@ -172,13 +202,29 @@ end
 
 
 function _M.header_filter(conf, ctx)
-    if ngx.status >= 300 then
+    if ngx.status >= 300 or not ctx.proto_obj then
+        -- Ordinary HTTP errors (502, 504, etc.) are not gRPC frames.
+        -- Preserve the original status, content type, body and Content-Length.
         return
     end
+    ctx.grpc_transcode_headers_prepared = true
 
+    -- When upstream Content-Length is available, reject oversized payloads
+    -- before response headers are committed. Without Content-Length the only
+    -- safe reaction to an oversized body is aborting the response.
+    local upstream_length = tonumber(ngx.header["Content-Length"])
+    if upstream_length and upstream_length > (conf.max_resp_body_size or 67108864) then
+        ctx.grpc_transcode_rejected_length = true
+        ngx.status = 502
+    end
+
+    -- The body is replaced by JSON: the upstream length and encoding no
+    -- longer describe it.
     ngx.header["Content-Type"] = "application/json"
     ngx.header.content_length = nil
+    ngx.header["Content-Encoding"] = nil
 
+    if ctx.grpc_transcode_rejected_length then return end
     local headers = ngx.resp.get_headers()
 
     if headers["grpc-status"] ~= nil and headers["grpc-status"] ~= "0" then
@@ -197,10 +243,17 @@ end
 
 
 function _M.body_filter(conf, ctx)
-    if ngx.status >= 300 and not conf.show_status_in_body then
+    if ctx.grpc_transcode_rejected_length then
+        ngx.arg[1] = ngx.arg[2] and
+            '{"message":"gRPC response exceeds max_resp_body_size"}' or nil
         return
     end
-
+    -- An HTTP error that did not come from the gRPC upstream (e.g. 502 from
+    -- Nginx) keeps its original headers, so its body must stay untouched as
+    -- well. Mapped gRPC errors were prepared in header_filter.
+    if not ctx.grpc_transcode_headers_prepared then
+        return
+    end
     local proto_obj = ctx.proto_obj
     if not proto_obj then
         return
@@ -208,10 +261,14 @@ function _M.body_filter(conf, ctx)
 
     local err = response(ctx, proto_obj, conf.service, conf.method, conf.pb_option,
                          conf.show_status_in_body, conf.status_detail_type,
-                         conf.max_resp_body_size)
+                         conf.max_resp_body_size, conf.protojson,
+                         conf.error_response_format, conf.any_empty_format)
     if err then
         core.log.error("transform response error: ", err)
-        return
+        -- Headers are already sent, so the status cannot change any more and
+        -- a fabricated JSON body would look like success. Abort the response
+        -- instead (ngx.exit is not available in body_filter).
+        error("grpc-transcode body_filter: " .. tostring(err), 0)
     end
 end
 
