@@ -1100,8 +1100,9 @@ GET /hello
 --- response_body
 hello world
 --- wait: 2
---- error_log
-successfully processed the entries
+--- error_log eval
+[qr/successfully processed the entries/,
+qr/init plugin-level conf version: \d+, from \{.*"include_req_body_expr":\[\["http_x_debug","~=",null\]\]/]
 --- no_error_log
 failed to run log_by_lua
 is not supported by JSON

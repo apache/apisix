@@ -1008,6 +1008,8 @@ end
 -- instead of where this plugin conf belongs to
 function _M.conf_version(conf)
     if not conf._version then
+        -- a new state on every call: dkjson keeps its buffer in the state when it
+        -- raises, and a reused state would then make encode() return true
         local data = core.json.stably_encode(conf, {
             sortkey = true,
             exception = encode_json_null,

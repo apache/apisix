@@ -687,3 +687,36 @@ GET /t
 --- response_body
 sweep armed after a failed timer: false
 sweep armed on the next entry: true
+
+
+
+=== TEST 13: conf_version() keeps the version of a conf without null and encodes a null
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local plugin = require("apisix.plugin")
+            local conf = core.json.decode([=[{
+                "uri": "http://127.0.0.1:1980/log",
+                "batch_max_size": 10,
+                "auth_header": "Bearer token",
+                "headers": {"b": "2", "a": "1"},
+                "include_req_body_expr": [["arg_debug", "==", "1"]]
+            }]=])
+            -- the version this conf got before: the crc of the default encoding
+            local expected = tostring(ngx.crc32_short(core.json.stably_encode(conf)))
+            ngx.say("unchanged: ", plugin.conf_version(conf) == expected)
+
+            local json = [=[{"include_req_body_expr": [["http_x_debug", "~=", null]]}]=]
+            local ok, version = pcall(plugin.conf_version, core.json.decode(json))
+            ngx.say("null encoded: ", ok and type(version) == "string")
+            ngx.say("same content, same version: ",
+                    plugin.conf_version(core.json.decode(json)) == version)
+        }
+    }
+--- request
+GET /t
+--- response_body
+unchanged: true
+null encoded: true
+same content, same version: true
