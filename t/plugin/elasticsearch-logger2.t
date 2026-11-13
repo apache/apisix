@@ -585,15 +585,18 @@ passed
             end
 
             local base = "http://127.0.0.1:" .. ngx.var.server_port
-            -- the first route's batch processor exists by the time the second logs
-            for _, uri in ipairs({"/hello", "/hello1"}) do
-                local httpc = http.new()
-                local res, err = httpc:request_uri(base .. uri)
-                if not res or res.status ~= 200 then
-                    ngx.say("request to ", uri, " failed: ", err or res.status)
-                    return
+            -- the first route's batch processor exists by the time the second logs; the
+            -- second round runs once both confs have been probed
+            for _ = 1, 2 do
+                for _, uri in ipairs({"/hello", "/hello1"}) do
+                    local httpc = http.new()
+                    local res, err = httpc:request_uri(base .. uri)
+                    if not res or res.status ~= 200 then
+                        ngx.say("request to ", uri, " failed: ", err or res.status)
+                        return
+                    end
+                    ngx.sleep(0.5)
                 end
-                ngx.sleep(0.5)
             end
             ngx.sleep(1)
             ngx.say("done")
@@ -608,7 +611,7 @@ uri: http://127.0.0.1:9201/_bulk, body: {"index":{"_index":"route-b-logs"}}
 uri: http://127.0.0.1:9200/_bulk, body: {"index":{"_index":"route-b-logs"}}
 failed to get Elasticsearch version
 failed to process entries
---- timeout: 5
+--- timeout: 8
 
 
 
@@ -668,7 +671,7 @@ passed
                 end
                 -- each entry is sent in a batch of its own, from a timer; let it end
                 -- before the next one starts
-                ngx.sleep(0.5)
+                ngx.sleep(1)
             end
             ngx.say("done")
         }
@@ -728,9 +731,9 @@ passed
 === TEST 16: requests that come while the first version probe is in flight are logged with `_type`
 --- config
     location = /es6 {
-        # the version probe answers after half a second
+        # the version probe answers after a second
         access_by_lua_block {
-            ngx.sleep(0.5)
+            ngx.sleep(1)
         }
         proxy_pass http://127.0.0.1:9501/;
     }
@@ -741,6 +744,8 @@ passed
         content_by_lua_block {
             local http = require("resty.http")
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            ngx.update_time()
+            local start = ngx.now()
             local threads = {}
             for i = 1, 3 do
                 threads[i] = ngx.thread.spawn(function()
@@ -755,8 +760,13 @@ passed
                     return
                 end
             end
+            ngx.update_time()
+            if ngx.now() - start >= 1 then
+                ngx.say("the requests waited for the version probe")
+                return
+            end
             -- Elasticsearch 6 rejects a bulk request whose action line lacks `_type`
-            ngx.sleep(2)
+            ngx.sleep(3)
             ngx.say("done")
         }
     }
@@ -768,8 +778,11 @@ qr/successfully processed the entries/
 successfully processed the entries
 successfully processed the entries
 successfully processed the entries
+--- error_log
+"_type":"_doc"
 --- no_error_log
 failed to process entries
+/_bulk, body: {"index":{"_index":"services"}}
 --- timeout: 10
 
 
@@ -823,5 +836,137 @@ GET /hello
 --- wait: 2
 --- error_log
 successfully processed the entries
+"_type":"_doc"
+--- no_error_log
+failed to process entries
+/_bulk, body: {"index":{"_index":"services"}}
+
+
+
+=== TEST 19: a route whose body expressions match an exact IPv6 address
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, {
+                uri = "/hello",
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:1980"] = 1
+                    }
+                },
+                plugins = {
+                    ["elasticsearch-logger"] = {
+                        endpoint_addrs = {"http://127.0.0.1:9200"},
+                        field = {
+                            index = "services"
+                        },
+                        include_req_body = true,
+                        include_req_body_expr = {
+                            {"remote_addr", "ipmatch", {"127.0.0.1", "::1"}}
+                        },
+                        include_resp_body = true,
+                        include_resp_body_expr = {
+                            {"remote_addr", "ipmatch", {"127.0.0.1", "::1"}}
+                        },
+                        batch_max_size = 1,
+                    }
+                }
+            })
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 20: such a route is logged, and the rest of the log phase runs
+--- request
+GET /hello
+--- response_body
+hello world
+--- wait: 2
+--- error_log
+successfully processed the entries
+--- no_error_log
+failed to run log_by_lua
+attempt to compare
+failed to process entries
+
+
+
+=== TEST 21: a route that logs only requests with ?log=yes
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, {
+                uri = "/hello",
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:1980"] = 1
+                    }
+                },
+                plugins = {
+                    ["elasticsearch-logger"] = {
+                        endpoint_addrs = {"http://127.0.0.1:9200"},
+                        field = {
+                            index = "services"
+                        },
+                        match = {
+                            {
+                                {"arg_log", "==", "yes"}
+                            }
+                        },
+                        batch_max_size = 1,
+                    }
+                }
+            })
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 22: a request that `match` leaves out is not sent
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            for _, query in ipairs({"", "?log=yes"}) do
+                local res, err = http.new():request_uri(uri .. query)
+                if not res or res.status ~= 200 then
+                    ngx.say("request failed: ", err or res.status)
+                    return
+                end
+            end
+            ngx.sleep(1)
+            ngx.say("done")
+        }
+    }
+--- response_body
+done
+--- grep_error_log eval
+qr/uri: http:\/\/127.0.0.1:9200\/_bulk/
+--- grep_error_log_out
+uri: http://127.0.0.1:9200/_bulk
 --- no_error_log
 failed to process entries

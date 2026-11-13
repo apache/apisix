@@ -191,13 +191,15 @@ local function get_es_major_version(uri, conf)
     if not json_body then
         return nil, "failed to decode response body: " .. err
     end
-    if not json_body.version or not json_body.version.number then
+    -- checked before use: a probe that raises would fail its batch, and the next one
+    local version = type(json_body) == "table" and json_body.version
+    if type(version) ~= "table" or type(version.number) ~= "string" then
         return nil, "failed to get version from response body"
     end
 
-    local major_version = json_body.version.number:match("^(%d+)%.")
+    local major_version = version.number:match("^(%d+)%.")
     if not major_version then
-        return nil, "invalid version format: " .. json_body.version.number
+        return nil, "invalid version format: " .. version.number
     end
 
     return major_version
@@ -245,6 +247,10 @@ local es_versions = setmetatable({}, {__mode = "k"})
 -- The action line is added when the batch is sent, see send_to_elasticsearch().
 local function get_logger_entry(conf, ctx, index)
     local entry = log_util.get_log_entry(plugin_name, conf, ctx)
+    if entry == nil then
+        -- not logged: `match` leaves the request out, or its body could not be read
+        return nil
+    end
     local doc, err = core.json.encode(entry)
     if not doc then
         -- an entry that cannot be encoded would fail every batch it is part of
