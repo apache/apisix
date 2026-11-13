@@ -59,7 +59,7 @@ if [ "$SSL_LIB_VERSION" == "tongsuo" ] || [ "$ENABLE_FIPS" == "true" ]; then
     fi
 else
     sudo apt-get -y update --fix-missing
-    sudo apt-get install -y build-essential gcc g++ cpanminus libxml2-dev libxslt-dev
+    sudo apt-get install -y build-essential gcc g++ cpanminus libxml2-dev libxslt-dev jq
 
     if [ "$APISIX_RUNTIME" != "1.4.2" ]; then
         echo "Please update the apisix-runtime-debug checksum for APISIX_RUNTIME=$APISIX_RUNTIME" >&2
@@ -82,9 +82,8 @@ else
     esac
 
     DEB_NAME="apisix-runtime-debug_${APISIX_RUNTIME}-0.debianbookworm-slim_${DEB_ARCH}.deb"
-    RELEASE_URL="https://github.com/api7/apisix-build-tools/releases/download/apisix-runtime%2F${APISIX_RUNTIME}/${DEB_NAME}"
-
-    wget --no-verbose --tries=3 --retry-connrefused "$RELEASE_URL" -O "/tmp/$DEB_NAME"
+    download_github_release api7/apisix-build-tools "apisix-runtime/$APISIX_RUNTIME" \
+        "$DEB_NAME" "/tmp/$DEB_NAME"
     echo "$EXPECTED_SHA256  /tmp/$DEB_NAME" | sha256sum -c -
     sudo apt-get install -y "/tmp/$DEB_NAME"
     rm -f "/tmp/$DEB_NAME"
