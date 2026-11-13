@@ -70,6 +70,7 @@ The `openid-connect` Plugin supports the integration with [OpenID Connect (OIDC)
 | dpop.private_key | string | False | | | PEM-encoded private key used to sign DPoP proof JWTs. Required when `dpop.enabled` is true. |
 | dpop.public_jwk | object | False | | | Public JWK that matches `dpop.private_key`. Required when `dpop.enabled` is true. The JWK must not contain private key material. |
 | token_signing_alg_values_expected | string | False | | | Algorithm used for signing JWT, such as `RS256`. |
+| hide_credentials | boolean | False | false | | If true, clear the inbound `Authorization` header carrying the bearer token so it is not forwarded to the upstream. The `X-Access-Token` header supplied by the client is always cleared regardless of this option. Works independently of `set_access_token_header`: when both are enabled, the original credential is removed and the validated access token is added back as a fresh, plugin-controlled header. |
 | set_access_token_header | boolean | False | true | | If true, set the access token in a request header. By default, the `X-Access-Token` header is used. |
 | access_token_in_authorization_header | boolean | False | false | | If true and if `set_access_token_header` is also true, set the access token in the `Authorization` header. |
 | set_id_token_header | boolean | False | true | | If true and if the ID token is available, set the value in the `X-ID-Token` request header. Note: this header contains `base64(JSON(decoded_claims))` and carries no cryptographic signature. |
