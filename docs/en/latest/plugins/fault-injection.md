@@ -34,11 +34,11 @@ description: The fault-injection Plugin tests application resiliency by simulati
 
 ## Description
 
-The `fault-injection` Plugin is designed to test your application's resiliency by simulating controlled faults or delays. It executes before other configured Plugins, ensuring that faults are applied consistently. This makes it ideal for scenarios like chaos engineering, where the behavior of your system under failure conditions is analyzed.
+The `fault-injection` Plugin tests your application's resiliency by simulating controlled faults or delays. It runs in the rewrite phase. Within the same rewrite execution pass, Plugins run in descending priority order, and `_meta.priority` can override a Plugin's default priority. The `fault-injection` default of `11000` places it before lower-priority rewrite handlers and after higher-priority rewrite handlers in that pass. Global-rule Plugins and Route or Service Plugins run in separate rewrite passes. This makes the Plugin useful for scenarios such as chaos engineering, where you analyze how your system behaves under failure conditions.
 
 The Plugin supports two key actions:
 
-- `abort`: immediately terminates a request with a specified HTTP status code (e.g., `503 Service Unavailable`), skipping all subsequent Plugins.
+- `abort`: immediately ends request processing with a specified HTTP status code (e.g., `503 Service Unavailable`), so later rewrite and access handlers do not run. Response-filter and log handlers can still run for the injected response.
 - `delay`: introduces a specified delay before processing the request further.
 
 :::info

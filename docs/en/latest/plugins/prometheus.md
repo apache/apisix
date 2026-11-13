@@ -274,6 +274,9 @@ Under plain forwarding `downstream`/`ingress` tracks `upstream`/`egress`, and
 `upstream`/`ingress` tracks `downstream`/`egress`; a lasting mismatch is itself
 a signal that one side stopped reading.
 
+A Service is counted from its first session, including sessions that end
+before the next `refresh_interval`.
+
 ### Labels for `apisix_bandwidth`
 
 The following labels are used to differentiate `apisix_bandwidth` metrics.
@@ -583,7 +586,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
       "checks": {
         "active": {
           "timeout": 5,
-          "http_path": "/status",
+          "http_path": "/status/200",
           "healthy": {
             "interval": 2,
             "successes": 1
@@ -620,11 +623,11 @@ You should see an output similar to the following:
 ```text
 # HELP apisix_upstream_status upstream status from health check
 # TYPE apisix_upstream_status gauge
-apisix_upstream_status{name="/apisix/routes/1",ip="54.237.103.220",port="80"} 1
-apisix_upstream_status{name="/apisix/routes/1",ip="127.0.0.1",port="20001"} 0
+apisix_upstream_status{name="/apisix/routes/prometheus-route",ip="54.237.103.220",port="80"} 1
+apisix_upstream_status{name="/apisix/routes/prometheus-route",ip="127.0.0.1",port="20001"} 0
 ```
 
-This shows that the upstream node `httpbin.org:80` is healthy and the upstream node `127.0.0.1:20001` is unhealthy.
+This shows that the upstream node `httpbin.org:80` is healthy and the upstream node `127.0.0.1:20001` is unhealthy, assuming no service is listening on port `20001`. HTTPBin returns `200` for `/status/200`. The resolved IP address can differ, and health checks need time to update the node statuses.
 
 ### Add Extra Labels for Metrics
 

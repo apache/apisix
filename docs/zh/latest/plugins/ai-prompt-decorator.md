@@ -38,6 +38,10 @@ import TabItem from '@theme/TabItem';
 
 `ai-prompt-decorator` 插件通过在用户输入提示前后添加预设提示来修改用户输入，以在内容生成中设定上下文。这种做法有助于模型在交互过程中按照预期的指导方针运行。
 
+该插件使用每种协议的原生提示结构修饰 Chat Completions、Responses API、Anthropic Messages 和 Bedrock Converse 请求。对于 Responses，`prepend` 中的内容会添加到 `instructions`，`append` 中的内容会添加到 `input`。Embeddings 和透传请求没有可前置或追加的提示角色，因此插件不会修改这两类请求。
+
+检测顺序和 URI 要求参见[请求协议检测](./ai-proxy.md#请求协议检测)。
+
 ## 插件属性
 
 | 名称 | 类型 | 必选项 | 默认值 | 有效值 | 描述 |
@@ -53,10 +57,10 @@ import TabItem from '@theme/TabItem';
 
 ## 示例
 
-以下示例将使用 OpenAI 作为上游服务提供商。在开始之前，请创建一个 [OpenAI 账户](https://openai.com) 和一个 [API 密钥](https://openai.com/blog/openai-api)。你可以选择将密钥保存到环境变量中：
+以下示例将使用 OpenAI 作为上游服务提供商。在开始之前，请创建一个 [OpenAI 账户](https://openai.com) 和一个 [API 密钥](https://openai.com/blog/openai-api)。请将密钥保存到环境变量中，并将占位符替换为你的 API 密钥：
 
 ```shell
-export OPENAI_API_KEY=<YOUR_OPENAI_API_KEY>
+export OPENAI_API_KEY='<YOUR_OPENAI_API_KEY>'
 ```
 
 如果你使用的是其他 LLM 提供商，请参阅该提供商的文档以获取 API 密钥。

@@ -387,7 +387,7 @@ apisix:
     }
 --- response_body
 userkey
-mt39FazQccyMqt4ctoRV7w==
+$ENC$v1$mt39FazQccyMqt4ctoRV7w==
 
 
 

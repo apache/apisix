@@ -262,6 +262,8 @@ UDP 没有关闭、FIN 或重置信号，因此只会出现其中一部分状态
 
 在普通转发中，`downstream`/`ingress` 通常对应 `upstream`/`egress`，`upstream`/`ingress` 通常对应 `downstream`/`egress`；持续不一致可能表示某一侧停止读取。
 
+每个 Service 从其第一个会话起计入，包括在下一个 `refresh_interval` 之前就已结束的会话。
+
 ### `apisix_bandwidth` 的标签
 
 以下标签用于区分 `apisix_bandwidth` 指标。
@@ -571,7 +573,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
       "checks": {
         "active": {
           "timeout": 5,
-          "http_path": "/status",
+          "http_path": "/status/200",
           "healthy": {
             "interval": 2,
             "successes": 1
@@ -608,11 +610,11 @@ curl "http://127.0.0.1:9091/apisix/prometheus/metrics"
 ```text
 # HELP apisix_upstream_status 上游健康检查的状态
 # TYPE apisix_upstream_status gauge
-apisix_upstream_status{name="/apisix/routes/1",ip="54.237.103.220",port="80"} 1
-apisix_upstream_status{name="/apisix/routes/1",ip="127.0.0.1",port="20001"} 0
+apisix_upstream_status{name="/apisix/routes/prometheus-route",ip="54.237.103.220",port="80"} 1
+apisix_upstream_status{name="/apisix/routes/prometheus-route",ip="127.0.0.1",port="20001"} 0
 ```
 
-这显示上游节点 `httpbin.org:80` 是健康的，而上游节点 `127.0.0.1:20001` 是不健康的。
+假设端口 `20001` 上没有服务监听，此输出显示上游节点 `httpbin.org:80` 是健康的，而上游节点 `127.0.0.1:20001` 是不健康的。HTTPBin 在 `/status/200` 返回 `200`。实际解析的 IP 地址可能不同，健康检查也需要时间来更新节点状态。
 
 ### 为指标添加额外标签
 
