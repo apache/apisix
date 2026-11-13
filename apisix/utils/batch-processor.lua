@@ -21,8 +21,9 @@ local ipairs = ipairs
 local table = table
 local now = ngx.now
 local type = type
-local pcall = pcall
+local xpcall = xpcall
 local tostring = tostring
+local debug_traceback = debug.traceback
 local exiting = ngx.worker.exiting
 local batch_processor = {}
 local batch_processor_mt = {
@@ -103,23 +104,26 @@ function execute_func(premature, self, batch)
     -- In case of "err" and a valid "first_fail" batch processor considers, all first_fail-1
     -- entries have been successfully consumed and hence reschedule the job for entries with
     -- index first_fail to #entries based on the current retry policy.
-    local call_ok, ok, err, first_fail = pcall(self.func, batch.entries,
-                                               self.batch_max_size)
+    local call_ok, ok, err, first_fail = xpcall(self.func, debug_traceback,
+                                                batch.entries, self.batch_max_size)
     if not call_ok then
         -- a callback that raises has failed the batch, so it takes the same retry
         -- and drop path as one that returns false
-        ok, err, first_fail = false, tostring(ok), nil
+        ok, err, first_fail = false, ok, nil
     end
 
+    -- err goes through tostring: ngx.log raises on a table without __tostring, and a
+    -- raise here would end the timer before the batch is counted
     if not ok then
         if first_fail then
             core.log.error("Batch Processor[", self.name, "] failed to process entries [",
-                            #batch.entries + 1 - first_fail, "/", #batch.entries ,"]: ", err)
+                            #batch.entries + 1 - first_fail, "/", #batch.entries ,"]: ",
+                            tostring(err))
             batch.entries = slice_batch(batch.entries, first_fail)
             self.processed_entries = self.processed_entries + first_fail - 1
         else
             core.log.error("Batch Processor[", self.name,
-                           "] failed to process entries: ", err)
+                           "] failed to process entries: ", tostring(err))
         end
 
         batch.retry_count = batch.retry_count + 1
@@ -201,6 +205,7 @@ function batch_processor:new(func, config)
         last_entry_t = 0,
         route_id = config.route_id,
         server_addr = config.server_addr,
+        pushed_entries = 0,
         processed_entries = 0
     }
 
@@ -208,6 +213,8 @@ function batch_processor:new(func, config)
 end
 
 function batch_processor:push(entry)
+    self.pushed_entries = self.pushed_entries + 1
+
     -- if the batch size is one then immediately send for processing
     if self.batch_max_size == 1 then
         local batch = {entries = {entry}, retry_count = 0}

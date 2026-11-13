@@ -557,7 +557,13 @@ done
             end
 
             log_buffer:push({hello='world'})
-            ngx.sleep(0.5)
+            -- wait for the call, its retry and the drop
+            for _ = 1, 200 do
+                if calls == 2 and log_buffer.processed_entries == 1 then
+                    break
+                end
+                ngx.sleep(0.01)
+            end
             ngx.say("calls: ", calls)
             ngx.say("processed: ", log_buffer.processed_entries)
         }
@@ -570,6 +576,7 @@ processed: 1
 --- error_log eval
 [qr/Batch Processor\[log buffer\] failed to process entries: .*callback raised on call 1/,
 qr/Batch Processor\[log buffer\] failed to process entries: .*callback raised on call 2/,
+qr/\[C\]: in function 'xpcall'/,
 qr/Batch Processor\[log buffer\] exceeded the max_retry_count\[2\] dropping the entries/]
 --- no_error_log
 lua entry thread aborted
@@ -580,7 +587,9 @@ lua entry thread aborted
 --- config
     location /t {
         content_by_lua_block {
-            -- load a fresh copy of the module so that it captures a failing timer
+            -- load a private copy of the module so that it captures a failing timer,
+            -- and put the shared copy back for everything else
+            local shared = package.loaded["apisix.utils.batch-processor"]
             package.loaded["apisix.utils.batch-processor"] = nil
             local timer_at = ngx.timer.at
             ngx.timer.at = function()
@@ -588,6 +597,7 @@ lua entry thread aborted
             end
             local Batch = require("apisix.utils.batch-processor")
             ngx.timer.at = timer_at
+            package.loaded["apisix.utils.batch-processor"] = shared
 
             local config = {
                 max_retry_count  = 0,
@@ -611,3 +621,89 @@ GET /t
 processed: 1
 --- error_log
 failed to create process timer: too many pending timers
+
+
+
+=== TEST 16: a batch dropped because no timer can be created while exiting still counts as processed
+--- config
+    location /t {
+        content_by_lua_block {
+            -- load a private copy of the module so that it captures a failing timer,
+            -- and put the shared copy back for everything else
+            local shared = package.loaded["apisix.utils.batch-processor"]
+            package.loaded["apisix.utils.batch-processor"] = nil
+            local timer_at = ngx.timer.at
+            ngx.timer.at = function()
+                return nil, "process exiting"
+            end
+            local Batch = require("apisix.utils.batch-processor")
+            ngx.timer.at = timer_at
+            package.loaded["apisix.utils.batch-processor"] = shared
+
+            local config = {
+                max_retry_count  = 0,
+                batch_max_size = 1,
+                retry_delay  = 0,
+            }
+            local log_buffer, err = Batch:new(function() return true end, config)
+
+            if not log_buffer then
+                ngx.say(err)
+                return
+            end
+
+            log_buffer:push({hello='world'})
+            ngx.say("processed: ", log_buffer.processed_entries)
+        }
+    }
+--- request
+GET /t
+--- response_body
+processed: 1
+--- error_log
+failed to create fallback process timer while exiting: process exiting
+
+
+
+=== TEST 17: a callback that returns a table as its error is still counted
+--- config
+    location /t {
+        content_by_lua_block {
+            local Batch = require("apisix.utils.batch-processor")
+            local config = {
+                max_retry_count  = 0,
+                batch_max_size = 1,
+                retry_delay  = 0,
+            }
+            local calls = 0
+            local func_to_send = function(elements)
+                calls = calls + 1
+                return false, {reason = "rejected by the log server"}
+            end
+            local log_buffer, err = Batch:new(func_to_send, config)
+
+            if not log_buffer then
+                ngx.say(err)
+                return
+            end
+
+            log_buffer:push({hello='world'})
+            for _ = 1, 200 do
+                if log_buffer.processed_entries == 1 then
+                    break
+                end
+                ngx.sleep(0.01)
+            end
+            ngx.say("calls: ", calls)
+            ngx.say("processed: ", log_buffer.processed_entries)
+        }
+    }
+--- request
+GET /t
+--- response_body
+calls: 1
+processed: 1
+--- error_log eval
+qr/Batch Processor\[log buffer\] failed to process entries: table: 0x/
+--- no_error_log
+lua entry thread aborted

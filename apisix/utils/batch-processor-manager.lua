@@ -91,7 +91,11 @@ local function remove_stale_objects(premature, self)
     end
 
     for key, batch in pairs(self.buffers) do
-        if #batch.entry_buffer.entries == 0 and #batch.batch_to_process == 0 then
+        -- batches running in a timer or waiting for a retry are in neither list, and
+        -- the count they add when they finish would be lost with the processor, so
+        -- only remove it once everything pushed to it has been counted
+        if #batch.entry_buffer.entries == 0 and #batch.batch_to_process == 0
+           and batch.processed_entries >= batch.pushed_entries then
             core.log.info("removing batch processor stale object, conf: ",
                           core.json.delay_encode(key))
             self.total_stale_processed_entries =
@@ -178,6 +182,14 @@ end
 -- would otherwise build the batch-processing closure and take the backlog check a
 -- second time, for every request, throughout the outage that caused the discards.
 function _M:add_entry(conf, entry)
+    -- log_util.get_log_entry returns nil for a request that is not to be logged (one
+    -- that `match` excludes, or whose request body could not be read). A processor
+    -- stores nothing for it and so never counts it as processed: counting it as
+    -- pushed would hold a pending slot for the worker's lifetime.
+    if entry == nil then
+        return true
+    end
+
     local limit = max_pending_entries(self)
     if backlog_is_full(self, limit) then
         report_discard(self, limit)
@@ -197,6 +209,11 @@ end
 
 
 function _M:add_entry_to_new_processor(conf, entry, ctx, func)
+    -- see add_entry()
+    if entry == nil then
+        return true
+    end
+
     -- add_entry() reports a discard as handled, so the usual caller never arrives
     -- here over the limit; this keeps a caller that skips add_entry() bounded, and
     -- deliberately does not count, to leave the discard total to add_entry().

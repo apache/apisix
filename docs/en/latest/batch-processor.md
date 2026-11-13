@@ -30,7 +30,7 @@ than 1 will start aggregating the entries until it reaches the max size or the t
 The only mandatory parameter to create a batch processor is a function. The function will be executed when the batch reaches the max size
 or when the buffer duration exceeds.
 
-If the function raises an error, the batch is treated as failed, the same as when the function returns `false`: it is retried according to `max_retry_count` and then dropped.
+If the function raises an error, the batch is treated as failed, the same as when the function returns `false` without `first_fail`: the whole batch, including any entries the function had already sent, is retried according to `max_retry_count` and `retry_delay`, and dropped if every attempt fails.
 
 | Name             | Type    | Requirement | Default | Valid   | Description                                                  |
 | ---------------- | ------- | ----------- | ------- | ------- | ------------------------------------------------------------ |
