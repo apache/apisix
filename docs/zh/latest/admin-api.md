@@ -65,6 +65,8 @@ deployment:
             port: 9180                  # Admin API 监听的 端口，必须使用与 node_listen 不同的端口。
 ```
 
+每个 key 的 `role` 取值为 `admin`（可以读取和修改配置）或 `viewer`（只能读取配置）。`apisix init` 会拒绝其他取值。APISIX 只会在初始化时为 `admin` 角色的空 key 生成 key，启动时仍为空的 key 不会匹配任何请求。
+
 ### 使用环境变量 {#using-environment-variables}
 
 要通过环境变量进行配置，可以使用 `${{VAR}}` 语法。例如：
