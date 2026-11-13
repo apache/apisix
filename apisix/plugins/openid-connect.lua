@@ -56,7 +56,9 @@ local MAX_AUTH_FLOW_RESTARTS = 3
 -- Session config is passed as-is to resty.session.start(); the only
 -- translation is the legacy session.cookie.lifetime alias from the
 -- lua-resty-session 3.x schema, which is mapped to absolute_timeout
--- when the latter is unset.
+-- when the latter is unset. The revocation error cache needs the lookup cache:
+-- the session library only allocates its cache when revocation_cache_ttl > 0,
+-- so with the lookup cache off the error TTL is set to 0 as well.
 local function build_session_opts(session_conf)
     if not session_conf then
         return nil
@@ -66,6 +68,18 @@ local function build_session_opts(session_conf)
             session_conf.absolute_timeout = session_conf.cookie.lifetime
             core.log.warn("session.cookie.lifetime is deprecated; ",
                           "use session.absolute_timeout instead")
+        end
+    end
+    if session_conf.revocation and session_conf.revocation_cache_ttl == 0 then
+        local error_ttl = session_conf.revocation_error_cache_ttl
+        -- the error cache needs the lookup cache, so a non-zero error TTL, set
+        -- or defaulted by the library, cannot apply without it
+        if error_ttl == nil or error_ttl > 0 then
+            if error_ttl then
+                core.log.warn("session.revocation_error_cache_ttl is ignored when ",
+                              "session.revocation_cache_ttl is 0")
+            end
+            session_conf.revocation_error_cache_ttl = 0
         end
     end
     return session_conf
@@ -295,7 +309,33 @@ local schema = {
                             description = "keepalive timeout in milliseconds",
                         },
                     }
-                }
+                },
+                revocation = {
+                    type = "string",
+                    enum = {"redis"},
+                    description = "Redis-backed revocation for cookie sessions.",
+                },
+                revocation_fail_mode = {
+                    type = "string",
+                    enum = {"open", "closed"},
+                    description =
+                        "When the revocation store is unreachable, open treats the "
+                        .. "session as not revoked and closed rejects open/destroy.",
+                },
+                revocation_cache_ttl = {
+                    type = "integer",
+                    minimum = 0,
+                    description =
+                        "Worker-local TTL in seconds for successful revocation "
+                        .. "lookups. 0 disables. Default is 5 in lua-resty-session.",
+                },
+                revocation_error_cache_ttl = {
+                    type = "integer",
+                    minimum = 0,
+                    description =
+                        "Worker-local TTL in seconds for revocation store errors. "
+                        .. "0 disables. Default is 5 in lua-resty-session.",
+                },
             },
             required = {"secret"},
             ["if"] = {
@@ -305,6 +345,19 @@ local schema = {
             },
             ["then"] = {
                 required = {"redis"},
+            },
+            allOf = {
+                {
+                    ["if"] = {
+                        required = {"revocation"},
+                    },
+                    ["then"] = {
+                        required = {"redis"},
+                        properties = {
+                            storage = { const = "cookie" },
+                        },
+                    },
+                },
             },
             additionalProperties = false,
         },
@@ -1465,6 +1518,17 @@ local function authenticate(plugin_conf, ctx)
                     return nil
                 end
                 return 401
+            end
+
+            -- fail-closed only: resty.session appends the store error, so match
+            -- the prefix. Reject without destroying the cookie.
+            if core.string.find(err, "unable to check session revocation")
+                or core.string.find(err, "unable to mark session revoked") then
+                if session then
+                    session:close()
+                end
+                core.log.error("OIDC session revocation store unavailable: ", err)
+                return 503
             end
 
             -- Recoverable authorization-callback failures: a stale state
