@@ -719,6 +719,11 @@ sweep armed on the next entry: true
             ngx.say("null encoded as null: ", ok and null_version
                     == crc('{"include_req_body_expr":[["http_x_debug","~=",null]]}'))
 
+            local other_userdata = require("cjson.safe").empty_array
+            assert(type(other_userdata) == "userdata" and other_userdata ~= core.json.null)
+            local ok_u, v_u = pcall(plugin.conf_version, {u = other_userdata})
+            ngx.say("other userdata not encoded as null: ", not ok_u or v_u ~= crc('{"u":null}'))
+
             -- a conf that dkjson cannot encode still raises, and leaves nothing behind
             -- that breaks the next one
             ngx.say("function rejected: ", not pcall(plugin.conf_version, {f = function() end}))
@@ -732,5 +737,6 @@ GET /t
 unchanged: true
 sorted: true
 null encoded as null: true
+other userdata not encoded as null: true
 function rejected: true
 next conf: true
