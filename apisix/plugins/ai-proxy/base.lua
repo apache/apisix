@@ -78,6 +78,23 @@ local function resolve_cap(cap_entry, key, conf, ctx)
 end
 
 
+-- The path a plain proxy_pass would send. proxy-rewrite (and
+-- normalize_uri_like_servlet) put it in $upstream_uri, while ctx.var.uri keeps
+-- the path the route was matched on. The query string is forwarded separately.
+local function passthrough_path(ctx)
+    local upstream_uri = ctx.var.upstream_uri
+    if not upstream_uri or upstream_uri == "" then
+        return ctx.var.uri
+    end
+
+    local idx = core.string.find(upstream_uri, "?")
+    if idx then
+        return upstream_uri:sub(1, idx - 1)
+    end
+    return upstream_uri
+end
+
+
 -- Read the upstream error response body (429/5xx) so the provider's error
 -- details are not discarded: they are logged on fallback and returned to the
 -- client when no retry happens. Error bodies are small, so a single read_body()
@@ -239,10 +256,10 @@ function _M.before_proxy(conf, ctx, on_error)
             converter = nil
             target_proto = client_protocol
         elseif client_protocol == "passthrough" then
-            -- Catch-all: proxy to the original request URI path
+            -- Catch-all: proxy to the request path, as rewritten for the upstream
             converter = nil
             target_proto = "passthrough"
-            target_path = ctx.var.uri
+            target_path = passthrough_path(ctx)
         else
             -- Find a converter to bridge the gap
             local conv, target_protocol = protocols.find_converter(client_protocol, caps)
