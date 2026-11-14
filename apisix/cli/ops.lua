@@ -275,6 +275,15 @@ local function get_lua_path(conf)
 end
 
 
+-- the name of an entry of deployment.admin.admin_key, for messages
+local function admin_key_name(admin, index)
+    if type(admin.name) == "string" and admin.name ~= "" then
+        return admin.name
+    end
+    return "#" .. index
+end
+
+
 local function init(env)
     if env.is_root_path then
         print('Warning! Running apisix under /root is only suitable for '
@@ -342,6 +351,32 @@ local function init(env)
                 .. "please enable `admin_key_required` and set a secure admin key!")
     end
 
+    -- the Admin API knows the roles admin and viewer only; refuse any other value
+    -- instead of starting with a key whose permissions are unclear
+    local admin_conf = yaml_conf.deployment.admin
+    if yaml_conf.apisix.enable_admin and admin_conf
+       and admin_conf.admin_key_required ~= false
+       and type(admin_conf.admin_key) == "table" then
+        for i, admin in ipairs(admin_conf.admin_key) do
+            if type(admin) ~= "table" then
+                util.die("ERROR: Admin API key #", i, " is not a map.\n")
+            end
+
+            if admin.role ~= "admin" and admin.role ~= "viewer" then
+                util.die("ERROR: the role of Admin API key ", admin_key_name(admin, i),
+                         " must be admin or viewer.\n")
+            end
+
+            -- only the key of the admin role is generated, and an empty key
+            -- never matches a request
+            if admin.role ~= "admin" and (admin.key == nil or admin.key == ""
+                                          or type(admin.key) == "table") then
+                stderr:write("WARNING: Admin API key ", admin_key_name(admin, i),
+                             " is empty, so it does not match any request.\n")
+            end
+        end
+    end
+
     if yaml_conf.apisix.enable_admin and not checked_admin_key then
         local help = [[
 
@@ -359,6 +394,7 @@ Please modify "admin_key" in conf/config.yaml .
             util.die(help:format("ERROR: missing valid Admin API token."))
         end
 
+        -- the check above has refused entries that are not maps
         for _, admin in ipairs(admin_key) do
             if type(admin.key) == "table" then
                 admin.key = ""
@@ -366,7 +402,7 @@ Please modify "admin_key" in conf/config.yaml .
                 admin.key = tostring(admin.key)
             end
 
-            if admin.key == "" then
+            if admin.key == "" and admin.role == "admin" then
                 stderr:write(
                     help:format([[WARNING: using empty Admin API.
                     This will trigger APISIX to automatically generate a random Admin API token.]]),

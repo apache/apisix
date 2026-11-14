@@ -96,13 +96,16 @@ local function check_token(ctx)
 
     local req_token = ctx.var.arg_api_key or ctx.var.http_x_api_key
                       or ctx.var.cookie_x_api_key
-    if not req_token then
+    -- an empty token, such as `?api_key=` or an empty X-API-KEY header, is no token
+    if not req_token or req_token == "" then
         return false, "missing apikey"
     end
 
     local admin
     for i, row in ipairs(admin_key) do
-        if req_token == row.key then
+        -- an entry without a key, or with an empty one, matches no request
+        if type(row) == "table" and type(row.key) == "string" and row.key ~= ""
+           and req_token == row.key then
             admin = row
             break
         end
@@ -112,9 +115,14 @@ local function check_token(ctx)
         return false, "wrong apikey"
     end
 
-    if admin.role == "viewer" and
-       not viewer_methods[str_lower(get_method())] then
-        return false, "invalid method for role viewer"
+    if admin.role == "viewer" then
+        if not viewer_methods[str_lower(get_method())] then
+            return false, "invalid method for role viewer"
+        end
+
+    elseif admin.role ~= "admin" then
+        -- only the roles admin and viewer have permissions
+        return false, "invalid role"
     end
 
     return true

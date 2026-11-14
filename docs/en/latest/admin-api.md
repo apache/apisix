@@ -63,6 +63,8 @@ deployment:
             port: 9180                  # Specific port, which must be different from node_listen's port.
 ```
 
+The `role` of each key is `admin`, which can read and change the configuration, or `viewer`, which can only read it. Unless `admin_key_required` is `false`, which turns off the key check, `apisix init` refuses any other value and a missing one. An empty key matches no request. APISIX generates a key when it starts only for a key of the `admin` role that is set to `''`, and writes the generated key to the configuration file.
+
 ### Using environment variables
 
 To configure via environment variables, you can use the `${{VAR}}` syntax. For instance:

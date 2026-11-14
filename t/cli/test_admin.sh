@@ -250,7 +250,7 @@ echo "pass: allow empty admin_key, when admin_key_required=false"
 
 # admin api, allow any IP but use default key
 
-echo '
+cat > conf/config.yaml <<'EOF'
 deployment:
   admin:
     allow_admin: ~
@@ -258,7 +258,7 @@ deployment:
       - name: "admin"
         key: ''
         role: admin
-' > conf/config.yaml
+EOF
 
 make init > output.log 2>&1 | true
 
@@ -490,3 +490,87 @@ fi
 make stop
 
 echo "pass: accept changes to /apisix/plugins successfully"
+
+# the role of an Admin API key must be admin or viewer
+
+git checkout conf/config.yaml
+
+echo '
+deployment:
+  admin:
+    admin_key:
+      - name: admin
+        key: admin-key-for-the-role-check
+        role: admin
+      - name: ops
+        key: ops-key-for-the-role-check
+        role: Admin
+' > conf/config.yaml
+
+if make init > output.log 2>&1; then
+    echo "failed: make init should refuse an Admin API key whose role is Admin"
+    exit 1
+fi
+
+if ! grep -F "ERROR: the role of Admin API key ops must be admin or viewer." output.log > /dev/null; then
+    echo "failed: should refuse an Admin API key whose role is Admin"
+    exit 1
+fi
+
+echo '
+deployment:
+  admin:
+    admin_key:
+      - name: admin
+        key: admin-key-for-the-role-check
+        role: admin
+      - name: ops
+        key: ops-key-for-the-role-check
+' > conf/config.yaml
+
+if make init > output.log 2>&1; then
+    echo "failed: make init should refuse an Admin API key without a role"
+    exit 1
+fi
+
+if ! grep -F "ERROR: the role of Admin API key ops must be admin or viewer." output.log > /dev/null; then
+    echo "failed: should refuse an Admin API key without a role"
+    exit 1
+fi
+
+echo "pass: refuse an Admin API key whose role is not admin or viewer"
+
+# an empty key of another role than admin is reported, also with the default allow_admin
+
+git checkout conf/config.yaml
+
+echo '
+deployment:
+  admin:
+    admin_key:
+      - name: admin
+        key: admin-key-for-the-empty-key-check
+        role: admin
+      - name: viewer
+        key: ""
+        role: viewer
+      - name: viewer2
+        role: viewer
+' > conf/config.yaml
+
+if ! make init > output.log 2>&1; then
+    echo "failed: make init should accept an empty viewer key"
+    exit 1
+fi
+
+if ! grep -F "WARNING: Admin API key viewer is empty, so it does not match any request." output.log > /dev/null; then
+    echo "failed: should warn about the empty viewer key"
+    exit 1
+fi
+
+if ! grep -F "WARNING: Admin API key viewer2 is empty, so it does not match any request." output.log > /dev/null; then
+    echo "failed: should warn about a viewer entry without a key"
+    exit 1
+fi
+
+echo "pass: warn about an empty or missing key of the viewer role"
