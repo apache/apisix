@@ -634,14 +634,17 @@ deployment:
       - name: boolean
         key: ${{TEST_BOOLEAN_ADMIN_KEY}}
         role: admin
+      - name: zero
+        key: ${{TEST_ZERO_ADMIN_KEY}}
+        role: admin
 ' > conf/config.yaml
 
 printf 'routes: []\n#END\n' > conf/apisix.yaml
-TEST_NUMERIC_ADMIN_KEY=00123456 TEST_BOOLEAN_ADMIN_KEY=false make init
-TEST_NUMERIC_ADMIN_KEY=00123456 TEST_BOOLEAN_ADMIN_KEY=false make run
+TEST_NUMERIC_ADMIN_KEY=00123456 TEST_BOOLEAN_ADMIN_KEY=false TEST_ZERO_ADMIN_KEY=0 make init
+TEST_NUMERIC_ADMIN_KEY=00123456 TEST_BOOLEAN_ADMIN_KEY=false TEST_ZERO_ADMIN_KEY=0 make run
 wait_for_tcp 127.0.0.1 9180
 
-for key in 00123456 false; do
+for key in 00123456 false 0; do
     code=$(curl -o /dev/null -s -m 5 -w '%{http_code}' -H "X-API-KEY: $key" \
         http://127.0.0.1:9180/apisix/admin/configs)
     if [ "$code" -ne 200 ]; then

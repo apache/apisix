@@ -335,6 +335,40 @@ fi
 
 echo "passed: data encryption keyring length validation"
 
+# Preserve numeric and boolean-looking environment values for either etcd password path.
+cat > conf/config.yaml <<'EOF'
+deployment:
+    etcd:
+        password: ${{TEST_DEPLOYMENT_ETCD_PASSWORD}}
+etcd:
+    host:
+        - http://127.0.0.1:2379
+    prefix: /apisix
+    password: ${{TEST_ETCD_PASSWORD}}
+EOF
+
+TEST_DEPLOYMENT_ETCD_PASSWORD=00123456 TEST_ETCD_PASSWORD=false make init
+
+# Keyring accepts a single key or a list of keys supplied through environment variables.
+cat > conf/config.yaml <<'EOF'
+apisix:
+    data_encryption:
+        keyring: ${{TEST_KEYRING}}
+EOF
+
+TEST_KEYRING=0123456789012345 make init
+
+cat > conf/config.yaml <<'EOF'
+apisix:
+    data_encryption:
+        keyring:
+            - ${{TEST_KEYRING}}
+            - ${{TEST_KEYRING_256}}
+EOF
+
+TEST_KEYRING=0123456789012345 TEST_KEYRING_256=01234567890123456789012345678901 make init
+echo "passed: environment substitutions preserve etcd passwords and keyring strings"
+
 # support environment variables
 echo '
 nginx_config:

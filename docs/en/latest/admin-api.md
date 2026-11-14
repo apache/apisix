@@ -85,6 +85,10 @@ And then run `export ADMIN_KEY=$your_admin_key` before running `make init`.
 
 APISIX preserves the exact text of an Admin API key supplied through an environment variable, including leading zeros.
 
+**Upgrade note**
+
+Environment-supplied Admin API keys such as `0` and `false` previously failed to match requests. After upgrading, a request with that exact text in its `X-API-KEY` header can authenticate. Replace or remove any such placeholder keys before upgrading. This change applies only to environment variable substitutions and leaves numeric YAML literals unchanged.
+
 If the configured environment variable can't be found, an error will be thrown.
 
 If you want to use a default value when the environment variable is not set, use `${{VAR:=default_value}}` instead. For instance:

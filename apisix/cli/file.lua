@@ -103,7 +103,12 @@ end
 
 -- Numeric entries share the first item's field rules.
 local local_conf_string_fields = {
-    deployment = {admin = {admin_key = {{key = true}}}},
+    apisix = {data_encryption = {keyring = true}},
+    deployment = {
+        admin = {admin_key = {{key = true}}},
+        etcd = {password = true},
+    },
+    etcd = {password = true},
 }
 
 
@@ -125,9 +130,10 @@ local function resolve_conf_var(conf, string_fields)
         end
 
         local field_key = type(resolved_key) == "number" and 1 or resolved_key
-        local field = string_fields and string_fields[field_key]
+        -- A string rule also applies to entries of a string list such as keyring.
+        local field = string_fields == true or (string_fields and string_fields[field_key])
         if type(val) == "table" then
-            local ok, err = resolve_conf_var(val, type(field) == "table" and field)
+            local ok, err = resolve_conf_var(val, field)
             if not ok then
                 return nil, err
             end
