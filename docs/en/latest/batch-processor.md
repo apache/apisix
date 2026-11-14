@@ -30,6 +30,8 @@ than 1 will start aggregating the entries until it reaches the max size or the t
 The only mandatory parameter to create a batch processor is a function. The function will be executed when the batch reaches the max size
 or when the buffer duration exceeds.
 
+If the function raises an error, the batch is treated as failed, the same as when the function returns `false` without `first_fail`: the whole batch, including any entries the function had already sent, is retried according to `max_retry_count` and `retry_delay`, and dropped if every attempt fails.
+
 | Name             | Type    | Requirement | Default | Valid   | Description                                                  |
 | ---------------- | ------- | ----------- | ------- | ------- | ------------------------------------------------------------ |
 | name             | string  | optional    | logger's name | ["http logger",...] | A unique identifier used to identify the batch processor, which defaults to the name of the logger plug-in that calls the batch processor, such as plug-in "http logger" 's `name` is "http logger. |
@@ -88,9 +90,9 @@ local _M = {
 function _M.log(conf, ctx)
     local entry = {...} -- data to log
 
-    -- a true return means the entry needs nothing further from you: it was either
-    -- pushed to an existing processor, or discarded because the backlog is over
-    -- max_pending_entries
+    -- a true return means the entry needs nothing further from you: it was pushed
+    -- to an existing processor, discarded because the backlog is over
+    -- max_pending_entries, or skipped because it is nil (nothing to log)
     if batch_processor_manager:add_entry(conf, entry) then
         return
     end

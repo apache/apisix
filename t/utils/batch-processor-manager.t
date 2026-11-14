@@ -372,3 +372,371 @@ passed
 --- error_log
 max pending entries limit exceeded. discarding entry
 --- timeout: 5
+
+
+
+=== TEST 8: entries whose callback raised no longer count against the backlog
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugin")
+            plugin.plugin_metadatas = {
+                get = function(self, name)
+                    return {value = {max_pending_entries = 2}}
+                end
+            }
+
+            local bp_manager_mod = require("apisix.utils.batch-processor-manager")
+            local bp_manager = bp_manager_mod.new("test logger", "test-logger")
+            local conf = {
+                name = "test logger",
+                batch_max_size = 1,
+                inactive_timeout = 300,
+                buffer_duration = 300,
+                max_retry_count = 0,
+                retry_delay = 0,
+            }
+            local ctx = {var = {route_id = "1", server_addr = "127.0.0.1"}}
+            local func = function()
+                error("unexpected reply from the log server")
+            end
+
+            local push = function(n)
+                for i = 1, n do
+                    if not bp_manager:add_entry(conf, i) then
+                        bp_manager:add_entry_to_new_processor(conf, i, ctx, func)
+                    end
+                end
+            end
+
+            -- every entry is a batch of its own, and every batch fails by raising
+            push(2)
+            -- wait until both batches have failed and been counted
+            for _ = 1, 200 do
+                local processed = 0
+                for _, buffer in pairs(bp_manager.buffers) do
+                    processed = processed + buffer.processed_entries
+                end
+                if processed == 2 then
+                    break
+                end
+                ngx.sleep(0.01)
+            end
+            -- the failed entries were dropped, so these fit under the limit again
+            push(2)
+            ngx.say("pushed: ", bp_manager.total_pushed_entries)
+        }
+    }
+--- request
+GET /t
+--- response_body
+pushed: 4
+--- error_log eval
+qr/Batch Processor\[test logger\] failed to process entries: .*unexpected reply from the log server/
+--- no_error_log
+max pending entries limit exceeded
+
+
+
+=== TEST 9: a processor whose batches are still in flight is not removed as stale
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugin")
+            plugin.plugin_metadatas = {
+                get = function(self, name)
+                    return {value = {max_pending_entries = 2}}
+                end
+            }
+
+            local bp_manager_mod = require("apisix.utils.batch-processor-manager")
+            bp_manager_mod.set_check_stale_interval(0.1)
+            local bp_manager = bp_manager_mod.new("test logger", "test-logger")
+            local conf = {
+                name = "test logger",
+                batch_max_size = 1,
+                inactive_timeout = 300,
+                buffer_duration = 300,
+                max_retry_count = 0,
+                retry_delay = 0,
+            }
+            local ctx = {var = {route_id = "1", server_addr = "127.0.0.1"}}
+
+            -- the callback holds on to its batch until it is released, like a slow
+            -- log server, so the batches are in flight while the stale sweep runs
+            local released, finished = false, 0
+            local func = function()
+                while not released do
+                    ngx.sleep(0.01)
+                end
+                finished = finished + 1
+                return true
+            end
+
+            local push = function(n)
+                for i = 1, n do
+                    if not bp_manager:add_entry(conf, i) then
+                        bp_manager:add_entry_to_new_processor(conf, i, ctx, func)
+                    end
+                end
+            end
+
+            local wait_for = function(cond)
+                for _ = 1, 200 do
+                    if cond() then
+                        return true
+                    end
+                    ngx.sleep(0.01)
+                end
+                return false
+            end
+
+            push(2)
+            if not wait_for(function() return not bp_manager.stale_timer_running end) then
+                ngx.say("the stale sweep did not run")
+                return
+            end
+
+            released = true
+            if not wait_for(function() return finished == 2 end) then
+                ngx.say("the batches did not finish")
+                return
+            end
+
+            -- the delivered entries have left the backlog, so these fit under the limit
+            push(2)
+            ngx.say("pushed: ", bp_manager.total_pushed_entries)
+        }
+    }
+--- request
+GET /t
+--- response_body
+pushed: 4
+--- no_error_log
+max pending entries limit exceeded
+
+
+
+=== TEST 10: a processor is removed as stale once its batches have finished
+--- config
+    location /t {
+        content_by_lua_block {
+            local bp_manager_mod = require("apisix.utils.batch-processor-manager")
+            bp_manager_mod.set_check_stale_interval(0.3)
+            local bp_manager = bp_manager_mod.new("test logger", "test-logger")
+            local conf = {
+                name = "test logger",
+                batch_max_size = 1,
+                inactive_timeout = 300,
+                buffer_duration = 300,
+                max_retry_count = 0,
+                retry_delay = 0,
+            }
+            local ctx = {var = {route_id = "1", server_addr = "127.0.0.1"}}
+            local finished = 0
+            local func = function()
+                finished = finished + 1
+                return true
+            end
+
+            local wait_for = function(cond)
+                for _ = 1, 200 do
+                    if cond() then
+                        return true
+                    end
+                    ngx.sleep(0.01)
+                end
+                return false
+            end
+
+            if not bp_manager:add_entry(conf, 1) then
+                bp_manager:add_entry_to_new_processor(conf, 1, ctx, func)
+            end
+            if not wait_for(function() return finished == 1 end) then
+                ngx.say("the batch did not finish")
+                return
+            end
+            if not wait_for(function() return not bp_manager.stale_timer_running end) then
+                ngx.say("the stale sweep did not run")
+                return
+            end
+
+            ngx.say("processors left: ", require("apisix.core").table.nkeys(bp_manager.buffers))
+            ngx.say("processed: ", bp_manager.total_stale_processed_entries)
+        }
+    }
+--- request
+GET /t
+--- response_body
+processors left: 0
+processed: 1
+--- error_log
+removing batch processor stale object
+
+
+
+=== TEST 11: a request that produced no log entry does not take a pending slot
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugin")
+            plugin.plugin_metadatas = {
+                get = function(self, name)
+                    return {value = {max_pending_entries = 3}}
+                end
+            }
+
+            local bp_manager_mod = require("apisix.utils.batch-processor-manager")
+            local bp_manager = bp_manager_mod.new("test logger", "test-logger")
+            local conf = {
+                name = "test logger",
+                batch_max_size = 10000000,
+                inactive_timeout = 300,
+                buffer_duration = 300,
+                max_retry_count = 0,
+                retry_delay = 1,
+            }
+            -- cloned before conf is used, so that it does not carry the processor key
+            -- that plugin.conf_version() caches in conf._version
+            local other_conf = require("apisix.core").table.clone(conf)
+            other_conf.name = "other logger"
+            local ctx = {var = {route_id = "1", server_addr = "127.0.0.1"}}
+            local func = function() return true end
+
+            local add = function(entry)
+                if not bp_manager:add_entry(conf, entry) then
+                    bp_manager:add_entry_to_new_processor(conf, entry, ctx, func)
+                end
+            end
+
+            -- log_util.get_log_entry returns nil for a request that the logger does
+            -- not log, e.g. one that its `match` excludes; here they arrive while the
+            -- processor already exists, so add_entry() is the one that sees them
+            add({msg = "first"})
+            add(nil)
+            add(nil)
+            add({msg = "second"})
+
+            -- a caller that goes straight to add_entry_to_new_processor()
+            bp_manager:add_entry_to_new_processor(other_conf, nil, ctx, func)
+
+            local buffered = 0
+            for _, buffer in pairs(bp_manager.buffers) do
+                buffered = buffered + #buffer.entry_buffer.entries
+            end
+            ngx.say("buffered: ", buffered)
+            ngx.say("pushed: ", bp_manager.total_pushed_entries)
+        }
+    }
+--- request
+GET /t
+--- response_body
+buffered: 2
+pushed: 2
+--- no_error_log
+max pending entries limit exceeded
+
+
+
+=== TEST 12: the stale sweep is armed again when its timer could not be created
+--- config
+    location /t {
+        content_by_lua_block {
+            -- load a private copy of the manager whose timers fail until `fail` is
+            -- cleared, and put the shared copy back for everything else
+            local shared = package.loaded["apisix.utils.batch-processor-manager"]
+            package.loaded["apisix.utils.batch-processor-manager"] = nil
+            local timer_at = ngx.timer.at
+            local fail = true
+            ngx.timer.at = function(...)
+                if fail then
+                    return nil, "too many pending timers"
+                end
+                return timer_at(...)
+            end
+            local bp_manager_mod = require("apisix.utils.batch-processor-manager")
+            ngx.timer.at = timer_at
+            package.loaded["apisix.utils.batch-processor-manager"] = shared
+
+            local bp_manager = bp_manager_mod.new("test logger", "test-logger")
+            local conf = {
+                name = "test logger",
+                batch_max_size = 10000000,
+                inactive_timeout = 300,
+                buffer_duration = 300,
+                max_retry_count = 0,
+                retry_delay = 1,
+            }
+            local ctx = {var = {route_id = "1", server_addr = "127.0.0.1"}}
+            local func = function() return true end
+            local add = function(entry)
+                if not bp_manager:add_entry(conf, entry) then
+                    bp_manager:add_entry_to_new_processor(conf, entry, ctx, func)
+                end
+            end
+
+            add({msg = 1})
+            ngx.say("sweep armed after a failed timer: ", bp_manager.stale_timer_running)
+            fail = false
+            add({msg = 2})
+            ngx.say("sweep armed on the next entry: ", bp_manager.stale_timer_running)
+        }
+    }
+--- request
+GET /t
+--- response_body
+sweep armed after a failed timer: false
+sweep armed on the next entry: true
+
+
+
+=== TEST 13: conf_version() keeps the version of a conf without null and encodes a null
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local plugin = require("apisix.plugin")
+            local crc = function(s) return tostring(ngx.crc32_short(s)) end
+            local conf = core.json.decode([=[{
+                "uri": "http://127.0.0.1:1980/log",
+                "batch_max_size": 10,
+                "auth_header": "Bearer token",
+                "headers": {"b": "2", "a": "1"},
+                "include_req_body_expr": [["arg_debug", "==", "1"]]
+            }]=])
+            -- the version this conf got before: the crc of the default encoding, whose
+            -- keys are sorted
+            local expected = crc(core.json.stably_encode(conf))
+            local version = plugin.conf_version(conf)
+            ngx.say("unchanged: ", version == expected)
+            ngx.say("sorted: ", version == crc('{"auth_header":"Bearer token",'
+                .. '"batch_max_size":10,"headers":{"a":"1","b":"2"},'
+                .. '"include_req_body_expr":[["arg_debug","==","1"]],'
+                .. '"uri":"http://127.0.0.1:1980/log"}'))
+
+            local json = [=[{"include_req_body_expr": [["http_x_debug", "~=", null]]}]=]
+            local ok, null_version = pcall(plugin.conf_version, core.json.decode(json))
+            ngx.say("null encoded as null: ", ok and null_version
+                    == crc('{"include_req_body_expr":[["http_x_debug","~=",null]]}'))
+
+            local other_userdata = require("cjson.safe").empty_array
+            assert(type(other_userdata) == "userdata" and other_userdata ~= core.json.null)
+            local ok_u, v_u = pcall(plugin.conf_version, {u = other_userdata})
+            ngx.say("other userdata not encoded as null: ", not ok_u or v_u ~= crc('{"u":null}'))
+
+            -- a conf that dkjson cannot encode still raises, and leaves nothing behind
+            -- that breaks the next one
+            ngx.say("function rejected: ", not pcall(plugin.conf_version, {f = function() end}))
+            local ok2, next_version = pcall(plugin.conf_version, core.json.decode('{"a": 1}'))
+            ngx.say("next conf: ", ok2 and next_version == crc('{"a":1}'))
+        }
+    }
+--- request
+GET /t
+--- response_body
+unchanged: true
+sorted: true
+null encoded as null: true
+other userdata not encoded as null: true
+function rejected: true
+next conf: true

@@ -28,6 +28,8 @@ title: 批处理器
 
 创建批处理器的唯一必需参数是函数。当批处理达到最大值或缓冲区持续时间超过时，函数将被执行。
 
+如果函数执行时抛出错误，该批次按失败处理，与函数返回 `false` 且不带 `first_fail` 时相同：整个批次（包括函数已经发出的条目）按 `max_retry_count` 和 `retry_delay` 重试，所有尝试都失败后丢弃。
+
 | 名称             | 类型    | 必选项 | 默认值 | 有效值  | 描述                                                         |
 | ---------------- | ------- | ------ | ------ | ------- | ------------------------------------------------------------ |
 | name             | string  | 可选   | xxx logger | ["http logger", "Some strings",...] | 用于标识批处理器的唯一标识符，默认为调用批处理器的日志插件名字，如配置插件为 `http logger`，name 默认为 http logger。  |
@@ -86,8 +88,8 @@ local _M = {
 function _M.log(conf, ctx)
     local entry = {...} -- data to log
 
-    -- 返回 true 表示该条目已无需调用方再处理：要么已推入现有处理器，
-    -- 要么因积压超过 max_pending_entries 而被丢弃
+    -- 返回 true 表示该条目已无需调用方再处理：已推入现有处理器、
+    -- 因积压超过 max_pending_entries 而被丢弃，或因条目为 nil（没有要记录的内容）而被跳过
     if batch_processor_manager:add_entry(conf, entry) then
         return
     end

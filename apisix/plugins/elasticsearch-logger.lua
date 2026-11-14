@@ -26,6 +26,8 @@ local os_date         = os.date
 local pcall           = pcall
 local type            = type
 local pairs           = pairs
+local ipairs          = ipairs
+local setmetatable    = setmetatable
 
 local plugin_name = "elasticsearch-logger"
 local batch_processor_manager = bp_manager_mod.new(plugin_name)
@@ -189,13 +191,15 @@ local function get_es_major_version(uri, conf)
     if not json_body then
         return nil, "failed to decode response body: " .. err
     end
-    if not json_body.version or not json_body.version.number then
+    -- checked before use: a probe that raises would fail its batch, and the next one
+    local version = type(json_body) == "table" and json_body.version
+    if type(version) ~= "table" or type(version.number) ~= "string" then
         return nil, "failed to get version from response body"
     end
 
-    local major_version = json_body.version.number:match("^(%d+)%.")
+    local major_version = version.number:match("^(%d+)%.")
     if not major_version then
-        return nil, "invalid version format: " .. json_body.version.number
+        return nil, "invalid version format: " .. version.number
     end
 
     return major_version
@@ -232,26 +236,44 @@ local function resolve_index_vars(index, var)
 end
 
 
+-- The Elasticsearch major version of the cluster a batch processor's conf sends to,
+-- or false once its probe has failed. It is not kept in the conf: plugin.conf_version()
+-- caches in conf._version the version that keys the conf's batch processor, so a
+-- major version stored there made every conf with that major version share one
+-- processor, and so its endpoints and credentials.
+local es_versions = setmetatable({}, {__mode = "k"})
+
+
+-- The action line is added when the batch is sent, see send_to_elasticsearch().
 local function get_logger_entry(conf, ctx, index)
     local entry = log_util.get_log_entry(plugin_name, conf, ctx)
-    local body = {
-        index = {
-            _index = index
-        }
-    }
-    -- for older version type is required
-    if conf._version == "6" or conf._version == "5" then
-        body.index._type = "_doc"
+    if entry == nil then
+        -- not logged: `match` leaves the request out, or its body could not be read
+        return nil
     end
-    return core.json.encode(body) .. "\n" ..
-        core.json.encode(entry) .. "\n"
+    local doc, err = core.json.encode(entry)
+    if not doc then
+        -- an entry that cannot be encoded would fail every batch it is part of
+        core.log.error("failed to encode the log entry: ", err)
+        return nil
+    end
+    return {
+        index = index,
+        doc = doc,
+    }
 end
 
 
+-- The version is probed from the batch timer, so that no request waits for it. Batches
+-- sent before the first probe returns probe as well; after that, a failed probe is not
+-- repeated: only Elasticsearch 5 and 6 need the version, while a cluster that refuses
+-- GET / (it needs the `monitor` cluster privilege) would otherwise cost a request and
+-- an error line for every batch.
 local function fetch_and_update_es_version(conf)
-    if conf._version then
+    if es_versions[conf] ~= nil then
         return
     end
+
     local selected_endpoint_addr
     if conf.endpoint_addr then
         selected_endpoint_addr = conf.endpoint_addr
@@ -261,9 +283,13 @@ local function fetch_and_update_es_version(conf)
     local major_version, err = get_es_major_version(selected_endpoint_addr, conf)
     if err then
         core.log.error("failed to get Elasticsearch version: ", err)
+        -- keep a version that a concurrent batch has got in the meantime
+        if es_versions[conf] == nil then
+            es_versions[conf] = false
+        end
         return
     end
-    conf._version = major_version
+    es_versions[conf] = major_version
 end
 
 
@@ -272,7 +298,27 @@ local function send_to_elasticsearch(conf, entries)
     if not httpc then
         return false, str_format("create http error: %s", err)
     end
+
+    -- Every action line of the batch is built here, from the version of the cluster
+    -- this processor sends to: Elasticsearch 5 and 6 reject the whole bulk request
+    -- when one of its action lines lacks the `_type` they need.
     fetch_and_update_es_version(conf)
+    local es_version = es_versions[conf]
+    local lines = core.table.new(#entries * 2, 0)
+    for i, entry in ipairs(entries) do
+        local action = {
+            index = {
+                _index = entry.index
+            }
+        }
+        -- for older version type is required
+        if es_version == "6" or es_version == "5" then
+            action.index._type = "_doc"
+        end
+        lines[i * 2 - 1] = core.json.encode(action)
+        lines[i * 2] = entry.doc
+    end
+
     local selected_endpoint_addr
     if conf.endpoint_addr then
         selected_endpoint_addr = conf.endpoint_addr
@@ -280,7 +326,7 @@ local function send_to_elasticsearch(conf, entries)
         selected_endpoint_addr = conf.endpoint_addrs[math_random(#conf.endpoint_addrs)]
     end
     local uri = selected_endpoint_addr .. "/_bulk"
-    local body = core.table.concat(entries, "")
+    local body = core.table.concat(lines, "\n") .. "\n"
     local headers = {
         ["Content-Type"] = "application/x-ndjson",
         ["Accept"] = "application/vnd.elasticsearch+json"
@@ -324,10 +370,6 @@ end
 
 
 function _M.access(conf, ctx)
-    -- fetch_and_update_es_version will call ES server only the first time
-    -- so this should not amount to considerable overhead
-    fetch_and_update_es_version(conf)
-
     log_util.check_and_read_req_body(conf, ctx)
 end
 

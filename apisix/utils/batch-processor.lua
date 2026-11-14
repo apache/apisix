@@ -21,6 +21,9 @@ local ipairs = ipairs
 local table = table
 local now = ngx.now
 local type = type
+local xpcall = xpcall
+local tostring = tostring
+local debug_traceback = debug.traceback
 local exiting = ngx.worker.exiting
 local batch_processor = {}
 local batch_processor_mt = {
@@ -49,6 +52,14 @@ local schema = {
 batch_processor.schema = schema
 
 
+-- The backlog limit in batch-processor-manager counts an entry as pending until it
+-- is added to processed_entries, so every batch that is given up on, not only the
+-- ones that ran, must be added; otherwise it stays pending for the worker's lifetime.
+local function drop_batch(self, batch)
+    self.processed_entries = self.processed_entries + #batch.entries
+end
+
+
 local function schedule_func_exec(self, delay, batch)
     local hdl, err = timer_at(delay, execute_func, self, batch)
     if not hdl then
@@ -56,11 +67,15 @@ local function schedule_func_exec(self, delay, batch)
             local hdl2, err2 = timer_at(0, execute_func, self, batch)
             if not hdl2 then
                 core.log.error("failed to create fallback process timer ",
-                               "while exiting: ", err2)
+                               "while exiting: ", err2, ", dropped entries: ",
+                               #batch.entries)
+                drop_batch(self, batch)
                 return
             end
         else
-            core.log.error("failed to create process timer: ", err)
+            core.log.error("failed to create process timer: ", err,
+                           ", dropped entries: ", #batch.entries)
+            drop_batch(self, batch)
             return
         end
     end
@@ -91,16 +106,27 @@ function execute_func(premature, self, batch)
     -- In case of "err" and a valid "first_fail" batch processor considers, all first_fail-1
     -- entries have been successfully consumed and hence reschedule the job for entries with
     -- index first_fail to #entries based on the current retry policy.
-    local ok, err, first_fail = self.func(batch.entries, self.batch_max_size)
+    local call_ok, ok, err, first_fail = xpcall(self.func, debug_traceback,
+                                                batch.entries, self.batch_max_size)
+    if not call_ok then
+        -- a callback that raises has failed the batch, so it takes the same retry
+        -- and drop path as one that returns false; "runtime error" is what the log
+        -- said when the raise used to abort the timer
+        ok, err, first_fail = false, "runtime error: " .. tostring(ok), nil
+    end
+
+    -- err goes through tostring: ngx.log raises on a table without __tostring, and a
+    -- raise here would end the timer before the batch is counted
     if not ok then
         if first_fail then
             core.log.error("Batch Processor[", self.name, "] failed to process entries [",
-                            #batch.entries + 1 - first_fail, "/", #batch.entries ,"]: ", err)
+                            #batch.entries + 1 - first_fail, "/", #batch.entries ,"]: ",
+                            tostring(err))
             batch.entries = slice_batch(batch.entries, first_fail)
             self.processed_entries = self.processed_entries + first_fail - 1
         else
             core.log.error("Batch Processor[", self.name,
-                           "] failed to process entries: ", err)
+                           "] failed to process entries: ", tostring(err))
         end
 
         batch.retry_count = batch.retry_count + 1
@@ -108,7 +134,7 @@ function execute_func(premature, self, batch)
             schedule_func_exec(self, self.retry_delay,
                                batch)
         else
-            self.processed_entries = self.processed_entries + #batch.entries
+            drop_batch(self, batch)
             core.log.error("Batch Processor[", self.name,"] exceeded ",
                            "the max_retry_count[", batch.retry_count,
                            "] dropping the entries")
@@ -182,6 +208,7 @@ function batch_processor:new(func, config)
         last_entry_t = 0,
         route_id = config.route_id,
         server_addr = config.server_addr,
+        pushed_entries = 0,
         processed_entries = 0
     }
 
@@ -189,6 +216,8 @@ function batch_processor:new(func, config)
 end
 
 function batch_processor:push(entry)
+    self.pushed_entries = self.pushed_entries + 1
+
     -- if the batch size is one then immediately send for processing
     if self.batch_max_size == 1 then
         local batch = {entries = {entry}, retry_count = 0}
