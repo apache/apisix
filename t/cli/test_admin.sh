@@ -250,7 +250,7 @@ echo "pass: allow empty admin_key, when admin_key_required=false"
 
 # admin api, allow any IP but use default key
 
-echo '
+cat > conf/config.yaml <<'EOF'
 deployment:
   admin:
     allow_admin: ~
@@ -258,7 +258,7 @@ deployment:
       - name: "admin"
         key: ''
         role: admin
-' > conf/config.yaml
+EOF
 
 make init > output.log 2>&1 | true
 
