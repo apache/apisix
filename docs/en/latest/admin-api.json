@@ -9727,7 +9727,7 @@
           "type": {
             "default": "roundrobin",
             "type": "string",
-            "description": "algorithms of load balancing"
+            "description": "Load balancing algorithm. Built-in values are `roundrobin`, `chash`, `ewma`, and `least_conn`; user-defined balancers can provide other values."
           },
           "pass_host": {
             "default": "pass",
@@ -9737,7 +9737,12 @@
               "rewrite"
             ],
             "type": "string",
-            "description": "mod of host passing"
+            "description": "How to set the `Host` header when proxying to the upstream.",
+            "x-enumDescriptions": {
+              "pass": "Forward the client's original `Host` header.",
+              "node": "Use the upstream node's hostname.",
+              "rewrite": "Use the value of `upstream_host`."
+            }
           },
           "scheme": {
             "description": "The scheme of the upstream. For L7 proxy, it can be one of grpc/grpcs/http/https/ws/wss. For L4 proxy, it can be one of tcp/tls/udp. For specific protocols, it can be kafka.",
@@ -9753,7 +9758,19 @@
               "ws",
               "wss"
             ],
-            "default": "http"
+            "default": "http",
+            "x-enumDescriptions": {
+              "grpc": "Layer 7 gRPC.",
+              "grpcs": "Layer 7 gRPC over TLS.",
+              "http": "Layer 7 HTTP.",
+              "https": "Layer 7 HTTP over TLS.",
+              "tcp": "Layer 4 TCP.",
+              "tls": "Layer 4 TCP over TLS.",
+              "udp": "Layer 4 UDP.",
+              "kafka": "Apache Kafka protocol.",
+              "ws": "Frame-aware WebSocket proxying; `enable_websocket` is ignored.",
+              "wss": "Frame-aware WebSocket proxying over TLS; uses the shared CA trust store, not `tls.ca_certs`."
+            }
           },
           "upstream_host": {
             "pattern": "^\\*$|^\\*?[0-9a-zA-Z-._\\[\\]:]+$",
@@ -9839,7 +9856,15 @@
               "vars_combinations"
             ],
             "default": "vars",
-            "type": "string"
+            "type": "string",
+            "description": "What to hash on when `type` is `chash`.",
+            "x-enumDescriptions": {
+              "vars": "Hash on an NGINX variable specified by `key`.",
+              "header": "Hash on a request header specified by `key`.",
+              "cookie": "Hash on a cookie value specified by `key`.",
+              "consumer": "Hash on the authenticated consumer name.",
+              "vars_combinations": "Hash on a combination of variables."
+            }
           },
           "keepalive_pool": {
             "properties": {
@@ -10272,7 +10297,7 @@
           "type": {
             "default": "roundrobin",
             "type": "string",
-            "description": "algorithms of load balancing"
+            "description": "Load balancing algorithm. Built-in values are `roundrobin`, `chash`, `ewma`, and `least_conn`; user-defined balancers can provide other values."
           },
           "pass_host": {
             "default": "pass",
@@ -10282,7 +10307,12 @@
               "rewrite"
             ],
             "type": "string",
-            "description": "mod of host passing"
+            "description": "How to set the `Host` header when proxying to the upstream.",
+            "x-enumDescriptions": {
+              "pass": "Forward the client's original `Host` header.",
+              "node": "Use the upstream node's hostname.",
+              "rewrite": "Use the value of `upstream_host`."
+            }
           },
           "scheme": {
             "description": "The scheme of the upstream. For L7 proxy, it can be one of grpc/grpcs/http/https/ws/wss. For L4 proxy, it can be one of tcp/tls/udp. For specific protocols, it can be kafka.",
@@ -10298,7 +10328,19 @@
               "ws",
               "wss"
             ],
-            "default": "http"
+            "default": "http",
+            "x-enumDescriptions": {
+              "grpc": "Layer 7 gRPC.",
+              "grpcs": "Layer 7 gRPC over TLS.",
+              "http": "Layer 7 HTTP.",
+              "https": "Layer 7 HTTP over TLS.",
+              "tcp": "Layer 4 TCP.",
+              "tls": "Layer 4 TCP over TLS.",
+              "udp": "Layer 4 UDP.",
+              "kafka": "Apache Kafka protocol.",
+              "ws": "Frame-aware WebSocket proxying; `enable_websocket` is ignored.",
+              "wss": "Frame-aware WebSocket proxying over TLS; uses the shared CA trust store, not `tls.ca_certs`."
+            }
           },
           "upstream_host": {
             "pattern": "^\\*$|^\\*?[0-9a-zA-Z-._\\[\\]:]+$",
@@ -10384,7 +10426,15 @@
               "vars_combinations"
             ],
             "default": "vars",
-            "type": "string"
+            "type": "string",
+            "description": "What to hash on when `type` is `chash`.",
+            "x-enumDescriptions": {
+              "vars": "Hash on an NGINX variable specified by `key`.",
+              "header": "Hash on a request header specified by `key`.",
+              "cookie": "Hash on a cookie value specified by `key`.",
+              "consumer": "Hash on the authenticated consumer name.",
+              "vars_combinations": "Hash on a combination of variables."
+            }
           },
           "keepalive_pool": {
             "properties": {
@@ -10702,7 +10752,9 @@
             "readOnly": true
           },
           "vars": {
-            "type": "array"
+            "type": "array",
+            "items": {},
+            "description": "Custom matching conditions using APISIX expressions. Each condition is an array of `[variable, operator, value]`."
           },
           "plugins": {
             "type": "object"
@@ -10728,7 +10780,11 @@
               0
             ],
             "type": "integer",
-            "description": "route status, 1 to enable, 0 to disable"
+            "description": "Route status.",
+            "x-enumDescriptions": {
+              "0": "Disabled.",
+              "1": "Enabled (default)."
+            }
           },
           "enable_websocket": {
             "type": "boolean",
@@ -11718,7 +11774,9 @@
             "readOnly": true
           },
           "vars": {
-            "type": "array"
+            "type": "array",
+            "items": {},
+            "description": "Custom matching conditions using APISIX expressions. Each condition is an array of `[variable, operator, value]`."
           },
           "plugins": {
             "type": "object"
@@ -11744,7 +11802,11 @@
               0
             ],
             "type": "integer",
-            "description": "route status, 1 to enable, 0 to disable"
+            "description": "Route status.",
+            "x-enumDescriptions": {
+              "0": "Disabled.",
+              "1": "Enabled (default)."
+            }
           },
           "enable_websocket": {
             "type": "boolean",
@@ -12895,12 +12957,16 @@
           },
           "status": {
             "default": 1,
-            "description": "ssl status, 1 to enable, 0 to disable",
+            "description": "SSL status.",
             "enum": [
               1,
               0
             ],
-            "type": "integer"
+            "type": "integer",
+            "x-enumDescriptions": {
+              "0": "Disabled.",
+              "1": "Enabled (default)."
+            }
           },
           "cert": {
             "$ref": "#/components/schemas/CertificateOrReference",
@@ -12960,9 +13026,13 @@
               "server",
               "client"
             ],
-            "description": "ssl certificate type, server to server certificate, client to client certificate for upstream",
+            "description": "Certificate type.",
             "default": "server",
-            "type": "string"
+            "type": "string",
+            "x-enumDescriptions": {
+              "server": "HTTPS termination matched by SNI.",
+              "client": "Client certificate for mTLS with upstream services."
+            }
           }
         },
         "type": "object",
@@ -13347,6 +13417,7 @@
                     },
                     "filter": {
                       "type": "array",
+                      "items": {},
                       "description": "logger filter rules"
                     },
                     "conf": {
@@ -14162,6 +14233,7 @@
                     },
                     "filter": {
                       "type": "array",
+                      "items": {},
                       "description": "logger filter rules"
                     },
                     "conf": {
@@ -14287,12 +14359,16 @@
           },
           "status": {
             "default": 1,
-            "description": "ssl status, 1 to enable, 0 to disable",
+            "description": "SSL status.",
             "enum": [
               1,
               0
             ],
-            "type": "integer"
+            "type": "integer",
+            "x-enumDescriptions": {
+              "0": "Disabled.",
+              "1": "Enabled (default)."
+            }
           },
           "cert": {
             "$ref": "#/components/schemas/CertificateOrReference",
@@ -14346,9 +14422,13 @@
               "server",
               "client"
             ],
-            "description": "ssl certificate type, server to server certificate, client to client certificate for upstream",
+            "description": "Certificate type.",
             "default": "server",
-            "type": "string"
+            "type": "string",
+            "x-enumDescriptions": {
+              "server": "HTTPS termination matched by SNI.",
+              "client": "Client certificate for mTLS with upstream services."
+            }
           }
         },
         "type": "object",
@@ -16130,7 +16210,8 @@
           "vars": {
             "anyOf": [
               {
-                "type": "array"
+                "type": "array",
+                "items": {}
               },
               {
                 "type": "null"
@@ -18595,8 +18676,162 @@
         "description": "Recursive merge fragment. Null deletes object fields; arrays are replaced. APISIX validates the resulting resource, including plugin and reference checks."
       },
       "SecretPatch": {
-        "type": "object",
-        "description": "Manager-specific recursive merge fragment. The resulting configuration must match the selected secret manager schema."
+        "description": "Partial update for an existing `Secret`. APISIX recursively merges object fields, replaces arrays, and removes an object field when its value is `null`. The merged resource is then validated against the complete `Secret` schema.",
+        "anyOf": [
+          {
+            "type": "object",
+            "title": "HashiCorp Vault",
+            "description": "HashiCorp Vault secret-manager configuration.",
+            "properties": {
+              "uri": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "uri",
+                "description": "Vault server URI."
+              },
+              "prefix": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Path prefix for secrets in Vault."
+              },
+              "token": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Vault authentication token or environment-variable URI."
+              },
+              "namespace": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Vault Enterprise or HCP Vault namespace."
+              }
+            }
+          },
+          {
+            "type": "object",
+            "title": "AWS Secrets Manager",
+            "description": "AWS Secrets Manager configuration.",
+            "properties": {
+              "access_key_id": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "AWS access key ID or environment-variable URI."
+              },
+              "secret_access_key": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "AWS secret access key or environment-variable URI."
+              },
+              "session_token": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Optional AWS session token or environment-variable URI."
+              },
+              "region": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "default": "us-east-1",
+                "description": "AWS region."
+              },
+              "endpoint_url": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "uri",
+                "description": "Custom AWS Secrets Manager endpoint."
+              }
+            }
+          },
+          {
+            "type": "object",
+            "title": "Google Cloud Secret Manager",
+            "description": "Google Cloud Secret Manager configuration.",
+            "properties": {
+              "auth_config": {
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "properties": {
+                  "client_email": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "private_key": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "project_id": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "token_uri": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "default": "https://oauth2.googleapis.com/token"
+                  },
+                  "scope": {
+                    "type": [
+                      "array",
+                      "null"
+                    ],
+                    "items": {
+                      "type": "string"
+                    },
+                    "default": [
+                      "https://www.googleapis.com/auth/cloud-platform"
+                    ]
+                  },
+                  "entries_uri": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "default": "https://secretmanager.googleapis.com/v1"
+                  }
+                }
+              },
+              "ssl_verify": {
+                "type": [
+                  "boolean",
+                  "null"
+                ],
+                "default": true
+              },
+              "auth_file": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Path to a Google service-account JSON file."
+              }
+            }
+          }
+        ]
       },
       "ConfigValidationDocument": {
         "type": "object",
@@ -19165,7 +19400,8 @@
             "type": "string"
           },
           "vars": {
-            "type": "array"
+            "type": "array",
+            "items": {}
           },
           "name": {
             "minLength": 1,
@@ -19632,6 +19868,7 @@
                     },
                     "filter": {
                       "type": "array",
+                      "items": {},
                       "description": "logger filter rules"
                     }
                   },
