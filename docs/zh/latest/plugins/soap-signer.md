@@ -156,6 +156,47 @@ $secret://<manager>/<configuration-id>/<key-path>
 
 APISIX 会在插件执行前解析引用。解析后的凭据会在每个 worker 中按解析值的指纹缓存。APISIX Secret 缓存刷新后，插件会使用轮换后的 Secret 值，无需重启 worker。
 
+### 使用环境变量
+
+如果没有外部密钥管理服务（例如在 Kubernetes 环境中），可以将 PEM 格式的值以环境变量的形式注入，并通过 `$env://<NAME>` 引用。
+
+1. 创建 Kubernetes Secret 并将其注入到 APISIX Pod 中：
+
+   ```shell
+   kubectl create secret generic soap-signing \
+     --from-file=cert=signer.crt --from-file=key=signer.key
+   ```
+
+   ```yaml
+   env:
+     - name: SIGNER_CERT
+       valueFrom: { secretKeyRef: { name: soap-signing, key: cert } }
+     - name: SIGNER_KEY
+       valueFrom: { secretKeyRef: { name: soap-signing, key: key } }
+   ```
+
+2. 在 `config.yaml` 中允许这些变量在 NGINX worker 中使用：
+
+   ```yaml
+   nginx_config:
+     envs:
+       - SIGNER_CERT
+       - SIGNER_KEY
+   ```
+
+3. 在插件中引用这些变量：
+
+   ```json
+   {
+     "credentials": {
+       "certificate": "$env://SIGNER_CERT",
+       "private_key": "$env://SIGNER_KEY"
+     }
+   }
+   ```
+
+更改环境变量的值后，需要重启 APISIX Pod 才能生效。
+
 ## 启用插件
 
 创建客户端用于认证的消费者，例如使用 [`key-auth`](key-auth.md)：
