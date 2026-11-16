@@ -90,6 +90,7 @@ description: xml-signer 插件为 XML 请求体添加 enveloped XML 数字签名
 ## 要求
 
 - APISIX 必须运行在 Linux 上，并且系统中提供 `libxml2.so.2`。已发布的 APISIX Debian、Ubuntu 和 Red Hat 镜像已包含此库。从源码构建的镜像（例如使用 [apisix-docker](https://github.com/apache/apisix-docker) 中的 `debian-dev/Dockerfile.local`）不包含此库，请在最终镜像中安装，例如执行 `apt-get install -y libxml2`。缺少此库时，APISIX 会在启动时记录 `xml-signer is unavailable and will reject requests`，插件会返回 `500 signing_error`。
+- APISIX-Runtime 必须在构建时支持在 NGINX 读取请求体期间强制执行 `request.max_body_bytes` 限制。
 - 证书和私钥必须为 PEM 编码，使用 RSA，并且属于同一密钥对。`rsa-sha256` 要求 RSA 密钥至少为 2048 位，`rsa-sha1` 要求至少为 1024 位。
 - 上游验证方必须支持 exclusive XML canonicalization。
 - 请将插件配置在所有其他请求体修改插件之后。此插件之后对请求体的任何修改都会使签名失效。
@@ -144,6 +145,47 @@ $secret://<manager>/<configuration-id>/<key-path>
 ```
 
 APISIX 会在插件执行前解析引用。解析后的凭据会在每个 worker 中按解析值的指纹缓存。Secret 缓存返回轮换后的 PEM 值时，插件会解析并使用新的密钥对，无需重启 APISIX worker。
+
+### 使用环境变量
+
+在未使用外部 Secret 管理器的环境中（例如 Kubernetes），可以通过环境变量提供 PEM 值，并使用 `$env://<NAME>` 引用。
+
+1. 创建 Kubernetes Secret，并将其注入 APISIX Pod：
+
+   ```shell
+   kubectl create secret generic xml-signing \
+     --from-file=cert=signer.crt --from-file=key=signer.key
+   ```
+
+   ```yaml
+   env:
+     - name: SIGNER_CERT
+       valueFrom: { secretKeyRef: { name: xml-signing, key: cert } }
+     - name: SIGNER_KEY
+       valueFrom: { secretKeyRef: { name: xml-signing, key: key } }
+   ```
+
+2. 在 `config.yaml` 中允许 NGINX worker 使用这些变量：
+
+   ```yaml
+   nginx_config:
+     envs:
+       - SIGNER_CERT
+       - SIGNER_KEY
+   ```
+
+3. 在插件中引用这些变量：
+
+   ```json
+   {
+     "credentials": {
+       "certificate": "$env://SIGNER_CERT",
+       "private_key": "$env://SIGNER_KEY"
+     }
+   }
+   ```
+
+环境变量的值发生变更后，需要重启 APISIX Pod。
 
 ## 启用插件
 
