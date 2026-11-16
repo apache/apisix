@@ -62,6 +62,8 @@ max pending entries limit exceeded. discarding entry. total_pushed_entries: 1228
 
 只有在发送跟不上时该上限才会起作用。日志服务正常的情况下，积压量接近 `batch_max_size`——在相同环境下 3000 QPS 时不足 1000 条，因此默认值为正常运行留出了约 8 倍余量。调大 `batch_max_size` 会同步抬高正常状态下的积压量，此时也应相应调大 `max_pending_entries`。
 
+当 worker 达到 `lua_max_running_timers`（`nginx_config.max_running_timers`）上限时，OpenResty 可能直接丢弃到期的定时器。定时器压力缓解后，批处理器会将发送定时器从未启动的批次计为丢弃并释放积压额度，同时恢复丢失的缓冲区刷新定时器，使日志发送无需 reload 即可恢复。已经开始发送的批次以及尚未到达重试时间的批次仍计入待处理条目。
+
 以下代码显示了如何在你的插件中使用批处理器：
 
 ```lua

@@ -17,6 +17,8 @@
 local core = require("apisix.core")
 local setmetatable = setmetatable
 local timer_at = ngx.timer.at
+local timer_every = ngx.timer.every
+local pairs = pairs
 local ipairs = ipairs
 local table = table
 local now = ngx.now
@@ -31,10 +33,35 @@ local batch_processor_mt = {
 }
 local execute_func
 local create_buffer_timer
+local recover_timers
 local batch_metrics
 local prometheus
 if ngx.config.subsystem == "http" then
     prometheus = require("apisix.plugins.prometheus.exporter")
+end
+
+
+-- One worker-wide recurring timer recovers callbacks that OpenResty silently drops
+-- at lua_max_running_timers. Unlike an at() chain, every() schedules its next tick
+-- before checking the running-timer limit, so recovery survives the same pressure.
+local RECOVERY_INTERVAL = 1
+local TIMER_GRACE = 1
+local recovery_timer_running = false
+local pending_batches = {}
+local pending_buffers = {}
+
+
+local function ensure_recovery_timer()
+    if recovery_timer_running or exiting() then
+        return
+    end
+
+    local ok, err = timer_every(RECOVERY_INTERVAL, recover_timers)
+    if not ok then
+        core.log.error("failed to create batch recovery timer: ", err)
+        return
+    end
+    recovery_timer_running = true
 end
 
 
@@ -61,6 +88,7 @@ end
 
 
 local function schedule_func_exec(self, delay, batch)
+    ensure_recovery_timer()
     local hdl, err = timer_at(delay, execute_func, self, batch)
     if not hdl then
         if err == "process exiting" then
@@ -72,6 +100,7 @@ local function schedule_func_exec(self, delay, batch)
                 drop_batch(self, batch)
                 return
             end
+            delay = 0
         else
             core.log.error("failed to create process timer: ", err,
                            ", dropped entries: ", #batch.entries)
@@ -79,6 +108,9 @@ local function schedule_func_exec(self, delay, batch)
             return
         end
     end
+
+    batch.timer_deadline = now() + delay
+    pending_batches[batch] = self
 end
 
 
@@ -103,6 +135,15 @@ end
 
 
 function execute_func(premature, self, batch)
+    -- A late callback must not send or account for an already recovered batch.
+    if pending_batches[batch] ~= self then
+        return
+    end
+    pending_batches[batch] = nil
+    batch.timer_deadline = nil
+
+    -- Remove the deadline before invoking user code, which may yield for longer
+    -- than the grace period while a logger is sending or retrying a request.
     -- In case of "err" and a valid "first_fail" batch processor considers, all first_fail-1
     -- entries have been successfully consumed and hence reschedule the job for entries with
     -- index first_fail to #entries based on the current retry policy.
@@ -147,7 +188,12 @@ function execute_func(premature, self, batch)
 end
 
 
-local function flush_buffer(premature, self)
+local function flush_buffer(premature, self, timer)
+    if pending_buffers[self] ~= timer then
+        return
+    end
+    pending_buffers[self] = nil
+
     if premature or exiting() or
        now() - self.last_entry_t >= self.inactive_timeout or
        now() - self.first_entry_t >= self.buffer_duration
@@ -167,16 +213,58 @@ end
 
 
 function create_buffer_timer(self)
-    local hdl, err = timer_at(self.inactive_timeout, flush_buffer, self)
+    ensure_recovery_timer()
+    local timer = {deadline = now() + self.inactive_timeout}
+    local hdl, err = timer_at(self.inactive_timeout, flush_buffer, self, timer)
     if not hdl then
         if err == "process exiting" then
-            timer_at(0, flush_buffer, self)
-        else
+            hdl, err = timer_at(0, flush_buffer, self, timer)
+            timer.deadline = now()
+        end
+        if not hdl then
+            self.is_timer_running = false
             core.log.error("failed to create buffer timer: ", err)
             return
         end
     end
+    pending_buffers[self] = timer
     self.is_timer_running = true
+end
+
+
+function recover_timers(premature)
+    if premature then
+        return
+    end
+
+    local cutoff = now() - TIMER_GRACE
+    local dropped = {}
+    for batch, self in pairs(pending_batches) do
+        if batch.timer_deadline <= cutoff then
+            pending_batches[batch] = nil
+            batch.timer_deadline = nil
+            local count = #batch.entries
+            self.processed_entries = self.processed_entries + count
+            dropped[self] = (dropped[self] or 0) + count
+        end
+    end
+    -- Aggregate the report so recovering a full backlog does not flood the log.
+    for self, count in pairs(dropped) do
+        core.log.error("Batch Processor[", self.name, "] dropping ", count,
+                       " entries whose process timers did not start")
+    end
+
+    local buffers = {}
+    for self, timer in pairs(pending_buffers) do
+        if timer.deadline <= cutoff then
+            buffers[#buffers + 1] = self
+        end
+    end
+    -- Flushing may rearm a buffer timer, so do it outside the registry traversal.
+    for _, self in ipairs(buffers) do
+        core.log.warn("Batch Processor[", self.name, "] recovering buffer timer")
+        flush_buffer(false, self, pending_buffers[self])
+    end
 end
 
 
