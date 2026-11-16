@@ -476,7 +476,7 @@ ttl 5: 1
 
 
 
-=== TEST 6: build_session_opts disables the revocation error cache only when the lookup cache is off
+=== TEST 6: build_session_opts disables the revocation error cache where the library cannot apply it
 --- config
     location /t {
         content_by_lua_block {
@@ -484,33 +484,256 @@ ttl 5: 1
             local build = plugin._build_session_opts
             local secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK"
 
-            local opts = build({secret = secret, revocation = "redis",
-                                revocation_cache_ttl = 0,
-                                revocation_error_cache_ttl = 5})
-            ngx.say("ttl 0: ", opts.revocation_cache_ttl, " ", opts.revocation_error_cache_ttl)
+            local function say(name, opts)
+                ngx.say(name, ": ", tostring(opts.revocation_cache_ttl), " ",
+                        tostring(opts.revocation_error_cache_ttl))
+            end
 
-            opts = build({secret = secret, revocation = "redis",
-                          revocation_cache_ttl = 3,
-                          revocation_error_cache_ttl = 5})
-            ngx.say("ttl 3: ", opts.revocation_cache_ttl, " ", opts.revocation_error_cache_ttl)
+            -- lookup cache off: the error cache has nothing to live in
+            say("closed, ttl 0", build({secret = secret, revocation = "redis",
+                revocation_fail_mode = "closed", revocation_cache_ttl = 0,
+                revocation_error_cache_ttl = 5}))
+            say("closed, ttl 0, error unset", build({secret = secret, revocation = "redis",
+                revocation_fail_mode = "closed", revocation_cache_ttl = 0}))
 
-            opts = build({secret = secret, revocation = "redis",
-                          revocation_cache_ttl = 0})
-            ngx.say("ttl 0, error unset: ", tostring(opts.revocation_error_cache_ttl))
+            -- closed: the error cache is kept
+            say("closed, ttl 3", build({secret = secret, revocation = "redis",
+                revocation_fail_mode = "closed", revocation_cache_ttl = 3,
+                revocation_error_cache_ttl = 5}))
+            say("closed, unset", build({secret = secret, revocation = "redis",
+                revocation_fail_mode = "closed"}))
 
-            opts = build({secret = secret, revocation = "redis"})
-            ngx.say("unset: ", tostring(opts.revocation_cache_ttl), " ",
-                    tostring(opts.revocation_error_cache_ttl))
+            -- open (explicit or defaulted): errors are never cached
+            say("open, ttl 3", build({secret = secret, revocation = "redis",
+                revocation_fail_mode = "open", revocation_cache_ttl = 3,
+                revocation_error_cache_ttl = 5}))
+            say("default mode, unset", build({secret = secret, revocation = "redis"}))
 
-            opts = build({secret = secret, revocation_cache_ttl = 0})
-            ngx.say("no revocation: ", tostring(opts.revocation_error_cache_ttl))
+            -- no revocation: untouched
+            say("no revocation", build({secret = secret, revocation_cache_ttl = 0}))
         }
     }
 --- response_body
-ttl 0: 0 0
-ttl 3: 3 5
-ttl 0, error unset: 0
-unset: nil nil
-no revocation: nil
+closed, ttl 0: 0 0
+closed, ttl 0, error unset: 0 0
+closed, ttl 3: 3 5
+closed, unset: nil nil
+open, ttl 3: 3 0
+default mode, unset: nil 0
+no revocation: 0 nil
 --- error_log
-session.revocation_error_cache_ttl is ignored
+session.revocation_error_cache_ttl is ignored when session.revocation_cache_ttl is 0
+session.revocation_error_cache_ttl is ignored when session.revocation_fail_mode is not closed
+
+
+
+=== TEST 7: logout revokes the presented cookie even when the session is due for a rolling refresh
+--- timeout: 30
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local keycloak = require("lib.keycloak")
+            local test_admin = require("lib.test_admin").test
+
+            local code, body = test_admin("/apisix/admin/routes/1",
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "openid-connect": {
+                            "discovery": "http://127.0.0.1:8080/realms/University/.well-known/openid-configuration",
+                            "realm": "University",
+                            "client_id": "course_management",
+                            "client_secret": "d1ec69e9-55d2-4109-a3ea-befa071579d5",
+                            "redirect_uri": "http://127.0.0.1:]] .. ngx.var.server_port
+                                .. [[/authenticated",
+                            "ssl_verify": false,
+                            "session": {
+                                "secret": "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
+                                "storage": "cookie",
+                                "rolling_timeout": 8,
+                                "revocation": "redis",
+                                "revocation_fail_mode": "closed",
+                                "redis": {
+                                    "host": "127.0.0.1",
+                                    "port": 6379,
+                                    "prefix": "oidc:revocation:rolling:"
+                                }
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/*"
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.sleep(0.1)
+
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/uri"
+            local res, err = keycloak.login_keycloak(
+                uri, "teacher@gmail.com", "123456")
+            if err then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+
+            local cookie = keycloak.concatenate_cookies(res.headers["Set-Cookie"])
+            local httpc = http.new()
+
+            res, err = httpc:request_uri(uri, {
+                method = "GET",
+                headers = { Cookie = cookie },
+            })
+            if not res or res.status ~= 200 then
+                ngx.status = 500
+                ngx.say("authenticated request failed: ",
+                        res and res.status or err)
+                return
+            end
+
+            -- past 75% of rolling_timeout, where opening the session with
+            -- start() would save it under a new session id
+            ngx.sleep(7)
+
+            local logout_uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/logout"
+            res, err = httpc:request_uri(logout_uri, {
+                method = "GET",
+                headers = { Cookie = cookie },
+            })
+            if not res or res.status ~= 302 then
+                ngx.status = 500
+                ngx.say("logout failed: ", res and res.status or err)
+                return
+            end
+
+            res, err = httpc:request_uri(uri, {
+                method = "GET",
+                headers = { Cookie = cookie },
+            })
+            if not res then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+
+            ngx.say("replayed=", res.status)
+        }
+    }
+--- response_body
+replayed=302
+
+
+
+=== TEST 8: a fail-open store error is not replayed to a fail-closed configuration
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local keycloak = require("lib.keycloak")
+            local test_admin = require("lib.test_admin").test
+
+            -- nothing listens on port 1, so every revocation lookup fails
+            local function put_route(fail_mode)
+                return test_admin("/apisix/admin/routes/1",
+                    ngx.HTTP_PUT,
+                    [[{
+                        "plugins": {
+                            "openid-connect": {
+                                "discovery": "http://127.0.0.1:8080/realms/University/.well-known/openid-configuration",
+                                "realm": "University",
+                                "client_id": "course_management",
+                                "client_secret": "d1ec69e9-55d2-4109-a3ea-befa071579d5",
+                                "redirect_uri": "http://127.0.0.1:]] .. ngx.var.server_port
+                                    .. [[/authenticated",
+                                "ssl_verify": false,
+                                "session": {
+                                    "secret": "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
+                                    "storage": "cookie",
+                                    "revocation": "redis",
+                                    "revocation_fail_mode": "]] .. fail_mode .. [[",
+                                    "redis": {
+                                        "host": "127.0.0.1",
+                                        "port": 1
+                                    }
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/*"
+                    }]]
+                )
+            end
+
+            local code, body = put_route("open")
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            ngx.sleep(0.1)
+
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/uri"
+            local res, err = keycloak.login_keycloak(
+                uri, "teacher@gmail.com", "123456")
+            if err then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+
+            local cookie = keycloak.concatenate_cookies(res.headers["Set-Cookie"])
+            local httpc = http.new()
+
+            res, err = httpc:request_uri(uri, {
+                method = "GET",
+                headers = { Cookie = cookie },
+            })
+            if not res then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+            ngx.say("open=", res.status)
+
+            -- same cookie name and secret, now rejecting on store errors
+            code, body = put_route("closed")
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            ngx.sleep(0.1)
+
+            res, err = httpc:request_uri(uri, {
+                method = "GET",
+                headers = { Cookie = cookie },
+            })
+            if not res then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+            ngx.say("closed=", res.status)
+        }
+    }
+--- response_body
+open=200
+closed=503
+--- error_log
+OIDC session revocation store unavailable

@@ -93,8 +93,8 @@ import TabItem from '@theme/TabItem';
 | session.storage | string | 否 | cookie | ["cookie", "redis"] | 会话存储方式。 |
 | session.revocation | string | 否 | | ["redis"] | 会话吊销后端。设置为 `redis` 可为 Cookie 会话启用吊销功能。必须配置 `session.redis`，且不能在 `session.storage` 为 `redis` 时使用。 |
 | session.revocation_fail_mode | string | 否 | open | ["open", "closed"] | 当吊销存储不可用时，`open` 将会话视为未吊销，`closed` 则拒绝打开和销毁会话。 |
-| session.revocation_cache_ttl | integer | 否 | | | 成功吊销查询的 worker 本地缓存 TTL（秒）。`0` 禁用。lua-resty-session 默认为 `5`。 |
-| session.revocation_error_cache_ttl | integer | 否 | | | 吊销存储错误的 worker 本地缓存 TTL（秒）。`0` 禁用。lua-resty-session 默认为 `5`。当 `revocation_cache_ttl` 为 `0` 时强制为 `0`。 |
+| session.revocation_cache_ttl | integer | 否 | 5 | | 成功吊销查询的 worker 本地缓存 TTL（秒）。`0` 禁用。 |
+| session.revocation_error_cache_ttl | integer | 否 | 5 | | 吊销存储错误的 worker 本地缓存 TTL（秒）。`0` 禁用。仅在 `revocation_fail_mode` 为 `closed` 时生效；当 `revocation_fail_mode` 为 `open` 或 `revocation_cache_ttl` 为 `0` 时强制为 `0`。 |
 | session.redis | object | 否 | | | Redis 连接配置。当 `storage` 为 `redis`，或 `revocation` 为 `redis` 时必填。 |
 | session.redis.host | string | 否 | 127.0.0.1 | | Redis 主机。 |
 | session.redis.port | integer | 否 | 6379 | | Redis 端口。 |
@@ -380,7 +380,15 @@ Cookie 会话存储在客户端，APISIX 通常无法单独将其失效。要启
 }
 ```
 
-`revocation_fail_mode` 默认为 `open`，即吊销存储不可用时继续接受会话。使用 `closed` 则会拒绝打开和销毁会话。打开 Cookie 会话时会查询吊销存储，因此每个 worker 会缓存最近的查询结果，避免每个请求都访问一次 Redis。`revocation_cache_ttl` 是成功查询的 worker 本地 TTL，`revocation_error_cache_ttl` 是存储错误的 TTL。登出在处理该请求的 worker 上立即生效，在其他 worker 上则在其缓存条目过期后生效，因此 `revocation_cache_ttl` 也是已吊销会话在其他 worker 上仍可能被接受的最长时间。将 `revocation_cache_ttl` 设为 `0` 则每个请求都查询 Redis，此时错误缓存也会被禁用。省略 `revocation` 即不启用 Cookie 会话吊销。
+`revocation_fail_mode` 默认为 `open`，即吊销存储不可用时继续接受会话。使用 `closed` 则会拒绝打开和销毁会话。打开 Cookie 会话时会查询吊销存储，因此每个 worker 会缓存最近的查询结果，避免每个请求都访问一次 Redis。`revocation_cache_ttl` 是成功查询的 worker 本地 TTL，`revocation_error_cache_ttl` 是存储错误的 TTL，存储错误仅在 `closed` 模式下缓存。将 `revocation_cache_ttl` 设为 `0` 则每个请求都查询 Redis，此时错误缓存也会被禁用。省略 `revocation` 即不启用 Cookie 会话吊销。
+
+登出在处理该请求的 worker 上立即生效，在其他 worker 上则在其缓存条目过期后生效。因此 `revocation_cache_ttl` 限定的是：吊销标记已成功写入的会话，在其他 worker 上仍可能被接受的最长时间。它不涵盖下面的限制。
+
+#### 限制
+
+- **吊销仅适用于登出时携带的会话 Cookie。** `lua-resty-session` 每次保存会话（例如令牌续期或滚动刷新）都会生成新的会话 ID，而登出只会吊销当前正在登出的那个 ID。已经被刷新过的 Cookie（例如被窃取者刷新过的 Cookie）以及 Cookie 的旧副本，在其滚动超时或绝对超时之前仍然有效。
+- **当 `revocation_fail_mode` 为 `open`（默认值）时，登出可能在没有吊销任何内容的情况下成功。** 如果登出时 Redis 不可用，浏览器中的 Cookie 会被清除，但不会写入吊销标记，之后也不会重试。被复制的 Cookie 在超时之前仍然有效。依赖吊销功能的部署请使用 `closed`，这样吊销写入失败时会返回错误，且不会销毁会话。
+- 当 Redis 不可用时，`closed` 会对携带 Cookie 会话的请求返回 `503`。
 
 ### 使用 PAR 和 DPoP 的授权码流程
 
