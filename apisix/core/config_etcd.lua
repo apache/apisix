@@ -561,14 +561,13 @@ local function load_full_data(self, dir_res, headers, prev_values, prev_values_h
             data_valid, err = check_schema(self.item_schema, item.value)
             if not data_valid then
                 log.error("failed to check item data of [", self.key,
-                          "] err:", err, " ,val: ", json.encode(item.value))
+                          "] err:", err, ", key: ", item.key)
             end
         end
 
         if data_valid and self.checker then
             data_valid, err = self.checker(item.value, item.key)
             if not data_valid then
-                -- the checker may have decrypted fields in place, so only the key is logged
                 log.error("failed to check item data of [", self.key,
                           "] err:", err, ", key: ", item.key)
             end
@@ -641,7 +640,7 @@ local function load_full_data(self, dir_res, headers, prev_values, prev_values_h
                 data_valid, err = check_schema(self.item_schema, item.value)
                 if not data_valid then
                     log.error("failed to check item data of [", self.key,
-                              "] err:", err, " ,val: ", json.encode(item.value))
+                              "] err:", err, ", key: ", item.key)
                 end
             end
 
@@ -650,7 +649,6 @@ local function load_full_data(self, dir_res, headers, prev_values, prev_values_h
                 -- as different checkers may use different parameters
                 data_valid, err = self.checker(item.value, item.key)
                 if not data_valid then
-                    -- the checker may have decrypted fields in place, so only the key is logged
                     log.error("failed to check item data of [", self.key,
                               "] err:", err, ", key: ", item.key)
                 end
@@ -799,14 +797,13 @@ local function sync_data(self)
             data_valid, err = check_schema(self.item_schema, res.value)
             if not data_valid then
                 log.error("failed to check item data of [", self.key,
-                          "] err:", err, " ,val: ", json.encode(res.value))
+                          "] err:", err, ", key: ", res.key)
             end
         end
 
         if data_valid and res.value and self.checker then
             data_valid, err = self.checker(res.value, res.key)
             if not data_valid then
-                -- the checker may have decrypted fields in place, so only the key is logged
                 log.error("failed to check item data of [", self.key,
                           "] err:", err, ", key: ", res.key)
             end

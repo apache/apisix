@@ -308,3 +308,92 @@ done
 --- error_log
 failed to check item data of [/apisix/routes] err:failed to check the configuration of plugin response-rewrite
 key: /apisix/routes/1
+
+
+
+=== TEST 9: route fails the item schema, watch update
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.sleep(1)
+            put("/routes/1", {
+                uri = "/hello",
+                priority = "high",
+                plugins = {
+                    ["limit-count"] = {
+                        count = 2,
+                        time_window = 60,
+                        policy = "redis",
+                        redis_host = "127.0.0.1",
+                        redis_password = "plaintext-redis-secret",
+                    },
+                },
+                upstream = {nodes = {["127.0.0.1:1980"] = 1}, type = "roundrobin"},
+            })
+            ngx.sleep(1)
+            ngx.say("done")
+        }
+    }
+--- response_body
+done
+--- error_log
+failed to check item data of [/apisix/routes] err:property "priority" validation failed
+key: /apisix/routes/1
+
+
+
+=== TEST 10: route fails the item schema, full load
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.sleep(1)
+            del("/routes/1")
+            ngx.say("done")
+        }
+    }
+--- response_body
+done
+--- error_log
+failed to check item data of [/apisix/routes] err:property "priority" validation failed
+key: /apisix/routes/1
+
+
+
+=== TEST 11: non-table plugin conf, watch update
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.sleep(1)
+            put("/routes/1", {
+                uri = "/hello",
+                plugins = {
+                    ["limit-count"] = "plaintext-redis-secret",
+                },
+                upstream = {nodes = {["127.0.0.1:1980"] = 1}, type = "roundrobin"},
+            })
+            ngx.sleep(1)
+            ngx.say("done")
+        }
+    }
+--- response_body
+done
+--- error_log
+invalid plugin conf type string for plugin [limit-count]
+key: /apisix/routes/1
+
+
+
+=== TEST 12: non-table plugin conf, full load
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.sleep(1)
+            del("/routes/1")
+            ngx.say("done")
+        }
+    }
+--- response_body
+done
+--- error_log
+invalid plugin conf type string for plugin [limit-count]
+key: /apisix/routes/1

@@ -1013,8 +1013,7 @@ end
 local function check_single_plugin_schema(name, plugin_conf, schema_type, skip_disabled_plugin,
                                           ignore_disabled_plugin)
     if type(plugin_conf) ~= "table" then
-        return false, "invalid plugin conf " ..
-            core.json.encode(plugin_conf, true) ..
+        return false, "invalid plugin conf type " .. type(plugin_conf) ..
             " for plugin [" .. tostring(name) .. "]"
     end
 
@@ -1338,8 +1337,7 @@ local function stream_check_schema(plugins_conf, schema_type, skip_disabled_plug
     for name, plugin_conf in pairs(plugins_conf) do
         core.log.info("check stream plugin schema, name: ", name)
         if type(plugin_conf) ~= "table" then
-            return false, "invalid plugin conf " ..
-                core.json.encode(plugin_conf, true) ..
+            return false, "invalid plugin conf type " .. type(plugin_conf) ..
                 " for plugin [" .. name .. "]"
         end
 
