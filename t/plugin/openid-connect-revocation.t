@@ -651,16 +651,28 @@ replayed=302
             local cookie = keycloak.concatenate_cookies(res.headers["Set-Cookie"])
             local httpc = http.new()
 
-            res, err = httpc:request_uri(uri, {
-                method = "GET",
-                headers = { Cookie = cookie },
-            })
-            if not res then
-                ngx.status = 500
-                ngx.say(err)
-                return
+            -- the cache is per worker, so replay enough times to reach all of them
+            local function replay()
+                local seen = {}
+                for _ = 1, 10 do
+                    local res, err = httpc:request_uri(uri, {
+                        method = "GET",
+                        headers = { Cookie = cookie },
+                    })
+                    if not res then
+                        return "error: " .. tostring(err)
+                    end
+                    seen[res.status] = true
+                end
+                local statuses = {}
+                for status in pairs(seen) do
+                    statuses[#statuses + 1] = status
+                end
+                table.sort(statuses)
+                return table.concat(statuses, ",")
             end
-            ngx.say("open=", res.status)
+
+            ngx.say("open=", replay())
 
             -- same cookie name and secret, now rejecting on store errors
             code, body = put_route("closed")
@@ -671,16 +683,7 @@ replayed=302
             end
             ngx.sleep(0.1)
 
-            res, err = httpc:request_uri(uri, {
-                method = "GET",
-                headers = { Cookie = cookie },
-            })
-            if not res then
-                ngx.status = 500
-                ngx.say(err)
-                return
-            end
-            ngx.say("closed=", res.status)
+            ngx.say("closed=", replay())
         }
     }
 --- response_body
