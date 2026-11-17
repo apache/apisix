@@ -387,7 +387,7 @@ A logout takes effect immediately on the worker that handled it and on other wor
 
 #### Limitations
 
-- **Revocation applies to the session cookie presented at logout.** `lua-resty-session` generates a new session ID every time the session is saved, for example on token renewal or a rolling refresh, and only the ID being logged out is revoked. A cookie that was already refreshed (for example by someone who stole it) or older copies of the cookie stay valid until their rolling or absolute timeout.
+- **Revocation applies to the session cookie presented at logout.** `lua-resty-session` generates a new session ID every time the session is saved, for example on token renewal or a rolling refresh, and `lua-resty-session` 4.3.0 only revokes the ID being logged out. A cookie that was already refreshed (for example by someone who stole it) or older copies of the cookie stay valid until their rolling or absolute timeout. Releases of `lua-resty-session` that revoke the whole lineage of a session on logout reject every cookie that descends from the same login, whether it was issued before or after the one presented at logout, and only until the cookies would have expired naturally anyway; a new login is not affected.
 - **With `revocation_fail_mode` set to `open` (the default), a logout can succeed without revoking anything.** If Redis is unavailable during logout, the browser cookie is cleared but no revocation marker is written, and nothing retries it later. A copied cookie then stays valid until it times out. Use `closed` for deployments that rely on revocation, so that a failed revocation write is reported and the session is not destroyed.
 - When Redis is unavailable, `closed` rejects requests that carry a cookie session with a `503` response.
 
