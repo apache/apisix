@@ -31,10 +31,7 @@ local json_delay_encode  = core.json.delay_encode
 local process            = require("ngx.process")
 local ngx_worker_id      = ngx.worker.id
 local exiting            = ngx.worker.exiting
-local thread_spawn       = ngx.thread.spawn
-local thread_wait        = ngx.thread.wait
-local thread_kill        = ngx.thread.kill
-local math_random        = math.random
+local pcall              = pcall
 local is_http            = ngx.config.subsystem == "http"
 
 local _M = {
@@ -55,7 +52,6 @@ local nodes_cache = core.lrucache.new({
 })
 
 local default_skip_services = {"consul"}
-local default_random_range = 5
 
 
 local function get_dict()
@@ -224,83 +220,30 @@ end
 
 -- ─── polling loop ─────────────────────────────────────────────────────
 
-local function check_keepalive(reg, consul_server, retry_delay)
-    if reg.stop_flag then
+local watch
+
+
+local function arm_watch(reg, consul_server, watch_fn, delay)
+    if reg.stop_flag or exiting() then
         return
     end
 
-    if exiting() then
-        return
-    end
-
-    if consul_server.keepalive then
-        local ok, err = ngx_timer_at(0, _M.connect, reg, consul_server, retry_delay)
-        if not ok then
-            log.error("create ngx_timer_at got error: ", err)
-            return
-        end
-    else
-        -- self-rescheduling poll: use timer.at instead of timer.every
-        -- so stop_flag can actually halt future wakeups
-        local ok, err = ngx_timer_at(consul_server.fetch_interval,
-                                     _M.connect, reg, consul_server, retry_delay)
-        if not ok then
-            log.error("create ngx_timer_at got error: ", err)
-            return
-        end
+    local ok, err = ngx_timer_at(delay, watch, reg, consul_server, watch_fn)
+    if not ok then
+        log.error("create ngx_timer_at got error: ", err)
     end
 end
 
 
-function _M.connect(premature, reg, consul_server, retry_delay)
-    if premature or reg.stop_flag then
-        return
-    end
-
-    local catalog_thread, spawn_catalog_err = thread_spawn(consul_client.watch_catalog,
-                                                           consul_server)
-    if not catalog_thread then
-        local random_delay = math_random(default_random_range)
-        log.error("failed to spawn thread watch catalog: ", spawn_catalog_err,
-            ", retry connecting consul after ", random_delay, " seconds")
-        core_sleep(random_delay)
-
-        check_keepalive(reg, consul_server, retry_delay)
-        return
-    end
-
-    local health_thread, err = thread_spawn(consul_client.watch_health, consul_server)
-    if not health_thread then
-        thread_kill(catalog_thread)
-        local random_delay = math_random(default_random_range)
-        log.error("failed to spawn thread watch health: ", err,
-            ", retry connecting consul after ", random_delay, " seconds")
-        core_sleep(random_delay)
-
-        check_keepalive(reg, consul_server, retry_delay)
-        return
-    end
-
-    local thread_wait_ok, watch_type, index = thread_wait(catalog_thread, health_thread)
-    thread_kill(catalog_thread)
-    thread_kill(health_thread)
-    if not thread_wait_ok then
-        local random_delay = math_random(default_random_range)
-        log.error("failed to wait thread: ", watch_type, ", retry connecting consul after ",
-                random_delay, " seconds")
-        core_sleep(random_delay)
-
-        check_keepalive(reg, consul_server, retry_delay)
-        return
-    end
-
+-- One round: validate the watch result, then fetch all services, backing off on
+-- errors.
+local function handle_change(reg, consul_server, watch_type, index)
     if not consul_client.watch_result_is_valid(tonumber(watch_type),
             tonumber(index), consul_server.catalog_index, consul_server.health_index) then
-        retry_delay = consul_client.get_retry_delay(retry_delay)
+        local retry_delay = consul_client.get_retry_delay(consul_server.retry_delay)
+        consul_server.retry_delay = retry_delay
         log.warn("get all svcs got err, retry connecting consul after ", retry_delay, " seconds")
         core_sleep(retry_delay)
-
-        check_keepalive(reg, consul_server, retry_delay)
         return
     end
 
@@ -318,12 +261,11 @@ function _M.connect(premature, reg, consul_server, retry_delay)
         })
 
     if fetch_err then
-        retry_delay = consul_client.get_retry_delay(retry_delay)
+        local retry_delay = consul_client.get_retry_delay(consul_server.retry_delay)
+        consul_server.retry_delay = retry_delay
         log.warn("get all svcs got err: ", fetch_err,
                  ", retry connecting consul after ", retry_delay, " seconds")
         core_sleep(retry_delay)
-
-        check_keepalive(reg, consul_server, retry_delay)
         return
     end
 
@@ -345,7 +287,44 @@ function _M.connect(premature, reg, consul_server, retry_delay)
     end
 
     consul_client.update_index(consul_server, new_catalog_index, new_health_index)
-    check_keepalive(reg, consul_server, retry_delay)
+end
+
+
+-- Each index has its own watcher timer, and one run is one blocking query: no
+-- watcher is ever killed mid-read, and every run frees its memory when it ends.
+-- A watcher that sees a change runs the round itself. Rounds never overlap: a
+-- watcher that sees a change while another round runs parks, and is re-armed
+-- with the round's watcher when it ends, so it queries again against the
+-- updated indexes.
+watch = function(premature, reg, consul_server, watch_fn)
+    if premature or reg.stop_flag then
+        return
+    end
+
+    local watch_type, index = watch_fn(consul_server)
+    if not watch_type then
+        arm_watch(reg, consul_server, watch_fn, 0)
+        return
+    end
+
+    if consul_server.in_round then
+        consul_server.parked[watch_fn] = true
+        return
+    end
+
+    consul_server.in_round = true
+    local ok, err = pcall(handle_change, reg, consul_server, watch_type, index)
+    consul_server.in_round = false
+    if not ok then
+        log.error("failed to handle consul watch result: ", err)
+    end
+
+    local delay = consul_server.keepalive and 0 or consul_server.fetch_interval
+    for parked_fn in pairs(consul_server.parked) do
+        arm_watch(reg, consul_server, parked_fn, delay)
+    end
+    consul_server.parked = {}
+    arm_watch(reg, consul_server, watch_fn, delay)
 end
 
 
@@ -437,9 +416,12 @@ function _M.start_registry(reg)
     log.info("consul_server_list: ", json_delay_encode(consul_servers_list, true))
 
     for _, server in ipairs(consul_servers_list) do
-        local ok, timer_err = ngx_timer_at(0, _M.connect, reg, server)
-        if not ok then
-            error("create consul got error: " .. timer_err)
+        server.parked = {}
+        for _, watch_fn in ipairs({consul_client.watch_catalog, consul_client.watch_health}) do
+            local ok, timer_err = ngx_timer_at(0, watch, reg, server, watch_fn)
+            if not ok then
+                error("create consul got error: " .. timer_err)
+            end
         end
     end
 end

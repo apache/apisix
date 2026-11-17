@@ -38,6 +38,7 @@ discovery:
       - "http://127.0.0.1:8500"   # `http://127.0.0.1:8500` and `http://127.0.0.1:8600` are different clusters
       - "http://127.0.0.1:8600"   # `consul` service is default skip service
     token: "..."                  # if your consul cluster has enabled acl access control, you need to specify the token
+    ssl_verify: true              # default true, verify the certificate of https consul servers
     skip_services:                # if you need to skip special services
       - "service_a"
     timeout:
@@ -68,6 +69,20 @@ discovery:
     servers:
       - "http://127.0.0.1:8500"
 ```
+
+Each server address uses the `http` or `https` scheme, and the two can be mixed in one list. An `https` address without a port connects to port 443. By default APISIX verifies the certificate of an `https` Consul server against the host in the address, so configure the CA bundle that signed it with `apisix.ssl.ssl_trusted_certificate`:
+
+```yaml
+apisix:
+  ssl:
+    ssl_trusted_certificate: /path/to/consul-ca.crt
+discovery:
+  consul:
+    servers:
+      - "https://consul.example.com:8501"
+```
+
+Set `ssl_verify` to `false` to skip the certificate verification of `https` servers, for example while testing against a self-signed certificate. It has no effect on `http` servers.
 
 The `keepalive` has two optional values:
 

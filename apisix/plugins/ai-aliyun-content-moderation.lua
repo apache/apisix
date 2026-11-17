@@ -172,7 +172,6 @@ local function calculate_sign(params, secret)
     table.sort(params_arr)
     local canonical_str = table.concat(params_arr, "&")
     local str_to_sign = "POST&%2F&" .. ngx.escape_uri(canonical_str)
-    core.log.debug("string to calculate signature: ", str_to_sign)
     return ngx.encode_base64(ngx.hmac_sha1(secret, str_to_sign))
 end
 
@@ -284,12 +283,13 @@ local function deny_message(ctx, message)
     local usage = ctx.llm_raw_usage
         or (proto.empty_usage and proto.empty_usage())
         or { prompt_tokens = 0, completion_tokens = 0, total_tokens = 0 }
+    message = message or "Your request violate our content policy."
     return proto.build_deny_response({
-        text = message or "Your request violate our content policy.",
+        text = message,
         model = model,
         usage = usage,
         stream = stream,
-    })
+    }), message
 end
 
 
@@ -500,45 +500,67 @@ function _M.lua_body_filter(conf, ctx, headers, body)
     local proto = protocols.get(ctx.ai_client_protocol)
 
     if conf.stream_check_mode == "final_packet" then
-        if not ctx.var.llm_response_text then
+        local content = ctx.var.llm_response_text
+        if not content or content == "" or ctx.ai_stream_aborted or ctx.ai_stream_failed
+           or ctx.aliyun_cm_done_sent then
             return
         end
         if not ctx.ai_aliyun_response_moderated then
-            response_content_moderation(ctx, conf, ctx.var.llm_response_text)
+            ctx.var.llm_content_risk_level = nil
+            local _, _, message = response_content_moderation(ctx, conf, content)
+            ctx.aliyun_cm_deny_message = message or ""
             release_cm_httpc(ctx, conf)
             ctx.ai_aliyun_response_moderated = true
         end
-        local events = sse.decode(body)
+        if not ctx.var.llm_content_risk_level then
+            return
+        end
+        local events = sse.decode(body or "")
         for _, event in ipairs(events) do
-            if proto and proto.is_data_event(event) then
+            if proto.is_data_event(event) then
                 local data, err = core.json.decode(event.data)
                 if not data then
                     core.log.warn("failed to decode SSE data: ", err)
                     goto CONTINUE
                 end
                 data.risk_level = ctx.var.llm_content_risk_level
+                data.deny_message = ctx.aliyun_cm_deny_message
                 event.data = core.json.encode(data)
+                if not ctx.ai_stream_has_usage and event.type == "message_delta"
+                   and type(data.delta) == "table" then
+                    -- Anthropic SDKs overwrite stop fields on every message_delta.
+                    ctx.aliyun_cm_message_delta = data.delta
+                end
             end
             ::CONTINUE::
         end
 
         local raw_events = {}
-        local contains_done_event = false
+        local done_index
         for _, event in ipairs(events) do
-            if proto and proto.is_done_event(event) then
-                contains_done_event = true
+            if proto.is_done_event(event) then
+                done_index = #raw_events + 1
             end
             table.insert(raw_events, sse.encode(event))
         end
-        -- llm_request_done only means "no more content is coming", which is also
-        -- set when a stream is cut short (upstream read error, stream limit).
-        -- ctx.ai_stream_aborted marks those cases: synthesizing a terminator there
-        -- would tell the client a truncated response completed successfully.
-        if not contains_done_event and proto and ctx.var.llm_request_done
-           and not ctx.ai_stream_aborted then
-            table.insert(raw_events, proto.build_done_event())
+        -- Converters dispatch several events after the source has completed.
+        -- Only a client terminator or the empty EOF flush can finish its output.
+        local eof = ctx.var.llm_request_done and (not body or body == "")
+        if not ctx.ai_stream_has_usage and proto.build_moderation_event
+           and (done_index or eof) then
+            table.insert(raw_events, done_index or #raw_events + 1,
+                sse.encode(proto.build_moderation_event({
+                    deny_message = ctx.aliyun_cm_deny_message,
+                    risk_level = ctx.var.llm_content_risk_level,
+                    model = ctx.var.request_llm_model,
+                    delta = ctx.aliyun_cm_message_delta or {},
+                })))
         end
-        return nil, table.concat(raw_events, "\n")
+        if not done_index and eof and proto.build_moderation_event then
+            table.insert(raw_events, proto.build_done_event() .. "\n\n")
+        end
+        ctx.aliyun_cm_done_sent = done_index ~= nil or eof
+        return nil, table.concat(raw_events)
     end
 
     if conf.stream_check_mode == "realtime" then

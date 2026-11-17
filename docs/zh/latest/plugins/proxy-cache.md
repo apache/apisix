@@ -60,6 +60,8 @@ import TabItem from '@theme/TabItem';
 
 两种缓存策略都会遵循上游响应中的 `Vary` 响应头（RFC 9111 §4.1）。缓存条目会按请求中 `Vary` 列出的各个头部的值进行分区，因此一个带有 `Vary: Accept-Encoding` 的响应不会被返回给具有不同 `Accept-Encoding` 的请求。`Vary: *` 的响应被视为不可复用，不会被缓存。
 
+`consumer_isolation` 回退使用的 `$remote_user` 不会校验凭证。NGINX 直接从客户端的 `Authorization: Basic` 请求头中解析 `$remote_user`，因此任何客户端都可以声称任意用户名。不要依赖该回退来保护个性化的缓存响应。请在路由上配置认证插件，使身份解析为经过校验的 APISIX 消费者，或对返回用户专属内容的路由关闭缓存。
+
 ## 静态配置
 
 默认情况下，磁盘缓存时的 `cache_ttl` 和缓存 `zones` 等值已在 [默认配置](https://github.com/apache/apisix/blob/master/apisix/cli/config.lua) 中预先配置。

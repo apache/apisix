@@ -1,0 +1,19 @@
+{
+  "id": "chatcmpl-audio1",
+  "object": "chat.completion",
+  "model": "{{model}}",
+  "choices": [
+    {
+      "index": 0,
+      "message": { "role": "assistant", "content": "Hello" },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 100,
+    "completion_tokens": 50,
+    "total_tokens": 150,
+    "prompt_tokens_details": { "cached_tokens": 20, "audio_tokens": 30 },
+    "completion_tokens_details": { "reasoning_tokens": 10, "audio_tokens": 70 }
+  }
+}

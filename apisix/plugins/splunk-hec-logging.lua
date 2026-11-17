@@ -25,6 +25,7 @@ local table_insert    = core.table.insert
 local table_concat    = core.table.concat
 local ipairs          = ipairs
 local pairs           = pairs
+local type            = type
 
 
 local DEFAULT_SPLUNK_HEC_ENTRY_SOURCE = "apache-apisix-splunk-hec-logging"
@@ -171,11 +172,11 @@ local function send_to_splunk(conf, entries)
 
     if res.status ~= 200 then
         local body = core.json.decode(res.body)
-        if not body then
-            return false, "failed to send splunk, http status code: " .. res.status
-        else
+        if type(body) == "table" and type(body.text) == "string" then
             return false, "failed to send splunk, " .. body.text
         end
+        return false, "failed to send splunk, http status code: " .. res.status
+                      .. ", body: " .. (res.body or "")
     end
 
     return true

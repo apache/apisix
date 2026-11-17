@@ -75,6 +75,9 @@ import TabItem from '@theme/TabItem';
 | set_id_token_header | boolean | 否 | true | | 如果为 true 并且 ID 令牌可用，则在 `X-ID-Token` 请求标头中设置值。 |
 | set_userinfo_header | boolean | 否 | true | | 如果为 true 并且用户信息数据可用，则在 `X-Userinfo` 请求标头中设置值。 |
 | set_refresh_token_header | boolean | 否 | false | | 如果为 true 并且刷新令牌可用，则在 `X-Refresh-Token` 请求标头中设置值。 |
+| upstream_headers | array[object] | 否 | | | 以请求头形式转发给上游的 claim。插件会先清除所有声明的请求头，再只用已校验的 claim 设置，因此客户端无法自行提供这些值，包括 `unauth_action` 为 `pass` 时放行的请求。使用 `bearer_only`、`public_key`、`use_jwks` 或令牌自省时，claim 来自已校验的访问令牌负载或自省响应。授权码流程中，claim 先从 ID 令牌读取，ID 令牌中没有的再从用户信息读取。值为 `null` 或 `false` 的 claim 视为不存在，会继续从下一个来源读取。 |
+| upstream_headers.header | string | 是 | | | 上游请求头名称。 |
+| upstream_headers.path | array[string] | 是 | | | 定位 claim 的键，每层嵌套一个键，例如 `["org", "id"]`。键按字面匹配，因此包含 `://`、`/` 或 `.` 的 claim 名称是一个键。字符串原样转发，数字和 `true` 转为文本，数组和对象（包括空数组和空对象）以 base64 编码的 JSON 转发。claim 不存在、为 `null`、`false` 或空字符串时不设置该请求头。 |
 | session | object | 否 | | | 当 `bearer_only` 为 `false` 且插件使用 Authorization Code 流程时使用的 Session 配置。 |
 | session.secret | string | 是 | | 16 个字符以上 | 当 `bearer_only` 为 `false` 时，用于 session 加密和 HMAC 运算的密钥。|
 | session.cookie_name | string | 否 | | | 会话 Cookie 名称。作为 `cookie_name` 透传到 [lua-resty-session](https://github.com/bungle/lua-resty-session#configuration) 4.x。 |
@@ -458,6 +461,38 @@ OpenID Connect (OIDC) 中的 UserInfo 端点在 [OpenID Connect Core 1.0 第 5.3
 ![用户信息流程图](https://static.api7.ai/uploads/2026/04/21/WU7wdpMu_7-user-info-flow.webp)
 
 当 `set_userinfo_header` 为 `true`（默认值）时，插件在 `X-Userinfo` 请求头中设置用户信息数据，上游服务可使用该数据进行进一步处理。
+
+### 将 claim 转发给上游
+
+以下示例将已校验 bearer 令牌中的部分 claim 以请求头形式转发给上游，上游无需解析令牌。
+
+在插件中配置 `upstream_headers`，每一项指定请求头名称和定位 claim 的键路径 `path`：
+
+```json
+"openid-connect": {
+  "client_id": "api",
+  "discovery": "https://idp.example.com/.well-known/openid-configuration",
+  "bearer_only": true,
+  "use_jwks": true,
+  "upstream_headers": [
+    { "header": "X-Profile-Id", "path": ["https://example.com/claims/profile/id"] },
+    { "header": "X-Org-Id", "path": ["org", "id"] },
+    { "header": "X-Client-Scopes", "path": ["scope"] }
+  ]
+}
+```
+
+对于负载为 `{"https://example.com/claims/profile/id": "profile-1", "org": {"id": 42}, "scope": ["read", "write"]}` 的令牌，上游收到以下请求头：
+
+```text
+X-Profile-Id: profile-1
+X-Org-Id: 42
+X-Client-Scopes: WyJyZWFkIiwid3JpdGUiXQ==
+```
+
+数组 `scope` 以 base64 编码的 JSON 转发，解码后为 `["read","write"]`。
+
+令牌中不存在的 claim 不会产生对应请求头，即使客户端自带该请求头。
 
 ## 故障排除
 

@@ -536,7 +536,9 @@ inspect: all hooks removed
         content_by_lua_block {
             local test = require("lib.test_inspect")
 
-            local t1 = test.hot1()
+            local dbg = require("apisix.inspect.dbg")
+            assert(jit.status(), "JIT should be enabled before installing the hook")
+            test.hot1()
 
             write_hooks([[
             local test = require("lib.test_inspect")
@@ -546,10 +548,21 @@ inspect: all hooks removed
             end)
             ]])
 
-            ngx.sleep(1.5)
+            -- Wait for the file watcher to install the hook before exercising it.
+            for _ = 1, 50 do
+                if #dbg.hooks() == 1 then
+                    break
+                end
+                ngx.sleep(0.1)
+            end
+            assert(#dbg.hooks() == 1, "inspect hook was not installed")
+            assert(not jit.status(), "JIT should be disabled while the hook is active")
 
-            local t2 = test.hot1()
-            assert(t2-t1 < t1*0.8, "hot1 consumes at least double times than before")
+            test.hot1()
+
+            assert(#dbg.hooks() == 0, "completed hook should be removed")
+            assert(debug.gethook() == nil, "debug hook should be cleared")
+            assert(jit.status(), "JIT should be restored after the last hook completes")
         }
     }
 --- error_log

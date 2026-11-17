@@ -16,6 +16,7 @@
 local type         = type
 local pairs        = pairs
 local ipairs       = ipairs
+local pcall        = pcall
 local tostring     = tostring
 local tonumber     = tonumber
 local str_lower    = string.lower
@@ -120,7 +121,9 @@ local function update_config(apisix_yaml)
         if not ok then
             return nil, "failed to save config to shared dict: " .. err
         end
-        core.log.info("standalone config updated: ", raw)
+        -- the payload is a full declarative configuration and can carry TLS
+        -- private keys and plugin credentials; log its size, not its contents
+        core.log.info("standalone config updated, size: ", #raw)
     else
         core.log.crit(config_yaml.ERR_NO_SHARED_DICT)
     end
@@ -231,7 +234,8 @@ local function try_restore_from_shared_dict()
         core.log.info("no config found in shared dict")
         return true
     end
-    core.log.info("startup config loaded from shared dict: ", stored)
+    -- the payload can carry TLS private keys and plugin credentials
+    core.log.info("startup config loaded from shared dict, size: ", #stored)
 
     local _, raw, err = decode_config(tostring(stored))
     if not raw then
@@ -273,16 +277,21 @@ local function update(ctx)
     -- parse the request body
     local data
     if core.string.has_prefix(content_type, "application/yaml") then
-        data = yaml.load(req_body, { all = false })
-        if not data or type(data) ~= "table" then
+        local ok, result = pcall(yaml.load, req_body, { all = false })
+        -- a null document (`~`) loads as lyaml's sentinel table, which would
+        -- otherwise pass as an empty object and clear every resource
+        if not ok or type(result) ~= "table" or result == yaml.null then
             err = "invalid yaml request body"
+        else
+            data = result
         end
     else
         data, err = core.json.decode(req_body)
     end
     if err then
-        core.log.error("invalid request body: ", req_body, " err: ", err)
-        core.response.exit(400, {error_msg = "invalid request body: " .. err})
+        -- same reason as above: the body is the configuration itself
+        core.log.error("invalid request body, err: ", err)
+        return core.response.exit(400, {error_msg = "invalid request body: " .. err})
     end
     req_body = data
 

@@ -21,6 +21,7 @@ local ipairs = ipairs
 local pairs = pairs
 local string = string
 local error = error
+local tostring = tostring
 local is_http = ngx.config.subsystem == "http"
 local process = require("ngx.process")
 local core = require("apisix.core")
@@ -30,9 +31,19 @@ local k8s_core = require("apisix.discovery.kubernetes.core")
 
 local ctx
 
+-- The shared dict is the source of truth. A worker serves a cached node list
+-- for at most ENDPOINT_CACHE_TTL seconds and then re-reads it from the dict
+-- (invalid_stale: an expired entry is dropped, never handed back), so there
+-- is no version probe and no way to cache a torn pair (apache/apisix#14149).
+-- A miss is cached for the same time so an unknown service does not hit the
+-- dict on every request.
+local ENDPOINT_CACHE_TTL = 1
 local endpoint_lrucache = core.lrucache.new({
-    ttl = 300,
-    count = 1024
+    ttl = ENDPOINT_CACHE_TTL,
+    count = 1024,
+    invalid_stale = true,
+    neg_ttl = ENDPOINT_CACHE_TTL,
+    neg_count = 64,
 })
 
 
@@ -87,7 +98,13 @@ local function single_mode_init(conf)
 end
 
 
-local function single_mode_nodes(service_name)
+local function single_mode_nodes(service_name, discovery_args)
+    if discovery_args and discovery_args.cluster_ids then
+        core.log.error("discovery_args.cluster_ids requires kubernetes discovery ",
+                       "configured with multiple clusters, service: ", service_name)
+        return nil
+    end
+
     return k8s_core.resolve_nodes(
         endpoint_lrucache, service_name,
         "^(.*):(.*)$",   -- namespace/name:port_name
@@ -154,7 +171,91 @@ local function multiple_mode_init(confs)
 end
 
 
-local function multiple_mode_nodes(service_name)
+local function merge_cluster_nodes(endpoint_dicts, endpoint_key, endpoint_port)
+    local nodes = {}
+    local seen = {}
+    local found = false
+    for _, endpoint_dict in ipairs(endpoint_dicts) do
+        local cluster_nodes = k8s_core.create_endpoint_lrucache(endpoint_dict, endpoint_key,
+                                                                endpoint_port)
+        if cluster_nodes then
+            found = true
+        end
+        for _, node in ipairs(cluster_nodes or {}) do
+            local addr = node.host .. ":" .. tostring(node.port)
+            if not seen[addr] then
+                seen[addr] = true
+                core.table.insert(nodes, node)
+            end
+        end
+    end
+
+    -- nil, not an empty table, when no selected cluster knows the service,
+    -- so that the miss is negative-cached like in single cluster mode
+    if not found then
+        return nil
+    end
+
+    return nodes
+end
+
+
+-- with cluster_ids, service_name is "namespace/name:port_name"
+local cluster_ids_service_name_pattern = [[^([^/:]+/[^/:]+):([^/:]+)$]]
+
+
+local function parse_cluster_ids_service_name(service_name)
+    local match = ngx.re.match(service_name, cluster_ids_service_name_pattern, "jo")
+    if not match then
+        return nil, "service_name must be namespace/name:port_name when "
+                    .. "discovery_args.cluster_ids is set, got: " .. service_name
+    end
+    return match
+end
+
+
+local function selected_clusters_nodes(service_name, cluster_ids)
+    local match, err = parse_cluster_ids_service_name(service_name)
+    if not match then
+        core.log.error(err)
+        return nil
+    end
+    local endpoint_key, endpoint_port = match[1], match[2]
+
+    local endpoint_dicts = core.table.new(#cluster_ids, 0)
+    local unknown_ids
+    for _, id in ipairs(cluster_ids) do
+        local endpoint_dict = ctx[id]
+        if not endpoint_dict then
+            unknown_ids = unknown_ids or {}
+            core.table.insert(unknown_ids, id)
+        else
+            core.table.insert(endpoint_dicts, endpoint_dict)
+        end
+    end
+
+    if unknown_ids then
+        core.log.warn("skip unknown kubernetes discovery cluster ids: ",
+                      core.table.concat(unknown_ids, ", "), ", service: ", service_name)
+    end
+
+    if #endpoint_dicts == 0 then
+        core.log.info("no known kubernetes discovery cluster selected for ", service_name)
+        return nil
+    end
+
+    -- merged from the selected dicts, refreshed when the cache entry expires
+    return endpoint_lrucache(service_name .. "#" .. core.table.concat(cluster_ids, ","), nil,
+                             merge_cluster_nodes, endpoint_dicts, endpoint_key, endpoint_port)
+end
+
+
+local function multiple_mode_nodes(service_name, discovery_args)
+    local cluster_ids = discovery_args and discovery_args.cluster_ids
+    if cluster_ids then
+        return selected_clusters_nodes(service_name, cluster_ids)
+    end
+
     return k8s_core.resolve_nodes(
         endpoint_lrucache, service_name,
         "^(.*)/(.*/.*):(.*)$",   -- id/namespace/name:port_name
@@ -180,6 +281,52 @@ function _M.init_worker()
         _M.nodes = multiple_mode_nodes
         multiple_mode_init(discovery_conf)
     end
+end
+
+
+function _M.check_discovery_args(discovery_args, service_name, in_dp)
+    local cluster_ids = discovery_args and discovery_args.cluster_ids
+    if not cluster_ids then
+        return true
+    end
+
+    if service_name then
+        local match, err = parse_cluster_ids_service_name(service_name)
+        if not match then
+            return false, err
+        end
+    end
+
+    -- the data plane resolves the ids at runtime, where an unknown id is skipped
+    if in_dp then
+        return true
+    end
+
+    local discovery_conf = local_conf.discovery.kubernetes
+    if #discovery_conf == 0 then
+        return false, "discovery_args.cluster_ids requires kubernetes discovery "
+                      .. "configured with multiple clusters"
+    end
+
+    local known_ids = {}
+    for _, conf in ipairs(discovery_conf) do
+        known_ids[conf.id] = true
+    end
+
+    local unknown_ids
+    for _, id in ipairs(cluster_ids) do
+        if not known_ids[id] then
+            unknown_ids = unknown_ids or {}
+            core.table.insert(unknown_ids, id)
+        end
+    end
+
+    if unknown_ids then
+        return false, "unknown kubernetes discovery cluster ids in "
+                      .. "discovery_args.cluster_ids: " .. core.table.concat(unknown_ids, ", ")
+    end
+
+    return true
 end
 
 

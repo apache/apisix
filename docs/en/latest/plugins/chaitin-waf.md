@@ -57,6 +57,7 @@ The Plugin can add the following response headers, depending on the configuratio
 | match.vars               | array[array]  | false    |         |                          | An array of one or more matching conditions in the form of [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list) to conditionally execute the plugin. |
 | append_waf_resp_header   | boolean       | false    | true    |                          | If true, add response headers `X-APISIX-CHAITIN-WAF`, `X-APISIX-CHAITIN-WAF-TIME`, `X-APISIX-CHAITIN-WAF-ACTION`, and `X-APISIX-CHAITIN-WAF-STATUS`. |
 | append_waf_debug_header  | boolean       | false    | false   |                          | If true, add debugging headers `X-APISIX-CHAITIN-WAF-ERROR` and `X-APISIX-CHAITIN-WAF-SERVER` to the response. Effective only when `append_waf_resp_header` is `true`. |
+| allow_degradation        | boolean       | false    |         |                          | If true, allow requests to continue when the WAF integration fails. Overrides Plugin Metadata when explicitly set, including `false`. If omitted, inherits Plugin Metadata and falls back to `false`. |
 | config                   | object        | false    |         |                          | Chaitin WAF service configurations. These settings override the corresponding metadata defaults when specified. |
 | config.connect_timeout   | integer       | false    | 1000    |                          | The connection timeout to the WAF service, in milliseconds. |
 | config.send_timeout      | integer       | false    | 1000    |                          | The sending timeout for transmitting data to the WAF service, in milliseconds. |
@@ -69,6 +70,8 @@ The Plugin can add the following response headers, depending on the configuratio
 | config.resp_body_size    | integer       | false    | 4       | >= 0                     | The amount of the response body to report, in KB. Set to `0` to report only the status line and response headers. Effective only when `config.log_resp` is `true`. |
 | config.extra_ignored_content_types | string | false  |         |                          | A comma separated list of response `Content-Type` values to skip, in addition to the built-in ignored list. Effective only when `config.log_resp` is `true`. |
 
+When `allow_degradation` is `true`, requests continue if Plugin Metadata or `nodes` are missing, WAF node selection fails, or the WAF detection call fails (including timeouts). Successful WAF verdicts still follow `mode`. Requests can still wait for the configured WAF timeout before being allowed to continue.
+
 ## Plugin Metadata
 
 | Name                     | Type          | Required | Default | Valid values | Description |
@@ -77,6 +80,7 @@ The Plugin can add the following response headers, depending on the configuratio
 | nodes.host               | string        | True     |         |              | Address of Chaitin WAF service. Supports IPv4, IPv6, Unix Socket, etc. |
 | nodes.port               | integer       | False    | 80      |              | Port of Chaitin WAF service. |
 | mode                     | string        | False    |         |    block     | Mode to determine how the Plugin behaves for matched requests. In `off` mode, WAF checks are skipped. In `monitor` mode, requests with potential threats are logged but not blocked. In `block` mode, requests with threats are blocked as determined by the WAF service. |
+| allow_degradation        | boolean       | False    | false   |              | Default value for `allow_degradation` when the Plugin configuration does not set it. |
 | config                   | object        | False    |         |              | Chaitin WAF service configurations. |
 | config.connect_timeout   | integer       | False    | 1000    |              | The connection timeout to the WAF service, in milliseconds. |
 | config.send_timeout      | integer       | False    | 1000    |              | The sending timeout for transmitting data to the WAF service, in milliseconds. |

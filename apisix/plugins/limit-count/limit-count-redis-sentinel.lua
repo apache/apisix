@@ -87,14 +87,14 @@ end
 
 
 function _M.incoming_delayed(self, key, cost, syncer_id)
-    local remaining, reset, err = self.delayed_syncer:delayed_sync(key, cost, syncer_id)
+    local remaining, reset, err, info = self.delayed_syncer:delayed_sync(key, cost, syncer_id)
     if not remaining then
         return nil, err, 0
     end
     if remaining < 0 then
-        return nil, "rejected", reset
+        return nil, "rejected", reset, info
     end
-    return 0, remaining, reset
+    return 0, remaining, reset, info
 end
 
 

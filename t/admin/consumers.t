@@ -87,7 +87,7 @@ passed
                         "desc": "new consumer",
                         "plugins": {
                             "key-auth": {
-                                "key": "4y+JvURBE6ZwRbbgaryrhg=="
+                                "key": "$ENC$v1$4y+JvURBE6ZwRbbgaryrhg=="
                             }
                         }
                     },

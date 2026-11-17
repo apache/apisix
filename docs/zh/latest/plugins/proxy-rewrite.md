@@ -44,7 +44,7 @@ description: proxy-rewrite 插件支持重写 APISIX 转发到上游服务的请
 | method | string | 否 | | ["GET", "POST", "PUT", "HEAD", "DELETE", "OPTIONS", "MKCOL", "COPY", "MOVE", "PROPFIND", "LOCK", "UNLOCK", "PATCH", "TRACE"] | 要使用的重写请求的 HTTP 方法。 |
 | regex_uri | array[string] | 否 | | | 用于匹配客户端请求 URI 路径并生成新的上游 URI 路径的正则表达式。当同时配置 `uri` 和 `regex_uri` 时，`uri` 的优先级更高。请在一个扁平数组中提供一个或多个“匹配模式 - 替换值”配对。插件按顺序检查各配对，并应用第一个匹配项。例如，配置 `["^/test/(.*)/(.*)", "/$1-$2", "^/other/(.*)", "/other"]` 后，发送到 `/test/user/agent` 的请求会被重写为 `/user-agent`，发送到 `/other/hello` 的请求会被重写为 `/other`。|
 | host | string | 否 | | | 设置 [`Host`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Host) 请求标头。|
-| headers | object | 否 | | | 要执行的标头操作。可以设置为动作动词 `add`、`remove` 和/或 `set` 的对象；或由要 `set` 的标头组成的对象。当配置了多个动作动词时，动作将按照“添加”、“删除”和“设置”的顺序执行。|
+| headers | object | 否 | | | 要执行的标头操作。可以设置为动作动词 `add`、`remove` 和/或 `set` 的对象；或由要 `set` 的标头组成的对象。当配置了多个动作动词时，动作将按照 `add`、`set`、`remove` 的顺序执行。对于同名标头，`set` 会覆盖 `add` 添加的值，`remove` 会在这两个操作之后删除该标头。|
 | headers.add | object | 否 | | | 要附加到请求的标头。如果请求中已经存在该标头，插件会追加配置值。值可以是常量、一个或多个 [NGINX 变量](https://nginx.org/en/docs/http/ngx_http_core_module.html)，或者 `$1-$2-$3` 等 `regex_uri` 捕获结果。值也可以是数组；插件会分别解析每个元素，并按数组顺序将其追加为单独的标头行。APISIX 3.18.0 及后续版本支持数组值。|
 | headers.set | object | 否 | | | 要在请求中设置的标头。如果请求中已经存在该标头，插件会覆盖原有值。值可以是常量、一个或多个 [NGINX 变量](https://nginx.org/en/docs/http/ngx_http_core_module.html)，或者 `$1-$2-$3` 等 `regex_uri` 捕获结果。值也可以是数组；插件会分别解析每个元素，并用按数组顺序生成的多个标头行替换原有值。APISIX 3.18.0 及后续版本支持数组值。请勿使用此字段设置 `Host`。|
 | headers.remove | array[string] | 否 | | | 从请求中删除的标头。

@@ -30,6 +30,7 @@ return {
             default = "64m",
         },
         token = {type = "string", default = ""},
+        ssl_verify = {type = "boolean", default = true},
         fetch_interval = {type = "integer", minimum = 1, default = 3},
         keepalive = {
             type = "boolean",

@@ -319,11 +319,9 @@ passed
 POST /truncated
 {"messages":[{"role":"user","content":"hi"}],"model":"gpt-4","stream":true}
 --- response_body_like eval
-# The moderation plugin re-encodes every event, so the key order is not stable
-# enough to assert the body verbatim: require the delivered content and the
-# risk_level annotation that proves the final_packet branch ran, and reject a
-# [DONE] anywhere in the response.
-qr/^(?!.*\[DONE\])(?=.*"content":"hello")(?=.*"risk_level":"none")/s
+# Final-packet moderation requires completion; a transport failure must not
+# fabricate a final risk result or a successful protocol terminator.
+qr/^(?!.*\[DONE\])(?=.*"risk_level":"none")(?=.*"content":"hello")/s
 --- error_log
 failed to read response chunk: closed
 --- timeout: 10

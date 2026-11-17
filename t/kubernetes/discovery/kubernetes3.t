@@ -127,7 +127,7 @@ _EOC_
               local core = require("apisix.core")
               local d = require("apisix.discovery.kubernetes")
 
-              ngx.sleep(1)
+              ngx.sleep(1.1)
 
               ngx.req.read_body()
               local request_body = ngx.req.get_body_data()
@@ -205,7 +205,7 @@ _EOC_
                         return 500
                     end
 
-                    ngx.sleep(1)
+                    ngx.sleep(1.1)
 
                     local k8s = require("apisix.discovery.kubernetes")
                     local data = k8s.dump_data()
@@ -226,7 +226,7 @@ _EOC_
                 local http = require "resty.http"
                 local httpc = http.new()
 
-                ngx.sleep(1)
+                ngx.sleep(1.1)
 
                 local dump_uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/v1/discovery/kubernetes/dump"
                 local res, err = httpc:request_uri(dump_uri, { method = "GET"})
@@ -253,7 +253,7 @@ _EOC_
                         ngx.status = res.status
                         return
                     end
-                    ngx.sleep(1)
+                    ngx.sleep(1.1)
                 end
                 local httpc = http.new()
                 local res, _ = httpc:request_uri(healthcheck_uri, {method = "GET", keepalive = false})

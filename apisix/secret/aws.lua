@@ -136,7 +136,8 @@ function _M.get(conf, key)
 
             local data, err = core.json.decode(res)
             if not data then
-                return nil, "failed to decode result, res: " .. res .. ", err: " .. err
+                return nil, "failed to decode result, secret: " .. main_key
+                           .. ", field: " .. sub_key .. ", err: " .. err
             end
 
             return data[sub_key]

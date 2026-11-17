@@ -210,7 +210,7 @@ value
 --- request
 GET /t
 --- response_body_like
-failed to decode result, res: \{\"errors\":\[\"permission denied\"\]}\n
+failed to decode result, path: /apisix-key/jack
 
 
 
@@ -235,7 +235,7 @@ failed to decode result, res: \{\"errors\":\[\"permission denied\"\]}\n
 --- request
 GET /t
 --- response_body_like
-failed to decode result, res: \{\"errors\":\[\"permission denied\"\]}\n
+failed to decode result, path: /apisix-key/jack
 
 
 
@@ -293,3 +293,42 @@ passed
 GET /t
 --- error_log
 HCV_NAMESAPCE:apisix
+
+
+
+=== TEST 12: the response body is not logged when it has no data field
+--- request
+GET /t
+--- config
+    location /v1/kv/apisix/leak {
+        return 200 '{"warnings":["vault-body-sentinel"]}';
+    }
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/secrets/vault/leak',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "http://127.0.0.1:1984",
+                    "prefix": "kv/apisix",
+                    "token": "root"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                return ngx.say(body)
+            end
+
+            ngx.sleep(1)
+
+            local secret = require("apisix.secret")
+            local refs = secret.fetch_secrets({key = "$secret://vault/leak/leak/key"})
+            ngx.say(refs.key)
+        }
+    }
+--- response_body
+$secret://vault/leak/leak/key
+--- error_log
+failed to decode result, path: leak
+--- no_error_log
+vault-body-sentinel

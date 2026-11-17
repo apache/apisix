@@ -389,3 +389,23 @@ where application = 'A' and server_name = 'AServer' and node_name = '172.16.1.1'
 [
     "{ 1 0 1 1 }\n",
 ]
+
+
+
+=== TEST 12: the shared dict holds one key per servant and no version key
+--- timeout: 4
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.sleep(2)
+
+            -- exactly the servants left by the tests above, nothing else
+            local keys = ngx.shared["tars"]:get_keys(0)
+            table.sort(keys)
+            ngx.say(table.concat(keys, ","))
+        }
+    }
+--- request
+GET /t
+--- response_body
+A.AServer.FirstObj,B.BServer.FirstObj,C.CServer.FirstObj

@@ -453,3 +453,222 @@ hostname cached: true
 hostname valid: true
 system hostname: .+
 hostname match: true
+
+
+
+=== TEST 14: resolve_var reports how many variables it resolved
+--- config
+    location /t {
+        content_by_lua_block {
+            local resolve_var = require("apisix.core.utils").resolve_var
+            local ctx = {you = "John", me = "David", num = 42, f = false}
+            local cases = {
+                "$you and $me",
+                "${nobody}",
+                "${nobody??Rose}",
+                "${nobody??}",
+                "${ nobody ?? 0 }",
+                "$you$nobody$me",
+                "\\$me",
+                "no vars",
+                "$num",
+                "$f",
+            }
+            for _, case in ipairs(cases) do
+                local res, err, n = resolve_var(case, ctx)
+                ngx.say(case, " => ", res, " ", n, " ", tostring(err))
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+$you and $me => John and David 2 nil
+${nobody} =>  0 nil
+${nobody??Rose} => Rose 1 nil
+${nobody??} =>  0 nil
+${ nobody ?? 0 } => 0 1 nil
+$you$nobody$me => JohnDavid 2 nil
+\$me => \$me 0 nil
+no vars => no vars 0 nil
+$num => 42 1 nil
+$f => false 1 nil
+
+
+
+=== TEST 15: resolve_var applies the escaper to every resolved value
+--- config
+    location /t {
+        content_by_lua_block {
+            local resolve_var = require("apisix.core.utils").resolve_var
+            local ctx = {sp = "x y", sl = "/"}
+            local res, err, n = resolve_var("$sp-${sl}-${none??a b}", ctx, ngx.escape_uri)
+            ngx.say(res, " ", n, " ", tostring(err))
+            res, err, n = resolve_var("$sp-$sl", ctx, function(v)
+                return v == "/" and 1 or nil
+            end)
+            ngx.say(res, " ", n, " ", tostring(err))
+        }
+    }
+--- request
+GET /t
+--- response_body
+x%20y-%2F-a%20b 3 nil
+nil-1 2 nil
+
+
+
+=== TEST 16: resolve_var reuses a template with different values on every call
+--- config
+    location /t {
+        content_by_lua_block {
+            local resolve_var = require("apisix.core.utils").resolve_var
+            local tpl = "${host}:${uri}"
+            for i = 1, 3 do
+                local res, _, n = resolve_var(tpl, {host = "h" .. i, uri = "/u" .. i})
+                ngx.say(res, " ", n)
+            end
+            local res, _, n = resolve_var(tpl, {host = "h4"})
+            ngx.say(res, " ", n)
+        }
+    }
+--- request
+GET /t
+--- response_body
+h1:/u1 2
+h2:/u2 2
+h3:/u3 2
+h4: 1
+
+
+
+=== TEST 17: a variable getter may resolve another template while it is called
+--- config
+    location /t {
+        content_by_lua_block {
+            local resolve_var = require("apisix.core.utils").resolve_var
+            local ctx = setmetatable({}, {__index = function(_, key)
+                if key == "outer" then
+                    return (resolve_var("in-$inner", {inner = "x"}))
+                end
+                if key == "b" then
+                    return "B"
+                end
+            end})
+            local res, err, n = resolve_var("$outer/$b", ctx)
+            ngx.say(res, " ", n, " ", tostring(err))
+        }
+    }
+--- request
+GET /t
+--- response_body
+in-x/B 2 nil
+
+
+
+=== TEST 18: resolve_var keeps working after a variable getter raises an error
+--- config
+    location /t {
+        content_by_lua_block {
+            local resolve_var = require("apisix.core.utils").resolve_var
+            local ctx = setmetatable({}, {__index = function(_, key)
+                if key == "boom" then
+                    error("getter failed")
+                end
+                if key == "outer" then
+                    return (resolve_var("in-$inner", {inner = "x"}))
+                end
+                return key == "b" and "B" or nil
+            end})
+            local ok = pcall(resolve_var, "keep-$b/$boom", ctx)
+            ngx.say("raised: ", not ok)
+            for _ = 1, 2 do
+                local res, err, n = resolve_var("$outer/$b", ctx)
+                ngx.say(res, " ", n, " ", tostring(err))
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+raised: true
+in-x/B 2 nil
+in-x/B 2 nil
+
+
+
+=== TEST 19: resolve_var with no_cache resolves the template without caching it
+--- config
+    location /t {
+        content_by_lua_block {
+            local resolve_var = require("apisix.core.utils").resolve_var
+            local tpl_cache
+            for i = 1, math.huge do
+                local name, value = debug.getupvalue(resolve_var, i)
+                if not name then
+                    break
+                end
+                if name == "tpl_cache" then
+                    tpl_cache = value
+                    break
+                end
+            end
+
+            local res, err, n = resolve_var("once-$a", {a = "x"}, nil, true)
+            ngx.say(res, " ", n, " ", tostring(err))
+            ngx.say("cached: ", tpl_cache:get("once-$a") ~= nil)
+
+            res = resolve_var("kept-$a", {a = "x"})
+            ngx.say(res)
+            ngx.say("cached: ", tpl_cache:get("kept-$a") ~= nil)
+        }
+    }
+--- request
+GET /t
+--- response_body
+once-x 1 nil
+cached: false
+kept-x
+cached: true
+
+
+
+=== TEST 20: resolve_var stays correct with more templates than its cache holds
+--- config
+    location /t {
+        content_by_lua_block {
+            local resolve_var = require("apisix.core.utils").resolve_var
+            local tpl_cache
+            for i = 1, math.huge do
+                local name, value = debug.getupvalue(resolve_var, i)
+                if not name then
+                    break
+                end
+                if name == "tpl_cache" then
+                    tpl_cache = value
+                    break
+                end
+            end
+
+            -- the second pass resolves templates the first one evicted
+            local bad = 0
+            for pass = 1, 2 do
+                local ctx = {uri = "/p" .. pass}
+                for i = 1, 3000 do
+                    local res, err, n = resolve_var("/svc-" .. i .. "${uri}", ctx)
+                    if res ~= "/svc-" .. i .. "/p" .. pass or err or n ~= 1 then
+                        bad = bad + 1
+                    end
+                end
+            end
+            ngx.say("mismatches: ", bad)
+            ngx.say("first template evicted: ", tpl_cache:get("/svc-1${uri}") == nil)
+            ngx.say("last template cached: ", tpl_cache:get("/svc-3000${uri}") ~= nil)
+        }
+    }
+--- request
+GET /t
+--- response_body
+mismatches: 0
+first template evicted: true
+last template cached: true

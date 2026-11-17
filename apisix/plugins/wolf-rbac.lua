@@ -22,6 +22,7 @@ local sleep    = core.sleep
 local ngx_re = require("ngx.re")
 local http     = require("resty.http")
 local ngx      = ngx
+local ipairs   = ipairs
 local rawget   = rawget
 local rawset   = rawset
 local setmetatable = setmetatable
@@ -31,27 +32,34 @@ local req_read_body = ngx.req.read_body
 local req_get_body_data = ngx.req.get_body_data
 
 local plugin_name = "wolf-rbac"
+local default_header_prefix = "X-"
 
 
 local schema = {
     type = "object",
     properties = {
+        header_prefix = {
+            type = "string",
+            default = default_header_prefix
+        },
+    }
+}
+
+local consumer_schema = {
+    type = "object",
+    properties = {
         appid = {
             type = "string",
-            default = "unset"
         },
         server = {
             type = "string",
             default = "http://127.0.0.1:12180"
         },
-        header_prefix = {
-            type = "string",
-            default = "X-"
-        },
         ssl_verify = {
             type = "boolean",
         },
-    }
+    },
+    required = {"appid"},
 }
 
 local _M = {
@@ -60,10 +68,21 @@ local _M = {
     type = 'auth',
     name = plugin_name,
     schema = schema,
+    consumer_schema = consumer_schema,
 }
 
 
 local token_version = 'V1'
+local identity_headers = {"UserId", "Username", "Nickname"}
+
+
+function _M.clear_auth_headers(conf, ctx)
+    for _, name in ipairs(identity_headers) do
+        core.request.set_header(ctx, conf.header_prefix .. name, nil)
+    end
+end
+
+
 local function create_rbac_token(appid, wolf_token)
     return token_version .. "#" .. appid .. "#" .. wolf_token
 end
@@ -142,8 +161,19 @@ local function http_get(uri, myheaders, timeout, ssl_verify)
 end
 
 
-function _M.check_schema(conf)
-    local ok, err = core.schema.check(schema, conf)
+function _M.check_schema(conf, schema_type)
+    if schema_type ~= core.schema.TYPE_CONSUMER then
+        return core.schema.check(schema, conf)
+    end
+
+    -- the old schema stored the default "X-" on every consumer
+    if conf.header_prefix ~= nil and conf.header_prefix ~= default_header_prefix then
+        return false, "header_prefix is no longer supported in consumer configuration, "
+                      .. "move it to the route or service wolf-rbac configuration"
+    end
+    conf.header_prefix = nil
+
+    local ok, err = core.schema.check(consumer_schema, conf)
     if not ok then
         return false, err
     end
@@ -239,6 +269,8 @@ end
 
 
 function _M.rewrite(conf, ctx)
+    _M.clear_auth_headers(conf, ctx)
+
     local url = ctx.var.uri
     local action = ctx.var.request_method
     local client_ip = core.request.get_remote_client_ip(ctx)
@@ -287,23 +319,11 @@ function _M.rewrite(conf, ctx)
 
     local username = nil
     local nickname = nil
-    local prefix = cur_consumer.auth_conf.header_prefix or ''
-    -- drop client-supplied identity headers before trusting the auth response
-    core.request.set_header(ctx, prefix .. "UserId", nil)
-    core.request.set_header(ctx, prefix .. "Username", nil)
-    core.request.set_header(ctx, prefix .. "Nickname", nil)
     if type(res.userInfo) == 'table' then
         local userInfo = res.userInfo
         ctx.userInfo = userInfo
-        local userId = userInfo.id
         username = userInfo.username
         nickname = userInfo.nickname or userInfo.username
-        core.response.set_header(prefix .. "UserId", userId)
-        core.response.set_header(prefix .. "Username", username)
-        core.response.set_header(prefix .. "Nickname", ngx.escape_uri(nickname))
-        core.request.set_header(ctx, prefix .. "UserId", userId)
-        core.request.set_header(ctx, prefix .. "Username", username)
-        core.request.set_header(ctx, prefix .. "Nickname", ngx.escape_uri(nickname))
     end
 
     if res.status ~= 200 then
@@ -311,6 +331,16 @@ function _M.rewrite(conf, ctx)
             ", action: ", action, ", url: ", url,
             ") failed, res status: ", res.status, ", err: ", res.err)
         return res.status, fail_response(res.err, { username = username, nickname = nickname })
+    end
+    if type(res.userInfo) == 'table' then
+        local prefix = conf.header_prefix
+        local userId = res.userInfo.id
+        core.response.set_header(prefix .. "UserId", userId)
+        core.response.set_header(prefix .. "Username", username)
+        core.response.set_header(prefix .. "Nickname", ngx.escape_uri(nickname))
+        core.request.set_header(ctx, prefix .. "UserId", userId)
+        core.request.set_header(ctx, prefix .. "Username", username)
+        core.request.set_header(ctx, prefix .. "Nickname", ngx.escape_uri(nickname))
     end
     consumer.attach_consumer(ctx, cur_consumer, consumer_conf)
     core.log.info("wolf-rbac check permission passed")

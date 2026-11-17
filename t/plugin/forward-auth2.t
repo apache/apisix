@@ -66,7 +66,9 @@ __DATA__
                                                     core.response.exit(403)
                                                 end
                                             else
-                                                if core.request.header(ctx, "Content-Length") or
+                                                -- ngx_http_ffi_client frames a GET with Content-Length: 0
+                                                local len = core.request.header(ctx, "Content-Length");
+                                                if (len and len ~= "0") or
                                                 core.request.header(ctx, "Transfer-Encoding") or
                                                 core.request.header(ctx, "Content-Encoding") then
                                                     core.response.exit(403)

@@ -31,7 +31,7 @@ do_install() {
     # install nodejs
     install_nodejs
 
-    # install common jest test suite
+    # install common node test suite
     pushd t
     pnpm install
     popd

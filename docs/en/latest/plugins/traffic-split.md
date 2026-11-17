@@ -64,6 +64,8 @@ The traffic ratio between Upstream services may be less accurate since round rob
 | rules.weighted_upstreams.upstream.pass_host             | string          | False    | "pass"     | ["pass", "node", "rewrite"] | Mode deciding how the host name is passed. `pass` passes the client's host name to the Upstream. `node` passes the host configured in the node of the Upstream. `rewrite` passes the value configured in `upstream_host`.             |
 | rules.weighted_upstreams.upstream.name                  | string         | False    |            |                             |  Identifier for the Upstream for specifying service name, usage scenarios, and so on.        |
 | rules.weighted_upstreams.upstream.upstream_host         | string         | False    |            |                             | Used when `pass_host` is `rewrite`. Host name of the Upstream.         |
+| rules.weighted_upstreams.upstream.tls                   | object         | False    |            |                             | TLS settings used when connecting to the Upstream. See `tls` of [Upstream](../admin-api.md#upstream) for the supported fields. |
+| rules.weighted_upstreams.upstream.keepalive_pool        | object         | False    |            |                             | Connection pool settings for the Upstream. See `keepalive_pool` of [Upstream](../admin-api.md#upstream) for the supported fields. |
 
 ## Examples
 

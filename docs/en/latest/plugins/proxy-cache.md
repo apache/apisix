@@ -61,6 +61,8 @@ The plugin always honors upstream `Cache-Control: private`, `no-store`, and `no-
 
 Both caching strategies honor the upstream `Vary` response header (RFC 9111 §4.1). Cache entries are partitioned by the request's values for each header listed in `Vary`, so a response served with `Vary: Accept-Encoding` will not be served to a request with a different `Accept-Encoding`. Responses with `Vary: *` are treated as not reusable and are not cached.
 
+The `consumer_isolation` fallback to `$remote_user` does not verify credentials. NGINX parses `$remote_user` from the client's `Authorization: Basic` header as-is, so any client can claim any username. Do not rely on this fallback to protect personalized cached responses. Configure an authentication plugin on the route so the identity resolves to a verified APISIX consumer, or disable caching for routes that return per-user content.
+
 ## Static Configurations
 
 By default, values such as `cache_ttl` when caching on disk and cache `zones` are pre-configured in the [default configuration](https://github.com/apache/apisix/blob/master/apisix/cli/config.lua).
@@ -110,7 +112,7 @@ On-disk caching strategy offers the advantages of data persistency when system r
 
 The following example demonstrates how you can use `proxy-cache` Plugin on a Route to cache data on disk.
 
-When using the on-disk caching strategy, the cache TTL is determined by value from the response header `Expires` or `Cache-Control`. If none of these headers is present or if APISIX returns `502 Bad Gateway` or `504 Gateway Timeout` due to unavailable Upstreams, the cache TTL defaults to the value configured in the [configuration files](#static-configuration).
+When using the on-disk caching strategy, the cache TTL is determined by value from the response header `Expires` or `Cache-Control`. If none of these headers is present or if APISIX returns `502 Bad Gateway` or `504 Gateway Timeout` due to unavailable Upstreams, the cache TTL defaults to the value configured in the [configuration files](#static-configurations).
 
 Create a Route with the `proxy-cache` Plugin to cache data on disk:
 

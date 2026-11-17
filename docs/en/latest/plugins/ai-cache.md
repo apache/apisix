@@ -45,6 +45,8 @@ This Plugin supports two cache layers:
 - **Exact (L1):** A SHA-256 fingerprint of the effective prompt is used as the Redis key. An identical prompt always hits the same entry.
 - **Semantic (L2):** When L1 misses, the prompt is embedded into a vector and a nearest-neighbour search retrieves a past response whose embedding is within the configured similarity threshold. L2 is disabled by default; enable it by adding `"semantic"` to `layers`.
 
+Exact caching supports Chat Completions, Responses API, Embeddings, Anthropic Messages, Bedrock Converse, and passthrough requests and keeps the protocols in separate cache entries. For passthrough, the cache key also includes the request method, URI, and query string. Semantic caching applies only to Chat Completions requests; the other protocols can use the exact layer but bypass the semantic layer.
+
 The `ai-cache` Plugin must be used with the [`ai-proxy`](./ai-proxy.md) or [`ai-proxy-multi`](./ai-proxy-multi.md) Plugin.
 
 ### Streaming
@@ -89,6 +91,7 @@ For the `passthrough` protocol, `ai-proxy` forwards the client's request method,
 | redis_timeout | integer | False | 1000 | >= 1 | Redis timeout value in milliseconds. |
 | redis_ssl | boolean | False | false | | If true, use SSL to connect to Redis. |
 | redis_ssl_verify | boolean | False | false | | If true, verify the Redis server SSL certificate. |
+| redis_server_name | string | False | | | TLS SNI when `redis_ssl` is true. Defaults to `redis_host`. When `redis_ssl_verify` is true the certificate must also match this name, so set it when `redis_host` is an alias the certificate does not cover. |
 | redis_keepalive_timeout | integer | False | 10000 | >= 1000 | Keepalive timeout, in milliseconds, for the Redis connection pool. |
 | redis_keepalive_pool | integer | False | 100 | >= 1 | Maximum number of connections in the Redis keepalive pool. |
 

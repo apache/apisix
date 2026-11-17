@@ -19,7 +19,7 @@
 install_brotli() {
     apt-get -qy update
     apt-get install -y sudo cmake wget unzip
-    local BORTLI_VERSION="1.1.0"
+    local BORTLI_VERSION="1.2.1"
     wget -q https://github.com/google/brotli/archive/refs/tags/v${BORTLI_VERSION}.zip || exit 1
     unzip v${BORTLI_VERSION}.zip && cd ./brotli-${BORTLI_VERSION} && mkdir build && cd build || exit 1
     local CMAKE=$(command -v cmake3 >/dev/null 2>&1 && echo cmake3 || echo cmake) || exit 1

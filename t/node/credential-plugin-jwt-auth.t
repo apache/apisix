@@ -99,7 +99,7 @@ passed
                     "value":{
                         "id":"34010989-ce4e-4d61-9493-b54cca8edb31",
                         "plugins":{
-                            "jwt-auth": {"key": "user-key", "secret": "kK0lkbzXrE7aiTiyK/Z0Sw=="}
+                            "jwt-auth": {"key": "user-key", "secret": "$ENC$v1$kK0lkbzXrE7aiTiyK/Z0Sw=="}
                         }
                     },
                     "key":"/apisix/consumers/jack/credentials/34010989-ce4e-4d61-9493-b54cca8edb31"

@@ -178,6 +178,9 @@ local config_schema = {
                                             tls = {
                                                 type = "boolean",
                                             },
+                                            tls_passthrough = {
+                                                type = "boolean",
+                                            },
                                             proxy_protocol = {
                                                 type = "boolean",
                                             },
@@ -284,6 +287,13 @@ local config_schema = {
                     default = 64,
                     description = "cap (in MB) on the request body read for post_arg.* "
                                   .. "route matching; 0 disables the limit",
+                },
+                max_request_headers_readable = {
+                    type = "integer",
+                    minimum = 0,
+                    default = 100,
+                    description = "max number of request headers plugins can read; "
+                                  .. "0 disables the limit",
                 },
             }
         },

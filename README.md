@@ -65,8 +65,6 @@ APISIX can serve as an **[AI Gateway](https://apisix.apache.org/ai-gateway/)** t
 - **Token-based rate limiting** to control cost and protect upstream models.
 - **Robust security** for authentication, authorization, and traffic control on AI workloads.
 
-APISIX also provides the [`mcp-bridge`](https://apisix.apache.org/blog/2025/04/21/host-mcp-server-with-api-gateway/) plugin to seamlessly convert stdio-based MCP servers to scalable HTTP SSE services.
-
 ## Get Started
 
 Install and run APISIX with a single command using the quickstart script (requires [Docker](https://docs.docker.com/get-docker/)):
@@ -238,7 +236,7 @@ Using AWS's eight-core server, APISIX's QPS reaches 140,000 with a latency of on
 
 ## User Stories
 
-- [European eFactory Platform: API Security Gateway – Using APISIX in the eFactory Platform](https://www.efactory-project.eu/post/api-security-gateway-using-apisix-in-the-efactory-platform)
+- [European eFactory Platform: API Security Gateway – Using APISIX in the eFactory Platform](https://web.archive.org/web/20220120184502/https://www.efpf.org/post/api-security-gateway-using-apisix-in-the-efactory-platform)
 - [Copernicus Reference System Software](https://github.com/COPRS/infrastructure/wiki/Networking-trade-off)
 - [More Stories](https://apisix.apache.org/blog/tags/case-studies/)
 

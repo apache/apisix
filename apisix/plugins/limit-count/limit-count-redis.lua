@@ -93,14 +93,14 @@ function _M.new(plugin_name, limit, window, conf, key_version)
 end
 
 function _M.incoming_delayed(self, key, cost, syncer_id)
-    local remaining, reset, err = self.delayed_syncer:delayed_sync(key, cost, syncer_id)
+    local remaining, reset, err, info = self.delayed_syncer:delayed_sync(key, cost, syncer_id)
     if not remaining then
         return nil, err, 0
     end
     if remaining < 0 then
-        return nil, "rejected", reset
+        return nil, "rejected", reset, info
     end
-    return 0, remaining, reset
+    return 0, remaining, reset, info
 end
 
 function _M.incoming(self, key, cost)
@@ -114,12 +114,12 @@ function _M.incoming(self, key, cost)
     end
 
     self.red_cli = red
-    local delay, remaining, ttl = util.redis_incoming(self, key, cost, true)
+    local delay, remaining, ttl, info = util.redis_incoming(self, key, cost, true)
     if not delay and remaining ~= "rejected" then
         return nil, remaining, ttl
     end
 
-    return delay, remaining, ttl
+    return delay, remaining, ttl, info
 end
 
 function _M.log_phase_incoming(self, key, cost)

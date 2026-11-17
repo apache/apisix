@@ -119,4 +119,4 @@ apisix:
     }
 --- response_body
 admin-secret
-y4Z3aqo51xrt3f9UziNUrg==
+$ENC$v1$y4Z3aqo51xrt3f9UziNUrg==

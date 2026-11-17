@@ -57,6 +57,7 @@ description: chaitin-waf 插件与长亭雷池 WAF 集成，以检测和阻止�
 | match.vars               | array[array]  | 否       |         |                          | 一个或多个匹配条件数组，使用 [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list) 表达式来有条件地执行插件。 |
 | append_waf_resp_header   | boolean       | 否       | true    |                          | 若为 true，则在响应中添加 `X-APISIX-CHAITIN-WAF`、`X-APISIX-CHAITIN-WAF-TIME`、`X-APISIX-CHAITIN-WAF-ACTION` 和 `X-APISIX-CHAITIN-WAF-STATUS` 响应头。 |
 | append_waf_debug_header  | boolean       | 否       | false   |                          | 若为 true，则在响应中添加调试用响应头 `X-APISIX-CHAITIN-WAF-ERROR` 和 `X-APISIX-CHAITIN-WAF-SERVER`。仅当 `append_waf_resp_header` 为 true 时生效。 |
+| allow_degradation        | boolean       | 否       |         |                          | 若为 true，则在 WAF 集成发生故障时允许请求继续处理。显式设置时覆盖插件元数据，包括显式设置为 `false`。未设置时继承插件元数据，两处均未设置时为 `false`。 |
 | config                   | object        | 否       |         |                          | 长亭 WAF 服务配置。这些配置在指定时会覆盖对应的元数据默认值。 |
 | config.connect_timeout   | integer       | 否       | 1000    |                          | 与 WAF 服务的连接超时时间，单位为毫秒。 |
 | config.send_timeout      | integer       | 否       | 1000    |                          | 向 WAF 服务发送数据的超时时间，单位为毫秒。 |
@@ -69,6 +70,8 @@ description: chaitin-waf 插件与长亭雷池 WAF 集成，以检测和阻止�
 | config.resp_body_size    | integer       | 否       | 4       | >= 0                     | 上报的响应体大小，单位为 KB。设置为 `0` 表示仅上报状态行与响应头。仅当 `config.log_resp` 为 true 时生效。 |
 | config.extra_ignored_content_types | string | 否     |         |                          | 以逗号分隔的响应 `Content-Type` 列表，在内置忽略列表之外额外跳过这些类型。仅当 `config.log_resp` 为 true 时生效。 |
 
+当 `allow_degradation` 为 `true` 时，缺少插件元数据或 `nodes`、WAF 节点选择失败、WAF 检测调用失败（包括超时）均会放行请求。WAF 正常返回的检测结果仍按 `mode` 处理。请求仍可能需要等待配置的 WAF 超时时间后才会放行。
+
 ## 插件元数据
 
 | 名称 | 类型 | 必选项 | 默认值 | 有效值 | 描述 |
@@ -77,6 +80,7 @@ description: chaitin-waf 插件与长亭雷池 WAF 集成，以检测和阻止�
 | nodes.host               | string        | 是       |         |              | 长亭雷池 WAF 服务的地址，支持 IPv4、IPv6、Unix Socket 等。 |
 | nodes.port               | integer       | 否       | 80      |              | 长亭雷池 WAF 服务的端口。 |
 | mode                     | string        | 否       |         | block        | 用于决定插件在匹配请求时的行为模式。在 `off` 模式下，跳过 WAF 检查。在 `monitor` 模式下，记录潜在威胁请求但不拦截。在 `block` 模式下，根据 WAF 服务的判断拦截存在威胁的请求。 |
+| allow_degradation        | boolean       | 否       | false   |              | 插件配置未设置 `allow_degradation` 时使用的默认值。 |
 | config                   | object        | 否       |         |              | 长亭雷池 WAF 服务配置。 |
 | config.connect_timeout   | integer       | 否       | 1000    |              | 与 WAF 服务的连接超时时间，单位为毫秒。 |
 | config.send_timeout      | integer       | 否       | 1000    |              | 向 WAF 服务发送数据的超时时间，单位为毫秒。 |

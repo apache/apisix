@@ -152,3 +152,44 @@ done
 --- response_body
 3600
 60
+
+
+
+=== TEST 3: redis_server_name is accepted for redis policy and rejected when empty
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.limit-count")
+
+            local ok, err = plugin.check_schema({
+                count = 2,
+                time_window = 60,
+                policy = "redis",
+                redis_host = "127.0.0.1",
+                redis_ssl = true,
+                redis_server_name = "redis.example.com",
+            })
+            if not ok then
+                ngx.say(err)
+                return
+            end
+            ngx.say("passed")
+
+            ok, err = plugin.check_schema({
+                count = 2,
+                time_window = 60,
+                policy = "redis",
+                redis_host = "127.0.0.1",
+                redis_ssl = true,
+                redis_server_name = "",
+            })
+            if ok then
+                ngx.say("empty redis_server_name should fail")
+                return
+            end
+            ngx.say("rejected")
+        }
+    }
+--- response_body
+passed
+rejected

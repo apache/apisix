@@ -45,6 +45,10 @@ Please ensure that the `access_key_secret` is correctly configured in the Plugin
 
 The `ai-aliyun-content-moderation` Plugin should be used with either [`ai-proxy`](./ai-proxy.md) or [`ai-proxy-multi`](./ai-proxy-multi.md) Plugin for proxying LLM requests.
 
+The Plugin moderates Chat Completions, Responses API, Embeddings, Anthropic Messages, and Bedrock Converse requests using each protocol's native content structure. For Responses, it moderates `input` and returns blocked non-streaming or streaming requests in Responses API format. For Embeddings, it moderates a string or an array of strings in `input` and returns rejected requests as OpenAI-style errors. Other non-empty JSON bodies use passthrough, from which the Plugin extracts no format-specific text.
+
+See [request protocol detection](./ai-proxy.md#request-protocol-detection) for the detection order and URI requirements.
+
 ## Attributes
 
 | Name | Type | Required | Default | Valid values | Description |
@@ -65,7 +69,7 @@ The `ai-aliyun-content-moderation` Plugin should be used with either [`ai-proxy`
 | response_check_service | string | False | `"llm_response_moderation"` | | Aliyun service for response moderation. |
 | response_check_length_limit | number | False | `5000` | >= 1 | Response content length limit. If exceeded, the content is sent to Aliyun in chunks. For instance, if the response content is 250 characters and `response_check_length_limit` is set to `100`, the content is sent in 3 requests to Aliyun. |
 | risk_level_bar | string | False | `"high"` | `none`, `low`, `medium`, `high`, `max` | If the evaluated risk level is lower than the `risk_level_bar`, the request or response will be passed through to Upstream LLM or client respectively. |
-| deny_code | integer | False | `200` | [200, 599] | Rejection HTTP status code. Defaults to `200` so the provider-compatible refusal parses as a normal completion in client SDKs; set a 4xx to surface denies as HTTP errors instead. |
+| deny_code | integer | False | `200` | [200, 599] | Rejection HTTP status code. The default `200` returns the denial in the detected protocol's response shape. Set a 4xx value to surface denials as HTTP errors instead. |
 | deny_message | string | False | | | Rejection message. |
 | timeout | integer | False | `10000` | >= 1 | Timeout in milliseconds. |
 | keepalive | boolean | False | `true` | | If `true`, enable HTTP connection keepalive to Aliyun. |
@@ -73,6 +77,18 @@ The `ai-aliyun-content-moderation` Plugin should be used with either [`ai-proxy`
 | keepalive_timeout | integer | False | `60000` | >= 1000 | Keepalive timeout in milliseconds. |
 | ssl_verify | boolean | False | `true` | | If `true`, enable SSL certificate verification. |
 | fail_mode | string | False | `"skip"` | `skip`, `warn`, `error` | Behavior when the request is not a recognized AI request that this plugin can inspect (for example, plain HTTP traffic on a Consumer-bound plugin, or a request that did not pass through `ai-proxy`). `skip`: let the request pass through unchecked; `warn`: pass through and log a warning; `error`: reject the request. |
+
+In `final_packet` mode, `risk_level` and `deny_message` are added together to existing data events after the assembled response text is available. Rejected responses use the actual denial message; allowed responses use an empty string. Existing response content and token usage are preserved. The result is informational and cannot retract content already sent to the client.
+
+When the upstream omits `usage`, moderation runs at the end of the stream:
+
+- **OpenAI Chat Completions:** an additional `chat.completion.chunk` with `risk_level`, `deny_message`, and zero-valued `usage` is inserted before `[DONE]`. This is an empty usage chunk with `choices: []`: the denial message appears only in the top-level `deny_message` field, without appending text or changing the upstream finish reason.
+- **Anthropic Messages:** an additional `message_delta` carries `risk_level`, `deny_message`, zero-valued `usage`, and the original stop information before `message_stop`. Content blocks and `message_start` are not replayed.
+- **OpenAI Responses:** the existing `response.completed` event carries `risk_level` and `deny_message`; its output and usage are preserved. EOF without `response.completed` does not produce a synthetic completed response.
+
+Clients must consume through the stream terminator to receive an injected result. Usage-bearing streams receive in-place fields without an additional result event, so their reported usage is unchanged. New result events report zero usage; gateway accounting continues to use upstream usage. If moderation fails without returning a risk level, no result is fabricated. Error events are preserved, and aborted streams do not receive a synthesized terminator.
+
+Read moderation extensions from the SSE events. For example, the OpenAI Python SDK exposes Responses extensions through `responses.create(stream=True)`, while its higher-level `responses.stream()` wrapper can discard unknown top-level fields.
 
 ## Examples
 

@@ -618,7 +618,7 @@ curl -X GET "http://127.0.0.1:9080/get" \
 
 ### 启用请求正文验证
 
-以下示例演示如何启用请求正文验证以确保请求正文的完整性。
+以下示例演示如何启用请求正文验证，并将正文摘要纳入 HMAC 签名，以确保请求正文的完整性。
 
 <Tabs
 groupId="api"
@@ -668,7 +668,8 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     "methods": ["POST"],
     "plugins": {
       "hmac-auth": {
-        "validate_request_body": true
+        "validate_request_body": true,
+        "signed_headers": ["date", "digest"]
       }
     },
     "upstream": {
@@ -706,6 +707,9 @@ services:
         plugins:
           hmac-auth:
             validate_request_body: true
+            signed_headers:
+              - date
+              - digest
     upstream:
       type: roundrobin
       nodes:
@@ -771,6 +775,9 @@ spec:
         _meta:
           disable: false
         validate_request_body: true
+        signed_headers:
+          - date
+          - digest
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
@@ -853,6 +860,9 @@ spec:
         enable: true
         config:
           validate_request_body: true
+          signed_headers:
+            - date
+            - digest
 ```
 
 将配置应用到集群：
@@ -890,6 +900,10 @@ body = '{"name": "world"}'          # example request body
 # skew to prolong the validity within the advised security boundary
 gmt_time = datetime.now(timezone.utc).strftime('%a, %d %b %Y %H:%M:%S GMT')
 
+# create the SHA-256 digest of the request body and include it in the signing string
+body_digest = hashlib.sha256(body.encode('utf-8')).digest()
+digest_header = "SHA-256=" + base64.b64encode(body_digest).decode('utf-8')
+
 # construct the signing string (ordered)
 # the date and any subsequent custom headers should be lowercased and separated by a
 # single space character, i.e. `<key>:<space><value>`
@@ -898,51 +912,39 @@ signing_string = (
     f"{key_id}\n"
     f"{request_method} {request_path}\n"
     f"date: {gmt_time}\n"
+    f"digest: {digest_header}\n"
 )
 
 # create signature
 signature = hmac.new(secret_key, signing_string.encode('utf-8'), hashlib.sha256).digest()
 signature_base64 = base64.b64encode(signature).decode('utf-8')
 
-# create the SHA-256 digest of the request body and base64 encode it
-body_digest = hashlib.sha256(body.encode('utf-8')).digest()
-body_digest_base64 = base64.b64encode(body_digest).decode('utf-8')
+# construct the Authorization header
+authorization = (
+    f'Signature keyId="{key_id}",algorithm="hmac-sha256",'
+    f'headers="@request-target date digest",'
+    f'signature="{signature_base64}"'
+)
 
-# construct the request headers
-headers = {
-    "Date": gmt_time,
-    "Digest": f"SHA-256={body_digest_base64}",
-    "Authorization": (
-        f'Signature keyId="{key_id}",algorithm="hmac-sha256",'
-        f'headers="@request-target date",'
-        f'signature="{signature_base64}"'
-    )
+# print one value per line for the verification command to read
+print(gmt_time)
+print(digest_header)
+print(authorization)
+```
+
+生成新值，并将其直接传入请求：
+
+```shell
+python3 hmac-sig-digest-header-gen.py | {
+  IFS= read -r HMAC_DATE
+  IFS= read -r HMAC_DIGEST
+  IFS= read -r HMAC_AUTHORIZATION
+  curl "http://127.0.0.1:9080/post" -X POST \
+    -H "Date: ${HMAC_DATE}" \
+    -H "Digest: ${HMAC_DIGEST}" \
+    -H "Authorization: ${HMAC_AUTHORIZATION}" \
+    -d '{"name": "world"}'
 }
-
-# print headers
-print(headers)
-```
-
-运行脚本：
-
-```shell
-python3 hmac-sig-digest-header-gen.py
-```
-
-您应该看到打印的请求标头：
-
-```text
-{'Date': 'Fri, 06 Sep 2024 09:16:16 GMT', 'Digest': 'SHA-256=78qzJuLwSpZ8HacsTdFCQJWxzPMOf8bYctRk2ySLpS8=', 'Authorization': 'Signature keyId="john-key",algorithm="hmac-sha256",headers="@request-target date",signature="rjS6NxOBKmzS8CZL05uLiAfE16hXdIpMD/L/HukOTYE="'}
-```
-
-使用生成的标头，向 Route 发送请求：
-
-```shell
-curl "http://127.0.0.1:9080/post" -X POST \
-  -H "Date: Fri, 06 Sep 2024 09:16:16 GMT" \
-  -H "Digest: SHA-256=78qzJuLwSpZ8HacsTdFCQJWxzPMOf8bYctRk2ySLpS8=" \
-  -H 'Authorization: Signature keyId="john-key",algorithm="hmac-sha256",headers="@request-target date",signature="rjS6NxOBKmzS8CZL05uLiAfE16hXdIpMD/L/HukOTYE="' \
-  -d '{"name": "world"}'
 ```
 
 您应该会看到类似于以下内容的 `HTTP/1.1 200 OK` 响应：
@@ -957,11 +959,11 @@ curl "http://127.0.0.1:9080/post" -X POST \
   },
   "headers": {
     "Accept": "*/*",
-    "Authorization": "Signature keyId=\"john-key\",algorithm=\"hmac-sha256\",headers=\"@request-target date\",signature=\"rjS6NxOBKmzS8CZL05uLiAfE16hXdIpMD/L/HukOTYE=\"",
+    "Authorization": "<generated Authorization header>",
     "Content-Length": "17",
     "Content-Type": "application/x-www-form-urlencoded",
-    "Date": "Fri, 06 Sep 2024 09:16:16 GMT",
-    "Digest": "SHA-256=78qzJuLwSpZ8HacsTdFCQJWxzPMOf8bYctRk2ySLpS8=",
+    "Date": "<generated Date header>",
+    "Digest": "<generated Digest header>",
     "Host": "127.0.0.1",
     "User-Agent": "curl/8.6.0",
     "X-Amzn-Trace-Id": "Root=1-66d978c3-49f929ad5237da5340bbbeb4",
@@ -975,13 +977,19 @@ curl "http://127.0.0.1:9080/post" -X POST \
 }
 ```
 
-如果您发送的请求没有 digest 或 digest 无效：
+如果使用相同的签名标头发送不同的请求正文，`Digest` 标头将不再与正文匹配：
 
 ```shell
-curl "http://127.0.0.1:9080/post" -X POST \
-  -H "Date: Fri, 06 Sep 2024 09:16:16 GMT" \
-  -H 'Authorization: Signature keyId="john-key",algorithm="hmac-sha256",headers="@request-target date",signature="rjS6NxOBKmzS8CZL05uLiAfE16hXdIpMD/L/HukOTYE="' \
-  -d '{"name": "world"}'
+python3 hmac-sig-digest-header-gen.py | {
+  IFS= read -r HMAC_DATE
+  IFS= read -r HMAC_DIGEST
+  IFS= read -r HMAC_AUTHORIZATION
+  curl "http://127.0.0.1:9080/post" -X POST \
+    -H "Date: ${HMAC_DATE}" \
+    -H "Digest: ${HMAC_DIGEST}" \
+    -H "Authorization: ${HMAC_AUTHORIZATION}" \
+    -d '{"name": "tampered"}'
+}
 ```
 
 您应该看到一个 `HTTP/1.1 401 Unauthorized` 响应，其中包含以下消息：

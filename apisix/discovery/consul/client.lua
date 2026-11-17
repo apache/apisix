@@ -116,6 +116,16 @@ end
 
 -- ─── resty.consul options ─────────────────────────────────────────────
 
+local function set_tls_opts(opts, consul_server)
+    if consul_server.ssl then
+        opts.ssl = true
+        opts.ssl_verify = consul_server.ssl_verify
+        opts.sni_host = consul_server.host
+    end
+    return opts
+end
+
+
 local function get_opts(consul_server, is_catalog)
     local opts = {
         host = consul_server.host,
@@ -126,6 +136,7 @@ local function get_opts(consul_server, is_catalog)
             token = consul_server.token,
         }
     }
+    set_tls_opts(opts, consul_server)
     if not consul_server.keepalive then
         return opts
     end
@@ -144,10 +155,13 @@ end
 
 -- ─── blocking query watchers ──────────────────────────────────────────
 
+-- watch_catalog / watch_health run one blocking query. They return the watch
+-- type and the new index (an error index on failure), or nothing when the
+-- index did not change.
+
 function _M.watch_catalog(consul_server)
     local client = resty_consul:new(get_opts(consul_server, true))
 
-    ::RETRY::
     local watch_result, watch_err = client:get(consul_server.consul_watch_catalog_url)
     local watch_error_info = (watch_err ~= nil and watch_err)
                              or ((watch_result ~= nil and watch_result.status ~= 200)
@@ -166,7 +180,7 @@ function _M.watch_catalog(consul_server)
         local random_delay = math_random(default_random_range)
         log.info("watch catalog has no change, re-watch consul after ", random_delay, " seconds")
         core_sleep(random_delay)
-        goto RETRY
+        return
     end
 
     return watch_type_catalog, watch_result.headers['X-Consul-Index']
@@ -176,7 +190,6 @@ end
 function _M.watch_health(consul_server)
     local client = resty_consul:new(get_opts(consul_server, false))
 
-    ::RETRY::
     local watch_result, watch_err = client:get(consul_server.consul_watch_health_url)
     local watch_error_info = (watch_err ~= nil and watch_err)
             or ((watch_result ~= nil and watch_result.status ~= 200)
@@ -195,7 +208,7 @@ function _M.watch_health(consul_server)
         local random_delay = math_random(default_random_range)
         log.info("watch health has no change, re-watch consul after ", random_delay, " seconds")
         core_sleep(random_delay)
-        goto RETRY
+        return
     end
 
     return watch_type_health, watch_result.headers['X-Consul-Index']
@@ -249,15 +262,24 @@ function _M.format_consul_params(consul_conf)
     local consul_server_list = core.table.new(0, #servers)
 
     for _, v in pairs(servers) do
-        local scheme, host, port, path = unpack(http.parse_uri(nil, v))
-        if scheme ~= "http" then
-            return nil, "only support consul http schema address, eg: http://address:port"
+        local parsed, err = http.parse_uri(nil, v)
+        if not parsed then
+            return nil, "invalid consul server address: " .. err
+                        .. ", the valid format: http://address:port or https://address:port"
+        end
+        local scheme, host, port, path = unpack(parsed)
+        if scheme ~= "http" and scheme ~= "https" then
+            return nil, "only support consul http or https schema address, "
+                        .. "eg: http://address:port or https://address:port"
         elseif path ~= "/" or core.string.has_suffix(v, '/') then
-            return nil, "invalid consul server address, the valid format: http://address:port"
+            return nil, "invalid consul server address, the valid format: "
+                        .. "http://address:port or https://address:port"
         end
         core.table.insert(consul_server_list, {
             host = host,
             port = port,
+            ssl = scheme == "https",
+            ssl_verify = consul_conf.ssl_verify ~= false,
             token = consul_conf.token,
             connect_timeout = consul_conf.timeout.connect,
             read_timeout = consul_conf.timeout.read,
@@ -300,7 +322,7 @@ function _M.fetch_services_from_server(consul_server, options)
     local preserve_metadata = options.preserve_metadata or false
     local key_builder = options.key_builder
 
-    local consul_client = resty_consul:new({
+    local consul_client = resty_consul:new(set_tls_opts({
         host = consul_server.host,
         port = consul_server.port,
         connect_timeout = consul_server.connect_timeout,
@@ -308,7 +330,7 @@ function _M.fetch_services_from_server(consul_server, options)
         default_args = {
             token = consul_server.token
         }
-    })
+    }, consul_server))
 
     -- fetch catalog
     local catalog_success, catalog_res, catalog_err = pcall(function()

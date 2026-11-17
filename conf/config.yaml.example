@@ -77,6 +77,9 @@ apisix:
                                       # original request line, so the upstream receives %2F unchanged.
   max_post_args_readable_size: 64     # Cap (in MB) on the request body read when matching `post_arg.*`
                                       # route predicates for JSON and multipart requests. Set to 0 to disable the limit.
+  max_request_headers_readable: 100   # Max number of request headers plugins can read. Headers past this
+                                      # count are invisible to plugins but still forwarded to the upstream.
+                                      # Set to 0 to disable the limit.
 
   router:
     http: radixtree_host_uri    # radixtree_host_uri: match route by host and URI
@@ -95,6 +98,26 @@ apisix:
   #       proxy_protocol_to_upstream: true  # Send the PROXY protocol to the upstream on this
   #                                         # port only. Both override the global
   #                                         # proxy_protocol.enable_tcp_pp* defaults.
+  #     - addr: 9500
+  #       tls_passthrough: true      # Forward the TLS stream untouched, picking the upstream from
+  #                                  # the SNI in the prereaded ClientHello. The backend terminates
+  #                                  # the handshake, so payload-inspecting stream plugins
+  #                                  # (mqtt-proxy, xrpc, redis) and client certificate verification
+  #                                  # do not apply. Every connection on this port is passed
+  #                                  # through, whatever the stream_route says.
+  #     - addr: 9501
+  #       tls: true                  # Both flags open a mixed port: the listen only prereads, and
+  #       tls_passthrough: true      # each connection follows `tls_passthrough` on the stream_route
+  #                                  # it matches (default false). Costs one internal hop, so prefer
+  #                                  # a dedicated tls_passthrough port when the whole port passes
+  #                                  # through. That hop runs over unix sockets under logs/, and
+  #                                  # announces the client in a PROXY protocol header, so a local
+  #                                  # user able to connect to them could forge it. Keep logs/ off
+  #                                  # limits to untrusted local users, as it already has to be for
+  #                                  # stream_worker_events.sock.
+  #                                  # proxy_protocol_to_upstream is rejected on a mixed port: the
+  #                                  # upstream PROXY header would carry the internal unix socket
+  #                                  # as its destination. Use a dedicated listen instead.
   #     - "2000-2100"              # port range (nginx native support)
   #     - addr: "3000-3100"        # port range in table form
   #     - addr: "127.0.0.1:4000-4100"  # address with port range in table form
@@ -335,6 +358,7 @@ nginx_config:                     # Config for render the template to generate n
       plugin-limit-conn: 10m
       worker-events: 10m
       lrucache-lock: 10m
+      upstream-slow-start: 10m    # Slow start state of upstream nodes (`warm_up_conf`)
       balancer-ewma: 10m
       balancer-ewma-locks: 10m
       balancer-ewma-last-touched-at: 10m
@@ -344,6 +368,7 @@ nginx_config:                     # Config for render the template to generate n
       plugin-limit-conn-redis-cluster-slot-lock: 1m
       plugin-graphql-limit-count: 10m
       plugin-graphql-limit-count-reset-header: 10m
+      plugin-saml-auth-replay: 10m    # Assertions accepted by saml-auth when `replay_dict` names this dict
       tracing_buffer: 10m
       plugin-api-breaker: 10m
       etcd-cluster-health-check: 10m
@@ -417,9 +442,10 @@ nginx_config:                     # Config for render the template to generate n
 #       path: "logs/consul_kv.dump" # Location of the dump file.
 #       expire: 2592000             # Specify the expiration time of the dump file in units of seconds.
 #  consul:                          # Consul
-#    servers:                       # Consul address(es)
+#    servers:                       # Consul address(es), http or https
 #      - "http://127.0.0.1:8500"
 #      - "http://127.0.0.1:8600"
+#    ssl_verify: true               # Default true. Verify the certificate of https servers.
 #    skip_services:                 # Skip services during service discovery.
 #      - "service_a"
 #    timeout:
@@ -596,8 +622,8 @@ plugins:                           # plugin list (sorted by priority)
   - traffic-split                  # priority: 966
   - redirect                       # priority: 900
   - response-rewrite               # priority: 899
+  - openapi-to-mcp                 # priority: 540
   - oas-validator                  # priority: 512
-  - mcp-bridge                     # priority: 510
   - degraphql                      # priority: 509
   - kafka-proxy                    # priority: 508
   #- dubbo-proxy                   # priority: 507
@@ -662,6 +688,9 @@ plugin_attr:          # Plugin attributes
   ai-proxy:           # Plugin: ai-proxy, ai-proxy-multi
     http_client: ngx_http_ffi_client # HTTP client the AI plugins use to reach the
                       # LLM upstream: ngx_http_ffi_client or lua-resty-http.
+  forward-auth:       # Plugin: forward-auth
+    http_client: ngx_http_ffi_client # HTTP client used to reach the authorization
+                      # service: ngx_http_ffi_client or lua-resty-http.
   log-rotate:         # Plugin: log-rotate
     timeout: 10000    # maximum wait time for a log rotation(unit: millisecond)
     interval: 3600    # Set the log rotate interval in seconds.
@@ -701,6 +730,7 @@ plugin_attr:          # Plugin attributes
       ip: 127.0.0.1                         # Set the IP.
       port: 9091                            # Set the port.
     refresh_interval: 15                    # Set the interval for refreshing cached metric data. unit: second.
+    remove_expired_keys_interval: 3600       # Cleanup interval in seconds; capped at 3600. Non-positive values disable cleanup.
     # metrics:    # Create extra labels from nginx variables: https://nginx.org/en/docs/varindex.html
     #  http_status:
     #    expire: 0 # The expiration time after which metrics are removed. unit: second.

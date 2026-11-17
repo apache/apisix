@@ -46,7 +46,7 @@ OpenAPI 规范可以以内联 JSON 字符串的形式提供，也可以从远程
 | spec | string | 否* | | | 内联 OpenAPI 3.x 规范（JSON 格式）。未设置 `spec_url` 时必填。 |
 | spec_url | string | 否* | | `^https?://` | 获取 OpenAPI 规范的 URL。未设置 `spec` 时必填。 |
 | spec_url_request_headers | object | 否 | | | 获取 `spec_url` 时附带的自定义 HTTP 请求头，适用于需要鉴权的规范接口。 |
-| ssl_verify | boolean | 否 | false | | 获取 `spec_url` 时是否校验 TLS 证书。 |
+| ssl_verify | boolean | 否 | true | | 获取 `spec_url` 时是否校验 TLS 证书。关闭后，中间人可以返回宽松的规范，并拿到 `spec_url_request_headers` 中配置的凭证。 |
 | timeout | integer | 否 | 10000 | [1000, 60000] | 获取 `spec_url` 的 HTTP 请求超时时间（毫秒）。 |
 | verbose_errors | boolean | 否 | false | | 为 `true` 时，在响应体中返回详细的校验错误信息。 |
 | skip_request_body_validation | boolean | 否 | false | | 跳过请求体校验。 |
@@ -123,7 +123,7 @@ curl -i "http://127.0.0.1:9080/api/v3/pet" -X POST \
 
 ### 使用远程规范 URL 校验请求
 
-以下示例演示如何从远程 URL 获取 OpenAPI 规范。规范在首次获取后会被缓存，缓存时长由插件元数据的 `spec_url_ttl` 参数决定。
+以下示例演示如何从远程 URL 获取 OpenAPI 规范。规范在首次获取后会被缓存，缓存时长由插件元数据的 `spec_url_ttl` 参数决定。声明相同 `spec_url`、且 `ssl_verify` 与 `spec_url_request_headers` 也相同的资源共享同一份缓存。若某个缓存的规范在 `spec_url_ttl` 秒内没有被任何请求使用，它会被释放，因此不再使用的规范（例如路由修改了 `spec_url` 或被删除之后）不会一直占用内存。
 
 配置插件元数据以设置远程规范的缓存时间：
 
@@ -146,7 +146,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     "plugins": {
       "oas-validator": {
         "spec_url": "https://petstore3.swagger.io/api/v3/openapi.json",
-        "ssl_verify": false,
         "verbose_errors": true
       }
     },

@@ -217,6 +217,33 @@ function _M.delayed_body_filter(conf, ctx)
 end
 ```
 
+When a route's `upstream.scheme` is `ws` or `wss`, APISIX proxies WebSocket frames itself instead of letting nginx's `proxy_pass` transparently forward them, so it can also run a plugin's logic against each frame. The normal `rewrite`/`access`/`before_proxy` phases still run beforehand and `log` still runs afterward; only `header_filter`/`body_filter`/`delayed_body_filter` are skipped, since there's no separate response to filter. In their place, four WebSocket-specific phases fire for such a route:
+
+* `ws_handshake` - runs once, after `before_proxy`, before APISIX attempts to connect to the upstream.
+* `ws_client_frame` - runs once per frame received from the downstream client, before it is forwarded to the upstream.
+* `ws_upstream_frame` - runs once per frame received from the upstream, before it is forwarded to the downstream client.
+* `ws_close` - runs once, when the connection ends, before the normal `log` phase.
+
+`ws_client_frame` and `ws_upstream_frame` can read and rewrite the frame in flight through `core.websocket.client` and `core.websocket.upstream` respectively (`core.websocket.get_role("client")` and `core.websocket.get_role("upstream")` return the same two tables). `get_frame()` returns the current frame (`type`, `payload`, `last`, `code`); `set_frame_data(payload)` replaces the payload that actually gets forwarded:
+
+```lua
+function _M.ws_client_frame(conf, ctx)
+    local frame = core.websocket.client.get_frame()
+    if frame.type == "text" then
+        core.websocket.client.set_frame_data(frame.payload .. "-client")
+    end
+end
+
+function _M.ws_upstream_frame(conf, ctx)
+    local frame = core.websocket.upstream.get_frame()
+    if frame.type == "text" then
+        core.websocket.upstream.set_frame_data(frame.payload .. "-upstream")
+    end
+end
+```
+
+See [`example-plugin`](https://github.com/apache/apisix/blob/master/apisix/plugins/example-plugin.lua) for a complete reference implementation of all four phases.
+
 ### Implement the logic
 
 Write the logic of the plugin in the corresponding phase. There are two parameters `conf` and `ctx` in the phase method, take the `limit-conn` plugin configuration as an example.
@@ -351,7 +378,7 @@ By default, APISIX has `data_encryption` enabled with [two default keys](https:/
 ```yaml
 apisix:
     data_encryption:
-        enable: true
+        enable_encrypt_fields: true
         keyring:
             - ...
 ```
@@ -361,6 +388,20 @@ Each key doubles as the IV, so its length selects the cipher: a key of 16 charac
 APISIX will try to decrypt the data with keys in the order of the keys in the keyring (only for parameters declared in `encrypt_fields`). If the decryption fails, the next key will be tried until the decryption succeeds.
 
 If none of the keys in `keyring` can decrypt the data, the original data is used.
+
+### Encryption marker
+
+The Admin API stores every value it encrypts in plugin configurations and plugin metadata with the `$ENC$v1$` prefix (the marker) followed by the ciphertext described above, so the stored value says by itself that it is encrypted.
+
+When `enable_encrypt_fields` is on, APISIX decrypts every string value carrying the marker in plugin configurations (routes, services, plugin configs, consumers, credentials, consumer groups, global rules and stream routes) and in plugin metadata, whether or not the field is declared in `encrypt_fields`. The Admin API returns these values decrypted in both single-resource and list GET responses, including plugin metadata. When it is off, a marked value is used and returned as it is stored. If a marked value cannot be decrypted with the `keyring`, the error is logged and the value is used as it is, like a value declared in `encrypt_fields` that cannot be decrypted. Values without the marker go through `encrypt_fields` as before.
+
+PATCH preserves stored marked values outside the current plugin schema's `encrypt_fields` unless the request replaces or removes them. Fields in `encrypt_fields` are decrypted before merging and encrypted again before writing.
+
+:::warning
+
+A version of APISIX that does not recognize the marker uses a marked value as it is. Once resources are re-saved by a version that writes the marker, going back to a version without marker support requires restoring the data backed up before the upgrade, and this affects every encrypted field. Avoid writing through the Admin API during a rolling upgrade.
+
+:::
 
 ## Register public API
 

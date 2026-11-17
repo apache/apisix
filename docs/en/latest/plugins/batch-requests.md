@@ -69,7 +69,7 @@ plugins:
 
 ## Configuration
 
-By default, the maximum body size that can be sent to `/apisix/batch-requests` can't be larger than 1 MiB. You can change this configuration of the Plugin through the endpoint `apisix/admin/plugin_metadata/batch-requests`:
+By default, the maximum body size that can be sent to `/apisix/batch-requests` and the maximum response body size for each pipeline request are both 1 MiB. The maximum total response body size for a pipeline is 10 MiB. You can change these global Plugin metadata settings through the endpoint `/apisix/admin/plugin_metadata/batch-requests`:
 
 :::note
 You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
@@ -83,16 +83,22 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/batch-requests -H "X-API-KEY: $admin_key" -X PUT -d '
 {
-    "max_body_size": 4194304
+    "max_body_size": 4194304,
+    "max_response_body_size": 2097152,
+    "max_response_body_size_total": 20971520
 }'
 ```
 
+These metadata settings are global and apply to every request handled by the `batch-requests` Plugin.
+
 ## Metadata
 
-| Name               | Type    | Required | Default | Valid values | Description                                              |
-| ------------------ | ------- | -------- | ------- | ------------ | -------------------------------------------------------- |
-| max_body_size      | integer | True     | 1048576 | [1, ...]     | Maximum size of the request body in bytes.               |
-| max_pipeline_items | integer | True     | 1000    | [1, ...]     | Maximum number of requests allowed in a single pipeline. |
+| Name                         | Type    | Required | Default  | Valid values | Description                                                        |
+| ---------------------------- | ------- | -------- | -------- | ------------ | ------------------------------------------------------------------ |
+| max_body_size                | integer | True     | 1048576  | [1, ...]     | Maximum size of the request body in bytes.                         |
+| max_pipeline_items           | integer | True     | 1000     | [1, ...]     | Maximum number of requests allowed in a single pipeline.           |
+| max_response_body_size       | integer | False    | 1048576  | [1, ...]     | Maximum response body size in bytes for each pipeline request.     |
+| max_response_body_size_total | integer | False    | 10485760 | [1, ...]     | Maximum total response body size in bytes for a single pipeline.   |
 
 ## Request and response format
 

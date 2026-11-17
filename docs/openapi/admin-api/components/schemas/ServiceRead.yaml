@@ -1,0 +1,78 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+additionalProperties: false
+properties:
+  labels:
+    patternProperties:
+      .*:
+        maxLength: 256
+        description: value of label
+        minLength: 1
+        pattern: ^\S+$
+        type: string
+    type: object
+    description: key/value pairs to specify attributes
+  desc:
+    maxLength: 256
+    type: string
+  enable_websocket:
+    type: boolean
+    description: enable websocket for request
+  script:
+    maxLength: 102400
+    minLength: 10
+    type: string
+  name:
+    minLength: 1
+    maxLength: 256
+    type: string
+  create_time:
+    type: integer
+    readOnly: true
+  hosts:
+    uniqueItems: true
+    minItems: 1
+    items:
+      pattern: ^\*$|^\*?[0-9a-zA-Z-._\[\]:]+$
+      type: string
+    type: array
+  upstream_id:
+    anyOf:
+      - pattern: ^[a-zA-Z0-9-_.]+$
+        maxLength: 64
+        minLength: 1
+        type: string
+      - minimum: 1
+        type: integer
+  plugins:
+    type: object
+  id:
+    anyOf:
+      - pattern: ^[a-zA-Z0-9-_.]+$
+        maxLength: 64
+        minLength: 1
+        type: string
+      - minimum: 1
+        type: integer
+  upstream:
+    $ref: ./UpstreamRead.yaml
+  update_time:
+    type: integer
+    readOnly: true
+type: object
+x-source: apisix/schema_def.lua
+description: Stored Service configuration returned by the Admin API.

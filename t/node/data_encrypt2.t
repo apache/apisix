@@ -93,7 +93,7 @@ apisix:
     }
 --- response_body
 abc123
-7ipXoKyiZZUAgf3WWNPI5A==
+$ENC$v1$7ipXoKyiZZUAgf3WWNPI5A==
 
 
 
@@ -181,7 +181,7 @@ apisix:
     }
 --- response_body
 abc123
-7ipXoKyiZZUAgf3WWNPI5A==
+$ENC$v1$7ipXoKyiZZUAgf3WWNPI5A==
 
 
 
@@ -260,7 +260,7 @@ apisix:
     }
 --- response_body
 def456
-3hlZu5mwUbqROm+cy0Vi9A==
+$ENC$v1$3hlZu5mwUbqROm+cy0Vi9A==
 
 
 
@@ -337,7 +337,7 @@ apisix:
     }
 --- response_body
 abc123
-7ipXoKyiZZUAgf3WWNPI5A==
+$ENC$v1$7ipXoKyiZZUAgf3WWNPI5A==
 
 
 
@@ -435,7 +435,7 @@ apisix:
     }
 --- response_body
 abc123
-7ipXoKyiZZUAgf3WWNPI5A==
+$ENC$v1$7ipXoKyiZZUAgf3WWNPI5A==
 
 
 
@@ -558,7 +558,7 @@ apisix:
 GET /t
 --- response_body
 test
-9QKrmTT3TkWGvjlIoe5XXw==
+$ENC$v1$9QKrmTT3TkWGvjlIoe5XXw==
 passed
 
 
@@ -637,7 +637,7 @@ apisix:
     }
 --- response_body
 auth-two
-vU/ZHVJw7b0XscDJ1Fhtig==
+$ENC$v1$vU/ZHVJw7b0XscDJ1Fhtig==
 
 
 
