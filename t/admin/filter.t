@@ -798,6 +798,8 @@ passed
             assert(#res.list == 10)
 
             local code, body, res = t('/apisix/admin/routes?page=10&page_size=10', ngx.HTTP_GET)
+            -- an empty page must still be a JSON array, not an object
+            assert(string.find(res, '"list":[]', 1, true), res)
             res = json.decode(res)
             assert(res.total == 11)
             assert(#res.list == 0)
