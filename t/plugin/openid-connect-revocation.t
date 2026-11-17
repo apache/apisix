@@ -417,10 +417,13 @@ done
                 conf.revocation_cache_ttl = tonumber(ngx.var.arg_ttl)
             end
             local opts = plugin._build_session_opts(conf)
-            opts.revocation = {
+            -- one store for every request, as the session library identifies a
+            -- table backend by its instance
+            probe.store = probe.store or {
                 get = function() probe.gets = probe.gets + 1 end,
                 set = function() return true end,
             }
+            opts.revocation = probe.store
 
             if ngx.var.arg_action == "save" then
                 local s = session.new(opts)
@@ -462,72 +465,20 @@ done
                 return probe.gets
             end
 
-            -- ttl 0 goes first: lua-resty-session allocates its cache lazily, and
-            -- only a fresh worker shows whether a zero TTL still works without it
+            -- every open looks up the session id and the lineage of the session
             ngx.say("ttl 0: ", lookups("cached_a", 0))
             ngx.say("default ttl: ", lookups("cached_b"))
             ngx.say("ttl 5: ", lookups("cached_c", 5))
         }
     }
 --- response_body
-ttl 0: 3
-default ttl: 1
-ttl 5: 1
+ttl 0: 6
+default ttl: 2
+ttl 5: 2
 
 
 
-=== TEST 6: build_session_opts disables the revocation error cache where the library cannot apply it
---- config
-    location /t {
-        content_by_lua_block {
-            local plugin = require("apisix.plugins.openid-connect")
-            local build = plugin._build_session_opts
-            local secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK"
-
-            local function say(name, opts)
-                ngx.say(name, ": ", tostring(opts.revocation_cache_ttl), " ",
-                        tostring(opts.revocation_error_cache_ttl))
-            end
-
-            -- lookup cache off: the error cache has nothing to live in
-            say("closed, ttl 0", build({secret = secret, revocation = "redis",
-                revocation_fail_mode = "closed", revocation_cache_ttl = 0,
-                revocation_error_cache_ttl = 5}))
-            say("closed, ttl 0, error unset", build({secret = secret, revocation = "redis",
-                revocation_fail_mode = "closed", revocation_cache_ttl = 0}))
-
-            -- closed: the error cache is kept
-            say("closed, ttl 3", build({secret = secret, revocation = "redis",
-                revocation_fail_mode = "closed", revocation_cache_ttl = 3,
-                revocation_error_cache_ttl = 5}))
-            say("closed, unset", build({secret = secret, revocation = "redis",
-                revocation_fail_mode = "closed"}))
-
-            -- open (explicit or defaulted): errors are never cached
-            say("open, ttl 3", build({secret = secret, revocation = "redis",
-                revocation_fail_mode = "open", revocation_cache_ttl = 3,
-                revocation_error_cache_ttl = 5}))
-            say("default mode, unset", build({secret = secret, revocation = "redis"}))
-
-            -- no revocation: untouched
-            say("no revocation", build({secret = secret, revocation_cache_ttl = 0}))
-        }
-    }
---- response_body
-closed, ttl 0: 0 0
-closed, ttl 0, error unset: 0 0
-closed, ttl 3: 3 5
-closed, unset: nil nil
-open, ttl 3: 3 0
-default mode, unset: nil 0
-no revocation: 0 nil
---- error_log
-session.revocation_error_cache_ttl is ignored when session.revocation_cache_ttl is 0
-session.revocation_error_cache_ttl is ignored when session.revocation_fail_mode is not closed
-
-
-
-=== TEST 7: logout revokes the presented cookie even when the session is due for a rolling refresh
+=== TEST 6: logout revokes the presented cookie even when the session is due for a rolling refresh
 --- timeout: 30
 --- config
     location /t {
@@ -635,7 +586,7 @@ replayed=302
 
 
 
-=== TEST 8: a fail-open store error is not replayed to a fail-closed configuration
+=== TEST 7: a fail-open store error is not replayed to a fail-closed configuration
 --- config
     location /t {
         content_by_lua_block {

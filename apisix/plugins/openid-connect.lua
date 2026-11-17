@@ -19,7 +19,6 @@ local core              = require("apisix.core")
 local secret            = require("apisix.secret")
 local ngx_re            = require("ngx.re")
 local openidc           = require("resty.openidc")
-local resty_session     = require("resty.session")
 local jwt               = require("resty.jwt")
 local jsonschema        = require('jsonschema')
 local pkey              = require("resty.openssl.pkey")
@@ -58,28 +57,6 @@ local MAX_AUTH_FLOW_RESTARTS = 3
 -- translation is the legacy session.cookie.lifetime alias from the
 -- lua-resty-session 3.x schema, which is mapped to absolute_timeout
 -- when the latter is unset.
---
--- When revocation is enabled the revocation error cache TTL is forced to 0
--- where lua-resty-session 4.3.0 would misbehave with it:
---  * with revocation_cache_ttl = 0: the library allocates its worker-local
---    cache only when revocation_cache_ttl > 0, yet the error cache uses it
---    too, so a non-zero error TTL (set, or defaulted by the library) breaks
---    on a nil cache. Fixed upstream by
---    https://github.com/bungle/lua-resty-session/pull/215 (the cache is
---    allocated unconditionally); remove this branch once a release containing
---    it is required.
---  * with revocation_fail_mode = open: the library caches a store error as
---    `false`, indistinguishable from a successful "not revoked" lookup, under
---    a key that does not include the fail mode. A session opened under a
---    closed configuration (same cookie name and secret) would then be accepted
---    without error until the entry expires. Fix proposed on top of that PR in
---    https://github.com/Hockenba/lua-resty-session/commit/54ee922; error
---    caching is therefore only applied in closed mode for now. The reverse direction
---    (a closed-mode error read by an open configuration) is fail-safe: the
---    session is rejected until the entry expires.
---
--- NOTE: session_conf is the plugin conf's own table, shared by every request
--- of the route, so these assignments mutate it in place. They are idempotent.
 local function build_session_opts(session_conf)
     if not session_conf then
         return nil
@@ -89,23 +66,6 @@ local function build_session_opts(session_conf)
             session_conf.absolute_timeout = session_conf.cookie.lifetime
             core.log.warn("session.cookie.lifetime is deprecated; ",
                           "use session.absolute_timeout instead")
-        end
-    end
-    if session_conf.revocation then
-        local error_ttl = session_conf.revocation_error_cache_ttl
-        local reason
-        if session_conf.revocation_cache_ttl == 0 then
-            reason = "session.revocation_cache_ttl is 0"
-        elseif session_conf.revocation_fail_mode ~= "closed" then
-            reason = "session.revocation_fail_mode is not closed"
-        end
-        -- a non-zero error TTL, set or defaulted by the library, cannot apply
-        if reason and (error_ttl == nil or error_ttl > 0) then
-            if error_ttl then
-                core.log.warn("session.revocation_error_cache_ttl is ignored when ",
-                              reason)
-            end
-            session_conf.revocation_error_cache_ttl = 0
         end
     end
     return session_conf
@@ -360,8 +320,7 @@ local schema = {
                     minimum = 0,
                     description =
                         "Worker-local TTL in seconds for revocation store errors. "
-                        .. "0 disables. Default is 5. Only applies when "
-                        .. "revocation_fail_mode is closed.",
+                        .. "0 disables. Default is 5.",
                 },
             },
             required = {"secret"},
@@ -1533,30 +1492,8 @@ local function authenticate(plugin_conf, ctx)
         -- This code path also handles when the ID provider then redirects to
         -- the configured redirect URI after successful authentication.
         local target_url
-        local session_or_opts = build_session_opts(conf.session)
-
-        -- lua-resty-openidc starts the session before it checks for the
-        -- logout path, and start() refreshes a session that is past 75% of its
-        -- rolling timeout by saving it under a new session id. The logout
-        -- would then revoke the new id and leave the cookie the client
-        -- presented usable, so open the session here without refreshing it.
-        -- Closed-mode revocation store errors are rejected as authenticate()
-        -- would reject them.
-        if session_or_opts and session_or_opts.revocation
-           and path:match("^[^?#]*") == (conf.logout_path or "/logout") then
-            local opened, open_err = resty_session.open(session_or_opts)
-            if open_err and session_or_opts.revocation_fail_mode == "closed"
-               and (core.string.find(open_err, "unable to check session revocation")
-                    or core.string.find(open_err, "unable to mark session revoked")) then
-                opened:close()
-                core.log.error("OIDC session revocation store unavailable: ", open_err)
-                return 503
-            end
-            session_or_opts = opened
-        end
-
         response, err, target_url, session = openidc.authenticate(conf, nil, unauth_action,
-                                                                  session_or_opts)
+                                                          build_session_opts(conf.session))
 
         if err then
             if err == "unauthorized request" then
