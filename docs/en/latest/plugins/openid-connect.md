@@ -93,19 +93,23 @@ The `openid-connect` Plugin supports the integration with [OpenID Connect (OIDC)
 | session.cookie.lifetime | integer | False | | | Deprecated. Mapped to `session.absolute_timeout` at runtime when `absolute_timeout` is not set. Use `session.absolute_timeout` instead. |
 | session.storage | string | False | cookie | ["cookie", "redis"] | Session storage method. |
 | session.redis | object | False | | | Redis configuration when `storage` is `redis`. |
-| session.redis.host | string | False | 127.0.0.1 | | Redis host. |
-| session.redis.port | integer | False | 6379 | | Redis port. |
+| session.redis.host | string | False | 127.0.0.1 | | Redis host. Ignored when `session.redis.sentinels` is set. |
+| session.redis.port | integer | False | 6379 | | Redis port. Ignored when `session.redis.sentinels` is set. |
 | session.redis.username | string | False | | | Redis username. |
 | session.redis.password | string | False | | | Redis password. |
 | session.redis.database | integer | False | 0 | | Redis database index. |
 | session.redis.prefix | string | False | sessions | | Redis key prefix. |
-| session.redis.ssl | boolean | False | false | | Enable SSL for Redis connection. |
+| session.redis.ssl | boolean | False | false | | Enable SSL for Redis connection. With Redis Sentinel, applies to both the Sentinel and the master connections. |
 | session.redis.ssl_verify | boolean | False | true | | Verify SSL certificate for Redis connection. |
 | session.redis.server_name | string | False | | | Redis server name for SNI. |
 | session.redis.connect_timeout | integer | False | 1000 | | Connect timeout in milliseconds. |
 | session.redis.send_timeout | integer | False | 1000 | | Send timeout in milliseconds. |
 | session.redis.read_timeout | integer | False | 1000 | | Read timeout in milliseconds. |
 | session.redis.keepalive_timeout | integer | False | 10000 | | Keepalive timeout in milliseconds. |
+| session.redis.sentinels | array[object] | False | | | Redis Sentinel nodes, each with `host` and `port`. When set, the Plugin stores sessions in the master discovered through Redis Sentinel, and `session.redis.host` and `session.redis.port` are ignored. Requires `session.redis.master`. |
+| session.redis.master | string | False | | | Name of the master monitored by Redis Sentinel. Required when `session.redis.sentinels` is set. |
+| session.redis.sentinel_username | string | False | | | Username used to authenticate with Redis Sentinel. `session.redis.username` and `session.redis.password` are used to authenticate with the master. |
+| session.redis.sentinel_password | string | False | | | Password used to authenticate with Redis Sentinel. |
 | session_contents | object | False | | | Session content configurations. If unconfigured, all data will be stored in the session. |
 | session_contents.access_token | boolean | False | | | If true, store the access token in the session. |
 | session_contents.id_token | boolean | False | | | If true, store the ID token in the session. |
