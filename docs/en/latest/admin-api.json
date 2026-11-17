@@ -3,7 +3,7 @@
   "info": {
     "title": "Apache APISIX Admin API",
     "description": "The **Apache APISIX Admin API** is a RESTful interface for managing all APISIX gateway resources — routes, upstreams, services, consumers, SSL certificates, plugins, and more.\n\nAPISIX Admin API allows you to dynamically configure the API gateway without restarts. Accepted changes propagate to workers asynchronously.\n\nUnless API key authentication is explicitly disabled with `deployment.admin.admin_key_required: false`, endpoints require an **API key**. Pass a key configured under `deployment.admin.admin_key` in APISIX's `config.yaml` using the `X-API-KEY` request header.\n\nBy default, the Admin API binds to `0.0.0.0:9180` and allows clients from `127.0.0.0/24`. The examples use `http://127.0.0.1:9180`; configure the listener and client allowlist in `config.yaml` under `deployment.admin.admin_listen` and `deployment.admin.allow_admin`.\n\nTo learn how to configure and operate APISIX, see [Get Started](https://apisix.apache.org/docs/apisix/next/getting-started/README/).",
-    "version": "3.19.0",
+    "version": "3.20.0",
     "license": {
       "name": "Apache 2.0",
       "url": "https://www.apache.org/licenses/LICENSE-2.0.html"

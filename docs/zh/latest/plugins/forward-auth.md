@@ -96,7 +96,7 @@ plugin_attr:
 - `ngx_http_ffi_client`（默认）：C 客户端，要求 APISIX runtime 编译了该模块，`.requirements` 中固定的 runtime 已包含。在不含该模块的 runtime 上，鉴权请求会失败并返回 `status_on_error`，错误日志会指出缺失的模块；插件不会静默切换客户端。
 - `lua-resty-http`：Lua 客户端，适用于所有 runtime。
 
-两种客户端发出的鉴权请求略有不同：`ngx_http_ffi_client` 会发送 `Connection: keep-alive`（`keepalive` 为 `false` 时为 `close`），`GET` 请求会带 `Content-Length: 0`，且不发送默认的 `User-Agent`。它的 `timeout` 限制读取整个响应的总时长，而 `lua-resty-http` 对每次接收分别计时。
+两种客户端发出的鉴权请求略有不同：`ngx_http_ffi_client` 会发送 `Connection: keep-alive`，`GET` 请求会带 `Content-Length: 0`，且不发送默认的 `User-Agent`。它的 `timeout` 限制读取整个响应的总时长，而 `lua-resty-http` 对每次接收分别计时。无论使用哪种客户端，`keepalive` 只决定响应后连接放回连接池还是关闭，不影响 `Connection` 请求头。
 
 ## 使用示例
 

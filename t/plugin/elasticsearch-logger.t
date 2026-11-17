@@ -557,7 +557,7 @@ apisix:
     }
 --- response_body
 123456
-PTQvJEaPcNOXcOHeErC0XQ==
+$ENC$v1$PTQvJEaPcNOXcOHeErC0XQ==
 
 
 
@@ -1080,4 +1080,4 @@ apisix:
     }
 --- response_body
 Basic ZWxhc3RpYzoxMjM0NTY=
-8xFrqM3Y8W1eaQ5b6vIPlyOS+HvOyI4agcFeoe47abo=
+$ENC$v1$8xFrqM3Y8W1eaQ5b6vIPlyOS+HvOyI4agcFeoe47abo=

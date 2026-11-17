@@ -35,6 +35,8 @@ The `ext-plugin-post-resp` plugin will be executed after the request gets a resp
 
 This plugin uses [lua-resty-http](https://github.com/api7/lua-resty-http) library under the hood to send requests to the upstream, due to which the [proxy-control](./proxy-control.md), [proxy-mirror](./proxy-mirror.md), and [proxy-cache](./proxy-cache.md) plugins are not available to be used alongside this plugin. Also, [mTLS Between APISIX and Upstream](../mtls.md#mtls-between-apisix-and-upstream) is not yet supported.
 
+`ext-plugin-post-resp` cannot be combined with [`grpc-transcode`](./grpc-transcode.md). It sends upstream requests through `lua-resty-http`, an HTTP/1.0 and HTTP/1.1 client that does not support the HTTP/2 transport required by gRPC.
+
 See [External Plugin](../external-plugin.md) to learn more.
 
 :::note

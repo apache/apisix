@@ -29,8 +29,8 @@
 --
 --   <scope>|#               node ids the configuration held at the previous reconcile
 --   <scope>|!               aggregate ramp deadline, read on the request hot path
---   <scope>|<id>            ramp start: > 0 ramping, 0 mature, -1 not picked yet
---   <scope>|<id>|i          when a reconcile first saw it configured but unpickable
+--   <scope>|<id>            ramp start: > 0 ramping, 0 mature, < 0 waiting for a
+--                           picker since minus that value
 --   <scope>|<id>@<start>    the successor a worker elected for that ramp start
 --
 -- Workers reconcile in parallel, and the shared dict has no compare-and-set, so
@@ -38,22 +38,17 @@
 -- that read a ramp start just before another one changed it would put the old
 -- one back. Instead a node's ramp start is only ever created with `add`, only
 -- ever replaced through an election on `add` keyed by the value being replaced,
--- and otherwise kept alive with `expire`, which leaves the value alone. Every
--- worker that decides on a change to the same ramp start therefore ends up
--- writing the same successor.
+-- and otherwise kept alive with `expire`, which leaves the value alone, until the
+-- node leaves the configuration. Every worker that decides on a change to the
+-- same ramp start therefore ends up writing the same successor.
 --
 -- Presence and eligibility are tracked separately. Presence comes from the
 -- configuration, so every worker sees the same set; eligibility is this worker's
--- health view and only decides when a ramp starts and when it is interrupted.
--- Tombstoning off the eligible set would let one worker's transient health
--- opinion drop a node the other workers are still serving, and the state of a
--- node that never left could then expire and be ramped again from scratch.
---
--- A node the configuration still holds keeps its entry alive. One that leaves the
--- configuration keeps it for a further `slow_start_time_seconds` (the tombstone
--- window) so a short absence resumes the ramp instead of restarting it. Coming
--- back later, or being out of the picker for longer than a full window, starts a
--- new lifecycle.
+-- health view. Either kind of unavailability ends the ramp or the maturity of a
+-- node, however short it is: a node a health check takes out of the picker waits
+-- for its next picker and ramps from there, and one that leaves the configuration
+-- loses its state, so it ramps from scratch if it comes back. Whatever answers on
+-- the address afterwards may be a process that just started.
 local core         = require("apisix.core")
 local ipairs       = ipairs
 local pairs        = pairs
@@ -72,18 +67,13 @@ local shdict = ngx.shared["upstream-slow-start"]
 local INSTANCE_STARTED_KEY = "@instance_started_at"
 local SNAPSHOT_SUFFIX      = "|#"
 local DEADLINE_SUFFIX      = "|!"
-local INELIGIBLE_SUFFIX    = "|i"
 
--- A node that is present but needs no ramp is stored with this ramp start, so
--- that it can still be tombstoned when it disappears: without an entry it would
--- look new again on its way back.
+-- A node that is present but needs no ramp is stored with this ramp start. One
+-- the configuration holds but that is out of the picker is stored with the
+-- negated time it was first found out of it: that separates "known and mature"
+-- from "known but waiting to ramp", and keeps every such value unique to the
+-- interruption it records, which the election in `replace_start` relies on.
 local MATURE = 0
-
--- And one the configuration holds but that has never reached a picker - an
--- active health check has not cleared it yet - is stored with this one. It is
--- what separates "known and already mature" from "known but has not had its
--- chance to ramp", which otherwise both look like a node with no state.
-local PENDING = -1
 
 -- Lifetime of the state of a node that is still eligible. Refreshed on every
 -- reconcile, which a busy upstream runs at least as often as the picker LRU
@@ -177,18 +167,19 @@ end
 _M.effective_weight = effective_weight
 
 
-local function within_startup_grace(conf, now)
+-- Seconds left of `startup_grace_period_seconds`, or 0 once it is over.
+local function startup_grace_left(conf, now)
     local grace = conf.startup_grace_period_seconds or 0
     if grace <= 0 then
-        return false
+        return 0
     end
 
     local started_at = shdict:get(INSTANCE_STARTED_KEY)
     if not started_at then
-        return false
+        return 0
     end
 
-    return now < started_at + grace
+    return math_max(started_at + grace - now, 0)
 end
 
 
@@ -295,9 +286,11 @@ local function reconcile(conf, present_nodes, nodes, scope, now)
 
     -- The first reconcile of a scope is a baseline: the nodes an upstream is
     -- bootstrapped with, and the nodes it already had when `warm_up_conf` was
-    -- turned on, are mature. So are nodes observed inside the startup grace
-    -- period, which absorbs the ordering differences of a cold restart.
-    local baseline = (known == nil) or within_startup_grace(conf, now)
+    -- turned on, are mature. So are nodes observed for the first time inside the
+    -- startup grace period, which absorbs the ordering differences of a cold
+    -- restart.
+    local grace_left = startup_grace_left(conf, now)
+    local baseline = (known == nil) or grace_left > 0
 
     local first_seen = core.table.new(#nodes, 0)
     local deadline = 0
@@ -309,9 +302,7 @@ local function reconcile(conf, present_nodes, nodes, scope, now)
 
     for i, id in ipairs(ids) do
         local key = scope .. "|" .. id
-        local ineligible_key = key .. INELIGIBLE_SUFFIX
         local start_at = tonumber(shdict:get(key))
-        local ineligible_since = tonumber(shdict:get(ineligible_key))
         local changed
 
         if not start_at then
@@ -327,22 +318,12 @@ local function reconcile(conf, present_nodes, nodes, scope, now)
                 end
             end
 
-        elseif start_at == PENDING then
-            -- the first picker it can actually be part of: this is where its
-            -- window starts, not when the configuration first mentioned it
-            start_at, changed = replace_start(key, PENDING, now, window)
-            if changed then
-                log_began(id, nodes[i].weight)
-            end
-
-        elseif ineligible_since and now - ineligible_since > window then
-            -- observed out of the picker for longer than a full window: whatever
-            -- answers on this address now is not the process that was ramping
-            local out_for = now - ineligible_since
+        elseif start_at < MATURE then
+            -- the first picker it can be part of since it was configured or
+            -- came back: this is where its window starts
             start_at, changed = replace_start(key, start_at, now, window)
             if changed then
-                core.log.info("slow start restarted for node ", id, " of upstream ",
-                              scope, " after ", out_for, "s out of the picker")
+                log_began(id, nodes[i].weight)
             end
 
         elseif start_at > MATURE and now - start_at >= window then
@@ -353,14 +334,7 @@ local function reconcile(conf, present_nodes, nodes, scope, now)
             end
 
         else
-            -- refresh the lifetime, which also drops the tombstone window if the
-            -- node came back after having left the configuration
             keep_alive(key, STATE_TTL)
-        end
-
-        if ineligible_since then
-            -- back in the picker
-            shdict:delete(ineligible_key)
         end
 
         first_seen[i] = start_at
@@ -373,49 +347,40 @@ local function reconcile(conf, present_nodes, nodes, scope, now)
         if not eligible[id] then
             local key = scope .. "|" .. id
             local start_at = tonumber(shdict:get(key))
-            if start_at then
-                -- still configured, just not pickable here: keep the state alive
-                -- and mark when it dropped out, keeping the earliest mark. The
-                -- ramp clock itself runs on, so a short outage resumes where it
-                -- left off
-                keep_alive(key, STATE_TTL)
-                local ineligible_key = key .. INELIGIBLE_SUFFIX
-                if not shdict:add(ineligible_key, now, STATE_TTL) then
-                    keep_alive(ineligible_key, STATE_TTL)
+            if not start_at then
+                -- its window starts when it becomes usable
+                create_start(key, -now)
+            elseif start_at >= MATURE then
+                -- taken out of the picker by a health check: the ramp or the
+                -- maturity ends here, and it ramps again from its next picker
+                local _, changed = replace_start(key, start_at, -now, window)
+                if changed then
+                    core.log.info("slow start interrupted for node ", id,
+                                  " of upstream ", scope, ", out of the picker")
                 end
-            elseif baseline or (known and known[id]) then
-                -- part of the bootstrap set even though a health check has not
-                -- cleared it yet, or state the shared dict evicted: every node
-                -- the previous reconcile saw was given state then
-                start_at = create_start(key, MATURE)
             else
-                -- configured but never picked: its window starts when it first
-                -- becomes usable
-                start_at = create_start(key, PENDING)
-            end
-
-            -- a ramp this worker cannot pick from is still a ramp other workers
-            -- may be serving, and the deadline is what keeps their picker keys
-            -- moving; leaving it out would let this worker publish an early one
-            if start_at > MATURE then
-                deadline = math_max(deadline, start_at + window)
+                keep_alive(key, STATE_TTL)
             end
         end
     end
 
-    -- A node that left the configuration keeps its state for one slow start
-    -- window and is then forgotten, so that the address coming back later - a
-    -- different process behind the same host and port - is warmed up again.
+    -- A node that left the configuration is forgotten, so that coming back - very
+    -- likely a different process behind the same host and port - ramps it again.
+    -- Inside the startup grace period it is not forgotten but left waiting for a
+    -- picker until the period ends, as the grace only covers nodes observed for
+    -- the first time.
     if known then
         for id in pairs(known) do
             if not present[id] then
                 local key = scope .. "|" .. id
                 if shdict:get(key) then
                     core.log.info("node ", id, " of upstream ", scope,
-                                  " left the upstream, keeping its slow start state for ",
-                                  window, "s")
-                    keep_alive(key, window)
-                    keep_alive(key .. INELIGIBLE_SUFFIX, window)
+                                  " left the upstream, it ramps again if it comes back")
+                    if grace_left > 0 then
+                        store(key, -now, grace_left)
+                    else
+                        shdict:delete(key)
+                    end
                 end
             end
         end

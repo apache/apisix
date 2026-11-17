@@ -62,7 +62,7 @@ When enabled, the Plugin will serialize the request context information to [JSON
 | include_resp_body_expr | array[array]   | False    |  | | An array of one or more conditions in the form of [lua-resty-expr](https://github.com/api7/lua-resty-expr). Used when the `include_resp_body` is true. Response body would only be logged when the expressions configured here evaluate to true. |
 | max_resp_body_bytes | integer | False | 524288 | >=1 | Response bodies within this size will be logged, if the size exceeds the configured value it will be truncated before logging. |
 
-This Plugin supports using batch processors to aggregate and process entries (logs/data) in a batch. This avoids the need for frequently submitting the data. The batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. See [Batch Processor](../batch-processor.md#configuration) for more information or setting your custom configuration.
+This Plugin supports using batch processors to aggregate and process entries (logs/data) in a batch. This avoids the need for frequently submitting the data. The batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. See [Batch Processor](../batch-processor.md#configurations) for more information or setting your custom configuration.
 
 ## Plugin Metadata
 

@@ -40,6 +40,8 @@ description: 本文介绍了关于 Apache APISIX `ext-plugin-post-resp` 插件�
 - [proxy-cache](./proxy-cache.md) 插件不可用
 - [APISIX 与上游间的双向认证](../mtls.md#apisix-与上游间的双向认证) 功能尚不可用
 
+`ext-plugin-post-resp` 不能与 [`grpc-transcode`](./grpc-transcode.md) 插件一起使用。它通过 `lua-resty-http` 向上游发送请求，该客户端仅支持 HTTP/1.0 和 HTTP/1.1，不支持 gRPC 所需的 HTTP/2 协议。
+
 如果你想了解更多关于 External Plugin 的信息，请参考 [External Plugin](../external-plugin.md) 。
 
 :::note

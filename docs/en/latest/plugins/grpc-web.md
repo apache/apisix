@@ -107,6 +107,8 @@ docker run -d \
   moul/grpcbin
 ```
 
+The Route below uses `127.0.0.1:9000` as the upstream address and assumes APISIX runs on the Docker host. If APISIX runs in a container, connect both containers to the same [user-defined Docker network](https://docs.docker.com/engine/network/drivers/bridge/) and use `grpcbin:9000` in the Route instead. Inside the APISIX container, `127.0.0.1` refers to APISIX itself; Docker resolves `grpcbin` on the shared network.
+
 #### Generate gRPC-Web Client Code
 
 Download the Protocol Buffer definition `hello.proto`:
