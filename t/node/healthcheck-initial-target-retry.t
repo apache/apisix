@@ -97,7 +97,7 @@ our $RetryHook = <<'EOC';
             nodes[#nodes + 1] = { host = "127.0.0.1", port = 1970, weight = 1 }
         end
         local code = require("lib.test_admin").test("/apisix/admin/routes/1", ngx.HTTP_PUT, {
-            uri = "/server_port",
+            uri = state.uri,
             upstream = {
                 type = "roundrobin", retries = 0, nodes = nodes,
                 checks = { active = {
@@ -116,7 +116,7 @@ our $RetryHook = <<'EOC';
         local test = require("lib.test_admin").test
         local code
         assert(state.wait_for(function()
-            code = test("/server_port", ngx.HTTP_GET)
+            code = test(state.uri, ngx.HTTP_GET)
             return code == 200 or code == 502
         end), "route did not match, last status: " .. tostring(code))
     end
@@ -135,7 +135,7 @@ our $RetryHook = <<'EOC';
         local test = require("lib.test_admin").test
         local healthy = 0
         for _ = 1, 40 do
-            local code, _, body = test("/server_port", ngx.HTTP_GET)
+            local code, _, body = test(state.uri, ngx.HTTP_GET)
             if code == 200 and body == "1980" then
                 healthy = healthy + 1
             end
@@ -154,6 +154,7 @@ __DATA__
 location /t {
     content_by_lua_block {
         local state = _G.hc_retry_test
+        state.uri = "/server_port"
         state.armed = "add"
         state.put(1, true)
         state.seed()
@@ -200,6 +201,7 @@ lua entry thread aborted
 location /t {
     content_by_lua_block {
         local state = _G.hc_retry_test
+        state.uri = "/server_port_route2"
         state.put(1, true)
         state.seed()
         assert(state.wait_for(state.unhealthy), "initial probes did not finish")
@@ -261,6 +263,7 @@ lua entry thread aborted
 location /t {
     content_by_lua_block {
         local state = _G.hc_retry_test
+        state.uri = "/server_port_hello"
         state.put(1, true)
         state.seed()
         assert(state.wait_for(state.unhealthy), "initial probes did not finish")
