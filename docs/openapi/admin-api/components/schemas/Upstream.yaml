@@ -304,7 +304,7 @@ properties:
   type:
     default: roundrobin
     type: string
-    description: algorithms of load balancing
+    description: Load balancing algorithm. Built-in values are `roundrobin`, `chash`, `ewma`, and `least_conn`; user-defined balancers can provide other values.
   pass_host:
     default: pass
     enum:
@@ -312,7 +312,11 @@ properties:
       - node
       - rewrite
     type: string
-    description: mod of host passing
+    description: How to set the `Host` header when proxying to the upstream.
+    x-enumDescriptions:
+      pass: Forward the client's original `Host` header.
+      node: Use the upstream node's hostname.
+      rewrite: Use the value of `upstream_host`.
   scheme:
     description: The scheme of the upstream. For L7 proxy, it can be one of grpc/grpcs/http/https/ws/wss. For L4 proxy, it can be one of tcp/tls/udp. For specific protocols, it can be kafka.
     enum:
@@ -327,6 +331,17 @@ properties:
       - ws
       - wss
     default: http
+    x-enumDescriptions:
+      grpc: Layer 7 gRPC.
+      grpcs: Layer 7 gRPC over TLS.
+      http: Layer 7 HTTP.
+      https: Layer 7 HTTP over TLS.
+      tcp: Layer 4 TCP.
+      tls: Layer 4 TCP over TLS.
+      udp: Layer 4 UDP.
+      kafka: Apache Kafka protocol.
+      ws: Frame-aware WebSocket proxying; `enable_websocket` is ignored.
+      wss: Frame-aware WebSocket proxying over TLS; uses the shared CA trust store, not `tls.ca_certs`.
   upstream_host:
     pattern: ^\*$|^\*?[0-9a-zA-Z-._\[\]:]+$
     type: string
@@ -394,6 +409,13 @@ properties:
       - vars_combinations
     default: vars
     type: string
+    description: What to hash on when `type` is `chash`.
+    x-enumDescriptions:
+      vars: Hash on an NGINX variable specified by `key`.
+      header: Hash on a request header specified by `key`.
+      cookie: Hash on a cookie value specified by `key`.
+      consumer: Hash on the authenticated consumer name.
+      vars_combinations: Hash on a combination of variables.
   keepalive_pool:
     properties:
       requests:

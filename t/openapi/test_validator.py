@@ -92,6 +92,49 @@ class ContractValidationTest(unittest.TestCase):
             'properties']['field_path']['pattern'] = '^incorrect$'
         self.assertTrue(validator.validate_source(document, ROOT))
 
+    def test_admin_reference_metadata(self):
+        schemas = self.document['components']['schemas']
+
+        upstream_type = schemas['Upstream']['properties']['type']
+        self.assertNotIn('enum', upstream_type)
+        self.assertIn('user-defined balancers', upstream_type['description'])
+
+        enum_fields = {
+            'Upstream': ('hash_on', 'scheme', 'pass_host'),
+            'Route': ('status',),
+            'SSL': ('type', 'status'),
+            'SSLRead': ('type', 'status'),
+        }
+        for schema_name, property_names in enum_fields.items():
+            for property_name in property_names:
+                prop = schemas[schema_name]['properties'][property_name]
+                self.assertEqual(
+                    {str(value) for value in prop['enum']},
+                    set(prop['x-enumDescriptions']),
+                )
+
+        secret_patch = schemas['SecretPatch']
+        self.assertEqual(3, len(secret_patch['anyOf']))
+        self.assertEqual(
+            {'HashiCorp Vault', 'AWS Secrets Manager',
+             'Google Cloud Secret Manager'},
+            {branch['title'] for branch in secret_patch['anyOf']},
+        )
+        for value in (
+                {'token': None},
+                {'session_token': None},
+                {'auth_config': {'client_email': None}}):
+            errors = validator.Draft202012Validator(secret_patch).iter_errors(value)
+            self.assertFalse(list(errors))
+
+    def test_unconstrained_array_items_are_explicit(self):
+        document = deepcopy(self.document)
+        del document['components']['schemas']['Route'][
+            'properties']['vars']['items']
+        errors = validator.validate(document, self.versions)
+        self.assertTrue(any(
+            'array schema must declare items' in error for error in errors))
+
 
 if __name__ == '__main__':
     unittest.main()

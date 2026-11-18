@@ -38,6 +38,7 @@ properties:
               description: logger plugin configuration
             filter:
               type: array
+              items: {}
               description: logger filter rules
           dependentRequired:
             name:

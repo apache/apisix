@@ -195,6 +195,7 @@ properties:
     type: string
   vars:
     type: array
+    items: {}
   name:
     minLength: 1
     maxLength: 256
