@@ -21,6 +21,7 @@ local content_decode = require("apisix.utils.content-decode")
 local ngx = ngx
 local pairs = pairs
 local type = type
+local setmetatable = setmetatable
 local ngx_now = ngx.now
 local ngx_header = ngx.header
 local os_date = os.date
@@ -40,6 +41,14 @@ local req_read_body = ngx.req.read_body
 local lru_log_format = core.lrucache.new({
     ttl = 300, count = 512
 })
+
+-- The compiled include_req_body_expr and include_resp_body_expr of each conf. They are
+-- not kept in the conf: plugin.conf_version() encodes the conf with sorted keys, and
+-- the matcher an exact IPv6 address in `ipmatch` compiles to mixes number and string
+-- keys, so the encoding raised in the log phase of every request of that conf.
+local request_exprs = setmetatable({}, {__mode = "k"})
+local response_exprs = setmetatable({}, {__mode = "k"})
+
 
 local _M = {}
 
@@ -233,16 +242,18 @@ local function get_full_log(ngx, conf)
 
         if conf.include_req_body_expr then
 
-            if not conf.request_expr then
-                local request_expr, err = expr.new(conf.include_req_body_expr)
+            local request_expr = request_exprs[conf]
+            if not request_expr then
+                local err
+                request_expr, err = expr.new(conf.include_req_body_expr)
                 if not request_expr then
                     core.log.error('generate request expr err ' .. err)
                     return log
                 end
-                conf.request_expr = request_expr
+                request_exprs[conf] = request_expr
             end
 
-            local result = conf.request_expr:eval(ctx.var)
+            local result = request_expr:eval(ctx.var)
 
             if not result then
                 log_request_body = false
@@ -396,17 +407,19 @@ function _M.collect_body(conf, ctx)
         local log_response_body = true
 
         if conf.include_resp_body_expr then
-            if not conf.response_expr then
-                local response_expr, err = expr.new(conf.include_resp_body_expr)
+            local response_expr = response_exprs[conf]
+            if not response_expr then
+                local err
+                response_expr, err = expr.new(conf.include_resp_body_expr)
                 if not response_expr then
                     core.log.error('generate response expr err ' .. err)
                     return
                 end
-                conf.response_expr = response_expr
+                response_exprs[conf] = response_expr
             end
 
             if ctx.res_expr_eval_result == nil then
-                ctx.res_expr_eval_result = conf.response_expr:eval(ctx.var)
+                ctx.res_expr_eval_result = response_expr:eval(ctx.var)
             end
 
             if not ctx.res_expr_eval_result then
@@ -462,16 +475,18 @@ function _M.check_and_read_req_body(conf, ctx)
     if conf.include_req_body then
         local should_read_body = true
         if conf.include_req_body_expr then
-            if not conf.request_expr then
-                local request_expr, err = expr.new(conf.include_req_body_expr)
+            local request_expr = request_exprs[conf]
+            if not request_expr then
+                local err
+                request_expr, err = expr.new(conf.include_req_body_expr)
                 if not request_expr then
                     core.log.error('generate request expr err ', err)
                     return
                 end
-                conf.request_expr = request_expr
+                request_exprs[conf] = request_expr
             end
 
-            local result = conf.request_expr:eval(ctx.var)
+            local result = request_expr:eval(ctx.var)
 
             if not result then
                 should_read_body = false
