@@ -96,7 +96,8 @@ local function check_token(ctx)
 
     local req_token = ctx.var.arg_api_key or ctx.var.http_x_api_key
                       or ctx.var.cookie_x_api_key
-    if not req_token then
+    -- an empty token, such as `?api_key=` or an empty X-API-KEY header, is no token
+    if not req_token or req_token == "" then
         return false, "missing apikey"
     end
 
