@@ -65,7 +65,7 @@ NOTE: `encrypt_fields = {"password"}` is also defined in the schema, which means
 
 NOTE: In addition, you can use Environment Variables or APISIX Secret to store and reference Plugin attributes. APISIX currently supports storing secrets in two ways: [Environment Variables and HashiCorp Vault](../terminology/secret.md).
 
-This Plugin supports using batch processors to aggregate and process entries (logs/data) in a batch. This avoids the need for frequently submitting the data. The batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. See [Batch Processor](../batch-processor.md#configuration) for more information or setting your custom configuration.
+This Plugin supports using batch processors to aggregate and process entries (logs/data) in a batch. This avoids the need for frequently submitting the data. The batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. See [Batch Processor](../batch-processor.md#configurations) for more information or setting your custom configuration.
 
 ## Plugin Metadata
 

@@ -40,6 +40,14 @@ The `ai-prompt-guard` Plugin safeguards your LLM endpoints by inspecting and val
 
 When both `allow_patterns` and `deny_patterns` are configured, the Plugin first ensures that at least one `allow_patterns` is matched. If none match, the request is rejected. If an allowed pattern is matched, it then checks for any occurrences of denied patterns.
 
+The Plugin checks Chat Completions, Responses API, Embeddings, Anthropic Messages, and Bedrock Converse requests using each protocol's native content structure. For Responses, it checks user content in `input` and, when `match_all_roles` is `true`, system content in `instructions`.
+
+See [request protocol detection](./ai-proxy.md#request-protocol-detection) for the detection order and URI requirements. Other non-empty JSON bodies use passthrough and are handled according to `fail_mode` rather than inspected as a supported AI request.
+
+For Embeddings requests, the Plugin checks a string `input` or all strings in an `input` array. Batch items are joined with spaces and checked together, regardless of `match_all_conversation_history`. Allow patterns apply to this combined text; a denied pattern anywhere in the batch rejects the request.
+
+When no content is selected for inspection, the request continues upstream. This includes messages excluded by role filtering and Embeddings inputs containing only token IDs, which the Plugin does not decode into text. `fail_mode: "error"` applies to unrecognized protocols; it does not reject recognized requests solely because no text was selected.
+
 ## Plugin Attributes
 
 | Name | Type | Required | Default | Valid values | Description |
@@ -53,10 +61,10 @@ When both `allow_patterns` and `deny_patterns` are configured, the Plugin first 
 
 ## Examples
 
-The following examples will be using OpenAI as the Upstream service provider. Before proceeding, create an [OpenAI account](https://openai.com) and an [API key](https://openai.com/blog/openai-api). You can optionally save the key to an environment variable as such:
+The following examples will be using OpenAI as the Upstream service provider. Before proceeding, create an [OpenAI account](https://openai.com) and an [API key](https://openai.com/blog/openai-api). Save the key to an environment variable, replacing the placeholder with your API key:
 
 ```shell
-export OPENAI_API_KEY=<YOUR_OPENAI_API_KEY>
+export OPENAI_API_KEY='<YOUR_OPENAI_API_KEY>'
 ```
 
 If you are working with other LLM providers, please refer to the provider's documentation to obtain an API key.

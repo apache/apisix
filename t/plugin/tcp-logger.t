@@ -30,9 +30,10 @@ add_block_preprocessor(sub {
         my $extra_init_by_lua = <<_EOC_;
     local bp_manager = require("apisix.utils.batch-processor-manager")
     local core = require("apisix.core")
+    local json_encode = core.json.encode
     local old_f = bp_manager.add_entry_to_new_processor
     bp_manager.add_entry_to_new_processor = function(self, conf, entry, ctx, func)
-        ngx.log(ngx.INFO, "batch_entry: ", core.json.encode(entry))
+        ngx.log(ngx.INFO, "batch_entry: ", json_encode(entry))
         return old_f(self, conf, entry, ctx, func)
     end
 _EOC_
@@ -629,3 +630,125 @@ GET /t
 GET /t
 --- error_log
 "body":"opentracing\n"
+
+
+
+=== TEST 18: json encode failure in batch processor callback returns error gracefully
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local plugin = require("apisix.plugins.tcp-logger")
+            local orig_encode = core.json.encode
+            core.json.encode = function()
+                return nil, "mocked encoding error"
+            end
+
+            local conf = {
+                host = "127.0.0.1",
+                port = 43000,
+                batch_max_size = 1,
+                log_format = {
+                    host = "$host",
+                },
+            }
+
+            local ctx = {
+                var = {
+                    host = "127.0.0.1",
+                    remote_addr = "127.0.0.1",
+                    uri = "/t",
+                    request_uri = "/t",
+                    scheme = "http",
+                    request_method = "GET",
+                    status = 200,
+                }
+            }
+
+            local ok, call_err = pcall(plugin.log, conf, ctx)
+            ngx.sleep(0.1)
+            core.json.encode = orig_encode
+
+            if not ok then
+                error(call_err)
+            end
+            ngx.say("done")
+        }
+    }
+--- request
+GET /t
+--- response_body
+done
+--- wait: 0.5
+--- error_log
+Batch Processor[log buffer] failed to process entries: error occurred while encoding the data: mocked encoding error
+
+
+
+=== TEST 19: requests that `match` leaves out do not take a pending slot
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/tcp-logger',
+                                 ngx.HTTP_PUT, {max_pending_entries = 2})
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, {
+                uri = "/hello",
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:1980"] = 1
+                    }
+                },
+                plugins = {
+                    ["tcp-logger"] = {
+                        host = "127.0.0.1",
+                        port = 43000,
+                        batch_max_size = 1,
+                        -- only requests with ?log=yes are logged
+                        match = {{{"arg_log", "==", "yes"}}},
+                    }
+                }
+            })
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local http = require("resty.http")
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            -- the first request builds the batch processor, so the three that `match`
+            -- leaves out arrive while it exists, as they do on a route in use
+            for _, query in ipairs({"?log=yes", "", "", "", "?log=yes"}) do
+                local httpc = http.new()
+                local res, err = httpc:request_uri(uri .. query)
+                if not res then
+                    ngx.say("request failed: ", err)
+                    return
+                end
+            end
+            ngx.sleep(1)
+
+            t('/apisix/admin/plugin_metadata/tcp-logger', ngx.HTTP_DELETE)
+            ngx.say("passed")
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- grep_error_log eval
+qr/sending a batch logs to 127.0.0.1:43000/
+--- grep_error_log_out
+sending a batch logs to 127.0.0.1:43000
+sending a batch logs to 127.0.0.1:43000
+--- no_error_log
+max pending entries limit exceeded
+--- timeout: 5

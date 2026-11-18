@@ -394,3 +394,120 @@ print(inner['data']['seen_content_type'], inner['data']['seen_body'])
 "
 --- response_body
 text/markdown hello
+
+
+
+=== TEST 25: a route whose tools declare no header parameter
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "streamable_http",
+                    base_url = "http://127.0.0.1:11460",
+                    headers = { Authorization = "gateway-credential" },
+                    openapi_url = "http://127.0.0.1:11460/openapi.json",
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 26: an undeclared header parameter never reaches the API
+--- exec
+python3 t/plugin/openapi_to_mcp_harness.py /mcp \
+    '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"getPet","arguments":{"pathParameters":{"petId":7},"headerParameters":{"Authorization":"attacker","X-Forwarded-For":"10.0.0.1"}}}}' "
+inner = json.loads(d['result']['content'][0]['text'])
+print(inner['data']['seen_auth'])
+print(inner['data'].get('seen_forwarded'))
+"
+--- response_body
+gateway-credential
+None
+
+
+
+=== TEST 27: an undeclared query parameter is rejected when the container declares one
+--- exec
+python3 t/plugin/openapi_to_mcp_harness.py /mcp \
+    '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"getPet","arguments":{"pathParameters":{"petId":7},"queryParameters":{"verbose":false,"admin":"true"}}}}' "
+print(d['result']['isError'])
+"
+--- response_body
+True
+
+
+
+=== TEST 28: a route whose tool declares a header parameter
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "streamable_http",
+                    base_url = "http://127.0.0.1:11460",
+                    headers = { Authorization = "gateway-credential" },
+                    openapi_url = "http://127.0.0.1:11460/headerparam.json",
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 29: a declared header parameter is sent, but cannot carry a newline
+--- exec
+python3 t/plugin/openapi_to_mcp_harness.py /mcp \
+    '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"traced","arguments":{"headerParameters":{"X-Trace":"abc"}}}}' "
+inner = json.loads(d['result']['content'][0]['text'])
+print(inner['data'].get('seen_trace'))
+"
+--- response_body
+abc
+
+
+
+=== TEST 30: a newline in a declared header parameter drops the header
+--- exec
+python3 t/plugin/openapi_to_mcp_harness.py /mcp \
+    '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"traced","arguments":{"headerParameters":{"X-Trace":"v\r\nX-Injected: 1"}}}}' "
+inner = json.loads(d['result']['content'][0]['text'])
+print(inner['data'].get('seen_trace'), inner['data'].get('seen_injected'))
+print(inner['status'])
+"
+--- response_body
+None None
+200
+--- error_log
+cannot appear in a request header
+
+
+
+=== TEST 31: a declared header parameter cannot replace the route's credential
+--- exec
+python3 t/plugin/openapi_to_mcp_harness.py /mcp \
+    '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"traced","arguments":{"headerParameters":{"Authorization":"attacker"}}}}' "
+inner = json.loads(d['result']['content'][0]['text'])
+print(inner['data']['seen_auth'])
+"
+--- response_body
+gateway-credential
+
+
+
+=== TEST 32: an undeclared query parameter is dropped when the tool declares none
+--- exec
+python3 t/plugin/openapi_to_mcp_harness.py /mcp \
+    '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"traced","arguments":{"queryParameters":{"admin":"true"}}}}' "
+inner = json.loads(d['result']['content'][0]['text'])
+print(inner['data']['seen_path'])
+"
+--- response_body
+/traced

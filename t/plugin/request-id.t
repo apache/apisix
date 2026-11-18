@@ -1089,3 +1089,294 @@ ok
 --- timeout: 30
 --- response_body
 true
+
+
+
+=== TEST 29: a repeated request id header is echoed back with every value
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/opentracing"
+            local httpc = http.new()
+            local res, err = httpc:request_uri(uri, {
+                headers = {["X-Request-Id"] = {"id-a", "id-b"}},
+            })
+            if not res then
+                ngx.say("request failed: ", err)
+                return
+            end
+            local id = res.headers["X-Request-Id"]
+            if type(id) == "table" then
+                ngx.say(table.concat(id, ","))
+            else
+                ngx.say(tostring(id))
+            end
+        }
+    }
+--- response_body
+id-a,id-b
+
+
+
+=== TEST 30: route to an upstream that sets the request id header itself
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "request-id": {}
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/headers"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 31: the upstream's response header is kept, not replaced by the generated id
+--- request
+GET /headers?X-Request-Id=from-upstream
+--- response_headers
+X-Request-Id: from-upstream
+
+
+
+=== TEST 32: a header added later by proxy-rewrite is not echoed with a repeated request id
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local http = require "resty.http"
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "request-id": {},
+                            "proxy-rewrite": {
+                                "headers": {
+                                    "add": {
+                                        "X-Request-Id": "from-rewrite"
+                                    }
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/opentracing"
+                }]]
+                )
+            if code >= 300 then
+                ngx.say(body)
+                return
+            end
+            ngx.sleep(0.5)
+
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/opentracing"
+            local httpc = http.new()
+            local res, err = httpc:request_uri(uri, {
+                headers = {["X-Request-Id"] = {"id-a", "id-b"}},
+            })
+            if not res then
+                ngx.say("request failed: ", err)
+                return
+            end
+            local id = res.headers["X-Request-Id"]
+            if type(id) == "table" then
+                ngx.say(table.concat(id, ","))
+            else
+                ngx.say(tostring(id))
+            end
+        }
+    }
+--- response_body
+id-a,id-b
+
+
+
+=== TEST 33: route to an upstream that sets the header, configured with underscores
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "request-id": {
+                                "header_name": "X_Request_Id"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/headers"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 34: an underscore header name still matches the upstream header without the transform
+--- http_config
+lua_transform_underscores_in_response_headers off;
+--- config
+    location /t {
+        content_by_lua_block {
+            local sock = ngx.socket.tcp()
+            local ok, err = sock:connect("127.0.0.1", ngx.var.server_port)
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+            sock:send("GET /headers?X-Request-Id=from-upstream HTTP/1.0\r\n"
+                      .. "Host: localhost\r\n\r\n")
+            local resp = sock:receive("*a")
+            sock:close()
+            local upstream_id = ngx.re.find(resp, [[\nX-Request-Id: from-upstream\r]], "jo")
+            local generated_id = ngx.re.find(resp, [[\nX_Request_Id:]], "joi")
+            ngx.say("upstream id: ", upstream_id ~= nil)
+            ngx.say("generated id: ", generated_id ~= nil)
+        }
+    }
+--- response_body
+upstream id: true
+generated id: false
+
+
+
+=== TEST 35: generate_uuid_v4 yields the same ids as resty.jit-uuid for a seed
+--- config
+    location /t {
+        content_by_lua_block {
+            local jit_uuid = require("resty.jit-uuid")
+            local core = require("apisix.core")
+            -- apisix/patch.lua turns later math.randomseed calls into no-ops
+            local randomseed
+            for i = 1, math.huge do
+                local name, val = debug.getupvalue(math.randomseed, i)
+                if not name then
+                    break
+                end
+                if name == "math_randomseed" then
+                    randomseed = val
+                end
+            end
+            for seed = 1, 10000 do
+                randomseed(seed)
+                local expected = jit_uuid.generate_v4()
+                local expected_next = math.random()
+                randomseed(seed)
+                local got = core.utils.generate_uuid_v4()
+                if got ~= expected or math.random() ~= expected_next then
+                    ngx.say("seed ", seed, ": ", got, " ~= ", expected)
+                    return
+                end
+            end
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 36: a global rule sets the request id through the setter without ctx
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "request-id": {}
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/opentracing"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            code, body = t('/apisix/admin/global_rules/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "serverless-pre-function": {
+                                "phase": "rewrite",
+                                "functions": ["return function(conf, ctx) local core = require('apisix.core'); core.request.headers(ctx); core.request.set_header('X-Request-Id', 'from-global-rule') end"]
+                            }
+                        }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 37: the request id set without ctx is the one echoed back
+--- request
+GET /opentracing
+--- more_headers
+X-Request-Id: from-client
+--- response_headers
+X-Request-Id: from-global-rule
+
+
+
+=== TEST 38: delete the global rule
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/global_rules/1', ngx.HTTP_DELETE)
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed

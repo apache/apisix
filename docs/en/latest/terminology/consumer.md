@@ -29,38 +29,35 @@ description: This article describes the role of the Apache APISIX Consumer objec
 
 ## Description
 
-For an API gateway, it is usually possible to identify the type of the requester by using things like their request domain name and client IP address. A gateway like APISIX can then filter these requests using [Plugins](./plugin.md) and forward it to the specified [Upstream](./upstream.md).
-
-It has the highest priority: Consumer > Route > Plugin Config > Service.
-
-But this level of depth can be insufficient on some occasions.
+In APISIX, a **Consumer** represents a user, application, or host that sends requests through the gateway. Consumers are typically used with authentication plugins, which identify a Consumer from request credentials and make its plugin configuration available while APISIX processes the request.
 
 ![consumer-who](../../../assets/images/consumer-who.png)
 
-An API gateway should know who the consumer of the API is to configure different rules for different consumers. This is where the **Consumer** construct comes in APISIX.
+Consumers can carry plugin configuration and can reference a [Consumer Group](./consumer-group.md) for shared plugin configuration. When the same plugin is configured in more than one local object, APISIX merges those configurations according to the [plugin merging precedence](./plugin.md#plugins-merging-precedence).
 
 ### Configuration options
 
 The fields for defining a Consumer are defined as below.
 
-| Field      | Required | Description                                                                                                                                                                      |
-| ---------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `username` | True      | Name of the consumer.                                                                                                                                                             |
-| `plugins`  | False       | Plugin configuration of the **Consumer**. For specific Plugin configurations, please refer the [Plugins](./plugin.md). |
+| Field      | Required | Description |
+| ---------- | -------- | ----------- |
+| `username` | True | Unique name of the Consumer. |
+| `desc` | False | Description of the Consumer. |
+| `labels` | False | Labels attached to the Consumer. |
+| `group_id` | False | ID of the Consumer Group whose plugins are merged with the Consumer's plugins. |
+| `plugins` | False | Plugin configuration for the Consumer. See [Plugins](./plugin.md). |
 
 ## Identifying a Consumer
 
-The process of identifying a Consumer in APISIX is described below:
+The process of identifying a Consumer in APISIX works as follows:
 
-![consumer-internal](../../../assets/images/consumer-internal.png)
+1. An authentication plugin, such as [key-auth](../plugins/key-auth.md) or [jwt-auth](../plugins/jwt-auth.md), validates the request credentials.
+2. The plugin identifies the Consumer by its unique `username`.
+3. APISIX merges the Consumer and Consumer Group plugin configuration with the plugin configuration from the matched Route, Plugin Config, and Service.
 
-1. The first step is Authentication. This is achieved by Authentication Plugins like [key-auth](../plugins/key-auth.md) and [JWT](../plugins/jwt-auth.md).
-2. After authenticating, you can obtain the `id` of the Consumer. This `id` will be the unique identifier of a Consumer.
-3. The configurations like Plugins and Upstream bound to the Consumer are then executed.
+Consumers are useful when different applications or users request the same API and require different plugin configuration, such as rate limits or access controls. A Consumer does not hold an Upstream configuration.
 
-Consumers are useful when you have different consumers requesting the same API and you need to execute different Plugin and Upstream configurations based on the consumer. These need to be used in conjunction with the user authentication system.
-
-Authentication plugins that can be configured with a Consumer include `basic-auth`, `hmac-auth`, `jwt-auth`, `key-auth`, `ldap-auth`, and `wolf-rbac`.
+Authentication plugins enabled in APISIX can be configured on a Consumer. Examples include `basic-auth`, `hmac-auth`, `jwt-auth`, `key-auth`, `ldap-auth`, and `wolf-rbac`.
 
 Refer to the documentation for the [key-auth](../plugins/key-auth.md) authentication Plugin to further understand the concept of a Consumer.
 

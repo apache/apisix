@@ -64,7 +64,7 @@ When enabled, the plugin will collect information from the request context (e.g.
 | keepalive_timeout | integer       | False    | 60000 | >=1000 | Keepalive timeout in milliseconds.  |
 | keepalive_pool    | integer       | False    | 5       | >=1 | Maximum number of connections in the connection pool.  |
 
-This Plugin supports using batch processors to aggregate and process events in a batch. This avoids the need for frequently submitting the data. The batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. See [Batch Processor](../batch-processor.md#configuration) for more information or setting your custom configuration.
+This Plugin supports using batch processors to aggregate and process events in a batch. This avoids the need for frequently submitting the data. The batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. See [Batch Processor](../batch-processor.md#configurations) for more information or setting your custom configuration.
 
 ## Plugin Metadata
 

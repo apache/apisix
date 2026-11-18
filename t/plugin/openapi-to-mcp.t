@@ -282,14 +282,17 @@ data:\s*/mcp\?sessionId=.*
         content_by_lua_block {
             local plugin = require("apisix.plugins.openapi-to-mcp")
             for _, flatten in ipairs({ true, false }) do
-                local ok, err = plugin.check_schema({
-                    base_url = "http://127.0.0.1:11460",
-                    openapi_url = "http://127.0.0.1:11460/petstore.json",
-                    flatten_parameters = flatten,
-                })
-                if not ok then
-                    ngx.say(err)
-                    return
+                for _, allow_separators in ipairs({ true, false }) do
+                    local ok, err = plugin.check_schema({
+                        base_url = "http://127.0.0.1:11460",
+                        openapi_url = "http://127.0.0.1:11460/petstore.json",
+                        flatten_parameters = flatten,
+                        allow_encoded_path_separators = allow_separators,
+                    })
+                    if not ok then
+                        ngx.say(err)
+                        return
+                    end
                 end
             end
 
@@ -752,3 +755,1413 @@ timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
 qr/(?s)(?=.*"code":-32603)(?=.*not an openapi document: no openapi or swagger version)/
 --- error_log
 not an openapi document
+
+
+
+=== TEST 42: a route over an API that answers with a large body
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "streamable_http",
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/large.json",
+                    max_response_body_size = 65536,
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 43: a response over the limit fails the call instead of buffering it
+--- max_size: 2048000
+--- exec
+python3 t/plugin/openapi_to_mcp_harness.py /mcp \
+    '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"getLarge","arguments":{}}}' "
+print(d['result']['isError'])
+inner = json.loads(d['result']['content'][0]['text'])
+print(inner['error']['code'])
+"
+--- response_body
+True
+RESPONSE_TOO_LARGE
+--- error_log
+exceeded max_response_body_size
+
+
+
+=== TEST 44: a response under the limit still comes back whole
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "streamable_http",
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/large.json",
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 45: the whole body is read below the default limit
+--- max_size: 8192000
+--- exec
+python3 t/plugin/openapi_to_mcp_harness.py /mcp \
+    '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"getLarge","arguments":{"queryParameters":{"size":1000}}}}' "
+inner = json.loads(d['result']['content'][0]['text'])
+print(inner['status'], len(inner['data']['blob']))
+"
+--- response_body
+200 1000
+
+
+
+=== TEST 46: a route that names the origins it expects
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "streamable_http",
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/openapi.json",
+                    allowed_origins = { "https://app.example.com" },
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 47: a request from an allowed origin is served
+--- request
+POST /mcp
+{"jsonrpc":"2.0","id":1,"method":"ping"}
+--- more_headers
+Content-Type: application/json
+Accept: application/json, text/event-stream
+Origin: https://app.example.com
+--- response_body eval
+qr/"result":\{\}/
+
+
+
+=== TEST 48: a request from another origin is refused
+--- request
+POST /mcp
+{"jsonrpc":"2.0","id":1,"method":"ping"}
+--- more_headers
+Content-Type: application/json
+Accept: application/json, text/event-stream
+Origin: https://evil.example.com
+--- error_code: 403
+--- response_body
+{"message":"Origin not allowed. Add it to allowed_origins on this route to accept it."}
+--- error_log
+rejected an MCP request with a disallowed Origin
+
+
+
+=== TEST 49: a request without an Origin header is still served
+--- request
+POST /mcp
+{"jsonrpc":"2.0","id":1,"method":"ping"}
+--- more_headers
+Content-Type: application/json
+Accept: application/json, text/event-stream
+--- response_body eval
+qr/"result":\{\}/
+
+
+
+=== TEST 50: a configured list governs on its own, this origin included
+--- request
+POST /mcp
+{"jsonrpc":"2.0","id":1,"method":"ping"}
+--- more_headers
+Content-Type: application/json
+Accept: application/json, text/event-stream
+Origin: http://localhost
+--- error_code: 403
+--- response_body
+{"message":"Origin not allowed. Add it to allowed_origins on this route to accept it."}
+--- error_log
+rejected an MCP request with a disallowed Origin
+
+
+
+=== TEST 51: a route that names no origins at all
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "streamable_http",
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/openapi.json",
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 52: with nothing to check it against, an Origin is refused
+--- request
+POST /mcp
+{"jsonrpc":"2.0","id":1,"method":"ping"}
+--- more_headers
+Content-Type: application/json
+Accept: application/json, text/event-stream
+Origin: https://evil.example.com
+--- error_code: 403
+--- response_body
+{"message":"Origin not allowed. Add it to allowed_origins on this route to accept it."}
+--- error_log
+nothing to check it against
+
+
+
+=== TEST 53: loopback at both ends is served, which no rebinding produces
+--- request
+POST /mcp
+{"jsonrpc":"2.0","id":1,"method":"ping"}
+--- more_headers
+Content-Type: application/json
+Accept: application/json, text/event-stream
+Origin: http://localhost
+--- response_body eval
+qr/"result":\{\}/
+
+
+
+=== TEST 54: a non-browser client, which sends no Origin, is unaffected
+--- request
+POST /mcp
+{"jsonrpc":"2.0","id":1,"method":"ping"}
+--- more_headers
+Content-Type: application/json
+Accept: application/json, text/event-stream
+--- response_body eval
+qr/"result":\{\}/
+
+
+
+=== TEST 55: a rebound name is refused although Origin and Host agree
+--- exec
+timeout 5 curl -sS -o /dev/null -w "%{http_code}\n" -X POST http://localhost:1984/mcp \
+    -H "Host: attacker.example" \
+    -H "Origin: http://attacker.example" \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    -d '{"jsonrpc":"2.0","id":1,"method":"ping"}' 2>&1
+--- response_body
+403
+--- error_log
+nothing to check it against
+
+
+
+=== TEST 56: an opaque origin names no origin to check
+--- request
+POST /mcp
+{"jsonrpc":"2.0","id":1,"method":"ping"}
+--- more_headers
+Content-Type: application/json
+Accept: application/json, text/event-stream
+Origin: null
+--- error_code: 403
+--- response_body
+{"message":"Origin not allowed. Add it to allowed_origins on this route to accept it."}
+
+
+
+=== TEST 57: a route that declares the host it serves
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "streamable_http",
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/openapi.json",
+                }, nil, { hosts = { "mcp.example.com" } } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 58: a literal host predicate is what the Origin is checked against
+--- exec
+served=$(timeout 5 curl -sS -o /dev/null -w "%{http_code}" -X POST http://localhost:1984/mcp \
+    -H "Host: mcp.example.com" -H "Origin: http://mcp.example.com" \
+    -H "Content-Type: application/json" -H "Accept: application/json, text/event-stream" \
+    -d '{"jsonrpc":"2.0","id":1,"method":"ping"}' 2>&1)
+refused=$(timeout 5 curl -sS -o /dev/null -w "%{http_code}" -X POST http://localhost:1984/mcp \
+    -H "Host: mcp.example.com" -H "Origin: https://evil.example.com" \
+    -H "Content-Type: application/json" -H "Accept: application/json, text/event-stream" \
+    -d '{"jsonrpc":"2.0","id":1,"method":"ping"}' 2>&1)
+echo "declared host: $served"
+echo "another origin: $refused"
+--- response_body
+declared host: 200
+another origin: 403
+--- error_log
+is not a host of this route
+
+
+
+=== TEST 59: a route matched on a wildcard host
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "streamable_http",
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/openapi.json",
+                }, nil, { hosts = { "*.example.com" } } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 60: a wildcard routes the request but does not vouch for its origin
+--- exec
+timeout 5 curl -sS -o /dev/null -w "%{http_code}\n" -X POST http://localhost:1984/mcp \
+    -H "Host: attacker.example.com" \
+    -H "Origin: http://attacker.example.com" \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    -d '{"jsonrpc":"2.0","id":1,"method":"ping"}' 2>&1
+--- response_body
+403
+--- error_log
+nothing to check it against
+
+
+
+=== TEST 61: the same wildcard route, naming the origin it accepts
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "streamable_http",
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/openapi.json",
+                    allowed_origins = { "http://app.example.com" },
+                }, nil, { hosts = { "*.example.com" } } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 62: an exact allowed_origins entry is how a wildcard route accepts one
+--- exec
+served=$(timeout 5 curl -sS -o /dev/null -w "%{http_code}" -X POST http://localhost:1984/mcp \
+    -H "Host: app.example.com" -H "Origin: http://app.example.com" \
+    -H "Content-Type: application/json" -H "Accept: application/json, text/event-stream" \
+    -d '{"jsonrpc":"2.0","id":1,"method":"ping"}' 2>&1)
+refused=$(timeout 5 curl -sS -o /dev/null -w "%{http_code}" -X POST http://localhost:1984/mcp \
+    -H "Host: attacker.example.com" -H "Origin: http://attacker.example.com" \
+    -H "Content-Type: application/json" -H "Accept: application/json, text/event-stream" \
+    -d '{"jsonrpc":"2.0","id":1,"method":"ping"}' 2>&1)
+echo "listed origin: $served"
+echo "another subdomain: $refused"
+--- response_body
+listed origin: 200
+another subdomain: 403
+
+
+
+=== TEST 63: two Origin headers name no single origin
+--- exec
+timeout 5 curl -sS -o /dev/null -w "%{http_code}\n" -X POST http://localhost:1984/mcp \
+    -H "Host: app.example.com" \
+    -H "Origin: http://app.example.com" \
+    -H "Origin: https://evil.example.com" \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    -d '{"jsonrpc":"2.0","id":1,"method":"ping"}' 2>&1
+--- response_body
+403
+--- error_log
+carrying more than one Origin
+
+
+
+=== TEST 64: a route that declares one host, reached on its own port
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "streamable_http",
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/openapi.json",
+                }, nil, { hosts = { "mcp.example.com" } } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 65: another port of a declared host is another origin
+--- exec
+same=$(timeout 5 curl -sS -o /dev/null -w "%{http_code}" -X POST http://localhost:1984/mcp \
+    -H "Host: mcp.example.com" -H "Origin: http://mcp.example.com" \
+    -H "Content-Type: application/json" -H "Accept: application/json, text/event-stream" \
+    -d '{"jsonrpc":"2.0","id":1,"method":"ping"}' 2>&1)
+other=$(timeout 5 curl -sS -o /dev/null -w "%{http_code}" -X POST http://localhost:1984/mcp \
+    -H "Host: mcp.example.com" -H "Origin: http://mcp.example.com:8080" \
+    -H "Content-Type: application/json" -H "Accept: application/json, text/event-stream" \
+    -d '{"jsonrpc":"2.0","id":1,"method":"ping"}' 2>&1)
+echo "same port: $same"
+echo "other port: $other"
+--- response_body
+same port: 200
+other port: 403
+
+
+
+=== TEST 66: an allowed_origins entry has to name a scheme
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openapi-to-mcp")
+            local cases = {
+                { "https://app.example.com" },
+                { "http://app.example.com:8080" },
+                { "*" },
+                -- the mistake this pattern is here to catch: without a scheme
+                -- the entry matches nothing and the route refuses every
+                -- browser with no hint as to why
+                { "app.example.com" },
+                { "https://app.example.com/mcp" },
+            }
+            for i, origins in ipairs(cases) do
+                local ok = plugin.check_schema({
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/openapi.json",
+                    allowed_origins = origins,
+                })
+                ngx.say(i, ": ", tostring(ok ~= nil and ok ~= false))
+            end
+        }
+    }
+--- response_body
+1: true
+2: true
+3: true
+4: false
+5: false
+
+
+
+=== TEST 67: a route that accepts any origin on purpose
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "streamable_http",
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/openapi.json",
+                    allowed_origins = { "*" },
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 68: with ["*"] any origin is served
+--- request
+POST /mcp
+{"jsonrpc":"2.0","id":1,"method":"ping"}
+--- more_headers
+Content-Type: application/json
+Accept: application/json, text/event-stream
+Origin: https://evil.example.com
+--- response_body eval
+qr/"result":\{\}/
+
+
+
+=== TEST 69: a configured header cannot carry a newline
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openapi-to-mcp")
+            local cases = {
+                { ["X-Trace"] = "ok" },
+                { ["X-Trace"] = "bad\r\nX-Injected: 1" },
+                { ["X-Trace\r\nX-Injected"] = "1" },
+                { ["X Trace"] = "1" },
+            }
+            for i, headers in ipairs(cases) do
+                local ok = plugin.check_schema({
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/openapi.json",
+                    headers = headers,
+                })
+                ngx.say(i, ": ", tostring(ok ~= nil and ok ~= false))
+            end
+        }
+    }
+--- response_body
+1: true
+2: false
+3: false
+4: false
+
+
+
+=== TEST 70: the API receives the Host it was reached on, port included
+--- exec
+python3 t/plugin/openapi_to_mcp_harness.py /mcp \
+    '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"getPet","arguments":{"pathParameters":{"petId":7}}}}' "
+inner = json.loads(d['result']['content'][0]['text'])
+print(inner['data']['seen_host'])
+"
+--- response_body
+127.0.0.1:11460
+
+
+
+=== TEST 71: a route over an API that ends its body by closing the connection
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "streamable_http",
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/closing.json",
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 72: a connection-close-delimited body is read whole, not reported as an error
+--- max_size: 2048000
+--- exec
+python3 t/plugin/openapi_to_mcp_harness.py /mcp \
+    '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"getClosing","arguments":{}}}' "
+inner = json.loads(d['result']['content'][0]['text'])
+print(inner['status'], inner['data']['closed'], len(inner['data']['blob']))
+"
+--- response_body
+200 True 1024
+
+
+
+=== TEST 73: a route over an API that announces a non-chunked transfer coding
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "streamable_http",
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/identity.json",
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 74: "Transfer-Encoding: identity" is a close-delimited body, not a framed one
+--- max_size: 2048000
+--- exec
+python3 t/plugin/openapi_to_mcp_harness.py /mcp \
+    '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"getIdentity","arguments":{}}}' "
+inner = json.loads(d['result']['content'][0]['text'])
+print(inner['status'], inner['data']['identity'], len(inner['data']['blob']))
+"
+--- response_body
+200 True 1024
+
+
+
+=== TEST 75: a body larger than one read chunk is reassembled
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "streamable_http",
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/large.json",
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 76: the chunks add up to the whole body
+--- max_size: 8192000
+--- exec
+python3 t/plugin/openapi_to_mcp_harness.py /mcp \
+    '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"getLarge","arguments":{"queryParameters":{"size":200000}}}}' "
+inner = json.loads(d['result']['content'][0]['text'])
+print(inner['status'], len(inner['data']['blob']))
+"
+--- response_body
+200 200000
+
+
+
+=== TEST 77: the schema rejects a header with a newline in the middle of it
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openapi-to-mcp")
+            local cases = {
+                { ["X-Trace"] = "a\nb" },
+                { ["X-Tra\nce"] = "1" },
+                { ["X-Trace"] = "a\r\nX-Injected: 1" },
+                -- the schema anchors with $, which PCRE also matches before a
+                -- trailing newline, so these two get through it and are
+                -- dropped at request time instead -- see the case below
+                { ["X-Trace"] = "trailing\n" },
+                { ["X-Trace\n"] = "1" },
+            }
+            for i, headers in ipairs(cases) do
+                local ok = plugin.check_schema({
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/openapi.json",
+                    headers = headers,
+                })
+                ngx.say(i, ": ", tostring(ok ~= nil and ok ~= false))
+            end
+        }
+    }
+--- response_body
+1: false
+2: false
+3: false
+4: true
+5: true
+
+
+
+=== TEST 78: a route whose header value ends with a newline
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "streamable_http",
+                    base_url = "http://127.0.0.1:11460",
+                    headers = { ["X-Trace"] = "trailing\n" },
+                    openapi_url = "http://127.0.0.1:11460/openapi.json",
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 79: it never reaches the upstream, whatever the schema let through
+--- exec
+python3 t/plugin/openapi_to_mcp_harness.py /mcp \
+    '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"getPet","arguments":{"pathParameters":{"petId":7}}}}' "
+inner = json.loads(d['result']['content'][0]['text'])
+print(inner['data'].get('seen_trace'))
+"
+--- response_body
+None
+--- error_log
+cannot appear in a request header
+
+
+
+=== TEST 80: a route header built from a variable
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "streamable_http",
+                    base_url = "http://127.0.0.1:11460",
+                    headers = { ["X-Trace"] = "${arg_trace}" },
+                    openapi_url = "http://127.0.0.1:11460/openapi.json",
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 81: a newline arriving through that variable drops the header
+--- exec
+python3 t/plugin/openapi_to_mcp_harness.py '/mcp?trace=a%0d%0aX-Injected:%201' \
+    '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"getPet","arguments":{"pathParameters":{"petId":7}}}}' "
+inner = json.loads(d['result']['content'][0]['text'])
+print(inner['data'].get('seen_trace'), inner['data'].get('seen_injected'))
+"
+--- response_body
+None None
+--- error_log
+cannot appear in a request header
+
+
+
+=== TEST 82: a route over a document that declares framing headers as parameters
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "streamable_http",
+                    base_url = "http://127.0.0.1:11460",
+                    headers = { ["Authorization"] = "Bearer gateway-key" },
+                    openapi_url = "http://127.0.0.1:11460/framing.json",
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 83: a tool call cannot set the framing of the request the gateway sends
+--- exec
+python3 t/plugin/openapi_to_mcp_harness.py /mcp \
+    '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"framed","arguments":{"headerParameters":{"Transfer-Encoding":"chunked","Content-Length":"4","Host":"internal"},"requestBody":{"a":1}}}}' "
+inner = json.loads(d['result']['content'][0]['text'])
+print(inner['data'].get('seen_transfer_encoding'))
+print(inner['data'].get('seen_content_length'))
+print(inner['data'].get('seen_host'))
+print(inner['data'].get('seen_body'))
+"
+--- response_body
+None
+7
+127.0.0.1:11460
+{"a":1}
+--- error_log
+a tool call cannot set this header
+
+
+
+=== TEST 84: a header parameter spelled in another case cannot replace a route header
+--- exec
+python3 t/plugin/openapi_to_mcp_harness.py /mcp \
+    '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"framed","arguments":{"headerParameters":{"authorization":"Bearer attacker"},"requestBody":{"a":1}}}}' "
+inner = json.loads(d['result']['content'][0]['text'])
+print(inner['data'].get('seen_auth'))
+"
+--- response_body
+Bearer gateway-key
+
+
+
+=== TEST 85: default Origin checks normalize ports and compare schemes
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local plugin = require("apisix.plugins.openapi-to-mcp")
+            local cases = {
+                { "https", "mcp.example.com:443", "https://mcp.example.com", 200 },
+                { "https", "mcp.example.com", "https://mcp.example.com:443", 200 },
+                { "http", "mcp.example.com:80", "http://mcp.example.com", 200 },
+                { "https", "mcp.example.com", "http://mcp.example.com", 403 },
+                { "https", "mcp.example.com:443", "http://mcp.example.com:443", 403 },
+                { "https", "mcp.example.com", "https://mcp.example.com:8443", 403 },
+                { "http", "localhost:80", "http://localhost", 200 },
+                { "https", "localhost", "http://localhost", 403 },
+            }
+            local results = {}
+            local real_exit = core.response.exit
+            core.response.exit = function(status) return status end
+            for _, transport in ipairs({ "sse", "streamable_http" }) do
+                local module = require("apisix.plugins.openapi-to-mcp.transport." .. transport)
+                local real_handle = module.handle
+                module.handle = function() return 200 end
+                for i, case in ipairs(cases) do
+                    ngx.req.set_header("Host", case[2])
+                    ngx.req.set_header("Origin", case[3])
+                    local ctx = {
+                        var = { scheme = case[1] },
+                        matched_route = { value = { host = "mcp.example.com" } },
+                        mcp_inprocess_opts = { transport = transport },
+                    }
+                    if case[2]:find("localhost", 1, true) then
+                        ctx.matched_route = nil
+                    end
+                    local status = plugin.before_proxy({}, ctx)
+                    results[#results + 1] = transport .. " " .. i .. ": " ..
+                                             tostring(status == case[4])
+                end
+                module.handle = real_handle
+            end
+            core.response.exit = real_exit
+            ngx.say(table.concat(results, "\n"))
+        }
+    }
+--- response_body
+sse 1: true
+sse 2: true
+sse 3: true
+sse 4: true
+sse 5: true
+sse 6: true
+sse 7: true
+sse 8: true
+streamable_http 1: true
+streamable_http 2: true
+streamable_http 3: true
+streamable_http 4: true
+streamable_http 5: true
+streamable_http 6: true
+streamable_http 7: true
+streamable_http 8: true
+
+
+
+=== TEST 86: a route over a document with a string path parameter
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "streamable_http",
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/defaults.json",
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 87: a path parameter fills the segment it was declared for
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"getItem","arguments":{"pathParameters":{"id":"abc"}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/seen_path.*items\/abc/
+
+
+
+=== TEST 88: a dot segment in a path parameter fails the call
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"getItem","arguments":{"pathParameters":{"id":".."}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/(?s)(?=.*"isError":true)(?=.*path parameter in segment \{id\} cannot produce an empty or dot path segment)/
+
+
+
+=== TEST 89: a single dot in a path parameter fails the call
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"getItem","arguments":{"pathParameters":{"id":"."}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/(?s)(?=.*"isError":true)(?=.*path parameter in segment \{id\} cannot produce an empty or dot path segment)/
+
+
+
+=== TEST 90: a separator in a path parameter fails the call
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"getItem","arguments":{"pathParameters":{"id":"../items"}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/(?s)(?=.*"isError":true)(?=.*path parameter id cannot contain a path separator)/
+
+
+
+=== TEST 91: a backslash in a path parameter fails the call
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"getItem","arguments":{"pathParameters":{"id":"..\\\\items"}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/(?s)(?=.*"isError":true)(?=.*path parameter id cannot contain a path separator)/
+
+
+
+=== TEST 92: an empty path parameter fails the call
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"getItem","arguments":{"pathParameters":{"id":""}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/(?s)(?=.*"isError":true)(?=.*path parameter in segment \{id\} cannot produce an empty or dot path segment)/
+
+
+
+=== TEST 93: a route over a document whose parameter fills part of a segment
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "streamable_http",
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/partialsegment.json",
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 94: a parameter that fills part of a segment is sent as given
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"getFile","arguments":{"pathParameters":{"name":"report"}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/seen_path.*files\/report\.json/
+
+
+
+=== TEST 95: a dot-dot value that is not a whole segment is allowed through
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"getFile","arguments":{"pathParameters":{"name":".."}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/seen_path.*files\/\.\.\.json/
+
+
+
+=== TEST 96: a single dot that is not a whole segment is allowed through
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"getFile","arguments":{"pathParameters":{"name":"."}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/seen_path.*files\/\.\.json/
+
+
+
+=== TEST 97: an empty value that leaves a non-empty segment is allowed through
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"getFile","arguments":{"pathParameters":{"name":""}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/seen_path.*files\/\.json/
+
+
+
+=== TEST 98: a separator is still rejected when the parameter fills part of a segment
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"getFile","arguments":{"pathParameters":{"name":"../secret"}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/(?s)(?=.*"isError":true)(?=.*path parameter name cannot contain a path separator)/
+
+
+
+=== TEST 99: a route over path templates with several expressions and URI suffixes
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "streamable_http",
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/path-safety.json",
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 100: adjacent expressions are judged as one finished segment
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"adjacentPathParameters","arguments":{"pathParameters":{"a":".","b":"."}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/(?s)(?=.*"isError":true)(?=.*cannot produce an empty or dot path segment)/
+
+
+
+=== TEST 101: literals between expressions take part in the finished segment
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"separatedPathParameters","arguments":{"pathParameters":{"a":"","b":""}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/(?s)(?=.*"isError":true)(?=.*cannot produce an empty or dot path segment)/
+
+
+
+=== TEST 102: a literal prefix can complete a dot segment
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"prefixedPathParameter","arguments":{"pathParameters":{"a":"."}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/(?s)(?=.*"isError":true)(?=.*cannot produce an empty or dot path segment)/
+
+
+
+=== TEST 103: a query suffix does not hide a dot path segment
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"getBucketAcl","arguments":{"pathParameters":{"Bucket":".."}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/(?s)(?=.*"isError":true)(?=.*cannot produce an empty or dot path segment)/
+
+
+
+=== TEST 104: a query suffix does not hide an empty path segment
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"getBucketAcl","arguments":{"pathParameters":{"Bucket":""}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/(?s)(?=.*"isError":true)(?=.*cannot produce an empty or dot path segment)/
+
+
+
+=== TEST 105: a fragment suffix does not hide a dot path segment
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"getObjectAcl","arguments":{"pathParameters":{"Bucket":"b","Key":".."}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/(?s)(?=.*"isError":true)(?=.*cannot produce an empty or dot path segment)/
+
+
+
+=== TEST 106: a safe query-suffixed path is still sent unchanged
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"getBucketAcl","arguments":{"pathParameters":{"Bucket":"reports"}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/seen_path.*reports\?acl/
+
+
+
+=== TEST 107: an ordinary separator is rejected by default and logged
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"getEncodedPath","arguments":{"pathParameters":{"path":"group/project"}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/(?s)(?=.*"isError":true)(?=.*path parameter path cannot contain a path separator)/
+--- error_log
+rejected an openapi-to-mcp tool call: path parameter path cannot contain a path separator
+
+
+
+=== TEST 108: path validation also applies to flattened arguments
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "streamable_http",
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/path-safety.json",
+                    flatten_parameters = true,
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 109: a flattened call is judged on its finished segment
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"adjacentPathParameters","arguments":{"a":".","b":"."}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/(?s)(?=.*"isError":true)(?=.*cannot produce an empty or dot path segment)/
+
+
+
+=== TEST 110: a route can opt in to encoded path separators
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "streamable_http",
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/path-safety.json",
+                    allow_encoded_path_separators = true,
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 111: the opt-in sends a slash as data
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"getEncodedPath","arguments":{"pathParameters":{"path":"group/project"}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/seen_path.*encoded\/group%2Fproject/
+
+
+
+=== TEST 112: the opt-in sends a backslash as data
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"getEncodedPath","arguments":{"pathParameters":{"path":"group\\project"}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/seen_path.*encoded\/group%5Cproject/
+
+
+
+=== TEST 113: the opt-in still rejects a leading parent component
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"getEncodedPath","arguments":{"pathParameters":{"path":"../admin"}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/(?s)(?=.*"isError":true)(?=.*cannot contain an empty or dot path component)/
+
+
+
+=== TEST 114: the opt-in still rejects an embedded parent component
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"getEncodedPath","arguments":{"pathParameters":{"path":"a/../b"}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/(?s)(?=.*"isError":true)(?=.*cannot contain an empty or dot path component)/
+
+
+
+=== TEST 115: the opt-in still rejects an empty component
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"getEncodedPath","arguments":{"pathParameters":{"path":"a//b"}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/(?s)(?=.*"isError":true)(?=.*cannot contain an empty or dot path component)/
+
+
+
+=== TEST 116: encoded query and fragment characters remain parameter data
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"getEncodedPath","arguments":{"pathParameters":{"path":"a?b#c"}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/seen_path.*encoded\/a%3Fb%23c/
+
+
+
+=== TEST 117: restore the secure-default path-safety route
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "streamable_http",
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/path-safety.json",
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 118: a separator in a query expression is not path syntax
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"searchByTerm","arguments":{"pathParameters":{"term":"a/b"}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/seen_path.*search\?q=a%2Fb/
+
+
+
+=== TEST 119: a fragment suffix is not sent upstream
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"getObjectAcl","arguments":{"pathParameters":{"Bucket":"b","Key":"k"}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/(?s)(?=.*seen_path.*b\/k)(?!.*#acl)/
+
+
+
+=== TEST 120: an expression in a discarded fragment is not path syntax
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"discardFragmentExpression","arguments":{"pathParameters":{"a":".."}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/(?s)(?=.*seen_path.*\/x)(?!.*#\/)/
+
+
+
+=== TEST 121: restore the encoded-separator opt-in route
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "streamable_http",
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/path-safety.json",
+                    allow_encoded_path_separators = true,
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 122: the opt-in does not apply path checks to a query expression
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"searchByUrl","arguments":{"pathParameters":{"u":"http://x/y"}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/seen_path.*search\?url=http%3A%2F%2Fx%2Fy/
+
+
+
+=== TEST 123: the opt-in still rejects a separator-free parent segment
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"getEncodedPath","arguments":{"pathParameters":{"path":".."}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/(?s)(?=.*"isError":true)(?=.*cannot produce an empty or dot path segment)/
+
+
+
+=== TEST 124: a route over a document with a slash in an expression name
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "streamable_http",
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/slashinname.json",
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 125: a literal dot segment of the template is not the caller's to answer for
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"literalDotTail","arguments":{"pathParameters":{"scope/key":"safe","id":"ok"}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/seen_path.*x\/safe\/ok\/\.\./
+
+
+
+=== TEST 126: a dot-dot after a slashed expression name is rejected
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"slashNameTail","arguments":{"pathParameters":{"a/b":"v","c":".."}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/(?s)(?=.*"isError":true)(?=.*path parameter in segment \{c\} cannot produce an empty or dot path segment)/
+
+
+
+=== TEST 127: an empty value after a slashed expression name is rejected
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"slashNameTail","arguments":{"pathParameters":{"a/b":"v","c":""}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/(?s)(?=.*"isError":true)(?=.*path parameter in segment \{c\} cannot produce an empty or dot path segment)/
+
+
+
+=== TEST 128: a dot-dot between a slashed expression name and a literal is rejected
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"slashNameMiddle","arguments":{"pathParameters":{"a/b":"v","c":".."}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/(?s)(?=.*"isError":true)(?=.*path parameter in segment \{c\} cannot produce an empty or dot path segment)/
+
+
+
+=== TEST 129: a safe value for a slashed expression name is sent percent-encoded
+--- exec
+timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
+    -d '{"method":"tools/call","jsonrpc":"2.0","id":1,"params":{"name":"slashNameTail","arguments":{"pathParameters":{"a/b":"v","c":"ok"}}}}' \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json, text/event-stream" \
+    2>&1 | cat
+--- response_body eval
+qr/seen_path.*x\/v\/ok/

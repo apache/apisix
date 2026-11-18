@@ -1,0 +1,55 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+parameters:
+  - $ref: ../components/parameters/PluginNameInPath.yaml
+get:
+  tags:
+    - Schema Validation
+  operationId: getPluginSchemaAlt
+  summary: Get a plugin's JSON Schema (alternative path)
+  description: Equivalent to `GET /apisix/admin/plugins/{plugin_name}`. Provided for symmetry with `GET /apisix/admin/schema/{resource}`.
+  responses:
+    "200":
+      description: Plugin JSON Schema.
+      content:
+        application/json:
+          schema:
+            type: object
+            description: JSON Schema of the loaded plugin, selected by subsystem and schema_type. Plugin schemas and Lua validation depend on the installed plugin set.
+          examples:
+            keyAuthConsumer:
+              summary: key-auth with schema_type=consumer (from release/3.18 plugin source)
+              value:
+                type: object
+                properties:
+                  key:
+                    type: string
+                encrypt_fields:
+                  - key
+                required:
+                  - key
+    "400":
+      $ref: ../components/responses/BadRequest.yaml
+    "401":
+      $ref: ../components/responses/Unauthorized.yaml
+  parameters:
+    - in: query
+      name: schema_type
+      description: Use consumer to retrieve the consumer schema; otherwise returns the plugin schema.
+      schema:
+        type: string
+      example: consumer

@@ -1489,3 +1489,108 @@ success
     }
 --- response_body
 success
+
+
+
+=== TEST 35: data-mask with proxy-rewrite preserves unrelated upstream parameters and repeated values in upstream_uri
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "proxy-rewrite": {
+                                "uri": "/echo?fixed=1"
+                            },
+                            "data-mask": {
+                                "request": [
+                                    {
+                                        "action": "remove",
+                                        "name": "password",
+                                        "type": "query"
+                                    }
+                                ]
+                            },
+                            "file-logger": {
+                                "path": "mask-proxy-rewrite-upstream.log",
+                                "log_format": {
+                                    "upstream_uri": "$upstream_uri"
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+
+
+
+=== TEST 36: verify upstream_uri preserves unrelated upstream parameters and repeated values
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+
+            t("/hello?password=secret&foo=1&tag=a&tag=b", ngx.HTTP_GET)
+            ngx.sleep(0.5)
+
+            local fd, err = io.open("mask-proxy-rewrite-upstream.log", "r")
+            if not fd then
+                core.log.error("failed to open file: ", err)
+                return
+            end
+            local line = fd:read()
+            fd:close()
+            os.remove("mask-proxy-rewrite-upstream.log")
+
+            local log = core.json.decode(line)
+            local idx = string.find(log.upstream_uri, "?", 1, true)
+            if not idx then
+                ngx.say("missing query in upstream_uri: ", log.upstream_uri)
+                return
+            end
+
+            local path = string.sub(log.upstream_uri, 1, idx - 1)
+            if path ~= "/echo" then
+                ngx.say("unexpected path in upstream_uri: ", path)
+                return
+            end
+
+            local args = core.string.decode_args(string.sub(log.upstream_uri, idx + 1))
+            if args.password then
+                ngx.say("password was not masked in upstream_uri: ", log.upstream_uri)
+                return
+            end
+            if args.fixed ~= "1" then
+                ngx.say("fixed param missing in upstream_uri: ", log.upstream_uri)
+                return
+            end
+            if args.foo ~= "1" then
+                ngx.say("foo param missing in upstream_uri: ", log.upstream_uri)
+                return
+            end
+            if type(args.tag) ~= "table" or args.tag[1] ~= "a" or args.tag[2] ~= "b" then
+                ngx.say("repeated tag param missing or corrupt in upstream_uri: ", log.upstream_uri)
+                return
+            end
+
+            ngx.say("success")
+        }
+    }
+--- response_body
+success

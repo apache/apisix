@@ -1,0 +1,130 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+get:
+  summary: List All Global Rules
+  description: Retrieve all configured global rules.
+  tags:
+    - Global Rules
+  parameters:
+    - $ref: ../components/parameters/NameFilter.yaml
+    - $ref: ../components/parameters/LabelFilter.yaml
+    - $ref: ../components/parameters/Page.yaml
+    - $ref: ../components/parameters/PageSize.yaml
+  responses:
+    "200":
+      description: Successful response.
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/GlobalRuleListEnvelope.yaml
+          examples:
+            "1":
+              summary: Successful Example
+              value:
+                list:
+                  - value:
+                      plugins:
+                        limit-count:
+                          rejected_code: 503
+                          time_window: 60
+                          key: remote_addr
+                          key_type: var
+                          count: 2
+                          allow_degradation: false
+                          show_limit_quota_header: true
+                          policy: local
+                      update_time: 1684375502
+                      create_time: 1684375502
+                      id: "1"
+                    key: /apisix/global_rules/1
+                    modifiedIndex: 137
+                    createdIndex: 137
+                total: 1
+    "401":
+      $ref: ../components/responses/Unauthorized.yaml
+    "503":
+      $ref: ../components/responses/BadRequest.yaml
+      description: Storage access or write failed.
+  operationId: listGlobalRules
+put:
+  summary: Create or replace global_rules using a body ID
+  description: Equivalent to PUT on the item URL, with id required in the request body. The resource handler injects and validates this ID before persistence.
+  tags:
+    - Global Rules
+  parameters:
+    - $ref: ../components/parameters/Ttl.yaml
+  requestBody:
+    description: "`GlobalRule` configuration body for create / replace / patch."
+    required: true
+    content:
+      application/json:
+        schema:
+          allOf:
+            - allOf:
+                - $ref: ../components/schemas/GlobalRule.yaml
+                - not:
+                    anyOf:
+                      - required:
+                          - create_time
+                      - required:
+                          - update_time
+              description: Wire request body. APISIX injects timestamps and, where appropriate, the path or generated resource ID. A supplied ID must agree with the path.
+            - required:
+                - id
+        example:
+          plugins:
+            prometheus: {}
+            ip-restriction:
+              whitelist:
+                - 10.0.0.0/8
+                - 172.16.0.0/12
+          id: "1"
+  responses:
+    "201":
+      description: Created
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/GlobalRuleEnvelope.yaml
+          examples:
+            "1":
+              summary: Successful Example
+              value:
+                key: /apisix/global_rules/1
+                value:
+                  plugins:
+                    limit-count:
+                      time_window: 60
+                      rejected_code: 503
+                      key: remote_addr
+                      key_type: var
+                      count: 2
+                      show_limit_quota_header: true
+                      allow_degradation: false
+                      policy: local
+                  id: "1"
+                  create_time: 1684375502
+                  update_time: 1684375502
+    "400":
+      $ref: ../components/responses/BadRequest.yaml
+      description: Invalid configuration
+    "401":
+      $ref: ../components/responses/Unauthorized.yaml
+    "503":
+      $ref: ../components/responses/BadRequest.yaml
+      description: Storage access or write failed.
+  operationId: putGlobalRuleWithBodyId

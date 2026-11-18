@@ -25,6 +25,8 @@ local json = require("apisix.core.json")
 local io = require("apisix.core.io")
 local multipart = require("multipart")
 local core_str = require("apisix.core.string")
+local config_local = require("apisix.core.config_local")
+local try_read_attr = require("apisix.core.table").try_read_attr
 local req_add_header
 if ngx.config.subsystem == "http" then
     local ngx_req = require "ngx.req"
@@ -51,9 +53,28 @@ local req_set_header = ngx.req.set_header
 local CONTENT_TYPE_JSON = "application/json"
 local CONTENT_TYPE_FORM_URLENCODED = "application/x-www-form-urlencoded"
 local CONTENT_TYPE_MULTIPART_FORM = "multipart/form-data"
+local DEFAULT_MAX_HEADERS = 100
 
 
 local _M = {}
+
+
+local max_headers
+local function get_max_headers()
+    if max_headers then
+        return max_headers
+    end
+
+    local local_conf, err = config_local.local_conf()
+    if not local_conf then
+        log.error("failed to get local conf: ", err)
+        return DEFAULT_MAX_HEADERS
+    end
+
+    max_headers = try_read_attr(local_conf, "apisix", "max_request_headers_readable")
+                  or DEFAULT_MAX_HEADERS
+    return max_headers
+end
 
 
 local function _headers(ctx)
@@ -62,17 +83,17 @@ local function _headers(ctx)
     end
 
     if not is_apisix_or then
-        return get_headers()
+        return get_headers(get_max_headers())
     end
 
     if a6_request.is_request_header_set() then
         a6_request.clear_request_header()
-        ctx.headers = get_headers()
+        ctx.headers = get_headers(get_max_headers())
     end
 
     local headers = ctx.headers
     if not headers then
-        headers = get_headers()
+        headers = get_headers(get_max_headers())
         ctx.headers = headers
     end
 
@@ -125,7 +146,7 @@ local function modify_header(ctx, header_name, header_value, override)
         -- after 'header_value', but the style is too ugly!
         header_value = header_name
         header_name = ctx
-        ctx = nil
+        ctx = ngx.ctx.api_ctx
 
         if override then
             log.warn("DEPRECATED: use set_header(ctx, header_name, header_value) instead")

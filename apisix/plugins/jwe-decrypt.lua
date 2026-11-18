@@ -217,6 +217,8 @@ end
 function _M.rewrite(conf, ctx)
     -- fetch token and hide credentials if necessary
     local jwe_token, err = fetch_jwe_token(conf, ctx)
+    -- only the decrypted plaintext may reach the upstream in forward_header
+    core.request.set_header(ctx, conf.forward_header, nil)
     if not jwe_token then
         -- If true, throw a 403 error if JWE token is missing from the request.
         -- If false, do not throw an error when JWE token is not found.

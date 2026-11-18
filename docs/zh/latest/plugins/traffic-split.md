@@ -64,6 +64,8 @@ import TabItem from '@theme/TabItem';
 | rules.weighted_upstreams.upstream.pass_host | string | 否 | "pass" | ["pass", "node", "rewrite"] | 决定如何传递主机名的模式。`pass` 将客户端的主机名传递给上游。`node` 传递上游节点中配置的主机。`rewrite` 传递 `upstream_host` 中配置的值。|
 | rules.weighted_upstreams.upstream.name | string | 否 | | | 用于指定服务名称、使用场景等的上游标识符。|
 | rules.weighted_upstreams.upstream.upstream_host | string | 否 | | | 当 `pass_host` 为 `rewrite` 时使用。上游的主机名。|
+| rules.weighted_upstreams.upstream.tls | object | 否 | | | 连接上游时使用的 TLS 配置，支持的字段参见[上游](../admin-api.md#upstream)的 `tls`。|
+| rules.weighted_upstreams.upstream.keepalive_pool | object | 否 | | | 上游的连接池配置，支持的字段参见[上游](../admin-api.md#upstream)的 `keepalive_pool`。|
 
 ## 示例
 

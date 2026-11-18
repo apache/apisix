@@ -761,8 +761,9 @@ end
 
 
 function _M.merge_service_route(service_conf, route_conf)
-    core.log.info("service conf: ", core.json.delay_encode(service_conf, true))
-    core.log.info("  route conf: ", core.json.delay_encode(route_conf, true))
+    -- the confs hold decrypted values, so log their ids only
+    core.log.info("merge service [", service_conf.value.id, "] into route [",
+                  route_conf.value.id, "]")
 
     local route_service_key = route_conf.value.id .. "#"
         .. route_conf.modifiedIndex .. "#" .. service_conf.modifiedIndex
@@ -803,8 +804,8 @@ end
 
 
 function _M.merge_service_stream_route(service_conf, route_conf)
-    core.log.info("service conf: ", core.json.delay_encode(service_conf, true))
-    core.log.info("  stream route conf: ", core.json.delay_encode(route_conf, true))
+    core.log.info("merge service [", service_conf.value.id, "] into stream route [",
+                  route_conf.value.id, "]")
 
     local version = route_conf.modifiedIndex .. "#" .. service_conf.modifiedIndex
     local route_service_key = route_conf.value.id .. "#"
@@ -869,8 +870,9 @@ end
 
 
 function _M.merge_consumer_route(route_conf, consumer_conf, consumer_group_conf, api_ctx)
-    core.log.info("route conf: ", core.json.delay_encode(route_conf))
-    core.log.info("consumer group conf: ", core.json.delay_encode(consumer_group_conf))
+    core.log.info("merge consumer [", consumer_conf.id, "] and consumer group [",
+                  consumer_group_conf and consumer_group_conf.value.id, "] into route [",
+                  route_conf.value.id, "]")
 
     local flag = route_conf.value.id .. "#" .. route_conf.modifiedIndex
                  .. "#" .. consumer_conf.id .. "#" .. consumer_conf.modifiedIndex
@@ -994,13 +996,28 @@ function _M.get_all(attrs)
 end
 
 
+-- A JSON null in a conf, such as the operand of ["http_x", "==", null] in an
+-- expression, is cjson.null, which dkjson does not encode on its own.
+local function encode_json_null(_, value, _, defaultmessage)
+    if value == core.json.null then
+        return "null"
+    end
+    return nil, defaultmessage
+end
+
+
 -- conf_version returns a version which only depends on the value of conf,
 -- instead of where this plugin conf belongs to
 function _M.conf_version(conf)
     if not conf._version then
-        local data = core.json.stably_encode(conf)
+        -- a new state on every call: dkjson keeps its buffer in the state when it
+        -- raises, and a reused state would then make encode() return true
+        local data = core.json.stably_encode(conf, {
+            sortkey = true,
+            exception = encode_json_null,
+        })
         conf._version = tostring(crc32(data))
-        core.log.info("init plugin-level conf version: ", conf._version, ", from ", data)
+        core.log.info("init plugin-level conf version: ", conf._version)
     end
 
     return conf._version
@@ -1011,8 +1028,7 @@ end
 local function check_single_plugin_schema(name, plugin_conf, schema_type, skip_disabled_plugin,
                                           ignore_disabled_plugin)
     if type(plugin_conf) ~= "table" then
-        return false, "invalid plugin conf " ..
-            core.json.encode(plugin_conf, true) ..
+        return false, "invalid plugin conf type " .. type(plugin_conf) ..
             " for plugin [" .. tostring(name) .. "]"
     end
 
@@ -1194,7 +1210,17 @@ end
 _M.process_encrypt_field = process_encrypt_field
 
 
-local function decrypt_conf(name, conf, schema_type)
+-- marked values are left to `decrypt_marked_conf`
+local function decrypt_unmarked(value)
+    if core.data_encryption.has_marker(value) then
+        return value
+    end
+
+    return core.data_encryption.decrypt(value)
+end
+
+
+local function decrypt_conf(name, conf, schema_type, decrypt)
     if not enable_gde() then
         return
     end
@@ -1206,11 +1232,65 @@ local function decrypt_conf(name, conf, schema_type)
 
     if schema.encrypt_fields and not core.table.isempty(schema.encrypt_fields) then
         for _, key in ipairs(schema.encrypt_fields) do
-            process_encrypt_field(conf, key, core.data_encryption.decrypt, name, "decrypt")
+            process_encrypt_field(conf, key, decrypt or decrypt_unmarked, name, "decrypt")
         end
     end
 end
 _M.decrypt_conf = decrypt_conf
+
+
+local function decrypt_field(value)
+    if core.data_encryption.has_marker(value) then
+        return core.data_encryption.decrypt_marked(value)
+    end
+    return core.data_encryption.decrypt(value)
+end
+
+
+-- PATCH only decrypts fields that encrypt_conf will encrypt again on write.
+-- Keep marked values outside encrypt_fields in their original stored form.
+function _M.decrypt_conf_for_patch(name, conf, schema_type)
+    decrypt_conf(name, conf, schema_type, decrypt_field)
+end
+
+
+-- Decrypt in place every string under `conf` that carries the encryption
+-- marker, whatever the `encrypt_fields` of the plugin. A value that fails to
+-- decrypt is logged and kept as it is.
+local function decrypt_marked_conf(name, conf, path)
+    if type(conf) ~= "table" then
+        return
+    end
+
+    for k, v in pairs(conf) do
+        local tv = type(v)
+        if tv == "string" then
+            if core.data_encryption.has_marker(v) then
+                local plain, err = core.data_encryption.decrypt_marked(v)
+                if plain then
+                    conf[k] = plain
+                else
+                    core.log.warn("failed to decrypt the value of plugin [", name, "] key [",
+                                  path and path .. "." .. tostring(k) or tostring(k), "]: ", err)
+                end
+            end
+
+        elseif tv == "table" then
+            decrypt_marked_conf(name, v, path and path .. "." .. tostring(k) or tostring(k))
+        end
+    end
+end
+_M.decrypt_marked_conf = decrypt_marked_conf
+
+
+-- Decrypt a stored plugin conf for the Admin API: the `encrypt_fields`, then
+-- the marked values, when data encryption is enabled.
+function _M.decrypt_stored_conf(name, conf, schema_type)
+    if enable_gde() then
+        decrypt_conf(name, conf, schema_type)
+        decrypt_marked_conf(name, conf)
+    end
+end
 
 
 local function encrypt_conf(name, conf, schema_type)
@@ -1225,7 +1305,8 @@ local function encrypt_conf(name, conf, schema_type)
 
     if schema.encrypt_fields and not core.table.isempty(schema.encrypt_fields) then
         for _, key in ipairs(schema.encrypt_fields) do
-            process_encrypt_field(conf, key, core.data_encryption.encrypt, name, "encrypt")
+            process_encrypt_field(conf, key, core.data_encryption.encrypt_with_marker, name,
+                                  "encrypt")
         end
     end
 end
@@ -1240,10 +1321,13 @@ check_plugin_metadata = function(item)
     -- subsystems, while each of them only loads its own plugins.
     local ok, err = check_single_plugin_schema(item.id, item,
                                                core.schema.TYPE_METADATA, false, true)
-    -- the schema of an unloaded plugin is unavailable, so decrypting its
-    -- metadata would only produce a "failed to get schema" warning
-    if ok and enable_gde() and local_plugins_hash[item.id] then
-        decrypt_conf(item.id, item, core.schema.TYPE_METADATA)
+    if ok and enable_gde() then
+        -- the schema of an unloaded plugin is unavailable, so decrypting its
+        -- metadata would only produce a "failed to get schema" warning
+        if local_plugins_hash[item.id] then
+            decrypt_conf(item.id, item, core.schema.TYPE_METADATA)
+        end
+        decrypt_marked_conf(item.id, item)
     end
 
     return ok, err
@@ -1266,11 +1350,9 @@ _M.check_schema = check_schema
 
 local function stream_check_schema(plugins_conf, schema_type, skip_disabled_plugin)
     for name, plugin_conf in pairs(plugins_conf) do
-        core.log.info("check stream plugin schema, name: ", name,
-                      ": ", core.json.delay_encode(plugin_conf, true))
+        core.log.info("check stream plugin schema, name: ", name)
         if type(plugin_conf) ~= "table" then
-            return false, "invalid plugin conf " ..
-                core.json.encode(plugin_conf, true) ..
+            return false, "invalid plugin conf type " .. type(plugin_conf) ..
                 " for plugin [" .. name .. "]"
         end
 
@@ -1312,6 +1394,7 @@ function _M.plugin_checker(item, schema_type)
             -- (e.g. ai-proxy service_account_json JSON parsing) see plaintext
             for name, conf in pairs(item.plugins) do
                 decrypt_conf(name, conf, schema_type)
+                decrypt_marked_conf(name, conf)
             end
         end
 
@@ -1330,6 +1413,12 @@ function _M.stream_plugin_checker(item, in_cp)
         local skip_disabled_plugins = in_cp ~= true
         if core.config.type == "yaml" or core.config.type == "json" then
             skip_disabled_plugins = false
+        end
+
+        if enable_gde() then
+            for name, conf in pairs(item.plugins) do
+                decrypt_marked_conf(name, conf)
+            end
         end
         return stream_check_schema(item.plugins, nil, skip_disabled_plugins)
     end

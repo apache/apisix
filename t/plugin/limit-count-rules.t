@@ -649,3 +649,328 @@ GET /hello
 x-user: testuser
 x-project: myproject
 --- error_code: 200
+
+
+
+=== TEST 23: setup routes whose rule resolves its count per request
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local conf = [[{
+                "methods": ["GET"],
+                "plugins": {
+                    "limit-count": {
+                        "rejected_code": 503,
+                        "rules": [
+                            {
+                                "count": "${http_count ?? 3}",
+                                "time_window": 60,
+                                "key": "${http_x_user}"
+                            }
+                        ]
+                    }
+                },
+                "upstream": {
+                    "nodes": {
+                        "127.0.0.1:1980": 1
+                    },
+                    "type": "roundrobin"
+                },
+                "uri": "%s"
+            }]]
+            for id, uri in pairs({["1"] = "/hello", ["2"] = "/hello1"}) do
+                local code, body = t('/apisix/admin/routes/' .. id, ngx.HTTP_PUT,
+                                     string.format(conf, uri))
+                if code >= 300 then
+                    ngx.status = code
+                    ngx.say(body)
+                    return
+                end
+            end
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 24: the same key limited under counts that change per request
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local base = "http://127.0.0.1:" .. ngx.var.server_port
+            local function hit(uri, user, count)
+                local httpc = http.new()
+                local res, err = httpc:request_uri(base .. uri, {
+                    headers = {["X-User"] = user, ["Count"] = count},
+                })
+                if not res then
+                    ngx.say("failed: ", err)
+                    return
+                end
+                ngx.say(uri, " ", user, " ", count or "-", ": ", res.status, " ",
+                        res.headers["X-1-RateLimit-Limit"], " ",
+                        res.headers["X-1-RateLimit-Remaining"])
+            end
+            hit("/hello", "u24", "3")
+            hit("/hello", "u24", "5")
+            hit("/hello", "u24", "3")
+            hit("/hello", "u24", nil)
+            hit("/hello", "u24", "5")
+            hit("/hello", "u24", "5")
+            hit("/hello", "other24", "3")
+        }
+    }
+--- response_body
+/hello u24 3: 200 3 2
+/hello u24 5: 200 5 3
+/hello u24 3: 200 3 0
+/hello u24 -: 503 3 0
+/hello u24 5: 200 5 0
+/hello u24 5: 503 5 0
+/hello other24 3: 200 3 2
+
+
+
+=== TEST 25: a count that fails to resolve rejects only that request
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local base = "http://127.0.0.1:" .. ngx.var.server_port
+            for _, count in ipairs({"abc", "2", "-1", "2", "2"}) do
+                local httpc = http.new()
+                local res, err = httpc:request_uri(base .. "/hello", {
+                    headers = {["X-User"] = "u25", ["Count"] = count},
+                })
+                if not res then
+                    ngx.say("failed: ", err)
+                    return
+                end
+                ngx.say(count, ": ", res.status, " ",
+                        res.headers["X-1-RateLimit-Remaining"])
+            end
+        }
+    }
+--- response_body
+abc: 500 nil
+2: 200 1
+-1: 500 nil
+2: 200 0
+2: 503 0
+--- error_log
+failed to get rate limit rules: resolved value is not a number
+failed to get rate limit rules: resolved value must be a positive number
+
+
+
+=== TEST 26: routes with the same rule shape keep separate counters
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local base = "http://127.0.0.1:" .. ngx.var.server_port
+            for _, uri in ipairs({"/hello", "/hello1", "/hello", "/hello1", "/hello"}) do
+                local httpc = http.new()
+                local res, err = httpc:request_uri(base .. uri, {
+                    headers = {["X-User"] = "u26", ["Count"] = "2"},
+                })
+                if not res then
+                    ngx.say("failed: ", err)
+                    return
+                end
+                ngx.say(uri, ": ", res.status, " ", res.headers["X-1-RateLimit-Remaining"])
+            end
+        }
+    }
+--- response_body
+/hello: 200 1
+/hello1: 200 1
+/hello: 200 0
+/hello1: 200 0
+/hello: 503 0
+
+
+
+=== TEST 27: changing the plugin configuration starts a new counter
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local http = require("resty.http")
+            local base = "http://127.0.0.1:" .. ngx.var.server_port
+            local function hit()
+                local httpc = http.new()
+                local res, err = httpc:request_uri(base .. "/hello", {
+                    headers = {["X-User"] = "u27", ["Count"] = "1"},
+                })
+                if not res then
+                    return "failed: " .. err
+                end
+                return res.status
+            end
+            ngx.say(hit(), " ", hit())
+
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PATCH, [[{
+                "plugins": {
+                    "limit-count": {
+                        "rejected_code": 429,
+                        "rules": [
+                            {
+                                "count": "${http_count ?? 3}",
+                                "time_window": 60,
+                                "key": "${http_x_user}"
+                            }
+                        ]
+                    }
+                }
+            }]])
+            if code >= 300 then
+                ngx.say(body)
+                return
+            end
+            ngx.sleep(0.5)
+            ngx.say(hit(), " ", hit())
+        }
+    }
+--- response_body
+200 503
+200 429
+
+
+
+=== TEST 28: rule header names follow a plugin metadata change
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local http = require("resty.http")
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, [[{
+                "plugins": {
+                    "limit-count": {
+                        "rejected_code": 503,
+                        "rules": [
+                            {
+                                "count": 5,
+                                "time_window": 60,
+                                "key": "${http_x_user}",
+                                "header_prefix": "jack"
+                            }
+                        ]
+                    }
+                },
+                "upstream": {
+                    "nodes": {"127.0.0.1:1980": 1},
+                    "type": "roundrobin"
+                },
+                "uri": "/hello"
+            }]])
+            if code >= 300 then
+                ngx.say(body)
+                return
+            end
+            ngx.sleep(0.5)
+
+            local function hit()
+                local httpc = http.new()
+                local res, err = httpc:request_uri(
+                    "http://127.0.0.1:" .. ngx.var.server_port .. "/hello",
+                    {headers = {["X-User"] = "u28"}})
+                if not res then
+                    ngx.say("failed: ", err)
+                    return
+                end
+                ngx.say(res.headers["X-jack-RateLimit-Remaining"], " ",
+                        res.headers["APISIX-jack-RateLimit-Remaining"])
+            end
+            hit()
+
+            code, body = t('/apisix/admin/plugin_metadata/limit-count',
+                ngx.HTTP_PUT, [[{
+                    "limit_header": "APISIX-RateLimit-Limit",
+                    "remaining_header": "APISIX-RateLimit-Remaining",
+                    "reset_header": "APISIX-RateLimit-Reset"
+                }]])
+            if code >= 300 then
+                ngx.say(body)
+                return
+            end
+            ngx.sleep(0.5)
+            hit()
+
+            code, body = t('/apisix/admin/plugin_metadata/limit-count',
+                ngx.HTTP_DELETE)
+            if code >= 300 then
+                ngx.say(body)
+                return
+            end
+            ngx.sleep(0.5)
+            hit()
+        }
+    }
+--- response_body
+4 nil
+nil 3
+2 nil
+
+
+
+=== TEST 29: a count resolved per request without rules is enforced per value
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local http = require("resty.http")
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, [[{
+                "plugins": {
+                    "limit-count": {
+                        "count": "${http_count ?? 3}",
+                        "time_window": 60,
+                        "rejected_code": 503,
+                        "key_type": "var",
+                        "key": "http_x_user"
+                    }
+                },
+                "upstream": {
+                    "nodes": {"127.0.0.1:1980": 1},
+                    "type": "roundrobin"
+                },
+                "uri": "/hello"
+            }]])
+            if code >= 300 then
+                ngx.say(body)
+                return
+            end
+            ngx.sleep(0.5)
+
+            local function hit(user, count)
+                local httpc = http.new()
+                local res, err = httpc:request_uri(
+                    "http://127.0.0.1:" .. ngx.var.server_port .. "/hello",
+                    {headers = {["X-User"] = user, ["Count"] = count}})
+                if not res then
+                    ngx.say("failed: ", err)
+                    return
+                end
+                ngx.say(user, " ", count or "-", ": ", res.status, " ",
+                        res.headers["X-RateLimit-Limit"], " ",
+                        res.headers["X-RateLimit-Remaining"])
+            end
+            hit("u29a", "1")
+            hit("u29a", "1")
+            hit("u29b", "2")
+            hit("u29b", "2")
+            hit("u29b", "2")
+            hit("u29c")
+        }
+    }
+--- response_body
+u29a 1: 200 1 0
+u29a 1: 503 1 0
+u29b 2: 200 2 1
+u29b 2: 200 2 0
+u29b 2: 503 2 0
+u29c -: 200 3 2

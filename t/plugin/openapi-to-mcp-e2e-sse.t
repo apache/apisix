@@ -171,14 +171,15 @@ passed
             local dict = ngx.shared["mcp-session"]
 
             -- what handle_get stores when nothing needs re-resolving
-            local plain = assert(session.create(nil))
+            local plain = assert(session.create("route-1"))
             ngx.say("plain context: ", tostring(session.context(plain)))
 
             -- and what it stores when the configuration holds a variable
-            local frozen = assert(session.create({ headers = { Authorization = "Bearer t" } }))
+            local frozen = assert(session.create("route-1",
+                                  { headers = { Authorization = "Bearer t" } }))
             ngx.say("frozen context: ", session.context(frozen).headers.Authorization)
             ngx.say("in the dict: ",
-                    tostring(string.find(tostring(dict:get(plain .. ":alive")),
+                    tostring(string.find(tostring(dict:get("openapi-to-mcp:" .. plain .. ":alive")),
                                          "Bearer", 1, true) ~= nil))
         }
     }
@@ -186,3 +187,176 @@ passed
 plain context: nil
 frozen context: Bearer t
 in the dict: false
+
+
+
+=== TEST 9: two sse routes, one of them without authentication
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "sse",
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/openapi.json",
+                } },
+                { 2, "/mcp-other", {
+                    transport = "sse",
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/openapi.json",
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 10: a session issued by one route is not accepted by another
+--- timeout: 30
+--- exec
+python3 t/plugin/openapi_to_mcp_cross_route.py /mcp /mcp-other 2>&1
+--- response_body
+own route: 202
+other route: 404
+pushed on own stream: True
+
+
+
+=== TEST 11: clean up the extra route
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            t('/apisix/admin/routes/2', ngx.HTTP_DELETE)
+            ngx.say("cleaned")
+        }
+    }
+--- response_body
+cleaned
+
+
+
+=== TEST 12: an sse route that names the origins it expects
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "sse",
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/openapi.json",
+                    allowed_origins = { "https://app.example.com" },
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 13: the stream is refused from another origin
+--- request
+GET /mcp
+--- more_headers
+Origin: https://evil.example.com
+--- error_code: 403
+--- response_body
+{"message":"Origin not allowed. Add it to allowed_origins on this route to accept it."}
+--- error_log
+rejected an MCP request with a disallowed Origin
+
+
+
+=== TEST 14: an sse route that names no origins at all
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "sse",
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/openapi.json",
+                } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 15: with nothing to check it against, the stream is refused
+--- request
+GET /mcp
+--- more_headers
+Origin: https://evil.example.com
+--- error_code: 403
+--- response_body
+{"message":"Origin not allowed. Add it to allowed_origins on this route to accept it."}
+--- error_log
+nothing to check it against
+
+
+
+=== TEST 16: loopback at both ends opens a stream
+--- exec
+timeout 3 curl -sSN -H "Origin: http://localhost:1984" http://localhost:1984/mcp 2>&1 | head -1
+--- response_body
+event: endpoint
+
+
+
+=== TEST 17: a non-browser client, which sends no Origin, still opens a stream
+--- exec
+timeout 3 curl -sSN http://localhost:1984/mcp 2>&1 | head -1
+--- response_body
+event: endpoint
+
+
+
+=== TEST 18: a rebound name is refused on the stream too
+--- exec
+timeout 5 curl -sSN -o /dev/null -w "%{http_code}\n" http://localhost:1984/mcp \
+    -H "Host: attacker.example" \
+    -H "Origin: http://attacker.example" 2>&1
+--- response_body
+403
+--- error_log
+nothing to check it against
+
+
+
+=== TEST 19: an sse route matched on a wildcard host
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok = require("lib.openapi_to_mcp_fixture").put_routes({
+                { 1, "/mcp", {
+                    transport = "sse",
+                    base_url = "http://127.0.0.1:11460",
+                    openapi_url = "http://127.0.0.1:11460/openapi.json",
+                }, nil, { hosts = { "*.example.com" } } },
+            })
+            if ok then ngx.say("passed") end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 20: the wildcard routes the stream request but does not vouch for it
+--- exec
+timeout 5 curl -sSN -o /dev/null -w "%{http_code}\n" http://localhost:1984/mcp \
+    -H "Host: attacker.example.com" \
+    -H "Origin: http://attacker.example.com" 2>&1
+--- response_body
+403
+--- error_log
+nothing to check it against

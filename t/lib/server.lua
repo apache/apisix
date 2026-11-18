@@ -1480,7 +1480,8 @@ function _M.bedrock_converse()
     end
 
     local fixture_loader = require("lib.fixture_loader")
-    local content, ferr = fixture_loader.load("bedrock/converse-basic.json")
+    local content, ferr = fixture_loader.load(
+        ngx.req.get_headers()["X-AI-Fixture"] or "bedrock/converse-basic.json")
     if not content then
         ngx.status = 500
         ngx.say(ferr)
@@ -1594,7 +1595,8 @@ function _M.bedrock_converse_stream()
     end
 
     local fixture_loader = require("lib.fixture_loader")
-    local content, ferr = fixture_loader.load("bedrock/bedrock-converse-streaming.bin")
+    local content, ferr = fixture_loader.load(
+        ngx.req.get_headers()["X-AI-Fixture"] or "bedrock/bedrock-converse-streaming.bin")
     if not content then
         ngx.status = 500
         ngx.say(ferr)
@@ -1644,6 +1646,16 @@ function _M.test_params_in_overridden_endpoint()
         return
     end
     ngx.say("passed")
+end
+
+function _M.error_json_no_text()
+    ngx.status = 403
+    ngx.say([[{"message":"Forbidden: missing permissions"}]])
+end
+
+function _M.error_json_null_text()
+    ngx.status = 403
+    ngx.say([[{"text":null}]])
 end
 
 

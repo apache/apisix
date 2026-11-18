@@ -38,9 +38,9 @@ description: 这个文档包含有关 Apache APISIX brotli 插件的相关信息
 如下是构建和安装 brotli 共享库的示例脚本：
 
 ``` shell
-wget https://github.com/google/brotli/archive/refs/tags/v1.1.0.zip
-unzip v1.1.0.zip
-cd brotli-1.1.0 && mkdir build && cd build
+wget https://github.com/google/brotli/archive/refs/tags/v1.2.1.zip
+unzip v1.2.1.zip
+cd brotli-1.2.1 && mkdir build && cd build
 cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local/brotli ..
 sudo cmake --build . --config Release --target install
 sudo sh -c "echo /usr/local/brotli/lib >> /etc/ld.so.conf.d/brotli.conf"

@@ -209,3 +209,83 @@ sleep 0.1
 make stop
 
 echo "passed: connection to upstream with mTLS success"
+
+# test tls.verify alone with proxy_ssl_verify off
+git checkout conf/config.yaml
+
+for trusted_cert in apisix.crt apisix_ecc.crt; do
+echo "
+deployment:
+  admin:
+    admin_key:
+      - name: admin
+        key: edd1c9f034335f136f87ad84b625c8f1
+        role: admin
+apisix:
+  ssl:
+    ssl_trusted_certificate: t/certs/$trusted_cert
+nginx_config:
+  http_configuration_snippet: |
+    server {
+        listen 1983 ssl;
+        server_name test.com;
+        ssl_certificate             ../t/certs/apisix.crt;
+        ssl_certificate_key         ../t/certs/apisix.key;
+        location /hello {
+            return 200 \"hello world\";
+        }
+    }
+" > conf/config.yaml
+
+rm logs/error.log || true
+make init
+
+if ! grep -q "grpc_ssl_trusted_certificate " conf/nginx.conf; then
+    echo "failed: grpc_ssl_trusted_certificate is not rendered from ssl_trusted_certificate"
+    exit 1
+fi
+
+make run
+sleep 1
+
+code=$(curl -k -s -o /dev/null -w %{http_code} http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
+{
+    "uri": "/hello",
+    "upstream": {
+        "pass_host": "rewrite",
+        "nodes": {
+            "127.0.0.1:1983": 1
+        },
+        "scheme": "https",
+        "upstream_host": "test.com",
+        "type": "roundrobin",
+        "tls": {
+            "verify": true
+        }
+    }
+}')
+
+if [ ! "$code" -eq 200 ] && [ ! "$code" -eq 201 ]; then
+    make stop
+    echo "failed: failed to create the route, got $code"
+    exit 1
+fi
+
+sleep 1
+
+code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9080/hello)
+
+make stop
+
+if [ "$trusted_cert" = "apisix.crt" ] && [ ! $code -eq 200 ]; then
+    echo "failed: tls.verify should verify against ssl_trusted_certificate, got $code"
+    exit 1
+fi
+
+if [ "$trusted_cert" = "apisix_ecc.crt" ] && [ ! $code -eq 502 ]; then
+    echo "failed: tls.verify should reject a certificate ssl_trusted_certificate does not cover, got $code"
+    exit 1
+fi
+done
+
+echo "passed: tls.verify uses ssl_trusted_certificate with proxy_ssl_verify off"

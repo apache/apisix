@@ -52,4 +52,4 @@ additional variables.
 | rpc_time            | xRPC       | Time spent at the rpc request level.                                                |                |
 | upstream_unresolved_host | core  | The upstream host before DNS resolution (the configured domain or IP of the picked node). | httpbin.org |
 
-You can also register your own [variable](./plugin-develop.md#register-custom-variable).
+You can also register your own [variable](./plugin-develop.md#register-custom-variables).

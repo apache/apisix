@@ -882,27 +882,43 @@ curl -i "http://127.0.0.1:9080/get" -H "Authorization: ${jwt_token}"
 
 You should receive an `HTTP/1.1 200 OK` response.
 
-### Manage Secrets in Secret Manager
+### Store a JWT Secret in HashiCorp Vault
 
-The following example demonstrates how to manage `jwt-auth` Consumer key in [HashiCorp Vault](https://www.vaultproject.io) and reference it in Plugin configuration.
+[HashiCorp Vault](https://developer.hashicorp.com/vault/docs) provides centralized external storage for secrets. The following example stores a JWT signing secret in Vault instead of directly in a `jwt-auth` credential and references it from APISIX.
 
-Start a Vault development server in Docker:
+:::info
+
+[Vault dev mode](https://developer.hashicorp.com/vault/docs/concepts/dev-server) stores data in memory and uses a root token. Use this setup only for local testing. In production, run a production deployment of Vault and give APISIX a token with read access only to the required secret paths.
+
+:::
+
+Set `APISIX_CONTAINER` to the name of the running APISIX container. Create a dedicated Docker network and connect APISIX to it:
+
+```shell
+export APISIX_CONTAINER=replace-with-apisix-container-name
+
+docker network create apisix-vault-net
+docker network connect apisix-vault-net "$APISIX_CONTAINER"
+```
+
+Start a Vault development server on the same network:
 
 ```shell
 docker run -d \
-  --name vault \
-  -p 8200:8200 \
+  --name apisix-vault \
+  --network apisix-vault-net \
   --cap-add IPC_LOCK \
   -e VAULT_DEV_ROOT_TOKEN_ID=root \
   -e VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8200 \
-  vault:1.9.0 \
+  hashicorp/vault:1.21.4 \
   vault server -dev
 ```
 
-APISIX currently supports [Vault KV engine version 1](https://developer.hashicorp.com/vault/docs/secrets/kv#kv-version-1). Enable it in Vault:
+The APISIX Vault secret provider reads from [Vault KV version 1](https://developer.hashicorp.com/vault/docs/secrets/kv/kv-v1). Enable a KV version 1 secrets engine at `kv/`:
 
 ```shell
-docker exec -i vault sh -c "VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault secrets enable -path=kv -version=1 kv"
+docker exec apisix-vault sh -c \
+  "VAULT_TOKEN='root' VAULT_ADDR='http://127.0.0.1:8200' vault secrets enable -path=kv -version=1 kv"
 ```
 
 You should see a response similar to the following:
@@ -910,6 +926,35 @@ You should see a response similar to the following:
 ```text
 Success! Enabled the kv secrets engine at: kv/
 ```
+
+Store the signing secret under `kv/apisix/jack`:
+
+```shell
+docker exec apisix-vault sh -c \
+  "VAULT_TOKEN='root' VAULT_ADDR='http://127.0.0.1:8200' vault kv put kv/apisix/jack jwt-secret=vault-hs256-secret-that-is-very-long"
+```
+
+You should see a response similar to the following:
+
+```text
+Success! Data written to: kv/apisix/jack
+```
+
+Create an APISIX [Secret](../terminology/secret.md) resource with the Vault connection details. ADC does not currently synchronize Secret resources, so create this resource through the Admin API:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/secrets/vault/jwt" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "uri": "http://apisix-vault:8200",
+    "prefix": "kv/apisix",
+    "token": "root"
+  }'
+```
+
+The Vault container is reachable by name because it runs on the same Docker network as APISIX.
+
+The Secret resource is required for both configuration methods below. ADC does not currently synchronize Secret resources, but it can synchronize credentials that reference an existing Secret resource.
 
 <Tabs
 groupId="api"
@@ -921,18 +966,6 @@ values={[
 
 <TabItem value="dashboard">
 
-Create a [Secret](../terminology/secret.md) and configure the Vault address and other connection information. Adjust the Vault address accordingly:
-
-```shell
-curl "http://127.0.0.1:9180/apisix/admin/secrets/vault/jwt" -X PUT \
-  -H "X-API-KEY: ${admin_key}" \
-  -d '{
-    "uri": "http://127.0.0.1:8200",
-    "prefix": "kv/apisix",
-    "token": "root"
-  }'
-```
-
 Create a Consumer `jack`:
 
 ```shell
@@ -943,7 +976,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
   }'
 ```
 
-Create `jwt-auth` Credential for the Consumer and reference the Secret:
+Create a `jwt-auth` Credential for the Consumer and reference the Secret:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers/jack/credentials" -X PUT \
@@ -983,25 +1016,24 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 
 <TabItem value="adc">
 
-Create a Secret and configure the Vault address. Adjust the Vault address accordingly:
+Create `adc.yaml` with the Consumer, Vault-backed Credential, and Route:
 
 ```yaml title="adc.yaml"
-secrets:
-  - name: vault-jwt
-    vault:
-      url: http://127.0.0.1:8200
-      prefix: kv/apisix
-      token: root
 consumers:
   - username: jack
+    labels:
+      docs-example: jwt-auth
     credentials:
-      - name: jwt-auth
+      - id: cred-jack-jwt-auth
+        name: jwt-auth
         type: jwt-auth
         config:
           key: jwt-vault-key
-          secret: $secret://vault-jwt/jack/jwt-secret
+          secret: $secret://vault/jwt/jack/jwt-secret
 services:
   - name: jwt-auth-service
+    labels:
+      docs-example: jwt-auth
     routes:
       - name: jwt-route
         uris:
@@ -1016,47 +1048,54 @@ services:
           weight: 1
 ```
 
-Synchronize the configuration to the gateway:
+ADC reconciles the selected top-level resource types as desired state. Preview the scoped changes and confirm that they contain no unintended updates or deletions:
 
 ```shell
-adc sync -f adc.yaml
+adc diff -f adc.yaml \
+  --include-resource-type service \
+  --include-resource-type consumer \
+  --label-selector docs-example=jwt-auth
+```
+
+Synchronize the reviewed configuration:
+
+```shell
+adc sync -f adc.yaml \
+  --include-resource-type service \
+  --include-resource-type consumer \
+  --label-selector docs-example=jwt-auth
 ```
 
 </TabItem>
 
 </Tabs>
 
-Set `jwt-auth` key value to be `vault-hs256-secret-that-is-very-long` in Vault:
+In both methods, the reference uses the `jwt` Secret resource to read the `jwt-secret` field from `kv/apisix/jack`.
+
+Define a local HS256 signing helper, then generate a JWT with the key and secret stored in Vault:
 
 ```shell
-docker exec -i vault sh -c "VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault kv put kv/apisix/jack jwt-secret=vault-hs256-secret-that-is-very-long"
-```
-
-You should see a response similar to the following:
-
-```text
-Success! Data written to: kv/apisix/jack
-```
-
-To issue a JWT, you could use [JWT.io's JWT encoder](https://jwt.io) or other utilities. If you are using [JWT.io's JWT encoder](https://jwt.io), do the following:
-
-* Fill in `HS256` as the algorithm.
-* Update the secret in the __Valid secret__ section to be `vault-hs256-secret-that-is-very-long`.
-* Update payload with Consumer key `jwt-vault-key`; and add `exp` or `nbf` in UNIX timestamp.
-
-Your payload should look similar to the following:
-
-```json
-{
-  "key": "jwt-vault-key",
-  "nbf": 1729132271
+base64url() {
+  openssl base64 -A | tr '+/' '-_' | tr -d '='
 }
-```
 
-Copy the generated JWT and save to a variable:
+sign_hs256() {
+  local secret="$1"
+  local payload="$2"
+  local encoded_header encoded_payload signature
 
-```shell
-export jwt_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJqd3QtdmF1bHQta2V5IiwibmJmIjoxNzI5MTMyMjcxfQ.i2pLj7QcQvnlSjB7iV5V522tIV43boQRtee7L0rwlkQ
+  encoded_header=$(printf '%s' '{"alg":"HS256","typ":"JWT"}' | base64url)
+  encoded_payload=$(printf '%s' "$payload" | base64url)
+  signature=$(printf '%s' "$encoded_header.$encoded_payload" | \
+    openssl dgst -sha256 -hmac "$secret" -binary | base64url)
+
+  printf '%s.%s.%s\n' "$encoded_header" "$encoded_payload" "$signature"
+}
+
+jwt_token=$(sign_hs256 \
+  'vault-hs256-secret-that-is-very-long' \
+  '{"key":"jwt-vault-key"}')
+export jwt_token
 ```
 
 Send a request with the token in the header:
@@ -1065,7 +1104,16 @@ Send a request with the token in the header:
 curl -i "http://127.0.0.1:9080/get" -H "Authorization: ${jwt_token}"
 ```
 
-You should receive an `HTTP/1.1 200 OK` response.
+You should receive an `HTTP/1.1 200 OK` response. The response body should include headers that identify the authenticated Consumer:
+
+```json
+{
+  "headers": {
+    "X-Consumer-Username": "jack",
+    "X-Credential-Identifier": "cred-jack-jwt-auth"
+  }
+}
+```
 
 ### Sign JWT with RS256 Algorithm
 

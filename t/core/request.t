@@ -611,3 +611,68 @@ header: new
 body: nil
 err: request size 17 is greater than the maximum size 8 allowed
 kind: too_large
+
+
+
+=== TEST 20: plugins read the first 100 request headers by default
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            ngx.ctx.api_ctx = {}
+            local ctx = ngx.ctx.api_ctx
+            local count = 0
+            for _ in pairs(core.request.headers(ctx)) do
+                count = count + 1
+            end
+            ngx.say("count: ", count)
+            ngx.say("x-last: ", core.request.header(ctx, "X-Last"))
+        }
+    }
+--- more_headers eval
+CORE::join("", map { "X-Pad-$_: $_\n" } 1 .. 100) . "X-Last: yes\n"
+--- response_body
+count: 100
+x-last: nil
+
+
+
+=== TEST 21: max_request_headers_readable raises the limit
+--- yaml_config
+apisix:
+    node_listen: 1984
+    max_request_headers_readable: 200
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            ngx.ctx.api_ctx = {}
+            local ctx = ngx.ctx.api_ctx
+            ngx.say("x-last: ", core.request.header(ctx, "X-Last"))
+        }
+    }
+--- more_headers eval
+CORE::join("", map { "X-Pad-$_: $_\n" } 1 .. 100) . "X-Last: yes\n"
+--- response_body
+x-last: yes
+
+
+
+=== TEST 22: max_request_headers_readable 0 reads all headers
+--- yaml_config
+apisix:
+    node_listen: 1984
+    max_request_headers_readable: 0
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            ngx.ctx.api_ctx = {}
+            local ctx = ngx.ctx.api_ctx
+            ngx.say("x-last: ", core.request.header(ctx, "X-Last"))
+        }
+    }
+--- more_headers eval
+CORE::join("", map { "X-Pad-$_: $_\n" } 1 .. 300) . "X-Last: yes\n"
+--- response_body
+x-last: yes

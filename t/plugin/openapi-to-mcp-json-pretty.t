@@ -109,3 +109,27 @@ __DATA__
 {
   "s": "a{b},c\"d"
 }
+
+
+
+=== TEST 5: a large value is returned compact instead of indented
+--- config
+    location /t {
+        content_by_lua_block {
+            local json_pretty = require("apisix.plugins.openapi-to-mcp.json_pretty")
+            local small = json_pretty.encode({ a = { b = 1 } })
+            ngx.say("small indented: ", tostring(string.find(small, "\n", 1, true) ~= nil))
+
+            -- one entry per character is what indenting costs, so past the
+            -- limit the compact form is handed back as it is
+            local big = { blob = string.rep("x", 300 * 1024) }
+            local out = json_pretty.encode(big)
+            ngx.say("large indented: ", tostring(string.find(out, "\n", 1, true) ~= nil))
+            ngx.say("large parses: ",
+                    tostring(require("apisix.core").json.decode(out).blob == big.blob))
+        }
+    }
+--- response_body
+small indented: true
+large indented: false
+large parses: true

@@ -127,11 +127,11 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
             "nodes": {
                 "127.0.0.1:1980": 1
             }
-        }
+        },
         "plugins": {
             "proxy-rewrite": {
                 "uri": "/test/add",
-                "host": "apisix.iresty.com"
+                "host": "example.com"
             },
             "limit-count": {
                 "count": 20,
@@ -155,7 +155,7 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
             "nodes": {
                 "127.0.0.1:1980": 1
             }
-        }
+        },
         "plugins": {
             "ip-restriction": {
                 "whitelist": [
@@ -165,7 +165,7 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
             },
             "proxy-rewrite": {
                 "uri": "/test/add",
-                "host": "apisix.iresty.com"
+                "host": "example.com"
             },
             "limit-count": {
                 "count": 20,

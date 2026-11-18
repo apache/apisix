@@ -74,7 +74,7 @@ end
 
 
 function _M.rewrite(conf, ctx)
-    core.log.warn("plugin rewrite phase, conf: ", core.json.encode(conf))
+    core.log.warn("plugin rewrite phase")
     core.log.warn("conf_type: ", ctx.conf_type)
     core.log.warn("conf_id: ", ctx.conf_id)
     core.log.warn("conf_version: ", ctx.conf_version)
@@ -82,7 +82,7 @@ end
 
 
 function _M.access(conf, ctx)
-    core.log.warn("plugin access phase, conf: ", core.json.encode(conf))
+    core.log.warn("plugin access phase")
     -- return 200, {message = "hit example plugin"}
 
     if not conf.ip then
@@ -108,28 +108,26 @@ function _M.access(conf, ctx)
 end
 
 function _M.header_filter(conf, ctx)
-    core.log.warn("plugin header_filter phase, conf: ", core.json.encode(conf))
+    core.log.warn("plugin header_filter phase")
 end
 
 
 function _M.body_filter(conf, ctx)
-    core.log.warn("plugin body_filter phase, eof: ", ngx.arg[2],
-                  ", conf: ", core.json.encode(conf))
+    core.log.warn("plugin body_filter phase, eof: ", ngx.arg[2])
 end
 
 
 function _M.delayed_body_filter(conf, ctx)
-    core.log.warn("plugin delayed_body_filter phase, eof: ", ngx.arg[2],
-                  ", conf: ", core.json.encode(conf))
+    core.log.warn("plugin delayed_body_filter phase, eof: ", ngx.arg[2])
 end
 
 function _M.log(conf, ctx)
-    core.log.warn("plugin log phase, conf: ", core.json.encode(conf))
+    core.log.warn("plugin log phase")
 end
 
 
 function _M.ws_handshake(conf, ctx)
-    core.log.warn("plugin ws_handshake phase, conf: ", core.json.encode(conf))
+    core.log.warn("plugin ws_handshake phase")
 end
 
 
@@ -152,7 +150,7 @@ end
 
 
 function _M.ws_close(conf, ctx)
-    core.log.warn("plugin ws_close phase, conf: ", core.json.encode(conf))
+    core.log.warn("plugin ws_close phase")
 end
 
 

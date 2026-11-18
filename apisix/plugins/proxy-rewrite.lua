@@ -302,7 +302,8 @@ do
     local function resolve_header_value(value, ctx)
         local val = core.utils.resolve_var_with_captures(value,
                                         ctx.proxy_rewrite_regex_uri_captures)
-        return core.utils.resolve_var(val, ctx.var)
+        -- a value with captures substituted is a new template per request
+        return core.utils.resolve_var(val, ctx.var, nil, val ~= value)
     end
 
 

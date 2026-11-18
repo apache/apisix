@@ -96,4 +96,4 @@ hello world
 --- error_log eval
 qr/loaded script_obj: \{"access":"function: 0x[\w]+"\}/
 --- no_error_log eval
-qr/plugin rewrite phase, conf: \{"i":1\}/
+qr/plugin rewrite phase/

@@ -63,25 +63,34 @@ function install_dependencies_with_yum() {
 function install_dependencies_with_apt() {
     # add OpenResty source
     sudo apt-get update
-    sudo apt-get -y install software-properties-common wget lsb-release gnupg patch
-    wget -qO - https://openresty.org/package/pubkey.gpg | sudo apt-key add -
+    sudo apt-get -y install wget lsb-release gnupg patch
+    sudo mkdir -p /etc/apt/keyrings
+    wget -qO - https://openresty.org/package/pubkey.gpg | sudo gpg --dearmor --yes -o /etc/apt/keyrings/openresty.gpg
+    sudo chmod 0644 /etc/apt/keyrings/openresty.gpg
     arch=$(uname -m | tr '[:upper:]' '[:lower:]')
     arch_path=""
     if [[ $arch == "arm64" ]] || [[ $arch == "aarch64" ]]; then
         arch_path="arm64/"
     fi
-    if [[ "${1}" == "ubuntu" ]]; then
-        sudo add-apt-repository -y "deb http://openresty.org/package/${arch_path}ubuntu $(lsb_release -sc) main"
-    elif [[ "${1}" == "debian" ]]; then
-        # add-apt-repository on Debian 12 writes an empty list file for a plain
-        # deb line, so the repository never makes it into apt
-        echo "deb http://openresty.org/package/${arch_path}debian $(lsb_release -sc) openresty" \
-            | sudo tee /etc/apt/sources.list.d/openresty.list
+    codename=$(lsb_release -sc)
+    repo_url="https://openresty.org/package/${arch_path}${1}"
+    # OpenResty publishes packages for a new Ubuntu release some time after it
+    # comes out (e.g. 26.04). Only openresty-zlib-dev and openresty-pcre-dev are
+    # needed from it, and they are self-contained under /usr/local/openresty,
+    # so fall back to the latest LTS repository it has.
+    if [[ "${1}" == "ubuntu" ]] && ! wget -q --spider "${repo_url}/dists/${codename}/Release"; then
+        codename=noble
     fi
+    component=main
+    if [[ "${1}" == "debian" ]]; then
+        component=openresty
+    fi
+    echo "deb [signed-by=/etc/apt/keyrings/openresty.gpg] ${repo_url} ${codename} ${component}" \
+        | sudo tee /etc/apt/sources.list.d/openresty.list
     sudo apt-get update
 
     # install some compilation tools
-    sudo apt-get install -y curl make gcc g++ cpanminus libpcre3 libpcre3-dev libpcre2-dev libyaml-dev unzip openresty-zlib-dev openresty-pcre-dev libxml2-dev libxslt-dev zlib1g-dev
+    sudo apt-get install -y curl make gcc g++ cpanminus libpcre2-dev libyaml-dev unzip openresty-zlib-dev openresty-pcre-dev libxml2-dev libxslt-dev zlib1g-dev
 }
 
 # Identify the different distributions and call the corresponding function

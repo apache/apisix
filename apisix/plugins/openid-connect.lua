@@ -26,6 +26,7 @@ local dump_jwk          = require("resty.openssl.auxiliary.jwk").dump_jwk
 local string            = string
 local ngx               = ngx
 local ipairs            = ipairs
+local next              = next
 local type              = type
 local tostring          = tostring
 local pcall             = pcall
@@ -638,7 +639,32 @@ local schema = {
             description = "JSON schema of OIDC response claim",
             type = "object",
             default = nil,
-        }
+        },
+        upstream_headers = {
+            description = "Verified claims to forward to the upstream as request headers.",
+            type = "array",
+            minItems = 1,
+            items = {
+                type = "object",
+                properties = {
+                    header = {
+                        description = "Name of the upstream request header.",
+                        type = "string",
+                        pattern = [[^[!#$%&'*+.^_`|~0-9A-Za-z-]+$]],
+                    },
+                    path = {
+                        description = "Keys leading to the claim, one per nesting level.",
+                        type = "array",
+                        minItems = 1,
+                        items = {
+                            type = "string",
+                            minLength = 1,
+                        },
+                    },
+                },
+                required = {"header", "path"},
+            },
+        },
     },
     encrypt_fields = {"client_secret", "client_rsa_private_key", "dpop.private_key",
                       "session.secret", "session.redis.password"},
@@ -1075,13 +1101,17 @@ local function introspect(ctx, conf)
             end
         end
 
-        local res, err = openidc.introspect(conf)
+        local res, err, _, failure = openidc.introspect(conf)
         conf.http_request_decorator = nil
 
         if err then
-            ngx.header["WWW-Authenticate"] = 'Bearer realm="' .. conf.realm ..
-                '", error="invalid_token", error_description="' .. err .. '"'
-            return ngx.HTTP_UNAUTHORIZED, err, nil, nil
+            local status = failure and failure.http_status or
+                           ngx.HTTP_INTERNAL_SERVER_ERROR
+            if failure and failure.kind == "invalid_token" then
+                ngx.header["WWW-Authenticate"] = 'Bearer realm="' .. conf.realm ..
+                    '", error="invalid_token", error_description="' .. err .. '"'
+            end
+            return status, err, nil, nil
         end
 
         local valid_issuers = core.table.try_read_attr(conf, "claim_validator",
@@ -1159,6 +1189,68 @@ local function session_scopes(response)
     return split_scopes_by_space(scope)
 end
 
+
+local function lookup_claim(claims, path)
+    local value = claims
+    for _, key in ipairs(path) do
+        if type(value) ~= "table" then
+            return nil
+        end
+        value = value[key]
+    end
+    return value
+end
+
+
+-- Strings as is, numbers and true as text, tables as base64 of their
+-- JSON. Missing, null and false yield nil.
+local function serialize_claim(value)
+    local value_type = type(value)
+    if value_type == "string" then
+        return value
+    end
+
+    if value_type == "number" then
+        -- tostring() switches to exponent notation for large integers
+        if value % 1 == 0 and value >= -2^53 and value <= 2^53 then
+            return string.format("%d", value)
+        end
+        return tostring(value)
+    end
+
+    if value == true then
+        return "true"
+    end
+
+    if value_type == "table" then
+        -- an empty array goes out as {} as well
+        if next(value) == nil then
+            return ngx_encode_base64("{}")
+        end
+        return ngx_encode_base64(core.json.encode(value))
+    end
+
+    return nil
+end
+
+
+-- Each header gets the value from the first claim source holding the claim.
+local function upstream_header_values(upstream_headers, sources)
+    local values = core.table.new(0, #upstream_headers)
+    for _, mapping in ipairs(upstream_headers) do
+        for _, claims in ipairs(sources) do
+            local value = serialize_claim(lookup_claim(claims, mapping.path))
+            if value then
+                values[mapping.header] = value
+                break
+            end
+        end
+    end
+    return values
+end
+_M._upstream_header_values = upstream_header_values
+
+
 local function validate_claims_in_oidcauth_response(resp, conf)
     if not conf.claim_schema then
         return true
@@ -1172,7 +1264,7 @@ local function validate_claims_in_oidcauth_response(resp, conf)
 end
 
 
-function _M.rewrite(plugin_conf, ctx)
+local function authenticate(plugin_conf, ctx)
     local conf = core.table.clone(plugin_conf)
     flatten_openidc_options(conf)
 
@@ -1316,6 +1408,10 @@ function _M.rewrite(plugin_conf, ctx)
 
             -- Add configured access token header, maybe.
             add_access_token_header(ctx, conf, access_token)
+
+            if conf.upstream_headers then
+                ctx.openid_connect_claim_sources = {userinfo}
+            end
 
             if userinfo and conf.set_userinfo_header then
                 -- Set X-Userinfo header to introspection endpoint response.
@@ -1511,6 +1607,14 @@ function _M.rewrite(plugin_conf, ctx)
                 core.request.set_header(ctx, "X-Raw-ID-Token", enc_id_token)
             end
 
+            if conf.upstream_headers then
+                -- the ID token is verified, userinfo fills in what it lacks
+                ctx.openid_connect_claim_sources = {
+                    response.id_token or {},
+                    response.user or {},
+                }
+            end
+
             -- a successful authentication resets the restart budget
             if session:get("auth_flow_restarts") then
                 session:set("auth_flow_restarts", nil)
@@ -1525,6 +1629,24 @@ function _M.rewrite(plugin_conf, ctx)
         session:close()
     end
 end
+
+
+function _M.rewrite(plugin_conf, ctx)
+    local code, body = authenticate(plugin_conf, ctx)
+
+    -- runs on every outcome so spoofed values never reach the upstream
+    local upstream_headers = plugin_conf.upstream_headers
+    if upstream_headers then
+        local values = upstream_header_values(upstream_headers,
+                                              ctx.openid_connect_claim_sources or {})
+        for _, mapping in ipairs(upstream_headers) do
+            core.request.set_header(ctx, mapping.header, values[mapping.header])
+        end
+    end
+
+    return code, body
+end
+
 
 
 return _M

@@ -329,6 +329,55 @@ local function set_stream_upstream_client_cert(api_ctx, up_conf)
 end
 
 
+local function set_http_upstream_tls(api_ctx, up_conf)
+    local scheme = up_conf.scheme
+    if scheme == "https" then
+        -- grpcs applies these in `set_grpcs_upstream_param` instead, after the
+        -- internal redirect that drops the settings made here
+        local ok, err = set_upstream_ssl_opts(up_conf)
+        if not ok then
+            return 503, err
+        end
+    end
+
+    local tls_has_cert = up_conf.tls and (up_conf.tls.client_cert or up_conf.tls.client_cert_id)
+    if (scheme == "https" or scheme == "grpcs") and tls_has_cert then
+        local client_cert, client_key
+        if up_conf.tls.client_cert_id then
+            client_cert = api_ctx.upstream_ssl.cert
+            client_key = api_ctx.upstream_ssl.key
+        else
+            client_cert = up_conf.tls.client_cert
+            client_key = up_conf.tls.client_key
+        end
+
+        -- the sni here is just for logging
+        local sni = api_ctx.var.upstream_host
+        local cert, err = apisix_ssl.fetch_cert(sni, client_cert)
+        if not cert then
+            return 503, err
+        end
+
+        local key, err = apisix_ssl.fetch_pkey(sni, client_key)
+        if not key then
+            return 503, err
+        end
+
+        if scheme == "grpcs" then
+            api_ctx.upstream_grpcs_cert = cert
+            api_ctx.upstream_grpcs_key = key
+        else
+            local ok, err = set_upstream_tls_client_param(cert, key)
+            if not ok then
+                return 503, err
+            end
+        end
+    end
+
+    return
+end
+
+
 function _M.set_by_route(route, api_ctx)
     -- Ahead of the traffic-split short circuit below so its inline upstream is
     -- covered too. A second handshake would send the client's ClientHello as payload.
@@ -341,7 +390,7 @@ function _M.set_by_route(route, api_ctx)
 
     if api_ctx.upstream_conf then
         -- upstream_conf has been set by traffic-split plugin
-        return
+        return set_http_upstream_tls(api_ctx, api_ctx.upstream_conf)
     end
 
     local up_conf = api_ctx.matched_upstream
@@ -449,51 +498,8 @@ function _M.set_by_route(route, api_ctx)
                                                                   node_ver )
     local checker = healthcheck_manager.fetch_checker(up_conf.resource_key, resource_version)
     api_ctx.up_checker = checker
-    local scheme = up_conf.scheme
-    if scheme == "https" then
-        -- grpcs applies these in `set_grpcs_upstream_param` instead, after the
-        -- internal redirect that drops the settings made here
-        local ok, err = set_upstream_ssl_opts(up_conf)
-        if not ok then
-            return 503, err
-        end
-    end
 
-    local tls_has_cert = up_conf.tls and (up_conf.tls.client_cert or up_conf.tls.client_cert_id)
-    if (scheme == "https" or scheme == "grpcs") and tls_has_cert then
-        local client_cert, client_key
-        if up_conf.tls.client_cert_id then
-            client_cert = api_ctx.upstream_ssl.cert
-            client_key = api_ctx.upstream_ssl.key
-        else
-            client_cert = up_conf.tls.client_cert
-            client_key = up_conf.tls.client_key
-        end
-
-        -- the sni here is just for logging
-        local sni = api_ctx.var.upstream_host
-        local cert, err = apisix_ssl.fetch_cert(sni, client_cert)
-        if not cert then
-            return 503, err
-        end
-
-        local key, err = apisix_ssl.fetch_pkey(sni, client_key)
-        if not key then
-            return 503, err
-        end
-
-        if scheme == "grpcs" then
-            api_ctx.upstream_grpcs_cert = cert
-            api_ctx.upstream_grpcs_key = key
-        else
-            local ok, err = set_upstream_tls_client_param(cert, key)
-            if not ok then
-                return 503, err
-            end
-        end
-    end
-
-    return
+    return set_http_upstream_tls(api_ctx, up_conf)
 end
 
 

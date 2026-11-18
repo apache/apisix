@@ -29,11 +29,9 @@ description: 本文介绍了 Apache APISIX Credential 对象的作用以及如�
 
 ## 描述
 
-Credential 是存放 [Consumer](./consumer.md) 凭证配置的对象。
-一个 Consumer 可以使用不同类型的多个凭证。
-当你需要为一个 Consumer 配置不同类型的多个凭证时，就会用到 Credential。
+Credential 存储与 [Consumer](./consumer.md) 关联的认证插件配置。每个 Credential 最多包含一个已启用的认证插件，例如 `basic-auth`、`hmac-auth`、`jwt-auth` 或 `key-auth`。
 
-目前，Credential 可以配置的身份认证插件包括 `basic-auth`、`hmac-auth`、`jwt-auth` 以及 `key-auth`。
+一个 Consumer 可以拥有不同认证插件的 Credential，也可以为同一认证插件配置多个具有不同识别值的 Credential。例如，可以先创建第二个 `key-auth` Credential，将客户端切换到新密钥，再删除旧 Credential，以完成密钥轮换。Credential 详情独立存储，获取 Consumer 资源时不会返回这些详情。
 
 ## 配置选项
 
@@ -43,7 +41,7 @@ Credential 是存放 [Consumer](./consumer.md) 凭证配置的对象。
 |---------|-----|-----------------------------------------------------|
 | desc    | 否   | Credential 描述。                                      |
 | labels  | 否   | Credential 标签。                                      |
-| plugins | 否   | Credential 对应的插件配置。详细信息，请参考 [Plugins](./plugin.md)。 |
+| plugins | 否   | 最多包含一个认证插件配置。详细信息请参见 [Plugins](./plugin.md)。 |
 
 :::note
 

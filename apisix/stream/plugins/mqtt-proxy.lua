@@ -179,7 +179,7 @@ end
 
 
 function _M.log(conf, ctx)
-    core.log.info("plugin log phase, conf: ", core.json.encode(conf))
+    core.log.info("plugin log phase")
 end
 
 

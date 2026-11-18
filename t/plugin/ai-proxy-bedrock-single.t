@@ -497,3 +497,71 @@ POST /single-ai/stream/converse
 qr/"text"\s*:\s*"Hello!"/
 --- error_log eval
 qr{\[test\] received uri: /model/anthropic\.claude-3-5-sonnet-20241022-v2%3A0/converse(?!-stream)}
+
+
+
+=== TEST 19: Bedrock cache usage matches LiteLLM for both response modes
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local bedrock = require("apisix.plugins.ai-protocols.bedrock-converse")
+            local loader = require("lib.fixture_loader")
+            -- Expected usage was differentialed against LiteLLM 3d526bfe transform_usage.
+            local cases = core.json.decode(assert(loader.load(
+                "bedrock/converse-cache-usage-cases.json")), { null_as_nil = true })
+            for _, case in ipairs(cases) do
+                local usage, raw = bedrock.extract_usage({ usage = case.raw })
+                assert(raw == case.raw, case.name .. " raw usage preserved")
+                local result = bedrock.parse_sse_event({
+                    headers = { [":event-type"] = "metadata" },
+                    payload = core.json.encode({ usage = case.raw }),
+                }, {}, {})
+                assert(result.type == "usage_and_done", case.name)
+                for key, expected in pairs(case.expected) do
+                    assert(usage[key] == expected, case.name .. " non-stream " .. key)
+                    assert(result.usage[key] == expected, case.name .. " stream " .. key)
+                end
+                assert(core.json.stably_encode(result.raw_usage)
+                       == core.json.stably_encode(case.raw), case.name .. " stream raw usage")
+            end
+            local usage = bedrock.extract_usage({ usage = {} })
+            assert(usage.prompt_tokens == 0 and usage.total_tokens == 0, "empty usage")
+            assert(bedrock.extract_usage({}) == nil, "missing usage")
+            ngx.say("OK")
+        }
+    }
+--- response_body
+OK
+--- no_error_log
+[error]
+
+
+
+=== TEST 20: non-streaming cache tokens reach the LLM logging variables
+--- request
+POST /single-ai/stream/converse
+{"messages":[{"role":"user","content":[{"text":"Say hi"}]}]}
+--- more_headers
+X-AI-Fixture: bedrock/converse-with-cache.json
+--- response_body_like eval
+qr/"cacheReadInputTokens":20/
+--- access_log eval
+qr/ 60 8 68 false false 0 \S* 20 30 0 /
+--- no_error_log
+[error]
+
+
+
+=== TEST 21: streaming cache tokens reach the LLM logging variables
+--- request
+POST /single-ai/stream/converse
+{"stream":true,"messages":[{"role":"user","content":[{"text":"Say hi"}]}]}
+--- more_headers
+X-AI-Fixture: bedrock/converse-streaming-with-cache.bin
+--- response_body_like eval
+qr/metadata/
+--- access_log eval
+qr/ 60 8 68 true false 0 \S* 20 30 0 /
+--- no_error_log
+[error]

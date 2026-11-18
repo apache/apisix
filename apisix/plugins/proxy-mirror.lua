@@ -91,8 +91,15 @@ end
 
 local function enable_mirror(ctx, conf)
     local uri = (ctx.var.upstream_uri and ctx.var.upstream_uri ~= "") and
-                ctx.var.upstream_uri or
-                ctx.var.uri .. ctx.var.is_args .. (ctx.var.args or '')
+                (ctx.servlet_upstream_uri and not ctx.servlet_upstream_uri_overridden and
+                    ctx.var.upstream_uri == ctx.servlet_upstream_uri and
+                    (ctx.servlet_upstream_uri .. (ctx.var.is_args or "")
+                     .. (ctx.var.args or "")) or
+                    ctx.var.upstream_uri) or
+                (ctx.servlet_upstream_uri and
+                    (ctx.servlet_upstream_uri .. (ctx.var.is_args or "")
+                     .. (ctx.var.args or "")) or
+                    (ctx.var.uri .. ctx.var.is_args .. (ctx.var.args or "")))
 
     if conf.path then
         if conf.path_concat_mode == "prefix" then
@@ -113,7 +120,7 @@ end
 
 
 function _M.rewrite(conf, ctx)
-    core.log.info("proxy mirror plugin rewrite phase, conf: ", core.json.delay_encode(conf))
+    core.log.info("proxy mirror plugin rewrite phase")
 
     if conf.sample_ratio == 1 then
         enable_mirror(ctx, conf)

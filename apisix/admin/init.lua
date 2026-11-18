@@ -96,7 +96,8 @@ local function check_token(ctx)
 
     local req_token = ctx.var.arg_api_key or ctx.var.http_x_api_key
                       or ctx.var.cookie_x_api_key
-    if not req_token then
+    -- an empty token, such as `?api_key=` or an empty X-API-KEY header, is no token
+    if not req_token or req_token == "" then
         return false, "missing apikey"
     end
 
@@ -257,11 +258,11 @@ local function run()
     if code then
         if code == 200 and method == "get" and plugin.enable_gde() then
             if seg_res == "consumers" or seg_res == "credentials" then
-                utils.decrypt_params(plugin.decrypt_conf, data, core.schema.TYPE_CONSUMER)
+                utils.decrypt_params(plugin.decrypt_stored_conf, data, core.schema.TYPE_CONSUMER)
             elseif seg_res == "plugin_metadata" then
-                utils.decrypt_params(plugin.decrypt_conf, data, core.schema.TYPE_METADATA)
+                utils.decrypt_params(plugin.decrypt_stored_conf, data, core.schema.TYPE_METADATA)
             else
-                utils.decrypt_params(plugin.decrypt_conf, data)
+                utils.decrypt_params(plugin.decrypt_stored_conf, data)
             end
         end
 

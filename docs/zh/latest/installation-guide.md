@@ -102,9 +102,16 @@ helm install apisix apisix/apisix --create-namespace  --namespace apisix
 
 <TabItem value="rpm">
 
-该安装方法适用于 CentOS 7 和 CentOS 8。如果你选择该方法安装 APISIX，需要先安装 etcd。具体安装方法请参考 [安装 etcd](#安装-etcd)。
+对于 APISIX RPM 仓库支持的 Linux 发行版，可以通过以下方式安装 APISIX。安装前请先部署 etcd，具体步骤参见 [安装 etcd](#安装-etcd)。
 
 ### 通过 RPM 仓库安装
+
+在 Rocky Linux 9 上安装前，先启用 CRB 仓库。APISIX RPM 依赖的 `libyaml-devel` 由该仓库提供：
+
+```shell
+sudo dnf install -y dnf-plugins-core
+sudo dnf config-manager --set-enabled crb
+```
 
 ```shell
 sudo yum-config-manager --add-repo https://repos.apiseven.com/packages/redhat/apache-apisix.repo
@@ -118,21 +125,25 @@ sudo yum install apisix
 
 :::tip
 
-你也可以安装指定版本的 APISIX（本示例为 APISIX v3.8.0 版本）：
+如需安装指定版本，先查询当前系统对应的 RPM 仓库中可用的 APISIX 版本：
 
 ```shell
-sudo yum install apisix-3.8.0
+sudo yum --showduplicates list apisix
 ```
+
+然后使用 `sudo yum install apisix-<版本号>` 安装查询到的版本。
 
 :::
 
 ### 通过 RPM 包离线安装：
 
+从 APISIX 3.14.0 起，RPM 包的构建基础由 UBI 8 升级为 UBI 9。以下以 EL9 x86_64 上的 APISIX 3.19.0 为例。安装其他版本时，请在对应系统的 RPM 仓库中确认目录和文件名。
+
 将 APISIX 离线 RPM 包下载到 `apisix` 文件夹：
 
 ```shell
 sudo mkdir -p apisix
-sudo yum install -y https://repos.apiseven.com/packages/redhat/8/x86_64/apisix-3.13.0-0.ubi8.6.x86_64.rpm
+sudo yum install -y https://repos.apiseven.com/packages/redhat/9/x86_64/apisix-3.19.0-0.ubi9.6.x86_64.rpm
 sudo yum clean all && yum makecache
 sudo yum install -y --downloadonly --downloaddir=./apisix apisix
 ```

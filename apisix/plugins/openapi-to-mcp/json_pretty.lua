@@ -21,6 +21,7 @@ local table_concat = table.concat
 
 local _M = {}
 
+local MAX_PRETTY_SIZE = 256 * 1024
 local INDENT_UNIT = "  "
 
 
@@ -36,6 +37,13 @@ function _M.encode(value)
     local compact, err = core.json.encode(value)
     if not compact then
         return nil, err
+    end
+
+    -- Indenting builds one table entry per character, so a large payload would
+    -- cost many times its own size in memory. Past this point the compact form
+    -- is returned as it is: it says the same thing, with no blank space.
+    if #compact > MAX_PRETTY_SIZE then
+        return compact
     end
 
     local out = {}

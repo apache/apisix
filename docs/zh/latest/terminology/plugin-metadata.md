@@ -27,25 +27,19 @@ description: APISIX 的插件元数据
 #
 -->
 
-## 摘要
-
-在本文档中，您将了解到 APISIX 中，插件元数据的基本概念和您可能使用到的场景。
-
-浏览文档末尾的相关资源，获取与此相关的更多信息。
-
 ## 描述
 
-在 APISIX 中，配置通用的元数据属性，可以作用于包含该元数据插件的所有路由及服务中。例如为`rocketmq-logger`指定了 `log_format`，则所有绑定 rocketmq-logger 的路由或服务都将使用该日志格式。
+本文介绍 APISIX 插件元数据的基本概念和适用场景。
 
-下图说明了插件元数据的概念，使用两个不同路由上的 [syslog](https://apisix.apache.org/zh/docs/apisix/plugins/syslog/)  插件的实例，以及为 [syslog](https://apisix.apache.org/zh/docs/apisix/plugins/syslog/)  插件设置全局`log_format`的插件元数据对象：
+在 APISIX 中，插件元数据对象为同一插件的所有实例配置共享设置，适用于日志格式模板等通常需要保持一致的配置。
 
-![plugin_metadata](https://static.apiseven.com/uploads/2023/04/17/Z0OFRQhV_plugin%20metadata.svg)
+APISIX 为每个插件名称保存一个插件元数据对象。只有定义了元数据 Schema 的插件才支持插件元数据。字段和行为取决于具体插件，因此配置前请查看对应插件的文档。
 
-如果没有另外指定，插件元数据对象上的`log_format`应将相同的日志格式统一应用于两个`syslog`插件。但是，由于`/orders`路由上的`syslog`插件具有不同的`log_format`，因此访问该路由的请求将按照路由中插件指定的`log_format`生成日志。
+例如，插件元数据可以为所有 `syslog` 插件实例定义共享的 `log_format`。未配置实例级 `log_format` 时，插件使用元数据中的值；配置实例级 `log_format` 后，该值优先。
 
-在插件级别设置的元数据属性更加精细，并且比`全局`元数据对象具有更高的优先级。
+对于支持共享 `log_format` 元数据的日志插件，此行为也适用于 `http-logger`、`kafka-logger` 和 `file-logger` 等插件。
 
-插件元数据对象只能用于具有元数据属性的插件。有关哪些插件具有元数据属性的更多详细信息，请查看插件配置属性及相关信息。
+插件元数据与插件实例配置之间不存在适用于所有插件的统一优先级规则。每个插件自行决定如何使用元数据，以及实例级字段是否覆盖元数据字段。
 
 ## 配置示例
 
@@ -82,4 +76,4 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/http-logger \
 
 ## 相关资源
 
-核心概念 - [插件](https://apisix.apache.org/docs/apisix/terminology/plugin/)
+[插件](./plugin.md)

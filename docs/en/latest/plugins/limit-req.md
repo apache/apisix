@@ -49,13 +49,13 @@ The `limit-req` Plugin supports two modes of rate limiting:
 
 | Name | Type | Required | Default | Valid values | Description |
 |------|------|----------|---------|--------------|-------------|
-| rate | number | True | | > 0 | The maximum number of requests allowed per second. Requests exceeding the rate and below burst will be delayed. |
-| burst | number | True | | >= 0 | The number of requests allowed to be delayed per second for throttling. Requests exceeding the rate and burst will get rejected. |
+| rate | number | True | | > 0 | The rate at which requests are admitted, in requests per second. Excess requests within the `burst` capacity are delayed unless `nodelay` is `true`. |
+| burst | number | True | | >= 0 | The maximum number of excess requests allowed above the configured `rate`. This is a burst capacity, not a per-second quota. Requests exceeding this capacity are rejected. |
 | key_type | string | False | var | ["var", "var_combination"] | The type of key. If the `key_type` is `var`, the `key` is interpreted as a variable. If the `key_type` is `var_combination`, the `key` is interpreted as a combination of variables. |
 | key | string | True | | | The key to count requests by. If the `key_type` is `var`, the `key` is interpreted as a variable. The variable does not need to be prefixed by a dollar sign (`$`). If the `key_type` is `var_combination`, the `key` is interpreted as a combination of variables. All variables should be prefixed by dollar signs (`$`). For example, to configure the `key` to use a combination of two request headers `custom-a` and `custom-b`, the `key` should be configured as `$http_custom_a $http_custom_b`. |
 | rejected_code | integer | False | 503 | [200,...,599] | The HTTP status code returned when a request is rejected for exceeding the threshold. |
 | rejected_msg | string | False | | non-empty | The response body returned when a request is rejected for exceeding the threshold. |
-| nodelay | boolean | False | false | | If true, do not delay requests within the burst threshold. |
+| nodelay | boolean | False | false | | If true, admit requests within the `burst` capacity without delay. Excess requests still consume burst capacity and are rejected when it is exhausted. |
 | allow_degradation | boolean | False | false | | If true, allow APISIX to continue handling requests without the Plugin when the Plugin or its dependencies become unavailable. |
 | policy | string | False | local | ["local", "redis", "redis-cluster"] | The policy for rate limiting counter. If it is `local`, the counter is stored in memory locally. If it is `redis`, the counter is stored on a Redis instance. If it is `redis-cluster`, the counter is stored in a Redis cluster. |
 | redis_host | string | False | | | The address of the Redis node. Required when `policy` is `redis`. |
@@ -305,7 +305,7 @@ curl -i "http://127.0.0.1:9080/get"
 
 You should see an `HTTP/1.1 200 OK` response.
 
-The request has consumed all the quota allowed for the time window. If you send the request again within the same second, you should receive an `HTTP/1.1 429 Too Many Requests` response, indicating the request surpasses the quota threshold.
+With `rate` set to 1 and `burst` set to 0, a second request arriving less than one second after the first is rejected with `HTTP/1.1 429 Too Many Requests`. The leaky bucket drains continuously; it does not reset at the start of each second.
 
 ### Implement API Throttling
 
@@ -501,22 +501,23 @@ kubectl apply -f limit-req-ic.yaml
 
 ❶ `burst`: allow for 1 request exceeding the `rate` to be delayed for processing.
 
-Generate three requests to the Route:
+Wait for any previous burst to drain, then send three requests to the Route in parallel:
 
 ```shell
-resp=$(seq 3 | xargs -I{} curl -i "http://127.0.0.1:9080/get" -o /dev/null -s -w "%{http_code}\n") && \
+sleep 2
+resp=$(seq 3 | xargs -P 3 -I{} curl "http://127.0.0.1:9080/get" -o /dev/null -s -w "%{http_code}\n") && \
   count_200=$(echo "$resp" | grep "200" | wc -l) && \
   count_429=$(echo "$resp" | grep "429" | wc -l) && \
   echo "200 responses: $count_200 ; 429 responses: $count_429"
 ```
 
-You are likely to see that all three requests are successful:
+With an initially empty bucket and all three requests arriving together, one request proceeds immediately, one is delayed by about one second, and one is rejected:
 
 ```text
-200 responses: 3 ; 429 responses: 0
+200 responses: 2 ; 429 responses: 1
 ```
 
-To see the effect without `burst`, update `burst` to 0 or set `nodelay` to `true` as follows:
+To admit the excess request without delaying it, keep `burst` set to 1 and set `nodelay` to `true`:
 
 <Tabs
 groupId="api"
@@ -557,7 +558,7 @@ services:
         plugins:
           limit-req:
             rate: 1
-            burst: 1  # alternatively, set burst to 0
+            burst: 1
             key: remote_addr
             rejected_code: 429
             policy: local
@@ -603,7 +604,7 @@ spec:
     - name: limit-req
       config:
         rate: 1
-        burst: 1  # alternatively, set burst to 0
+        burst: 1
         key: remote_addr
         rejected_code: 429
         policy: local
@@ -635,7 +636,7 @@ spec:
         - name: limit-req
           config:
             rate: 1
-            burst: 1  # alternatively, set burst to 0
+            burst: 1
             key: remote_addr
             rejected_code: 429
             policy: local
@@ -656,20 +657,25 @@ kubectl apply -f limit-req-ic.yaml
 
 </Tabs>
 
-Generate three requests to the Route again:
+Wait for the bucket to drain, then send three requests in parallel again:
 
 ```shell
-resp=$(seq 3 | xargs -I{} curl -i "http://127.0.0.1:9080/get" -o /dev/null -s -w "%{http_code}\n") && \
+sleep 2
+resp=$(seq 3 | xargs -P 3 -I{} curl "http://127.0.0.1:9080/get" -o /dev/null -s -w "%{http_code}\n") && \
   count_200=$(echo "$resp" | grep "200" | wc -l) && \
   count_429=$(echo "$resp" | grep "429" | wc -l) && \
   echo "200 responses: $count_200 ; 429 responses: $count_429"
 ```
 
-You should see a response similar to the following, showing requests surpassing the rate have been rejected:
+The expected counts are the same, but both accepted requests now proceed without a throttling delay:
 
 ```text
-200 responses: 1 ; 429 responses: 2
+200 responses: 2 ; 429 responses: 1
 ```
+
+The counts can vary if requests arrive far enough apart for the bucket to drain. Sending requests serially can hide the effect of `burst`, because each delayed request gives the bucket time to drain before the next request arrives.
+
+To reject excess requests instead of allowing a burst, set `burst` to 0. For three requests arriving together at `rate: 1`, one succeeds and two are rejected, regardless of `nodelay`.
 
 ### Apply Rate Limiting by Remote Address and Consumer Name
 

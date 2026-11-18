@@ -31,6 +31,7 @@ header:
     - '**/*.sse'
     - '**/*.key'
     - '**/*.crt'
+    - '**/*.crl'
     - '**/*.pem'
     - '**/*.pb.go'
     - '**/pnpm-lock.yaml'

@@ -40,7 +40,7 @@ import TabItem from '@theme/TabItem';
 
 `ai-aws-content-moderation` 插件集成了 [AWS Comprehend](https://aws.amazon.com/comprehend/)，用于在代理请求到 LLM 时检查请求内容中的有害内容，例如亵渎、仇恨言论、侮辱、骚扰、暴力等，如果评估结果超过配置的阈值则拒绝请求。
 
-该插件是协议感知的：它会从 LLM 请求中提取提示内容（例如 `messages[].content`），仅审核解码后的文本，而不是原始请求体。`request_check_roles` 用于选择审核哪些消息角色，`request_check_mode` 可将 `user`/`tool` 的审核范围收窄到最新一轮，避免每次请求都重复审核历史对话。
+该插件支持 Chat Completions、Responses API、Embeddings、Anthropic Messages 和 Bedrock Converse 请求。它会使用检测到的协议的原生内容结构提取文本，并仅审核解码后的文本，而不是原始请求体。被拒绝的请求使用检测到的协议对应的响应格式。`request_check_roles` 用于选择审核哪些消息角色，`request_check_mode` 可将 `user`/`tool`/`assistant` 的审核范围收窄到最新一轮，避免每次请求都重复审核历史对话。
 
 `ai-aws-content-moderation` 插件应与 [`ai-proxy`](./ai-proxy.md) 或 [`ai-proxy-multi`](./ai-proxy-multi.md) 插件一起使用，以代理 LLM 请求。
 

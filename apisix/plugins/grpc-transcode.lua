@@ -175,6 +175,11 @@ end
 
 
 function _M.access(conf, ctx)
+<<<<<<< HEAD
+=======
+    core.log.info("proto_id: ", conf.proto_id)
+
+>>>>>>> upstream/master
     local proto_id = conf.proto_id
     if not proto_id then
         core.log.error("grpc-transcode: proto_id missing")

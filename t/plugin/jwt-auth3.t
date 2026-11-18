@@ -374,7 +374,7 @@ apisix:
     }
 --- response_body
 my-secret-key
-IRWpPjbDq5BCgHyIllnOMA==
+$ENC$v1$IRWpPjbDq5BCgHyIllnOMA==
 
 
 

@@ -428,7 +428,7 @@ apisix:
     }
 --- response_body
 secret_key
-oshn8tcqE8cJArmEILVNPQ==
+$ENC$v1$oshn8tcqE8cJArmEILVNPQ==
 
 
 

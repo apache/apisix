@@ -23,6 +23,8 @@ local ngx_decode_base64 = ngx.decode_base64
 local ngx_time = ngx.time
 local ngx_cookie_time = ngx.cookie_time
 local math = math
+local type = type
+local tonumber = tonumber
 local SAFE_METHODS = {"GET", "HEAD", "OPTIONS"}
 
 
@@ -98,18 +100,18 @@ local function check_csrf_token(conf, ctx, token)
     end
 
     local token_table, err = core.json.decode(token_str)
-    if err then
-        core.log.error("decode token error: ", err)
+    if err or type(token_table) ~= "table" then
+        core.log.error("decode token error: ", err or "token is not an object")
         return false
     end
 
     local random = token_table["random"]
-    if not random then
+    if not random or (type(random) ~= "number" and type(random) ~= "string") then
         core.log.error("no random in token")
         return false
     end
 
-    local expires = token_table["expires"]
+    local expires = tonumber(token_table["expires"])
     if not expires then
         core.log.error("no expires in token")
         return false
@@ -121,7 +123,7 @@ local function check_csrf_token(conf, ctx, token)
     end
 
     local sign = gen_sign(random, expires, conf.key)
-    if token_table["sign"] ~= sign then
+    if type(token_table["sign"]) ~= "string" or token_table["sign"] ~= sign then
         core.log.error("Invalid signatures")
         return false
     end

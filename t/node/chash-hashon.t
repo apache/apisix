@@ -55,7 +55,7 @@ __DATA__
                         "username": "jack",
                         "plugins": {
                             "key-auth": {
-                                "key": "re62sf0vRJqOBjvJJ6RUcA=="
+                                "key": "$ENC$v1$re62sf0vRJqOBjvJJ6RUcA=="
                             }
                         }
                     }
@@ -83,7 +83,7 @@ __DATA__
                         "username": "tom",
                         "plugins": {
                             "key-auth": {
-                                "key": "RAL/niDfEUpx+ynsoqWDuA=="
+                                "key": "$ENC$v1$RAL/niDfEUpx+ynsoqWDuA=="
                             }
                         }
                     }
