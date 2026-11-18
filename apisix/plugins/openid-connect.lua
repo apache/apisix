@@ -1304,8 +1304,10 @@ local function validate_claims_in_oidcauth_response(resp, conf)
 end
 
 
+-- One entry per route that uses revocation. The default of 8 would evict the
+-- storage of busy routes, and every eviction drops that storage's lookup cache.
 local session_lrucache = core.lrucache.new({
-    type = "plugin",
+    type = "plugin", count = 512,
 })
 
 
