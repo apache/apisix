@@ -24,7 +24,10 @@ no_shuffle();
 our $RetryHook = <<'EOC';
     local healthcheck = require("resty.healthcheck")
     local new = healthcheck.new
-    local state = { failures = 0, created = 0, add_calls = 0, remove_calls = 0 }
+    local state = {
+        failures = 0, created = 0, add_calls = 0, remove_calls = 0,
+        healthy_add_calls = 0, healthy_remove_calls = 0,
+    }
     _G.hc_retry_test = state
 
     -- Fail one real target-list write. All other dictionary operations,
@@ -50,6 +53,10 @@ our $RetryHook = <<'EOC';
         for _, operation in ipairs({ "add", "remove" }) do
             local method = checker[operation .. "_target"]
             checker[operation .. "_target"] = function(self, ip, port, ...)
+                if port == 1980 then
+                    local key = "healthy_" .. operation .. "_calls"
+                    state[key] = state[key] + 1
+                end
                 if port == 1970 then
                     state[operation .. "_calls"] = state[operation .. "_calls"] + 1
                     if state.armed == operation then
@@ -103,6 +110,17 @@ our $RetryHook = <<'EOC';
         assert(code < 300, code)
     end
 
+    function state.seed()
+        -- The Admin API can return before this worker observes the route.
+        -- Stop sending requests once either upstream response proves a match.
+        local test = require("lib.test_admin").test
+        local code
+        assert(state.wait_for(function()
+            code = test("/server_port", ngx.HTTP_GET)
+            return code == 200 or code == 502
+        end), "route did not match, last status: " .. tostring(code))
+    end
+
     function state.targets()
         return healthcheck.get_target_list("upstream#/apisix/routes/1",
                                            "upstream-healthcheck") or {}
@@ -138,7 +156,7 @@ location /t {
         local state = _G.hc_retry_test
         state.armed = "add"
         state.put(1, true)
-        require("lib.test_admin").test("/server_port", ngx.HTTP_GET)
+        state.seed()
 
         -- No further route traffic or config update drives the retry. The
         -- working-pool timer must notice that registration was incomplete.
@@ -148,6 +166,8 @@ location /t {
         ngx.say("failed writes: ", state.failures)
         ngx.say("dead-node add attempts: ", state.add_calls)
         ngx.say("checkers created: ", state.created)
+        ngx.say("healthy-node add attempts: ", state.healthy_add_calls)
+        ngx.say("healthy-node remove attempts: ", state.healthy_remove_calls)
         ngx.say("registered targets: ", #state.targets())
         ngx.say("dead node unhealthy: ", tostring(state.unhealthy()))
         state.traffic()
@@ -159,6 +179,8 @@ GET /t
 failed writes: 1
 dead-node add attempts: 2
 checkers created: 1
+healthy-node add attempts: 1
+healthy-node remove attempts: 0
 registered targets: 2
 dead node unhealthy: true
 healthy responses: 40
@@ -168,7 +190,7 @@ failed to add healthcheck target: 127.0.0.1:1970
 failed to run timer_create_checker
 failed to run timer_working_pool_check
 lua entry thread aborted
---- timeout: 20
+--- timeout: 30
 
 
 
@@ -179,7 +201,7 @@ location /t {
     content_by_lua_block {
         local state = _G.hc_retry_test
         state.put(1, true)
-        require("lib.test_admin").test("/server_port", ngx.HTTP_GET)
+        state.seed()
         assert(state.wait_for(state.unhealthy), "initial probes did not finish")
 
         state.armed = "add"
@@ -198,6 +220,8 @@ location /t {
         ngx.say("failed writes: ", state.failures)
         ngx.say("dead-node add attempts: ", state.add_calls)
         ngx.say("checkers created: ", state.created)
+        ngx.say("healthy-node add attempts: ", state.healthy_add_calls)
+        ngx.say("healthy-node remove attempts: ", state.healthy_remove_calls)
 
         -- The real cleanup timer must not remove this desired target after
         -- the old delayed-clear deadline (10 seconds) and a cleanup interval.
@@ -216,6 +240,8 @@ GET /t
 failed writes: 1
 dead-node add attempts: 3
 checkers created: 2
+healthy-node add attempts: 2
+healthy-node remove attempts: 0
 registered targets after cleanup: 2
 dead node unhealthy: true
 healthy responses: 40
@@ -225,7 +251,7 @@ failed to add healthcheck target: 127.0.0.1:1970
 failed to run timer_create_checker
 failed to run timer_working_pool_check
 lua entry thread aborted
---- timeout: 45
+--- timeout: 55
 
 
 
@@ -236,7 +262,7 @@ location /t {
     content_by_lua_block {
         local state = _G.hc_retry_test
         state.put(1, true)
-        require("lib.test_admin").test("/server_port", ngx.HTTP_GET)
+        state.seed()
         assert(state.wait_for(state.unhealthy), "initial probes did not finish")
 
         state.armed = "remove"
@@ -247,6 +273,8 @@ location /t {
         ngx.say("failed writes: ", state.failures)
         ngx.say("dead-node remove attempts: ", state.remove_calls)
         ngx.say("checkers created: ", state.created)
+        ngx.say("healthy-node add attempts: ", state.healthy_add_calls)
+        ngx.say("healthy-node remove attempts: ", state.healthy_remove_calls)
         local ports = {}
         for _, target in ipairs(state.targets()) do
             ports[#ports + 1] = target.port
@@ -262,6 +290,8 @@ GET /t
 failed writes: 1
 dead-node remove attempts: 2
 checkers created: 2
+healthy-node add attempts: 2
+healthy-node remove attempts: 0
 registered ports: 1980
 healthy responses: 40
 --- error_log
@@ -270,4 +300,4 @@ failed to remove healthcheck target: 127.0.0.1:1970
 failed to run timer_create_checker
 failed to run timer_working_pool_check
 lua entry thread aborted
---- timeout: 20
+--- timeout: 40
