@@ -19,6 +19,7 @@ local core              = require("apisix.core")
 local secret            = require("apisix.secret")
 local ngx_re            = require("ngx.re")
 local openidc           = require("resty.openidc")
+local load_storage      = require("resty.session.utils").load_storage
 local jwt               = require("resty.jwt")
 local jsonschema        = require('jsonschema')
 local pkey              = require("resty.openssl.pkey")
@@ -1303,6 +1304,27 @@ local function validate_claims_in_oidcauth_response(resp, conf)
 end
 
 
+local session_lrucache = core.lrucache.new({
+    type = "plugin",
+})
+
+
+-- The session library keeps one revocation cache per revocation storage object,
+-- and a storage given by name is created again for every request, so its cache
+-- would never be reused. Create the storage once per route configuration instead,
+-- and pass it to the library as an object.
+local function create_revocation_session_opts(session_conf)
+    local storage, err = load_storage(session_conf.revocation, session_conf)
+    if not storage then
+        return nil, err or "unable to load the session revocation storage"
+    end
+
+    local opts = core.table.clone(session_conf)
+    opts.revocation = storage
+    return opts
+end
+
+
 -- With revocation_fail_mode closed, an unreachable revocation store makes
 -- opening or destroying a session fail. resty.session appends the store error to
 -- its own message, so match on the message prefix.
@@ -1500,9 +1522,20 @@ local function authenticate(plugin_conf, ctx)
         -- provider's authorization endpoint to initiate the Relying Party flow.
         -- This code path also handles when the ID provider then redirects to
         -- the configured redirect URI after successful authentication.
+        local session_opts = build_session_opts(conf.session)
+        if session_opts and session_opts.revocation then
+            session_opts, err = core.lrucache.plugin_ctx(session_lrucache, ctx, nil,
+                                                         create_revocation_session_opts,
+                                                         session_opts)
+            if not session_opts then
+                core.log.error("failed to create the session revocation storage: ", err)
+                return 500
+            end
+        end
+
         local target_url
         response, err, target_url, session = openidc.authenticate(conf, nil, unauth_action,
-                                                          build_session_opts(conf.session))
+                                                                  session_opts)
 
         if err then
             if err == "unauthorized request" then
