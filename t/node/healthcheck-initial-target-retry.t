@@ -271,4 +271,3 @@ failed to run timer_create_checker
 failed to run timer_working_pool_check
 lua entry thread aborted
 --- timeout: 20
-
