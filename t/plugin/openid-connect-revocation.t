@@ -324,7 +324,7 @@ done
 
 
 
-=== TEST 4: logout revokes the presented cookie even when the session is due for a rolling refresh
+=== TEST 4: logout revokes the presented cookie and the cookie of a refresh, even when the session is due for a rolling refresh
 --- timeout: 30
 --- config
     location /t {
@@ -403,6 +403,19 @@ done
             -- start() would save it under a new session id
             ngx.sleep(7)
 
+            -- this request refreshes the session, so it hands out a cookie
+            -- with a new session id
+            res, err = httpc:request_uri(uri, {
+                method = "GET",
+                headers = { Cookie = cookie },
+            })
+            if not res or res.status ~= 200 then
+                ngx.status = 500
+                ngx.say("refreshing request failed: ", res and res.status or err)
+                return
+            end
+            local refreshed_cookie = keycloak.concatenate_cookies(res.headers["Set-Cookie"])
+
             local logout_uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/logout"
             res, err = httpc:request_uri(logout_uri, {
                 method = "GET",
@@ -424,11 +437,24 @@ done
                 return
             end
 
-            ngx.say("replayed=", res.status)
+            local replayed = res.status
+
+            -- the cookie issued by the refresh belongs to the same login
+            res, err = httpc:request_uri(uri, {
+                method = "GET",
+                headers = { Cookie = refreshed_cookie },
+            })
+            if not res then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+
+            ngx.say("replayed=", replayed, " refreshed=", res.status)
         }
     }
 --- response_body
-replayed=302
+replayed=302 refreshed=302
 
 
 
