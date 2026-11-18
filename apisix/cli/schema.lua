@@ -16,6 +16,7 @@
 --
 
 local jsonschema = require("jsonschema")
+local yaml = require("lyaml")
 local pairs = pairs
 local pcall = pcall
 local require = require
@@ -384,15 +385,6 @@ local admin_schema = {
     properties = {
         admin_key = {
             type = "array",
-            properties = {
-                items = {
-                    properties = {
-                        name = {type = "string"},
-                        key = {type = "string"},
-                        role = {type = "string"},
-                    }
-                }
-            }
         },
         admin_listen = {
             properties = {
@@ -410,7 +402,30 @@ local admin_schema = {
         admin_key_required = {
             type = "boolean",
         },
-    }
+    },
+    -- keep entry checks disabled when admin_key_required is false
+    anyOf = {
+        {
+            properties = {
+                admin_key_required = {enum = {false}},
+            },
+            required = {"admin_key_required"},
+        },
+        {
+            properties = {
+                admin_key = {
+                    items = {
+                        type = "object",
+                        properties = {
+                            key = {type = {"string", "null"}},
+                            role = {enum = {"admin", "viewer"}},
+                        },
+                        required = {"role"},
+                    },
+                },
+            },
+        },
+    },
 }
 
 local deployment_schema = {
@@ -482,7 +497,9 @@ function _M.validate(yaml_conf)
     end
 
     local role = yaml_conf.deployment.role
-    local validator = jsonschema.generate_validator(deployment_schema[role])
+    local validator = jsonschema.generate_validator(deployment_schema[role], {
+        null = yaml.null,
+    })
     local ok, err = validator(yaml_conf.deployment)
     if not ok then
         return false, "invalid deployment " .. role .. " configuration: " .. err

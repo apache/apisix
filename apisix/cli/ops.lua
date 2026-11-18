@@ -351,22 +351,12 @@ local function init(env)
                 .. "please enable `admin_key_required` and set a secure admin key!")
     end
 
-    -- the Admin API knows the roles admin and viewer only; refuse any other value
-    -- instead of starting with a key whose permissions are unclear
+    -- report empty keys of the viewer role, which never match a request
     local admin_conf = yaml_conf.deployment.admin
     if yaml_conf.apisix.enable_admin and admin_conf
        and admin_conf.admin_key_required ~= false
        and type(admin_conf.admin_key) == "table" then
         for i, admin in ipairs(admin_conf.admin_key) do
-            if type(admin) ~= "table" then
-                util.die("ERROR: Admin API key #", i, " is not a map.\n")
-            end
-
-            if admin.role ~= "admin" and admin.role ~= "viewer" then
-                util.die("ERROR: the role of Admin API key ", admin_key_name(admin, i),
-                         " must be admin or viewer.\n")
-            end
-
             -- only the key of the admin role is generated, and an empty key
             -- never matches a request
             if admin.role ~= "admin" and (admin.key == nil or admin.key == ""
@@ -394,7 +384,7 @@ Please modify "admin_key" in conf/config.yaml .
             util.die(help:format("ERROR: missing valid Admin API token."))
         end
 
-        -- the check above has refused entries that are not maps
+        -- the schema has checked entries when the key check is enabled
         for _, admin in ipairs(admin_key) do
             if type(admin.key) == "table" then
                 admin.key = ""

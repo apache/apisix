@@ -38,11 +38,11 @@ deployment:
             - name: reader
               role: viewer
               key: reader-key-for-the-role-check
-            - name: ops
-              role: Admin
-              key: ops-key-for-the-role-check
-            - name: norole
-              key: norole-key-for-the-role-check
+            - name: missing
+              role: viewer
+            - name: null
+              role: viewer
+              key: null
 apisix:
   node_listen: 1984
 _EOC_
@@ -85,29 +85,7 @@ qr/"description":"missing apikey"/
 
 
 
-=== TEST 4: a key whose role is Admin is refused
---- request
-DELETE /apisix/admin/routes/1
---- more_headers
-X-API-KEY: ops-key-for-the-role-check
---- error_code: 401
---- response_body_like eval
-qr/"description":"invalid role"/
-
-
-
-=== TEST 5: a key without a role is refused
---- request
-GET /apisix/admin/routes
---- more_headers
-X-API-KEY: norole-key-for-the-role-check
---- error_code: 401
---- response_body_like eval
-qr/"description":"invalid role"/
-
-
-
-=== TEST 6: the admin key still works
+=== TEST 4: the admin key still works
 --- request
 GET /apisix/admin/routes
 --- more_headers
@@ -116,7 +94,7 @@ X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
 
 
 
-=== TEST 7: the viewer key can read routes
+=== TEST 5: the viewer key can read routes
 --- request
 GET /apisix/admin/routes
 --- more_headers
@@ -125,7 +103,7 @@ X-API-KEY: reader-key-for-the-role-check
 
 
 
-=== TEST 8: the viewer key cannot delete a route
+=== TEST 6: the viewer key cannot delete a route
 --- request
 DELETE /apisix/admin/routes/1
 --- more_headers
@@ -133,3 +111,25 @@ X-API-KEY: reader-key-for-the-role-check
 --- error_code: 401
 --- response_body_like eval
 qr/"description":"invalid method for role viewer"/
+
+
+
+=== TEST 7: a missing configured key is not converted to a string
+--- request
+GET /apisix/admin/routes
+--- more_headers
+X-API-KEY: nil
+--- error_code: 401
+--- response_body_like eval
+qr/"description":"wrong apikey"/
+
+
+
+=== TEST 8: a null configured key is not converted to a string
+--- request
+GET /apisix/admin/routes
+--- more_headers
+X-API-KEY: null
+--- error_code: 401
+--- response_body_like eval
+qr/"description":"wrong apikey"/

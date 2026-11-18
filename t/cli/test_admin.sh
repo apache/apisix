@@ -491,54 +491,64 @@ make stop
 
 echo "pass: accept changes to /apisix/plugins successfully"
 
-# the role of an Admin API key must be admin or viewer
+# validate Admin API key entries when loading the configuration
 
-git checkout conf/config.yaml
-
-echo '
+assert_invalid_admin_key() {
+    local label="$1"
+    local entry="$2"
+    cat > conf/config.yaml <<EOF
 deployment:
   admin:
     admin_key:
-      - name: admin
-        key: admin-key-for-the-role-check
-        role: admin
+$entry
+EOF
+
+    if make init > output.log 2>&1; then
+        echo "failed: make init should refuse $label"
+        exit 1
+    fi
+
+    if ! grep -F "invalid deployment traditional configuration:" output.log > /dev/null; then
+        echo "failed: should report a configuration error for $label"
+        exit 1
+    fi
+}
+
+assert_invalid_admin_key "the role Admin" '      - name: ops
+        key: ops-key-for-the-role-check
+        role: Admin'
+assert_invalid_admin_key "a missing role" '      - name: ops
+        key: ops-key-for-the-role-check'
+assert_invalid_admin_key "an entry that is not a map" '      - entry'
+assert_invalid_admin_key "a numeric key" '      - role: admin
+        key: 123'
+assert_invalid_admin_key "a boolean key" '      - role: admin
+        key: false'
+assert_invalid_admin_key "a map as a key" '      - role: admin
+        key: {value: example}'
+assert_invalid_admin_key "an array as a key" '      - role: admin
+        key: [example]'
+
+echo "pass: refuse invalid Admin API key entries in the configuration schema"
+
+cat > conf/config.yaml <<'EOF'
+deployment:
+  admin:
+    admin_key_required: false
+    admin_key:
       - name: ops
         key: ops-key-for-the-role-check
         role: Admin
-' > conf/config.yaml
+      - name: norole
+        key: norole-key-for-the-role-check
+EOF
 
-if make init > output.log 2>&1; then
-    echo "failed: make init should refuse an Admin API key whose role is Admin"
+if ! make init > output.log 2>&1; then
+    echo "failed: should accept unused roles when admin_key_required is false"
     exit 1
 fi
 
-if ! grep -F "ERROR: the role of Admin API key ops must be admin or viewer." output.log > /dev/null; then
-    echo "failed: should refuse an Admin API key whose role is Admin"
-    exit 1
-fi
-
-echo '
-deployment:
-  admin:
-    admin_key:
-      - name: admin
-        key: admin-key-for-the-role-check
-        role: admin
-      - name: ops
-        key: ops-key-for-the-role-check
-' > conf/config.yaml
-
-if make init > output.log 2>&1; then
-    echo "failed: make init should refuse an Admin API key without a role"
-    exit 1
-fi
-
-if ! grep -F "ERROR: the role of Admin API key ops must be admin or viewer." output.log > /dev/null; then
-    echo "failed: should refuse an Admin API key without a role"
-    exit 1
-fi
-
-echo "pass: refuse an Admin API key whose role is not admin or viewer"
+echo "pass: do not check key entries when admin_key_required is false"
 
 # an empty key of another role than admin is reported, also with the default allow_admin
 
@@ -555,6 +565,9 @@ deployment:
         key: ""
         role: viewer
       - name: viewer2
+        role: viewer
+      - name: viewer3
+        key: null
         role: viewer
 ' > conf/config.yaml
 
@@ -573,4 +586,9 @@ if ! grep -F "WARNING: Admin API key viewer2 is empty, so it does not match any 
     exit 1
 fi
 
-echo "pass: warn about an empty or missing key of the viewer role"
+if ! grep -F "WARNING: Admin API key viewer3 is empty, so it does not match any request." output.log > /dev/null; then
+    echo "failed: should warn about a null viewer key"
+    exit 1
+fi
+
+echo "pass: warn about an empty, missing or null key of the viewer role"

@@ -103,9 +103,7 @@ local function check_token(ctx)
 
     local admin
     for i, row in ipairs(admin_key) do
-        -- an entry without a key, or with an empty one, matches no request
-        if type(row) == "table" and type(row.key) == "string" and row.key ~= ""
-           and req_token == row.key then
+        if req_token == row.key then
             admin = row
             break
         end
@@ -115,14 +113,9 @@ local function check_token(ctx)
         return false, "wrong apikey"
     end
 
-    if admin.role == "viewer" then
-        if not viewer_methods[str_lower(get_method())] then
-            return false, "invalid method for role viewer"
-        end
-
-    elseif admin.role ~= "admin" then
-        -- only the roles admin and viewer have permissions
-        return false, "invalid role"
+    if admin.role == "viewer" and
+       not viewer_methods[str_lower(get_method())] then
+        return false, "invalid method for role viewer"
     end
 
     return true
