@@ -385,6 +385,8 @@ Cookie sessions are stored by the client and cannot normally be invalidated indi
 
 A logout takes effect immediately on the worker that handled it and on other workers once their cached entry expires. `revocation_cache_ttl` therefore bounds how long a session whose revocation marker was written successfully can still be accepted by another worker. It does not cover the limitations below.
 
+Each worker keeps up to 1024 cached lookups, shared by all routes. To change this, set the nginx variable `$session_revocation_cache_size`, for example `set $session_revocation_cache_size 4096;` in a server snippet. Each worker reads it once on first use, so a reload is needed to change it.
+
 #### Logout behavior and limitations
 
 - **Logout revokes every cookie of the same login.** `lua-resty-session` generates a new session ID every time the session is saved, for example on token renewal or a rolling refresh. Logout therefore revokes the whole lineage of the session: the cookie presented at logout, older copies of it, and cookies refreshed from it (for example by someone who stole it), whether they were issued before or after the logout. The revocation lasts until those cookies would have expired anyway, and a new login is not affected. Cookies issued before an upgrade to a `lua-resty-session` version with lineage revocation are only revoked by their own session ID.

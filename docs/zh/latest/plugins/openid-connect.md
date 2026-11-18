@@ -384,6 +384,8 @@ Cookie 会话存储在客户端，APISIX 通常无法单独将其失效。要启
 
 登出在处理该请求的 worker 上立即生效，在其他 worker 上则在其缓存条目过期后生效。因此 `revocation_cache_ttl` 限定的是：吊销标记已成功写入的会话，在其他 worker 上仍可能被接受的最长时间。它不涵盖下面的限制。
 
+每个 worker 最多缓存 1024 条查询结果，所有路由共享。如需调整，请设置 nginx 变量 `$session_revocation_cache_size`，例如在 server 代码片段中添加 `set $session_revocation_cache_size 4096;`。每个 worker 在首次使用时读取一次该变量，因此修改后需要重新加载。
+
 #### 登出行为与限制
 
 - **登出会吊销同一次登录产生的所有 Cookie。** `lua-resty-session` 每次保存会话（例如令牌续期或滚动刷新）都会生成新的会话 ID。因此登出会吊销整个会话谱系：登出时携带的 Cookie、它的旧副本，以及由它刷新出来的 Cookie（例如被窃取者刷新的 Cookie），无论这些 Cookie 签发于登出之前还是之后。吊销持续到这些 Cookie 本应自然过期为止，新的登录不受影响。在升级到支持谱系吊销的 `lua-resty-session` 版本之前签发的 Cookie，仅会按其自身的会话 ID 被吊销。

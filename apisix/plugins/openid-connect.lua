@@ -19,6 +19,7 @@ local core              = require("apisix.core")
 local secret            = require("apisix.secret")
 local ngx_re            = require("ngx.re")
 local openidc           = require("resty.openidc")
+local resty_session     = require("resty.session")
 local jwt               = require("resty.jwt")
 local jsonschema        = require('jsonschema')
 local pkey              = require("resty.openssl.pkey")
@@ -1303,15 +1304,6 @@ local function validate_claims_in_oidcauth_response(resp, conf)
 end
 
 
--- With revocation_fail_mode closed, an unreachable revocation store makes
--- opening or destroying a session fail. resty.session appends the store error to
--- its own message, so match on the message prefix.
-local function is_revocation_store_error(err)
-    return core.string.find(err, "unable to check session revocation")
-        or core.string.find(err, "unable to mark session revoked")
-end
-
-
 local function authenticate(plugin_conf, ctx)
     local conf = core.table.clone(plugin_conf)
     flatten_openidc_options(conf)
@@ -1516,7 +1508,7 @@ local function authenticate(plugin_conf, ctx)
             end
 
             -- Reject without destroying the cookie.
-            if is_revocation_store_error(err) then
+            if resty_session.is_revocation_error(err) then
                 if session then
                     session:close()
                 end
