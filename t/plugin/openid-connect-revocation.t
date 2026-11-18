@@ -351,6 +351,7 @@ done
                                 "rolling_timeout": 8,
                                 "revocation": "redis",
                                 "revocation_fail_mode": "closed",
+                                "revocation_cache_ttl": 0,
                                 "redis": {
                                     "host": "127.0.0.1",
                                     "port": 6379,
@@ -404,7 +405,8 @@ done
             ngx.sleep(7)
 
             -- this request refreshes the session, so it hands out a cookie
-            -- with a new session id
+            -- with a new session id. The lookup cache is off, so a worker that did
+            -- not handle the logout cannot still hold a cached "not revoked".
             res, err = httpc:request_uri(uri, {
                 method = "GET",
                 headers = { Cookie = cookie },
