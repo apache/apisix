@@ -145,7 +145,7 @@ end
 
 
 function _M.access(conf, ctx)
-    core.log.info("conf: ", core.json.delay_encode(conf))
+    core.log.info("proto_id: ", conf.proto_id)
 
     local proto_id = conf.proto_id
     if not proto_id then

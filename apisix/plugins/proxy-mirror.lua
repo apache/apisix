@@ -120,7 +120,7 @@ end
 
 
 function _M.rewrite(conf, ctx)
-    core.log.info("proxy mirror plugin rewrite phase, conf: ", core.json.delay_encode(conf))
+    core.log.info("proxy mirror plugin rewrite phase")
 
     if conf.sample_ratio == 1 then
         enable_mirror(ctx, conf)

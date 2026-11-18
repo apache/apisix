@@ -291,7 +291,7 @@ find consumer user01
     }
 --- response_body
 {"error_msg":"invalid plugins configuration: failed to check the configuration of plugin ldap-auth err: property \"user_dn\" is required"}
-{"error_msg":"invalid plugins configuration: invalid plugin conf \"blah\" for plugin [ldap-auth]"}
+{"error_msg":"invalid plugins configuration: invalid plugin conf type string for plugin [ldap-auth]"}
 
 
 

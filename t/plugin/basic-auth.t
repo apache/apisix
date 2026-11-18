@@ -311,7 +311,7 @@ qr/\{"error_msg":"invalid plugins configuration: failed to check the configurati
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid plugins configuration: invalid plugin conf \"blah\" for plugin [basic-auth]"}
+{"error_msg":"invalid plugins configuration: invalid plugin conf type string for plugin [basic-auth]"}
 
 
 

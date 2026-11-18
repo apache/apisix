@@ -321,6 +321,7 @@ qr/X-RateLimit-Limit/
                             "redis_port": 6379,
                             "redis_database": 1,
                             "redis_timeout": 1001,
+                            "redis_password": "limit-count-group-secret",
                             "group": "redis"
                         }
                     },
@@ -354,6 +355,7 @@ qr/X-RateLimit-Limit/
                             "redis_port": 6379,
                             "redis_database": 2,
                             "redis_timeout": 1001,
+                            "redis_password": "limit-count-group-secret",
                             "group": "redis"
                         }
                     },
@@ -374,6 +376,8 @@ qr/X-RateLimit-Limit/
     }
 --- error_code: 400
 --- error_log
-[error]
+limit-count group redis conf mismatched on field: redis_database
+--- no_error_log eval
+qr/limit-count group .*limit-count-group-secret/
 --- response_body
 {"error_msg":"failed to check the configuration of plugin limit-count err: group conf mismatched"}

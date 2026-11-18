@@ -69,8 +69,8 @@ passed
 === TEST 2: hit
 --- request
 GET /opentracing
---- error_log
-X-Request-Id
+--- response_headers_like
+X-Request-Id: [0-9a-zA-Z]{27}
 --- no_error_log
 [error]
 

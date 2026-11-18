@@ -188,7 +188,7 @@ local function get_port(attr)
 end
 
 function _M.rewrite(conf, ctx)
-    core.log.info("plugin rewrite phase, conf: ", core.json.delay_encode(conf))
+    core.log.info("plugin rewrite phase")
 
     local ret_code = conf.ret_code
 

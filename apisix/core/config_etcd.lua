@@ -561,7 +561,7 @@ local function load_full_data(self, dir_res, headers, prev_values, prev_values_h
             data_valid, err = check_schema(self.item_schema, item.value)
             if not data_valid then
                 log.error("failed to check item data of [", self.key,
-                          "] err:", err, " ,val: ", json.encode(item.value))
+                          "] err:", err, ", key: ", item.key)
             end
         end
 
@@ -569,7 +569,7 @@ local function load_full_data(self, dir_res, headers, prev_values, prev_values_h
             data_valid, err = self.checker(item.value, item.key)
             if not data_valid then
                 log.error("failed to check item data of [", self.key,
-                          "] err:", err, " ,val: ", json.delay_encode(item.value))
+                          "] err:", err, ", key: ", item.key)
             end
         end
 
@@ -640,7 +640,7 @@ local function load_full_data(self, dir_res, headers, prev_values, prev_values_h
                 data_valid, err = check_schema(self.item_schema, item.value)
                 if not data_valid then
                     log.error("failed to check item data of [", self.key,
-                              "] err:", err, " ,val: ", json.encode(item.value))
+                              "] err:", err, ", key: ", item.key)
                 end
             end
 
@@ -650,7 +650,7 @@ local function load_full_data(self, dir_res, headers, prev_values, prev_values_h
                 data_valid, err = self.checker(item.value, item.key)
                 if not data_valid then
                     log.error("failed to check item data of [", self.key,
-                              "] err:", err, " ,val: ", json.delay_encode(item.value))
+                              "] err:", err, ", key: ", item.key)
                 end
             end
 
@@ -797,7 +797,7 @@ local function sync_data(self)
             data_valid, err = check_schema(self.item_schema, res.value)
             if not data_valid then
                 log.error("failed to check item data of [", self.key,
-                          "] err:", err, " ,val: ", json.encode(res.value))
+                          "] err:", err, ", key: ", res.key)
             end
         end
 
@@ -805,7 +805,7 @@ local function sync_data(self)
             data_valid, err = self.checker(res.value, res.key)
             if not data_valid then
                 log.error("failed to check item data of [", self.key,
-                          "] err:", err, " ,val: ", json.delay_encode(res.value))
+                          "] err:", err, ", key: ", res.key)
             end
         end
 

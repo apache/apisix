@@ -381,7 +381,6 @@ function _M.rewrite(conf, api_ctx)
         core.log.warn("plugin_metadata is required for opentelemetry plugin to working properly")
         return
     end
-    core.log.info("metadata: ", core.json.delay_encode(metadata))
     local plugin_info = metadata.value
     local vars = api_ctx.var
 
