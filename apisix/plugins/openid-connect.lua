@@ -1303,14 +1303,6 @@ local function validate_claims_in_oidcauth_response(resp, conf)
 end
 
 
--- With revocation_fail_mode closed, an unreachable revocation store fails opening
--- or destroying a session; resty.session puts these messages in the error.
-local function is_revocation_store_error(err)
-    return core.string.find(err, "unable to check session revocation")
-        or core.string.find(err, "unable to mark session revoked")
-end
-
-
 local function authenticate(plugin_conf, ctx)
     local conf = core.table.clone(plugin_conf)
     flatten_openidc_options(conf)
@@ -1514,8 +1506,11 @@ local function authenticate(plugin_conf, ctx)
                 return 401
             end
 
-            -- Reject without destroying the cookie.
-            if is_revocation_store_error(err) then
+            -- With revocation_fail_mode closed, an unreachable revocation store
+            -- fails opening or destroying a session. Reject without destroying
+            -- the cookie.
+            if core.string.find(err, "unable to check session revocation")
+                    or core.string.find(err, "unable to mark session revoked") then
                 if session then
                     session:close()
                 end
