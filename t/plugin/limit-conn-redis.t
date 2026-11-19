@@ -588,7 +588,7 @@ GET /test_concurrency
 status:200, count:6
 status:503, count:4
 --- error_log eval
-qr/limit key: \/apisix\/routes\/1:\d+:10\.10\.10\.1/
+qr/limit key: v2:[0-9a-f]{64}, resource: \/apisix\/routes\/1, subject: 10\.10\.10\.1/
 
 
 
@@ -680,7 +680,7 @@ GET /test_concurrency
 status:200, count:6
 status:503, count:4
 --- error_log eval
-qr/limit key: \/apisix\/routes\/1:\d+:10\.10\.10\.2/
+qr/limit key: v2:[0-9a-f]{64}, resource: \/apisix\/routes\/1, subject: 10\.10\.10\.2/
 
 
 

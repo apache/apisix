@@ -62,7 +62,7 @@ import TabItem from '@theme/TabItem';
 | redis_timeout | integer | 否 | 1000 | >= 1 | 当 `policy` 为 `redis` 或 `redis-cluster` 时，Redis 超时值（以毫秒为单位）。|
 | redis_keepalive_timeout | integer | 否 | 10000 | >= 1000 | 当 `policy` 为 `redis` 或 `redis-cluster` 时，Redis 的空闲连接超时时间（以毫秒为单位）。|
 | redis_keepalive_pool | integer | 否 | 100 | >= 1 | 当 `policy` 为 `redis` 或 `redis-cluster` 时，Redis 的连接池最大连接数。|
-| key_ttl | integer | 否 | 3600 | | Redis 键的 TTL（以秒为单位）。当 `policy` 为 `redis` 或 `redis-cluster` 时使用。|
+| key_ttl | integer | 否 | 3600 | >= 1 | 每个已准入请求在 Redis 中占用记录的有效期，单位为秒。当 `policy` 为 `redis` 或 `redis-cluster` 时使用。计数键保留到其请求记录能够过期；缩短新请求的 TTL 不会缩短已有请求记录的有效期。|
 | redis_cluster_nodes | array[string] | 否 | | | 至少包含一个地址的 Redis 集群节点列表。当 `policy` 为 `redis-cluster` 时必填。|
 | redis_cluster_name | string | 否 | | | Redis 集群的名称。当 `policy` 为 `redis-cluster` 时必填。|
 | redis_cluster_ssl | boolean | 否 | false | | 如果为 true，则在 `policy` 为 `redis-cluster` 时使用 SSL 连接到 Redis 集群。|
@@ -73,6 +73,24 @@ import TabItem from '@theme/TabItem';
 | rules.key | string | 是 | | | 用于计数请求的键。如果配置的键不存在，则不会执行该规则。`key` 被解释为变量的组合。所有变量都应以美元符号（`$`）为前缀。|
 
 注意：schema 中还定义了 `encrypt_fields = {"redis_password"}`，这意味着该字段将会被加密存储在 etcd 中。具体参考[加密存储字段](../plugin-develop.md#加密存储字段)。
+
+## 计数身份与配置更新
+
+请求使用相同的插件所属资源、主体定义（`key_type` 和 `key`）以及主体求值结果时，共享一个计数器。例如，Consumer 级配置跨路由共享计数，但不同 Consumer 的相同配置彼此独立。多个路由引用同一个 PluginConfig 时也共享其计数。
+
+修改 `conn`、`burst`、响应选项、插件优先级或 Redis 连接设置，不会在同一个存储后端中创建新的计数器，已有请求继续占用额度。例如，已有四个请求在途时，将 `conn` 降为三且保持 `burst` 为零，会拒绝新请求，直到在途请求少于三个；不会中断已有请求。各 worker 收到配置更新后开始使用新阈值。
+
+修改主体定义会使用不同的计数器，即使新定义求出的字符串相同。每个请求结束时，释放其准入时使用的计数器，并连接原来的 Redis 后端。修改 `policy`、Redis 实例或数据库，不会把已有请求记录迁移到新存储。在途请求结束前，需要保持原后端可达且准入时使用的凭据有效；否则，其占用记录可能一直保留到准入时设置的 TTL 到期。
+
+`rules` 中各项独立计数，以原始 key 表达式及其在相同表达式中的出现次序标识。重排不同表达式的规则不会重置其计数；重复的相同表达式按出现次序区分。Workflow 动作继续按 workflow 规则位置隔离，重排这些规则可能改变其计数身份。
+
+对于 Redis 策略，`key_ttl` 作用于每个新准入的请求，缩短它不会缩短旧请求记录的有效期。请求记录不会自动续期，应将 TTL 设置为大于需要计数的请求持续时间。请求持续时间超过记录有效期时，可能在结束前就不再参与计数。这是并发限制，不是每个 TTL 时间窗口内的请求次数限制。
+
+:::warning 升级兼容性
+
+稳定计数身份使用新的 key 格式，旧版和新版 APISIX 不共享这些计数器。切换版本前，应停止向受影响的配额范围准入新请求，等待共享计数的所有节点上的在途请求结束，再完成这些节点的版本切换并恢复流量。混合版本滚动升级可能暂时超过预期限制，回退时同样需要处理。仅等待 `key_ttl` 过去，不能证明长请求已经结束。
+
+:::
 
 ## 示例
 

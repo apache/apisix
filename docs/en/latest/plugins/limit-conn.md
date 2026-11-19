@@ -62,7 +62,7 @@ The `limit-conn` Plugin limits the rate of requests by the number of concurrent 
 | redis_timeout | integer | False | 1000 | >= 1 | The Redis timeout value in milliseconds when `policy` is `redis` or `redis-cluster`. |
 | redis_keepalive_timeout | integer | False | 10000 | >= 1000 | Keepalive timeout in milliseconds for Redis when `policy` is `redis` or `redis-cluster`. |
 | redis_keepalive_pool | integer | False | 100 | >= 1 | Keepalive pool size for Redis when `policy` is `redis` or `redis-cluster`. |
-| key_ttl | integer | False | 3600 | | The TTL of the Redis key in seconds. Used when `policy` is `redis` or `redis-cluster`. |
+| key_ttl | integer | False | 3600 | >= 1 | The lifetime in seconds of each admitted request's Redis reservation. Used when `policy` is `redis` or `redis-cluster`. The counter key remains until its reservations can expire; a shorter TTL for new requests does not shorten existing reservations. |
 | redis_cluster_nodes | array[string] | False | | | The list of Redis cluster nodes with at least one address. Required when `policy` is `redis-cluster`. |
 | redis_cluster_name | string | False | | | The name of the Redis cluster. Required when `policy` is `redis-cluster`. |
 | redis_cluster_ssl | boolean | False | false | | If true, use SSL to connect to Redis cluster when `policy` is `redis-cluster`. |
@@ -73,6 +73,24 @@ The `limit-conn` Plugin limits the rate of requests by the number of concurrent 
 | rules.key | string | True | | | The key to count requests by. If the configured key does not exist, the rule will not be executed. The `key` is interpreted as a combination of variables. All variables should be prefixed by dollar signs (`$`). |
 
 NOTE: `encrypt_fields = {"redis_password"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
+
+## Counter identity and configuration updates
+
+Requests share a counter when they use the same plugin-owning resource, subject definition (`key_type` and `key`), and resolved subject value. For example, a Consumer-level configuration shares its counter across routes, while identical configurations belonging to different Consumers remain independent. A shared PluginConfig also retains its counter across the routes using it.
+
+Changing `conn`, `burst`, response options, plugin priority, or Redis connection settings does not create a new counter in the same storage backend. Existing requests remain counted. With four requests in flight, lowering `conn` to three and keeping `burst` at zero rejects new requests until fewer than three remain; it does not terminate existing requests. Each worker applies the new threshold when it receives the configuration update.
+
+Changing the subject definition creates a different counter even if the new definition resolves to the same string. Each request releases the counter and Redis backend captured when it was admitted. Changing `policy`, the Redis instance or the database does not migrate existing reservations to the new storage. Keep the original backend reachable and its captured credentials valid until in-flight requests finish; otherwise their reservations may remain until their admission-time TTL expires.
+
+Each entry in `rules` has its own counter, identified by its original key expression and its occurrence among entries with that expression. Reordering different expressions does not reset their counters. Repeated identical expressions are distinguished by occurrence order. Workflow actions remain isolated by their workflow rule position; reordering those rules can change their counter identities.
+
+For Redis policies, `key_ttl` applies to each newly admitted request. Reducing it does not shorten older reservations. Reservations are not renewed automatically: choose a TTL longer than the requests you need to count. A request that outlives its reservation can stop contributing to the count before it completes. This is a concurrency limit, not a count of requests per TTL window.
+
+:::warning Upgrade compatibility
+
+The stable counter identity uses a new key format. Old and new APISIX versions do not share these counters. Before switching versions, stop admitting requests to the affected quota domain and drain its in-flight requests across all nodes sharing the counter, then switch the nodes before resuming traffic. A mixed-version rolling upgrade can temporarily exceed the intended limit. The same consideration applies when rolling back. Waiting for `key_ttl` alone does not prove that long-running requests have finished.
+
+:::
 
 ## Examples
 

@@ -216,7 +216,7 @@ GET /concurrent?case=two_routes
 --- response_body
 200,503
 --- error_log eval
-qr/limit key: \/apisix\/consumers\/jack:\d+:127\.0\.0\.1/
+qr/limit key: v2:[0-9a-f]{64}, resource: \/apisix\/consumers\/jack, subject: 127\.0\.0\.1/
 --- no_error_log
 [error]
 --- timeout: 10
@@ -231,7 +231,7 @@ GET /concurrent?case=two_consumers
 --- response_body
 200,200
 --- error_log eval
-qr/limit key: \/apisix\/consumers\/bob:\d+:127\.0\.0\.1/
+qr/limit key: v2:[0-9a-f]{64}, resource: \/apisix\/consumers\/bob, subject: 127\.0\.0\.1/
 --- timeout: 10
 
 

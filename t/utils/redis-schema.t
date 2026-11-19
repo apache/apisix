@@ -193,3 +193,39 @@ done
 --- response_body
 passed
 rejected
+
+
+
+=== TEST 4: limit-conn requires a positive lease for both Redis policies
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.limit-conn")
+            for _, policy in ipairs({"redis", "redis-cluster"}) do
+                for _, ttl in ipairs({-1, 0, 1, 3600}) do
+                    local conf = {
+                        conn = 1,
+                        burst = 0,
+                        default_conn_delay = 0.1,
+                        key = "remote_addr",
+                        policy = policy,
+                        redis_host = "127.0.0.1",
+                        redis_cluster_nodes = {"127.0.0.1:5000"},
+                        redis_cluster_name = "positive-lease",
+                        key_ttl = ttl,
+                    }
+                    local ok, err = plugin.check_schema(conf)
+                    if ttl < 1 then
+                        assert(not ok, "non-positive lease was accepted")
+                        assert(type(err) == "string" and #err > 0, "missing schema error")
+                    else
+                        assert(ok, err)
+                    end
+                end
+                ngx.say(policy, ": passed")
+            end
+        }
+    }
+--- response_body
+redis: passed
+redis-cluster: passed

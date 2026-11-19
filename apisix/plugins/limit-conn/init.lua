@@ -16,8 +16,10 @@
 --
 local limit_conn_new = require("resty.limit.conn").new
 local core = require("apisix.core")
-local apisix_plugin = require("apisix.plugin")
-local is_http = ngx.config.subsystem == "http"
+local sha256 = require("resty.sha256")
+local to_hex = require("resty.string").to_hex
+local subsystem = ngx.config.subsystem
+local is_http = subsystem == "http"
 local sleep = core.sleep
 local tonumber = tonumber
 local type = type
@@ -25,7 +27,7 @@ local tostring = tostring
 local ipairs = ipairs
 local floor = math.floor
 local shdict_name = "plugin-limit-conn"
-if ngx.config.subsystem == "stream" then
+if subsystem == "stream" then
     shdict_name = shdict_name .. "-stream"
 end
 
@@ -102,7 +104,12 @@ local function get_rules(ctx, conf)
     end
 
     local rules = {}
+    local key_occurrences = {}
     for _, rule in ipairs(conf.rules) do
+        -- Identify repeated expressions independently of other rules' positions,
+        -- including rules that this request does not match.
+        local occurrence = (key_occurrences[rule.key] or 0) + 1
+        key_occurrences[rule.key] = occurrence
         local conn, err = resolve_var(ctx, rule.conn)
         if err then
             goto CONTINUE
@@ -121,6 +128,8 @@ local function get_rules(ctx, conf)
             burst = burst,
             key_type = "constant",
             key = key,
+            key_expr = rule.key,
+            key_occurrence = occurrence,
         })
 
         ::CONTINUE::
@@ -129,20 +138,33 @@ local function get_rules(ctx, conf)
 end
 
 
-local function gen_limit_key(conf, ctx, key)
+local function gen_limit_key(conf, rule, key)
     local parent = conf._meta and conf._meta.parent
     if not parent or not parent.resource_key then
         core.log.error("failed to generate key invalid parent: ", core.json.encode(parent))
         return nil
     end
 
-    local new_key = parent.resource_key .. ':' .. apisix_plugin.conf_version(conf) .. ':' .. key
-    if conf._vid then
-        -- conf has _vid means it's from workflow plugin, add _vid to the key
-        -- so that the counter is unique per action.
-        return new_key .. ':' .. conf._vid
-    end
-
+    -- Counter identity must not depend on configuration versions or runtime
+    -- metadata. Threshold, response and Redis client updates retain occupancy.
+    -- Preserve the subject definition as well as its value, so two dimensions
+    -- resolving to the same string do not accidentally share a counter.
+    local identity = core.json.stably_encode({
+        subsystem,
+        parent.resource_key,
+        conf._vid or 0,
+        rule.key_expr and "var_combination" or (rule.key_type or "var"),
+        rule.key_expr or rule.key,
+        rule.key_occurrence or 0,
+        tostring(key),
+    })
+    local hash = sha256:new()
+    hash:update(identity)
+    -- Hash the complete tuple: expressions and subject values may contain
+    -- braces, which must not become Redis Cluster hash tags.
+    local new_key = "v2:" .. to_hex(hash:final())
+    core.log.info("limit key: ", new_key, ", resource: ", parent.resource_key,
+                  ", subject: ", key, ", action: ", conf._vid or 0)
     return new_key
 end
 
@@ -209,15 +231,13 @@ local function run_limit_conn(conf, rule, ctx)
         key = ctx.var["remote_addr"]
     end
 
-    key = gen_limit_key(conf, ctx, key)
+    key = gen_limit_key(conf, rule, key)
     if not key then
         if conf.allow_degradation then
             return
         end
         return 500
     end
-    core.log.info("limit key: ", key)
-
     local delay, err = lim:incoming(key, true)
     if not delay then
         if err == "rejected" then
