@@ -101,27 +101,74 @@ nil nil nil
 
 
 
-=== TEST 5: a table moved to another path keeps the order of where it came from
+=== TEST 5: attach: a marked object keeps its order when moved or deep-copied
 --- config
     location /t {
         content_by_lua_block {
             local core = require("apisix.core")
             local json_order = require("apisix.utils.json-order")
-            local raw = [[{"tools":[{"function":{"parameters":{"b":1,"a":1}}}]}]]
+            local raw = [[{"tools":[{"name":"t","input_schema":{"type":"object","properties":]]
+                .. [[{"zeta":{"type":"string"},"alpha":{"type":"object","properties":]]
+                .. [[{"y":{"type":"string"},"x":{"type":"string"}}}}}}],]]
+                .. [[ "output":{"schema":{"properties":{"b":{"type":"string"},"a":{"type":"string"}}}}}]]
             local body = core.json.decode(raw)
-            local params = body.tools[1]["function"].parameters
-            local moved = {toolSpec = {inputSchema = {json = params}}}
-            local shape = json_order.shape(raw)
-            local shapes = {[params] = json_order.child(shape, "tools", 1, "function", "parameters")}
-            ngx.say(json_order.encode(moved, nil, shapes))
+            json_order.attach(body, json_order.shape(raw))
+            -- moved by reference
+            local params = body.tools[1].input_schema
+            ngx.say(json_order.encode({tools = {{["function"] = {parameters = params}}}}))
+            -- deep-copied, then changed: new keys follow, sorted
+            local schema = core.table.deepcopy(body.output.schema)
+            schema.required = setmetatable({"b", "a"}, core.json.array_mt)
+            schema.additionalProperties = false
+            ngx.say(json_order.encode({response_format = {schema = schema}}))
+            -- an object's own order wins over the one of the path it now sits at
+            ngx.say(json_order.encode({output = {schema = params}}, json_order.shape(raw)))
+            -- cjson and core.json still encode a marked body as before
+            ngx.say(core.json.encode(body.output) == core.json.encode(core.json.decode(raw).output))
         }
     }
 --- response_body
-{"toolSpec":{"inputSchema":{"json":{"b":1,"a":1}}}}
+{"tools":[{"function":{"parameters":{"type":"object","properties":{"zeta":{"type":"string"},"alpha":{"type":"object","properties":{"y":{"type":"string"},"x":{"type":"string"}}}}}}}]}
+{"response_format":{"schema":{"properties":{"b":{"type":"string"},"a":{"type":"string"}},"additionalProperties":false,"required":["b","a"]}}}
+{"output":{"schema":{"type":"object","properties":{"zeta":{"type":"string"},"alpha":{"type":"object","properties":{"y":{"type":"string"},"x":{"type":"string"}}}}}}}
+true
 
 
 
-=== TEST 6: what cannot be JSON is an error
+=== TEST 6: attach: only objects without a metatable are marked; marked ones still merge as objects
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local json_order = require("apisix.utils.json-order")
+            local deep_merge = require("apisix.plugins.ai-proxy.merge").deep_merge
+            local raw = [[{"list":[],"own":{"b":1,"a":1},"plain":{"b":1,"a":1},"arr":[{"b":1,"a":1}]}]]
+            local body = core.json.decode(raw)
+            local foreign = {}
+            setmetatable(body.own, foreign)
+            json_order.attach(body, json_order.shape(raw))
+            json_order.attach(body, json_order.shape(raw))  -- again: no change
+            ngx.say(getmetatable(body.list) == core.json.array_mt, " ",
+                    getmetatable(body.own) == foreign)
+            ngx.say(json_order.encode({o = body.own, p = body.plain, q = body.arr[1]}))
+            -- request_body overrides (ai-proxy/merge.lua) still recurse into marked objects
+            deep_merge(body, {plain = {c = 1}})
+            ngx.say(json_order.encode(body.plain))
+            -- no shape (invalid JSON): nothing is marked
+            local other = {b = 1, a = 1}
+            json_order.attach(other, json_order.shape("{"))
+            ngx.say(getmetatable(other) == nil)
+        }
+    }
+--- response_body
+true true
+{"o":{"a":1,"b":1},"p":{"b":1,"a":1},"q":{"b":1,"a":1}}
+{"b":1,"a":1,"c":1}
+true
+
+
+
+=== TEST 7: what cannot be JSON is an error
 --- config
     location /t {
         content_by_lua_block {

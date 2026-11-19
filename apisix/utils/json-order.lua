@@ -32,6 +32,12 @@
 -- when the original had an array there, so one built in Lua stays [] too.
 -- Values come from the table, never from the raw bytes, so a shape from older
 -- bytes only affects order.
+--
+-- attach(value, shape) marks each object of a decoded value with its own
+-- shape, in a metatable, so the order goes with the object when code moves it
+-- to another path or copies it with core.table.deepcopy (which keeps
+-- metatables) -- as a protocol converter does with a tool's input_schema or an
+-- output schema. encode uses an object's own shape before the one of its path.
 
 local core = require("apisix.core")
 local type = type
@@ -43,6 +49,8 @@ local error = error
 local tostring = tostring
 local tonumber = tonumber
 local getmetatable = getmetatable
+local setmetatable = setmetatable
+local rawget = rawget
 local byte = string.byte
 local char = string.char
 local sub = string.sub
@@ -62,6 +70,10 @@ local _M = {}
 -- Shapes: an object is {keys = {...}, child = {key -> shape or false}}, an
 -- array {array = true, items = {index -> shape or false}}; false (or nil)
 -- stands for a scalar.
+
+-- The metatable field attach() keeps an object's shape in; a private key, so it
+-- cannot clash with a metatable field anyone else reads.
+local SHAPE = {}
 
 local UNESCAPE = {['"'] = '"', ["\\"] = "\\", ["/"] = "/", b = "\b", f = "\f",
                   n = "\n", r = "\r", t = "\t"}
@@ -204,17 +216,47 @@ function _M.shape(raw)
 end
 
 
---- The shape at a path of object keys and array indexes, or nil.
-function _M.child(shape, ...)
-    for _, step in ipairs({...}) do
-        if not shape then return nil end
-        if type(step) == "number" then
-            shape = shape.items and shape.items[step]
-        else
-            shape = shape.child and shape.child[step]
+local function attach(value, shape, depth)
+    if type(value) ~= "table" or not shape or depth > MAX_DEPTH then
+        return
+    end
+    if shape.array then
+        local items = shape.items
+        for i = 1, #items do
+            if items[i] then
+                attach(value[i], items[i], depth + 1)
+            end
+        end
+        return
+    end
+    local mt = getmetatable(value)
+    if mt == nil then
+        mt = shape.mt
+        if not mt then
+            mt = {[SHAPE] = shape}
+            shape.mt = mt
+        end
+        setmetatable(value, mt)
+    elseif rawget(mt, SHAPE) == nil then
+        -- An object with a metatable of its own is left alone.
+        return
+    end
+    local child = shape.child
+    for _, k in ipairs(shape.keys) do
+        if child[k] then
+            attach(value[k], child[k], depth + 1)
         end
     end
-    return shape or nil
+end
+
+
+--- Mark every object of value (a decoded JSON body) with its shape, read from
+-- the bytes it was decoded from, so encode keeps its key order wherever the
+-- object is later moved or copied (core.table.deepcopy keeps metatables). An
+-- object that already has a metatable of its own is not marked. Objects added
+-- later have no shape: their keys are written sorted.
+function _M.attach(value, shape)
+    attach(value, shape, 1)
 end
 
 
@@ -295,9 +337,10 @@ encode_value = function(v, shape, opts, depth)
     if t ~= "table" then error("cannot encode a " .. t) end
     if depth >= MAX_DEPTH then error("nested too deeply") end
     depth = depth + 1
-    if opts.shapes then
-        local own = opts.shapes[v]
-        if own ~= nil then shape = own end
+    local mt = getmetatable(v)
+    local own = mt and rawget(mt, SHAPE)
+    if own then
+        shape = own
     end
     shape = shape or nil
     if next(v) == nil then
@@ -318,13 +361,11 @@ encode_value = function(v, shape, opts, depth)
 end
 
 
---- Encode value as JSON with the key order (and empty arrays) of shape.
--- shapes, optional, maps a table to the shape to use for it wherever it sits,
--- for values moved to another path (e.g. a schema an adapter relocates).
--- Returns the JSON text, or nil and an error.
-function _M.encode(value, shape, shapes)
-    local opts = {null = core.json and core.json.null, array_mt = core.json and core.json.array_mt,
-                  shapes = shapes}
+--- Encode value as JSON with the key order (and empty arrays) of shape, the
+-- shape of where value sits; an object attach() marked uses its own shape
+-- instead, wherever it sits. Returns the JSON text, or nil and an error.
+function _M.encode(value, shape)
+    local opts = {null = core.json and core.json.null, array_mt = core.json and core.json.array_mt}
     local ok, out = pcall(encode_value, value, shape, opts, 0)
     if not ok then return nil, out end
     return out
