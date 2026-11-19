@@ -43,6 +43,8 @@ import TabItem from '@theme/TabItem';
 
 当消费者成功通过身份验证后，APISIX 会在将请求代理到上游服务之前，向请求添加额外的请求头，例如 `X-Consumer-Username`、`X-Credential-Identifier` 以及其他已配置的消费者自定义请求头。上游服务可据此区分消费者并根据需要实现额外逻辑。若某个值不可用，则不会添加对应的请求头。
 
+令牌按照 [RFC 7515](https://datatracker.ietf.org/doc/html/rfc7515#section-2) 进行严格解析：紧凑序列化必须由恰好三段无填充、规范的 base64url 段组成。编码同一令牌的变体，例如带 `=` 填充或使用标准 base64 字母表（`+`/`/`）的段，将被拒绝。
+
 ## 属性
 
 以下属性可用于消费者或凭据上的配置。

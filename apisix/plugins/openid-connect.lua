@@ -102,9 +102,9 @@ local dpop_jwk_required_members = {
     RSA = {"e", "n"},
 }
 
--- resty.jwt selects the signer from the algorithm and not from the key, so an
--- EC algorithm handed an RSA key terminates the worker with a SIGSEGV; the
--- curve matters too, since ES512 on a P-256 key emits a P-256 signature
+-- lua-resty-jwt 0.4.0 binds algorithms to key types itself, but only at
+-- signing time; this table lets the config check reject the mismatch up front
+-- with a precise message instead of a 500 on the first request
 local client_assertion_key_type = {
     RS256 = {kty = "RSA"},
     RS512 = {kty = "RSA"},
@@ -532,13 +532,8 @@ local schema = {
             type = "integer",
             default = 60
         },
-        -- resty.jwt signs the client assertion and raises an uncaught Lua
-        -- error for an algorithm it cannot handle, so an unconstrained value
-        -- would surface as a 500 per request instead of a rejected config.
-        -- Two rocks provide resty/jwt.lua here: the api7-lua-resty-jwt this
-        -- rockspec pins, and the lua-resty-jwt lua-resty-openidc depends on.
-        -- This enum is what the api7 fork signs, a subset of what the other
-        -- one signs, so it holds whichever of the two ends up installed.
+        -- the enum keeps a rejected config instead of a 500 per request for
+        -- an algorithm the token endpoint or lua-resty-jwt cannot handle
         client_jwt_assertion_alg = {
             description = "Signing algorithm for the client assertion JWT.",
             type = "string",
@@ -883,10 +878,9 @@ local function check_client_jwt_assertion_alg(conf)
                       .. "selected by \"" .. symmetric_by .. "\""
     end
 
-    -- resty.jwt picks the signer from the algorithm, not the key: handing an
-    -- EC algorithm an RSA key terminates the worker with a SIGSEGV in the
-    -- signature conversion, and an EC key on the wrong curve silently emits a
-    -- signature of the wrong size
+    -- lua-resty-jwt 0.4.0 rejects an algorithm/key mismatch itself, but only
+    -- when the assertion is signed; check it here so the config is rejected
+    -- with a precise message instead of failing on the first request
     local expected = asymmetric_by and client_assertion_key_type[alg]
     local private_key = conf.client_rsa_private_key
     if not expected or not private_key or secret.is_secret_ref(private_key) then
