@@ -15,6 +15,8 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
+local resty_time = require("resty.core.time")
+local assert = assert
 local setmetatable = setmetatable
 local timer_at = ngx.timer.at
 local timer_every = ngx.timer.every
@@ -41,6 +43,26 @@ if ngx.config.subsystem == "http" then
 end
 
 
+-- NGINX schedules event timers against ngx_current_msec (monotonic on supported
+-- platforms), whereas ngx.now() reads wall time. OpenResty >= 1.21.4.2 exposes
+-- ngx_current_msec via resty.core.time.monotonic_time; on 1.21.4.1, read the
+-- exported NGINX symbol directly so APISIX's >= 1.21.4 runtime contract holds
+-- without falling back to wall time.
+local timer_now = resty_time.monotonic_time
+if not timer_now then
+    local ffi = require("ffi")
+    local C = ffi.C
+    local tonumber = tonumber
+    ffi.cdef[[
+        extern volatile uintptr_t ngx_current_msec;
+    ]]
+    assert(tonumber(C.ngx_current_msec), "ngx_current_msec is unavailable")
+    timer_now = function()
+        return tonumber(C.ngx_current_msec) / 1000
+    end
+end
+
+
 -- One worker-wide recurring timer recovers callbacks that OpenResty silently drops
 -- at lua_max_running_timers. Unlike an at() chain, every() schedules its next tick
 -- before checking the running-timer limit, so recovery survives the same pressure.
@@ -51,12 +73,47 @@ local pending_batches = {}
 local pending_buffers = {}
 
 
+local function has_overdue_timers(cutoff)
+    for batch in pairs(pending_batches) do
+        if batch.timer_deadline <= cutoff then
+            return true
+        end
+    end
+    for _, timer in pairs(pending_buffers) do
+        if timer.deadline <= cutoff then
+            return true
+        end
+    end
+    return false
+end
+
+
+local function schedule_recovery(premature)
+    if premature or exiting() then
+        return
+    end
+
+    -- After a worker pause, an older recurring tick can fire before a later-due
+    -- timer that is still queued. Capture the cutoff now and defer reclamation
+    -- to a zero-delay timer so queued callbacks run first and clear themselves.
+    local cutoff = timer_now() - TIMER_GRACE
+    if not has_overdue_timers(cutoff) then
+        return
+    end
+
+    local ok, err = timer_at(0, recover_timers, cutoff)
+    if not ok then
+        core.log.error("failed to schedule batch recovery sweep: ", err)
+    end
+end
+
+
 local function ensure_recovery_timer()
     if recovery_timer_running or exiting() then
         return
     end
 
-    local ok, err = timer_every(RECOVERY_INTERVAL, recover_timers)
+    local ok, err = timer_every(RECOVERY_INTERVAL, schedule_recovery)
     if not ok then
         core.log.error("failed to create batch recovery timer: ", err)
         return
@@ -109,7 +166,7 @@ local function schedule_func_exec(self, delay, batch)
         end
     end
 
-    batch.timer_deadline = now() + delay
+    batch.timer_deadline = timer_now() + delay
     pending_batches[batch] = self
 end
 
@@ -214,12 +271,12 @@ end
 
 function create_buffer_timer(self)
     ensure_recovery_timer()
-    local timer = {deadline = now() + self.inactive_timeout}
+    local timer = {deadline = timer_now() + self.inactive_timeout}
     local hdl, err = timer_at(self.inactive_timeout, flush_buffer, self, timer)
     if not hdl then
         if err == "process exiting" then
             hdl, err = timer_at(0, flush_buffer, self, timer)
-            timer.deadline = now()
+            timer.deadline = timer_now()
         end
         if not hdl then
             self.is_timer_running = false
@@ -232,19 +289,18 @@ function create_buffer_timer(self)
 end
 
 
-function recover_timers(premature)
+function recover_timers(premature, cutoff)
     if premature then
         return
     end
 
-    local cutoff = now() - TIMER_GRACE
     local dropped = {}
     for batch, self in pairs(pending_batches) do
         if batch.timer_deadline <= cutoff then
             pending_batches[batch] = nil
             batch.timer_deadline = nil
             local count = #batch.entries
-            self.processed_entries = self.processed_entries + count
+            drop_batch(self, batch)
             dropped[self] = (dropped[self] or 0) + count
         end
     end

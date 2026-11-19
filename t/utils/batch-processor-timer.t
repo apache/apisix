@@ -226,8 +226,11 @@ entries whose process timers did not start
             local timer_at = ngx.timer.at
             local callback, owner, batch
             ngx.timer.at = function(delay, func, self, entries)
-                callback, owner, batch = func, self, entries
-                return true
+                if not callback and type(self) == "table" then
+                    callback, owner, batch = func, self, entries
+                    return true
+                end
+                return timer_at(delay, func, self, entries)
             end
             package.loaded["apisix.utils.batch-processor"] = nil
             local Batch = require("apisix.utils.batch-processor")
@@ -297,4 +300,106 @@ flushed twice
 recovering buffer timer
 --- no_error_log
 [error]
+--- timeout: 10
+
+
+
+=== TEST 7: a queued retry survives a worker pause
+--- config
+    location /t {
+        content_by_lua_block {
+            local Batch = require("apisix.utils.batch-processor")
+            local calls, sent = 0, 0
+            local processor = assert(Batch:new(function(entries)
+                calls = calls + 1
+                if calls == 1 then
+                    ngx.sleep(0.2)
+                    return false, "transient failure"
+                end
+                sent = sent + #entries
+                return true
+            end, {name = "worker pause", batch_max_size = 1,
+                  max_retry_count = 1, retry_delay = 1}))
+
+            processor:push("paused")
+            ngx.sleep(0.3)
+            local resume_at = os.clock() + 3
+            while os.clock() < resume_at do
+            end
+            ngx.update_time()
+            ngx.sleep(0.2)
+            assert(calls == 2)
+            assert(sent == 1)
+            assert(processor.processed_entries == 1)
+            ngx.say("retried after pause")
+        }
+    }
+--- request
+GET /t
+--- response_body
+retried after pause
+--- error_log
+failed to process entries: transient failure
+--- no_error_log
+lua_max_running_timers are not enough
+entries whose process timers did not start
+--- timeout: 10
+
+
+
+=== TEST 8: timer deadlines use a monotonic clock and support the 1.21.4.1 fallback
+--- config
+    location /t {
+        content_by_lua_block {
+            local resty_time = require("resty.core.time")
+            local saved_monotonic = resty_time.monotonic_time
+            local saved_now = ngx.now
+            local offset = 0
+
+            resty_time.monotonic_time = nil
+            ngx.now = function()
+                return saved_now() + offset
+            end
+            package.loaded["apisix.utils.batch-processor"] = nil
+            local ok, Batch = pcall(require, "apisix.utils.batch-processor")
+            resty_time.monotonic_time = saved_monotonic
+            ngx.now = saved_now
+            assert(ok, Batch)
+
+            local calls, sent = 0, 0
+            local processor = assert(Batch:new(function(entries)
+                calls = calls + 1
+                if calls == 1 then
+                    return false, "retry later"
+                end
+                sent = sent + #entries
+                return true
+            end, {name = "monotonic clock", batch_max_size = 1,
+                  max_retry_count = 1, retry_delay = 3}))
+
+            processor:push("steady")
+            ngx.sleep(0.2)
+            assert(calls == 1)
+            -- Jump wall time forward so a wall-clock sweep would see the pending
+            -- retry as overdue before its 3-second monotonic timer fires.
+            offset = 3600
+            ngx.sleep(2.0)
+            assert(calls == 1)
+            assert(processor.processed_entries == 0)
+            ngx.sleep(1.2)
+            assert(calls == 2)
+            assert(sent == 1)
+            assert(processor.processed_entries == 1)
+            package.loaded["apisix.utils.batch-processor"] = nil
+            ngx.say("monotonic ok")
+        }
+    }
+--- request
+GET /t
+--- response_body
+monotonic ok
+--- error_log
+failed to process entries: retry later
+--- no_error_log
+entries whose process timers did not start
 --- timeout: 10
