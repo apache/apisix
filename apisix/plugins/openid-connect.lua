@@ -1303,9 +1303,8 @@ local function validate_claims_in_oidcauth_response(resp, conf)
 end
 
 
--- With revocation_fail_mode closed, an unreachable revocation store makes
--- opening or destroying a session fail. resty.session appends the store error to
--- its own message, so match on the message prefix.
+-- With revocation_fail_mode closed, an unreachable revocation store fails opening
+-- or destroying a session; resty.session puts these messages in the error.
 local function is_revocation_store_error(err)
     return core.string.find(err, "unable to check session revocation")
         or core.string.find(err, "unable to mark session revoked")

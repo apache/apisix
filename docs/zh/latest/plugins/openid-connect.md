@@ -384,11 +384,11 @@ Cookie 会话存储在客户端，APISIX 通常无法单独将其失效。要启
 
 登出在处理该请求的 worker 上立即生效，在其他 worker 上则在其缓存条目过期后生效。因此 `revocation_cache_ttl` 限定的是：吊销标记已成功写入的会话，在其他 worker 上仍可能被接受的最长时间。它不涵盖下面的限制。
 
-每个路由在每个 worker 中各自维护一份缓存，因此在一个路由上处理的登出，会在使用同一 Redis 的另一个路由的缓存条目过期后才对其生效。每个 worker 最多缓存 1024 条查询结果和 1024 条存储错误，所有路由共享。如需调整，请在所有请求都能访问的位置定义 nginx 变量 `$session_revocation_cache_size` 和 `$session_revocation_error_cache_size`，例如在 `http` 配置片段中添加 `map $host $session_revocation_cache_size { default 4096; }`。每个 worker 在处理的第一次吊销查询时读取一次这些变量，因此修改后需要重新加载。
+每个路由在每个 worker 中各有一份缓存，因此在一个路由上处理的登出，要等其他路由的缓存条目过期后才会对其生效。默认情况下，每个 worker 最多缓存 1024 条查询结果和 1024 条存储错误。如需调整，请在所有请求都能访问的位置定义 nginx 变量 `$session_revocation_cache_size` 和 `$session_revocation_error_cache_size`，例如在 `http` 配置片段中添加 `map $host $session_revocation_cache_size { default 4096; }`。worker 只读取一次，因此修改后需要重新加载。
 
 #### 登出行为与限制
 
-- **登出会吊销同一次登录产生的所有 Cookie。** `lua-resty-session` 每次保存会话（例如令牌续期或滚动刷新）都会生成新的会话 ID。因此登出会吊销整个会话谱系：登出时携带的 Cookie、它的旧副本，以及由它刷新出来的 Cookie（例如被窃取者刷新的 Cookie），无论这些 Cookie 签发于登出之前还是之后。吊销持续到这些 Cookie 本应自然过期为止，新的登录不受影响。在升级到支持谱系吊销的 `lua-resty-session` 版本之前签发的 Cookie，仅会按其自身的会话 ID 被吊销。
+- **登出会吊销同一次登录产生的所有 Cookie。** 会话每次保存（例如令牌续期或滚动刷新）都会生成新的会话 ID，因此登出会吊销整个谱系：当前提交的 Cookie、较早的副本和刷新得到的 Cookie，无论是在登出之前还是之后签发的。新的登录不受影响。升级到支持谱系吊销的 `lua-resty-session` 之前签发的 Cookie 只会按其自身的会话 ID 被吊销。
 - **当 `revocation_fail_mode` 为 `open`（默认值）时，登出可能在没有吊销任何内容的情况下成功。** 如果登出时 Redis 不可用，浏览器中的 Cookie 会被清除，但不会写入吊销标记，之后也不会重试。被复制的 Cookie 在超时之前仍然有效。依赖吊销功能的部署请使用 `closed`，这样吊销写入失败时会返回错误，且不会销毁会话。
 - 当 Redis 不可用时，`closed` 会对携带 Cookie 会话的请求返回 `503`。
 
