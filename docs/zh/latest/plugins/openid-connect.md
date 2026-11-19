@@ -384,7 +384,7 @@ Cookie 会话存储在客户端，APISIX 通常无法单独将其失效。要启
 
 登出在处理该请求的 worker 上立即生效，在其他 worker 上则在其缓存条目过期后生效。因此 `revocation_cache_ttl` 限定的是：吊销标记已成功写入的会话，在其他 worker 上仍可能被接受的最长时间。它不涵盖下面的限制。
 
-使用相同 `session.redis` 配置的路由在每个 worker 中共享同一份缓存，因此其中一个路由处理的登出会立即被同一 worker 中的其他路由看到。每个 worker 最多缓存 1024 条查询结果，所有路由共享。如需调整，请在所有请求都能访问的位置定义 nginx 变量 `$session_revocation_cache_size`，例如在 `http` 配置片段中添加 `map $host $session_revocation_cache_size { default 4096; }`。每个 worker 在处理的第一次吊销查询时读取一次该变量，因此修改后需要重新加载。
+每个路由在每个 worker 中各自维护一份缓存，因此在一个路由上处理的登出，会在使用同一 Redis 的另一个路由的缓存条目过期后才对其生效。每个 worker 最多缓存 1024 条查询结果，所有路由共享。如需调整，请在所有请求都能访问的位置定义 nginx 变量 `$session_revocation_cache_size`，例如在 `http` 配置片段中添加 `map $host $session_revocation_cache_size { default 4096; }`。每个 worker 在处理的第一次吊销查询时读取一次该变量，因此修改后需要重新加载。
 
 #### 登出行为与限制
 

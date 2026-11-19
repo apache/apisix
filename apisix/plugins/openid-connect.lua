@@ -19,9 +19,6 @@ local core              = require("apisix.core")
 local secret            = require("apisix.secret")
 local ngx_re            = require("ngx.re")
 local openidc           = require("resty.openidc")
-local session_redis     = require("resty.session.redis")
-local resty_sha256      = require("resty.sha256")
-local resty_string      = require("resty.string")
 local jwt               = require("resty.jwt")
 local jsonschema        = require('jsonschema')
 local pkey              = require("resty.openssl.pkey")
@@ -1306,38 +1303,6 @@ local function validate_claims_in_oidcauth_response(resp, conf)
 end
 
 
--- The session library keeps one revocation cache per revocation storage object,
--- and a storage given by name is created again for every request, so its cache
--- would never be reused. Create the storage once and pass it to the library as an
--- object instead. Routes that use the same Redis share one storage, and so one
--- cache in each worker; the key is a digest, so the credentials are not retained.
-local revocation_storages = core.lrucache.new({
-    count = 512,
-})
--- One entry per route that uses revocation. The default of 8 would evict the
--- session options of busy routes.
-local session_lrucache = core.lrucache.new({
-    type = "plugin", count = 512,
-})
-
-
-local function create_revocation_storage(redis_conf)
-    return session_redis.new(redis_conf)
-end
-
-
-local function create_revocation_session_opts(session_conf)
-    local hash = resty_sha256:new()
-    hash:update(core.json.canonical_encode(session_conf.redis))
-    local storage = revocation_storages(resty_string.to_hex(hash:final()), nil,
-                                        create_revocation_storage, session_conf.redis)
-
-    local opts = core.table.clone(session_conf)
-    opts.revocation = storage
-    return opts
-end
-
-
 -- With revocation_fail_mode closed, an unreachable revocation store makes
 -- opening or destroying a session fail. resty.session appends the store error to
 -- its own message, so match on the message prefix.
@@ -1535,16 +1500,9 @@ local function authenticate(plugin_conf, ctx)
         -- provider's authorization endpoint to initiate the Relying Party flow.
         -- This code path also handles when the ID provider then redirects to
         -- the configured redirect URI after successful authentication.
-        local session_opts = build_session_opts(conf.session)
-        if session_opts and session_opts.revocation then
-            session_opts = core.lrucache.plugin_ctx(session_lrucache, ctx, nil,
-                                                    create_revocation_session_opts,
-                                                    session_opts)
-        end
-
         local target_url
         response, err, target_url, session = openidc.authenticate(conf, nil, unauth_action,
-                                                                  session_opts)
+                                                          build_session_opts(conf.session))
 
         if err then
             if err == "unauthorized request" then
