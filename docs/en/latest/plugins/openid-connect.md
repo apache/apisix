@@ -391,6 +391,7 @@ Routes that use the same `session.redis` settings share their cache in each work
 
 - **Logout revokes every cookie of the same login.** Each save of the session, such as a token renewal or rolling refresh, gives it a new session ID, so logout revokes the whole lineage: the cookie presented, older copies and refreshed ones, whether issued before or after the logout. A new login is not affected.
 - **With `revocation_fail_mode` set to `open` (the default), a logout can succeed without revoking anything.** If Redis is unavailable during logout, the browser cookie is cleared but no revocation marker is written, and nothing retries it later. A copied cookie then stays valid until it times out. Use `closed` for deployments that rely on revocation, so that a failed revocation write is reported and the session is not destroyed.
+- **Revocation markers live only in Redis.** If Redis loses its data, for example after a restart without persistence or a flush, revoked cookies are accepted again until they expire. Use a Redis with persistence if logouts must survive that.
 - When Redis is unavailable, `closed` rejects requests that carry a cookie session with a `503` response.
 
 ### Authorization Code Flow with PAR and DPoP
