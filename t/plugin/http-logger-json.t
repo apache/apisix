@@ -237,3 +237,34 @@ POST /hello?bar=bar
 {"sample_payload":"hello"}
 --- no_error_log
 "request":{"body":"{\"test\":\"hello\"}"
+
+
+
+=== TEST 9: body expressions with an exact IPv6 address in ipmatch
+--- apisix_yaml
+routes:
+  -
+    uri: /hello
+    upstream:
+        nodes:
+            "127.0.0.1:1980": 1
+        type: roundrobin
+    plugins:
+        http-logger:
+            batch_max_size: 1
+            uri: http://127.0.0.1:1980/log
+            include_req_body: true
+            include_req_body_expr:
+                - ["remote_addr", "ipmatch", ["127.0.0.1", "::1"]]
+            include_resp_body: true
+            include_resp_body_expr:
+                - ["remote_addr", "ipmatch", ["127.0.0.1", "::1"]]
+#END
+--- request
+POST /hello
+{"test":"hello"}
+--- error_log
+"request":{"body":"{\"test\":\"hello\"}"
+"response":{"body":"hello world\n"
+--- no_error_log
+failed to run log_by_lua

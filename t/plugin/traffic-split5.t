@@ -699,6 +699,8 @@ passed
 GET /server_port
 --- response_body chomp
 1983
+--- no_error_log eval
+qr/traffic-split\.lua:\d+: .*PRIVATE KEY/
 
 
 

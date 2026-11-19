@@ -303,7 +303,7 @@ end
 
 local function batch_requests(ctx)
     local metadata = plugin.plugin_metadata(plugin_name)
-    core.log.info("metadata: ", core.json.delay_encode(metadata))
+    core.log.info("metadata of plugin ", plugin_name, " found: ", metadata ~= nil)
 
     local max_body_size
     local max_pipeline_items

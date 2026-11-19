@@ -896,3 +896,59 @@ hello world
 --- error_log eval
 qr/request log:.*"response":\{"body":"hello world\\n"/
 --- wait: 1.5
+
+
+
+=== TEST 30: set route with an http-logger conf that holds a JSON null
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            t('/apisix/admin/global_rules/1', ngx.HTTP_DELETE)
+
+            -- the null is the operand of the expression: read the body only when the
+            -- request has an X-Debug header
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [=[{
+                        "plugins": {
+                            "http-logger": {
+                                "uri": "http://127.0.0.1:1980/log",
+                                "batch_max_size": 1,
+                                "include_req_body": true,
+                                "include_req_body_expr": [["http_x_debug", "~=", null]]
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]=]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 31: a conf that holds a JSON null is logged, and the rest of the log phase runs
+--- request
+GET /hello
+--- response_body
+hello world
+--- wait: 1
+--- error_log eval
+[qr/request log:/,
+qr/init plugin-level conf version: \d+, from \{.*"include_req_body_expr":\[\["http_x_debug","~=",null\]\]/]
+--- no_error_log
+failed to run log_by_lua
+is not supported by JSON

@@ -302,7 +302,6 @@ function _M.access(conf, ctx)
 
     local upstream = rr_up:find()
     if upstream and type(upstream) == "table" then
-        core.log.info("upstream: ", core.json.encode(upstream))
         return set_upstream(upstream, ctx)
     elseif upstream and upstream ~= "plugin#upstream#is#empty" then
         ctx.upstream_id = upstream

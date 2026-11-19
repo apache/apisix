@@ -646,6 +646,7 @@ properties:
   vars:
     anyOf:
       - type: array
+        items: {}
       - type: "null"
   name:
     anyOf:
