@@ -151,8 +151,8 @@ class Scenario:
 
     def snapshot(self):
         states = {}
-        # Use a dedicated test database and set difference: the counter format
-        # is deliberately opaque, and assertions must work on old and new code.
+        # Use a dedicated test database and set difference so assertions work
+        # with both the old and new counter formats.
         for database, initial_keys in self.initial_keys.items():
             keys = set(redis("KEYS", "limit_conn:*", database=database).splitlines())
             for key in keys - initial_keys:
@@ -177,6 +177,7 @@ class Scenario:
     def request(self, connection, path, headers=None):
         connection.request("GET", "/" + self.prefix + path,
                            headers={"X-Tenant": "tenant-a", "X-Account": "tenant-a",
+                                    "X-Other-Tenant": "tenant-b",
                                     "Connection": "keep-alive", **(headers or {})})
         response = connection.getresponse()
         return response
@@ -280,9 +281,11 @@ class Scenario:
             record = self.upstream.records[request_id]
             assert record["headers"]["X-Tenant"] == "tenant-a"
             assert record["headers"]["X-Account"] == "tenant-a"
+            assert record["headers"]["X-Other-Tenant"] == "tenant-b"
             self.event("upstream_arrival", request_id=request_id, path=record["path"],
                        arrived=record["arrived"], tenant=record["headers"]["X-Tenant"],
-                       account=record["headers"]["X-Account"])
+                       account=record["headers"]["X-Account"],
+                       other_tenant=record["headers"]["X-Other-Tenant"])
             held["entries"] = self.entries() - before
             assert len(held["entries"]) == expected_entries, held
         else:
@@ -382,10 +385,13 @@ def subject_change(s):
     s.publish(conn=1)
     a = s.hold(0, 1)
     s.publish(key="http_x_account")
-    b = s.hold(1, 1)
-    assert len(s.snapshot()) == 2, "different subject definitions accidentally shared quota"
+    s.hold(1, 1, 429)
+    assert s.entries() == a["entries"], "expression change discarded the in-flight reservation"
     s.release(a)
-    assert s.entries() == b["entries"], "old request released the new subject's entry"
+    s.wait_count(0)
+    b = s.hold(1, 1)
+    assert {(db, key) for db, key, _ in a["entries"]} == {
+        (db, key) for db, key, _ in b["entries"]}, "same value changed the counter identity"
     s.hold(0, 2, 429)
     s.release(b)
     s.wait_count(0)
@@ -409,10 +415,10 @@ def partial_rule_release(s):
         s.conf.pop(field)
     s.publish(rules=[
         {"conn": 2, "burst": 0, "key": "${http_x_tenant}"},
-        {"conn": 1, "burst": 0, "key": "${http_x_account}"},
+        {"conn": 1, "burst": 0, "key": "${http_x_other_tenant}"},
     ])
     a = s.hold(0, 1, expected_entries=2)
-    assert len(s.snapshot()) == 2, "different subject definitions shared a counter"
+    assert len(s.snapshot()) == 2, "different resolved values shared a counter"
     # Rule 1 admits this request, but rule 2 rejects it. The log phase must
     # release only the partial reservation belonging to the rejected request.
     s.hold(1, 1, 429)

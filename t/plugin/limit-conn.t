@@ -623,7 +623,7 @@ GET /test_concurrency
 503
 503
 --- error_log eval
-qr/limit key: v2:[0-9a-f]{64}, resource: \/apisix\/routes\/1, subject: 10\.10\.10\.1/
+qr/limit key: \/apisix\/routes\/1:10\.10\.10\.1/
 
 
 
@@ -714,7 +714,7 @@ GET /test_concurrency
 503
 503
 --- error_log eval
-qr/limit key: v2:[0-9a-f]{64}, resource: \/apisix\/routes\/1, subject: 10\.10\.10\.2/
+qr/limit key: \/apisix\/routes\/1:10\.10\.10\.2/
 
 
 
@@ -988,7 +988,7 @@ GET /test_concurrency
 200
 200
 --- error_log eval
-qr/limit key: v2:[0-9a-f]{64}, resource: \/apisix\/routes\/\d+, subject: consumer_jack/
+qr/limit key: \/apisix\/routes\/\d+:consumer_jack/
 
 
 
@@ -1077,7 +1077,7 @@ GET /test_concurrency
 503
 503
 --- error_log eval
-qr/limit key: v2:[0-9a-f]{64}, resource: \/apisix\/routes\/\d+, subject: consumer_jack/
+qr/limit key: \/apisix\/routes\/\d+:consumer_jack/
 
 
 

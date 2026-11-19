@@ -77,7 +77,8 @@ add_block_preprocessor(sub {
     }
 _EOC_
     $block->set_value("request", "GET /t");
-    $block->set_value("more_headers", "Subject: tenant:{shared}:one\nOther: tenant:{shared}:one");
+    $block->set_value("more_headers", "Subject: tenant:{shared}:one\n" .
+                      "Other: tenant:{shared}:one\nDistinct: tenant:{different}:two");
     $block->set_value("response_body", "passed\n");
     $block->set_value("no_error_log", "[error]\n[alert]");
 });
@@ -151,15 +152,12 @@ __DATA__
 
 
 
-=== TEST 3: resources, subject definitions, and workflow actions are isolated
+=== TEST 3: resources and workflow actions retain their existing isolation
 --- test
     local confs = {config("scope-a"), config("scope-b"), config("scope-a"),
-                   config("scope-a"), config("scope-a"), config("scope-a")}
-    confs[3].key = "http_other"
-    confs[4].key_type = "var_combination"
-    confs[4].key = "$http_subject"
-    confs[5]._vid = 1
-    confs[6]._vid = 2
+                   config("scope-a")}
+    confs[3]._vid = 1
+    confs[4]._vid = 2
 
     local seen, requests = {}, {}
     for i, conf in ipairs(confs) do
@@ -178,12 +176,12 @@ __DATA__
 
 
 
-=== TEST 4: rule reordering preserves each expression's counter
+=== TEST 4: different expressions with the same value share a counter across reordering
 --- test
     local original = config("reorder")
     original.rules = {
-        {conn = 2, burst = 0, key = "$http_subject"},
-        {conn = 2, burst = 0, key = "$http_other"},
+        {conn = 4, burst = 0, key = "$http_subject"},
+        {conn = 4, burst = 0, key = "$http_other"},
     }
     local reordered = config("reorder")
     reordered.rules = {core.table.deepcopy(original.rules[2]),
@@ -191,19 +189,17 @@ __DATA__
 
     local first = enter(original)
     local subject_key, other_key = key(first, 1), key(first, 2)
-    assert(subject_key ~= other_key, "different dimensions with the same value collided")
+    assert(subject_key == other_key, "equal resolved values created separate counters")
+    count(subject_key, 2)
     local second = enter(reordered)
     assert(key(second, 1) == other_key and key(second, 2) == subject_key,
            "reordering changed a rule's identity")
-    count(subject_key, 2)
-    count(other_key, 2)
+    count(subject_key, 4)
     enter(reordered, 503)
     leave(reordered, first)
-    count(subject_key, 1)
-    count(other_key, 1)
+    count(subject_key, 2)
     leave(reordered, second)
     count(subject_key, 0)
-    count(other_key, 0)
 
 
 
@@ -251,15 +247,14 @@ __DATA__
 
 
 
-=== TEST 7: request IDs and Redis hash-tag characters do not define buckets
+=== TEST 7: request IDs do not change the counter identity
 --- test
-    local conf = config("hash-tag")
+    local conf = config("request-id")
     conf.key_type = "var_combination"
     conf.key = "${http_subject}"
     ngx.ctx.request_id = "first-request"
     local first = enter(conf)
     local k = key(first)
-    assert(not k:find("[{}]"), "subject or expression injected a Redis hash tag")
     ngx.ctx.request_id = "second-request"
     enter(conf, 503)
     count(k, 1)
@@ -273,7 +268,7 @@ __DATA__
     local conf = config("partial-admission")
     conf.rules = {
         {conn = 2, burst = 0, key = "$http_subject"},
-        {conn = 1, burst = 0, key = "$http_other"},
+        {conn = 1, burst = 0, key = "$http_distinct"},
     }
     local first = enter(conf)
     local k1, k2 = key(first, 1), key(first, 2)
@@ -291,19 +286,28 @@ __DATA__
 
 
 
-=== TEST 9: an old request releases its original subject definition
+=== TEST 9: expression and key type changes retain occupancy for the same resolved value
 --- test
-    local original = config("changed-subject")
-    local updated = config("changed-subject")
-    updated.key = "http_other"
-    local first = enter(original)
-    local old_key = key(first)
-    local second = enter(updated)
-    local new_key = key(second)
-    assert(old_key ~= new_key)
-    leave(updated, first)
-    count(old_key, 0)
-    count(new_key, 1)
-    enter(updated, 503)
-    leave(updated, second)
-    count(new_key, 0)
+    local changes = {
+        function(c) c.key = "http_other" end,
+        function(c)
+            c.key_type = "var_combination"
+            c.key = "$http_subject"
+        end,
+    }
+    for i, change in ipairs(changes) do
+        local original = config("same-value-" .. i)
+        local updated = config("same-value-" .. i)
+        change(updated)
+        local first = enter(original)
+        local original_key = key(first)
+        enter(updated, 503)
+        count(original_key, 1)
+        leave(updated, first)
+        count(original_key, 0)
+        local second = enter(updated)
+        assert(key(second) == original_key, "same resolved value changed the counter")
+        count(original_key, 1)
+        leave(updated, second)
+        count(original_key, 0)
+    end
