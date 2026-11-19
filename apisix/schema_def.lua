@@ -579,6 +579,15 @@ local upstream_schema = {
                         type = "string",
                     },
                 },
+                metadata = {
+                    description = "only use the discovered nodes whose metadata "
+                                  .. "contains all of these key/value pairs",
+                    type = "object",
+                    minProperties = 1,
+                    additionalProperties = {
+                        type = "string",
+                    },
+                },
             }
         },
         pass_host = {

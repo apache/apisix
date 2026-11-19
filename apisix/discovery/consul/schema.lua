@@ -37,6 +37,7 @@ return {
             default = true
         },
         weight = {type = "integer", minimum = 1, default = 1},
+        preserve_metadata = {type = "boolean", default = false},
         timeout = {
             type = "object",
             properties = {
