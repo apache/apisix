@@ -48,6 +48,30 @@ core.ctx.register_var("proxy_rewrite_regex_uri_captures", function(ctx)
     return ctx.proxy_rewrite_regex_uri_captures
 end)
 
+local args_values_schema = {
+    type = "object",
+    minProperties = 1,
+    additionalProperties = false,
+    patternProperties = {
+        ["^[\\s\\S]+$"] = {
+            oneOf = {
+                {type = "string"},
+                {type = "number"},
+                {
+                    type = "array",
+                    minItems = 1,
+                    items = {
+                        oneOf = {
+                            {type = "string"},
+                            {type = "number"},
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 local schema = {
     type = "object",
     properties = {
@@ -159,6 +183,21 @@ local schema = {
                 }
             },
 
+        },
+        args = {
+            description = "query parameter operations for the upstream request",
+            type = "object",
+            minProperties = 1,
+            additionalProperties = false,
+            properties = {
+                add = args_values_schema,
+                set = args_values_schema,
+                remove = {
+                    type = "array",
+                    minItems = 1,
+                    items = {type = "string", minLength = 1},
+                },
+            },
         },
         use_real_request_uri_unsafe = {
             description = "use real_request_uri instead, THIS IS VERY UNSAFE.",
@@ -307,6 +346,47 @@ do
     end
 
 
+local function rewrite_args(uri, operations)
+    local index = str_find(uri, "?")
+    local path = index and sub_str(uri, 1, index - 1) or uri
+    local args = index and core.string.decode_args(sub_str(uri, index + 1)) or {}
+
+    -- Match header operation precedence: add, set, then remove.
+    if operations.add then
+        for name, value in pairs(operations.add) do
+            local values = args[name]
+            if type(values) ~= "table" then
+                values = values ~= nil and {values} or {}
+                args[name] = values
+            end
+            if type(value) == "table" then
+                for _, item in ipairs(value) do
+                    core.table.insert(values, item)
+                end
+            else
+                core.table.insert(values, value)
+            end
+        end
+    end
+
+    if operations.set then
+        for name, value in pairs(operations.set) do
+            -- Encoding only reads these values; never mutate configuration arrays.
+            args[name] = value
+        end
+    end
+
+    if operations.remove then
+        for _, name in ipairs(operations.remove) do
+            args[name] = nil
+        end
+    end
+
+    local query = core.string.encode_args(args)
+    return query ~= "" and path .. "?" .. query or path
+end
+
+
 function _M.rewrite(conf, ctx)
     for _, name in ipairs(upstream_names) do
         if conf[name] then
@@ -408,6 +488,12 @@ function _M.rewrite(conf, ctx)
         end
     else
         ctx.var.upstream_uri = upstream_uri
+    end
+
+    -- Apply to the completed upstream URI, including query parameters from uri
+    -- or regex_uri. Changing request args alone would leave upstream_uri stale.
+    if conf.args then
+        ctx.var.upstream_uri = rewrite_args(ctx.var.upstream_uri, conf.args)
     end
 
     if conf.headers then

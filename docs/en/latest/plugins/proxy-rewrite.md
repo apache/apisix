@@ -48,7 +48,35 @@ The `proxy-rewrite` Plugin offers options to rewrite requests that APISIX forwar
 | headers.add     | object   | False     |        |                 | Headers to append to requests. If a header is already present, its configured value is appended. A value can be a constant, one or more [NGINX variables](https://nginx.org/en/docs/http/ngx_http_core_module.html), or a `regex_uri` capture such as `$1-$2-$3`. A value can also be an array. Each element is resolved independently and appended as a separate header line in array order. Array values are supported in APISIX 3.18.0 and later. |
 | headers.set     | object  | False     |        |                 | Headers to set on requests. If a header is already present, its value is overwritten. A value can be a constant, one or more [NGINX variables](https://nginx.org/en/docs/http/ngx_http_core_module.html), or a `regex_uri` capture such as `$1-$2-$3`. A value can also be an array. Each element is resolved independently, and the array replaces any existing value with separate header lines in array order. Array values are supported in APISIX 3.18.0 and later. Do not use this field to set `Host`. |
 | headers.remove  | array[string]   | False     |        |                 | Headers to remove from requests.
+| args | object | False | | | Non-empty object containing at least one of `add`, `set`, or `remove`. Operations run in the fixed order `add`, `set`, then `remove`, on the completed upstream query. |
+| args.add | object | False | | | Non-empty map of non-empty parameter names to literal strings, numbers, or non-empty arrays of strings/numbers. Preserve existing values and append configured values without deduplication; create absent parameters. |
+| args.set | object | False | | | Same value types as `args.add`. Replace all values for each configured name, or create the parameter if absent. Unlisted names are preserved. An empty string produces `name=`; it does not remove the parameter. |
+| args.remove | array[string] | False | | | Non-empty array of non-empty parameter names. Remove all values for each name; absent names are ignored. |
 | use_real_request_uri_unsafe | boolean       | False    | false   |                                                                                                                                        | If true, bypass URI normalization and allow for the full original request URI. Enabling this option is considered unsafe.         |
+
+## Rewrite Query Parameters
+
+Configure the following fragment in the Route's `plugins` object:
+
+```json
+{
+  "proxy-rewrite": {
+    "args": {
+      "add": {"tag": ["b", "c"]},
+      "set": {"page": "1"},
+      "remove": ["token"]
+    }
+  }
+}
+```
+
+For `/demo?tag=a&page=2&page=3&token=tmp`, the upstream receives parameters equivalent to `/demo?tag=a&tag=b&tag=c&page=1`.
+
+Parameter names are case-sensitive and matched after URL decoding. Existing values for the same name retain their order; appended values follow in configuration array order. Setting an array replaces the entire existing value list. Arrays are encoded as repeated query parameters, not as JSON or comma-separated values. Different parameter names may be reordered, and the original percent-encoding representation is not preserved.
+
+Values are literal: variables and templates are not expanded. Empty strings are allowed, but empty arrays, booleans, nulls, objects, and nested arrays are not supported as configured values. Existing bare parameters such as `flag` are retained when appending to them. Removal operates by name, not by value or array index.
+
+Operations run after the existing URI rewriting logic and before header rewriting. A `set` for the same name overwrites `add`; `remove` wins over both. Omitting `args` preserves the existing URI handling without decoding and re-encoding the query.
 
 ## Examples
 
