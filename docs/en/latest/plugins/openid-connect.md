@@ -389,7 +389,7 @@ Each route has its own cache in each worker, so a logout on one route reaches ot
 
 #### Logout behavior and limitations
 
-- **Logout revokes every cookie of the same login.** Each save of the session, such as a token renewal or rolling refresh, gives it a new session ID, so logout revokes the whole lineage: the cookie presented, older copies and refreshed ones, whether issued before or after the logout. A new login is not affected. Cookies issued before an upgrade to a `lua-resty-session` with lineage revocation are revoked by their own session ID only.
+- **Logout revokes every cookie of the same login.** Each save of the session, such as a token renewal or rolling refresh, gives it a new session ID, so logout revokes the whole lineage: the cookie presented, older copies and refreshed ones, whether issued before or after the logout. A new login is not affected.
 - **With `revocation_fail_mode` set to `open` (the default), a logout can succeed without revoking anything.** If Redis is unavailable during logout, the browser cookie is cleared but no revocation marker is written, and nothing retries it later. A copied cookie then stays valid until it times out. Use `closed` for deployments that rely on revocation, so that a failed revocation write is reported and the session is not destroyed.
 - When Redis is unavailable, `closed` rejects requests that carry a cookie session with a `503` response.
 
