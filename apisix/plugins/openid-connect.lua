@@ -102,9 +102,9 @@ local dpop_jwk_required_members = {
     RSA = {"e", "n"},
 }
 
--- lua-resty-jwt 0.4.0 binds algorithms to key types itself, but only at
--- signing time; this table lets the config check reject the mismatch up front
--- with a precise message instead of a 500 on the first request
+-- lua-resty-jwt binds algorithms to key types itself, but only at signing
+-- time; this table lets the config check reject the mismatch up front with a
+-- precise message instead of a 500 on the first request
 local client_assertion_key_type = {
     RS256 = {kty = "RSA"},
     RS512 = {kty = "RSA"},
@@ -878,9 +878,9 @@ local function check_client_jwt_assertion_alg(conf)
                       .. "selected by \"" .. symmetric_by .. "\""
     end
 
-    -- lua-resty-jwt 0.4.0 rejects an algorithm/key mismatch itself, but only
-    -- when the assertion is signed; check it here so the config is rejected
-    -- with a precise message instead of failing on the first request
+    -- lua-resty-jwt rejects an algorithm/key mismatch itself, but only when
+    -- the assertion is signed; check it here so the config is rejected with a
+    -- precise message instead of failing on the first request
     local expected = asymmetric_by and client_assertion_key_type[alg]
     local private_key = conf.client_rsa_private_key
     if not expected or not private_key or secret.is_secret_ref(private_key) then
