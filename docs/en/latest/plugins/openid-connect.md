@@ -385,7 +385,7 @@ Cookie sessions are stored by the client and cannot normally be invalidated indi
 
 A logout takes effect immediately on the worker that handled it and on other workers once their cached entry expires. `revocation_cache_ttl` therefore bounds how long a session whose revocation marker was written successfully can still be accepted by another worker. It does not cover the limitations below.
 
-Each route has its own cache in each worker, so a logout on one route reaches other routes only after their cached entries expire. Each worker holds up to 1024 cached lookups and 1024 cached store errors by default. To change that, define the nginx variables `$session_revocation_cache_size` and `$session_revocation_error_cache_size` where every request sees them, for example `map $host $session_revocation_cache_size { default 4096; }` in an `http` configuration snippet. Workers read them once, so a reload is needed.
+Routes that use the same `session.redis` settings share their cache in each worker, so a logout on one is seen at once by the others in that worker. Each worker holds up to 1024 cached lookups and 1024 cached store errors by default. To change that, define the nginx variables `$session_revocation_cache_size` and `$session_revocation_error_cache_size` where every request sees them, for example `map $host $session_revocation_cache_size { default 4096; }` in an `http` configuration snippet. Workers read them once, so a reload is needed.
 
 #### Logout behavior and limitations
 
