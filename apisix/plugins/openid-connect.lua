@@ -1499,9 +1499,17 @@ local function authenticate(plugin_conf, ctx)
         -- provider's authorization endpoint to initiate the Relying Party flow.
         -- This code path also handles when the ID provider then redirects to
         -- the configured redirect URI after successful authentication.
+        -- The configuration table is not the same on every request, so the session
+        -- library needs a stable name for the revocation cache entries.
+        local session_opts = build_session_opts(conf.session)
+        if session_opts and session_opts.revocation then
+            session_opts = core.table.clone(session_opts)
+            session_opts.revocation_cache_id = core.lrucache.plugin_ctx_id(ctx)
+        end
+
         local target_url
         response, err, target_url, session = openidc.authenticate(conf, nil, unauth_action,
-                                                          build_session_opts(conf.session))
+                                                                  session_opts)
 
         if err then
             if err == "unauthorized request" then
