@@ -449,13 +449,9 @@ function _M.collect_body(conf, ctx)
                 return
             end
 
-            -- a buffer that reached the limit may have been cut, so only the
-            -- part that decodes is logged, held to the same limit
-            local max_output
-            if #final_body >= max_resp_body_bytes then
-                max_output = max_resp_body_bytes
-            end
-            local decoded_body, err = decoder(final_body, max_output)
+            -- the buffer may have been cut at the limit, so it is decoded as a
+            -- possibly cut stream, and the decoded body is held to the same limit
+            local decoded_body, err = decoder(final_body, max_resp_body_bytes)
             if err ~= nil then
                 core.log.warn("try decode compressed data err: ", err)
                 ctx.resp_body = final_body

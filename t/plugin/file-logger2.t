@@ -635,10 +635,15 @@ contain with target
                 {uri = "/compressed/304"},
                 {uri = "/compressed/text-gzip", max = 100},
                 {uri = "/compressed/stored-gzip", max = 100},
-                {uri = "/compressed/stored-gzip-exact", max = exact},
+                {uri = "/compressed/stored-gzip-exact", upstream = "/compressed/stored-gzip",
+                 max = exact},
                 {uri = "/compressed/not-gzip"},
+                {uri = "/compressed/text-gzip-under", upstream = "/compressed/text-gzip",
+                 max = 10000},
                 {uri = "/compressed/empty-br"},
                 {uri = "/compressed/text-br", max = 5000},
+                {uri = "/compressed/text-br-under", upstream = "/compressed/text-br",
+                 max = 50000},
                 {uri = "/compressed/not-br"},
             }
             for i, route in ipairs(routes) do
@@ -652,7 +657,7 @@ contain with target
                                 max_resp_body_bytes = route.max,
                             },
                             ["proxy-rewrite"] = {
-                                uri = string.gsub(route.uri, "-exact$", ""),
+                                uri = route.upstream or route.uri,
                             },
                         },
                         upstream = {
@@ -779,7 +784,32 @@ try decode compressed data err: inflate gzip err
 
 
 
-=== TEST 21: br bodies that are empty or cut at the limit are logged without error
+=== TEST 21: the plaintext of a gzip body under the limit is held to the limit
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local plain = string.rep("hello world\n", 10000)
+            t("/compressed/text-gzip-under", ngx.HTTP_GET)
+            local fd = assert(io.open("file-logger-compressed.log"))
+            local last
+            for line in fd:lines() do
+                last = line
+            end
+            fd:close()
+            local body = core.json.decode(last).response.body
+            ngx.say(#body, " ", body == string.sub(plain, 1, #body))
+        }
+    }
+--- response_body
+10000 true
+--- no_error_log
+try decode compressed data err
+
+
+
+=== TEST 22: br bodies that are empty, cut at the limit or decoding past it are logged without error
 --- config
     location /t {
         content_by_lua_block {
@@ -790,7 +820,7 @@ try decode compressed data err: inflate gzip err
                 numbers[i] = i
             end
             local plain = table.concat(numbers, " ")
-            for _, case in ipairs({"empty-br", "text-br"}) do
+            for _, case in ipairs({"empty-br", "text-br", "text-br-under"}) do
                 t("/compressed/" .. case, ngx.HTTP_GET)
                 local fd = assert(io.open("file-logger-compressed.log"))
                 local last
@@ -806,12 +836,13 @@ try decode compressed data err: inflate gzip err
 --- response_body
 empty-br 0 true
 text-br 5000 true
+text-br-under 50000 true
 --- no_error_log
 try decode compressed data err
 
 
 
-=== TEST 22: a br body below the limit that fails to decode is logged as received
+=== TEST 23: a br body below the limit that fails to decode is logged as received
 --- config
     location /t {
         content_by_lua_block {
