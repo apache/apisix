@@ -35,15 +35,24 @@ description: 这个文档包含有关 Apache APISIX brotli 插件的相关信息
 
 该插件依赖 brotli 共享库。
 
-如下是构建和安装 brotli 共享库的示例脚本：
+请使用发行版自带的软件包安装，这样可以持续获得安全更新：
 
 ``` shell
-wget https://github.com/google/brotli/archive/refs/tags/v1.2.1.zip
-unzip v1.2.1.zip
-cd brotli-1.2.1 && mkdir build && cd build
-cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local/brotli ..
-sudo cmake --build . --config Release --target install
-sudo sh -c "echo /usr/local/brotli/lib >> /etc/ld.so.conf.d/brotli.conf"
+# Debian / Ubuntu
+sudo apt-get install -y brotli libbrotli1
+# RHEL / CentOS / Rocky
+sudo yum install -y brotli libbrotli
+```
+
+该插件通过 LuaJIT FFI 加载共享库，加载时使用不带版本号的 soname（`libbrotlienc.so`）。
+发行版把该符号链接放在开发包中，因此请安装开发包（`libbrotli-dev`，RHEL 上为
+`brotli-devel`），或者自行创建符号链接：
+
+``` shell
+for lib in brotlicommon brotlidec brotlienc; do
+  so=$(ldconfig -p | awk -v n="lib${lib}.so.1" '$1 == n { print $NF; exit }')
+  sudo ln -sf "lib${lib}.so.1" "$(dirname "$so")/lib${lib}.so"
+done
 sudo ldconfig
 ```
 

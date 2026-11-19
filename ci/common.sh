@@ -134,20 +134,22 @@ install_nodejs () {
 }
 
 install_brotli () {
-    local BORTLI_VERSION="1.2.1"
-    wget -q https://github.com/google/brotli/archive/refs/tags/v${BORTLI_VERSION}.zip
-    unzip v${BORTLI_VERSION}.zip && cd ./brotli-${BORTLI_VERSION} && mkdir build && cd build
-    local CMAKE=$(command -v cmake3 > /dev/null 2>&1 && echo cmake3 || echo cmake)
-    ${CMAKE} -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local/brotli ..
-    sudo ${CMAKE} --build . --config Release --target install
-    if [ -d "/usr/local/brotli/lib64" ]; then
-        echo /usr/local/brotli/lib64 | sudo tee /etc/ld.so.conf.d/brotli.conf
-    else
-        echo /usr/local/brotli/lib | sudo tee /etc/ld.so.conf.d/brotli.conf
-    fi
+    sudo apt-get -qy update
+    sudo apt-get install -y --no-install-recommends brotli libbrotli1
+
+    # brotli-ffi calls ffi.load("brotlienc"), which resolves the unversioned
+    # soname. The distro ships that symlink in libbrotli-dev, so create it here.
+    local lib so dir
+    for lib in brotlicommon brotlidec brotlienc; do
+        so=$(ldconfig -p | awk -v n="lib${lib}.so.1" '$1 == n { print $NF; exit }')
+        if [ -z "${so}" ]; then
+            echo "lib${lib}.so.1 not found after install" >&2
+            exit 1
+        fi
+        dir=$(dirname "${so}")
+        sudo ln -sf "lib${lib}.so.1" "${dir}/lib${lib}.so"
+    done
     sudo ldconfig
-    cd ../..
-    rm -rf brotli-${BORTLI_VERSION}
 }
 
 set_coredns() {

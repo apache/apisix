@@ -35,15 +35,26 @@ The `brotli` Plugin dynamically sets the behavior of [brotli in Nginx](https://g
 
 This Plugin requires brotli shared libraries.
 
-The example commands to build and install brotli shared libraries:
+Install them from your distribution's packages, so that they keep receiving
+security updates:
 
 ``` shell
-wget https://github.com/google/brotli/archive/refs/tags/v1.2.1.zip
-unzip v1.2.1.zip
-cd brotli-1.2.1 && mkdir build && cd build
-cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local/brotli ..
-sudo cmake --build . --config Release --target install
-sudo sh -c "echo /usr/local/brotli/lib >> /etc/ld.so.conf.d/brotli.conf"
+# Debian / Ubuntu
+sudo apt-get install -y brotli libbrotli1
+# RHEL / CentOS / Rocky
+sudo yum install -y brotli libbrotli
+```
+
+The Plugin loads the libraries through LuaJIT's FFI, which resolves the
+unversioned soname (`libbrotlienc.so`). Distributions ship that symlink in the
+development package, so either install it (`libbrotli-dev`, or `brotli-devel`
+on RHEL) or create the symlinks yourself:
+
+``` shell
+for lib in brotlicommon brotlidec brotlienc; do
+  so=$(ldconfig -p | awk -v n="lib${lib}.so.1" '$1 == n { print $NF; exit }')
+  sudo ln -sf "lib${lib}.so.1" "$(dirname "$so")/lib${lib}.so"
+done
 sudo ldconfig
 ```
 
