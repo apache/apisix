@@ -69,6 +69,15 @@ local schema = {
                 job = "apisix",
             },
         },
+        structured_metadata = {
+            type = "object",
+            patternProperties = {
+                [".*"] = {
+                    type = "string",
+                    minLength = 1,
+                },
+            },
+        },
 
         -- connection layer configurations
         ssl_verify = {type = "boolean", default = false},
@@ -249,6 +258,28 @@ function _M.log(conf, ctx)
     end
     entry.loki_labels = labels
 
+    -- structured metadata is resolved the same way, but a key whose value
+    -- resolves to an empty string (e.g. a missing request header) is dropped,
+    -- since Loki has nothing to index for it
+    if conf.structured_metadata then
+        local metadata = new_tab(0, 4)
+        local has_metadata = false
+        for key, value in pairs(conf.structured_metadata) do
+            local new_val, err = core.utils.resolve_var(value, ctx.var)
+            if err then
+                core.log.warn("failed to resolve structured metadata '", key,
+                              "' value '", value, "': ", err)
+            elseif new_val ~= "" then
+                metadata[key] = new_val
+                has_metadata = true
+            end
+        end
+
+        if has_metadata then
+            entry.loki_structured_metadata = metadata
+        end
+    end
+
     if batch_processor_manager:add_entry(conf, entry) then
         return
     end
@@ -263,14 +294,17 @@ function _M.log(conf, ctx)
         for _, entry in ipairs(entries) do
             local entry_labels = entry.loki_labels
             local log_time = entry.loki_log_time
+            local metadata = entry.loki_structured_metadata
             -- remove logger internal fields so they don't leak into the encoded
             -- log line, then restore them: the batch processor reuses the same
             -- entry tables on retry, so they must survive a failed flush
             entry.loki_log_time = nil
             entry.loki_labels = nil
+            entry.loki_structured_metadata = nil
             local line = core.json.encode(entry)
             entry.loki_log_time = log_time
             entry.loki_labels = entry_labels
+            entry.loki_structured_metadata = metadata
 
             local key = gen_label_key(entry_labels)
             local stream = stream_by_key[key]
@@ -283,9 +317,18 @@ function _M.log(conf, ctx)
                 table_insert(streams, stream)
             end
 
-            table_insert(stream.values, {
-                log_time, line
-            })
+            -- Loki accepts an optional third element holding the structured
+            -- metadata of the line; leave it out when there is none so older
+            -- Loki versions keep working
+            if metadata then
+                table_insert(stream.values, {
+                    log_time, line, metadata
+                })
+            else
+                table_insert(stream.values, {
+                    log_time, line
+                })
+            end
         end
 
         -- build loki request data
