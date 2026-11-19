@@ -104,12 +104,7 @@ local function get_rules(ctx, conf)
     end
 
     local rules = {}
-    local key_occurrences = {}
     for _, rule in ipairs(conf.rules) do
-        -- Identify repeated expressions independently of other rules' positions,
-        -- including rules that this request does not match.
-        local occurrence = (key_occurrences[rule.key] or 0) + 1
-        key_occurrences[rule.key] = occurrence
         local conn, err = resolve_var(ctx, rule.conn)
         if err then
             goto CONTINUE
@@ -129,7 +124,6 @@ local function get_rules(ctx, conf)
             key_type = "constant",
             key = key,
             key_expr = rule.key,
-            key_occurrence = occurrence,
         })
 
         ::CONTINUE::
@@ -155,7 +149,6 @@ local function gen_limit_key(conf, rule, key)
         conf._vid or 0,
         rule.key_expr and "var_combination" or (rule.key_type or "var"),
         rule.key_expr or rule.key,
-        rule.key_occurrence or 0,
         tostring(key),
     })
     local hash = sha256:new()

@@ -207,7 +207,7 @@ __DATA__
 
 
 
-=== TEST 5: duplicate expressions have independent reservations
+=== TEST 5: duplicate expressions retain shared counters and sequential admission
 --- test
     local conf = config("duplicates")
     conf.rules = {
@@ -216,45 +216,38 @@ __DATA__
     }
     local first = enter(conf)
     local k1, k2 = key(first, 1), key(first, 2)
-    assert(k1 ~= k2, "duplicate expressions reused one reservation")
-    count(k1, 1)
-    count(k2, 1)
-    local second = enter(conf)
+    assert(k1 == k2, "duplicate expressions created separate counters")
     count(k1, 2)
-    count(k2, 2)
     enter(conf, 503)
+    count(k1, 2)
     leave(conf, first)
-    count(k1, 1)
-    count(k2, 1)
-    leave(conf, second)
     count(k1, 0)
-    count(k2, 0)
 
 
 
-=== TEST 6: skipped rules do not renumber later duplicate expressions
+=== TEST 6: reordering duplicate expressions with a skipped rule retains occupancy
 --- test
     local original = config("skipped")
     original.rules = {
-        {conn = 2, burst = 0, key = "$http_subject"},
+        {conn = "$http_missing", burst = 0, key = "$http_subject"},
         {conn = 2, burst = 0, key = "$http_subject"},
     }
     local updated = config("skipped")
-    updated.rules = core.table.deepcopy(original.rules)
-    updated.rules[1].conn = "$http_missing"
+    updated.rules = {core.table.deepcopy(original.rules[2]),
+                     core.table.deepcopy(original.rules[1])}
 
     local first = enter(original)
-    local k1, k2 = key(first, 1), key(first, 2)
+    assert(#first.limit_conn == 4, "invalid rule was not skipped")
+    local original_key = key(first)
     local second = enter(updated)
     assert(#second.limit_conn == 4, "invalid rule was not skipped")
-    assert(key(second) == k2, "skipping a rule changed another rule's identity")
-    count(k1, 1)
-    count(k2, 2)
+    assert(key(second) == original_key, "reordering duplicate expressions changed the counter")
+    count(original_key, 2)
+    enter(updated, 503)
     leave(updated, first)
-    count(k1, 0)
-    count(k2, 1)
+    count(original_key, 1)
     leave(updated, second)
-    count(k2, 0)
+    count(original_key, 0)
 
 
 

@@ -409,16 +409,37 @@ def partial_rule_release(s):
         s.conf.pop(field)
     s.publish(rules=[
         {"conn": 2, "burst": 0, "key": "${http_x_tenant}"},
-        {"conn": 1, "burst": 0, "key": "${http_x_tenant}"},
+        {"conn": 1, "burst": 0, "key": "${http_x_account}"},
     ])
     a = s.hold(0, 1, expected_entries=2)
-    assert len(s.snapshot()) == 2, "repeated rules must have independent counters"
+    assert len(s.snapshot()) == 2, "different subject definitions shared a counter"
     # Rule 1 admits this request, but rule 2 rejects it. The log phase must
     # release only the partial reservation belonging to the rejected request.
     s.hold(1, 1, 429)
     s.wait_count(2)
     assert s.entries() == a["entries"], "partial admission damaged another request's leases"
     s.release(a)
+    s.wait_count(0)
+
+
+def duplicate_rule_order(s):
+    for field in ["conn", "burst", "key", "key_type"]:
+        s.conf.pop(field)
+    rules = [
+        {"conn": "$http_missing", "burst": 0, "key": "${http_x_tenant}"},
+        {"conn": 2, "burst": 0, "key": "${http_x_tenant}"},
+    ]
+    s.publish(rules=rules)
+    a = s.hold(0, 1)
+    s.publish(rules=list(reversed(rules)))
+    b = s.hold(1, 1)
+    assert len(s.snapshot()) == 1, "duplicate rule order changed the counter identity"
+    assert {(db, key) for db, key, _ in a["entries"]} == {
+        (db, key) for db, key, _ in b["entries"]}, "in-flight requests used different counters"
+    s.hold(0, 2, 429)
+    s.release(a)
+    assert s.entries() == b["entries"], "old request released the new request's entry"
+    s.release(b)
     s.wait_count(0)
 
 
@@ -445,7 +466,8 @@ def write_config():
 def main():
     cases = {"cross-worker": cross_worker, "hot-update": hot_update,
              "mixed-ttl": mixed_ttl, "subject-change": subject_change,
-             "backend-change": backend_change, "partial-rule-release": partial_rule_release}
+             "backend-change": backend_change, "partial-rule-release": partial_rule_release,
+             "duplicate-rule-order": duplicate_rule_order}
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--write-config", action="store_true")
     parser.add_argument("--case", choices=list(cases))
