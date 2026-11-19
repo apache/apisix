@@ -381,6 +381,34 @@ def mixed_ttl(s):
     s.wait_count(0)
 
 
+def nonpositive_ttl(s):
+    for ttl in (-1, 0):
+        s.event("nonpositive_ttl", ttl=ttl, initial_counter="absent")
+        s.publish(conn=1, key_ttl=ttl)
+        a = s.hold(0, 1, expected_entries=0)
+        b = s.hold(1, 1, expected_entries=0)
+        assert not s.snapshot(), "non-positive TTL left a counter while requests were in flight"
+        s.release(a)
+        s.release(b)
+        s.wait_count(0)
+
+
+def nonpositive_ttl_update(s):
+    for ttl in (-1, 0):
+        s.event("nonpositive_ttl", ttl=ttl, initial_counter="positive_ttl")
+        s.publish(conn=2, key_ttl=60)
+        a = s.hold(0, 1)
+        assert all(state["ttl"] > 0 for state in s.snapshot().values())
+        s.publish(key_ttl=ttl)
+        b = s.hold(1, 1, expected_entries=0)
+        # Preserve EXPIRE's existing non-positive-timeout behavior. Positive
+        # leases alone use the new expiry-extension rule.
+        assert not s.snapshot(), "non-positive TTL did not delete the existing counter"
+        s.release(b)
+        s.release(a)
+        s.wait_count(0)
+
+
 def subject_change(s):
     s.publish(conn=1)
     a = s.hold(0, 1)
@@ -471,7 +499,9 @@ def write_config():
 
 def main():
     cases = {"cross-worker": cross_worker, "hot-update": hot_update,
-             "mixed-ttl": mixed_ttl, "subject-change": subject_change,
+             "mixed-ttl": mixed_ttl, "nonpositive-ttl": nonpositive_ttl,
+             "nonpositive-ttl-update": nonpositive_ttl_update,
+             "subject-change": subject_change,
              "backend-change": backend_change, "partial-rule-release": partial_rule_release,
              "duplicate-rule-order": duplicate_rule_order}
     parser = argparse.ArgumentParser(description=__doc__)

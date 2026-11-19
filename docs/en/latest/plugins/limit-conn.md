@@ -62,7 +62,7 @@ The `limit-conn` Plugin limits the rate of requests by the number of concurrent 
 | redis_timeout | integer | False | 1000 | >= 1 | The Redis timeout value in milliseconds when `policy` is `redis` or `redis-cluster`. |
 | redis_keepalive_timeout | integer | False | 10000 | >= 1000 | Keepalive timeout in milliseconds for Redis when `policy` is `redis` or `redis-cluster`. |
 | redis_keepalive_pool | integer | False | 100 | >= 1 | Keepalive pool size for Redis when `policy` is `redis` or `redis-cluster`. |
-| key_ttl | integer | False | 3600 | >= 1 | The lifetime in seconds of each admitted request's Redis reservation. Used when `policy` is `redis` or `redis-cluster`. The counter key remains until its reservations can expire; a shorter TTL for new requests does not shorten existing reservations. |
+| key_ttl | integer | False | 3600 | | The lifetime in seconds of each admitted request's Redis reservation. Used when `policy` is `redis` or `redis-cluster`. For positive values, the counter key remains until its reservations can expire; a shorter positive TTL for new requests does not shorten existing reservations. |
 | redis_cluster_nodes | array[string] | False | | | The list of Redis cluster nodes with at least one address. Required when `policy` is `redis-cluster`. |
 | redis_cluster_name | string | False | | | The name of the Redis cluster. Required when `policy` is `redis-cluster`. |
 | redis_cluster_ssl | boolean | False | false | | If true, use SSL to connect to Redis cluster when `policy` is `redis-cluster`. |
@@ -84,7 +84,7 @@ Changing `key` or `key_type` does not create a new counter if the resolved value
 
 Rules that resolve to the same value share a counter, including different expressions and repeated entries. Rules are still applied sequentially; this change does not deduplicate their admission or release operations. Workflow actions remain isolated by their workflow rule position; reordering those rules can change their counter identities.
 
-For Redis policies, `key_ttl` applies to each newly admitted request. Reducing it does not shorten older reservations. Reservations are not renewed automatically: choose a TTL longer than the requests you need to count. A request that outlives its reservation can stop contributing to the count before it completes. This is a concurrency limit, not a count of requests per TTL window.
+For Redis policies, `key_ttl` applies to each newly admitted request. Reducing it to another positive value does not shorten older reservations. Zero and negative values remain accepted and retain Redis `EXPIRE`'s immediate-deletion behavior after admission. With the stable counter identity, an admitted request using either value deletes the shared counter, including reservations from earlier configurations; older versions used a different counter after configuration changes. These values do not provide reliable concurrency limiting. Reservations are not renewed automatically: choose a TTL longer than the requests you need to count. A request that outlives its reservation can stop contributing to the count before it completes. This is a concurrency limit, not a count of requests per TTL window.
 
 :::warning Upgrade compatibility
 

@@ -39,11 +39,12 @@ local redis_incoming_script = core.string.compress_script([=[
     end
 
     redis.call('ZADD', key, now + ttl, req_id)
-    -- A configuration update can shorten the new request's lease while older
-    -- requests still have longer leases in this set. Never expire their entire
-    -- counter early. Expired members are removed above before admission.
+    -- A shorter positive lease must not expire older requests in this set.
+    -- Preserve the existing immediate deletion for non-positive TTLs.
     local ttl_ms = ttl * 1000
-    if redis.call('PTTL', key) < ttl_ms then
+    if ttl <= 0 then
+        redis.call('EXPIRE', key, ttl)
+    elseif redis.call('PTTL', key) < ttl_ms then
         redis.call('PEXPIRE', key, ttl_ms)
     end
     return {1, count + 1}

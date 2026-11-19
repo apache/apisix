@@ -94,13 +94,13 @@ local policy_to_additional_properties = {
 local limit_conn_redis_cluster_schema =
     core.table.deepcopy(policy_to_additional_properties["redis-cluster"])
 limit_conn_redis_cluster_schema.properties.key_ttl = {
-    type = "integer", minimum = 1, default = 3600,
+    type = "integer", default = 3600,
 }
 
 local limit_conn_redis_schema =
     core.table.deepcopy(policy_to_additional_properties["redis"])
 limit_conn_redis_schema.properties.key_ttl = {
-    type = "integer", minimum = 1, default = 3600,
+    type = "integer", default = 3600,
 }
 
 local _M = {

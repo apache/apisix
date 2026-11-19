@@ -62,7 +62,7 @@ import TabItem from '@theme/TabItem';
 | redis_timeout | integer | 否 | 1000 | >= 1 | 当 `policy` 为 `redis` 或 `redis-cluster` 时，Redis 超时值（以毫秒为单位）。|
 | redis_keepalive_timeout | integer | 否 | 10000 | >= 1000 | 当 `policy` 为 `redis` 或 `redis-cluster` 时，Redis 的空闲连接超时时间（以毫秒为单位）。|
 | redis_keepalive_pool | integer | 否 | 100 | >= 1 | 当 `policy` 为 `redis` 或 `redis-cluster` 时，Redis 的连接池最大连接数。|
-| key_ttl | integer | 否 | 3600 | >= 1 | 每个已准入请求在 Redis 中占用记录的有效期，单位为秒。当 `policy` 为 `redis` 或 `redis-cluster` 时使用。计数键保留到其请求记录能够过期；缩短新请求的 TTL 不会缩短已有请求记录的有效期。|
+| key_ttl | integer | 否 | 3600 | | 每个已准入请求在 Redis 中占用记录的有效期，单位为秒。当 `policy` 为 `redis` 或 `redis-cluster` 时使用。对于正数 TTL，计数键保留到其请求记录能够过期；将新请求的 TTL 缩短为另一个正数，不会缩短已有请求记录的有效期。|
 | redis_cluster_nodes | array[string] | 否 | | | 至少包含一个地址的 Redis 集群节点列表。当 `policy` 为 `redis-cluster` 时必填。|
 | redis_cluster_name | string | 否 | | | Redis 集群的名称。当 `policy` 为 `redis-cluster` 时必填。|
 | redis_cluster_ssl | boolean | 否 | false | | 如果为 true，则在 `policy` 为 `redis-cluster` 时使用 SSL 连接到 Redis 集群。|
@@ -84,7 +84,7 @@ import TabItem from '@theme/TabItem';
 
 `rules` 中求值结果相同的规则共享计数器，包括不同表达式和重复条目。规则仍按顺序执行；本次修改不对其准入或释放操作去重。Workflow 动作继续按 workflow 规则位置隔离，重排这些规则可能改变其计数身份。
 
-对于 Redis 策略，`key_ttl` 作用于每个新准入的请求，缩短它不会缩短旧请求记录的有效期。请求记录不会自动续期，应将 TTL 设置为大于需要计数的请求持续时间。请求持续时间超过记录有效期时，可能在结束前就不再参与计数。这是并发限制，不是每个 TTL 时间窗口内的请求次数限制。
+对于 Redis 策略，`key_ttl` 作用于每个新准入的请求，将它缩短为另一个正数，不会缩短旧请求记录的有效期。零和负数继续被接受，并保留 Redis `EXPIRE` 在准入后立即删除计数 key 的语义。在稳定计数身份下，使用这些值的新请求一旦准入，会删除共享计数 key 中旧配置的请求记录；旧版在配置更新后使用不同的计数 key。这些值不能提供可靠的并发限制。请求记录不会自动续期，应将 TTL 设置为大于需要计数的请求持续时间。请求持续时间超过记录有效期时，可能在结束前就不再参与计数。这是并发限制，不是每个 TTL 时间窗口内的请求次数限制。
 
 :::warning 升级兼容性
 
