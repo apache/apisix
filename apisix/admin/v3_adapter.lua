@@ -17,6 +17,7 @@
 
 local type              = type
 local pairs             = pairs
+local setmetatable      = setmetatable
 local tonumber          = tonumber
 local ngx               = ngx
 local re_find           = ngx.re.find
@@ -27,6 +28,7 @@ local log               = require("apisix.core.log")
 local request           = require("apisix.core.request")
 local response          = require("apisix.core.response")
 local table             = require("apisix.core.table")
+local array_mt          = require("apisix.core.json").array_mt
 
 local _M = {}
 
@@ -110,7 +112,8 @@ local function pagination(body, args)
     local to = args.page * args.page_size
     local from =  to - args.page_size + 1
 
-    local res = table.new(20, 0)
+    -- keep the list encoded as a JSON array even when the page is empty
+    local res = setmetatable(table.new(20, 0), array_mt)
 
     for i = from, to do
         if list[i] then
