@@ -983,6 +983,12 @@ local function retry_on_error(ctx, conf, code, body)
         core.log.warn("ai instance ", failed_instance, " returned status ", code,
                       ", falling back to ", name, ". upstream error body: ",
                       body or "")
+        -- Release the failed attempt before switching its metric labels.
+        -- The next attempt increments again; log handles the final attempt.
+        if ctx.llm_active_connections_tracked then
+            exporter.dec_llm_active_connections(ctx)
+            ctx.llm_active_connections_tracked = false
+        end
         ctx.balancer_ip = name
         ctx.picked_ai_instance_name = name
         ctx.picked_ai_instance = ai_instance
