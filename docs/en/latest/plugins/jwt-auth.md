@@ -43,6 +43,8 @@ Once enabled, the Plugin exposes an endpoint to create JWT credentials by [Consu
 
 When a Consumer is successfully authenticated, APISIX adds additional headers, such as `X-Consumer-Username`, `X-Credential-Identifier`, and other Consumer custom headers if configured, to the request, before proxying it to the Upstream service. The Upstream service will be able to differentiate between consumers and implement additional logics as needed. If any of these values is not available, the corresponding header will not be added.
 
+Tokens are parsed strictly per [RFC 7515](https://datatracker.ietf.org/doc/html/rfc7515#section-2): the compact serialization must consist of exactly three unpadded, canonical base64url segments. Variants that encode the same token, such as segments with `=` padding or the standard base64 alphabet (`+`/`/`), are rejected.
+
 ## Attributes
 
 The following attributes are available for configurations on Consumers or Credentials.
