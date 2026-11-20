@@ -1012,11 +1012,14 @@ end
 -- state of the table it was copied from until it writes its own.
 function _M.set_runtime_state(tab, key, value)
     local mt = getmetatable(tab)
+    if mt and mt.runtime_state_of == nil then
+        error("set_runtime_state: the table has a metatable of its own", 2)
+    end
+
     if not mt or mt.runtime_state_of ~= tab then
         local state = {}
-        local inherited = mt and mt.__index
-        if type(inherited) == "table" then
-            for k, v in pairs(inherited) do
+        if mt then
+            for k, v in pairs(mt.__index) do
                 state[k] = v
             end
         end
@@ -1588,6 +1591,11 @@ function _M.set_plugins_meta_parent(plugins, parent)
         return
     end
     for _, plugin_conf in pairs(plugins) do
+        -- an empty conf is decoded as an empty array
+        if getmetatable(plugin_conf) == core.json.array_mt then
+            setmetatable(plugin_conf, nil)
+        end
+
         local meta = plugin_conf._meta
         if not meta then
             meta = {}

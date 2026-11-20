@@ -305,16 +305,23 @@ authenticated: true
             -- a nil clears the state of the copy only
             plugin.set_runtime_state(copy, "_version", nil)
             ngx.say("cleared: ", copy._version, " ", conf._version == version)
+
+            -- a metatable the helper does not own is never replaced
+            local arr = setmetatable({}, core.json.array_mt)
+            local ok, err = pcall(plugin.set_runtime_state, arr, "_k", 1)
+            ngx.say("foreign metatable: ", ok, " ", err,
+                    " ", getmetatable(arr) == core.json.array_mt)
         }
     }
---- response_body
+--- response_body_like
 read: true true
 configured priority wins: 5
-encoded: {"_meta":{"priority":5},"key":"v"}
+encoded: \{"_meta":\{"priority":5\},"key":"v"\}
 copy reads: true
 copy: false true
 origin: true nil
 cleared: nil true
+foreign metatable: false .*set_runtime_state: the table has a metatable of its own true
 
 
 
