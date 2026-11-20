@@ -47,6 +47,7 @@ import TabItem from '@theme/TabItem';
 | blacklist     | array[string] | 否     |                                  |           | 拒绝访问的 IP 或 CIDR 范围列表。`whitelist` 和 `blacklist` 必须且只能配置其中一个。 |
 | message       | string        | 否     | "Your IP address is not allowed" | [1, 1024] | IP 被拒绝时返回给客户端的消息。                                           |
 | response_code | integer       | 否     | 403                              | [403, 404] | 因 IP 地址限制而拒绝请求时返回的 HTTP 响应码。                            |
+| phase         | string        | 否     | "access"                         | ["rewrite", "access"] | 执行检查的阶段。设置为 `rewrite` 时，会在 `openid-connect`、`key-auth`、`jwt-auth` 等 rewrite 阶段的认证插件处理请求之前拒绝请求，例如被拒绝的客户端不会被重定向到身份提供方的登录页面。配置在消费者上的 `ip-restriction` 仍会在认证之后生效，但无法放宽路由上 `rewrite` 阶段的检查。stream 插件会忽略该属性。 |
 
 ## 示例
 
@@ -477,3 +478,224 @@ curl -i "http://127.0.0.1:9080/anything?realip=192.168.10.24"
 ```
 
 你应该会收到 `HTTP/1.1 403 Forbidden` 响应。
+
+### 在认证之前拒绝请求
+
+默认情况下，`ip-restriction` 在 `access` 阶段运行，晚于 `key-auth`、`jwt-auth` 或 `openid-connect` 等 rewrite 阶段的认证插件。以下示例演示了如何将 `phase` 设置为 `rewrite`，从而在认证之前拒绝来自白名单之外 IP 的请求。使用 `openid-connect` 时，被拒绝的客户端不会被重定向到身份提供方的登录页面。
+
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
+
+创建一个带有 `key-auth` 和 `ip-restriction` 插件的路由，并在 `rewrite` 阶段执行 IP 检查：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "ip-restriction-route",
+    "uri": "/anything",
+    "plugins": {
+      "key-auth": {},
+      "ip-restriction": {
+        "whitelist": [
+          "192.168.0.1/24"
+        ],
+        "phase": "rewrite"
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
+    }
+  }'
+```
+
+</TabItem>
+
+<TabItem value="adc">
+
+```yaml title="adc.yaml"
+services:
+  - name: ip-restriction-service
+    routes:
+      - name: ip-restriction-route
+        uris:
+          - /anything
+        plugins:
+          key-auth: {}
+          ip-restriction:
+            whitelist:
+              - "192.168.0.1/24"
+            phase: rewrite
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: httpbin.org
+          port: 80
+          weight: 1
+```
+
+将配置同步到网关：
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX Ingress Controller', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="ip-restriction-ic.yaml"
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: ip-restriction-plugin-config
+spec:
+  plugins:
+    - name: key-auth
+      config:
+        _meta:
+          disable: false
+    - name: ip-restriction
+      config:
+        whitelist:
+          - "192.168.0.1/24"
+        phase: rewrite
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: ip-restriction-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /anything
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: ip-restriction-plugin-config
+      backendRefs:
+        - name: httpbin-external-domain
+          port: 80
+```
+
+将配置应用到集群：
+
+```shell
+kubectl apply -f ip-restriction-ic.yaml
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="ip-restriction-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  externalNodes:
+  - type: Domain
+    name: httpbin.org
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: ip-restriction-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: ip-restriction-route
+      match:
+        paths:
+          - /anything
+      upstreams:
+      - name: httpbin-external-domain
+      plugins:
+      - name: key-auth
+        enable: true
+        config:
+          _meta:
+            disable: false
+      - name: ip-restriction
+        enable: true
+        config:
+          whitelist:
+            - "192.168.0.1/24"
+          phase: rewrite
+```
+
+将配置应用到集群：
+
+```shell
+kubectl apply -f ip-restriction-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
+</TabItem>
+
+</Tabs>
+
+不携带 API key 向该路由发送请求：
+
+```shell
+curl -i "http://127.0.0.1:9080/anything"
+```
+
+如果你的 IP 不被允许，你应该在 `key-auth` 运行之前收到 `HTTP/1.1 403 Forbidden` 响应：
+
+```text
+{"message":"Your IP address is not allowed"}
+```
+
+如果没有设置 `"phase": "rewrite"`，同样的请求会收到来自 `key-auth` 的 `HTTP/1.1 401 Unauthorized` 响应。
+
+:::caution
+
+在全局规则中，`rewrite` 阶段会早于路由和服务上的插件执行。如果客户端 IP 是由路由或服务上的 `real-ip` 插件设置的，那么全局规则中设置了 `"phase": "rewrite"` 的 `ip-restriction` 检查的是修改之前的地址，例如负载均衡器的 IP。请改用 NGINX 的 `real_ip_*` 指令或全局规则中的 `real-ip` 插件来设置客户端 IP。
+
+:::

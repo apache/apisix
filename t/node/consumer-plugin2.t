@@ -444,3 +444,205 @@ end
 hello world
 --- error_log
 failed to fetch data from etcd
+
+
+
+=== TEST 11: consumer conf with phase rewrite replaces a route conf
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers/jack',
+                 ngx.HTTP_PUT,
+                [[{
+                    "username": "jack",
+                    "plugins": {
+                        "key-auth": {
+                            "key": "auth-jack"
+                        },
+                        "ip-restriction": {
+                            "blacklist": [
+                                "127.0.0.0/24"
+                            ],
+                            "phase": "rewrite"
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "key-auth": {},
+                            "ip-restriction": {
+                                "whitelist": [
+                                    "127.0.0.0/24"
+                                ]
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+
+
+
+=== TEST 12: the replacing consumer conf is still applied, in the access phase
+--- request
+GET /hello
+--- more_headers
+apikey: auth-jack
+--- error_code: 403
+--- response_body
+{"message":"Your IP address is not allowed"}
+
+
+
+=== TEST 13: route conf with phase rewrite and a consumer conf that would allow the client
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers/jack',
+                 ngx.HTTP_PUT,
+                [[{
+                    "username": "jack",
+                    "plugins": {
+                        "key-auth": {
+                            "key": "auth-jack"
+                        },
+                        "ip-restriction": {
+                            "whitelist": [
+                                "127.0.0.0/24"
+                            ]
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "key-auth": {},
+                            "ip-restriction": {
+                                "whitelist": [
+                                    "10.0.0.0/8"
+                                ],
+                                "phase": "rewrite"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+
+
+
+=== TEST 14: the consumer conf cannot loosen the route's rewrite check
+--- request
+GET /hello
+--- more_headers
+apikey: auth-jack
+--- error_code: 403
+--- response_body
+{"message":"Your IP address is not allowed"}
+
+
+
+=== TEST 15: consumer conf with phase rewrite, route without ip-restriction
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers/jack',
+                 ngx.HTTP_PUT,
+                [[{
+                    "username": "jack",
+                    "plugins": {
+                        "key-auth": {
+                            "key": "auth-jack"
+                        },
+                        "ip-restriction": {
+                            "blacklist": [
+                                "127.0.0.0/24"
+                            ],
+                            "phase": "rewrite"
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "key-auth": {}
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+
+
+
+=== TEST 16: the consumer conf runs in the consumer's rewrite pass
+--- request
+GET /hello
+--- more_headers
+apikey: auth-jack
+--- error_code: 403
+--- response_body
+{"message":"Your IP address is not allowed"}
