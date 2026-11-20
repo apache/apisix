@@ -314,7 +314,7 @@ code: 200
                 ngx.say("code: ", code)
             end
 
-            set_route(3)
+            set_route(7)
             local t = require("lib.test_admin").test
             for i = 1, 5 do
                 local code, body = t('/hello', ngx.HTTP_GET)
@@ -330,7 +330,7 @@ code: 503
 code: 503
 code: 200
 code: 200
-code: 200
+code: 503
 code: 503
 code: 503
 

@@ -193,6 +193,9 @@ passed
             if code >= 300 then
                 ngx.status = code
             end
+            -- a configuration update keeps the bucket, let the one of the
+            -- previous configuration expire (ceil(burst / rate) + 1 seconds)
+            ngx.sleep(2.5)
             ngx.say(body)
         }
     }
@@ -542,6 +545,9 @@ apikey: auth-jack
                 )
 
             ngx.status = code
+            -- a configuration update keeps the bucket, let the one of the
+            -- previous configuration expire (ceil(burst / rate) + 1 seconds)
+            ngx.sleep(2.5)
             ngx.say(body)
         }
     }
