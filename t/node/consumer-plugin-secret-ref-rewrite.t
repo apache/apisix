@@ -28,7 +28,7 @@ no_shuffle();
 add_block_preprocessor(sub {
     my ($block) = @_;
 
-    if (!defined $block->request) {
+    if (!defined $block->request && !defined $block->exec) {
         $block->set_value("request", "GET /t");
     }
 });
@@ -209,7 +209,15 @@ with.test route=with consumer=-
 
 
 
-=== TEST 6: route plugin with a $secret:// (vault) reference
+=== TEST 6: store the secret into vault
+--- exec
+VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault kv put kv/apisix/hdr value=from-vault
+--- response_body
+Success! Data written to: kv/apisix/hdr
+
+
+
+=== TEST 7: route plugin with a $secret:// (vault) reference
 --- config
     location /t {
         content_by_lua_block {
@@ -245,7 +253,7 @@ passed
 
 
 
-=== TEST 7: route plugin with $secret:// ref runs its rewrite once per request
+=== TEST 8: route plugin with $secret:// ref runs its rewrite once per request
 --- config
     location /t {
         content_by_lua_block {
