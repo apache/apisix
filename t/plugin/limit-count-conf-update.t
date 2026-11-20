@@ -21,6 +21,8 @@ no_long_string();
 no_shuffle();
 no_root_location();
 
+my $run = time() . "-" . $$;
+
 add_block_preprocessor(sub {
     my ($block) = @_;
 
@@ -33,11 +35,21 @@ add_block_preprocessor(sub {
     }
 
     my $extra_init_by_lua = <<_EOC_;
-    local helper = {route = "lc-conf-update"}
+    -- a route of its own for every run, so that a run never meets the
+    -- counters of an earlier one
+    local helper = {route = "lc-conf-update-$run"}
 
-    -- deletes the Redis counters of the route of this file, and only those
+    -- deletes the Redis counters of the route, and only those
     function helper.clear(opts)
-        require("lib.test_redis").delete_keys("*/apisix/routes/" .. helper.route .. "[:#]*", opts)
+        for _, prefix in ipairs({"plugin-limit-count:v1:", "plugin-limit-count:"}) do
+            require("lib.test_redis").delete_keys(
+                prefix .. "/apisix/routes/" .. helper.route .. "[:#]*", opts)
+        end
+    end
+
+    -- the storage key of the counter for this client
+    function helper.key(prefix, middle)
+        return prefix .. "/apisix/routes/" .. helper.route .. ":" .. (middle or "") .. "127.0.0.1"
     end
 
     -- updates route 1 and waits for the change to reach the worker
@@ -418,7 +430,7 @@ redis: 200 200 503 503
 
             -- both syncers are done
             ngx.sleep(2)
-            local key = "plugin-limit-count:v1:/apisix/routes/lc-conf-update:60:127.0.0.1"
+            local key = helper.key("plugin-limit-count:v1:", "60:")
             local red = require("resty.redis").new()
             assert(red:connect("127.0.0.1", 6379))
             for _, db in ipairs({14, 15}) do
@@ -475,4 +487,187 @@ database 15: 1
 200 remaining 1 reset <= 60
 --- error_log
 sync to redis failed
+--- timeout: 10
+
+
+
+=== TEST 10: a workflow action keeps its counter when the rules are reordered, not when its case changes
+--- config
+    location /t {
+        content_by_lua_block {
+            local helper = require("conf_update_helper")
+            local function action(case, count)
+                return {
+                    case = case,
+                    actions = {{"limit-count", {
+                        count = count,
+                        time_window = 60,
+                        rejected_code = 503,
+                        key = "remote_addr",
+                        policy = "local",
+                    }}},
+                }
+            end
+            local route_conf = {count = 100, time_window = 60, key = "remote_addr"}
+            local a = action({{"arg_a", "==", "1"}}, 2)
+            local b = action({{"arg_b", "==", "1"}}, 3)
+            local out = {}
+            local function hit(args)
+                out[#out + 1] = args .. ": " .. helper.hit(args):match("^%d+ remaining %d+")
+            end
+
+            helper.set_route(route_conf, {rules = {a, b}})
+            hit("a=1")
+
+            helper.set_route(route_conf, {rules = {b, a}})
+            hit("a=1")
+            hit("b=1")
+
+            a.case = {{"arg_a", "==", "2"}}
+            helper.set_route(route_conf, {rules = {b, a}})
+            hit("a=2")
+
+            ngx.say(table.concat(out, "\n"))
+        }
+    }
+--- response_body
+a=1: 200 remaining 1
+a=1: 200 remaining 0
+b=1: 200 remaining 2
+a=2: 200 remaining 1
+--- timeout: 10
+
+
+
+=== TEST 11: redis with delayed sync, a raised count on a sliding window is judged on the counts, not on the old remaining
+--- config
+    location /t {
+        content_by_lua_block {
+            local helper = require("conf_update_helper")
+            helper.clear()
+            -- a window length the current time is 0.4 into, with 8 requests
+            -- in the previous window and 1 in the current one
+            local window = math.floor(ngx.now() / 1.4)
+            local key = helper.key("plugin-limit-count:", window .. ":")
+            local red = require("resty.redis").new()
+            assert(red:connect("127.0.0.1", 6379))
+            assert(red:set(key .. ".0.counter", 8, "EX", 3600))
+            assert(red:set(key .. ".1.counter", 1, "EX", 3600))
+
+            local conf = {
+                count = 2,
+                time_window = window,
+                window_type = "sliding",
+                rejected_code = 503,
+                key = "remote_addr",
+                policy = "redis",
+                redis_host = "127.0.0.1",
+                redis_port = 6379,
+                sync_interval = 1,
+            }
+            helper.set_route(conf)
+            ngx.say(helper.hit())
+
+            conf.count = 10
+            helper.set_route(conf)
+            local weight = (window - ngx.now() % window) / window
+            local expected = math.floor(10 - 1 - 8 * weight) - 1
+            local res = helper.hit()
+            ngx.say("judged on the counts: ",
+                    res:match("^200 remaining (%d+)") == tostring(expected) or res)
+        }
+    }
+--- response_body
+503
+judged on the counts: true
+--- timeout: 10
+
+
+
+=== TEST 12: redis with delayed sync, a pending delta is synced with the window algorithm it was counted with
+--- config
+    location /t {
+        content_by_lua_block {
+            local helper = require("conf_update_helper")
+            helper.clear()
+            local conf = {
+                count = 10,
+                time_window = 60,
+                rejected_code = 503,
+                key = "remote_addr",
+                policy = "redis",
+                redis_host = "127.0.0.1",
+                redis_port = 6379,
+                sync_interval = 1,
+            }
+            local red = require("resty.redis").new()
+            assert(red:connect("127.0.0.1", 6379))
+            local fixed_key = helper.key("plugin-limit-count:v1:", "60:")
+            local function sliding_count()
+                local sum = 0
+                for _, k in ipairs(red:keys(helper.key("plugin-limit-count:", "60:") .. ".*")) do
+                    sum = sum + tonumber(red:get(k))
+                end
+                return sum
+            end
+
+            -- two requests wait to be synced to the fixed window
+            helper.set_route(conf)
+            helper.hit()
+            helper.hit()
+            ngx.say("fixed before the sync: ", (red:get(fixed_key)))
+
+            conf.window_type = "sliding"
+            helper.set_route(conf)
+            helper.hit()
+
+            -- both syncers are done
+            ngx.sleep(2)
+            ngx.say("fixed: ", (red:get(fixed_key)), ", sliding: ", sliding_count())
+        }
+    }
+--- response_body
+fixed before the sync: 0
+fixed: 2, sliding: 1
+--- timeout: 10
+
+
+
+=== TEST 13: redis with delayed sync, other credentials for the same Redis keep the pending delta
+--- config
+    location /t {
+        content_by_lua_block {
+            local helper = require("conf_update_helper")
+            helper.clear()
+            local conf = {
+                count = 2,
+                time_window = 60,
+                rejected_code = 503,
+                key = "remote_addr",
+                policy = "redis",
+                redis_host = "127.0.0.1",
+                redis_port = 6379,
+                sync_interval = 1,
+            }
+            local out = {}
+            local function hit()
+                out[#out + 1] = helper.hit():match("^%d+")
+            end
+
+            -- two requests wait to be synced
+            helper.set_route(conf)
+            hit()
+            hit()
+
+            -- the user alice has access to the same keys
+            conf.redis_username = "alice"
+            conf.redis_password = "somepassword"
+            helper.set_route(conf)
+            hit()
+
+            ngx.say(table.concat(out, " "))
+        }
+    }
+--- response_body
+200 200 503
 --- timeout: 10

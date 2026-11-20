@@ -21,6 +21,8 @@ no_long_string();
 no_shuffle();
 no_root_location();
 
+my $run = time() . "-" . $$;
+
 add_block_preprocessor(sub {
     my ($block) = @_;
 
@@ -33,11 +35,21 @@ add_block_preprocessor(sub {
     }
 
     my $extra_init_by_lua = <<_EOC_;
-    local helper = {route = "lreq-conf-update"}
+    -- a route of its own for every run, so that a run never meets the
+    -- counters of an earlier one
+    local helper = {route = "lreq-conf-update-$run"}
 
-    -- deletes the Redis counters of the route of this file, and only those
+    -- deletes the Redis counters of the route, and only those
     function helper.clear(opts)
-        require("lib.test_redis").delete_keys("*/apisix/routes/" .. helper.route .. "[:#]*", opts)
+        for _, prefix in ipairs({"limit_req:"}) do
+            require("lib.test_redis").delete_keys(
+                prefix .. "/apisix/routes/" .. helper.route .. "[:#]*", opts)
+        end
+    end
+
+    -- the storage key of the counter for this client
+    function helper.key(prefix, middle)
+        return prefix .. "/apisix/routes/" .. helper.route .. ":" .. (middle or "") .. "127.0.0.1"
     end
 
     -- updates route 1 and waits for the change to reach the worker
@@ -215,7 +227,7 @@ __DATA__
 
             local red = require("resty.redis").new()
             assert(red:connect("127.0.0.1", 6379))
-            local ttl = red:ttl("limit_req:/apisix/routes/lreq-conf-update:127.0.0.1")
+            local ttl = red:ttl(helper.key("limit_req:"))
             ngx.say("ttl > 90: ", ttl > 90)
         }
     }

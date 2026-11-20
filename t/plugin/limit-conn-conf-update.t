@@ -21,6 +21,8 @@ no_long_string();
 no_shuffle();
 no_root_location();
 
+my $run = time() . "-" . $$;
+
 add_block_preprocessor(sub {
     my ($block) = @_;
 
@@ -33,11 +35,21 @@ add_block_preprocessor(sub {
     }
 
     my $extra_init_by_lua = <<_EOC_;
-    local helper = {route = "lconn-conf-update"}
+    -- a route of its own for every run, so that a run never meets the
+    -- counters of an earlier one
+    local helper = {route = "lconn-conf-update-$run"}
 
-    -- deletes the Redis counters of the route of this file, and only those
+    -- deletes the Redis counters of the route, and only those
     function helper.clear(opts)
-        require("lib.test_redis").delete_keys("*/apisix/routes/" .. helper.route .. "[:#]*", opts)
+        for _, prefix in ipairs({"limit_conn:"}) do
+            require("lib.test_redis").delete_keys(
+                prefix .. "/apisix/routes/" .. helper.route .. "[:#]*", opts)
+        end
+    end
+
+    -- the storage key of the counter for this client
+    function helper.key(prefix, middle)
+        return prefix .. "/apisix/routes/" .. helper.route .. ":" .. (middle or "") .. "127.0.0.1"
     end
 
     -- updates route 1 and waits for the change to reach the worker
@@ -230,7 +242,7 @@ __DATA__
 
             local red = require("resty.redis").new()
             assert(red:connect("127.0.0.1", 6379))
-            local ttl = red:ttl("limit_conn:/apisix/routes/lconn-conf-update:127.0.0.1")
+            local ttl = red:ttl(helper.key("limit_conn:"))
             ngx.say("ttl > 90: ", ttl > 90)
             ngx.say(wait(), " ", wait2())
         }
@@ -262,7 +274,7 @@ ttl > 90: true
 
             local red = require("resty.redis").new()
             assert(red:connect("127.0.0.1", 6379))
-            local key = "limit_conn:/apisix/routes/lconn-conf-update:127.0.0.1"
+            local key = helper.key("limit_conn:")
             local wait = helper.hold(1, "seconds=0.5")
             ngx.say("leases while open: ", (red:zcard(key)))
             ngx.say(wait())
@@ -347,7 +359,7 @@ redis: 200 503 200
             -- 2800ms left reads as a TTL of 3 seconds
             local red = require("resty.redis").new()
             assert(red:connect("127.0.0.1", 6379))
-            local key = "limit_conn:/apisix/routes/lconn-conf-update:127.0.0.1"
+            local key = helper.key("limit_conn:")
             assert(red:pexpire(key, 2800) == 1)
             local status = helper.hit("seconds=0")
             ngx.say("pttl > 2900: ", red:pttl(key) > 2900)
@@ -357,4 +369,85 @@ redis: 200 503 200
 --- response_body
 pttl > 2900: true
 200 200
+--- timeout: 10
+
+
+
+=== TEST 8: the cleanup of a test only deletes the keys of its own route
+--- config
+    location /t {
+        content_by_lua_block {
+            local helper = require("conf_update_helper")
+            local red = require("resty.redis").new()
+            assert(red:connect("127.0.0.1", 6379))
+            local peers = {
+                "limit_conn:/apisix/routes/peer:client/apisix/routes/" .. helper.route .. ":blue",
+                "limit_conn:/apisix/routes/" .. helper.route .. "-peer:127.0.0.1",
+            }
+            for _, key in ipairs(peers) do
+                assert(red:zadd(key, ngx.time() + 60, "peer-lease"))
+            end
+            assert(red:zadd(helper.key("limit_conn:"), ngx.time() + 60, "own-lease"))
+
+            helper.clear()
+            for _, key in ipairs(peers) do
+                ngx.say("peer kept: ", red:zscore(key, "peer-lease") ~= ngx.null)
+                red:del(key)
+            end
+            ngx.say("own deleted: ", red:exists(helper.key("limit_conn:")) == 0)
+        }
+    }
+--- response_body
+peer kept: true
+peer kept: true
+own deleted: true
+
+
+
+=== TEST 9: redis, the late release of a lease admitted before an update removes only that lease
+--- config
+    location /t {
+        content_by_lua_block {
+            local helper = require("conf_update_helper")
+            helper.clear()
+            local conf = {
+                conn = 5,
+                burst = 0,
+                default_conn_delay = 0.1,
+                rejected_code = 503,
+                key = "remote_addr",
+                policy = "redis",
+                redis_host = "127.0.0.1",
+                redis_port = 6379,
+            }
+            local red = require("resty.redis").new()
+            assert(red:connect("127.0.0.1", 6379))
+            local key = helper.key("limit_conn:")
+
+            helper.set_route(conf)
+            local wait_old = helper.hold(1, "seconds=1.5")
+            local old = red:zrange(key, 0, -1)
+
+            conf.conn = 4
+            helper.set_route(conf)
+            local wait_new = helper.hold(1, "seconds=3")
+            local new
+            for _, member in ipairs(red:zrange(key, 0, -1)) do
+                if member ~= old[1] then
+                    new = member
+                end
+            end
+
+            -- the lease of the request admitted first is released after the update
+            ngx.say(wait_old())
+            ngx.sleep(0.3)
+            local left = red:zrange(key, 0, -1)
+            ngx.say("leases: ", #old, " then ", #left, ", the new one left: ", left[1] == new)
+            ngx.say(wait_new())
+        }
+    }
+--- response_body
+200
+leases: 1 then 1, the new one left: true
+200
 --- timeout: 10

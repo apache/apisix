@@ -61,6 +61,7 @@ A counter belongs to the resource the Plugin is configured on, such as a Route, 
 * A new `count` applies to what was already consumed. Raising it allows the difference right away, and lowering it below the consumed count rejects the next request.
 * Changes that do not affect the limit, such as `rejected_msg` or `_meta.filter`, leave the counter as it is.
 * A new `time_window` starts a new window.
+* A [workflow](./workflow.md) action keeps its counter when the rules are reordered, and starts a new one when the `case` of its rule changes.
 * With delayed synchronization (`sync_interval`), a new `count` also applies right away to the quota a node synchronized last.
 
 Earlier releases reset the counters on every update of the Plugin configuration. Because the format of the counter keys changed, existing counters start over once when APISIX is upgraded to a release with this behavior. During a rolling upgrade, nodes on the old and the new version use different counter keys and do not share consumption, so a limit shared through Redis is split between the two versions until every node runs the new one. Counters shared through `group` are not affected.
