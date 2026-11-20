@@ -610,8 +610,9 @@ function _M.filter(ctx, conf, plugins, route_conf, phase)
         -- 3. execute the rewrite phase of the plugins on consumer(phase: rewrite_in_consumer)
         -- in this case, we need to skip the plugins that was already executed(step 1)
         if phase == "rewrite_in_consumer"
-                and (not plugin_conf._from_consumer or plugin_obj.type == "auth") then
-            plugin_conf._skip_rewrite_in_consumer = true
+                and (not plugin_conf._from_consumer or plugin_obj.type == "auth")
+                and not plugin_conf._skip_rewrite_in_consumer then
+            _M.set_runtime_state(plugin_conf, "_skip_rewrite_in_consumer", true)
         end
 
         if plugin_conf._meta and plugin_conf._meta.priority then
@@ -635,13 +636,15 @@ function _M.filter(ctx, conf, plugins, route_conf, phase)
             tmp_plugin_objs[plugin_conf] = plugin_obj
             core.table.insert(tmp_plugin_confs, plugin_conf)
 
-            if not plugin_conf._meta then
-                plugin_conf._meta = core.table.new(0, 1)
-                plugin_conf._meta.priority = plugin_obj.priority
-            else
-                if not plugin_conf._meta.priority then
-                    plugin_conf._meta.priority = plugin_obj.priority
-                end
+            -- a priority configured by the user is a raw field of _meta and
+            -- shadows the default set here
+            local meta = plugin_conf._meta
+            if not meta then
+                meta = {}
+                _M.set_runtime_state(plugin_conf, "_meta", meta)
+            end
+            if not meta.priority then
+                _M.set_runtime_state(meta, "priority", plugin_obj.priority)
             end
         end
 
@@ -844,8 +847,8 @@ local function merge_consumer_route(route_conf, consumer_conf, consumer_group_co
                 new_route_conf.value.plugins = {}
             end
 
-            if new_route_conf.value.plugins[name] == nil then
-                conf._from_consumer = true
+            if new_route_conf.value.plugins[name] == nil and not conf._from_consumer then
+                _M.set_runtime_state(conf, "_from_consumer", true)
             end
             new_route_conf.value.plugins[name] = conf
         end
@@ -858,8 +861,8 @@ local function merge_consumer_route(route_conf, consumer_conf, consumer_group_co
                 new_route_conf.value.plugins = {}
             end
 
-            if new_route_conf.value.plugins[name] == nil then
-                conf._from_consumer = true
+            if new_route_conf.value.plugins[name] == nil and not conf._from_consumer then
+                _M.set_runtime_state(conf, "_from_consumer", true)
             end
             new_route_conf.value.plugins[name] = conf
         end
@@ -1006,21 +1009,49 @@ local function encode_json_null(_, value, _, defaultmessage)
 end
 
 
+-- Request-time state of a conf table: the cached conf_version, merge flags,
+-- resolved DNS nodes, ... It is kept in the __index of the table's own metatable,
+-- so it reads as tab[key] but stays out of pairs() and so out of conf_version()
+-- and of JSON encoding: plugin confs are shared between routes, services,
+-- plugin_configs and consumers, and which request writes such state first
+-- differs between workers. A deep copy shares the metatable, and so reads the
+-- state of the table it was copied from until it writes its own.
+function _M.set_runtime_state(tab, key, value)
+    local mt = getmetatable(tab)
+    if not mt or mt.runtime_state_of ~= tab then
+        local state = {}
+        local inherited = mt and mt.__index
+        if type(inherited) == "table" then
+            for k, v in pairs(inherited) do
+                state[k] = v
+            end
+        end
+
+        mt = {__index = state, runtime_state_of = tab}
+        setmetatable(tab, mt)
+    end
+
+    mt.__index[key] = value
+end
+
+
 -- conf_version returns a version which only depends on the value of conf,
 -- instead of where this plugin conf belongs to
 function _M.conf_version(conf)
-    if not conf._version then
+    local version = conf._version
+    if not version then
         -- a new state on every call: dkjson keeps its buffer in the state when it
         -- raises, and a reused state would then make encode() return true
         local data = core.json.stably_encode(conf, {
             sortkey = true,
             exception = encode_json_null,
         })
-        conf._version = tostring(crc32(data))
-        core.log.info("init plugin-level conf version: ", conf._version)
+        version = tostring(crc32(data))
+        _M.set_runtime_state(conf, "_version", version)
+        core.log.info("init plugin-level conf version: ", version)
     end
 
-    return conf._version
+    return version
 end
 
 
