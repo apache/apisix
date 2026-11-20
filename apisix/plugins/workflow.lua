@@ -173,12 +173,6 @@ function _M.access(conf, ctx)
 
             local action_name = action[1]
             local action_conf = action[2]
-            -- the action runs as a plugin of the parent of this conf, see
-            -- plugin.set_plugins_meta_parent
-            if action_conf._meta ~= conf._meta then
-                plugin.set_runtime_state(action_conf, "_meta", conf._meta)
-            end
-
             return support_action[action_name].handler(action_conf, ctx)
         end
     end

@@ -1618,21 +1618,37 @@ function _M.run_plugin(phase, plugins, api_ctx)
     return api_ctx, plugin_run
 end
 
+local function set_meta_parent(plugin_conf, parent)
+    local meta = plugin_conf._meta
+    if not meta then
+        meta = {}
+        _M.set_runtime_state(plugin_conf, "_meta", meta)
+    end
+    if not meta.parent then
+        _M.set_runtime_state(meta, "parent", {
+            resource_key = parent.key,
+            resource_version = tostring(parent.modifiedIndex)
+        })
+    end
+end
+
+
 function _M.set_plugins_meta_parent(plugins, parent)
     if not plugins then
         return
     end
-    for _, plugin_conf in pairs(plugins) do
-        local meta = plugin_conf._meta
-        if not meta then
-            meta = {}
-            _M.set_runtime_state(plugin_conf, "_meta", meta)
-        end
-        if not meta.parent then
-            _M.set_runtime_state(meta, "parent", {
-                resource_key = parent.key,
-                resource_version = tostring(parent.modifiedIndex)
-            })
+    for name, plugin_conf in pairs(plugins) do
+        set_meta_parent(plugin_conf, parent)
+
+        -- the actions of workflow run as plugins of the same parent
+        if name == "workflow" and type(plugin_conf.rules) == "table" then
+            for _, rule in ipairs(plugin_conf.rules) do
+                for _, action in ipairs(rule.actions or {}) do
+                    if type(action[2]) == "table" then
+                        set_meta_parent(action[2], parent)
+                    end
+                end
+            end
         end
     end
 end
