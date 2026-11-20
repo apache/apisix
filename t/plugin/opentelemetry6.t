@@ -304,3 +304,69 @@ opentracing
             end
         }
     }
+
+
+
+=== TEST 10: clear file
+--- exec
+echo '' > ci/pod/otelcol-contrib/data-otlp.json
+--- response_body eval
+qr//
+
+
+
+=== TEST 11: request whose Host has no SSL object, over a connection whose SNI does
+--- init_by_lua_block
+    require "resty.core"
+    apisix = require("apisix")
+    core = require("apisix.core")
+    apisix.http_init()
+
+    local utils = require("apisix.core.utils")
+    utils.dns_parse = function (domain)
+        if domain == "test1.com" then
+            return {address = "127.0.0.2"}
+        end
+        error("unknown domain: " .. domain)
+    end
+--- exec
+curl -sk --resolve "test.com:1994:127.0.0.1" -H "Host: localhost" https://test.com:1994/opentracing
+--- wait: 5
+--- response_body
+opentracing
+
+
+
+=== TEST 12: the Host re-check in the access phase does not mark sni_radixtree_match as an error
+--- config
+    location /t {
+        content_by_lua_block {
+            local otel = require("lib.test_otel")
+
+            local ok, err = otel.verify_tree(
+                "ci/pod/otelcol-contrib/data-otlp.json",
+                {
+                    name = "GET /opentracing",
+                    kind = 2,
+                    attributes = {
+                        ["http.status_code"] = "200",
+                    },
+                    children = {
+                        {
+                            name = "apisix.phase.access",
+                            kind = 2,
+                            children = {
+                                { name = "sni_radixtree_match", kind = 1, status_code = 0 },
+                            }
+                        },
+                    }
+                }
+            )
+
+            if not ok then
+                ngx.say("FAIL:\n" .. err)
+            else
+                ngx.say("passed")
+            end
+        }
+    }
