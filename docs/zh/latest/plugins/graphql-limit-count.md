@@ -48,6 +48,8 @@ description: graphql-limit-count 插件使用固定窗口算法，基于 GraphQL
 - `X-RateLimit-Remaining`：剩余配额
 - `X-RateLimit-Reset`：计数器重置的剩余秒数
 
+与 [limit-count](./limit-count.md#配置更新时的计数器) 一样，更新插件配置会保留当前窗口内已经计入的代价。修改 `cost_strategy` 或 `score_factor` 则会开始一个新的计数器，因为它们改变了已存代价的单位含义。
+
 ## 属性
 
 本插件与 [limit-count](./limit-count.md) 插件共享相同的 Schema，完整属性参考请见该页面。关键属性如下所示。

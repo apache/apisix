@@ -359,7 +359,7 @@ local function create_limit_obj(conf, rule, plugin_name)
 end
 
 
-local function gen_limit_key(conf, ctx, rule, key)
+local function gen_limit_key(conf, ctx, rule, key, unit)
     if conf.group then
         return conf.group .. ':' .. key
     end
@@ -381,6 +381,11 @@ local function gen_limit_key(conf, ctx, rule, key)
             prefix = parent.resource_key .. '#' .. conf._vid .. ':'
         else
             prefix = parent.resource_key .. ':'
+        end
+        -- what one unit of consumption means to the caller, when it has a
+        -- choice: a counter kept in other units starts over
+        if unit then
+            prefix = prefix .. unit .. ':'
         end
         limit_key_prefix[conf] = prefix
     end
@@ -555,7 +560,7 @@ local function rate_limiting_detail(conf, rule, cost, delay, remaining, reset, i
 end
 
 
-local function run_rate_limit(conf, rule, ctx, name, cost, dry_run)
+local function run_rate_limit(conf, rule, ctx, name, cost, dry_run, unit)
     local lim, err
     if conf.group then
         lim, err = group_limit_lru(conf.group, "", create_limit_obj, conf, conf, name)
@@ -605,7 +610,7 @@ local function run_rate_limit(conf, rule, ctx, name, cost, dry_run)
         key = ctx.var["remote_addr"]
     end
 
-    key = gen_limit_key(conf, ctx, rule, key)
+    key = gen_limit_key(conf, ctx, rule, key, unit)
     if not key then
         return 500
     end
@@ -696,7 +701,7 @@ local function run_rate_limit(conf, rule, ctx, name, cost, dry_run)
 end
 
 
-function _M.rate_limit(conf, ctx, name, cost, dry_run)
+function _M.rate_limit(conf, ctx, name, cost, dry_run, unit)
     core.log.info("ver: ", ctx.conf_version)
 
     local rules, err = get_rules(ctx, conf)
@@ -709,7 +714,7 @@ function _M.rate_limit(conf, ctx, name, cost, dry_run)
     end
 
     for _, rule in ipairs(rules) do
-        local code, msg = run_rate_limit(conf, rule, ctx, name, cost, dry_run)
+        local code, msg = run_rate_limit(conf, rule, ctx, name, cost, dry_run, unit)
         if code then
             return code, msg
         end
