@@ -320,6 +320,7 @@ def cleanup_isolation(s):
     try:
         other.setup()
         held = s.hold(0, 1)
+        assert not other.entries(), "peer snapshot included another PluginConfig's reservation"
         other.release(other.hold(1, 1))
     finally:
         other.cleanup()
