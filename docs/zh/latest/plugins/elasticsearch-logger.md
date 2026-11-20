@@ -55,7 +55,7 @@ description: elasticsearch-logger Plugin 将请求和响应日志批量推送到
 | max_req_body_bytes | integer | 否 | 524288 | >=1          | 记录请求主体的最大字节数。如果请求主体超过此值，则会在记录前截断。在 APISIX 3.16.0 中可用。 |
 | include_resp_body | boolean | 否 | false |              | 如果为 true，则将响应主体包含在日志中。 |
 | include_resp_body_expr | array[array] | 否 | |              | 一个或多个条件的数组，形式为 [lua-resty-expr](https://github.com/api7/lua-resty-expr)。在 `include_resp_body` 为 true 时使用。仅当此处配置的表达式计算结果为 true 时，才会记录响应主体。 |
-| max_resp_body_bytes | integer | 否 | 524288 | >=1          | 记录响应主体的最大字节数。如果响应主体超过此值，则会在记录前截断。在 APISIX 3.16.0 中可用。 |
+| max_resp_body_bytes | integer | 否 | 524288 | >=1          | 记录响应主体的最大字节数。如果响应主体超过此值，则会在记录前截断。对于压缩响应，解压后的响应体同样截断到该大小。在 APISIX 3.16.0 中可用。 |
 
 注意：schema 中还定义了 `encrypt_fields = {"auth.password", "headers"}`，这意味着这些字段将会被加密存储在 etcd 中。具体参考 [加密存储字段](../plugin-develop.md#加密存储字段)。
 
