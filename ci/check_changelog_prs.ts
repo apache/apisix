@@ -73,10 +73,18 @@ const IGNORE_PRS = [
     // CI-only changes whose "fix(ci)" subject prefix dodges the docs/chore/test/ci
     // type filter but which do not belong in a user changelog.
     13921, 13923,
+    // 3.21.0: documentation typo (#13837), GitHub Actions upgrades, and
+    // test dependencies under t/ (#14007, #14020).
+    13837, 13846, 13847, 13849, 13962, 14007, 14020,
 ];
 
 
 function getGitRef(version: string): string {
+    // The 3.20.0 tag points at the later master sync (#14183). Use the
+    // published source release (#14168) for both adjacent version ranges.
+    if (version === '3.20.0') {
+        return '9380e21338d09abf50c23c7f83d51d55458bfcb9';
+    }
     try {
         execSync(`git rev-parse ${version}`, { stdio: 'ignore' });
         return version;
@@ -151,7 +159,9 @@ function shouldIgnoreCommitMessage(message: string): boolean {
 }
 
 function extractPRsFromGitLog(oldRef: string, newRef: string): PR[] {
-    const log = execSync(`git log ${oldRef}..${newRef} --oneline`, { encoding: 'utf-8' });
+    // A backport already shipped on the old release branch can have a
+    // different commit ID on master. Compare patches across the two branches.
+    const log = execSync(`git log --cherry-pick --right-only ${oldRef}...${newRef} --oneline`, { encoding: 'utf-8' });
     const prs: PR[] = [];
 
     for (const line of log.split('\n')) {
