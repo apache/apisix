@@ -329,6 +329,42 @@ local function set_stream_upstream_client_cert(api_ctx, up_conf)
 end
 
 
+local function set_stream_upstream(api_ctx, up_conf)
+    local ok, err = fill_node_info(up_conf, nil, true)
+    if not ok then
+        return 503, err
+    end
+
+    local scheme = up_conf.scheme
+    if scheme == "tls" then
+        local ok, err = set_stream_upstream_tls()
+        if not ok then
+            return 503, err
+        end
+
+        local sni = apisix_ssl.server_name()
+        if sni then
+            ngx_var.upstream_sni = sni
+        end
+
+        local ok, err = set_stream_upstream_client_cert(api_ctx, up_conf)
+        if not ok then
+            return 503, err
+        end
+    end
+
+    if up_conf.resource_key and healthcheck_manager then
+        local node_ver = resource.get_nodes_ver(up_conf.resource_key)
+        local resource_version = upstream_util.version(up_conf.resource_version,
+                                                                      node_ver)
+        local checker = healthcheck_manager.fetch_checker(up_conf.resource_key, resource_version)
+        api_ctx.up_checker = checker
+    end
+
+    return
+end
+
+
 local function set_http_upstream_tls(api_ctx, up_conf)
     local scheme = up_conf.scheme
     if scheme == "https" then
@@ -390,6 +426,9 @@ function _M.set_by_route(route, api_ctx)
 
     if api_ctx.upstream_conf then
         -- upstream_conf has been set by traffic-split plugin
+        if not is_http then
+            return set_stream_upstream(api_ctx, api_ctx.upstream_conf)
+        end
         return set_http_upstream_tls(api_ctx, api_ctx.upstream_conf)
     end
 
@@ -457,34 +496,7 @@ function _M.set_by_route(route, api_ctx)
     end
 
     if not is_http then
-        local ok, err = fill_node_info(up_conf, nil, true)
-        if not ok then
-            return 503, err
-        end
-
-        local scheme = up_conf.scheme
-        if scheme == "tls" then
-            local ok, err = set_stream_upstream_tls()
-            if not ok then
-                return 503, err
-            end
-
-            local sni = apisix_ssl.server_name()
-            if sni then
-                ngx_var.upstream_sni = sni
-            end
-
-            local ok, err = set_stream_upstream_client_cert(api_ctx, up_conf)
-            if not ok then
-                return 503, err
-            end
-        end
-        local node_ver = resource.get_nodes_ver(up_conf.resource_key)
-        local resource_version = upstream_util.version(up_conf.resource_version,
-                                                                      node_ver)
-        local checker = healthcheck_manager.fetch_checker(up_conf.resource_key, resource_version)
-        api_ctx.up_checker = checker
-        return
+        return set_stream_upstream(api_ctx, up_conf)
     end
 
     set_upstream_scheme(api_ctx, up_conf)
