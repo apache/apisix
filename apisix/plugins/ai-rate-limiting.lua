@@ -242,18 +242,17 @@ local function transform_limit_conf(plugin_conf, instance_conf, instance_name)
     if plugin_conf.rules and #plugin_conf.rules > 0 then
         limit_conf.rules = plugin_conf.rules
     else
-        local key = plugin_name .. "#global"
         local limit = plugin_conf.limit
         local time_window = plugin_conf.time_window
         if instance_conf then
             name = instance_conf.name
-            key = instance_conf.name
             limit = instance_conf.limit
             time_window = instance_conf.time_window
         end
-        -- every instance counts on its own, also on the top-level limit
+        -- every instance counts on its own, on the same counter whether it
+        -- uses the top-level limit or one of its own
         limit_conf._vid = name
-        limit_conf.key = key
+        limit_conf.key = name
         limit_conf.count = limit
         limit_conf.time_window = time_window
         limit_conf.limit_header = "X-AI-RateLimit-Limit-" .. name
