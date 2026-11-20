@@ -617,6 +617,7 @@ plugins:                           # plugin list (sorted by priority)
   #- node-status                   # priority: 1000
   #- brotli                        # priority: 996
   - gzip                           # priority: 995
+  #- zstd                          # priority: 994
   #- server-info                    # priority: 990
   - traffic-label                  # priority: 967
   - traffic-split                  # priority: 966
