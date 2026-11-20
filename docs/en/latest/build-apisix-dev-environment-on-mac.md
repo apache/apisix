@@ -41,11 +41,12 @@ We use Docker to build the test environment of Apache APISIX. When the container
 
 ### Implementation Steps
 
-First, clone the APISIX source code, build an image that can run test cases, and compile the Apache APISIX.
+First, clone the APISIX source code, fetch the `t/toolkit` submodule that the test cases need, build an image that can run test cases, and compile the Apache APISIX.
 
 ```shell
 git clone https://github.com/apache/apisix.git
 cd apisix
+git submodule update --init t/toolkit
 docker build -t apisix-dev-env -f example/build-dev-image.dockerfile .
 ```
 
