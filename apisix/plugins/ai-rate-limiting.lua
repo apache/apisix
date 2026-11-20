@@ -77,9 +77,12 @@ local schema = {
             minLength = 1,
             description = "Lua arithmetic expression for dynamic token cost calculation. "
                 .. "Variables are injected from the LLM API raw usage response fields. "
-                .. "Missing variables default to 0. "
+                .. "Missing variables default to 0, so use the usage field names "
+                .. "of the API format that the route's clients use. "
                 .. "Only valid when limit_strategy is 'expression'. "
-                .. "Example: input_tokens + cache_creation_input_tokens + output_tokens",
+                .. "Example (Anthropic Messages): "
+                .. "input_tokens + cache_creation_input_tokens + output_tokens. "
+                .. "Example (OpenAI Chat Completions): prompt_tokens + completion_tokens",
         },
         instances = {
             type = "array",
