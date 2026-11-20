@@ -22,6 +22,8 @@
 local json = require("apisix.core.json")
 local log = require("apisix.core.log")
 local ipmatcher = require("resty.ipmatcher")
+local bit       = require("bit")
+local str_fmt   = string.format
 local str_sub   = string.sub
 local str_find  = require("apisix.core.string").find
 local tonumber  = tonumber
@@ -40,6 +42,26 @@ function _M.create_ip_matcher(ip_list)
 
     return ip
 end
+
+
+-- an IPv4-mapped address parses as IPv6, so an IPv4 rule is never consulted
+function _M.match_addr(matcher, ip)
+    if matcher:match(ip) then
+        return true
+    end
+
+    local inets = ipmatcher.parse_ipv6(ip)
+    if not inets or inets[1] ~= 0 or inets[2] ~= 0 or inets[3] ~= 0xffff then
+        return false
+    end
+
+    local v4 = inets[4]
+    return matcher:match(str_fmt("%d.%d.%d.%d", bit.rshift(v4, 24),
+                                 bit.band(bit.rshift(v4, 16), 0xff),
+                                 bit.band(bit.rshift(v4, 8), 0xff),
+                                 bit.band(v4, 0xff)))
+end
+
 
 ---
 -- Verify that the given ip is a valid ip or cidr.

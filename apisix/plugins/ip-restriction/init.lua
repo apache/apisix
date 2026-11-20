@@ -101,7 +101,7 @@ function _M.restrict(conf, ctx)
         local matcher = lrucache(conf.blacklist, nil,
                                  core.ip.create_ip_matcher, conf.blacklist)
         if matcher then
-            block = matcher:match(remote_addr)
+            block = core.ip.match_addr(matcher, remote_addr)
         end
     end
 
@@ -109,7 +109,7 @@ function _M.restrict(conf, ctx)
         local matcher = lrucache(conf.whitelist, nil,
                                  core.ip.create_ip_matcher, conf.whitelist)
         if matcher then
-            block = not matcher:match(remote_addr)
+            block = not core.ip.match_addr(matcher, remote_addr)
         end
     end
 
