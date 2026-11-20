@@ -20,6 +20,8 @@ local expr         = require("resty.expr.v1")
 local ipairs       = ipairs
 local setmetatable = setmetatable
 local getmetatable = getmetatable
+local tostring     = tostring
+local ngx          = ngx
 
 local schema = {
     type = "object",
