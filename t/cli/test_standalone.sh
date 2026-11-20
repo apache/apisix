@@ -660,5 +660,55 @@ fi
 
 echo "passed: missing env var produces clear startup error"
 
+# test: unset env vars referenced only in commented-out lines must be ignored
+echo '
+apisix:
+  enable_admin: false
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
+' > conf/config.yaml
+
+echo '
+# ${{COMMENTED_UNSET_VAR}}
+routes:
+  -
+    uri: /test-commented-var
+    # indented comment: ${{ANOTHER_COMMENTED_UNSET_VAR}}
+    plugins:
+      response-rewrite:
+        body: "commented-ok"
+        status_code: 200
+    upstream:
+      nodes:
+        "127.0.0.1:9091": 1
+      type: roundrobin
+#END
+' > conf/apisix.yaml
+
+unset COMMENTED_UNSET_VAR
+unset ANOTHER_COMMENTED_UNSET_VAR
+make init
+
+if ! make run > output.log 2>&1; then
+    cat output.log
+    echo "failed: make run should ignore env vars in commented-out lines"
+    exit 1
+fi
+sleep 0.1
+
+code=$(curl -o /tmp/response_body -s -m 5 -w %{http_code} http://127.0.0.1:9080/test-commented-var)
+body=$(cat /tmp/response_body)
+if [ "$code" -ne 200 ] || [ "$body" != "commented-ok" ]; then
+    echo "failed: expected 200/commented-ok for /test-commented-var, got code: $code body: $body"
+    exit 1
+fi
+
+make stop
+sleep 0.5
+
+echo "passed: commented-out env var references are not resolved"
+
 git checkout conf/config.yaml
 git checkout conf/apisix.yaml
