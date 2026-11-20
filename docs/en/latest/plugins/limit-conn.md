@@ -45,7 +45,7 @@ Connections are counted per resource the Plugin is configured on, such as a Rout
 * Changes that do not affect the limit, such as `rejected_msg` or `_meta.filter`, leave the count as it is.
 * With the Redis policies, the expiry of a key is only ever extended for a positive `key_ttl`, so lowering `key_ttl` does not expire connections admitted under the previous value.
 
-Earlier releases reset the count on every update of the Plugin configuration. Because the format of the counter keys changed, existing counts start over once when APISIX is upgraded to a release with this behavior.
+Earlier releases reset the count on every update of the Plugin configuration. Because the format of the counter keys changed, existing counts start over once when APISIX is upgraded to a release with this behavior. During a rolling upgrade, nodes on the old and the new version use different counter keys and do not share consumption, so a limit shared through Redis is split between the two versions until every node runs the new one.
 
 ## Attributes
 
