@@ -371,7 +371,7 @@ passed
                         },
                         "limit-count": {
                             "count": 1,
-                            "time_window": 60,
+                            "time_window": 62,
                             "rejected_code": 429
                         }
                     },

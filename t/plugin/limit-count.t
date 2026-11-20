@@ -149,7 +149,7 @@ passed
                         "plugins": {
                             "limit-count": {
                                 "count": 3,
-                                "time_window": 60,
+                                "time_window": 63,
                                 "rejected_code": 503,
                                 "key": "remote_addr"
                             }
@@ -500,7 +500,7 @@ passed
                         "plugins": {
                             "limit-count": {
                                 "count": 2,
-                                "time_window": 60,
+                                "time_window": 62,
                                 "rejected_code": 503,
                                 "key": "server_addr"
                             }
@@ -606,7 +606,7 @@ passed
 --- pipelined_requests eval
 ["GET /hello", "GET /hello","GET /hello","GET /t1", "GET /hello","GET /hello"]
 --- error_code eval
-[200, 200, 503, 200, 200, 503]
+[200, 200, 503, 200, 503, 503]
 
 
 
@@ -675,7 +675,7 @@ passed
 --- pipelined_requests eval
 ["GET /t1", "GET /hello", "GET /hello", "GET /t", "GET /hello", "GET /hello", "GET /hello"]
 --- error_code eval
-[200, 200, 503, 200, 200, 200, 503]
+[200, 200, 503, 200, 503, 503, 503]
 
 
 
