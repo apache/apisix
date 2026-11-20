@@ -317,7 +317,7 @@ curl -i "http://127.0.0.1:9180/apisix/admin/routes" -X PUT -d '
 
 ### 使用有效访问令牌进行验证
 
-在 [令牌端点](https://www.keycloak.org/docs/latest/securing_apps/#token-endpoint) 获取 Keycloak 服务器的访问令牌：
+在 [令牌端点](https://www.keycloak.org/securing-apps/oidc-layers#_token_endpoint) 获取 Keycloak 服务器的访问令牌：
 
 ```shell
 curl -i "http://$KEYCLOAK_IP:8080/realms/quickstart-realm/protocol/openid-connect/token" -X POST \
@@ -399,7 +399,7 @@ curl -i "http://127.0.0.1:9180/apisix/admin/routes" -X PUT -d '
 
 ### 使用有效访问令牌进行验证
 
-在 [令牌端点](https://www.keycloak.org/docs/latest/securing_apps/#token-endpoint) 获取 Keycloak 服务器的访问令牌：
+在 [令牌端点](https://www.keycloak.org/securing-apps/oidc-layers#_token_endpoint) 获取 Keycloak 服务器的访问令牌：
 
 ```shell
 OIDC_USER=quickstart-user

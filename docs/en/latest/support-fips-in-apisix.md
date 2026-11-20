@@ -29,7 +29,7 @@ description: Compile apisix-runtime with OpenSSL 3.0 (FIPS enabled)
 #
 -->
 
-OpenSSL 3.0 [supports](https://www.openssl.org/blog/blog/2022/08/24/FIPS-validation-certificate-issued/) [FIPS](https://en.wikipedia.org/wiki/FIPS_140-2) mode. To support FIPS in APISIX, you can compile apisix-runtime with OpenSSL 3.0.
+OpenSSL 3.0 [supports](https://openssl-library.org/post/2022-08-24-fips-validation-certificate-issued/) [FIPS](https://en.wikipedia.org/wiki/FIPS_140-2) mode. To support FIPS in APISIX, you can compile apisix-runtime with OpenSSL 3.0.
 
 ## Compilation
 
