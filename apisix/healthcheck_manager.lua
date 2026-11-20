@@ -83,6 +83,52 @@ local function compute_targets(up_conf)
 end
 
 
+-- APISIX's own schema (schema_def.lua) declares non-zero defaults for
+-- checks.active.healthy/unhealthy.interval (1 -- always on), but its JSON-schema
+-- admin validation only fills a sub-object's defaults when that sub-object is
+-- present in the submitted config; an entirely omitted `healthy` or `unhealthy`
+-- block never reaches that fill-in code, so those documented defaults are never
+-- written to etcd. resty.healthcheck.new() then fills the gap from its OWN
+-- defaults table, where the same fields default to interval = 0 ("disabled").
+-- Net effect: omitting the whole block silently disables that active-check
+-- direction -- healthy.interval=0 stops re-probing currently-healthy targets for
+-- failure, unhealthy.interval=0 stops re-probing currently-unhealthy targets for
+-- recovery -- contradicting the documented (and schema-enforced, minimum=1)
+-- default of "always on". Backfill APISIX's defaults here, the single place
+-- up_conf.checks reaches resty.healthcheck.new(), without mutating up_conf.checks
+-- itself (it may be shared/cached and read elsewhere, e.g. by the admin API).
+local function backfill_active_health_check_defaults(checks)
+    local active = checks and checks.active
+    if not active or (active.healthy and active.unhealthy) then
+        return checks
+    end
+
+    local new_active = tab_clone(active)
+    if not new_active.healthy then
+        new_active.healthy = {
+            interval = 1,
+            http_statuses = {200, 302},
+            successes = 2,
+        }
+    end
+    if not new_active.unhealthy then
+        new_active.unhealthy = {
+            interval = 1,
+            http_statuses = {429, 404, 500, 501, 502, 503, 504, 505},
+            http_failures = 5,
+            tcp_failures = 2,
+            timeouts = 3,
+        }
+    end
+
+    local new_checks = tab_clone(checks)
+    new_checks.active = new_active
+    return new_checks
+end
+-- for test
+_M.backfill_active_health_check_defaults = backfill_active_health_check_defaults
+
+
 local function create_checker(up_conf)
     if not up_conf.checks then
         return nil
@@ -100,7 +146,7 @@ local function create_checker(up_conf)
     local checker, err = healthcheck.new({
         name = get_healthchecker_name(up_conf),
         shm_name = healthcheck_shdict_name,
-        checks = up_conf.checks,
+        checks = backfill_active_health_check_defaults(up_conf.checks),
         events_module = "resty.events",
     })
 
