@@ -364,42 +364,122 @@ function _M.get_messages(body)
 end
 
 
+local function split_configured_messages(msgs)
+    local systems = {}
+    local messages = {}
+    for _, msg in ipairs(msgs or {}) do
+        if msg.role == "system" then
+            core.table.insert(systems, msg.content)
+        else
+            core.table.insert(messages, msg)
+        end
+    end
+    return systems, messages
+end
+
+
+local function message_item(msg)
+    return {
+        type = "message",
+        role = msg.role,
+        content = msg.content,
+    }
+end
+
+
+local function input_as_items(input)
+    if type(input) == "table" then
+        return input
+    end
+    local items = {}
+    if type(input) == "string" then
+        core.table.insert(items, message_item({role = "user", content = input}))
+    end
+    return items
+end
+
+
+local function all_user_messages(messages)
+    for _, msg in ipairs(messages) do
+        if msg.role ~= "user" then
+            return false
+        end
+    end
+    return true
+end
+
+
 --- Prepend messages to the request body.
--- System messages go to instructions; user messages prepend to input.
+-- System messages go to instructions; user/assistant messages prepend to input.
 function _M.prepend_messages(body, msgs)
     if not msgs or #msgs == 0 then return end
-    local parts = {}
-    for _, msg in ipairs(msgs) do
-        core.table.insert(parts, msg.content)
+
+    local systems, messages = split_configured_messages(msgs)
+    if #systems > 0 then
+        local text = table.concat(systems, "\n")
+        if type(body.instructions) == "string" then
+            body.instructions = text .. "\n" .. body.instructions
+        else
+            body.instructions = text
+        end
     end
-    local prepend_text = table.concat(parts, "\n")
-    if type(body.instructions) == "string" then
-        body.instructions = prepend_text .. "\n" .. body.instructions
-    else
-        body.instructions = prepend_text
+
+    if #messages == 0 then
+        return
     end
+    if type(body.input) == "string" and all_user_messages(messages) then
+        local parts = {}
+        for _, msg in ipairs(messages) do
+            core.table.insert(parts, msg.content)
+        end
+        core.table.insert(parts, body.input)
+        body.input = table.concat(parts, "\n")
+        return
+    end
+
+    local input = input_as_items(body.input)
+    local merged = {}
+    for _, msg in ipairs(messages) do
+        core.table.insert(merged, message_item(msg))
+    end
+    for _, item in ipairs(input) do
+        core.table.insert(merged, item)
+    end
+    body.input = merged
 end
 
 
 --- Append messages to the request body.
 function _M.append_messages(body, msgs)
     if not msgs or #msgs == 0 then return end
-    local parts = {}
-    for _, msg in ipairs(msgs) do
-        core.table.insert(parts, msg.content)
+
+    local systems, messages = split_configured_messages(msgs)
+    if #systems > 0 then
+        local text = table.concat(systems, "\n")
+        if type(body.instructions) == "string" then
+            body.instructions = body.instructions .. "\n" .. text
+        else
+            body.instructions = text
+        end
     end
-    local append_text = table.concat(parts, "\n")
-    if type(body.input) == "string" then
-        body.input = body.input .. "\n" .. append_text
-    elseif type(body.input) == "table" then
-        core.table.insert(body.input, {
-            type = "message",
-            role = "user",
-            content = append_text,
-        })
-    else
-        body.input = append_text
+
+    if #messages == 0 then
+        return
     end
+    if type(body.input) == "string" and all_user_messages(messages) then
+        local parts = {body.input}
+        for _, msg in ipairs(messages) do
+            core.table.insert(parts, msg.content)
+        end
+        body.input = table.concat(parts, "\n")
+        return
+    end
+
+    local input = input_as_items(body.input)
+    for _, msg in ipairs(messages) do
+        core.table.insert(input, message_item(msg))
+    end
+    body.input = input
 end
 
 

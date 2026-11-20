@@ -14,29 +14,13 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local core              = require("apisix.core")
-local body_transformer  = require("apisix.plugins.body-transformer")
-local ipairs            = ipairs
-
-local prompt_schema = {
-    properties = {
-        role = {
-            type = "string",
-            enum = { "system", "user", "assistant" }
-        },
-        content = {
-            type = "string",
-            minLength = 1,
-        }
-    },
-    required = { "role", "content" }
-}
-
-local prompts = {
-    type = "array",
-    minItems = 1,
-    items = prompt_schema
-}
+local core          = require("apisix.core")
+local body          = require("apisix.plugins.ai-prompt.body")
+local prompt_schema = require("apisix.plugins.ai-prompt.schema")
+local template      = require("resty.template")
+local ipairs        = ipairs
+local pcall         = pcall
+local string_gsub   = string.gsub
 
 local schema = {
     type = "object",
@@ -65,7 +49,7 @@ local schema = {
                                 type = "string",
                                 minLength = 1,
                             },
-                            messages = prompts
+                            messages = prompt_schema.messages,
                         }
                     }
                 },
@@ -88,27 +72,8 @@ local templates_lrucache = core.lrucache.new({
     ttl = 300, count = 256
 })
 
-local templates_json_lrucache = core.lrucache.new({
-    ttl = 300, count = 256
-})
-
 function _M.check_schema(conf)
     return core.schema.check(schema, conf)
-end
-
-
-local function get_request_body_table(max_size)
-    local body, err = core.request.get_body(max_size)
-    if not body then
-        return nil, { message = "could not get body: " .. (err or "request body is empty") }
-    end
-
-    local body_tab, err = core.json.decode(body)
-    if not body_tab then
-        return nil, { message = "could not parse JSON request body: " .. (err or "invalid JSON") }
-    end
-
-    return body_tab
 end
 
 
@@ -121,10 +86,49 @@ local function find_template(conf, template_name)
     return nil
 end
 
+
+local function render_string(value, input)
+    local raw_template = string_gsub(value, "{{(.-)}}", "{*%1*}")
+    local ok, render = pcall(template.compile, raw_template)
+    if not ok then
+        return nil, "template compile: " .. render
+    end
+
+    local output
+    ok, output = pcall(render, input)
+    if not ok then
+        return nil, "template rendering: " .. output
+    end
+    return output
+end
+
+
+local function render_template(configured, input)
+    local rendered = core.table.deepcopy(configured)
+    local err
+
+    if rendered.model then
+        rendered.model, err = render_string(rendered.model, input)
+        if not rendered.model then
+            return nil, err
+        end
+    end
+
+    for _, message in ipairs(rendered.messages or {}) do
+        message.content, err = render_string(message.content, input)
+        if not message.content then
+            return nil, err
+        end
+    end
+
+    return rendered
+end
+
+
 function _M.rewrite(conf, ctx)
-    local body_tab, err = get_request_body_table(conf.max_req_body_size)
+    local body_tab, status, err = body.read(conf.max_req_body_size)
     if not body_tab then
-        return 400, err
+        return status, err
     end
     local template_name = body_tab.template_name
     if not template_name then
@@ -136,17 +140,13 @@ function _M.rewrite(conf, ctx)
         return 400, { message = "template: " .. template_name .. " not configured." }
     end
 
-    local template_json = templates_json_lrucache(template, template, core.json.encode, template)
-    core.log.info("sending template to body_transformer, name: ", template_name)
-    return body_transformer.rewrite(
-        {
-            request = {
-                template = template_json,
-                input_format = "json"
-            }
-        },
-        ctx
-    )
+    local rendered, render_err = render_template(template, body_tab)
+    if not rendered then
+        return 503, {message = render_err}
+    end
+
+    body.replace(body_tab, rendered)
+    return body.write(ctx, body_tab)
 end
 
 
