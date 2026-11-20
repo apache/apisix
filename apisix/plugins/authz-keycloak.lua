@@ -290,7 +290,7 @@ local function authz_keycloak_get_endpoint(conf, endpoint)
     if conf and conf[endpoint] then
         -- Use explicit entry.
         return conf[endpoint]
-    elseif conf and conf._discovery then
+    elseif conf and type(conf._discovery) == "table" then
         -- Use discovery data.
         return conf._discovery[endpoint]
     end

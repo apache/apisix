@@ -27,26 +27,6 @@ add_block_preprocessor(sub {
     if (!defined $block->request) {
         $block->set_value("request", "GET /t");
     }
-
-    my $http_config = $block->http_config // <<_EOC_;
-        server {
-            listen 127.0.0.1:16724;
-
-            location /status {
-                content_by_lua_block {
-                    ngx.say("ok")
-                }
-            }
-
-            location /v1/chat/completions {
-                content_by_lua_block {
-                    ngx.say([[{"choices":[{"message":{"content":"ok","role":"assistant"}}]}]])
-                }
-            }
-        }
-_EOC_
-
-    $block->set_value("http_config", $http_config);
 });
 
 run_tests;
@@ -172,8 +152,9 @@ done
                 versions[path] = res.headers["X-Conf-Version"]
             end
 
-            ngx.say("priority: ", versions["/priority"] == versions["/ref"])
-            ngx.say("plain: ", versions["/plain"] == versions["/ref"])
+            local ref = versions["/ref"]
+            ngx.say("priority: ", ref ~= nil and versions["/priority"] == ref)
+            ngx.say("plain: ", ref ~= nil and versions["/plain"] == ref)
         }
     }
 --- response_body
@@ -195,8 +176,9 @@ plain: true
                 versions[path] = res.headers["X-Conf-Version"]
             end
 
-            ngx.say("priority: ", versions["/priority"] == versions["/ref"])
-            ngx.say("plain: ", versions["/plain"] == versions["/ref"])
+            local ref = versions["/ref"]
+            ngx.say("priority: ", ref ~= nil and versions["/priority"] == ref)
+            ngx.say("plain: ", ref ~= nil and versions["/plain"] == ref)
         }
     }
 --- response_body
@@ -240,7 +222,8 @@ consumer: true
             local authenticated = res.headers["X-Conf-Version"]
 
             res = assert(http.new():request_uri(uri .. "/ref"))
-            ngx.say("same: ", authenticated == res.headers["X-Conf-Version"])
+            local ref = res.headers["X-Conf-Version"]
+            ngx.say("same: ", ref ~= nil and authenticated == ref)
         }
     }
 --- response_body
@@ -267,8 +250,8 @@ same: true
 
             res = assert(http.new():request_uri(uri .. "/ref"))
             local ref = res.headers["X-Conf-Version"]
-            ngx.say("rejected: ", rejected == ref)
-            ngx.say("authenticated: ", authenticated == ref)
+            ngx.say("rejected: ", ref ~= nil and rejected == ref)
+            ngx.say("authenticated: ", ref ~= nil and authenticated == ref)
         }
     }
 --- response_body
@@ -344,7 +327,7 @@ foreign metatable: false .*set_runtime_state: the table has a metatable of its o
                     weight = 1,
                     auth = {header = {Authorization = "Bearer token"}},
                     options = {model = "gpt-4"},
-                    override = {endpoint = "http://127.0.0.1:16724/v1/chat/completions"},
+                    override = {endpoint = "http://127.0.0.1:1980/v1/chat/completions"},
                     checks = {
                         active = {
                             type = "http",
@@ -396,7 +379,10 @@ foreign metatable: false .*set_runtime_state: the table has a metatable of its o
             local res = assert(http.new():request_uri(
                 "http://127.0.0.1:" .. ngx.var.server_port .. "/ai", {
                     method = "POST",
-                    headers = {["Content-Type"] = "application/json"},
+                    headers = {
+                        ["Content-Type"] = "application/json",
+                        ["X-AI-Fixture"] = "openai/chat-basic.json",
+                    },
                     body = [[{"messages":[{"role":"user","content":"hi"}]}]],
                 }))
             ngx.say("resolved: ", res.headers["X-Resolved"])
