@@ -91,7 +91,11 @@ import TabItem from '@theme/TabItem';
 | session.absolute_timeout | integer | 否 | | | 会话绝对生存时间（秒）。作为 `absolute_timeout` 透传到 lua-resty-session。 |
 | session.cookie.lifetime | integer | 否 | | | 已弃用。当未设置 `session.absolute_timeout` 时，运行时会将该值映射到 `session.absolute_timeout`。请改用 `session.absolute_timeout`。 |
 | session.storage | string | 否 | cookie | ["cookie", "redis"] | 会话存储方式。 |
-| session.redis | object | 否 | | | `storage` 为 `redis` 时的 Redis 配置。 |
+| session.revocation | string | 否 | | ["redis"] | 会话吊销后端。设置为 `redis` 可为 Cookie 会话启用吊销功能。必须配置 `session.redis`，且不能在 `session.storage` 为 `redis` 时使用。 |
+| session.revocation_fail_mode | string | 否 | open | ["open", "closed"] | 当吊销存储不可用时，`open` 将会话视为未吊销，`closed` 则拒绝打开和销毁会话。 |
+| session.revocation_cache_ttl | integer | 否 | 5 | | 成功吊销查询的 worker 本地缓存 TTL（秒）。`0` 禁用。 |
+| session.revocation_error_cache_ttl | integer | 否 | 5 | | 吊销存储错误的 worker 本地缓存 TTL（秒）。`0` 禁用。 |
+| session.redis | object | 否 | | | Redis 连接配置。当 `storage` 为 `redis`，或 `revocation` 为 `redis` 时必填。 |
 | session.redis.host | string | 否 | 127.0.0.1 | | Redis 主机。 |
 | session.redis.port | integer | 否 | 6379 | | Redis 端口。 |
 | session.redis.username | string | 否 | | | Redis 用户名。 |
@@ -355,6 +359,39 @@ spec:
 </Tabs>
 
 详见[实现授权码授权](../tutorials/keycloak-oidc.md#实现-authorization-code-grant)，获取使用 `openid-connect` 插件与 Keycloak 集成并使用授权码流程的完整示例。
+
+### Cookie 会话吊销
+
+Cookie 会话存储在客户端，APISIX 通常无法单独将其失效。要启用服务端吊销，请将 `session.revocation` 设置为 `redis` 并配置 Redis 拒绝列表：
+
+```json
+"session": {
+  "secret": "your-session-secret-min-16-chars",
+  "storage": "cookie",
+  "revocation": "redis",
+  "revocation_fail_mode": "closed",
+  "revocation_cache_ttl": 5,
+  "revocation_error_cache_ttl": 1,
+  "redis": {
+    "host": "127.0.0.1",
+    "port": 6379,
+    "prefix": "oidc:session:"
+  }
+}
+```
+
+`revocation_fail_mode` 默认为 `open`，即吊销存储不可用时继续接受会话。使用 `closed` 则会拒绝打开和销毁会话。打开 Cookie 会话时会查询吊销存储，因此每个 worker 会缓存最近的查询结果，避免每个请求都访问一次 Redis。`revocation_cache_ttl` 是成功查询的 worker 本地 TTL，`revocation_error_cache_ttl` 是存储错误的 TTL。将 `revocation_cache_ttl` 设为 `0` 则每个请求都查询 Redis。省略 `revocation` 即不启用 Cookie 会话吊销。
+
+登出在处理该请求的 worker 上立即生效，在其他 worker 上则在其缓存条目过期后生效。因此 `revocation_cache_ttl` 限定的是：吊销标记已成功写入的会话，在其他 worker 上仍可能被接受的最长时间。它不涵盖下面的限制。
+
+使用相同 `session.redis` 配置的路由在每个 worker 中共享同一份缓存，因此其中一个路由处理的登出会立即被同一 worker 中的其他路由看到。默认情况下，每个 worker 最多缓存 1024 条查询结果和 1024 条存储错误。如需调整，请在所有请求都能访问的位置定义 nginx 变量 `$session_revocation_cache_size` 和 `$session_revocation_error_cache_size`，例如在 `http` 配置片段中添加 `map $host $session_revocation_cache_size { default 4096; }`。worker 只读取一次，因此修改后需要重新加载。
+
+#### 登出行为与限制
+
+- **登出会吊销同一次登录产生的所有 Cookie。** 会话每次保存（例如令牌续期或滚动刷新）都会生成新的会话 ID，因此登出会吊销整个谱系：当前提交的 Cookie、较早的副本和刷新得到的 Cookie，无论是在登出之前还是之后签发的。新的登录不受影响。
+- **当 `revocation_fail_mode` 为 `open`（默认值）时，登出可能在没有吊销任何内容的情况下成功。** 如果登出时 Redis 不可用，浏览器中的 Cookie 会被清除，但不会写入吊销标记，之后也不会重试。被复制的 Cookie 在超时之前仍然有效。依赖吊销功能的部署请使用 `closed`，这样吊销写入失败时会返回错误，且不会销毁会话。
+- **吊销标记只保存在 Redis 中。** 如果 Redis 丢失数据，例如在没有持久化的情况下重启或被清空，已吊销的 Cookie 在过期之前会再次被接受。如果登出必须在这种情况下仍然有效，请使用启用持久化的 Redis。
+- 当 Redis 不可用时，`closed` 会对携带 Cookie 会话的请求返回 `503`。
 
 ### 使用 PAR 和 DPoP 的授权码流程
 

@@ -295,7 +295,33 @@ local schema = {
                             description = "keepalive timeout in milliseconds",
                         },
                     }
-                }
+                },
+                revocation = {
+                    type = "string",
+                    enum = {"redis"},
+                    description = "Redis-backed revocation for cookie sessions.",
+                },
+                revocation_fail_mode = {
+                    type = "string",
+                    enum = {"open", "closed"},
+                    description =
+                        "When the revocation store is unreachable, open treats the "
+                        .. "session as not revoked and closed rejects open/destroy.",
+                },
+                revocation_cache_ttl = {
+                    type = "integer",
+                    minimum = 0,
+                    description =
+                        "Worker-local TTL in seconds for successful revocation "
+                        .. "lookups. 0 disables. Default is 5.",
+                },
+                revocation_error_cache_ttl = {
+                    type = "integer",
+                    minimum = 0,
+                    description =
+                        "Worker-local TTL in seconds for revocation store errors. "
+                        .. "0 disables. Default is 5.",
+                },
             },
             required = {"secret"},
             ["if"] = {
@@ -305,6 +331,19 @@ local schema = {
             },
             ["then"] = {
                 required = {"redis"},
+            },
+            allOf = {
+                {
+                    ["if"] = {
+                        required = {"revocation"},
+                    },
+                    ["then"] = {
+                        required = {"redis"},
+                        properties = {
+                            storage = { const = "cookie" },
+                        },
+                    },
+                },
             },
             additionalProperties = false,
         },
@@ -1465,6 +1504,18 @@ local function authenticate(plugin_conf, ctx)
                     return nil
                 end
                 return 401
+            end
+
+            -- With revocation_fail_mode closed, an unreachable revocation store
+            -- fails opening or destroying a session. Reject without destroying
+            -- the cookie.
+            if core.string.find(err, "unable to check session revocation")
+                    or core.string.find(err, "unable to mark session revoked") then
+                if session then
+                    session:close()
+                end
+                core.log.error("OIDC session revocation store unavailable: ", err)
+                return 503
             end
 
             -- Recoverable authorization-callback failures: a stale state
