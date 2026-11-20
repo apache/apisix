@@ -251,7 +251,8 @@ local function transform_limit_conf(plugin_conf, instance_conf, instance_name)
             limit = instance_conf.limit
             time_window = instance_conf.time_window
         end
-        limit_conf._vid = key
+        -- every instance counts on its own, also on the top-level limit
+        limit_conf._vid = name
         limit_conf.key = key
         limit_conf.count = limit
         limit_conf.time_window = time_window
