@@ -121,6 +121,8 @@ Reload APISIX for changes to take effect.
 
 You can configure the Plugin through its [Plugin Metadata](../terminology/plugin-metadata.md), which is set dynamically through the Admin API and takes effect at runtime without a restart.
 
+`disabled_labels` can only be set in the Plugin Metadata. If you set it in the `prometheus` Plugin configuration of a Route, Service, or other resource, APISIX rejects the configuration.
+
 | Name            | Type   | Required | Description                                                                                                                                                                                                                                                                                |
 | --------------- | ------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | disabled_labels | object | False    | Per-metric map of built-in label names whose values are collapsed to an empty string `""` to reduce metric cardinality. Keyed by metric name: `http_status`, `http_latency`, `bandwidth`, `llm_latency`, `llm_prompt_tokens`, `llm_completion_tokens`, `llm_active_connections`, `llm_prompt_tokens_dist`, `llm_completion_tokens_dist`, `ai_cache_hits_total`, `ai_cache_misses_total`, `ai_cache_bypasses_total`, `ai_cache_embedding_latency`. Structural labels that define a metric's identity (`code` on `http_status`, `type` on `http_latency`, `bandwidth` and `llm_latency`, `layer` on `ai_cache_hits_total`) cannot be disabled. |

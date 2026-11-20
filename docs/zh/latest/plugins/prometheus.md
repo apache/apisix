@@ -121,6 +121,8 @@ plugin_attr:
 
 你可以通过插件的[元数据（Plugin Metadata）](../terminology/plugin-metadata.md)进行配置。元数据通过 Admin API 动态设置，无需重启即可在运行时生效。
 
+`disabled_labels` 只能在插件元数据中配置。如果在路由、服务或其他资源的 `prometheus` 插件配置中设置该字段，APISIX 会拒绝该配置。
+
 | 名称            | 类型   | 必选项 | 描述                                                                                                                                                                                                                                                              |
 | --------------- | ------ | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | disabled_labels | object | 否     | 按指标配置的内置标签列表，列出的标签其值会被设置为空字符串 `""` 以降低指标基数。以指标名称作为键：`http_status`、`http_latency`、`bandwidth`、`llm_latency`、`llm_prompt_tokens`、`llm_completion_tokens`、`llm_active_connections`、`llm_prompt_tokens_dist`、`llm_completion_tokens_dist`、`ai_cache_hits_total`、`ai_cache_misses_total`、`ai_cache_bypasses_total`、`ai_cache_embedding_latency`。定义指标本身含义的结构性标签（`http_status` 的 `code`、`http_latency`、`bandwidth` 与 `llm_latency` 的 `type`、`ai_cache_hits_total` 的 `layer`）不可被禁用。 |

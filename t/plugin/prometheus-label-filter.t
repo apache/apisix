@@ -170,3 +170,34 @@ qr/failed to validate item 1/
     }
 --- response_body eval
 qr/additional properties forbidden/
+
+
+
+=== TEST 8: reject disabled_labels in the plugin config of a route
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/2',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "prometheus": {
+                            "disabled_labels": {"http_status": ["node"]}
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {"127.0.0.1:1980": 1},
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello2"
+                }]])
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.print(body)
+        }
+    }
+--- error_code: 400
+--- response_body
+{"error_msg":"failed to check the configuration of plugin prometheus err: disabled_labels can only be set in the prometheus plugin metadata"}
