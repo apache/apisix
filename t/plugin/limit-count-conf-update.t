@@ -224,14 +224,16 @@ __DATA__
             hit()
             ngx.sleep(0.5)
 
-            -- a node judges on the quota it synced last, so the new count
-            -- applies once the next sync is done, on the same consumption
+            -- the quota synced under the previous count applies the new one
             conf.count = 4
             helper.set_route(conf)
             hit()
+            hit()
+            hit()
             ngx.sleep(0.5)
-            hit()
-            hit()
+
+            conf.count = 3
+            helper.set_route(conf)
             hit()
 
             conf.rejected_msg = "rejected"
@@ -249,12 +251,12 @@ __DATA__
 200 remaining 1 reset <= 60
 200 remaining 0 reset <= 60
 503
-503
 200 remaining 1 reset <= 60
 200 remaining 0 reset <= 60
 503
+503
 503 {"error_msg":"rejected"}
-200 remaining 3 reset > 60
+200 remaining 2 reset > 60
 --- timeout: 15
 
 
@@ -299,4 +301,49 @@ __DATA__
 --- response_body
 local: 200 200 503 503
 redis: 200 200 503 503
+--- timeout: 10
+
+
+
+=== TEST 6: redis with delayed sync, a sync of the previous configuration does not bring back its count
+--- config
+    location /t {
+        content_by_lua_block {
+            require("lib.test_redis").flush_all()
+            local helper = require("conf_update_helper")
+            local conf = {
+                count = 2,
+                time_window = 60,
+                rejected_code = 503,
+                key = "remote_addr",
+                policy = "redis",
+                redis_host = "127.0.0.1",
+                redis_port = 6379,
+                sync_interval = 2,
+            }
+            local out = {}
+            local function hit()
+                out[#out + 1] = helper.hit()
+            end
+
+            -- starts the syncer of this configuration, due in 2s
+            helper.set_route(conf)
+            hit()
+
+            conf.count = 4
+            helper.set_route(conf)
+            ngx.sleep(0.5)
+            hit()
+
+            -- the syncer of count 2 has synced the key, the one of count 4 not yet
+            ngx.sleep(1.5)
+            hit()
+
+            ngx.say(table.concat(out, "\n"))
+        }
+    }
+--- response_body
+200 remaining 1 reset <= 60
+200 remaining 2 reset <= 60
+200 remaining 1 reset <= 60
 --- timeout: 10
