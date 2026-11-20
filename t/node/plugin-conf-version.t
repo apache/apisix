@@ -306,8 +306,12 @@ authenticated: true
             plugin.set_runtime_state(copy, "_version", nil)
             ngx.say("cleared: ", copy._version, " ", conf._version == version)
 
-            -- a metatable the helper does not own is never replaced
-            local arr = setmetatable({}, core.json.array_mt)
+            -- an object decoded as an empty array takes state, any other
+            -- metatable the helper does not own is never replaced
+            local obj = setmetatable({key = "v"}, core.json.array_mt)
+            plugin.set_runtime_state(obj, "_k", 1)
+            ngx.say("empty array: ", obj._k, " ", core.json.stably_encode(obj))
+            local arr = setmetatable({1}, core.json.array_mt)
             local ok, err = pcall(plugin.set_runtime_state, arr, "_k", 1)
             ngx.say("foreign metatable: ", ok, " ", err,
                     " ", getmetatable(arr) == core.json.array_mt)
@@ -321,6 +325,7 @@ copy reads: true
 copy: false true
 origin: true nil
 cleared: nil true
+empty array: 1 \{"key":"v"\}
 foreign metatable: false .*set_runtime_state: the table has a metatable of its own true
 
 

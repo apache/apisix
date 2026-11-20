@@ -272,3 +272,47 @@ passed
 --- response_body
 checked 18 confs
 --- timeout: 10
+
+
+
+=== TEST 3: an empty plugin conf and an empty _meta load
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            -- an empty Lua table is sent as [], which is what the Admin API
+            -- stores for an empty object
+            local code, body = t('/apisix/admin/routes/empty', ngx.HTTP_PUT, {
+                uri = "/hello",
+                host = "empty.test",
+                plugins = {
+                    cors = {},
+                    ["response-rewrite"] = {
+                        _meta = {},
+                        headers = {set = {["X-Empty-Meta"] = "1"}},
+                    },
+                },
+                upstream = {type = "roundrobin", nodes = {["127.0.0.1:1980"] = 1}},
+            })
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 4: and run
+--- request
+GET /hello
+--- more_headers
+Host: empty.test
+Origin: http://a.test
+--- response_headers
+Access-Control-Allow-Origin: *
+X-Empty-Meta: 1
+--- response_body
+hello world

@@ -1012,6 +1012,12 @@ end
 -- state of the table it was copied from until it writes its own.
 function _M.set_runtime_state(tab, key, value)
     local mt = getmetatable(tab)
+    -- an empty object of the configuration is decoded as an empty array, which
+    -- keeps the array metatable once check_schema has filled in the defaults
+    if mt == core.json.array_mt and tab[1] == nil then
+        setmetatable(tab, nil)
+        mt = nil
+    end
     if mt and mt.runtime_state_of == nil then
         error("set_runtime_state: the table has a metatable of its own", 2)
     end
@@ -1591,11 +1597,6 @@ function _M.set_plugins_meta_parent(plugins, parent)
         return
     end
     for _, plugin_conf in pairs(plugins) do
-        -- an empty conf is decoded as an empty array
-        if getmetatable(plugin_conf) == core.json.array_mt then
-            setmetatable(plugin_conf, nil)
-        end
-
         local meta = plugin_conf._meta
         if not meta then
             meta = {}
