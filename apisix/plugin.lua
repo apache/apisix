@@ -604,17 +604,6 @@ function _M.filter(ctx, conf, plugins, route_conf, phase)
             end
         end
 
-        -- in the rewrite phase, the plugin executes in the following order:
-        -- 1. execute the rewrite phase of the plugins on route(including the auth plugins)
-        -- 2. merge plugins from consumer and route
-        -- 3. execute the rewrite phase of the plugins on consumer(phase: rewrite_in_consumer)
-        -- in this case, we need to skip the plugins that was already executed(step 1)
-        if phase == "rewrite_in_consumer"
-                and (not plugin_conf._from_consumer or plugin_obj.type == "auth")
-                and not plugin_conf._skip_rewrite_in_consumer then
-            _M.set_runtime_state(plugin_conf, "_skip_rewrite_in_consumer", true)
-        end
-
         if plugin_conf._meta and plugin_conf._meta.priority then
             custom_sort = true
         end
@@ -840,6 +829,11 @@ local function merge_consumer_route(route_conf, consumer_conf, consumer_group_co
     -- overwrites its keys without touching the original route conf.
     local new_route_conf = core.table.deepcopy(route_conf,
         { shallow_prefix = "self.value.plugins" })
+    -- the plugins the route does not configure itself, whose rewrite phase has
+    -- not run yet. It is kept on the merged route and not on the plugin confs,
+    -- which are shared with every other route the consumer is merged into.
+    local route_plugins = route_conf.value.plugins
+    new_route_conf.plugins_from_consumer = {}
 
     if has_group_plugins then
         for name, conf in pairs(consumer_group_conf.value.plugins) do
@@ -847,8 +841,8 @@ local function merge_consumer_route(route_conf, consumer_conf, consumer_group_co
                 new_route_conf.value.plugins = {}
             end
 
-            if new_route_conf.value.plugins[name] == nil and not conf._from_consumer then
-                _M.set_runtime_state(conf, "_from_consumer", true)
+            if not route_plugins or route_plugins[name] == nil then
+                new_route_conf.plugins_from_consumer[name] = true
             end
             new_route_conf.value.plugins[name] = conf
         end
@@ -861,8 +855,8 @@ local function merge_consumer_route(route_conf, consumer_conf, consumer_group_co
                 new_route_conf.value.plugins = {}
             end
 
-            if new_route_conf.value.plugins[name] == nil and not conf._from_consumer then
-                _M.set_runtime_state(conf, "_from_consumer", true)
+            if not route_plugins or route_plugins[name] == nil then
+                new_route_conf.plugins_from_consumer[name] = true
             end
             new_route_conf.value.plugins[name] = conf
         end
@@ -1499,9 +1493,16 @@ function _M.run_plugin(phase, plugins, api_ctx)
         -- in the "rewrite_in_consumer" phase, the executed functions
         -- are the "rewrite" ones
         local exec_phase = phase == "rewrite_in_consumer" and "rewrite" or phase
+        -- in the rewrite phase, the plugin executes in the following order:
+        -- 1. execute the rewrite phase of the plugins on route(including the auth plugins)
+        -- 2. merge plugins from consumer and route
+        -- 3. execute the rewrite phase of the plugins on consumer(phase: rewrite_in_consumer)
+        -- in this case, we need to skip the plugins that was already executed(step 1)
+        local from_consumer = phase == "rewrite_in_consumer"
+                              and api_ctx.matched_route.plugins_from_consumer
         for i = 1, #plugins, 2 do
-
-            if phase == "rewrite_in_consumer" and plugins[i + 1]._skip_rewrite_in_consumer then
+            if from_consumer and (plugins[i].type == "auth"
+                                  or not from_consumer[plugins[i].name]) then
                 goto CONTINUE
             end
 
