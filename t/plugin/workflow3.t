@@ -264,8 +264,8 @@ GET /test_concurrency2
 503
 --- error_log eval
 [
-    qr/limit key: \/apisix\/routes\/1#1:127\.0\.0\.1/,
-    qr/limit key: \/apisix\/routes\/1#2:127\.0\.0\.1/,
+    qr/limit key: \/apisix\/routes\/1#[0-9#]+:127\.0\.0\.1/,
+    qr/limit key: \/apisix\/routes\/1#[0-9#]+:127\.0\.0\.1/,
 ]
 
 
