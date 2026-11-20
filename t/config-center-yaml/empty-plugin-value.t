@@ -102,3 +102,26 @@ GET /t
 2 proxy-rewrite parent: /routes/2
 own cors conf: true
 own _meta: true
+
+
+
+=== TEST 2: a workflow action with an empty _meta loads and runs
+--- apisix_yaml
+routes:
+  - id: 1
+    uri: /hello
+    plugins:
+      workflow:
+        rules:
+          - actions:
+              - - return
+                - code: 403
+                  _meta:
+    upstream:
+      nodes:
+        "127.0.0.1:1980": 1
+      type: roundrobin
+#END
+--- request
+GET /hello
+--- error_code: 403

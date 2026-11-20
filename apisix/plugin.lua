@@ -1619,7 +1619,7 @@ function _M.run_plugin(phase, plugins, api_ctx)
 end
 
 local function set_meta_parent(plugin_conf, parent)
-    local meta = plugin_conf._meta
+    local meta = own_empty_yaml_value(plugin_conf, "_meta")
     if not meta then
         meta = {}
         _M.set_runtime_state(plugin_conf, "_meta", meta)
