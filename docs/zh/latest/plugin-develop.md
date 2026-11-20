@@ -238,6 +238,19 @@ conf:
 }
 ```
 
+同一个 `conf` table 会被合并到它所在的每个路由、服务、插件配置和消费者中共享使用，`plugin.conf_version(conf)` 会对它的字段计算哈希。如果需要在它上面缓存请求阶段产生的状态，例如解析出的地址或编译后的表达式，请使用 `plugin.set_runtime_state(conf, key, value)`，而不是直接给 `conf[key]` 赋值。这样写入的值仍然可以通过 `conf[key]` 读取，但 `pairs()`、JSON 编码和 `conf_version` 都看不到它，conf 的版本因此不会取决于哪个请求先写入了状态：
+
+```lua
+local plugin = require("apisix.plugin")
+
+function _M.access(conf, ctx)
+    if not conf._resolved_host then
+        plugin.set_runtime_state(conf, "_resolved_host", resolve(conf.host))
+    end
+    ......
+end
+```
+
 #### ctx 参数
 
 `ctx` 参数缓存了请求相关的数据信息，您可以通过 `core.log.warn(core.json.encode(ctx, true))` 将其输出到 `error.log` 中进行查看，如下所示：
