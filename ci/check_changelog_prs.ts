@@ -32,6 +32,10 @@ interface PR {
 }
 
 // Configuration
+// The 3.20.0 tag points at the later master sync (#14183). Use the
+// published source release (#14168) for both adjacent version ranges.
+const RELEASE_3_20_0 = '9380e21338d09abf50c23c7f83d51d55458bfcb9';
+
 const IGNORE_TYPES = [
     'docs',
     'chore',
@@ -73,10 +77,16 @@ const IGNORE_PRS = [
     // CI-only changes whose "fix(ci)" subject prefix dodges the docs/chore/test/ci
     // type filter but which do not belong in a user changelog.
     13921, 13923,
+    // 3.21.0: documentation typo (#13837), GitHub Actions upgrades, and
+    // test dependencies under t/ (#14007, #14020).
+    13837, 13846, 13847, 13849, 13962, 14007, 14020,
 ];
 
 
 function getGitRef(version: string): string {
+    if (version === '3.20.0') {
+        return RELEASE_3_20_0;
+    }
     try {
         execSync(`git rev-parse ${version}`, { stdio: 'ignore' });
         return version;
@@ -151,7 +161,12 @@ function shouldIgnoreCommitMessage(message: string): boolean {
 }
 
 function extractPRsFromGitLog(oldRef: string, newRef: string): PR[] {
-    const log = execSync(`git log ${oldRef}..${newRef} --oneline`, { encoding: 'utf-8' });
+    // #14167 already shipped in 3.20.0 via the patch-equivalent #14169.
+    // Limit patch matching to this verified pair of published releases.
+    const range = oldRef === RELEASE_3_20_0 && newRef === '3.21.0'
+        ? `--cherry-pick --right-only ${oldRef}...${newRef}`
+        : `${oldRef}..${newRef}`;
+    const log = execSync(`git log ${range} --oneline`, { encoding: 'utf-8' });
     const prs: PR[] = [];
 
     for (const line of log.split('\n')) {

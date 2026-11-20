@@ -29,15 +29,20 @@ local _M = {}
 -- running total crosses it, so an oversized payload is never fully buffered;
 -- the third return value flags that case. Bytes left after the last member are
 -- fed to a further inflate, which rejects them.
-function _M.inflate_gzip(data, buf_size, opts, max_output)
+-- With partial set, data may be a cut prefix of the stream: running out of
+-- input or reaching max_output ends inflating without an error, and what was
+-- inflated until then is returned, at most max_output bytes of it.
+function _M.inflate_gzip(data, buf_size, opts, max_output, partial)
     buf_size = buf_size or DEFAULT_CHUNK
     local outputs = str_buffer.new()
     local written = 0
     local exceeded = false
+    local drained = false
     local pos = 1
 
     local read_inputs = function(size)
         if pos > #data then
+            drained = true
             return nil
         end
         local chunk = str_sub(data, pos, pos + size - 1)
@@ -47,9 +52,13 @@ function _M.inflate_gzip(data, buf_size, opts, max_output)
 
     local write_outputs = function(chunk)
         if max_output then
+            local room = max_output - written
             written = written + #chunk
             if written > max_output then
                 exceeded = true
+                if partial then
+                    outputs:put(str_sub(chunk, 1, room))
+                end
                 return nil, "output size limit exceeded"
             end
         end
@@ -68,6 +77,9 @@ function _M.inflate_gzip(data, buf_size, opts, max_output)
         local ok, err = zlib.inflate(read_inputs, write_outputs, buf_size,
                                      stream, inbuf, outbuf)
         if not ok then
+            if partial and (exceeded or drained) then
+                return outputs:get()
+            end
             if exceeded then
                 return nil, "inflated data is greater than the maximum size "
                             .. max_output .. " allowed", true

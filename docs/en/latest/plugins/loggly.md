@@ -50,7 +50,7 @@ When the maximum batch size is exceeded, the data in the queue is pushed to Logg
 | max_req_body_bytes | integer | False | 524288 | Request bodies within this size will be logged, if the size exceeds the configured value it will be truncated before logging. |
 | include_resp_body      | boolean       | False    | false   | When set to `true` includes the response body in the log.                                                                                                                                                                      |
 | include_resp_body_expr | array         | False    |         | When the `include_resp_body` attribute is set to `true`, use this to filter based on [lua-resty-expr](https://github.com/api7/lua-resty-expr). If present, only logs the response if the expression evaluates to `true`.       |
-| max_resp_body_bytes | integer | False | 524288 | Response bodies within this size will be logged, if the size exceeds the configured value it will be truncated before logging. |
+| max_resp_body_bytes | integer | False | 524288 | Response bodies within this size will be logged, if the size exceeds the configured value it will be truncated before logging. For a compressed response, the decoded body is also truncated to this size. |
 
 This Plugin supports using batch processors to aggregate and process entries (logs/data) in a batch. This avoids the need for frequently submitting the data. The batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. See [Batch Processor](../batch-processor.md#configurations) for more information or setting your custom configuration.
 

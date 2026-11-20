@@ -52,7 +52,7 @@ description: skywalking-logger 将请求和响应日志作为 JSON 对象批量�
 | max_req_body_bytes | integer | 否 | 524288 | >=1 | 在此大小范围内的请求主体将被记录，如果大小超过配置值则截断后记录。|
 | include_resp_body | boolean | 否 | false | | 如果为 true，则将响应主体包含在日志中。|
 | include_resp_body_expr | array[array] | 否 | | | 一个或多个条件的数组，形式为 [lua-resty-expr](https://github.com/api7/lua-resty-expr)。在 `include_resp_body` 为 true 时使用。仅当此处配置的表达式计算结果为 true 时，才会记录响应主体。|
-| max_resp_body_bytes | integer | 否 | 524288 | >=1 | 在此大小范围内的响应主体将被记录，如果大小超过配置值则截断后记录。|
+| max_resp_body_bytes | integer | 否 | 524288 | >=1 | 在此大小范围内的响应主体将被记录，如果大小超过配置值则截断后记录。对于压缩响应，解压后的响应体同样截断到该大小。|
 
 该插件支持使用批处理器来聚合并批量处理条目（日志/数据）。这样可以避免插件频繁地提交数据，默认设置情况下批处理器会每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置)。
 

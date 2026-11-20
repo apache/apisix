@@ -52,6 +52,13 @@ add_block_preprocessor(sub {
                 ngx.say(s)
             }
         }
+        location /gzip_empty {
+            content_by_lua_block {
+                ngx.header['Content-Encoding'] = "gzip"
+                ngx.header['Content-Length'] = 0
+                ngx.send_headers()
+            }
+        }
     }
 
     server {
@@ -675,3 +682,55 @@ Content-Encoding: br
 X-Server-id: 3
 X-Server-status: on
 Content-Type:
+
+
+
+=== TEST 23: set route with filters to an upstream sending an empty gzip body
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/gzip_empty",
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:11451": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "plugins": {
+                        "response-rewrite": {
+                            "filters": [
+                                {
+                                    "regex": "hello",
+                                    "replace": "test"
+                                }
+                            ]
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 24: an empty gzip body is passed through without a decode error
+--- request
+GET /gzip_empty
+--- response_body
+--- response_headers
+Content-Encoding:
+--- no_error_log
+filters may not work as expected
