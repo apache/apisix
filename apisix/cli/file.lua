@@ -101,11 +101,39 @@ local function resolve_conf_var_in_text(text)
 end
 
 
-local function resolve_conf_var(conf)
+-- Numeric entries share the first item's field rules.
+local local_conf_string_fields = {
+    apisix = {data_encryption = {keyring = true}},
+    deployment = {
+        admin = {admin_key = {{key = true}}},
+        etcd = {password = true},
+    },
+    etcd = {password = true},
+}
+
+
+local function resolve_conf_var(conf, string_fields)
     local renamed_keys
     for key, val in pairs(conf) do
+        local resolved_key = key
+        -- Defer renaming because inserting a new key during pairs() is undefined.
+        if type(key) == "string" then
+            local new_key, _, err = var_sub(key)
+            if err then
+                return nil, err
+            end
+            resolved_key = new_key
+            if new_key ~= key then
+                renamed_keys = renamed_keys or {}
+                renamed_keys[key] = new_key
+            end
+        end
+
+        local field_key = type(resolved_key) == "number" and 1 or resolved_key
+        -- A string rule also applies to entries of a string list such as keyring.
+        local field = string_fields == true or (string_fields and string_fields[field_key])
         if type(val) == "table" then
-            local ok, err = resolve_conf_var(val)
+            local ok, err = resolve_conf_var(val, field)
             if not ok then
                 return nil, err
             end
@@ -117,7 +145,7 @@ local function resolve_conf_var(conf)
                 return nil, err
             end
 
-            if var_used then
+            if var_used and field ~= true then
                 if tonumber(new_val) ~= nil then
                     new_val = tonumber(new_val)
                 elseif new_val == "true" then
@@ -128,20 +156,6 @@ local function resolve_conf_var(conf)
             end
 
             conf[key] = new_val
-        end
-
-        -- substitute environment variables from conf keys. The rename is
-        -- deferred because inserting a new key while iterating with pairs()
-        -- is undefined behavior.
-        if type(key) == "string" then
-            local new_key, _, err = var_sub(key)
-            if err then
-                return nil, err
-            end
-            if new_key ~= key then
-                renamed_keys = renamed_keys or {}
-                renamed_keys[key] = new_key
-            end
         end
     end
 
@@ -272,7 +286,7 @@ function _M.read_yaml_conf(apisix_home)
             return nil, "invalid config.yaml file"
         end
 
-        local ok, err = resolve_conf_var(user_conf)
+        local ok, err = resolve_conf_var(user_conf, local_conf_string_fields)
         if not ok then
             return nil, err
         end
