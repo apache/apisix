@@ -167,7 +167,7 @@ passed
 --- pipelined_requests eval
 ["GET /hello", "GET /hello", "GET /hello", "GET /hello"]
 --- error_code eval
-[200, 503, 503, 503]
+[503, 503, 503, 503]
 
 
 
@@ -452,7 +452,7 @@ passed
 --- more_headers
 apikey: auth-jack
 --- error_code eval
-[200, 403, 403, 403]
+[403, 403, 403, 403]
 
 
 

@@ -53,6 +53,8 @@ You may see the following rate limiting headers in the response:
 - `X-RateLimit-Remaining`: the remaining quota
 - `X-RateLimit-Reset`: number of seconds left for the counter to reset
 
+As with [limit-count](./limit-count.md#counters-across-configuration-updates), updating the Plugin keeps the cost already counted in the current window. Changing `cost_strategy` or `score_factor` starts a new counter instead, because they change what a unit of the stored cost means.
+
 ## Attributes
 
 This Plugin shares the same schema as the [limit-count](./limit-count.md) Plugin. Refer to that page for the full attribute reference. Key attributes are listed below.

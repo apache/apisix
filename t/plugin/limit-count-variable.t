@@ -503,4 +503,4 @@ GET /hello
 x-client: a"b\c
 --- error_code: 200
 --- error_log eval
-qr/decoded rate limiting key: \/apisix\/routes\/1:\d+:a"b\\c/
+qr/decoded rate limiting key: \/apisix\/routes\/1:60:a"b\\c/

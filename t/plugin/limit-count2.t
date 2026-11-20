@@ -282,7 +282,7 @@ passed
                     "plugins": {
                         "limit-count": {
                             "count": 2,
-                            "time_window": 60,
+                            "time_window": 61,
                             "rejected_code": 503,
                             "key": "$http_a $http_b",
                             "key_type": "var_combination"
@@ -400,7 +400,7 @@ The value of the configured key is empty, use client IP instead
                     "plugins": {
                         "limit-count": {
                             "count": 2,
-                            "time_window": 60,
+                            "time_window": 62,
                             "rejected_code": 503,
                             "key": "abcdefgh",
                             "key_type": "var_combination"

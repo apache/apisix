@@ -165,7 +165,7 @@ apikey: auth-one
                     "plugins": {
                         "limit-count": {
                             "count": 4,
-                            "time_window": 60,
+                            "time_window": 61,
                             "rejected_code": 503,
                             "key": "remote_addr"
                         },

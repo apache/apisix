@@ -127,7 +127,7 @@ hello world
 --- error_log
 check stream plugin schema, name: limit-conn
 merge service [1] into stream route [1]
-init plugin-level conf version
+limit key: /apisix/stream_routes/1:127.0.0.1
 
 
 
@@ -256,7 +256,7 @@ hello world
 --- error_log
 check stream plugin schema, name: limit-conn
 merge service [1] into stream route [1]
-init plugin-level conf version
+limit key: /apisix/stream_routes/1:127.0.0.1
 
 
 

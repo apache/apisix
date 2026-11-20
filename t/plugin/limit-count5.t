@@ -152,7 +152,7 @@ passed
                         "plugins": {
                             "limit-count": {
                                 "count": 10,
-                                "time_window": 60,
+                                "time_window": 61,
                                 "rejected_code": 503,
                                 "key_type": "var",
                                 "key": "remote_addr"

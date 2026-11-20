@@ -20,6 +20,8 @@ local expr         = require("resty.expr.v1")
 local ipairs       = ipairs
 local setmetatable = setmetatable
 local getmetatable = getmetatable
+local tostring     = tostring
+local ngx          = ngx
 
 local schema = {
     type = "object",
@@ -120,6 +122,25 @@ function _M.register(plugin_name, check_schema, access_handler, log_handler)
 end
 
 
+-- The identity of the action of each rule, which keeps its rate limiting
+-- counters: the rule's case and the action's plugin, so that reordering the
+-- rules keeps every counter with its action and editing a case starts a new
+-- one. The position only tells apart rules that are otherwise the same.
+local function action_ids(rules)
+    local ids = {}
+    local seen = {}
+    for idx, rule in ipairs(rules) do
+        local id = tostring(ngx.crc32_long(core.json.stably_encode({
+            rule.case or {}, rule.actions[1][1],
+        })))
+        local n = (seen[id] or 0) + 1
+        seen[id] = n
+        ids[idx] = n == 1 and id or id .. "#" .. n
+    end
+    return ids
+end
+
+
 function _M.check_schema(conf)
     local ok, err = core.schema.check(schema, conf)
     if not ok then
@@ -148,8 +169,8 @@ function _M.check_schema(conf)
                 return false, "unsupported action: " .. action[1]
             end
 
-            -- use the action's idx as an identifier to isolate between confs
-            action[2]["_vid"] = idx
+            -- isolates the counters of the action from the other ones
+            action[2]["_vid"] = action_ids(conf.rules)[idx]
             local ok, err = support_action[action[1]].check_schema(action[2], plugin_name)
             if not ok then
                 return false, "failed to validate the '" .. action[1] .. "' action: " .. err

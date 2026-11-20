@@ -39,6 +39,8 @@ import TabItem from '@theme/TabItem';
 
 `workflow` 插件支持根据给定的规则集有条件地执行对客户端流量的用户定义操作，这些规则集使用 [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list) 定义。这为流量管理提供了一种细粒度的方法。
 
+`limit-count` 或 `limit-conn` 动作的限流计数器归属于该动作，动作由其规则的 `case` 和动作插件确定。调整其他规则的顺序、增加或删除其他规则都会保留这些计数器，修改动作的限流阈值也会保留。修改规则的 `case` 会让其动作使用新的计数器。`case` 和动作插件都相同的规则按顺序区分。
+
 ## 属性
 
 | 名称 | 类型 | 必选项 | 默认值 | 有效值 | 描述 |
