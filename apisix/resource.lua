@@ -48,7 +48,14 @@ local function remove_etcd_prefix(key)
     if provider == "etcd" and local_conf.etcd and local_conf.etcd.prefix then
         prefix = local_conf.etcd.prefix
     end
-    return string_sub(key, #prefix + 1)
+    -- only strip the prefix if it's actually there -- callers may already
+    -- pass a bare "/<resource_type>/<id>" path (format 2 below), and
+    -- unconditionally slicing off #prefix characters would mangle it
+    -- instead of leaving it untouched.
+    if prefix ~= "" and string_sub(key, 1, #prefix) == prefix then
+        return string_sub(key, #prefix + 1)
+    end
+    return key
 end
 
 
