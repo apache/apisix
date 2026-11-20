@@ -271,7 +271,7 @@ function _M.body_filter(conf, ctx)
         end
 
         local err
-        if ctx.response_encoding ~= nil then
+        if ctx.response_encoding ~= nil and body ~= "" then
             local decoder = content_decode.dispatch_decoder(ctx.response_encoding)
             if not decoder then
                 core.log.error("filters may not work as expected ",

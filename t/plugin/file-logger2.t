@@ -28,6 +28,48 @@ add_block_preprocessor(sub {
             $block->set_value("response_body", "passed\n");
         }
     }
+
+    if (!defined $block->http_config) {
+        my $http_config = <<_EOC_;
+    server {
+        listen 11463;
+        location ~ ^/compressed/(.+)\$ {
+            content_by_lua_block {
+                local gzip = require("apisix.utils.gzip")
+                local text = string.rep("hello world\\n", 10000)
+                local stored = string.rep("0123456789", 200)
+                local bodies = {
+                    ["text-gzip"] = {"gzip", gzip.deflate_gzip(text)},
+                    ["stored-gzip"] = {"gzip", gzip.deflate_gzip(stored, nil, {level = 0})},
+                    ["not-gzip"] = {"gzip", "not a gzip stream"},
+                }
+                local ok, brotli = pcall(require, "brotli")
+                if ok then
+                    local numbers = {}
+                    for i = 1, 20000 do
+                        numbers[i] = i
+                    end
+                    bodies["text-br"] = {"br", brotli:compress(table.concat(numbers, " "))}
+                    bodies["not-br"] = {"br", "not a brotli stream"}
+                end
+
+                local case = ngx.var[1]
+                if case == "empty" or case == "204" or case == "304" or case == "empty-br" then
+                    ngx.status = tonumber(case) or 200
+                    ngx.header["Content-Encoding"] = case == "empty-br" and "br" or "gzip"
+                    ngx.header["Content-Length"] = 0
+                    ngx.send_headers()
+                    return
+                end
+
+                ngx.header["Content-Encoding"] = bodies[case][1]
+                ngx.print(bodies[case][2])
+            }
+        }
+    }
+_EOC_
+        $block->set_value("http_config", $http_config);
+    }
 });
 
 
@@ -574,3 +616,249 @@ skip unconcern body
 try decode compressed data err: inflate gzip err: INFLATE: data error
 --- response_body
 contain with target
+
+
+
+=== TEST 16: set routes to upstreams sending compressed bodies
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local gzip = require("apisix.utils.gzip")
+            local stored = string.rep("0123456789", 200)
+            local exact = #gzip.deflate_gzip(stored, nil, {level = 0})
+
+            local routes = {
+                {uri = "/compressed/empty"},
+                {uri = "/compressed/204"},
+                {uri = "/compressed/304"},
+                {uri = "/compressed/text-gzip", max = 100},
+                {uri = "/compressed/stored-gzip", max = 100},
+                {uri = "/compressed/stored-gzip-exact", upstream = "/compressed/stored-gzip",
+                 max = exact},
+                {uri = "/compressed/not-gzip"},
+                {uri = "/compressed/text-gzip-under", upstream = "/compressed/text-gzip",
+                 max = 10000},
+                {uri = "/compressed/empty-br"},
+                {uri = "/compressed/text-br", max = 5000},
+                {uri = "/compressed/text-br-under", upstream = "/compressed/text-br",
+                 max = 50000},
+                {uri = "/compressed/not-br"},
+            }
+            for i, route in ipairs(routes) do
+                local code, body = t("/apisix/admin/routes/" .. i, ngx.HTTP_PUT,
+                    core.json.encode({
+                        uri = route.uri,
+                        plugins = {
+                            ["file-logger"] = {
+                                path = "file-logger-compressed.log",
+                                include_resp_body = true,
+                                max_resp_body_bytes = route.max,
+                            },
+                            ["proxy-rewrite"] = {
+                                uri = route.upstream or route.uri,
+                            },
+                        },
+                        upstream = {
+                            nodes = {["127.0.0.1:11463"] = 1},
+                            type = "roundrobin",
+                        },
+                    })
+                )
+                if code >= 300 then
+                    ngx.status = code
+                    ngx.say(body)
+                    return
+                end
+            end
+            ngx.say("passed")
+        }
+    }
+
+
+
+=== TEST 17: empty bodies labelled gzip are logged as empty
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            for _, case in ipairs({"empty", "204", "304"}) do
+                local code = t("/compressed/" .. case, ngx.HTTP_GET)
+                local fd = assert(io.open("file-logger-compressed.log"))
+                local last
+                for line in fd:lines() do
+                    last = line
+                end
+                fd:close()
+                local resp = core.json.decode(last).response
+                ngx.say(code, " ", resp.headers["content-encoding"], " [", resp.body, "]")
+            end
+        }
+    }
+--- response_body
+200 gzip []
+204 gzip []
+304 gzip []
+--- no_error_log
+try decode compressed data err
+
+
+
+=== TEST 18: a gzip body cut at the limit is logged as the plaintext decoded from it
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local plaintexts = {
+                ["text-gzip"] = string.rep("hello world\n", 10000),
+                ["stored-gzip"] = string.rep("0123456789", 200),
+            }
+            for _, case in ipairs({"text-gzip", "stored-gzip"}) do
+                t("/compressed/" .. case, ngx.HTTP_GET)
+                local fd = assert(io.open("file-logger-compressed.log"))
+                local last
+                for line in fd:lines() do
+                    last = line
+                end
+                fd:close()
+                local body = core.json.decode(last).response.body
+                ngx.say(case, " ", #body, " ", body == string.sub(plaintexts[case], 1, #body))
+            end
+        }
+    }
+--- response_body
+text-gzip 100 true
+stored-gzip 85 true
+--- no_error_log
+try decode compressed data err
+
+
+
+=== TEST 19: a complete gzip body exactly at the limit is decoded in full
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            t("/compressed/stored-gzip-exact", ngx.HTTP_GET)
+            local fd = assert(io.open("file-logger-compressed.log"))
+            local last
+            for line in fd:lines() do
+                last = line
+            end
+            fd:close()
+            local body = core.json.decode(last).response.body
+            ngx.say(body == string.rep("0123456789", 200))
+        }
+    }
+--- response_body
+true
+--- no_error_log
+try decode compressed data err
+
+
+
+=== TEST 20: a body below the limit that fails to decode is logged as received
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            t("/compressed/not-gzip", ngx.HTTP_GET)
+            local fd = assert(io.open("file-logger-compressed.log"))
+            local last
+            for line in fd:lines() do
+                last = line
+            end
+            fd:close()
+            ngx.say(core.json.decode(last).response.body)
+        }
+    }
+--- response_body
+not a gzip stream
+--- error_log
+try decode compressed data err: inflate gzip err
+
+
+
+=== TEST 21: the plaintext of a gzip body under the limit is held to the limit
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local plain = string.rep("hello world\n", 10000)
+            t("/compressed/text-gzip-under", ngx.HTTP_GET)
+            local fd = assert(io.open("file-logger-compressed.log"))
+            local last
+            for line in fd:lines() do
+                last = line
+            end
+            fd:close()
+            local body = core.json.decode(last).response.body
+            ngx.say(#body, " ", body == string.sub(plain, 1, #body))
+        }
+    }
+--- response_body
+10000 true
+--- no_error_log
+try decode compressed data err
+
+
+
+=== TEST 22: br bodies that are empty, cut at the limit or decoding past it are logged without error
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local numbers = {}
+            for i = 1, 20000 do
+                numbers[i] = i
+            end
+            local plain = table.concat(numbers, " ")
+            for _, case in ipairs({"empty-br", "text-br", "text-br-under"}) do
+                t("/compressed/" .. case, ngx.HTTP_GET)
+                local fd = assert(io.open("file-logger-compressed.log"))
+                local last
+                for line in fd:lines() do
+                    last = line
+                end
+                fd:close()
+                local body = core.json.decode(last).response.body
+                ngx.say(case, " ", #body, " ", body == string.sub(plain, 1, #body))
+            end
+        }
+    }
+--- response_body
+empty-br 0 true
+text-br 5000 true
+text-br-under 50000 true
+--- no_error_log
+try decode compressed data err
+
+
+
+=== TEST 23: a br body below the limit that fails to decode is logged as received
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            t("/compressed/not-br", ngx.HTTP_GET)
+            local fd = assert(io.open("file-logger-compressed.log"))
+            local last
+            for line in fd:lines() do
+                last = line
+            end
+            fd:close()
+            ngx.say(core.json.decode(last).response.body)
+        }
+    }
+--- response_body
+not a brotli stream
+--- error_log
+try decode compressed data err: brotli decode err
