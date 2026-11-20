@@ -19,8 +19,8 @@ local ipairs       = ipairs
 local core         = require("apisix.core")
 local http         = require("resty.http")
 local http_client  = require("apisix.utils.http")
+local plugin       = require("apisix.plugin")
 local pairs        = pairs
-local setmetatable = setmetatable
 local type         = type
 local tostring     = tostring
 local unpack       = unpack
@@ -150,11 +150,10 @@ end
 
 
 local SLASH = str_byte("/")
-local parsed_uris = setmetatable({}, {__mode = "k"})
 
 
 local function parse_uri(conf)
-    local parsed = parsed_uris[conf]
+    local parsed = conf._parsed_uri
     if parsed then
         return parsed
     end
@@ -167,7 +166,7 @@ local function parse_uri(conf)
 
     -- a scheme-relative uri takes the scheme of the current request
     if str_byte(conf.uri, 1) ~= SLASH then
-        parsed_uris[conf] = parsed
+        plugin.set_runtime_state(conf, "_parsed_uri", parsed)
     end
 
     return parsed

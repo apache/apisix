@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core      = require("apisix.core")
+local plugin    = require("apisix.plugin")
 local http      = require "resty.http"
 local sub_str   = string.sub
 local type      = type
@@ -273,11 +274,11 @@ end
 -- Turn a discovery url set in the conf dictionary into the discovered information.
 local function authz_keycloak_ensure_discovered_data(conf)
     local err
-    if type(conf.discovery) == "string" then
+    if type(conf.discovery) == "string" and not conf._discovery then
         local discovery
         discovery, err = authz_keycloak_discover(conf)
         if not err then
-            conf.discovery = discovery
+            plugin.set_runtime_state(conf, "_discovery", discovery)
         end
     end
     return err
@@ -289,9 +290,9 @@ local function authz_keycloak_get_endpoint(conf, endpoint)
     if conf and conf[endpoint] then
         -- Use explicit entry.
         return conf[endpoint]
-    elseif conf and conf.discovery and type(conf.discovery) == "table" then
+    elseif conf and type(conf._discovery) == "table" then
         -- Use discovery data.
-        return conf.discovery[endpoint]
+        return conf._discovery[endpoint]
     end
 
     -- Unable to obtain endpoint.

@@ -20,6 +20,7 @@ local secret = require("apisix.secret")
 local schema = require("apisix.plugins.ai-proxy.schema")
 local base   = require("apisix.plugins.ai-proxy.base")
 local plugin = require("apisix.plugin")
+local set_runtime_state = plugin.set_runtime_state
 local ipmatcher  = require("resty.ipmatcher")
 local healthcheck_manager = require("apisix.healthcheck_manager")
 local resource = require("apisix.resource")
@@ -367,10 +368,10 @@ local function use_node_for_request(instance_conf, node)
         return
     end
 
-    instance_conf._dns_value = node
-    instance_conf._resolved_endpoint = make_endpoint(node)
-    instance_conf._resolved_host_header = make_host_header(node)
-    instance_conf._resolved_ssl_server_name = node.domain
+    set_runtime_state(instance_conf, "_dns_value", node)
+    set_runtime_state(instance_conf, "_resolved_endpoint", make_endpoint(node))
+    set_runtime_state(instance_conf, "_resolved_host_header", make_host_header(node))
+    set_runtime_state(instance_conf, "_resolved_ssl_server_name", node.domain)
 end
 
 
@@ -423,8 +424,8 @@ local function resolve_endpoint(instance_conf)
     local nodes_changed = not nodes_equal(instance_conf._dns_nodes, new_nodes)
 
     if nodes_changed then
-        instance_conf._dns_nodes = new_nodes
-        instance_conf._nodes_ver = (instance_conf._nodes_ver or 0) + 1
+        set_runtime_state(instance_conf, "_dns_nodes", new_nodes)
+        set_runtime_state(instance_conf, "_nodes_ver", (instance_conf._nodes_ver or 0) + 1)
         core.log.info("DNS resolution changed for instance: ", instance_conf.name,
                      " new nodes: ", core.json.delay_encode(new_nodes))
     end
@@ -511,14 +512,14 @@ end
 local function apply_health_status(conf, health_status)
     if not health_status or health_status.all_unhealthy then
         for _, ins in ipairs(conf.instances) do
-            ins._healthy_dns_nodes = nil
+            set_runtime_state(ins, "_healthy_dns_nodes", nil)
         end
 
         return nil
     end
 
     for _, ins in ipairs(conf.instances) do
-        ins._healthy_dns_nodes = health_status.healthy_dns_nodes[ins.name]
+        set_runtime_state(ins, "_healthy_dns_nodes", health_status.healthy_dns_nodes[ins.name])
     end
 
     return health_status.status
@@ -632,8 +633,8 @@ local function pick_target(ctx, conf, ups_tab)
             if instance._nodes_ver then
                 resource_version = resource_version .. instance._nodes_ver
             end
-            instances[i]._dns_nodes = instance._dns_nodes
-            instances[i]._nodes_ver = instance._nodes_ver
+            set_runtime_state(instances[i], "_dns_nodes", instance._dns_nodes)
+            set_runtime_state(instances[i], "_nodes_ver", instance._nodes_ver)
             local checker = healthcheck_manager.fetch_checker(resource_path, resource_version)
             checkers[instance.name] = checker
         end

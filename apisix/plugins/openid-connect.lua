@@ -63,6 +63,7 @@ local function build_session_opts(session_conf)
     end
     if session_conf.cookie and session_conf.cookie.lifetime then
         if not session_conf.absolute_timeout then
+            session_conf = core.table.clone(session_conf)
             session_conf.absolute_timeout = session_conf.cookie.lifetime
             core.log.warn("session.cookie.lifetime is deprecated; ",
                           "use session.absolute_timeout instead")

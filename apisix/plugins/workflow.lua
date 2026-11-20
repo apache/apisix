@@ -18,8 +18,6 @@ local core         = require("apisix.core")
 local plugin       = require("apisix.plugin")
 local expr         = require("resty.expr.v1")
 local ipairs       = ipairs
-local setmetatable = setmetatable
-local getmetatable = getmetatable
 
 local schema = {
     type = "object",
@@ -132,17 +130,12 @@ function _M.check_schema(conf)
             if not expr then
                 return false, "failed to validate the 'case' expression: " .. err
             end
-            local mt = getmetatable(rule)
-            if not mt then
-                mt = {}
-                mt.__index = mt
-                setmetatable(rule, mt)
-            end
-            mt.__expr = expr
+            plugin.set_runtime_state(rule, "_expr", expr)
         end
 
         local actions = rule.actions
         for _, action in ipairs(actions) do
+            plugin.own_empty_yaml_value(action, 2)
 
             if not support_action[action[1]] then
                 return false, "unsupported action: " .. action[1]
@@ -166,7 +159,7 @@ function _M.access(conf, ctx)
     for idx, rule in ipairs(conf.rules) do
         local match_result = true
         if rule.case then
-            local expr = rule.__expr
+            local expr = rule._expr
             if expr then
                 match_result = expr:eval(ctx.var)
             end
@@ -180,8 +173,6 @@ function _M.access(conf, ctx)
 
             local action_name = action[1]
             local action_conf = action[2]
-            action_conf._meta = conf._meta
-
             return support_action[action_name].handler(action_conf, ctx)
         end
     end
