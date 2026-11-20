@@ -149,6 +149,9 @@ done
             local versions = {}
             for _, path in ipairs({"/priority", "/plain", "/ref"}) do
                 local res = assert(http.new():request_uri(uri .. path))
+                if res.status ~= 200 then
+                    ngx.say(path, ": ", res.status)
+                end
                 versions[path] = res.headers["X-Conf-Version"]
             end
 
@@ -173,6 +176,9 @@ plain: true
             local versions = {}
             for _, path in ipairs({"/plain", "/priority", "/ref"}) do
                 local res = assert(http.new():request_uri(uri .. path))
+                if res.status ~= 200 then
+                    ngx.say(path, ": ", res.status)
+                end
                 versions[path] = res.headers["X-Conf-Version"]
             end
 
@@ -223,11 +229,13 @@ consumer: true
 
             res = assert(http.new():request_uri(uri .. "/ref"))
             local ref = res.headers["X-Conf-Version"]
+            ngx.say("ref: ", res.status)
             ngx.say("same: ", ref ~= nil and authenticated == ref)
         }
     }
 --- response_body
 authenticated: 200 rose
+ref: 200
 same: true
 
 
@@ -246,9 +254,11 @@ same: true
 
             res = assert(http.new():request_uri(uri .. "/auth",
                                                 {headers = {apikey = "rose-key"}}))
+            ngx.say("authenticated: ", res.status)
             local authenticated = res.headers["X-Conf-Version"]
 
             res = assert(http.new():request_uri(uri .. "/ref"))
+            ngx.say("ref: ", res.status)
             local ref = res.headers["X-Conf-Version"]
             ngx.say("rejected: ", ref ~= nil and rejected == ref)
             ngx.say("authenticated: ", ref ~= nil and authenticated == ref)
@@ -256,6 +266,8 @@ same: true
     }
 --- response_body
 rejected: 401
+authenticated: 200
+ref: 200
 rejected: true
 authenticated: true
 
