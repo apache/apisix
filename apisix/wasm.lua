@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
+local require = require
 local type = type
 local support_wasm, wasm = pcall(require, "resty.proxy-wasm")
 local ngx_var = ngx.var
@@ -45,11 +46,13 @@ local function get_plugin_ctx_key(ctx)
 end
 
 local function fetch_plugin_ctx(conf, ctx, plugin)
-    if not conf.plugin_ctxs then
-        conf.plugin_ctxs = {}
+    local ctxs = conf._plugin_ctxs
+    if not ctxs then
+        ctxs = {}
+        -- apisix.plugin requires this module
+        require("apisix.plugin").set_runtime_state(conf, "_plugin_ctxs", ctxs)
     end
 
-    local ctxs = conf.plugin_ctxs
     local key = get_plugin_ctx_key(ctx)
     local plugin_ctx = ctxs[key]
     local err

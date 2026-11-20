@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
+local plugin = require("apisix.plugin")
 local pairs       = pairs
 local type        = type
 local ngx         = ngx
@@ -95,8 +96,9 @@ function _M.header_filter(conf, ctx)
         return
     end
 
-    if not conf.headers_arr then
-        conf.headers_arr = {}
+    local headers_arr = conf._headers_arr
+    if not headers_arr then
+        headers_arr = {}
 
         for field, value in pairs(conf.headers) do
             if type(field) == 'string'
@@ -104,17 +106,18 @@ function _M.header_filter(conf, ctx)
                 if #field == 0 then
                     return false, 'invalid field length in header'
                 end
-                core.table.insert(conf.headers_arr, field)
-                core.table.insert(conf.headers_arr, value)
+                core.table.insert(headers_arr, field)
+                core.table.insert(headers_arr, value)
             else
                 return false, 'invalid type as header value'
             end
         end
+        plugin.set_runtime_state(conf, "_headers_arr", headers_arr)
     end
 
-    local field_cnt = #conf.headers_arr
+    local field_cnt = #headers_arr
     for i = 1, field_cnt, 2 do
-        ngx.header[conf.headers_arr[i]] = conf.headers_arr[i+1]
+        ngx.header[headers_arr[i]] = headers_arr[i+1]
     end
 end
 

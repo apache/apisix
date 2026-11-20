@@ -16,6 +16,7 @@
 --
 local core       = require("apisix.core")
 local upstream   = require("apisix.upstream")
+local set_runtime_state = require("apisix.plugin").set_runtime_state
 local schema_def = require("apisix.schema_def")
 local roundrobin = require("resty.roundrobin")
 local ipmatcher  = require("resty.ipmatcher")
@@ -158,6 +159,8 @@ local function set_upstream(upstream_info, ctx)
     local new_nodes = {}
     if core.table.isarray(nodes) then
         for _, node in ipairs(nodes) do
+            -- the resolved address goes into a copy: the node belongs to the conf
+            node = core.table.clone(node)
             parse_domain_for_node(node)
             table_insert(new_nodes, node)
         end
@@ -219,13 +222,13 @@ local function new_rr_obj(weighted_upstreams)
             server_list[upstream_obj.upstream_id] = upstream_obj.weight
         elseif upstream_obj.upstream then
             -- Add a virtual id field to uniquely identify the upstream key.
-            upstream_obj.upstream.vid = i
+            set_runtime_state(upstream_obj.upstream, "vid", i)
             -- Get the table id of the nodes as part of the upstream_key,
             -- avoid upstream_key duplicate because vid is the same in the loop
             -- when multiple rules with multiple weighted_upstreams under each rule.
             -- see https://github.com/apache/apisix/issues/5276
             local node_tid = tostring(upstream_obj.upstream.nodes):sub(#"table: " + 1)
-            upstream_obj.upstream.node_tid = node_tid
+            set_runtime_state(upstream_obj.upstream, "node_tid", node_tid)
             server_list[upstream_obj.upstream] = upstream_obj.weight
         else
             -- If the upstream object has only the weight value, it means

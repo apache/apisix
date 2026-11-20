@@ -173,19 +173,22 @@ cookie=nil
         content_by_lua_block {
             local plugin = require("apisix.plugins.openid-connect")
             local build = plugin._build_session_opts
-            local opts = build({
+            local session_conf = {
                 secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
                 cookie = {
                     lifetime = 7200,
                 }
-            })
+            }
+            local opts = build(session_conf)
             ngx.say("absolute_timeout=", opts.absolute_timeout)
             ngx.say("cookie.lifetime=", opts.cookie.lifetime)
+            ngx.say("conf absolute_timeout=", tostring(session_conf.absolute_timeout))
         }
     }
 --- response_body
 absolute_timeout=7200
 cookie.lifetime=7200
+conf absolute_timeout=nil
 --- error_log
 session.cookie.lifetime is deprecated
 

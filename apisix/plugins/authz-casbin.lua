@@ -76,7 +76,7 @@ local function new_enforcer_if_need(conf)
         local model_path = conf.model_path
         local policy_path = conf.policy_path
         if not conf.casbin_enforcer then
-            conf.casbin_enforcer = casbin:new(model_path, policy_path)
+            plugin.set_runtime_state(conf, "casbin_enforcer", casbin:new(model_path, policy_path))
         end
         return true
     end
@@ -85,7 +85,8 @@ local function new_enforcer_if_need(conf)
         local model = conf.model
         local policy = conf.policy
         if not conf.casbin_enforcer then
-            conf.casbin_enforcer = casbin:newEnforcerFromText(model, policy)
+            plugin.set_runtime_state(conf, "casbin_enforcer",
+                                     casbin:newEnforcerFromText(model, policy))
         end
         return true
     end

@@ -238,7 +238,7 @@ conf:
 }
 ```
 
-同一个 `conf` table 会被合并到它所在的每个路由、服务、插件配置和消费者中共享使用，`plugin.conf_version(conf)` 会对它的字段计算哈希。如果需要在它上面缓存请求阶段产生的状态，例如解析出的地址或编译后的表达式，请使用 `plugin.set_runtime_state(conf, key, value)`，而不是直接给 `conf[key]` 赋值。这样写入的值仍然可以通过 `conf[key]` 读取，但 `pairs()`、JSON 编码和 `conf_version` 都看不到它，conf 的版本因此不会取决于哪个请求先写入了状态：
+`check_schema` 返回之后，请把 `conf` 当作只读：`check_schema` 可以填充默认值或规范化字段，但之后同一个 table 会被合并到它所在的每个路由、服务、插件配置和消费者中共享使用，`plugin.conf_version(conf)` 也会对它的字段计算哈希。当前请求的信息应放在 `ctx` 中。如果需要缓存请求阶段由 conf 推导出的状态，例如解析出的地址或编译后的表达式，请使用 `plugin.set_runtime_state(conf, key, value)`，而不是直接给 `conf[key]` 赋值。这样写入的值仍然可以通过 `conf[key]` 读取，但 `pairs()`、JSON 编码和 `conf_version` 都看不到它，conf 的版本因此不会取决于哪个请求先写入了状态：
 
 ```lua
 local plugin = require("apisix.plugin")

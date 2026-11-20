@@ -1588,21 +1588,16 @@ function _M.set_plugins_meta_parent(plugins, parent)
         return
     end
     for _, plugin_conf in pairs(plugins) do
-        if not plugin_conf._meta then
-            plugin_conf._meta = {}
+        local meta = plugin_conf._meta
+        if not meta then
+            meta = {}
+            _M.set_runtime_state(plugin_conf, "_meta", meta)
         end
-        if not plugin_conf._meta.parent then
-            local parent_info = {
+        if not meta.parent then
+            _M.set_runtime_state(meta, "parent", {
                 resource_key = parent.key,
                 resource_version = tostring(parent.modifiedIndex)
-            }
-            local mt_table = getmetatable(plugin_conf._meta)
-            if mt_table then
-                mt_table.parent = parent_info
-            else
-                plugin_conf._meta = setmetatable(plugin_conf._meta,
-                                                    { __index = {parent = parent_info} })
-            end
+            })
         end
     end
 end

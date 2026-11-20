@@ -17,6 +17,7 @@
 local core            = require("apisix.core")
 local http            = require("resty.http")
 local log_util        = require("apisix.utils.log-util")
+local set_runtime_state = require("apisix.plugin").set_runtime_state
 local bp_manager_mod  = require("apisix.utils.batch-processor-manager")
 local ngx             = ngx
 local ngx_re          = ngx.re
@@ -27,7 +28,6 @@ local pcall           = pcall
 local type            = type
 local pairs           = pairs
 local ipairs          = ipairs
-local setmetatable    = setmetatable
 
 local plugin_name = "elasticsearch-logger"
 local batch_processor_manager = bp_manager_mod.new(plugin_name)
@@ -236,14 +236,6 @@ local function resolve_index_vars(index, var)
 end
 
 
--- The Elasticsearch major version of the cluster a batch processor's conf sends to,
--- or false once its probe has failed. It is not kept in the conf: plugin.conf_version()
--- caches in conf._version the version that keys the conf's batch processor, so a
--- major version stored there made every conf with that major version share one
--- processor, and so its endpoints and credentials.
-local es_versions = setmetatable({}, {__mode = "k"})
-
-
 -- The action line is added when the batch is sent, see send_to_elasticsearch().
 local function get_logger_entry(conf, ctx, index)
     local entry = log_util.get_log_entry(plugin_name, conf, ctx)
@@ -264,13 +256,14 @@ local function get_logger_entry(conf, ctx, index)
 end
 
 
--- The version is probed from the batch timer, so that no request waits for it. Batches
--- sent before the first probe returns probe as well; after that, a failed probe is not
--- repeated: only Elasticsearch 5 and 6 need the version, while a cluster that refuses
--- GET / (it needs the `monitor` cluster privilege) would otherwise cost a request and
--- an error line for every batch.
+-- conf._es_version is the major version of the cluster the conf sends to, or false once
+-- its probe has failed. The version is probed from the batch timer, so that no request
+-- waits for it. Batches sent before the first probe returns probe as well; after that,
+-- a failed probe is not repeated: only Elasticsearch 5 and 6 need the version, while a
+-- cluster that refuses GET / (it needs the `monitor` cluster privilege) would otherwise
+-- cost a request and an error line for every batch.
 local function fetch_and_update_es_version(conf)
-    if es_versions[conf] ~= nil then
+    if conf._es_version ~= nil then
         return
     end
 
@@ -284,12 +277,12 @@ local function fetch_and_update_es_version(conf)
     if err then
         core.log.error("failed to get Elasticsearch version: ", err)
         -- keep a version that a concurrent batch has got in the meantime
-        if es_versions[conf] == nil then
-            es_versions[conf] = false
+        if conf._es_version == nil then
+            set_runtime_state(conf, "_es_version", false)
         end
         return
     end
-    es_versions[conf] = major_version
+    set_runtime_state(conf, "_es_version", major_version)
 end
 
 
@@ -303,7 +296,7 @@ local function send_to_elasticsearch(conf, entries)
     -- this processor sends to: Elasticsearch 5 and 6 reject the whole bulk request
     -- when one of its action lines lacks the `_type` they need.
     fetch_and_update_es_version(conf)
-    local es_version = es_versions[conf]
+    local es_version = conf._es_version
     local lines = core.table.new(#entries * 2, 0)
     for i, entry in ipairs(entries) do
         local action = {
