@@ -431,3 +431,48 @@ redis: 200 200 503 503
 database 14: 2
 database 15: 1
 --- timeout: 10
+
+
+
+=== TEST 9: redis with delayed sync, a new count applies to what the local fallback rejected
+--- config
+    location /t {
+        content_by_lua_block {
+            local helper = require("conf_update_helper")
+            -- nothing listens on the port, so the syncer falls back to the
+            -- local limiter, which has already counted 3
+            local conf = {
+                count = 2,
+                time_window = 60,
+                rejected_code = 503,
+                key = "remote_addr",
+                policy = "redis",
+                redis_host = "127.0.0.1",
+                redis_port = 1,
+                sync_interval = 0.2,
+            }
+            local key = "/apisix/routes/" .. helper.route .. ":60:127.0.0.1"
+            assert(ngx.shared["plugin-limit-count"]:incr(key, 3, 0, 60))
+            assert(ngx.shared["plugin-limit-count-reset-header"]:set(key, ngx.now() + 60, 60))
+            local out = {}
+            local function hit()
+                out[#out + 1] = helper.hit()
+            end
+
+            helper.set_route(conf)
+            hit()
+
+            -- one over the new count of 5 is left
+            conf.count = 5
+            helper.set_route(conf)
+            hit()
+
+            ngx.say(table.concat(out, "\n"))
+        }
+    }
+--- response_body
+503
+200 remaining 1 reset <= 60
+--- error_log
+sync to redis failed
+--- timeout: 10

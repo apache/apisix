@@ -103,11 +103,12 @@ end
 -- The remaining of a rejected sync: the counter may be over the limit, and
 -- clamping it to 0 would lose by how much once the limit is raised.
 local function rejected_remaining(self, info)
-    if not (info and info.count) then
+    local count = info and (info.count or info.consumed)
+    if not count then
         return 0
     end
 
-    local remaining = self.limit - info.count
+    local remaining = self.limit - count
     -- a sliding window also counts its share of the previous window
     if info.last_count and info.now then
         local remaining_time = self.window - info.now % self.window
