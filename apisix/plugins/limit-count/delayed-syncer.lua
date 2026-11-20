@@ -26,6 +26,8 @@ local tostring = tostring
 local pairs = pairs
 local ipairs = ipairs
 local tab_insert = table.insert
+local tab_concat = table.concat
+local crc32 = ngx.crc32_long
 local type = type
 local pcall = pcall
 
@@ -67,9 +69,9 @@ local mt = {
 
 function _M.build_key(self, prefix, key)
     if self.shd_per_worker then
-        return prefix .. worker_id() .. "#" .. key
+        return prefix .. worker_id() .. "#" .. self.backend .. key
     end
-    return prefix .. key
+    return prefix .. self.backend .. key
 end
 
 
@@ -497,6 +499,28 @@ function _M.sync(self, syncer_id, time_to_sync)
 end
 
 
+-- The node-local accounting of a key belongs to the Redis it is synced with:
+-- a configuration update that moves the counter to another Redis keeps the
+-- same key, and must not judge on, or flush to, the other one.
+local function backend_id(conf)
+    local parts
+    if conf.policy == "redis" then
+        parts = {conf.redis_host, conf.redis_port or 6379, conf.redis_database or 0,
+                 conf.redis_username or ""}
+    elseif conf.policy == "redis-cluster" then
+        parts = {conf.redis_cluster_name, tab_concat(conf.redis_cluster_nodes or {}, ",")}
+    elseif conf.policy == "redis-sentinel" then
+        parts = {conf.redis_master_name, conf.redis_database or 0, conf.redis_role or "master"}
+        for _, sentinel in ipairs(conf.redis_sentinels or {}) do
+            tab_insert(parts, sentinel.host .. ":" .. sentinel.port)
+        end
+    else
+        return ""
+    end
+    return crc32(conf.policy .. "#" .. tab_concat(parts, "#")) .. "#"
+end
+
+
 function _M.new(shdict_name, limit, window, conf, limiter)
     local shd = ngx_shared[shdict_name]
     if not shd then
@@ -512,6 +536,7 @@ function _M.new(shdict_name, limit, window, conf, limiter)
         window = window,
         limiter = limiter,
         sync_interval = conf.sync_interval,
+        backend = backend_id(conf),
     }
     -- self.shd_per_worker = true: simulate multiple nginx server instance
     if conf._shd_per_worker then

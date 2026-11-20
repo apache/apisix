@@ -61,7 +61,7 @@ APISIX 3.18.0 及后续版本支持 Redis Sentinel、滑动窗口和 Redis 延�
 
 * 新的 `count` 作用于已消耗的配额。调大后可以立即放行多出的部分；调小到已消耗数量以下时，下一个请求会被拒绝。
 * 不影响限流阈值的修改，例如 `rejected_msg` 或 `_meta.filter`，不会改变计数器。
-* 修改 `time_window` 会开始一个新的固定窗口。滑动窗口的计数器本身已经由窗口标识。
+* 修改 `time_window` 会开始一个新的窗口。
 * 启用延迟同步（`sync_interval`）时，新的 `count` 同样立即作用于节点上一次同步得到的配额。
 
 早期版本在每次更新插件配置时都会重置计数器。由于计数器键的格式发生了变化，升级到具有此行为的 APISIX 版本后，现有计数器会重新开始计数一次。通过 `group` 共享的计数器不受影响。
@@ -2183,7 +2183,7 @@ nginx_config:
 计入滑动窗口的请求记录的值类似如下：
 
 ```json
-{"rate_limiting_key":"/apisix/routes/1:127.0.0.1","rate_limiting_limit":10,"rate_limiting_remaining":3,"rate_limiting_reset":14,"window_type":"sliding","window_size_ms":60000,"decision":"allowed","cost":1,"evaluated_at_ms":1759212345678,"current_window":{"id":29320205,"start_ms":1759212300000,"end_ms":1759212360000,"count":4},"previous_window":{"count":10,"weight":0.2387,"weighted_count":2.387}}
+{"rate_limiting_key":"/apisix/routes/1:60:127.0.0.1","rate_limiting_limit":10,"rate_limiting_remaining":3,"rate_limiting_reset":14,"window_type":"sliding","window_size_ms":60000,"decision":"allowed","cost":1,"evaluated_at_ms":1759212345678,"current_window":{"id":29320205,"start_ms":1759212300000,"end_ms":1759212360000,"count":4},"previous_window":{"count":10,"weight":0.2387,"weighted_count":2.387}}
 ```
 
 字段的顺序不固定。所有 `*_ms` 字段都是以毫秒为单位的 Unix 时间戳或时长，取自 APISIX 实例的时钟。适用于该窗口类型、但对本次请求未知的字段为 `null`。各字段含义如下：

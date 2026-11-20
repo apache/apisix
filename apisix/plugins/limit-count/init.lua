@@ -385,13 +385,9 @@ local function gen_limit_key(conf, ctx, rule, key)
         limit_key_prefix[conf] = prefix
     end
 
-    -- a fixed window keeps its length in the key so that a new time_window
-    -- starts a new window; a sliding window counter already carries its window
-    if conf.window_type ~= "sliding" then
-        return prefix .. rule.time_window .. ':' .. key
-    end
-
-    return prefix .. key
+    -- the window length is in the key so that a new time_window starts a new
+    -- window: a sliding window id alone may be the same for two lengths
+    return prefix .. rule.time_window .. ':' .. key
 end
 
 

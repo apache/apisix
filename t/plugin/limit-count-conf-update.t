@@ -33,7 +33,12 @@ add_block_preprocessor(sub {
     }
 
     my $extra_init_by_lua = <<_EOC_;
-    local helper = {}
+    local helper = {route = "lc-conf-update"}
+
+    -- deletes the Redis counters of the route of this file, and only those
+    function helper.clear(opts)
+        require("lib.test_redis").delete_keys("*/apisix/routes/" .. helper.route .. "[:#]*", opts)
+    end
 
     -- updates route 1 and waits for the change to reach the worker
     function helper.set_route(conf, workflow)
@@ -43,7 +48,7 @@ add_block_preprocessor(sub {
         if workflow then
             plugins.workflow = workflow
         end
-        local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, core.json.encode({
+        local code, body = t('/apisix/admin/routes/' .. helper.route, ngx.HTTP_PUT, core.json.encode({
             uri = "/hello",
             plugins = plugins,
             upstream = {type = "roundrobin", nodes = {["127.0.0.1:1980"] = 1}},
@@ -147,7 +152,7 @@ __DATA__
 --- config
     location /t {
         content_by_lua_block {
-            require("lib.test_redis").flush_all()
+            require("conf_update_helper").clear()
             require("conf_update_helper").run({
                 count = 3,
                 time_window = 60,
@@ -174,7 +179,7 @@ __DATA__
 --- config
     location /t {
         content_by_lua_block {
-            require("lib.test_redis").flush_all()
+            require("conf_update_helper").clear()
             require("conf_update_helper").run({
                 count = 3,
                 time_window = 60,
@@ -201,7 +206,7 @@ __DATA__
 --- config
     location /t {
         content_by_lua_block {
-            require("lib.test_redis").flush_all()
+            require("conf_update_helper").clear()
             local helper = require("conf_update_helper")
             local conf = {
                 count = 2,
@@ -265,7 +270,7 @@ __DATA__
 --- config
     location /t {
         content_by_lua_block {
-            require("lib.test_redis").flush_all()
+            require("conf_update_helper").clear()
             local helper = require("conf_update_helper")
             local out = {}
             for _, policy in ipairs({"local", "redis"}) do
@@ -309,7 +314,7 @@ redis: 200 200 503 503
 --- config
     location /t {
         content_by_lua_block {
-            require("lib.test_redis").flush_all()
+            require("conf_update_helper").clear()
             local helper = require("conf_update_helper")
             local conf = {
                 count = 2,
@@ -346,4 +351,83 @@ redis: 200 200 503 503
 200 remaining 1 reset <= 60
 200 remaining 2 reset <= 60
 200 remaining 1 reset <= 60
+--- timeout: 10
+
+
+
+=== TEST 7: a new sliding window length starts a new window, also with the same window id
+--- config
+    location /t {
+        content_by_lua_block {
+            local helper = require("conf_update_helper")
+            -- floor(now / time_window) is 1 for both lengths
+            local conf = {
+                count = 3,
+                time_window = 1000000000,
+                window_type = "sliding",
+                rejected_code = 503,
+                key = "remote_addr",
+                policy = "local",
+            }
+            local out = {}
+            helper.set_route(conf)
+            out[#out + 1] = helper.hit():match("^%d+ remaining %d+")
+            out[#out + 1] = helper.hit():match("^%d+ remaining %d+")
+
+            conf.time_window = 1000000001
+            helper.set_route(conf)
+            out[#out + 1] = helper.hit():match("^%d+ remaining %d+")
+            ngx.say(table.concat(out, "\n"))
+        }
+    }
+--- response_body
+200 remaining 2
+200 remaining 1
+200 remaining 2
+--- timeout: 10
+
+
+
+=== TEST 8: redis with delayed sync, a pending delta is synced to the Redis it was counted for
+--- config
+    location /t {
+        content_by_lua_block {
+            local helper = require("conf_update_helper")
+            helper.clear({database = 14})
+            helper.clear({database = 15})
+            local conf = {
+                count = 10,
+                time_window = 60,
+                rejected_code = 503,
+                key = "remote_addr",
+                policy = "redis",
+                redis_host = "127.0.0.1",
+                redis_port = 6379,
+                redis_database = 14,
+                sync_interval = 1,
+            }
+
+            -- two requests wait to be synced to database 14
+            helper.set_route(conf)
+            helper.hit()
+            helper.hit()
+
+            conf.redis_database = 15
+            helper.set_route(conf)
+            helper.hit()
+
+            -- both syncers are done
+            ngx.sleep(2)
+            local key = "plugin-limit-count:v1:/apisix/routes/lc-conf-update:60:127.0.0.1"
+            local red = require("resty.redis").new()
+            assert(red:connect("127.0.0.1", 6379))
+            for _, db in ipairs({14, 15}) do
+                assert(red:select(db))
+                ngx.say("database ", db, ": ", (red:get(key)))
+            end
+        }
+    }
+--- response_body
+database 14: 2
+database 15: 1
 --- timeout: 10
