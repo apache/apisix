@@ -46,6 +46,7 @@ discovery:
       read: 1000                  # default 2000 ms
       wait: 60                    # default 60 sec
     weight: 1                     # default 1
+    preserve_metadata: false      # default false, keep the Meta of consul services to filter nodes with discovery_args.metadata
     fetch_interval: 5             # default 3 sec, only take effect for keepalive: false way
     keepalive: true               # default true, use the long pull way to query consul servers
     sort_type: "origin"           # default origin
@@ -229,6 +230,40 @@ The format response as below:
 ```
 
 You could find more usage in the `apisix/t/discovery/consul.t` file.
+
+#### Filter nodes by metadata
+
+When the instances of one service are told apart by their Consul metadata (`Meta`), for example stable and canary instances, an upstream can use only the instances whose metadata contains all the key/value pairs given in `discovery_args.metadata`. This needs `preserve_metadata` to be `true` in the Consul discovery configuration, so APISIX keeps the metadata of the services it fetches:
+
+```yaml
+discovery:
+  consul:
+    servers:
+      - "http://127.0.0.1:8500"
+    preserve_metadata: true
+```
+
+Then only the instances of `service_a` registered with `"Meta": {"release": "canary"}` are used by this route:
+
+```shell
+$ curl http://127.0.0.1:9180/apisix/admin/routes/2 -H "X-API-KEY: $admin_key" -X PUT -i -d '
+{
+    "uri": "/*",
+    "vars": [["http_x_canary", "==", "true"]],
+    "upstream": {
+        "service_name": "service_a",
+        "type": "roundrobin",
+        "discovery_type": "consul",
+        "discovery_args": {
+            "metadata": {
+                "release": "canary"
+            }
+        }
+    }
+}'
+```
+
+The values in `discovery_args.metadata` are strings, as Consul stores them. If no instance matches, the request fails with `503`. Upstreams without `discovery_args.metadata` keep using all the instances of the service. The metadata is only used for the filtering and is not added to the nodes of the upstream.
 
 #### L4
 
