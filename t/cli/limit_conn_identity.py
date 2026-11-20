@@ -129,6 +129,7 @@ class Scenario:
             REDIS_DATABASE: set(redis("KEYS", "limit_conn:*").splitlines())}
         self.seen_keys = set()
         self.generation = 0
+        self.workflow = None
         self.conf = {
             "conn": 2, "burst": 0, "default_conn_delay": 0.1,
             "key": "http_x_tenant", "key_type": "var", "policy": "redis",
@@ -196,11 +197,14 @@ class Scenario:
             self.initial_keys[database] = set(
                 redis("KEYS", "limit_conn:*", database=database).splitlines())
         self.generation += 1
-        self.put("plugin_configs/" + self.prefix, {"plugins": {
+        plugins = {
             "limit-conn": self.conf,
             "response-rewrite": {"headers": {"set": {
                 "X-Limit-Generation": str(self.generation)}}},
-        }})
+        }
+        if self.workflow is not None:
+            plugins["workflow"] = self.workflow
+        self.put("plugin_configs/" + self.prefix, {"plugins": plugins})
         self.wait_generation()
         self.event("published", generation=self.generation, changes=changes)
 
@@ -266,11 +270,11 @@ class Scenario:
         self.wait_generation()
         self.pids = sorted(self.pools)
 
-    def hold(self, worker, index, expected=200, expected_entries=1):
+    def hold(self, worker, index, expected=200, expected_entries=1, headers=None):
         connection = self.pools[self.pids[worker]][index]
         request_id = uuid.uuid4().hex
         before = self.entries()
-        response = self.request(connection, "/plain/hold?id=" + request_id)
+        response = self.request(connection, "/plain/hold?id=" + request_id, headers)
         assert response.getheader("X-Test-Worker") == self.pids[worker]
         self.event("request", request_id=request_id, status=response.status,
                    worker=self.pids[worker])
@@ -282,6 +286,8 @@ class Scenario:
             assert record["headers"]["X-Tenant"] == "tenant-a"
             assert record["headers"]["X-Account"] == "tenant-a"
             assert record["headers"]["X-Other-Tenant"] == "tenant-b"
+            for name, value in (headers or {}).items():
+                assert record["headers"][name] == value
             self.event("upstream_arrival", request_id=request_id, path=record["path"],
                        arrived=record["arrived"], tenant=record["headers"]["X-Tenant"],
                        account=record["headers"]["X-Account"],
@@ -477,6 +483,47 @@ def duplicate_rule_order(s):
     s.wait_count(0)
 
 
+def workflow_isolation(s):
+    action = {**s.conf, "conn": 1}
+    s.workflow = {"rules": [{
+        "case": [["http_x_use_workflow", "==", "yes"]],
+        "actions": [["limit-conn", action]],
+    }]}
+    s.publish(conn=1, key="${http_x_tenant}:1", key_type="var_combination")
+    for first, second in [("no", "yes"), ("yes", "no")]:
+        first_headers = {"X-Use-Workflow": first}
+        second_headers = {"X-Use-Workflow": second}
+        a = s.hold(0, 1, headers=first_headers)
+        b = s.hold(1, 1, headers=second_headers)
+        assert len(s.snapshot()) == 2, "ordinary and workflow counters collided"
+        assert a["entries"].isdisjoint(b["entries"])
+        s.hold(1, 2, 429, headers=first_headers)
+        s.hold(0, 2, 429, headers=second_headers)
+        assert s.entries() == a["entries"] | b["entries"]
+
+        # Both paths must retain their occupied counter across an update.
+        action["rejected_msg"] = "workflow quota exhausted: " + first
+        s.publish(rejected_msg="ordinary quota exhausted: " + first)
+        s.hold(1, 2, 429, headers=first_headers)
+        s.hold(0, 2, 429, headers=second_headers)
+        assert s.entries() == a["entries"] | b["entries"]
+
+        s.release(a)
+        assert s.entries() == b["entries"], "release removed the other path's reservation"
+        s.hold(0, 2, 429, headers=second_headers)
+        c = s.hold(1, 2, headers=first_headers)
+        assert {(db, key) for db, key, _ in c["entries"]} == {
+            (db, key) for db, key, _ in a["entries"]}
+        s.release(b)
+        assert s.entries() == c["entries"]
+        s.hold(0, 2, 429, headers=first_headers)
+        d = s.hold(0, 1, headers=second_headers)
+        s.release(c)
+        assert s.entries() == d["entries"]
+        s.release(d)
+        s.wait_count(0)
+
+
 def write_config():
     config = {
         "apisix": {"node_listen": 9080, "enable_ipv6": False},
@@ -503,7 +550,8 @@ def main():
              "nonpositive-ttl-update": nonpositive_ttl_update,
              "subject-change": subject_change,
              "backend-change": backend_change, "partial-rule-release": partial_rule_release,
-             "duplicate-rule-order": duplicate_rule_order}
+             "duplicate-rule-order": duplicate_rule_order,
+             "workflow-isolation": workflow_isolation}
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--write-config", action="store_true")
     parser.add_argument("--case", choices=list(cases))

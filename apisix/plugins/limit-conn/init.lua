@@ -143,7 +143,7 @@ local function gen_limit_key(conf, ctx, key)
         return new_key .. ':' .. conf._vid
     end
 
-    return new_key
+    return new_key .. ':0'
 end
 
 

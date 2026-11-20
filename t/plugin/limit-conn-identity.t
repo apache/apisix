@@ -311,3 +311,34 @@ __DATA__
         leave(updated, second)
         count(original_key, 0)
     end
+
+
+
+=== TEST 10: a resolved value suffix does not alias a workflow action
+--- test
+    local ordinary = config("workflow-alias")
+    ordinary.key_type = "var_combination"
+    ordinary.key = "${http_subject}:1"
+    local workflow = config("workflow-alias")
+    workflow._vid = 1
+
+    for _, confs in ipairs({{ordinary, workflow}, {workflow, ordinary}}) do
+        local first = enter(confs[1])
+        local second = enter(confs[2])
+        local k1, k2 = key(first), key(second)
+        assert(k1 ~= k2, "ordinary and workflow counters collided")
+        enter(confs[1], 503)
+        enter(confs[2], 503)
+        count(k1, 1)
+        count(k2, 1)
+        leave(confs[1], first)
+        count(k1, 0)
+        count(k2, 1)
+        enter(confs[2], 503)
+        local replacement = enter(confs[1])
+        leave(confs[2], second)
+        count(k1, 1)
+        count(k2, 0)
+        leave(confs[1], replacement)
+        count(k1, 0)
+    end
