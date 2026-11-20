@@ -747,3 +747,49 @@ Content-Type: application/json
 invalid graphql request: fragment spreads form a cycle
 --- response_body eval
 qr/fragment spreads must not form cycles/
+
+
+
+=== TEST 31: invalid graphql request: json body is not an object
+--- request
+POST /hello
+123
+--- more_headers
+Content-Type: application/json
+--- error_code: 400
+--- error_log
+invalid graphql request, json body is not an object
+--- response_body eval
+qr/invalid graphql request, json body is not an object/
+
+
+
+=== TEST 32: invalid graphql request: json body is false
+--- request
+POST /hello
+false
+--- more_headers
+Content-Type: application/json
+--- error_code: 400
+--- error_log
+invalid graphql request, json body is not an object
+--- no_error_log
+runtime error:
+--- response_body eval
+qr/invalid graphql request, json body is not an object/
+
+
+
+=== TEST 33: invalid graphql request: json body is null
+--- request
+POST /hello
+null
+--- more_headers
+Content-Type: application/json
+--- error_code: 400
+--- error_log
+invalid graphql request, json body is not an object
+--- no_error_log
+runtime error:
+--- response_body eval
+qr/invalid graphql request, json body is not an object/

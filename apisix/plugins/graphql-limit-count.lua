@@ -160,8 +160,12 @@ local check_graphql_request = {
 
         if core.string.has_prefix(content_type, GRAPHQL_REQ_MIME_JSON) then
             local res, err = core.json.decode(body)
-            if not res then
+            if err then
                 return false, "invalid graphql request, " .. err
+            end
+
+            if type(res) ~= "table" then
+                return false, "invalid graphql request, json body is not an object"
             end
 
             if not res[GRAPHQL_REQ_QUERY] then
