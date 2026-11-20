@@ -117,6 +117,19 @@ m = keyMatch(r.sub, p.sub) && keyMatch(r.obj, p.obj) && keyMatch(r.act, p.act)]]
                         }),
                     },
                 },
+                workflow = {
+                    workflow = {
+                        rules = {{
+                            case = {{"uri", "==", "/hello"}},
+                            actions = {{"limit-count", {
+                                count = 100,
+                                time_window = 60,
+                                rejected_code = 503,
+                                key = "remote_addr",
+                            }}},
+                        }},
+                    },
+                },
                 ["key-auth"] = {
                     ["key-auth"] = {},
                 },
@@ -199,7 +212,7 @@ passed
             local before
             for _ = 1, 20 do
                 before = snapshot()
-                if core.table.nkeys(before) == 17 then
+                if core.table.nkeys(before) == 18 then
                     break
                 end
                 ngx.sleep(0.2)
@@ -215,6 +228,7 @@ passed
                 {host = "forward-auth"},
                 {host = "authz-casbin", headers = {user = "alice"}},
                 {host = "oas-validator"},
+                {host = "workflow"},
                 {host = "http-logger", query = "bar=foo"},
                 {host = "key-auth-rewrite", headers = {apikey = "auth-jack"}},
                 {host = "key-auth", headers = {apikey = "auth-jack"}},
@@ -256,5 +270,5 @@ passed
         }
     }
 --- response_body
-checked 17 confs
+checked 18 confs
 --- timeout: 10
