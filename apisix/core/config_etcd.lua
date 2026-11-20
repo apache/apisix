@@ -1266,6 +1266,18 @@ function _M.init_worker()
     -- we consider it to have restarted, and at this point,
     -- it is necessary to reload the full configuration from etcd.
     if configuration_loaded_time and ngx_time() - configuration_loaded_time > threshold then
+        if not is_http then
+            -- reading etcd here needs coroutine.create (in resty.http), which
+            -- the stream subsystem disables in init_worker. Drop the stale
+            -- snapshot instead, so every resource type reads for itself at
+            -- first sync.
+            log.warn("master process has been running for a long time, ",
+                     "discarding the stale configuration for this new worker")
+            loaded_configuration = {}
+            loaded_configuration_rev = nil
+            return true
+        end
+
         log.warn("master process has been running for a long time, ",
                      "reloading the full configuration from etcd for this new worker")
         local err = init_loaded_configuration()
