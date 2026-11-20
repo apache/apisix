@@ -37,6 +37,16 @@ import TabItem from '@theme/TabItem';
 
 The `limit-conn` Plugin limits the rate of requests by the number of concurrent connections. Requests exceeding the threshold will be delayed or rejected based on the configuration, ensuring controlled resource usage and preventing overload.
 
+### Connections Across Configuration Updates
+
+Connections are counted per resource the Plugin is configured on, such as a Route, a Service or a Consumer, and per resolved `key`. The count does not depend on the rest of the Plugin configuration, so updating the Plugin keeps counting the connections that are in progress:
+
+* A new `conn` or `burst` applies to the connections already open. Lowering `conn` below them rejects or delays new connections until enough of them close.
+* Changes that do not affect the limit, such as `rejected_msg` or `_meta.filter`, leave the count as it is.
+* With the Redis policies, the expiry of a key is only ever extended for a positive `key_ttl`, so lowering `key_ttl` does not expire connections admitted under the previous value.
+
+Earlier releases reset the count on every update of the Plugin configuration. Because the format of the counter keys changed, existing counts start over once when APISIX is upgraded to a release with this behavior.
+
 ## Attributes
 
 | Name | Type | Required | Default | Valid values | Description |

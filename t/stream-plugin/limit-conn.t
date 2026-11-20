@@ -142,7 +142,7 @@ GET /test_concurrency
 200
 --- stream_enable
 --- error_log eval
-qr/limit key: \/apisix\/stream_routes\/1:\d+:127\.0\.0\.1/
+qr/limit key: \/apisix\/stream_routes\/1:127\.0\.0\.1/
 --- no_error_log
 [error]
 [alert]
@@ -386,7 +386,7 @@ GET /test_concurrency
 503
 --- error_log eval
 [
-    qr/limit key: \/apisix\/stream_routes\/1:\d+:1985/,
+    qr/limit key: \/apisix\/stream_routes\/1:1985/,
     qr/Connection reset by peer/,
 ]
 --- no_error_log

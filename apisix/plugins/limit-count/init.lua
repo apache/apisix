@@ -313,7 +313,7 @@ function _M.check_schema(conf, schema_type)
     end
 
     -- Each rule writes its own counter, but the runtime counter key is derived
-    -- only from the resolved key (not the rule index/window). Two rules sharing
+    -- from the resolved key, not from the rule index. Two rules sharing
     -- the same key would therefore read/write the same counter, double-counting
     -- a request and polluting each other's window/TTL. Reject duplicates instead.
     local keys = {}
@@ -359,15 +359,14 @@ local function create_limit_obj(conf, rule, plugin_name)
 end
 
 
-local function gen_limit_key(conf, ctx, key)
+local function gen_limit_key(conf, ctx, rule, key)
     if conf.group then
         return conf.group .. ':' .. key
     end
 
-    -- here we add a separator ':' to mark the boundary of the prefix and the key itself
-    -- Here we use plugin-level conf version to prevent the counter from being resetting
-    -- because of the change elsewhere.
-    -- A route which reuses a previous route's ID will inherits its counter.
+    -- The counter belongs to the resource, not to a version of the plugin
+    -- configuration, so a configuration update keeps the current consumption.
+    -- A route which reuses a previous route's ID will inherit its counter.
     local parent = conf._meta and conf._meta.parent
     if not parent or not parent.resource_key then
         core.log.error("failed to generate key invalid parent: ", core.json.encode(parent))
@@ -376,17 +375,23 @@ local function gen_limit_key(conf, ctx, key)
 
     local prefix = limit_key_prefix[conf]
     if not prefix then
-        prefix = parent.resource_key .. ':' .. apisix_plugin.conf_version(conf) .. ':'
+        if conf._vid then
+            -- a workflow action gets its own counter; its "#" tag sits before
+            -- the first ":" so it can't collide with an ordinary key
+            prefix = parent.resource_key .. '#' .. conf._vid .. ':'
+        else
+            prefix = parent.resource_key .. ':'
+        end
         limit_key_prefix[conf] = prefix
     end
-    local new_key = prefix .. key
-    if conf._vid then
-        -- conf has _vid means it's from workflow plugin, add _vid to the key
-        -- so that the counter is unique per action.
-        return new_key .. ':' .. conf._vid
+
+    -- a fixed window keeps its length in the key so that a new time_window
+    -- starts a new window; a sliding window counter already carries its window
+    if conf.window_type ~= "sliding" then
+        return prefix .. rule.time_window .. ':' .. key
     end
 
-    return new_key
+    return prefix .. key
 end
 
 
@@ -604,7 +609,7 @@ local function run_rate_limit(conf, rule, ctx, name, cost, dry_run)
         key = ctx.var["remote_addr"]
     end
 
-    key = gen_limit_key(conf, ctx, key)
+    key = gen_limit_key(conf, ctx, rule, key)
     if not key then
         return 500
     end

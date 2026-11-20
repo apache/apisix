@@ -18,7 +18,6 @@ local redis         = require("apisix.utils.redis")
 local core          = require("apisix.core")
 local util          = require("apisix.plugins.limit-conn.util")
 local ngx_timer_at  = ngx.timer.at
-local ngx           = ngx
 
 local setmetatable  = setmetatable
 
@@ -81,10 +80,7 @@ end
 
 
 function _M.leaving(self, key, req_latency)
-    local req_id
-    if ngx.ctx.limit_conn_req_ids then
-        req_id = ngx.ctx.limit_conn_req_ids[key]
-    end
+    local req_id = self.req_id
 
     -- log_by_lua can't use cosocket
     local ok, err = ngx_timer_at(0, leaving_thread, self, key, req_latency, req_id)

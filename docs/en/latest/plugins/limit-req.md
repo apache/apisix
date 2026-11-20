@@ -45,6 +45,16 @@ The `limit-req` Plugin supports two modes of rate limiting:
 * **Local rate limiting**: Limits are enforced independently on each gateway instance. Each instance maintains its own counters, so the effective limit is roughly (limit × number of instances) when traffic is spread across instances. This is the default when no `policy` is set or when `policy` is `local`.
 * **Redis-based rate limiting**: Limits are shared across all gateway instances through Redis. All instances share the same quota, so the configured limit applies to all gateway instances.
 
+## Rate Limiting Across Configuration Updates
+
+The leaky bucket is kept per resource the Plugin is configured on, such as a Route, a Service or a Consumer, and per resolved `key`. It does not depend on the rest of the Plugin configuration, so updating the Plugin keeps the requests already in the bucket:
+
+* A new `rate` or `burst` applies to the current bucket right away.
+* Changes that do not affect the limit, such as `rejected_msg` or `_meta.filter`, leave the bucket as it is.
+* With the Redis policies, the expiry of a bucket is only ever extended, so a configuration that drains faster does not expire a bucket written under a slower one.
+
+Earlier releases reset the bucket on every update of the Plugin configuration. Because the format of the counter keys changed, existing buckets start over once when APISIX is upgraded to a release with this behavior.
+
 ## Attributes
 
 | Name | Type | Required | Default | Valid values | Description |

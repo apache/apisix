@@ -54,6 +54,17 @@ The `limit-count` Plugin supports two counter-storage modes:
 
 Redis Sentinel, sliding windows, and delayed Redis synchronization are supported in APISIX 3.18.0 and later. Multiple rules and variable-resolved limits are supported in APISIX 3.16.0 and later.
 
+### Counters Across Configuration Updates
+
+A counter belongs to the resource the Plugin is configured on, such as a Route, a Service or a Consumer, and to the resolved `key`. It does not depend on the rest of the Plugin configuration, so updating the Plugin keeps the requests already counted in the current window:
+
+* A new `count` applies to what was already consumed. Raising it allows the difference right away, and lowering it below the consumed count rejects the next request.
+* Changes that do not affect the limit, such as `rejected_msg` or `_meta.filter`, leave the counter as it is.
+* A new `time_window` starts a new fixed window. A sliding window counter is already identified by its window.
+* With delayed synchronization (`sync_interval`), a node judges requests on the quota it synchronized last, so a new `count` takes effect from its next synchronization.
+
+Earlier releases reset the counters on every update of the Plugin configuration. Because the format of the counter keys changed, existing counters start over once when APISIX is upgraded to a release with this behavior. Counters shared through `group` are not affected.
+
 ## Attributes
 
 | Name                    | Type    | Required                                  | Default       | Valid values                           | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
@@ -2165,13 +2176,13 @@ nginx_config:
 A request counted in a fixed window logs a value like this:
 
 ```json
-{"rate_limiting_key":"/apisix/routes/1:1:127.0.0.1","rate_limiting_limit":10,"rate_limiting_remaining":3,"rate_limiting_reset":42,"window_type":"fixed","window_size_ms":60000,"decision":"allowed","cost":1,"evaluated_at_ms":1759212345678,"current_window":{"start_ms":1759212300123,"end_ms":1759212360123,"count":7,"created":false}}
+{"rate_limiting_key":"/apisix/routes/1:60:127.0.0.1","rate_limiting_limit":10,"rate_limiting_remaining":3,"rate_limiting_reset":42,"window_type":"fixed","window_size_ms":60000,"decision":"allowed","cost":1,"evaluated_at_ms":1759212345678,"current_window":{"start_ms":1759212300123,"end_ms":1759212360123,"count":7,"created":false}}
 ```
 
 A request counted in a sliding window logs a value like this:
 
 ```json
-{"rate_limiting_key":"/apisix/routes/1:1:127.0.0.1","rate_limiting_limit":10,"rate_limiting_remaining":3,"rate_limiting_reset":14,"window_type":"sliding","window_size_ms":60000,"decision":"allowed","cost":1,"evaluated_at_ms":1759212345678,"current_window":{"id":29320205,"start_ms":1759212300000,"end_ms":1759212360000,"count":4},"previous_window":{"count":10,"weight":0.2387,"weighted_count":2.387}}
+{"rate_limiting_key":"/apisix/routes/1:127.0.0.1","rate_limiting_limit":10,"rate_limiting_remaining":3,"rate_limiting_reset":14,"window_type":"sliding","window_size_ms":60000,"decision":"allowed","cost":1,"evaluated_at_ms":1759212345678,"current_window":{"id":29320205,"start_ms":1759212300000,"end_ms":1759212360000,"count":4},"previous_window":{"count":10,"weight":0.2387,"weighted_count":2.387}}
 ```
 
 The fields are not in a fixed order. All `*_ms` fields are Unix timestamps or durations in milliseconds, taken from the clock of the APISIX instance. A field that applies to the window type but is unknown for the request is `null`. The fields are:
