@@ -572,7 +572,7 @@ local function meta_filter(ctx, plugin_name, plugin_conf)
 end
 
 
-function _M.filter(ctx, conf, plugins, route_conf, phase)
+function _M.filter(ctx, conf, plugins, route_conf)
     local user_plugin_conf = conf.value.plugins
     if user_plugin_conf == nil or
        core.table.nkeys(user_plugin_conf) == 0 then
@@ -602,16 +602,6 @@ function _M.filter(ctx, conf, plugins, route_conf, phase)
             if plugin_conf_in_route and not disable_in_route then
                 goto continue
             end
-        end
-
-        -- in the rewrite phase, the plugin executes in the following order:
-        -- 1. execute the rewrite phase of the plugins on route(including the auth plugins)
-        -- 2. merge plugins from consumer and route
-        -- 3. execute the rewrite phase of the plugins on consumer(phase: rewrite_in_consumer)
-        -- in this case, we need to skip the plugins that was already executed(step 1)
-        if phase == "rewrite_in_consumer"
-                and (not plugin_conf._from_consumer or plugin_obj.type == "auth") then
-            plugin_conf._skip_rewrite_in_consumer = true
         end
 
         if plugin_conf._meta and plugin_conf._meta.priority then
@@ -838,30 +828,18 @@ local function merge_consumer_route(route_conf, consumer_conf, consumer_group_co
     local new_route_conf = core.table.deepcopy(route_conf,
         { shallow_prefix = "self.value.plugins" })
 
+    local plugins = new_route_conf.value.plugins or {}
+    new_route_conf.value.plugins = plugins
+
     if has_group_plugins then
         for name, conf in pairs(consumer_group_conf.value.plugins) do
-            if not new_route_conf.value.plugins then
-                new_route_conf.value.plugins = {}
-            end
-
-            if new_route_conf.value.plugins[name] == nil then
-                conf._from_consumer = true
-            end
-            new_route_conf.value.plugins[name] = conf
+            plugins[name] = conf
         end
     end
 
-
     if has_consumer_plugins then
         for name, conf in pairs(consumer_conf.plugins) do
-            if not new_route_conf.value.plugins then
-                new_route_conf.value.plugins = {}
-            end
-
-            if new_route_conf.value.plugins[name] == nil then
-                conf._from_consumer = true
-            end
-            new_route_conf.value.plugins[name] = conf
+            plugins[name] = conf
         end
     end
 
@@ -1467,10 +1445,13 @@ function _M.run_plugin(phase, plugins, api_ctx)
     then
         -- in the "rewrite_in_consumer" phase, the executed functions
         -- are the "rewrite" ones
-        local exec_phase = phase == "rewrite_in_consumer" and "rewrite" or phase
+        local consumer_rewrite = phase == "rewrite_in_consumer"
+        local exec_phase = consumer_rewrite and "rewrite" or phase
+        local route_plugins = api_ctx.plugins_before_consumer_merge
         for i = 1, #plugins, 2 do
-
-            if phase == "rewrite_in_consumer" and plugins[i + 1]._skip_rewrite_in_consumer then
+            -- Only run rewrite for non-auth plugins added by the Consumer or its group.
+            if consumer_rewrite and (plugins[i].type == "auth"
+                    or (route_plugins and route_plugins[plugins[i].name])) then
                 goto CONTINUE
             end
 

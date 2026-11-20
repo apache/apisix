@@ -1082,6 +1082,7 @@ function _M.http_access_phase()
                 end
             end
 
+            local route_plugins = route.value.plugins
             route, changed = plugin.merge_consumer_route(
                 route,
                 api_ctx.consumer,
@@ -1095,10 +1096,10 @@ function _M.http_access_phase()
             if changed then
                 api_ctx.matched_route = route
                 core.table.clear(api_ctx.plugins)
-                local phase = "rewrite_in_consumer"
-                api_ctx.plugins = plugin.filter(api_ctx, route, api_ctx.plugins, nil, phase)
-                -- rerun rewrite phase for newly added plugins in consumer
-                plugin.run_plugin(phase, api_ctx.plugins, api_ctx)
+                api_ctx.plugins = plugin.filter(api_ctx, route, api_ctx.plugins)
+                api_ctx.plugins_before_consumer_merge = route_plugins
+                plugin.run_plugin("rewrite_in_consumer", api_ctx.plugins, api_ctx)
+                api_ctx.plugins_before_consumer_merge = nil
             end
         end
         plugin.run_global_rules(api_ctx, global_rules, conf_version, "access")
