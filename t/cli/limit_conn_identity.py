@@ -125,9 +125,9 @@ class Scenario:
         self.connections = []
         self.held = []
         self.pools = collections.defaultdict(list)
-        self.initial_keys = {
-            REDIS_DATABASE: set(redis("KEYS", "limit_conn:*").splitlines())}
-        self.seen_keys = set()
+        etcd_prefix = json.loads(Path("conf/config.yaml").read_text())["deployment"]["etcd"]["prefix"]
+        self.counter_pattern = f"limit_conn:{etcd_prefix}/plugin_configs/{self.prefix}:*"
+        self.databases = set()
         self.generation = 0
         self.workflow = None
         self.conf = {
@@ -152,12 +152,8 @@ class Scenario:
 
     def snapshot(self):
         states = {}
-        # Use a dedicated test database and set difference so assertions work
-        # with both the old and new counter formats.
-        for database, initial_keys in self.initial_keys.items():
-            keys = set(redis("KEYS", "limit_conn:*", database=database).splitlines())
-            for key in keys - initial_keys:
-                self.seen_keys.add((database, key))
+        for database in self.databases:
+            for key in redis("KEYS", self.counter_pattern, database=database).splitlines():
                 members = redis("ZRANGE", key, 0, -1, database=database).splitlines()
                 if members:
                     states[str(database) + ":" + key] = {
@@ -192,10 +188,7 @@ class Scenario:
 
     def publish(self, **changes):
         self.conf.update(changes)
-        database = self.conf["redis_database"]
-        if database not in self.initial_keys:
-            self.initial_keys[database] = set(
-                redis("KEYS", "limit_conn:*", database=database).splitlines())
+        self.databases.add(self.conf["redis_database"])
         self.generation += 1
         plugins = {
             "limit-conn": self.conf,
@@ -315,9 +308,26 @@ class Scenario:
             connection.close()
         for resource in reversed(self.resources):
             admin("DELETE", resource)
-        # Remove only keys observed by this scenario, never FLUSHDB.
-        for database, key in self.seen_keys:
-            redis("DEL", key, database=database)
+        for database in self.databases:
+            for key in redis("KEYS", self.counter_pattern, database=database).splitlines():
+                redis("DEL", key, database=database)
+
+
+def cleanup_isolation(s):
+    # Both PluginConfigs use the same Redis database and resolved subject.
+    s.publish(conn=1)
+    other = Scenario("cleanup-peer", s.upstream, s.report)
+    try:
+        other.setup()
+        held = s.hold(0, 1)
+        other.release(other.hold(1, 1))
+    finally:
+        other.cleanup()
+    assert s.entries() == held["entries"], "peer cleanup removed the in-flight reservation"
+    s.hold(1, 2, 429)
+    s.release(held)
+    s.release(s.hold(1, 2))
+    s.wait_count(0)
 
 
 def cross_worker(s):
@@ -551,7 +561,7 @@ def main():
              "subject-change": subject_change,
              "backend-change": backend_change, "partial-rule-release": partial_rule_release,
              "duplicate-rule-order": duplicate_rule_order,
-             "workflow-isolation": workflow_isolation}
+             "workflow-isolation": workflow_isolation, "cleanup-isolation": cleanup_isolation}
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--write-config", action="store_true")
     parser.add_argument("--case", choices=list(cases))
