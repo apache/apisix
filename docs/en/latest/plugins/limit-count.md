@@ -61,7 +61,7 @@ A counter belongs to the resource the Plugin is configured on, such as a Route, 
 * A new `count` applies to what was already consumed. Raising it allows the difference right away, and lowering it below the consumed count rejects the next request.
 * Changes that do not affect the limit, such as `rejected_msg` or `_meta.filter`, leave the counter as it is.
 * A new `time_window` starts a new fixed window. A sliding window counter is already identified by its window.
-* With delayed synchronization (`sync_interval`), a node judges requests on the quota it synchronized last, so a new `count` takes effect from its next synchronization.
+* With delayed synchronization (`sync_interval`), a new `count` also applies right away to the quota a node synchronized last.
 
 Earlier releases reset the counters on every update of the Plugin configuration. Because the format of the counter keys changed, existing counters start over once when APISIX is upgraded to a release with this behavior. Counters shared through `group` are not affected.
 
