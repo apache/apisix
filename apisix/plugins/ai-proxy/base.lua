@@ -28,6 +28,7 @@ local math_floor = math.floor
 local exporter = require("apisix.plugins.prometheus.exporter")
 local protocols = require("apisix.plugins.ai-protocols")
 local transport_http = require("apisix.plugins.ai-transport.http")
+local json_order = require("apisix.utils.json-order")
 local log_sanitize = require("apisix.utils.log-sanitize")
 local apisix_upstream = require("resty.apisix.upstream")
 
@@ -186,6 +187,19 @@ function _M.detect_request_type(ctx, max_req_body_size)
 end
 
 
+-- The key order of the request body's bytes (json-order shape), read once per
+-- request and again only if an earlier plugin replaced the body.
+local function request_body_shape(ctx)
+    local raw = core.request.get_body()
+    local cached = ctx.ai_body_shape
+    if not cached or cached.raw ~= raw then
+        cached = {raw = raw, shape = json_order.shape(raw)}
+        ctx.ai_body_shape = cached
+    end
+    return cached.shape
+end
+
+
 -- Execute the AI proxy pipeline:
 --   1. Validate request
 --   2. Route client protocol to driver capability (passthrough / convert / error)
@@ -311,6 +325,11 @@ function _M.before_proxy(conf, ctx, on_error)
             local body_for_llm = request_body
             local converted = false
             if converter and converter.convert_request then
+                -- A converter moves parts of the client's body to new paths and
+                -- copies some (e.g. a tool's input_schema, an output schema), so
+                -- mark each object with its own key order first: it goes with the
+                -- object, and core.table.deepcopy keeps it. See Step 3.
+                json_order.attach(request_body, request_body_shape(ctx))
                 local new_body, conv_err = converter.convert_request(request_body, ctx)
                 if not new_body then
                     return 400, {error_msg = conv_err or "invalid protocol"}
@@ -325,10 +344,27 @@ function _M.before_proxy(conf, ctx, on_error)
             -- (ai-request-rewrite marks that on ctx) -- the client's verbatim bytes
             -- are reused, keeping a pure passthrough byte-identical.
             local body, shaped = ai_provider:build_body(body_for_llm, extra_opts)
+            local body_table = type(body) == "table" and body or nil
             if not shaped and not converted and not ctx.ai_request_body_changed then
                 local raw = core.request.get_body()
                 if type(raw) == "string" then
                     body = raw
+                end
+            elseif body_table then
+                -- A reshaped body is encoded here in the key order of the bytes
+                -- it came from: left to the transport, core.json.canonical_encode
+                -- sorts every object's keys, which reorders e.g. a JSON Schema's
+                -- properties -- the order a model generates structured output
+                -- in. Values come from the table; the raw bytes only give the
+                -- order, so a body an earlier plugin changed is still sent as it
+                -- now is. A body reshaped in place keeps the order of each path;
+                -- a converted body has new paths, so only the objects carried
+                -- over from the client's body (marked above) keep theirs, and
+                -- the objects the converter built are written with sorted keys.
+                local shape = not converted and request_body_shape(ctx) or nil
+                local encoded = json_order.encode(body_table, shape)
+                if encoded then
+                    body = encoded
                 end
             end
 
@@ -345,7 +381,8 @@ function _M.before_proxy(conf, ctx, on_error)
             end
 
             -- Compute built-in AI log fields from the final upstream request
-            local final_body = params.body
+            -- (the table when it was encoded above: the fields read tables)
+            local final_body = body_table or params.body
             local is_stream = ctx.var.request_type == "ai_stream"
             ctx.var.llm_stream = is_stream and "true" or "false"
             ctx.var.llm_tool_count = count_request_tools(final_body)
