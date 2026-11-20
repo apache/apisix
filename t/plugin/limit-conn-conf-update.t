@@ -33,7 +33,12 @@ add_block_preprocessor(sub {
     }
 
     my $extra_init_by_lua = <<_EOC_;
-    local helper = {}
+    local helper = {route = "lconn-conf-update"}
+
+    -- deletes the Redis counters of the route of this file, and only those
+    function helper.clear(opts)
+        require("lib.test_redis").delete_keys("*/apisix/routes/" .. helper.route .. "[:#]*", opts)
+    end
 
     -- updates route 1 and waits for the change to reach the worker
     function helper.set_route(conf, workflow)
@@ -43,7 +48,7 @@ add_block_preprocessor(sub {
         if workflow then
             plugins.workflow = workflow
         end
-        local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, core.json.encode({
+        local code, body = t('/apisix/admin/routes/' .. helper.route, ngx.HTTP_PUT, core.json.encode({
             uri = "/mysleep",
             plugins = plugins,
             upstream = {type = "roundrobin", nodes = {["127.0.0.1:1980"] = 1}},
@@ -149,7 +154,7 @@ __DATA__
 --- config
     location /t {
         content_by_lua_block {
-            require("lib.test_redis").flush_all()
+            require("conf_update_helper").clear()
             require("conf_update_helper").run({
                 conn = 2,
                 burst = 0,
@@ -176,7 +181,7 @@ __DATA__
 --- config
     location /t {
         content_by_lua_block {
-            require("lib.test_redis").flush_all()
+            require("conf_update_helper").clear()
             require("conf_update_helper").run({
                 conn = 2,
                 burst = 0,
@@ -203,7 +208,7 @@ __DATA__
 --- config
     location /t {
         content_by_lua_block {
-            require("lib.test_redis").flush_all()
+            require("conf_update_helper").clear()
             local helper = require("conf_update_helper")
             local conf = {
                 conn = 5,
@@ -225,7 +230,7 @@ __DATA__
 
             local red = require("resty.redis").new()
             assert(red:connect("127.0.0.1", 6379))
-            local ttl = red:ttl("limit_conn:/apisix/routes/1:127.0.0.1")
+            local ttl = red:ttl("limit_conn:/apisix/routes/lconn-conf-update:127.0.0.1")
             ngx.say("ttl > 90: ", ttl > 90)
             ngx.say(wait(), " ", wait2())
         }
@@ -241,7 +246,7 @@ ttl > 90: true
 --- config
     location /t {
         content_by_lua_block {
-            require("lib.test_redis").flush_all()
+            require("conf_update_helper").clear()
             local helper = require("conf_update_helper")
             helper.set_route({
                 default_conn_delay = 0.1,
@@ -257,7 +262,7 @@ ttl > 90: true
 
             local red = require("resty.redis").new()
             assert(red:connect("127.0.0.1", 6379))
-            local key = "limit_conn:/apisix/routes/1:127.0.0.1"
+            local key = "limit_conn:/apisix/routes/lconn-conf-update:127.0.0.1"
             local wait = helper.hold(1, "seconds=0.5")
             ngx.say("leases while open: ", (red:zcard(key)))
             ngx.say(wait())
@@ -277,7 +282,7 @@ leases after close: 0
 --- config
     location /t {
         content_by_lua_block {
-            require("lib.test_redis").flush_all()
+            require("conf_update_helper").clear()
             local helper = require("conf_update_helper")
             local out = {}
             for _, policy in ipairs({"local", "redis"}) do
@@ -316,4 +321,40 @@ leases after close: 0
 --- response_body
 local: 200 503 200
 redis: 200 503 200
+--- timeout: 10
+
+
+
+=== TEST 7: redis, a lease is not admitted into a key that expires before it
+--- config
+    location /t {
+        content_by_lua_block {
+            local helper = require("conf_update_helper")
+            helper.clear()
+            helper.set_route({
+                conn = 5,
+                burst = 0,
+                default_conn_delay = 0.1,
+                rejected_code = 503,
+                key = "remote_addr",
+                policy = "redis",
+                redis_host = "127.0.0.1",
+                redis_port = 6379,
+                key_ttl = 3,
+            })
+            local wait = helper.hold(1, "seconds=1")
+
+            -- 2800ms left reads as a TTL of 3 seconds
+            local red = require("resty.redis").new()
+            assert(red:connect("127.0.0.1", 6379))
+            local key = "limit_conn:/apisix/routes/lconn-conf-update:127.0.0.1"
+            assert(red:pexpire(key, 2800) == 1)
+            local status = helper.hit("seconds=0")
+            ngx.say("pttl > 2900: ", red:pttl(key) > 2900)
+            ngx.say(wait(), " ", status)
+        }
+    }
+--- response_body
+pttl > 2900: true
+200 200
 --- timeout: 10

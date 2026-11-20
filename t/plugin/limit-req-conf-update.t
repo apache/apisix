@@ -33,13 +33,18 @@ add_block_preprocessor(sub {
     }
 
     my $extra_init_by_lua = <<_EOC_;
-    local helper = {}
+    local helper = {route = "lreq-conf-update"}
+
+    -- deletes the Redis counters of the route of this file, and only those
+    function helper.clear(opts)
+        require("lib.test_redis").delete_keys("*/apisix/routes/" .. helper.route .. "[:#]*", opts)
+    end
 
     -- updates route 1 and waits for the change to reach the worker
     function helper.set_route(conf)
         local core = require("apisix.core")
         local t = require("lib.test_admin").test
-        local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, core.json.encode({
+        local code, body = t('/apisix/admin/routes/' .. helper.route, ngx.HTTP_PUT, core.json.encode({
             uri = "/hello",
             plugins = {["limit-req"] = conf},
             upstream = {type = "roundrobin", nodes = {["127.0.0.1:1980"] = 1}},
@@ -129,7 +134,7 @@ __DATA__
 --- config
     location /t {
         content_by_lua_block {
-            require("lib.test_redis").flush_all()
+            require("conf_update_helper").clear()
             require("conf_update_helper").run({
                 rate = 0.1,
                 burst = 1,
@@ -157,7 +162,7 @@ __DATA__
 --- config
     location /t {
         content_by_lua_block {
-            require("lib.test_redis").flush_all()
+            require("conf_update_helper").clear()
             require("conf_update_helper").run({
                 rate = 0.1,
                 burst = 1,
@@ -185,7 +190,7 @@ __DATA__
 --- config
     location /t {
         content_by_lua_block {
-            require("lib.test_redis").flush_all()
+            require("conf_update_helper").clear()
             local helper = require("conf_update_helper")
             -- the bucket of 0.1 req/s with a burst of 10 needs 101s to drain
             local conf = {
@@ -210,10 +215,50 @@ __DATA__
 
             local red = require("resty.redis").new()
             assert(red:connect("127.0.0.1", 6379))
-            local ttl = red:ttl("limit_req:/apisix/routes/1:127.0.0.1")
+            local ttl = red:ttl("limit_req:/apisix/routes/lreq-conf-update:127.0.0.1")
             ngx.say("ttl > 90: ", ttl > 90)
         }
     }
 --- response_body
 ttl > 90: true
+--- timeout: 10
+
+
+
+=== TEST 5: redis, a slower rate keeps the bucket until it drains at that rate
+--- config
+    location /t {
+        content_by_lua_block {
+            local helper = require("conf_update_helper")
+            helper.clear()
+            -- the bucket of 1 req/s with a burst of 2 lives 3s
+            local conf = {
+                rate = 1,
+                burst = 2,
+                nodelay = true,
+                rejected_code = 503,
+                key = "remote_addr",
+                policy = "redis",
+                redis_host = "127.0.0.1",
+                redis_port = 6379,
+            }
+            helper.set_route(conf)
+            local out = {}
+            for i = 1, 4 do
+                out[i] = helper.hit()
+            end
+            ngx.say(table.concat(out, " "))
+
+            -- it now takes about 20s to drain, also while requests are rejected
+            conf.rate = 0.1
+            helper.set_route(conf)
+            ngx.say(helper.hit())
+            ngx.sleep(3)
+            ngx.say(helper.hit())
+        }
+    }
+--- response_body
+200 200 200 503
+503
+503
 --- timeout: 10

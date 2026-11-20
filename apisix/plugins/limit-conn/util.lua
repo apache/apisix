@@ -41,8 +41,10 @@ local redis_incoming_script = core.string.compress_script([=[
     end
 
     redis.call('ZADD', key, now + ttl, req_id)
-    if ttl <= 0 or redis.call('TTL', key) < ttl then
+    if ttl <= 0 then
         redis.call('EXPIRE', key, ttl)
+    elseif redis.call('PTTL', key) < ttl * 1000 then
+        redis.call('PEXPIRE', key, ttl * 1000)
     end
     return {1, count + 1}
 ]=])

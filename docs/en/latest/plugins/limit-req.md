@@ -51,7 +51,7 @@ The leaky bucket is kept per resource the Plugin is configured on, such as a Rou
 
 * A new `rate` or `burst` applies to the current bucket right away.
 * Changes that do not affect the limit, such as `rejected_msg` or `_meta.filter`, leave the bucket as it is.
-* With the Redis policies, the expiry of a bucket is only ever extended, so a configuration that drains faster does not expire a bucket written under a slower one.
+* With the Redis policies, the expiry of a bucket is only ever extended, so a configuration that drains faster does not expire a bucket written under a slower one. A rejected request extends it to the time the bucket needs to drain at the current `rate`. A bucket that receives no requests after the update still expires when the expiry set by its last request runs out.
 
 Earlier releases reset the bucket on every update of the Plugin configuration. Because the format of the counter keys changed, existing buckets start over once when APISIX is upgraded to a release with this behavior.
 
