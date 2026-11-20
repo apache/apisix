@@ -40,6 +40,7 @@ local error         = error
 local getmetatable  = getmetatable
 local setmetatable  = setmetatable
 local tracer    = require("apisix.tracer")
+local yaml_null = require("lyaml").null
 -- make linter happy to avoid error: getting the Lua global "load"
 -- luacheck: globals load, ignore lua_load
 local lua_load          = load
@@ -1038,6 +1039,20 @@ function _M.set_runtime_state(tab, key, value)
 end
 
 
+-- An empty value in a YAML configuration, such as `key-auth:`, is decoded as the
+-- null sentinel of lyaml, one table shared by the whole document. It is replaced
+-- by a table of its own before anything is written onto it.
+function _M.own_empty_yaml_value(parent, key)
+    local value = parent[key]
+    if value == yaml_null then
+        value = {}
+        parent[key] = value
+    end
+    return value
+end
+local own_empty_yaml_value = _M.own_empty_yaml_value
+
+
 -- conf_version returns a version which only depends on the value of conf,
 -- instead of where this plugin conf belongs to
 function _M.conf_version(conf)
@@ -1368,8 +1383,18 @@ check_plugin_metadata = function(item)
 end
 
 
+local function own_empty_yaml_plugin_conf(plugins_conf, name)
+    local plugin_conf = own_empty_yaml_value(plugins_conf, name)
+    if type(plugin_conf) == "table" then
+        own_empty_yaml_value(plugin_conf, "_meta")
+    end
+    return plugin_conf
+end
+
+
 local function check_schema(plugins_conf, schema_type, skip_disabled_plugin)
-    for name, plugin_conf in pairs(plugins_conf) do
+    for name in pairs(plugins_conf) do
+        local plugin_conf = own_empty_yaml_plugin_conf(plugins_conf, name)
         local ok, err = check_single_plugin_schema(name, plugin_conf,
             schema_type, skip_disabled_plugin)
         if not ok then
@@ -1383,7 +1408,8 @@ _M.check_schema = check_schema
 
 
 local function stream_check_schema(plugins_conf, schema_type, skip_disabled_plugin)
-    for name, plugin_conf in pairs(plugins_conf) do
+    for name in pairs(plugins_conf) do
+        local plugin_conf = own_empty_yaml_plugin_conf(plugins_conf, name)
         core.log.info("check stream plugin schema, name: ", name)
         if type(plugin_conf) ~= "table" then
             return false, "invalid plugin conf type " .. type(plugin_conf) ..

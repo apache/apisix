@@ -135,6 +135,7 @@ function _M.check_schema(conf)
 
         local actions = rule.actions
         for _, action in ipairs(actions) do
+            plugin.own_empty_yaml_value(action, 2)
 
             if not support_action[action[1]] then
                 return false, "unsupported action: " .. action[1]
