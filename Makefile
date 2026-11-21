@@ -345,6 +345,9 @@ install: runtime
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/serverless
 	$(ENV_INSTALL) apisix/plugins/serverless/*.lua $(ENV_INST_LUADIR)/apisix/plugins/serverless/
 
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/soap-signer
+	$(ENV_INSTALL) apisix/plugins/soap-signer/*.lua $(ENV_INST_LUADIR)/apisix/plugins/soap-signer/
+
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/syslog
 	$(ENV_INSTALL) apisix/plugins/syslog/*.lua $(ENV_INST_LUADIR)/apisix/plugins/syslog/
 

@@ -172,6 +172,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
   - [CORS](docs/en/latest/plugins/cors.md) Enable CORS(Cross-origin resource sharing) for your API.
   - [URI Blocker](docs/en/latest/plugins/uri-blocker.md): Block client request by URI.
   - [Request Validator](docs/en/latest/plugins/request-validation.md)
+  - [SOAP Request Signing](docs/en/latest/plugins/soap-signer.md): Sign SOAP 1.1 and SOAP 1.2 request bodies and timestamps with X.509 WS-Security signatures before proxying them upstream.
   - [CSRF](docs/en/latest/plugins/csrf.md) Based on the [`Double Submit Cookie`](https://en.wikipedia.org/wiki/Cross-site_request_forgery#Double_Submit_Cookie) way, protect your API from CSRF attacks.
 
 - **OPS friendly**

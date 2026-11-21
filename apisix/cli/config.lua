@@ -257,6 +257,7 @@ local _M = {
     "ai-aws-content-moderation",
     "ai-aliyun-content-moderation",
     "ai-lakera-guard",
+    "soap-signer",
     "proxy-mirror",
     "graphql-proxy-cache",
     "proxy-rewrite",
