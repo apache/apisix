@@ -560,7 +560,8 @@ function _M.call(tool, arguments, opts)
     end
     local url = base_url .. path
     if query then
-        url = url .. "?" .. query
+        local separator = str_find(url, "?", 1, true) and "&" or "?"
+        url = url .. separator .. query
     end
 
     local res, req_err = fetch.request(url, {
