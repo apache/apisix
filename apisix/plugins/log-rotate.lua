@@ -194,7 +194,7 @@ local function init_default_logs(logs_info, log_type)
     logs_info[log_type] = { type = log_type }
     if filename ~= "off" then
         logs_info[log_type].file = filepath .. filename
-        logs_info[log_type].new_file = filepath .. "/%s__" .. filename
+        logs_info[log_type].new_file = filepath .. "%s__" .. filename
     end
 end
 
