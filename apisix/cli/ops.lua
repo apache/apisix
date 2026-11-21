@@ -550,7 +550,7 @@ Please modify "admin_key" in conf/config.yaml .
     local ip_port_to_check = {}
 
     local function listen_table_insert(listen_table, scheme, ip, port,
-                                enable_http3, enable_ipv6)
+                                enable_http3, enable_ipv6, backlog)
         if type(ip) ~= "string" then
             util.die(scheme, " listen ip format error, must be string", "\n")
         end
@@ -571,7 +571,8 @@ Please modify "admin_key" in conf/config.yaml .
                     {
                         ip = ip,
                         port = port,
-                        enable_http3 = enable_http3
+                        enable_http3 = enable_http3,
+                        backlog = backlog
                     })
             ip_port_to_check[addr] = scheme
         end
@@ -585,7 +586,8 @@ Please modify "admin_key" in conf/config.yaml .
                         {
                             ip = ip,
                             port = port,
-                            enable_http3 = enable_http3
+                            enable_http3 = enable_http3,
+                            backlog = backlog
                         })
                 ip_port_to_check[addr] = scheme
             end
@@ -607,6 +609,7 @@ Please modify "admin_key" in conf/config.yaml .
                 local port = value.port
                 local enable_ipv6 = false
                 local enable_http2 = value.enable_http2
+                local backlog = value.backlog
 
                 if ip == nil then
                     ip = "0.0.0.0"
@@ -625,8 +628,13 @@ Please modify "admin_key" in conf/config.yaml .
                             .. "apisix level.", "\n")
                 end
 
+                if backlog ~= nil and (type(backlog) ~= "number"
+                        or backlog <= 0 or backlog % 1 ~= 0) then
+                    util.die("ERROR: backlog in node_listen must be a positive integer.", "\n")
+                end
+
                 listen_table_insert(node_listen, "http", ip, port,
-                        false, enable_ipv6)
+                        false, enable_ipv6, backlog)
             end
         end
     end
