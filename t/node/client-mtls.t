@@ -861,3 +861,15 @@ curl --cert t/certs/mtls_client.crt --key t/certs/mtls_client.key -k https://tes
 hello world
 --- error_log
 fetching data from env uri
+
+
+
+=== TEST 29: access to https using keepalive connection (matched_ssl is nil on subsequent request)
+--- exec
+curl --cert t/certs/mtls_client.crt --key t/certs/mtls_client.key -k https://test.com:1994/hello https://test.com:1994/hello
+--- response_body
+hello world
+hello world
+--- no_error_log
+[error]
+attempt to index local 'matched_ssl' (a nil value)
