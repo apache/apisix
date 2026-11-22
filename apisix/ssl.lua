@@ -19,6 +19,8 @@ local secret         = require("apisix.secret")
 local data_encryption = core.data_encryption
 local ngx_ssl        = require("ngx.ssl")
 local ngx_ssl_client = require("ngx.ssl.clienthello")
+local openssl_x509   = require("resty.openssl.x509")
+local openssl_pkey   = require("resty.openssl.pkey")
 
 local str_lower = string.lower
 local str_byte = string.byte
@@ -105,7 +107,7 @@ end
 _M.aes_decrypt_pkey = aes_decrypt_pkey
 
 
-local function validate(cert, key)
+local function validate(cert, key, check_pair)
     local parsed_cert, err = ngx_ssl.parse_pem_cert(cert)
     if not parsed_cert then
         return nil, "failed to parse cert: " .. err
@@ -128,7 +130,22 @@ local function validate(cert, key)
         return nil, "failed to parse key: " .. err
     end
 
-    -- TODO: check if key & cert match
+    if check_pair then
+        -- The first certificate in the PEM chain is the one presented with the key.
+        local leaf = openssl_x509.new(cert, "PEM")
+        if not leaf then
+            return nil, "failed to parse leaf certificate"
+        end
+
+        local private_key = openssl_pkey.new(key, {format = "PEM", type = "pr"})
+        if not private_key then
+            return nil, "failed to load private key for certificate validation"
+        end
+
+        if not leaf:check_private_key(private_key) then
+            return nil, "certificate and private key do not match"
+        end
+    end
     return true
 end
 _M.validate = validate
@@ -192,7 +209,7 @@ function _M.check_ssl_conf(in_dp, conf)
     if not secret.check_secret_uri(conf.cert) and
         not secret.check_secret_uri(conf.key) then
 
-        local ok, err = validate(conf.cert, conf.key)
+        local ok, err = validate(conf.cert, conf.key, not in_dp)
         if not ok then
             return nil, err
         end
@@ -212,7 +229,7 @@ function _M.check_ssl_conf(in_dp, conf)
         if not secret.check_secret_uri(conf.certs[i]) and
             not secret.check_secret_uri(conf.keys[i]) then
 
-            local ok, err = validate(conf.certs[i], conf.keys[i])
+            local ok, err = validate(conf.certs[i], conf.keys[i], not in_dp)
             if not ok then
                 return nil, "failed to handle cert-key pair[" .. i .. "]: " .. err
             end

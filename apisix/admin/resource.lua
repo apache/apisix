@@ -21,6 +21,9 @@ local apisix_plugin = require("apisix.plugin")
 local apisix_consumer = require("apisix.consumer")
 local apisix_service = require("apisix.http.service")
 local tbl_deepcopy = require("apisix.core.table").deepcopy
+local openssl_x509 = require("resty.openssl.x509")
+local ngx_null = ngx.null
+local pcall = pcall
 local setmetatable = setmetatable
 local tostring = tostring
 local ipairs = ipairs
@@ -146,6 +149,46 @@ function _M:check_conf(id, conf, need_id, typ, allow_time, sub_path)
 end
 
 
+local function certificate_validity(pem)
+    if type(pem) ~= "string" then
+        return nil, nil
+    end
+
+    -- Reading a PEM chain as X.509 gives the first (leaf) certificate.
+    local cert = openssl_x509.new(pem, "PEM")
+    if not cert then
+        return nil, nil
+    end
+
+    -- The date decoder can throw on malformed ASN.1 time values.
+    local ok, validity_start, validity_end = pcall(cert.get_lifetime, cert)
+    if ok then
+        return validity_start, validity_end
+    end
+end
+
+
+local function format_ssl_for_get(value)
+    value.key = nil
+    value.keys = nil
+    value.validity_start, value.validity_end = certificate_validity(value.cert)
+
+    if type(value.certs) == "table" and #value.certs > 0 then
+        local validity = {}
+        for i, pem in ipairs(value.certs) do
+            local validity_start, validity_end = certificate_validity(pem)
+            if validity_start and validity_end then
+                validity[i] = {validity_start = validity_start, validity_end = validity_end}
+            else
+                -- Keep the indexes aligned with certs, including secret references.
+                validity[i] = ngx_null
+            end
+        end
+        value.certs_validity = validity
+    end
+end
+
+
 function _M:get(id, conf, sub_path)
     if core.table.array_find(self.unsupported_methods, "get") then
         return 405, {error_msg = "not supported `GET` method for " .. self.kind}
@@ -178,18 +221,15 @@ function _M:get(id, conf, sub_path)
     end
 
     if self.name == "ssls" then
-        -- not return private key for security
         if res.body and res.body.node and res.body.node.value then
-            res.body.node.value.key = nil
-            res.body.node.value.keys = nil
+            format_ssl_for_get(res.body.node.value)
         end
 
         -- list response (range query)
         if res.body and res.body.list then
             for _, item in ipairs(res.body.list) do
                 if item.value then
-                    item.value.key = nil
-                    item.value.keys = nil
+                    format_ssl_for_get(item.value)
                 end
             end
         end
