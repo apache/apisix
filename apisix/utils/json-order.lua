@@ -55,7 +55,6 @@ local byte = string.byte
 local char = string.char
 local sub = string.sub
 local find = string.find
-local gsub = string.gsub
 local format = string.format
 local floor = math.floor
 local huge = math.huge
@@ -128,13 +127,18 @@ end
 
 
 -- s[i] is a quote: the index just past the closing quote, and the text inside.
+-- The closing quote is found with a plain search (in C), then checked: a quote
+-- with an odd number of backslashes right before it is escaped (\"), one with
+-- an even number (none, or \\ pairs) ends the string.
 local function string_end(s, i)
     local j = i + 1
     while true do
-        local k = find(s, '["\\]', j)
+        local k = find(s, '"', j, true)
         if not k then error("unterminated string") end
-        if byte(s, k) == 34 then return k + 1, sub(s, i + 1, k - 1) end
-        j = k + 2
+        local b = k - 1
+        while byte(s, b) == 92 do b = b - 1 end
+        if (k - 1 - b) % 2 == 0 then return k + 1, sub(s, i + 1, k - 1) end
+        j = k + 1
     end
 end
 
@@ -185,7 +189,7 @@ end
 
 -- The shape of the JSON value at i (nil for a scalar), and the index after it;
 -- depth counts the objects and arrays it sits in (at most MAX_DEPTH, as cjson).
-parse = function(s, i, depth)
+function parse(s, i, depth)
     i = skip(s, i)
     if not i then error("unexpected end") end
     local c = byte(s, i)
@@ -260,18 +264,14 @@ function _M.attach(value, shape)
 end
 
 
-local ESCAPE = {['"'] = '\\"', ["\\"] = "\\\\", ["\b"] = "\\b", ["\f"] = "\\f",
-                ["\n"] = "\\n", ["\r"] = "\\r", ["\t"] = "\\t"}
-for b = 0, 31 do
-    local c = char(b)
-    ESCAPE[c] = ESCAPE[c] or format("\\u%04x", b)
-end
-ESCAPE[char(127)] = "\\u007f"
-
-
-local function encode_string(s)
-    return '"' .. gsub(s, '[%c"\\]', ESCAPE) .. '"'
-end
+-- Strings are escaped by cjson, in C: a scan in Lua patterns costs ~10 ns a
+-- byte, and message text is most of a body. A private instance, so turning
+-- off the escaping of "/" (which the client did not escape) affects no one
+-- else: quotes, backslashes and control characters are escaped, the rest
+-- (UTF-8 included) is written as is.
+local cjson_str = require("cjson.safe").new()
+cjson_str.encode_escape_forward_slash(false)
+local encode_string = cjson_str.encode
 
 
 local function encode_number(n)
@@ -299,15 +299,22 @@ local function sequence_length(t)
 end
 
 
+-- The encoder appends pieces to one buffer (opts.buf) and joins it once, so a
+-- long string is copied once, not again at every level it is nested in.
 local encode_value
 
 local function encode_object(v, shape, opts, depth)
-    local out, done = {}, {}
+    local buf, done, first = opts.buf, {}, true
     local child = shape and shape.child
+    buf[#buf + 1] = "{"
     for _, k in ipairs(shape and shape.keys or {}) do
         local x = v[k]
         if x ~= nil then
-            out[#out + 1] = encode_string(k) .. ":" .. encode_value(x, child[k], opts, depth)
+            if not first then buf[#buf + 1] = "," end
+            first = false
+            buf[#buf + 1] = encode_string(k)
+            buf[#buf + 1] = ":"
+            encode_value(x, child[k], opts, depth)
             done[k] = true
         end
     end
@@ -320,20 +327,27 @@ local function encode_object(v, shape, opts, depth)
     end
     table_sort(rest)
     for _, k in ipairs(rest) do
-        out[#out + 1] = encode_string(k) .. ":"
-                        .. encode_value(v[k], child and child[k], opts, depth)
+        if not first then buf[#buf + 1] = "," end
+        first = false
+        buf[#buf + 1] = encode_string(k)
+        buf[#buf + 1] = ":"
+        encode_value(v[k], child and child[k], opts, depth)
     end
-    return "{" .. table_concat(out, ",") .. "}"
+    buf[#buf + 1] = "}"
 end
 
 
-encode_value = function(v, shape, opts, depth)
+function encode_value(v, shape, opts, depth)
+    local buf = opts.buf
     local t = type(v)
-    if t == "string" then return encode_string(v) end
-    if t == "number" then return encode_number(v) end
-    if t == "boolean" then return v and "true" or "false" end
+    if t == "string" then buf[#buf + 1] = encode_string(v) return end
+    if t == "number" then buf[#buf + 1] = encode_number(v) return end
+    if t == "boolean" then buf[#buf + 1] = v and "true" or "false" return end
     -- cjson.null / ngx.null are light userdata; tests may use a table sentinel.
-    if t == "userdata" or (opts.null ~= nil and v == opts.null) then return "null" end
+    if t == "userdata" or (opts.null ~= nil and v == opts.null) then
+        buf[#buf + 1] = "null"
+        return
+    end
     if t ~= "table" then error("cannot encode a " .. t) end
     if depth >= MAX_DEPTH then error("nested too deeply") end
     depth = depth + 1
@@ -346,18 +360,24 @@ encode_value = function(v, shape, opts, depth)
     if next(v) == nil then
         if (shape and shape.array)
                 or (opts.array_mt ~= nil and getmetatable(v) == opts.array_mt) then
-            return "[]"
+            buf[#buf + 1] = "[]"
+        else
+            buf[#buf + 1] = "{}"
         end
-        return "{}"
+        return
     end
     local n = sequence_length(v)
     if n then
         local items = shape and shape.items
-        local out = {}
-        for i = 1, n do out[i] = encode_value(v[i], items and items[i], opts, depth) end
-        return "[" .. table_concat(out, ",") .. "]"
+        buf[#buf + 1] = "["
+        for i = 1, n do
+            if i > 1 then buf[#buf + 1] = "," end
+            encode_value(v[i], items and items[i], opts, depth)
+        end
+        buf[#buf + 1] = "]"
+        return
     end
-    return encode_object(v, shape, opts, depth)
+    encode_object(v, shape, opts, depth)
 end
 
 
@@ -365,10 +385,11 @@ end
 -- shape of where value sits; an object attach() marked uses its own shape
 -- instead, wherever it sits. Returns the JSON text, or nil and an error.
 function _M.encode(value, shape)
-    local opts = {null = core.json and core.json.null, array_mt = core.json and core.json.array_mt}
-    local ok, out = pcall(encode_value, value, shape, opts, 0)
-    if not ok then return nil, out end
-    return out
+    local opts = {null = core.json and core.json.null, array_mt = core.json and core.json.array_mt,
+                  buf = {}}
+    local ok, err = pcall(encode_value, value, shape, opts, 0)
+    if not ok then return nil, err end
+    return table_concat(opts.buf)
 end
 
 

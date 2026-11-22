@@ -168,7 +168,32 @@ true
 
 
 
-=== TEST 7: what cannot be JSON is an error
+=== TEST 7: a quote ends a string after an even run of backslashes, not an odd one; empty strings
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local json_order = require("apisix.utils.json-order")
+            local raw = [[{"a\\":1,"b\\\"c":2,"d":"\\","e":"x\\\"y\\","g\\\\":"\\\\\"","":"","f":[""]}]]
+            local shape = json_order.shape(raw)
+            ngx.say(table.concat(shape.keys, " | "))
+            ngx.say(json_order.encode(core.json.decode(raw), shape))
+            -- an escaped closing quote leaves the string open: not valid JSON
+            ngx.say(tostring(json_order.shape([[{"a\\\":1}]])))
+            -- a long string with escapes, written in one piece
+            local long = string.rep('q"\\/\n', 50000)
+            ngx.say(core.json.decode(json_order.encode({s = long})).s == long)
+        }
+    }
+--- response_body
+a\ | b\"c | d | e | g\\ |  | f
+{"a\\":1,"b\\\"c":2,"d":"\\","e":"x\\\"y\\","g\\\\":"\\\\\"","":"","f":[""]}
+nil
+true
+
+
+
+=== TEST 8: what cannot be JSON is an error
 --- config
     location /t {
         content_by_lua_block {
