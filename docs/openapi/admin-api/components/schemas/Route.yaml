@@ -121,6 +121,8 @@ properties:
     readOnly: true
   vars:
     type: array
+    items: {}
+    description: Custom matching conditions using APISIX expressions. Each condition is an array of `[variable, operator, value]`.
   plugins:
     type: object
   id:
@@ -137,7 +139,10 @@ properties:
       - 1
       - 0
     type: integer
-    description: route status, 1 to enable, 0 to disable
+    description: Route status.
+    x-enumDescriptions:
+      "0": Disabled.
+      "1": Enabled (default).
   enable_websocket:
     type: boolean
     description: enable websocket for request

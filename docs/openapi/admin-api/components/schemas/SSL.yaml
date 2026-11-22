@@ -64,11 +64,14 @@ properties:
     $ref: ./Labels.yaml
   status:
     default: 1
-    description: ssl status, 1 to enable, 0 to disable
+    description: SSL status.
     enum:
       - 1
       - 0
     type: integer
+    x-enumDescriptions:
+      "0": Disabled.
+      "1": Enabled (default).
   cert:
     $ref: ./CertificateOrReference.yaml
     description: PEM-encoded certificate or an APISIX secret/environment reference.
@@ -111,8 +114,11 @@ properties:
     enum:
       - server
       - client
-    description: ssl certificate type, server to server certificate, client to client certificate for upstream
+    description: Certificate type.
     default: server
     type: string
+    x-enumDescriptions:
+      server: HTTPS termination matched by SNI.
+      client: Client certificate for mTLS with upstream services.
 type: object
 x-source: apisix/schema_def.lua

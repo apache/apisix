@@ -18,13 +18,23 @@ local pcall = pcall
 local inflate_gzip = require("apisix.utils.gzip").inflate_gzip
 local str_buffer = require("string.buffer")
 local is_br_libs_loaded, brotli = pcall(require, "brotli")
-local content_decode_funcs = {
-    gzip = inflate_gzip,
-}
 local _M = {}
 
 
-local function brotli_stream_decode(read_inputs, write_outputs)
+-- Every decoder takes (data, max_output). With max_output set, data may be a
+-- cut prefix of the stream: decoding stops without an error where data ends or
+-- once max_output bytes are decoded, and returns at most max_output bytes.
+local function gzip_decode(data, max_output)
+    return inflate_gzip(data, nil, nil, max_output, max_output ~= nil)
+end
+
+
+local content_decode_funcs = {
+    gzip = gzip_decode,
+}
+
+
+local function brotli_stream_decode(read_inputs, write_outputs, partial)
     -- read 64k data per times
     local read_size = 64 * 1024
     local decompressor = brotli.decompressor:new()
@@ -36,6 +46,8 @@ local function brotli_stream_decode(read_inputs, write_outputs)
             ok, res = pcall(function()
                 return decompressor:decompress(chunk)
             end)
+        elseif partial then
+            return true, nil
         else
             ok, res = pcall(function()
                 return decompressor:finish()
@@ -51,11 +63,14 @@ local function brotli_stream_decode(read_inputs, write_outputs)
 end
 
 
-local function brotli_decode(data)
+local function brotli_decode(data, max_output)
     local inputs = str_buffer.new():set(data)
     local outputs = str_buffer.new()
 
     local read_inputs = function(size)
+        if max_output and #outputs >= max_output then
+            return nil
+        end
         local data = inputs:get(size)
         if data == "" then
             return nil
@@ -67,12 +82,12 @@ local function brotli_decode(data)
         return outputs:put(data)
     end
 
-    local ok, err = brotli_stream_decode(read_inputs, write_outputs)
+    local ok, err = brotli_stream_decode(read_inputs, write_outputs, max_output ~= nil)
     if not ok then
         return nil, "brotli decode err: " .. err
     end
 
-    return outputs:get()
+    return outputs:get(max_output)
 end
 
 if is_br_libs_loaded then

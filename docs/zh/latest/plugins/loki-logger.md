@@ -59,7 +59,7 @@ description: loki-logger 插件通过 Loki HTTP API /loki/api/v1/push 将请求�
 | max_req_body_bytes | integer | 否 | 524288 | >=1 | 记录请求正文的最大字节数。如果请求正文超过此值，则会在记录前截断。|
 | include_resp_body | boolean | 否 | false | | 如果为 true，则将响应正文包含在日志中。|
 | include_resp_body_expr | array[array] | 否 | | | 一个或多个 [lua-resty-expr](https://github.com/api7/lua-resty-expr) 形式条件的数组。在 `include_resp_body` 为 true 时使用。仅当此处配置的表达式计算结果为 true 时，才会记录响应正文。|
-| max_resp_body_bytes | integer | 否 | 524288 | >=1 | 记录响应正文的最大字节数。如果响应正文超过此值，则会在记录前截断。|
+| max_resp_body_bytes | integer | 否 | 524288 | >=1 | 记录响应正文的最大字节数。如果响应正文超过此值，则会在记录前截断。对于压缩响应，解压后的响应体同样截断到该大小。|
 
 该插件支持使用批处理器对条目（日志/数据）进行批量聚合和处理，避免了频繁提交数据的需求。批处理器每隔 `5` 秒或当队列中的数据达到 `1000` 时提交数据。有关更多信息或设置自定义配置，请参阅 [批处理器](../batch-processor.md#configuration)。
 

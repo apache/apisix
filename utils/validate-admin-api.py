@@ -107,6 +107,13 @@ def validate(document, versions):
                     errors.append(f'{path}: {exc}')
         if '$id' in obj:
             errors.append(f'{path}: embedded $id changes local ref scope; use document pointers')
+        schema_type = obj.get('type')
+        is_array = schema_type == 'array' or (
+            isinstance(schema_type, list) and 'array' in schema_type)
+        if is_array and 'items' not in obj:
+            errors.append(
+                f'{path}: array schema must declare items; '
+                'use an empty object for unconstrained elements')
     if errors:
         return errors
 
@@ -257,6 +264,8 @@ def validate_source(document, root):
         result = {k: constraints(v) for k, v in value.items()
                   if k not in {'description', 'title', 'readOnly', 'examples', 'example'}
                   and not k.startswith('x-')}
+        if result.get('items') == {}:
+            result.pop('items')
 
         # APISIX's JSON Schema validator skips structural validation for
         # $secret:// and $env:// values. OpenAPI models that runtime hook
