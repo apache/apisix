@@ -819,6 +819,46 @@ etcd secret_fallbacks[1] encrypted: true
             assert(replay.status == 302,
                 "application B must restart login instead of accepting application A session, got "
                 .. replay.status)
+
+            code = t('/apisix/admin/routes/3', ngx.HTTP_PUT, [[{
+                "methods": ["GET"],
+                "upstream": {"nodes": {"127.0.0.1:1980": 1}, "type": "roundrobin"},
+                "plugins": {
+                    "feishu-auth": {
+                        "app_id": "application-a",
+                        "app_secret": "secret-a",
+                        "secret": "shared-session-secret",
+                        "auth_redirect_uri": "https://a.example.com/callback",
+                        "access_token_url": "http://127.0.0.1:1980/token",
+                        "userinfo_url": "http://127.0.0.1:1980/other-userinfo",
+                        "redirect_uri": "/echo"
+                    }
+                },
+                "uri": "/hello-other-provider"
+            }]])
+            assert(code <= 201, "setup alternate Provider failed: " .. tostring(code))
+
+            replay = http.new():request_uri(base .. "/hello-other-provider", {
+                headers = {["Cookie"] = cookie},
+            })
+            assert(replay and replay.status == 302,
+                "a changed Provider endpoint must use a different audience")
+
+            local session = require("resty.session")
+            local legacy = session.start({
+                secret = "shared-session-secret",
+                cookie_name = "feishu_session",
+                audience = "default",
+            })
+            legacy:set("userinfo", '{"open_id":"legacy-user"}')
+            assert(legacy:save())
+            local legacy_cookie = ngx.header["Set-Cookie"]
+            ngx.header["Set-Cookie"] = nil
+            replay = http.new():request_uri(base .. "/hello", {
+                headers = {["Cookie"] = legacy_cookie},
+            })
+            assert(replay and replay.status == 302,
+                "a legacy default-audience session must authenticate again")
             ngx.say("passed")
         }
     }

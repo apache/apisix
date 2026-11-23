@@ -107,6 +107,10 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X P
 6. 用户信息存储在加密的 session Cookie（`feishu_session`）中。后续携带有效 Cookie 的请求将跳过 OAuth 流程。会话按飞书应用及 Provider 端点隔离，其他应用签发的会话不会被接受。
 7. 若 `set_userinfo_header` 为 `true`，插件将用户信息 Base64 编码后设置到 `X-Userinfo` 请求头，随请求转发至上游服务。
 
+## 升级兼容性
+
+按应用隔离的会话 audience 会使不支持该功能的旧版本所签发的会话失效，用户升级后需要重新认证。滚动升级期间，应通过会话保持或先摘除旧节点等方式，确保 OAuth 发起请求与回调使用相同版本，否则可能返回 401。新版本签发的会话在回滚到旧版本后同样失效。
+
 ## 删除插件
 
 如需禁用 `feishu-auth` 插件，可删除插件配置中对应的 JSON 配置。APISIX 将自动重新加载，无需重启。

@@ -657,6 +657,45 @@ passed
             assert(replay.status == 302,
                 "application B must restart login instead of accepting application A session, got "
                 .. replay.status)
+
+            code = t('/apisix/admin/routes/3', ngx.HTTP_PUT, [[{
+                "methods": ["GET"],
+                "upstream": {"nodes": {"127.0.0.1:1980": 1}, "type": "roundrobin"},
+                "plugins": {
+                    "dingtalk-auth": {
+                        "app_key": "application-a",
+                        "app_secret": "secret-a",
+                        "secret": "shared-session-secret",
+                        "access_token_url": "http://127.0.0.1:10421/v1.0/oauth2/accessToken",
+                        "userinfo_url": "http://127.0.0.1:10421/other-userinfo",
+                        "redirect_uri": "/login"
+                    }
+                },
+                "uri": "/hello-other-provider"
+            }]])
+            assert(code <= 201, "setup alternate Provider failed: " .. tostring(code))
+
+            replay = http.new():request_uri(base .. "/hello-other-provider", {
+                headers = {["Cookie"] = cookie},
+            })
+            assert(replay and replay.status == 302,
+                "a changed Provider endpoint must use a different audience")
+
+            local session = require("resty.session")
+            local legacy = session.start({
+                secret = "shared-session-secret",
+                cookie_name = "dingtalk_session",
+                audience = "default",
+            })
+            legacy:set("userinfo", '{"userid":"legacy-user"}')
+            assert(legacy:save())
+            local legacy_cookie = ngx.header["Set-Cookie"]
+            ngx.header["Set-Cookie"] = nil
+            replay = http.new():request_uri(base .. "/hello", {
+                headers = {["Cookie"] = legacy_cookie},
+            })
+            assert(replay and replay.status == 302,
+                "a legacy default-audience session must authenticate again")
             ngx.say("passed")
         }
     }
@@ -707,6 +746,62 @@ passed
             cookie = res.headers["Set-Cookie"]
             assert(cookie and not cookie:find("; Secure", 1, true),
                 "cookie_secure=false must omit Secure")
+            ngx.say("passed")
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 20: secret_fallbacks keeps an existing session during key rotation
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local t = require("lib.test_admin").test
+            local oauth = require("lib.oauth_login")
+            local port = ngx.var.server_port
+            local uri = "http://127.0.0.1:" .. port .. "/hello"
+            local route = [[{
+                "methods": ["GET"],
+                "upstream": {"nodes": {"127.0.0.1:1980": 1}, "type": "roundrobin"},
+                "plugins": {
+                    "dingtalk-auth": {
+                        "app_key": "application-a",
+                        "app_secret": "secret-a",
+                        "secret": "%s",
+                        "access_token_url": "http://127.0.0.1:10421/v1.0/oauth2/accessToken",
+                        "userinfo_url": "http://127.0.0.1:10421/topapi/v2/user/getuserinfo",
+                        "redirect_uri": "/login"%s
+                    }
+                },
+                "uri": "/hello"
+            }]]
+
+            local code = t('/apisix/admin/routes/1', ngx.HTTP_PUT,
+                           string.format(route, "secret-v1", ""))
+            assert(code <= 201, "setup secret-v1 failed: " .. tostring(code))
+            local res = oauth.login(port, "/hello", "valid_code")
+            assert(res and res.status == 200, "login with secret-v1 failed")
+            local old_cookie = res.headers["Set-Cookie"]
+            assert(old_cookie, "secret-v1 did not issue a session cookie")
+
+            code = t('/apisix/admin/routes/1', ngx.HTTP_PUT,
+                     string.format(route, "secret-v2", ', "secret_fallbacks": ["secret-v1"]'))
+            assert(code <= 201, "setup fallback failed: " .. tostring(code))
+            res = http.new():request_uri(uri, {headers = {["Cookie"] = old_cookie}})
+            assert(res and res.status == 200,
+                "old cookie must be accepted through secret_fallbacks")
+
+            code = t('/apisix/admin/routes/1', ngx.HTTP_PUT,
+                     string.format(route, "secret-v2", ""))
+            assert(code <= 201, "removing fallback failed: " .. tostring(code))
+            res = http.new():request_uri(uri, {headers = {["Cookie"] = old_cookie}})
+            assert(res and res.status == 302,
+                "old cookie must be rejected after removing the fallback")
             ngx.say("passed")
         }
     }

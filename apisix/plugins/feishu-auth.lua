@@ -203,22 +203,15 @@ local function fetch_userinfo(conf, access_token)
 end
 
 
-local audience_cache = {}
 local function session_audience(conf)
     local fingerprint = core.table.concat({
         conf.app_id,
         conf.access_token_url or DEFAULT_TOKEN_URL,
         conf.userinfo_url or DEFAULT_USERINFO_URL,
     }, "\0")
-    if audience_cache[fingerprint] then
-        return audience_cache[fingerprint]
-    end
-
     local sha256 = resty_sha256:new()
     sha256:update(fingerprint)
-    local audience = "feishu-auth:" .. resty_string.to_hex(sha256:final())
-    audience_cache[fingerprint] = audience
-    return audience
+    return "feishu-auth:" .. resty_string.to_hex(sha256:final())
 end
 
 

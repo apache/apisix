@@ -110,6 +110,10 @@ The authentication flow proceeds as follows:
 6. User information is stored in an encrypted session cookie (`feishu_session`). Subsequent requests with a valid cookie bypass the OAuth flow. Sessions are scoped to the Feishu application and Provider endpoints; a session issued for another application is not accepted.
 7. If `set_userinfo_header` is `true`, the plugin encodes the user information as Base64 JSON and sets it in the `X-Userinfo` request header before forwarding to the upstream.
 
+## Upgrade compatibility
+
+The application-scoped session audience invalidates sessions issued by versions without it, so users need to authenticate again after upgrading. During a rolling upgrade, keep the OAuth initiation and callback on the same version, for example with sticky sessions or by draining old nodes before the callback; crossing versions can otherwise produce a 401. Sessions issued by the new version are also invalid after rolling back to an older version.
+
 ## Delete Plugin
 
 To remove the `feishu-auth` Plugin, delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.

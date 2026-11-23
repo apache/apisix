@@ -211,22 +211,15 @@ local function fetch_userinfo(conf, access_token, code)
 end
 
 
-local audience_cache = {}
 local function session_audience(conf)
     local fingerprint = core.table.concat({
         conf.app_key,
         conf.access_token_url or DEFAULT_TOKEN_URL,
         conf.userinfo_url or DEFAULT_USERINFO_URL,
     }, "\0")
-    if audience_cache[fingerprint] then
-        return audience_cache[fingerprint]
-    end
-
     local sha256 = resty_sha256:new()
     sha256:update(fingerprint)
-    local audience = "dingtalk-auth:" .. resty_string.to_hex(sha256:final())
-    audience_cache[fingerprint] = audience
-    return audience
+    return "dingtalk-auth:" .. resty_string.to_hex(sha256:final())
 end
 
 

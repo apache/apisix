@@ -185,6 +185,10 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
   }'
 ```
 
+## Upgrade compatibility
+
+The application-scoped session audience invalidates sessions issued by versions without it, so users need to authenticate again after upgrading. During a rolling upgrade, keep the OAuth initiation and callback on the same version, for example with sticky sessions or by draining old nodes before the callback; crossing versions can otherwise produce a 401. Sessions issued by the new version are also invalid after rolling back to an older version.
+
 ## Delete Plugin
 
 To remove the `dingtalk-auth` Plugin, delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
