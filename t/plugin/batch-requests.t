@@ -1460,3 +1460,27 @@ POST /apisix/batch-requests
 --- error_code: 502
 --- response_body
 {"error_msg":"response body of pipeline request 11 exceeds max_response_body_size_total"}
+
+
+
+=== TEST 43: frame each batch item independently of the chunked outer request
+--- config
+    location = /echo-body {
+        content_by_lua_block {
+            ngx.req.read_body()
+            ngx.print(ngx.var.http_content_length, ":", ngx.req.get_body_data())
+        }
+    }
+--- request eval
+my $body = '{
+    "headers": {"Content-Length": "003", "Connection": "keep-alive"},
+    "pipeline": [
+        {"method": "POST", "path": "/echo-body", "body": "one"},
+        {"method": "POST", "path": "/echo-body", "body": "three",
+         "headers": {"cOnTeNt-LeNgTh": "005"}}
+    ]
+}';
+"POST /apisix/batch-requests\n" . sprintf("%x\r\n%s\r\n0\r\n\r\n", length($body), $body)
+--- more_headers
+Transfer-Encoding: chunked
+--- response_body_like: "body":"3:one".*"body":"5:three"
