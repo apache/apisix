@@ -436,7 +436,7 @@ function _M.collect_body(conf, ctx)
             end
 
             local response_encoding = ngx_header["Content-Encoding"]
-            if not response_encoding or ctx.gzip_matched then
+            if not response_encoding or ctx.gzip_matched or final_body == "" then
                 ctx.resp_body = final_body
                 return
             end
@@ -449,7 +449,9 @@ function _M.collect_body(conf, ctx)
                 return
             end
 
-            local decoded_body, err = decoder(final_body)
+            -- the buffer may have been cut at the limit, so it is decoded as a
+            -- possibly cut stream, and the decoded body is held to the same limit
+            local decoded_body, err = decoder(final_body, max_resp_body_bytes)
             if err ~= nil then
                 core.log.warn("try decode compressed data err: ", err)
                 ctx.resp_body = final_body
