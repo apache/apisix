@@ -801,6 +801,7 @@ qr/"gender":2/
                     "uri": "/grpctest",
                     "plugins": {
                         "grpc-transcode": {
+                            "max_req_body_size": 16,
                             "proto_id": "1",
                             "service": "helloworld.Greeter",
                             "method": "SayHello"
@@ -837,3 +838,31 @@ POST /grpctest
 Content-Type: application/json
 --- response_body eval
 qr/"items":\[\]/
+
+
+
+=== TEST 32: reject a JSON request one byte over the configured limit
+--- request
+POST /grpctest
+{"name":"world!"}
+--- more_headers
+Content-Type: application/json
+--- error_code: 413
+--- error_log
+request size 17 is greater than the maximum size 16 allowed
+
+
+
+=== TEST 33: enforce the limit on a file-backed JSON request without Content-Length
+--- config
+    client_body_in_file_only clean;
+--- request eval
+my $body = '{"name":"world!"}';
+"POST /grpctest\n" . sprintf("%x\r\n%s\r\n0\r\n\r\n", length($body), $body)
+--- more_headers
+Content-Type: application/json
+Transfer-Encoding: chunked
+--- error_code: 413
+--- error_log
+attempt to read body from file
+request size 17 is greater than the maximum size 16 allowed
