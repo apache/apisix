@@ -27,29 +27,24 @@ local parsed_paths = {}
 
 local _M = {}
 
--- Connection credentials and tuning do not identify the counter's storage.
--- Keep this list shared by the three plugins instead of ignoring redis_*.
-local backend_paths = {
-    redis = "$['redis_host','redis_port','redis_database']",
-    ["redis-cluster"] = "$['redis_cluster_name','redis_cluster_nodes']",
-    ["redis-sentinel"] = "$['redis_sentinels','redis_master_name','redis_database','redis_role']",
-}
+local function select_nodes(conf, path)
+    local parsed = parsed_paths[path]
+    if not parsed then
+        local err
+        parsed, err = jsonpath.parse(path)
+        if not parsed then
+            return nil, err
+        end
+        parsed_paths[path] = parsed
+    end
+    return jsonpath.nodes(conf, parsed)
+end
 
 
 local function project(conf, paths)
     local result = {}
     for _, path in ipairs(paths) do
-        local parsed = parsed_paths[path]
-        if not parsed then
-            local err
-            parsed, err = jsonpath.parse(path)
-            if not parsed then
-                return nil, err
-            end
-            parsed_paths[path] = parsed
-        end
-
-        local nodes, err = jsonpath.nodes(conf, parsed)
+        local nodes, err = select_nodes(conf, path)
         if not nodes then
             return nil, err
         end
@@ -81,34 +76,44 @@ local function encode_null(_, value, _, message)
 end
 
 
-function _M.prepare_bucket_id(conf, fields)
+local function stable_encode(value)
+    -- A fresh encoder state keeps failures from affecting later checks.
+    return core.json.stably_encode(value, {sortkey = true, exception = encode_null})
+end
+
+
+function _M.prepare_bucket_id(conf, fields, unordered_fields)
     local identity, err = project(conf, fields)
     if not identity then
         return false, err
     end
 
-    local policy = conf.policy or "local"
-    local backend = {policy = policy}
-    if backend_paths[policy] then
-        backend, err = project(conf, {backend_paths[policy]})
-        if not backend then
+    -- The caller owns field selection and declares which arrays are unordered.
+    -- Normalize the projected copy without changing the input configuration.
+    for _, path in ipairs(unordered_fields or {}) do
+        local nodes
+        nodes, err = select_nodes(identity, path)
+        if not nodes then
             return false, err
         end
-        backend.policy = policy
-        if backend.redis_cluster_nodes then
-            core.table.sort(backend.redis_cluster_nodes)
-        end
-        if backend.redis_sentinels then
-            core.table.sort(backend.redis_sentinels, function(a, b)
-                return a.host .. ":" .. a.port < b.host .. ":" .. b.port
+        for _, node in ipairs(nodes) do
+            local encoded = {}
+            for _, value in ipairs(node.value) do
+                local data
+                data, err = stable_encode(value)
+                if not data then
+                    return false, err
+                end
+                encoded[value] = data
+            end
+            core.table.sort(node.value, function(a, b)
+                return encoded[a] < encoded[b]
             end)
         end
     end
-    identity.backend = backend
 
-    -- A fresh encoder state keeps failures from affecting later checks.
     local data
-    data, err = core.json.stably_encode(identity, {sortkey = true, exception = encode_null})
+    data, err = stable_encode(identity)
     if not data then
         return false, err
     end

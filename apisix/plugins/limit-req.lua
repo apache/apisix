@@ -23,9 +23,9 @@ local sleep                             = core.sleep
 local error                             = error
 local limit_util                        = require("apisix.utils.limit")
 
-local bucket_fields = {
-    "$['key','key_type']",
-    "$._meta['filter','pre_function']",
+local bucket_backend_fields = {
+    redis = "$['redis_host','redis_port','redis_database']",
+    ["redis-cluster"] = "$['redis_cluster_name','redis_cluster_nodes']",
 }
 
 local redis_single_new
@@ -107,7 +107,11 @@ function _M.check_schema(conf)
         return false, err
     end
 
-    return limit_util.prepare_bucket_id(conf, bucket_fields)
+    return limit_util.prepare_bucket_id(conf, {
+        "$['key','key_type','policy']",
+        "$._meta['filter','pre_function']",
+        bucket_backend_fields[conf.policy],
+    }, {"$.redis_cluster_nodes"})
 end
 
 

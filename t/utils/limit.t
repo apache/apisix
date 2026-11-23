@@ -321,3 +321,36 @@ passed
     }
 --- response_body
 passed
+
+
+
+=== TEST 9: the caller defines selected fields and unordered arrays
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local util = require("apisix.utils.limit")
+            local fields = {"$['tenant','endpoints']"}
+            local unordered = {"$.endpoints"}
+            local conf = {tenant = "team-a", policy = "redis", redis_host = "first",
+                          endpoints = {{name = "second", weight = 2},
+                                       {name = "first", weight = 1}}}
+            assert(util.prepare_bucket_id(conf, fields, unordered))
+            local id = util.get_bucket_id(conf)
+            local same = core.table.deepcopy(conf)
+            same.redis_host = "another"
+            same.redis_database = 12
+            assert(util.prepare_bucket_id(same, fields, unordered))
+            assert(util.get_bucket_id(same) == id, "unselected plugin fields affected identity")
+            same.endpoints[1], same.endpoints[2] = same.endpoints[2], same.endpoints[1]
+            assert(util.prepare_bucket_id(same, fields, unordered))
+            assert(util.get_bucket_id(same) == id, "caller-defined array order affected identity")
+            assert(conf.endpoints[1].name == "second", "normalization changed the configuration")
+            same.tenant = "team-b"
+            assert(util.prepare_bucket_id(same, fields, unordered))
+            assert(util.get_bucket_id(same) ~= id)
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed

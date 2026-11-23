@@ -19,10 +19,10 @@ local workflow = require("apisix.plugins.workflow")
 local limit_util = require("apisix.utils.limit")
 local core = require("apisix.core")
 
-local bucket_fields = {
-    "$['key','key_type','time_window','window_type','group']",
-    "$.rules[*]['key','time_window']",
-    "$._meta['filter','pre_function']",
+local bucket_backend_fields = {
+    redis = "$['redis_host','redis_port','redis_database']",
+    ["redis-cluster"] = "$['redis_cluster_name','redis_cluster_nodes']",
+    ["redis-sentinel"] = "$['redis_sentinels','redis_master_name','redis_database','redis_role']",
 }
 
 local plugin_name = "limit-count"
@@ -40,7 +40,12 @@ function _M.check_schema(conf, schema_type)
     if not ok or schema_type == core.schema.TYPE_METADATA then
         return ok, err
     end
-    return limit_util.prepare_bucket_id(conf, bucket_fields)
+    return limit_util.prepare_bucket_id(conf, {
+        "$['key','key_type','time_window','window_type','group','policy']",
+        "$.rules[*]['key','time_window']",
+        "$._meta['filter','pre_function']",
+        bucket_backend_fields[conf.policy],
+    }, {"$.redis_cluster_nodes", "$.redis_sentinels"})
 end
 
 

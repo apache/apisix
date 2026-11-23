@@ -212,6 +212,8 @@ function _M._delayed_sync(self, key, cost, syncer_id)
 
         remote_remaining, remote_reset, sync_at = quota.remaining, quota.reset, quota.sync_at
         local rebase = quota.limit and quota.limit ~= self.limit
+        -- Threshold updates now reuse this snapshot instead of selecting a new
+        -- counter key, so apply the new limit to its synchronized consumption.
         if rebase then
             if quota.count then
                 -- remaining can be clamped to zero after an over-limit sync.
