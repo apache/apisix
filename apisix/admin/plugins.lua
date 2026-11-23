@@ -31,7 +31,7 @@ local _M = {}
 
 
 function _M.check_schema(plugins_conf, schema_type)
-    return check_schema(plugins_conf, schema_type, false)
+    return check_schema(plugins_conf, schema_type, false, true)
 end
 
 

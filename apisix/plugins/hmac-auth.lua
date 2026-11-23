@@ -30,6 +30,10 @@ local ALLOWED_ALGORITHMS = {"hmac-sha1", "hmac-sha256", "hmac-sha512"}
 local resty_sha256 = require("resty.sha256")
 local schema_def = require("apisix.schema_def")
 local auth_utils = require("apisix.utils.auth")
+local string_lower = string.lower
+local setmetatable = setmetatable
+
+local legacy_unsigned_digest_warned = setmetatable({}, {__mode = "k"})
 
 local schema = {
     type = "object",
@@ -122,12 +126,33 @@ local function array_to_map(arr)
 end
 
 
-function _M.check_schema(conf, schema_type)
+local function has_signed_header(headers, name)
+    for _, header in ipairs(headers or {}) do
+        if string_lower(header) == name then
+            return true
+        end
+    end
+
+    return false
+end
+
+
+function _M.check_schema(conf, schema_type, for_write)
     if schema_type == core.schema.TYPE_CONSUMER then
         return core.schema.check(consumer_schema, conf)
-    else
-        return core.schema.check(schema, conf)
     end
+
+    local ok, err = core.schema.check(schema, conf)
+    if not ok then
+        return ok, err
+    end
+
+    if for_write and conf.validate_request_body
+       and not has_signed_header(conf.signed_headers, "digest") then
+        return false, "validate_request_body requires 'digest' in signed_headers"
+    end
+
+    return true
 end
 
 
@@ -276,6 +301,13 @@ local function validate(ctx, conf, params)
                 ngx_encode_base64(sha256(req_body))
         if digest_created ~= digest_header then
             return nil, "Invalid digest"
+        end
+
+        if not has_signed_header(params.headers, "digest")
+           and not legacy_unsigned_digest_warned[conf] then
+            legacy_unsigned_digest_warned[conf] = true
+            core.log.warn("hmac-auth accepted a request whose Digest header was not signed; ",
+                          "this compatibility behavior will be removed in a future release")
         end
     end
 

@@ -71,6 +71,8 @@ The following attributes are available for configurations on Routes or Services.
 | anonymous_consumer    | string        | False    |                                              |                                                                           | Anonymous Consumer name. If configured, allow anonymous users to bypass the authentication.                                                                                                                                                                                                                                                          |
 | realm                 | string        | False    | `hmac`                                       |                                                                           | Realm in the [`WWW-Authenticate`](https://datatracker.ietf.org/doc/html/rfc7235#section-4.1) response header returned with a `401 Unauthorized` response due to authentication failure.                                                                                                                                                               |
 
+When `validate_request_body` is `true`, new and updated configurations must include `digest` in `signed_headers` so that the `Digest` header is covered by the HMAC signature. During the compatibility transition, requests with a valid but unsigned `Digest` header are still accepted and APISIX logs a warning. A future release will reject these requests.
+
 ## Examples
 
 The examples below demonstrate how you can work with the `hmac-auth` Plugin for different scenarios.

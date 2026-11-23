@@ -1026,7 +1026,7 @@ end
 
 
 local function check_single_plugin_schema(name, plugin_conf, schema_type, skip_disabled_plugin,
-                                          ignore_disabled_plugin)
+                                          ignore_disabled_plugin, for_write)
     if type(plugin_conf) ~= "table" then
         return false, "invalid plugin conf type " .. type(plugin_conf) ..
             " for plugin [" .. tostring(name) .. "]"
@@ -1047,7 +1047,7 @@ local function check_single_plugin_schema(name, plugin_conf, schema_type, skip_d
     end
 
     if plugin_obj.check_schema then
-        local ok, err = plugin_obj.check_schema(plugin_conf, schema_type)
+        local ok, err = plugin_obj.check_schema(plugin_conf, schema_type, for_write)
         if not ok then
             if check_disable(plugin_conf) ~= true then
                 return false, "failed to check the configuration of plugin "
@@ -1334,10 +1334,10 @@ check_plugin_metadata = function(item)
 end
 
 
-local function check_schema(plugins_conf, schema_type, skip_disabled_plugin)
+local function check_schema(plugins_conf, schema_type, skip_disabled_plugin, for_write)
     for name, plugin_conf in pairs(plugins_conf) do
         local ok, err = check_single_plugin_schema(name, plugin_conf,
-            schema_type, skip_disabled_plugin)
+            schema_type, skip_disabled_plugin, nil, for_write)
         if not ok then
             return false, err
         end

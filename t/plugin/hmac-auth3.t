@@ -76,7 +76,8 @@ passed
                 [[{
                     "plugins": {
                         "hmac-auth": {
-                            "validate_request_body": true
+                            "validate_request_body": true,
+                            "signed_headers": ["date", "digest"]
                         }
                     },
                     "upstream": {
@@ -134,7 +135,7 @@ passed
             core.log.info("signature:", ngx_encode_base64(signature))
             local headers = {}
             headers["Date"] = gmt
-            headers["Authorization"] = "Signature keyId=\"" .. key_id .. "\",algorithm=\"hmac-sha256\"" .. ",headers=\"@request-target date x-custom-header-a x-custom-header-b\",signature=\"" .. ngx_encode_base64(signature) .. "\""
+            headers["Authorization"] = "Signature keyId=\"" .. key_id .. "\",algorithm=\"hmac-sha256\"" .. ",headers=\"@request-target date digest x-custom-header-a x-custom-header-b\",signature=\"" .. ngx_encode_base64(signature) .. "\""
             headers["x-custom-header-a"] = custom_header_a
             headers["x-custom-header-b"] = custom_header_b
 
@@ -182,6 +183,7 @@ qr/\{"message":"client request can't be validated"\}/
                 key_id,
                 "POST /hello",
                 "date: " .. gmt,
+                "digest: hello",
                 "x-custom-header-a: " .. custom_header_a,
                 "x-custom-header-b: " .. custom_header_b
             }
@@ -193,7 +195,7 @@ qr/\{"message":"client request can't be validated"\}/
             core.log.info("signature:", ngx_encode_base64(signature))
             local headers = {}
             headers["Date"] = gmt
-            headers["Authorization"] ="Signature keyId=\"" .. key_id .. "\",algorithm=\"hmac-sha256\"" .. ",headers=\"@request-target date x-custom-header-a x-custom-header-b\",signature=\"" .. ngx_encode_base64(signature) .. "\""
+            headers["Authorization"] ="Signature keyId=\"" .. key_id .. "\",algorithm=\"hmac-sha256\"" .. ",headers=\"@request-target date digest x-custom-header-a x-custom-header-b\",signature=\"" .. ngx_encode_base64(signature) .. "\""
             headers["Digest"] = "hello"
             headers["x-custom-header-a"] = custom_header_a
             headers["x-custom-header-b"] = custom_header_b
@@ -238,10 +240,16 @@ qr/\{"message":"client request can't be validated"\}/
             local custom_header_b = "23879fmsldfk"
             local body = "{\"name\": \"world\"}"
 
+            local resty_sha256 = require("resty.sha256")
+            local hash = resty_sha256:new()
+            hash:update(body)
+            local body_digest = ngx_encode_base64(hash:final())
+
             local signing_string = {
                 key_id,
                 "POST /hello",
                 "date: " .. gmt,
+                "digest: SHA-256=" .. body_digest,
                 "x-custom-header-a: " .. custom_header_a,
                 "x-custom-header-b: " .. custom_header_b
             }
@@ -251,17 +259,11 @@ qr/\{"message":"client request can't be validated"\}/
             local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
             local ngx_encode_base64 = ngx.encode_base64
 
-            local resty_sha256 = require("resty.sha256")
-            local hash = resty_sha256:new()
-            hash:update(body)
-            local digest = hash:final()
-            local body_digest = ngx_encode_base64(digest)
-
             core.log.info("signature:", ngx_encode_base64(signature))
             local headers = {}
             headers["Date"] = gmt
             headers["Digest"] = "SHA-256=" .. body_digest
-            headers["Authorization"] = "Signature keyId=\"" .. key_id .. "\",algorithm=\"hmac-sha256\"" .. ",headers=\"@request-target date x-custom-header-a x-custom-header-b\",signature=\"" .. ngx_encode_base64(signature) .. "\""
+            headers["Authorization"] = "Signature keyId=\"" .. key_id .. "\",algorithm=\"hmac-sha256\"" .. ",headers=\"@request-target date digest x-custom-header-a x-custom-header-b\",signature=\"" .. ngx_encode_base64(signature) .. "\""
             headers["x-custom-header-a"] = custom_header_a
             headers["x-custom-header-b"] = custom_header_b
 
@@ -292,6 +294,7 @@ passed
                     "plugins": {
                         "hmac-auth": {
                             "validate_request_body": true,
+                            "signed_headers": ["date", "digest"],
                             "max_req_body_size": 10
                         }
                     },
@@ -335,10 +338,16 @@ passed
             local custom_header_b = "23879fmsldfk"
             local body = "{\"name\": \"this body is well over ten bytes\"}"
 
+            local resty_sha256 = require("resty.sha256")
+            local hash = resty_sha256:new()
+            hash:update(body)
+            local body_digest = ngx_encode_base64(hash:final())
+
             local signing_string = {
                 key_id,
                 "POST /hello",
                 "date: " .. gmt,
+                "digest: SHA-256=" .. body_digest,
                 "x-custom-header-a: " .. custom_header_a,
                 "x-custom-header-b: " .. custom_header_b
             }
@@ -346,16 +355,10 @@ passed
 
             local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
 
-            local resty_sha256 = require("resty.sha256")
-            local hash = resty_sha256:new()
-            hash:update(body)
-            local digest = hash:final()
-            local body_digest = ngx_encode_base64(digest)
-
             local headers = {}
             headers["Date"] = gmt
             headers["Digest"] = "SHA-256=" .. body_digest
-            headers["Authorization"] = "Signature keyId=\"" .. key_id .. "\",algorithm=\"hmac-sha256\"" .. ",headers=\"@request-target date x-custom-header-a x-custom-header-b\",signature=\"" .. ngx_encode_base64(signature) .. "\""
+            headers["Authorization"] = "Signature keyId=\"" .. key_id .. "\",algorithm=\"hmac-sha256\"" .. ",headers=\"@request-target date digest x-custom-header-a x-custom-header-b\",signature=\"" .. ngx_encode_base64(signature) .. "\""
             headers["x-custom-header-a"] = custom_header_a
             headers["x-custom-header-b"] = custom_header_b
 
@@ -387,6 +390,7 @@ failed to read request body
                     "plugins": {
                         "hmac-auth": {
                             "validate_request_body": true,
+                            "signed_headers": ["date", "digest"],
                             "max_req_body_size": 1024
                         }
                     },
@@ -420,10 +424,16 @@ failed to read request body
             local custom_header_b = "23879fmsldfk"
             local req_body = "{\"name\": \"world\"}"
 
+            local resty_sha256 = require("resty.sha256")
+            local hash = resty_sha256:new()
+            hash:update(req_body)
+            local body_digest = ngx_encode_base64(hash:final())
+
             local signing_string = {
                 key_id,
                 "POST /hello",
                 "date: " .. gmt,
+                "digest: SHA-256=" .. body_digest,
                 "x-custom-header-a: " .. custom_header_a,
                 "x-custom-header-b: " .. custom_header_b
             }
@@ -431,16 +441,10 @@ failed to read request body
 
             local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
 
-            local resty_sha256 = require("resty.sha256")
-            local hash = resty_sha256:new()
-            hash:update(req_body)
-            local digest = hash:final()
-            local body_digest = ngx_encode_base64(digest)
-
             local headers = {}
             headers["Date"] = gmt
             headers["Digest"] = "SHA-256=" .. body_digest
-            headers["Authorization"] = "Signature keyId=\"" .. key_id .. "\",algorithm=\"hmac-sha256\"" .. ",headers=\"@request-target date x-custom-header-a x-custom-header-b\",signature=\"" .. ngx_encode_base64(signature) .. "\""
+            headers["Authorization"] = "Signature keyId=\"" .. key_id .. "\",algorithm=\"hmac-sha256\"" .. ",headers=\"@request-target date digest x-custom-header-a x-custom-header-b\",signature=\"" .. ngx_encode_base64(signature) .. "\""
             headers["x-custom-header-a"] = custom_header_a
             headers["x-custom-header-b"] = custom_header_b
 
@@ -457,3 +461,79 @@ failed to read request body
     }
 --- response_body
 passed
+
+
+
+=== TEST 9: reject body validation without signed digest on Admin API writes
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/invalid-hmac', ngx.HTTP_PUT, [[{
+                "plugins": {
+                    "hmac-auth": {
+                        "validate_request_body": true
+                    }
+                },
+                "upstream": {
+                    "nodes": {"127.0.0.1:1980": 1},
+                    "type": "roundrobin"
+                },
+                "uri": "/invalid-hmac"
+            }]])
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- error_code: 400
+--- response_body_like eval
+qr/validate_request_body requires 'digest' in signed_headers/
+
+
+
+=== TEST 10: legacy unsigned digest remains accepted with a warning
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin")
+            local hmac = require("resty.hmac")
+            local resty_sha256 = require("resty.sha256")
+
+            assert(core.etcd.set("/routes/1", {
+                id = "1",
+                uri = "/hello",
+                plugins = {
+                    ["hmac-auth"] = {validate_request_body = true}
+                },
+                upstream = {
+                    nodes = {["127.0.0.1:1980"] = 1},
+                    type = "roundrobin"
+                }
+            }))
+            ngx.sleep(1)
+
+            local body = "{\"name\":\"legacy\"}"
+            local hash = resty_sha256:new()
+            hash:update(body)
+            local digest = "SHA-256=" .. ngx.encode_base64(hash:final())
+            local date = ngx.http_time(ngx.time())
+            local signing_string = "my-access-key\nPOST /hello\ndate: " .. date .. "\n"
+            local signature = hmac:new("my-secret-key", hmac.ALGOS.SHA256):final(signing_string)
+            local authorization = "Signature keyId=\"my-access-key\",algorithm=\"hmac-sha256\""
+                .. ",headers=\"@request-target date\",signature=\""
+                .. ngx.encode_base64(signature) .. "\""
+
+            local code, response = t.test('/hello', ngx.HTTP_POST, body, nil, {
+                Date = date,
+                Digest = digest,
+                Authorization = authorization,
+            })
+            ngx.status = code
+            ngx.say(response)
+        }
+    }
+--- response_body
+passed
+--- error_log
+hmac-auth accepted a request whose Digest header was not signed
