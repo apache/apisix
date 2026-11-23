@@ -15,6 +15,7 @@
 # limitations under the License.
 #
 use t::APISIX 'no_plan';
+use File::Temp qw(tempdir);
 
 repeat_each(1);
 log_level('info');
@@ -22,14 +23,16 @@ no_long_string();
 no_root_location();
 no_shuffle();
 
+my $cache_dir = tempdir(TMPDIR => 1, CLEANUP => 1);
+
 add_block_preprocessor(sub {
     my ($block) = @_;
 
     my $http_config = $block->http_config // <<_EOC_;
-    proxy_cache_path /tmp/disk_cache_one levels=1:2 keys_zone=disk_cache_one:50m inactive=1d max_size=1G;
+    proxy_cache_path $cache_dir levels=1:2 keys_zone=disk_cache_one:50m inactive=1d max_size=1G;
 
     map \$upstream_cache_zone \$upstream_cache_zone_info {
-        disk_cache_one /tmp/disk_cache_one,1:2;
+        disk_cache_one $cache_dir,1:2;
     }
 _EOC_
     $block->set_value("http_config", $http_config);
@@ -273,16 +276,13 @@ passed
             ngx.sleep(0.5)
             local http = require("resty.http")
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
-            local query = '{"query": "query{conf_version_order_' .. math.floor(ngx.now() * 1000) .. '{id}}"}'
+            local query = '{"query": "query{conf_version_order{id}}"}'
             for _ = 1, 2 do
                 local res = http.new():request_uri(uri, {method = "POST", body = query,
                     headers = {Host = "b.test", apikey = "jack",
                                ["Content-Type"] = "application/json"}})
                 ngx.say("b.test ", res.status, " ", res.headers["Apisix-Cache-Status"])
             end
-            local f = assert(io.open("/tmp/apisix-conf-version-order-query", "w"))
-            f:write(query)
-            f:close()
         }
     }
 --- response_body
@@ -298,10 +298,7 @@ b.test 200 HIT
             ngx.sleep(0.5)
             local http = require("resty.http")
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
-            local f = assert(io.open("/tmp/apisix-conf-version-order-query"))
-            local query = f:read("*a")
-            f:close()
-            os.remove("/tmp/apisix-conf-version-order-query")
+            local query = '{"query": "query{conf_version_order{id}}"}'
             for _, host in ipairs({"a.test", "b.test"}) do
                 local res = http.new():request_uri(uri, {method = "POST", body = query,
                     headers = {Host = host, apikey = "jack",
