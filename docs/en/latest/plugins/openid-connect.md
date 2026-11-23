@@ -381,7 +381,7 @@ Cookie sessions are stored by the client and cannot normally be invalidated indi
 }
 ```
 
-`revocation_fail_mode` defaults to `open`, which continues accepting sessions if the revocation store is unavailable. Use `closed` to reject session open and destroy operations instead. Opening a cookie session checks the revocation store, so each worker keeps a small cache of recent lookups to avoid one Redis call per request. `revocation_cache_ttl` is the worker-local TTL for successful lookups, and `revocation_error_cache_ttl` is the TTL for store errors. Set `revocation_cache_ttl` to `0` to check Redis on every request. Omit `revocation` to leave cookie-session revocation disabled.
+`revocation_fail_mode` defaults to `open`, which continues accepting sessions if the revocation store is unavailable. Use `closed` to reject session open and destroy operations instead. Opening a cookie session checks the revocation store, so each worker keeps a small cache of recent lookups to avoid one Redis call per request. `revocation_cache_ttl` is the worker-local TTL for successful lookups, and `revocation_error_cache_ttl` is the TTL for store errors. Set both `revocation_cache_ttl` and `revocation_error_cache_ttl` to `0` to check Redis on every request: while either is above `0`, the lookups that it covers are cached. Omit `revocation` to leave cookie-session revocation disabled.
 
 A logout takes effect immediately on the worker that handled it and on other workers once their cached entry expires. `revocation_cache_ttl` therefore bounds how long a session whose revocation marker was written successfully can still be accepted by another worker. It does not cover the limitations below.
 
@@ -390,6 +390,7 @@ Routes that use the same `session.redis` settings share their cache in each work
 #### Logout behavior and limitations
 
 - **Logout revokes every cookie of the same login.** Each save of the session, such as a token renewal or rolling refresh, gives it a new session ID, so logout revokes the whole lineage: the cookie presented, older copies and refreshed ones, whether issued before or after the logout. A new login is not affected.
+- **Cookies issued before lineage IDs existed are revoked one by one.** A session gets its lineage ID when it is first saved by a `lua-resty-session` version that has it. A cookie saved before that, and still valid after an upgrade, is revoked by its own session ID only, so logout does not revoke its older copies. They stop working at their timeout.
 - **With `revocation_fail_mode` set to `open` (the default), a logout can succeed without revoking anything.** If Redis is unavailable during logout, the browser cookie is cleared but no revocation marker is written, and nothing retries it later. A copied cookie then stays valid until it times out. Use `closed` for deployments that rely on revocation, so that a failed revocation write is reported and the session is not destroyed.
 - **Revocation markers live only in Redis.** If Redis loses its data, for example after a restart without persistence or a flush, revoked cookies are accepted again until they expire. Use a Redis with persistence if logouts must survive that.
 - When Redis is unavailable, `closed` rejects requests that carry a cookie session with a `503` response.

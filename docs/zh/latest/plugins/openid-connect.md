@@ -380,7 +380,7 @@ Cookie 会话存储在客户端，APISIX 通常无法单独将其失效。要启
 }
 ```
 
-`revocation_fail_mode` 默认为 `open`，即吊销存储不可用时继续接受会话。使用 `closed` 则会拒绝打开和销毁会话。打开 Cookie 会话时会查询吊销存储，因此每个 worker 会缓存最近的查询结果，避免每个请求都访问一次 Redis。`revocation_cache_ttl` 是成功查询的 worker 本地 TTL，`revocation_error_cache_ttl` 是存储错误的 TTL。将 `revocation_cache_ttl` 设为 `0` 则每个请求都查询 Redis。省略 `revocation` 即不启用 Cookie 会话吊销。
+`revocation_fail_mode` 默认为 `open`，即吊销存储不可用时继续接受会话。使用 `closed` 则会拒绝打开和销毁会话。打开 Cookie 会话时会查询吊销存储，因此每个 worker 会缓存最近的查询结果，避免每个请求都访问一次 Redis。`revocation_cache_ttl` 是成功查询的 worker 本地 TTL，`revocation_error_cache_ttl` 是存储错误的 TTL。将 `revocation_cache_ttl` 和 `revocation_error_cache_ttl` 都设为 `0` 才会让每个请求都查询 Redis：只要其中一个大于 `0`，它所涵盖的查询结果就会被缓存。省略 `revocation` 即不启用 Cookie 会话吊销。
 
 登出在处理该请求的 worker 上立即生效，在其他 worker 上则在其缓存条目过期后生效。因此 `revocation_cache_ttl` 限定的是：吊销标记已成功写入的会话，在其他 worker 上仍可能被接受的最长时间。它不涵盖下面的限制。
 
@@ -389,6 +389,7 @@ Cookie 会话存储在客户端，APISIX 通常无法单独将其失效。要启
 #### 登出行为与限制
 
 - **登出会吊销同一次登录产生的所有 Cookie。** 会话每次保存（例如令牌续期或滚动刷新）都会生成新的会话 ID，因此登出会吊销整个谱系：当前提交的 Cookie、较早的副本和刷新得到的 Cookie，无论是在登出之前还是之后签发的。新的登录不受影响。
+- **在引入谱系 ID 之前签发的 Cookie 只能逐个吊销。** 会话在首次由带有该功能的 `lua-resty-session` 版本保存时获得谱系 ID。在此之前保存、升级后仍然有效的 Cookie 只会按其自身的会话 ID 吊销，因此登出不会吊销它较早的副本，这些副本在超时后失效。
 - **当 `revocation_fail_mode` 为 `open`（默认值）时，登出可能在没有吊销任何内容的情况下成功。** 如果登出时 Redis 不可用，浏览器中的 Cookie 会被清除，但不会写入吊销标记，之后也不会重试。被复制的 Cookie 在超时之前仍然有效。依赖吊销功能的部署请使用 `closed`，这样吊销写入失败时会返回错误，且不会销毁会话。
 - **吊销标记只保存在 Redis 中。** 如果 Redis 丢失数据，例如在没有持久化的情况下重启或被清空，已吊销的 Cookie 在过期之前会再次被接受。如果登出必须在这种情况下仍然有效，请使用启用持久化的 Redis。
 - 当 Redis 不可用时，`closed` 会对携带 Cookie 会话的请求返回 `503`。

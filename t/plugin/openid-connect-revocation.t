@@ -563,3 +563,172 @@ open=200
 closed=503
 --- error_log
 OIDC session revocation store unavailable
+
+
+
+=== TEST 6: a logout that fails on a Redis write can be retried with the same cookie
+--- timeout: 40
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local redis = require("resty.redis")
+            local keycloak = require("lib.keycloak")
+            local test_admin = require("lib.test_admin").test
+
+            local prefix = "oidc:revocation:retry:"
+            local code, body = test_admin("/apisix/admin/routes/1",
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "openid-connect": {
+                            "discovery": "http://127.0.0.1:8080/realms/University/.well-known/openid-configuration",
+                            "realm": "University",
+                            "client_id": "course_management",
+                            "client_secret": "d1ec69e9-55d2-4109-a3ea-befa071579d5",
+                            "redirect_uri": "http://127.0.0.1:]] .. ngx.var.server_port
+                                .. [[/authenticated",
+                            "ssl_verify": false,
+                            "session": {
+                                "secret": "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
+                                "storage": "cookie",
+                                "rolling_timeout": 8,
+                                "revocation": "redis",
+                                "revocation_fail_mode": "closed",
+                                "revocation_cache_ttl": 0,
+                                "revocation_error_cache_ttl": 0,
+                                "redis": {
+                                    "host": "127.0.0.1",
+                                    "port": 6379,
+                                    "prefix": "]] .. prefix .. [["
+                                }
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/*"
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.sleep(0.1)
+
+            local red = redis:new()
+            red:set_timeout(1000)
+            assert(red:connect("127.0.0.1", 6379))
+            local function marks()
+                return #assert(red:keys(prefix .. "*"))
+            end
+            -- a Redis that is over its memory limit still answers reads but
+            -- rejects writes
+            local function writes(allowed)
+                assert(red:config("set", "maxmemory", allowed and 0 or 1))
+            end
+            writes(true)
+
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/uri"
+            local res, err = keycloak.login_keycloak(
+                uri, "teacher@gmail.com", "123456")
+            if err then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+
+            local cookie = keycloak.concatenate_cookies(res.headers["Set-Cookie"])
+            local httpc = http.new()
+
+            -- past 75% of rolling_timeout, where a request refreshes the
+            -- session and hands out a cookie with a new session id
+            ngx.sleep(7)
+            res, err = httpc:request_uri(uri, {
+                method = "GET",
+                headers = { Cookie = cookie },
+            })
+            if not res or res.status ~= 200 then
+                ngx.status = 500
+                ngx.say("refreshing request failed: ", res and res.status or err)
+                return
+            end
+            local refreshed_cookie = keycloak.concatenate_cookies(res.headers["Set-Cookie"])
+
+            -- two distinct cookies of one login, both valid
+            for _, c in ipairs({ cookie, refreshed_cookie }) do
+                res, err = httpc:request_uri(uri, {
+                    method = "GET",
+                    headers = { Cookie = c },
+                })
+                if not res or res.status ~= 200 then
+                    writes(true)
+                    ngx.status = 500
+                    ngx.say("cookie rejected before logout: ", res and res.status or err)
+                    return
+                end
+            end
+            assert(cookie ~= refreshed_cookie)
+
+            local logout_uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/logout"
+
+            -- the first logout cannot write its marks
+            writes(false)
+            res, err = httpc:request_uri(logout_uri, {
+                method = "GET",
+                headers = { Cookie = cookie },
+            })
+            writes(true)
+            if not res then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+            local first_status = res.status
+            local cookie_cleared = res.headers["Set-Cookie"] ~= nil
+            local marks_after_failure = marks()
+
+            -- the browser kept its cookie, so it sends the logout again
+            res, err = httpc:request_uri(logout_uri, {
+                method = "GET",
+                headers = { Cookie = cookie },
+            })
+            if not res then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+            local retry_status = res.status
+
+            -- both cookies would still be valid if the retry had not revoked them
+            local statuses = {}
+            for _, c in ipairs({ cookie, refreshed_cookie }) do
+                res, err = httpc:request_uri(uri, {
+                    method = "GET",
+                    headers = { Cookie = c },
+                })
+                if not res then
+                    ngx.status = 500
+                    ngx.say(err)
+                    return
+                end
+                statuses[#statuses + 1] = res.status
+            end
+
+            ngx.say("first=", first_status, " cleared=", tostring(cookie_cleared),
+                    " marks_after_failure=", marks_after_failure,
+                    " retry=", retry_status,
+                    " marks_after_retry_ok=", tostring(marks() >= 2),
+                    " cookie=", statuses[1], " refreshed=", statuses[2])
+        }
+    }
+--- response_body
+first=503 cleared=false marks_after_failure=0 retry=302 marks_after_retry_ok=true cookie=302 refreshed=302
+--- error_log
+failed to destroy session
