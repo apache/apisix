@@ -39,6 +39,7 @@ local tostring      = tostring
 local error         = error
 local getmetatable  = getmetatable
 local setmetatable  = setmetatable
+local sub_str       = string.sub
 local tracer    = require("apisix.tracer")
 local yaml_null = require("lyaml").null
 -- make linter happy to avoid error: getting the Lua global "load"
@@ -1011,6 +1012,10 @@ end
 -- differs between workers. A deep copy shares the metatable, and so reads the
 -- state of the table it was copied from until it writes its own.
 function _M.set_runtime_state(tab, key, value)
+    if sub_str(key, 1, 1) ~= "_" then
+        error("set_runtime_state: the key must start with '_': " .. key, 2)
+    end
+
     local mt = getmetatable(tab)
     -- an empty object of the configuration is decoded as an empty array, which
     -- keeps the array metatable once check_schema has filled in the defaults
@@ -1623,8 +1628,8 @@ local function set_meta_parent(plugin_conf, parent)
         meta = {}
         _M.set_runtime_state(plugin_conf, "_meta", meta)
     end
-    if not meta.parent then
-        _M.set_runtime_state(meta, "parent", {
+    if not meta._parent then
+        _M.set_runtime_state(meta, "_parent", {
             resource_key = parent.key,
             resource_version = tostring(parent.modifiedIndex)
         })

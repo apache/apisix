@@ -251,6 +251,8 @@ function _M.access(conf, ctx)
 end
 ```
 
+运行时字段只能通过 `plugin.set_runtime_state` 设置，且 key 一律以 `_` 开头，其他 key 会让该函数直接报错。插件 conf 所属的父资源（它所在的路由、服务、消费者等）也是这样的字段：请从 `conf._meta._parent` 读取，其中包含 `resource_key` 和 `resource_version`。
+
 #### ctx 参数
 
 `ctx` 参数缓存了请求相关的数据信息，您可以通过 `core.log.warn(core.json.encode(ctx, true))` 将其输出到 `error.log` 中进行查看，如下所示：

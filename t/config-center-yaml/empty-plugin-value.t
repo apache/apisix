@@ -81,7 +81,7 @@ routes:
                 local plugins = item.value.plugins
                 for _, name in ipairs({"cors", "proxy-rewrite"}) do
                     ngx.say(item.value.id, " ", name, " parent: ",
-                            plugins[name]._meta.parent.resource_key)
+                            plugins[name]._meta._parent.resource_key)
                     confs[name] = confs[name] or {}
                     core.table.insert(confs[name], plugins[name])
                 end

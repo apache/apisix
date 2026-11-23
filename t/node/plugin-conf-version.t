@@ -284,9 +284,9 @@ authenticated: true
             local version = plugin.conf_version(conf)
 
             plugin.set_runtime_state(conf, "_from_consumer", true)
-            plugin.set_runtime_state(conf._meta, "priority", 1)
             ngx.say("read: ", conf._from_consumer, " ", conf._version == version)
-            ngx.say("configured priority wins: ", conf._meta.priority)
+            local ok, err = pcall(plugin.set_runtime_state, conf._meta, "priority", 1)
+            ngx.say("unprefixed key: ", ok, " ", err, " ", conf._meta.priority)
             ngx.say("encoded: ", core.json.stably_encode(conf))
 
             -- a deep copy reads the state it was copied with and then keeps its own
@@ -314,7 +314,7 @@ authenticated: true
     }
 --- response_body_like
 read: true true
-configured priority wins: 5
+unprefixed key: false .*set_runtime_state: the key must start with '_': priority 5
 encoded: \{"_meta":\{"priority":5\},"key":"v"\}
 copy reads: true
 copy: false true

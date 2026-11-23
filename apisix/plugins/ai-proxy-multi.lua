@@ -619,7 +619,7 @@ end
 
 local function pick_target(ctx, conf, ups_tab)
     local checkers = {}
-    local res_conf = resource.fetch_latest_conf(conf._meta.parent.resource_key)
+    local res_conf = resource.fetch_latest_conf(conf._meta._parent.resource_key)
     if not res_conf then
         return nil, nil, "failed to fetch the parent config"
     end
@@ -628,8 +628,8 @@ local function pick_target(ctx, conf, ups_tab)
         if instance.checks then
             resolve_endpoint(instance)
             local resource_path = instance_resource_path(
-                                      conf._meta.parent.resource_key, i)
-            local resource_version = conf._meta.parent.resource_version
+                                      conf._meta._parent.resource_key, i)
+            local resource_version = conf._meta._parent.resource_version
             if instance._nodes_ver then
                 resource_version = resource_version .. instance._nodes_ver
             end
