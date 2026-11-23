@@ -41,6 +41,7 @@ APISIX 目前支持通过以下方式存储密钥：
 - [HashiCorp Vault](#使用-vault-管理密钥)
 - [AWS Secrets Manager](#使用-aws-secrets-manager-管理密钥)
 - [GCP Secrets Manager](#使用-gcp-secrets-manager-管理密钥)
+- [文件](#使用文件管理密钥)
 
 你可以在消费者配置或任何插件的配置中通过指定格式的变量来使用 APISIX Secret 功能，SSL 证书配置中同样支持。
 
@@ -367,3 +368,70 @@ curl http://127.0.0.1:9180/apisix/admin/secrets/gcp/1 \
 }'
 
 ```
+
+## 使用文件管理密钥
+
+使用文件管理密钥意味着 APISIX 从本地文件系统中的文件读取密钥。这适用于以文件形式挂载到 APISIX 容器中的密钥，例如以卷的方式挂载的 Kubernetes Secret，而无需将其暴露为环境变量。
+
+### 引用方式
+
+```
+$secret://file/$id/$key
+```
+
+- id：APISIX Secrets 资源 ID，需要与添加 APISIX Secrets 资源时指定的 ID 保持一致
+- key：密钥文件相对于 `base_path` 的路径。可以包含 `/` 以引用子目录中的文件，但不能以 `/` 开头，也不能包含 `..` 路径段。
+
+取到的值是文件的全部内容。由于大多数工具在写入文件时会添加换行符，末尾的一个换行符（`
+` 或 `
+`）会被去掉。
+
+### 必需参数
+
+| 名称      | 必选项 | 默认值 | 描述                               |
+|-----------|--------|--------|------------------------------------|
+| base_path | 是     |        | 存放密钥文件的目录的绝对路径。     |
+
+APISIX 的 worker 进程需要有读取这些文件的权限。
+
+### 示例：在 key-auth 插件中使用
+
+将 Kubernetes Secret `jack` 挂载到 APISIX Pod 中，使其 `auth-key` 以文件 `/etc/apisix/secrets/jack/auth-key` 的形式存在：
+
+```yaml
+volumes:
+  - name: jack
+    secret:
+      secretName: jack
+containers:
+  - name: apisix
+    volumeMounts:
+      - name: jack
+        mountPath: /etc/apisix/secrets/jack
+        readOnly: true
+```
+
+添加 APISIX Secrets 资源：
+
+```shell
+curl http://127.0.0.1:9180/apisix/admin/secrets/file/1 -H "X-API-KEY: $admin_key" -X PUT -d '
+{
+    "base_path": "/etc/apisix/secrets"
+}'
+```
+
+在消费者中引用该文件：
+
+```shell
+curl http://127.0.0.1:9180/apisix/admin/consumers -H "X-API-KEY: $admin_key" -X PUT -d '
+{
+    "username": "jack",
+    "plugins": {
+        "key-auth": {
+            "key": "$secret://file/1/jack/auth-key"
+        }
+    }
+}'
+```
+
+与其他密钥管理服务一样，解析出的值会被缓存，参见 `config.yaml` 中的 `apisix.lru.secret`。挂载的 Secret 更新后，缓存过期时 APISIX 会读取到新的值，无需重启。

@@ -6987,7 +6987,8 @@
               "enum": [
                 "vault",
                 "aws",
-                "gcp"
+                "gcp",
+                "file"
               ]
             }
           },
@@ -7107,7 +7108,8 @@
               "enum": [
                 "vault",
                 "aws",
-                "gcp"
+                "gcp",
+                "file"
               ]
             }
           },
@@ -7228,7 +7230,8 @@
               "enum": [
                 "vault",
                 "aws",
-                "gcp"
+                "gcp",
+                "file"
               ]
             }
           },
@@ -7348,7 +7351,8 @@
               "enum": [
                 "vault",
                 "aws",
-                "gcp"
+                "gcp",
+                "file"
               ]
             }
           },
@@ -8077,7 +8081,7 @@
         ],
         "operationId": "listSecretsByType",
         "summary": "List secrets of a single secret-manager type",
-        "description": "Returns secrets registered under the given manager (`vault`, `aws`, or `gcp`). For listing across all managers, use `GET /apisix/admin/secrets`.",
+        "description": "Returns secrets registered under the given manager (`vault`, `aws`, `gcp`, or `file`). For listing across all managers, use `GET /apisix/admin/secrets`.",
         "parameters": [],
         "responses": {
           "200": {
@@ -8122,7 +8126,8 @@
             "enum": [
               "vault",
               "aws",
-              "gcp"
+              "gcp",
+              "file"
             ]
           },
           "description": "Secret manager backend.",
@@ -18448,6 +18453,21 @@
         ],
         "x-source": "apisix/secret/gcp.lua"
       },
+      "FileSecret": {
+        "type": "object",
+        "description": "File-based secret manager configuration. Secrets are read from files under `base_path`, such as a mounted Kubernetes Secret.",
+        "properties": {
+          "base_path": {
+            "type": "string",
+            "pattern": "^/",
+            "description": "Absolute path of the directory that holds the secret files."
+          }
+        },
+        "required": [
+          "base_path"
+        ],
+        "x-source": "apisix/secret/file.lua"
+      },
       "Secret": {
         "description": "Secret-manager configuration. The body must match the manager selected by the `secret_type` path parameter.",
         "anyOf": [
@@ -18459,6 +18479,9 @@
           },
           {
             "$ref": "#/components/schemas/GcpSecret"
+          },
+          {
+            "$ref": "#/components/schemas/FileSecret"
           }
         ]
       },
@@ -18828,6 +18851,21 @@
                   "null"
                 ],
                 "description": "Path to a Google service-account JSON file."
+              }
+            }
+          },
+          {
+            "type": "object",
+            "title": "Files",
+            "description": "File-based secret manager configuration.",
+            "properties": {
+              "base_path": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "pattern": "^/",
+                "description": "Absolute path of the directory that holds the secret files."
               }
             }
           }
@@ -20647,7 +20685,8 @@
           "enum": [
             "vault",
             "aws",
-            "gcp"
+            "gcp",
+            "file"
           ]
         },
         "description": "Secret manager backend.",
@@ -21878,6 +21917,12 @@
                   "auth_file": "/etc/apisix/gcp-service-account.json",
                   "ssl_verify": true
                 }
+              },
+              "file": {
+                "summary": "Files, such as a mounted Kubernetes Secret",
+                "value": {
+                  "base_path": "/etc/apisix/secrets"
+                }
               }
             }
           }
@@ -21908,6 +21953,12 @@
                 "summary": "Disable GCP endpoint verification",
                 "value": {
                   "ssl_verify": false
+                }
+              },
+              "fileBasePath": {
+                "summary": "Move file secrets to another directory",
+                "value": {
+                  "base_path": "/var/run/secrets/apisix"
                 }
               }
             }

@@ -114,16 +114,17 @@ class ContractValidationTest(unittest.TestCase):
                 )
 
         secret_patch = schemas['SecretPatch']
-        self.assertEqual(3, len(secret_patch['anyOf']))
+        self.assertEqual(4, len(secret_patch['anyOf']))
         self.assertEqual(
             {'HashiCorp Vault', 'AWS Secrets Manager',
-             'Google Cloud Secret Manager'},
+             'Google Cloud Secret Manager', 'Files'},
             {branch['title'] for branch in secret_patch['anyOf']},
         )
         for value in (
                 {'token': None},
                 {'session_token': None},
-                {'auth_config': {'client_email': None}}):
+                {'auth_config': {'client_email': None}},
+                {'base_path': '/etc/apisix/secrets'}):
             errors = validator.Draft202012Validator(secret_patch).iter_errors(value)
             self.assertFalse(list(errors))
 

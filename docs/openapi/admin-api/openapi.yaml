@@ -438,6 +438,8 @@ components:
       $ref: ./components/schemas/AwsSecret.yaml
     GcpSecret:
       $ref: ./components/schemas/GcpSecret.yaml
+    FileSecret:
+      $ref: ./components/schemas/FileSecret.yaml
     Secret:
       $ref: ./components/schemas/Secret.yaml
     SSLPatch:
