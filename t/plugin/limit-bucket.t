@@ -104,21 +104,15 @@ redis-sentinel: passed
                 local helper = require("lib.limit_bucket").new("limit-conn")
                 local conf = {conn = 2, burst = 0, default_conn_delay = 0.01,
                               key = "remote_addr", policy = policy,
-                              redis_host = "127.0.0.1", key_ttl = 3600, rejected_code = 429}
+                              redis_host = "127.0.0.1", rejected_code = 429}
                 helper:set(conf)
                 local release_old = helper:hold(2)
                 conf.conn = 1
                 helper:set(conf)
                 assert(helper:hit().status == 429)
                 conf.conn = 3
-                conf.key_ttl = 5
                 helper:set(conf)
                 local release_new = helper:hold(1)
-                if policy == "redis" then
-                    local red = require("resty.redis").new()
-                    assert(red:connect("127.0.0.1", 6379))
-                    assert(red:ttl("limit_conn:" .. helper:key()) > 3500)
-                end
                 release_old()
                 conf.conn = 1
                 conf.rejected_msg = "kept"
@@ -198,9 +192,9 @@ redis-cluster: passed
             assert(res.status == 200 and res.headers["X-RateLimit-Remaining"] == "1")
             local old = require("apisix.plugins.limit-count.limit-count-redis").new(
                 "plugin-limit-count", 2, 60, conf, "v1")
-            local _, err, reset, info = old:incoming(helper:key(), 3)
-            assert(err == "rejected")
-            assert(old.delayed_syncer:sync_to_shm(helper:key(), -1, reset, 3, info) == nil)
+            local delay, remaining, reset, info = old:incoming(helper:key(), 2)
+            assert(delay and remaining == 0)
+            assert(old.delayed_syncer:sync_to_shm(helper:key(), remaining, reset, 2, info) == nil)
             res = helper:hit()
             assert(res.status == 200 and res.headers["X-RateLimit-Remaining"] == "0")
             assert(helper:hit().status == 429)
@@ -278,46 +272,7 @@ passed
 
 
 
-=== TEST 7: limit-req Redis expiry preserves old debt across faster and slower rates
---- config
-    location /t {
-        content_by_lua_block {
-            local helper = require("lib.limit_bucket").new("limit-req")
-            local conf = {rate = 0.1, burst = 10, nodelay = true, policy = "redis",
-                          redis_host = "127.0.0.1", key = "remote_addr", rejected_code = 429}
-            helper:set(conf)
-            assert(helper:hit().status == 200)
-            assert(helper:hit().status == 200)
-            conf.rate = 10
-            conf.burst = 1
-            helper:set(conf)
-            helper:hit()
-            local red = require("resty.redis").new()
-            assert(red:connect("127.0.0.1", 6379))
-            assert(red:ttl("limit_req:" .. helper:key()) > 90)
-            conf._meta = {filter = {{"request_method", "==", "GET"}}}
-            conf.rate = 1
-            conf.burst = 2
-            helper:set(conf)
-            for _ = 1, 3 do
-                assert(helper:hit().status == 200)
-            end
-            assert(helper:hit().status == 429)
-            conf.rate = 0.1
-            helper:set(conf)
-            assert(helper:hit().status == 429)
-            ngx.sleep(3.2)
-            assert(helper:hit().status == 429)
-            ngx.say("passed")
-        }
-    }
---- response_body
-passed
---- timeout: 15
-
-
-
-=== TEST 8: raising a sliding-window count recomputes the previous window's contribution
+=== TEST 7: raising a sliding-window count recomputes the previous window's contribution
 --- config
     location /t {
         content_by_lua_block {

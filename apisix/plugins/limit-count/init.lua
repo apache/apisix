@@ -366,9 +366,8 @@ local function gen_limit_key(conf, ctx, key)
     end
 
     -- here we add a separator ':' to mark the boundary of the prefix and the key itself
-    -- Here we use plugin-level conf version to prevent the counter from being resetting
-    -- because of the change elsewhere.
-    -- A route which reuses a previous route's ID will inherits its counter.
+    -- A prepared bucket identity preserves counters when only limits change.
+    -- A route which reuses a previous route's ID inherits its counter.
     local parent = conf._meta and conf._meta.parent
     if not parent or not parent.resource_key then
         core.log.error("failed to generate key invalid parent: ", core.json.encode(parent))
@@ -377,8 +376,8 @@ local function gen_limit_key(conf, ctx, key)
 
     local prefix = limit_key_prefix[conf]
     if not prefix then
-        -- Derived configurations (AI, GraphQL and workflow) retain their own
-        -- existing identity until their callers opt into prepared buckets.
+        -- Only the direct plugin's check_schema prepares bucket_id. Shared
+        -- callers (AI, GraphQL and workflow) still need their existing conf version.
         local bucket_id = limit_util.get_bucket_id(conf) or apisix_plugin.conf_version(conf)
         prefix = parent.resource_key .. ':' .. bucket_id .. ':'
         limit_key_prefix[conf] = prefix

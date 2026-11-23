@@ -49,8 +49,6 @@ The `limit-req` Plugin supports two modes of rate limiting:
 
 Changing `rate`, `burst`, `nodelay`, rejection responses, or Redis connection credentials and tuning keeps the bucket's current excess. Subsequent requests use the new thresholds and drain rate. Changes to `key`, `key_type`, `_meta.filter`, `_meta.pre_function`, the owning resource, `policy`, or the Redis destination select another bucket without migrating its state. Reordering cluster seed nodes does not change identity.
 
-With Redis policies, a faster-draining configuration does not shorten the bucket's existing expiry. A rejected request can extend expiry to retain debt at a slower rate. Without another request after the update, the bucket still expires at the time set by its last request.
-
 Upgrading changes bucket keys once. During a rolling upgrade, old and new versions can use separate Redis buckets until all nodes are upgraded.
 
 ## Attributes
