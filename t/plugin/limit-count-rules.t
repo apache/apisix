@@ -795,7 +795,7 @@ failed to get rate limit rules: resolved value must be a positive number
 
 
 
-=== TEST 27: changing the plugin configuration starts a new counter
+=== TEST 27: changing thresholds and responses preserves the counter
 --- config
     location /t {
         content_by_lua_block {
@@ -838,7 +838,7 @@ failed to get rate limit rules: resolved value must be a positive number
     }
 --- response_body
 200 503
-200 429
+429 429
 
 
 

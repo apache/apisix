@@ -39,7 +39,12 @@ local redis_incoming_script = core.string.compress_script([=[
     end
 
     redis.call('ZADD', key, now + ttl, req_id)
-    redis.call('EXPIRE', key, ttl)
+    -- Existing leases may have been admitted with a longer key_ttl.
+    if ttl <= 0 then
+        redis.call('EXPIRE', key, ttl)
+    elseif redis.call('PTTL', key) < ttl * 1000 then
+        redis.call('PEXPIRE', key, ttl * 1000)
+    end
     return {1, count + 1}
 ]=])
 local redis_incoming_script_sha

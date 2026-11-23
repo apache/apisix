@@ -37,6 +37,14 @@ import TabItem from '@theme/TabItem';
 
 The `limit-conn` Plugin limits the rate of requests by the number of concurrent connections. Requests exceeding the threshold will be delayed or rejected based on the configuration, ensuring controlled resource usage and preventing overload.
 
+### Connections Across Configuration Updates
+
+When configured directly on a resource, changing `conn`, `burst`, delay settings, rejection responses, or Redis connection credentials and tuning keeps counting connections already in progress. New connection attempts use the updated thresholds; existing connections are not closed. With a positive Redis `key_ttl`, a new lease uses the new TTL while older leases retain their own expiry, and the Redis key's expiry is only extended.
+
+Counter identity includes `key`, `key_type`, each rule's `key`, and `_meta.filter` and `_meta.pre_function`. Changing these, the owning resource, `policy`, or the Redis destination selects another counter without migrating the existing connections. Reordering cluster seed nodes does not change identity. Workflow actions retain their existing counter identity; Stream configurations use the same update behavior as directly configured HTTP Plugins.
+
+Upgrading changes the counter keys once. During a rolling upgrade, old and new versions can use separate Redis counters until all nodes are upgraded.
+
 ## Attributes
 
 | Name | Type | Required | Default | Valid values | Description |

@@ -16,6 +16,14 @@
 --
 local limit_count = require("apisix.plugins.limit-count.init")
 local workflow = require("apisix.plugins.workflow")
+local limit_util = require("apisix.utils.limit")
+local core = require("apisix.core")
+
+local bucket_fields = {
+    "$['key','key_type','time_window','window_type','group']",
+    "$.rules[*]['key','time_window']",
+    "$._meta['filter','pre_function']",
+}
 
 local plugin_name = "limit-count"
 local _M = {
@@ -28,7 +36,11 @@ local _M = {
 
 
 function _M.check_schema(conf, schema_type)
-    return limit_count.check_schema(conf, schema_type)
+    local ok, err = limit_count.check_schema(conf, schema_type)
+    if not ok or schema_type == core.schema.TYPE_METADATA then
+        return ok, err
+    end
+    return limit_util.prepare_bucket_id(conf, bucket_fields)
 end
 
 

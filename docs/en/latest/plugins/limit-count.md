@@ -54,6 +54,14 @@ The `limit-count` Plugin supports two counter-storage modes:
 
 Redis Sentinel, sliding windows, and delayed Redis synchronization are supported in APISIX 3.18.0 and later. Multiple rules and variable-resolved limits are supported in APISIX 3.16.0 and later.
 
+### Counters Across Configuration Updates
+
+When configured directly on a resource, the Plugin keeps the consumption in the current window when `count`, rejection responses, quota headers, synchronization intervals, or Redis connection credentials and tuning change. For example, changing `count` from 8 to 10 after 6 requests leaves 4 requests available. Lowering it below the consumption rejects subsequent requests. Delayed synchronization also applies the new threshold to the node's cached quota.
+
+Counter identity includes `key`, `key_type`, `time_window`, `window_type`, each rule's `key` and `time_window`, and `_meta.filter` and `_meta.pre_function`. Changing these selects another counter. Adding or reordering rules can therefore change the counters. Changing `policy` or the Redis destination (address/database, cluster identity, or Sentinel target) also selects another counter; existing consumption is not migrated. Reordering cluster seed nodes or Sentinel endpoints does not change identity.
+
+This behavior does not change the configuration consistency requirements of `group`, or the counter identity of workflow actions and plugins that call `limit-count` internally. Upgrading changes the keys of directly configured Plugins once; existing counters are not migrated, and old and new versions can use separate counters during a rolling upgrade.
+
 ## Attributes
 
 | Name                    | Type    | Required                                  | Default       | Valid values                           | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |

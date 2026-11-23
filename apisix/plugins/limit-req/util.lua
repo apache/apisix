@@ -61,6 +61,12 @@ local redis_commit_script = core.string.compress_script([=[
         excess = math.max(tonumber(excess_raw) - rate * math.abs(elapsed) / 1000 + 1000, 0)
 
         if excess > burst then
+            -- A lower rate must retain the debt until it can drain, even
+            -- while requests are rejected under the new configuration.
+            local drain = math.ceil((excess - 1000) * 1000 / rate) + 1000
+            if redis.call('pttl', state_key) < drain then
+                redis.call('pexpire', state_key, drain)
+            end
             return {0, tostring(excess)}
         end
     else
@@ -71,7 +77,9 @@ local redis_commit_script = core.string.compress_script([=[
     end
 
     redis.call('hset', state_key, 'excess', excess, 'last', now)
-    redis.call('expire', state_key, ttl)
+    if redis.call('pttl', state_key) < ttl * 1000 then
+        redis.call('pexpire', state_key, ttl * 1000)
+    end
     return {1, tostring(excess)}
 ]=])
 

@@ -179,7 +179,7 @@ passed
 --- pipelined_requests eval
 ["GET /hello", "GET /hello", "GET /hello", "GET /hello"]
 --- error_code eval
-[200, 200, 200, 503]
+[503, 503, 503, 503]
 
 
 
@@ -606,7 +606,7 @@ passed
 --- pipelined_requests eval
 ["GET /hello", "GET /hello","GET /hello","GET /t1", "GET /hello","GET /hello"]
 --- error_code eval
-[200, 200, 503, 200, 200, 503]
+[200, 200, 503, 200, 503, 503]
 
 
 
@@ -675,7 +675,7 @@ passed
 --- pipelined_requests eval
 ["GET /t1", "GET /hello", "GET /hello", "GET /t", "GET /hello", "GET /hello", "GET /hello"]
 --- error_code eval
-[200, 200, 503, 200, 200, 200, 503]
+[200, 200, 503, 200, 503, 503, 503]
 
 
 

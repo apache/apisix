@@ -19,6 +19,13 @@ local limit_conn                        = require("apisix.plugins.limit-conn.ini
 local redis_schema                      = require("apisix.utils.redis-schema")
 local plugin_name                       = "limit-conn"
 local workflow                           = require("apisix.plugins.workflow")
+local limit_util                         = require("apisix.utils.limit")
+
+local bucket_fields = {
+    "$['key','key_type']",
+    "$.rules[*].key",
+    "$._meta['filter','pre_function']",
+}
 
 
 local schema = {
@@ -116,7 +123,11 @@ local _M = {
 
 
 function _M.check_schema(conf)
-    return core.schema.check(schema, conf)
+    local ok, err = core.schema.check(schema, conf)
+    if not ok then
+        return false, err
+    end
+    return limit_util.prepare_bucket_id(conf, bucket_fields)
 end
 
 

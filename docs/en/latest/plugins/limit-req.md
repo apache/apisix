@@ -45,6 +45,14 @@ The `limit-req` Plugin supports two modes of rate limiting:
 * **Local rate limiting**: Limits are enforced independently on each gateway instance. Each instance maintains its own counters, so the effective limit is roughly (limit × number of instances) when traffic is spread across instances. This is the default when no `policy` is set or when `policy` is `local`.
 * **Redis-based rate limiting**: Limits are shared across all gateway instances through Redis. All instances share the same quota, so the configured limit applies to all gateway instances.
 
+## Buckets Across Configuration Updates
+
+Changing `rate`, `burst`, `nodelay`, rejection responses, or Redis connection credentials and tuning keeps the bucket's current excess. Subsequent requests use the new thresholds and drain rate. Changes to `key`, `key_type`, `_meta.filter`, `_meta.pre_function`, the owning resource, `policy`, or the Redis destination select another bucket without migrating its state. Reordering cluster seed nodes does not change identity.
+
+With Redis policies, a faster-draining configuration does not shorten the bucket's existing expiry. A rejected request can extend expiry to retain debt at a slower rate. Without another request after the update, the bucket still expires at the time set by its last request.
+
+Upgrading changes bucket keys once. During a rolling upgrade, old and new versions can use separate Redis buckets until all nodes are upgraded.
+
 ## Attributes
 
 | Name | Type | Required | Default | Valid values | Description |

@@ -20,8 +20,13 @@ local redis_schema                      = require("apisix.utils.redis-schema")
 local policy_to_additional_properties   = core.table.deepcopy(redis_schema.schema)
 local plugin_name                       = "limit-req"
 local sleep                             = core.sleep
-local apisix_plugin                     = require("apisix.plugin")
 local error                             = error
+local limit_util                        = require("apisix.utils.limit")
+
+local bucket_fields = {
+    "$['key','key_type']",
+    "$._meta['filter','pre_function']",
+}
 
 local redis_single_new
 local redis_cluster_new
@@ -102,7 +107,7 @@ function _M.check_schema(conf)
         return false, err
     end
 
-    return true
+    return limit_util.prepare_bucket_id(conf, bucket_fields)
 end
 
 
@@ -131,7 +136,7 @@ local function gen_limit_key(conf, ctx, key)
         error("failed to generate key invalid parent: " .. core.json.encode(parent))
     end
 
-    return parent.resource_key .. ':' .. apisix_plugin.conf_version(conf) .. ':' .. key
+    return parent.resource_key .. ':' .. limit_util.get_bucket_id(conf) .. ':' .. key
 end
 
 

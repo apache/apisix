@@ -16,6 +16,12 @@
 --
 local core = require("apisix.core")
 local limit_conn = require("apisix.plugins.limit-conn.init")
+local limit_util = require("apisix.utils.limit")
+
+local bucket_fields = {
+    "$['key','key_type']",
+    "$._meta['filter','pre_function']",
+}
 
 
 local plugin_name = "limit-conn"
@@ -44,7 +50,11 @@ local _M = {
 
 
 function _M.check_schema(conf)
-    return core.schema.check(schema, conf)
+    local ok, err = core.schema.check(schema, conf)
+    if not ok then
+        return false, err
+    end
+    return limit_util.prepare_bucket_id(conf, bucket_fields)
 end
 
 

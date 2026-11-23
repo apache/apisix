@@ -16,6 +16,7 @@
 --
 local limit_conn_new = require("resty.limit.conn").new
 local core = require("apisix.core")
+local limit_util = require("apisix.utils.limit")
 local apisix_plugin = require("apisix.plugin")
 local is_http = ngx.config.subsystem == "http"
 local sleep = core.sleep
@@ -136,7 +137,8 @@ local function gen_limit_key(conf, ctx, key)
         return nil
     end
 
-    local new_key = parent.resource_key .. ':' .. apisix_plugin.conf_version(conf) .. ':' .. key
+    local bucket_id = limit_util.get_bucket_id(conf) or apisix_plugin.conf_version(conf)
+    local new_key = parent.resource_key .. ':' .. bucket_id .. ':' .. key
     if conf._vid then
         -- conf has _vid means it's from workflow plugin, add _vid to the key
         -- so that the counter is unique per action.

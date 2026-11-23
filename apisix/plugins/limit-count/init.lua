@@ -16,6 +16,7 @@
 --
 local core = require("apisix.core")
 local apisix_plugin = require("apisix.plugin")
+local limit_util = require("apisix.utils.limit")
 local tab_insert = table.insert
 local ipairs = ipairs
 local pairs = pairs
@@ -376,7 +377,10 @@ local function gen_limit_key(conf, ctx, key)
 
     local prefix = limit_key_prefix[conf]
     if not prefix then
-        prefix = parent.resource_key .. ':' .. apisix_plugin.conf_version(conf) .. ':'
+        -- Derived configurations (AI, GraphQL and workflow) retain their own
+        -- existing identity until their callers opt into prepared buckets.
+        local bucket_id = limit_util.get_bucket_id(conf) or apisix_plugin.conf_version(conf)
+        prefix = parent.resource_key .. ':' .. bucket_id .. ':'
         limit_key_prefix[conf] = prefix
     end
     local new_key = prefix .. key

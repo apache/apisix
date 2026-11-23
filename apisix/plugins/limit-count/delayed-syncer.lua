@@ -98,9 +98,25 @@ function _M.key_remote_quota(self, key)
 end
 
 
+-- Preserve over-limit debt so raising the limit does not grant it twice.
+local function rejected_remaining(self, info)
+    local count = info and (info.count or info.consumed)
+    if not count then
+        return 0
+    end
+    local remaining = self.limit - count
+    if info.last_count and info.now then
+        remaining = remaining - info.last_count / self.window *
+                    (self.window - info.now % self.window)
+    end
+    return remaining
+end
+
+
 function _M.sync_to_shm(self, key, remaining, reset, local_delta, info)
     local quota = {
         remaining = remaining,
+        limit = self.limit,
         reset = reset,
         sync_at = ngx_now(),
     }
@@ -206,8 +222,14 @@ function _M._delayed_sync(self, key, cost, syncer_id)
         end
 
         remote_remaining, remote_reset, sync_at = quota.remaining, quota.reset, quota.sync_at
+        local rebase = quota.limit and quota.limit ~= self.limit
+        if rebase then
+            remote_remaining = remote_remaining + self.limit - quota.limit
+        end
         reset = remote_reset - (ngx_now() - sync_at)
-        if reset < 0 then
+        -- Sliding windows cap the previous count at the old limit, so the
+        -- new limit needs a fresh calculation from the underlying counters.
+        if reset < 0 or (rebase and self.conf.window_type == "sliding") then
             reset = 0 -- flag that indicates needing to sync with redis
             time_to_sync_records[syncer_id] = nil
         end
@@ -239,7 +261,7 @@ function _M._delayed_sync(self, key, cost, syncer_id)
                     core.log.error("sync to fallback_limiter failed: ",
                                         remaining_or_err, ", key: ", key)
                 else
-                    remote_remaining = 0
+                    remote_remaining = rejected_remaining(self, info)
                     remote_reset = reset
                 end
             else
@@ -247,7 +269,7 @@ function _M._delayed_sync(self, key, cost, syncer_id)
             end
         else
             -- rejected: rate limit exceeded on Redis
-            remote_remaining = 0
+            remote_remaining = rejected_remaining(self, info)
             remote_reset = reset
         end
 
@@ -388,11 +410,11 @@ local function sync_key(self, key)
                     core.log.error("sync to fallback_limiter failed: ",
                                         remaining_or_err, ", key: ", key)
                 else
-                    self:sync_to_shm(key, 0, reset, delta, info)
+                    self:sync_to_shm(key, rejected_remaining(self, info), reset, delta, info)
                 end
             end
         else
-            self:sync_to_shm(key, 0, reset, delta, info)
+            self:sync_to_shm(key, rejected_remaining(self, info), reset, delta, info)
         end
     end
 end

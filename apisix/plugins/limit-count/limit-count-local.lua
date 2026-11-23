@@ -126,8 +126,13 @@ function _M.incoming(self, key, flag_or_cost, _conf, cost_arg)
         reset = read_reset(self, key)
     end
 
+    local consumed = consumed_or_err
+    if consumed_or_err == "rejected" then
+        consumed = self.limit_count.dict:get(key)
+    end
     return delay, remaining_or_err, reset,
-           {count = delay and consumed_or_err or nil, created = created}
+           {count = delay and consumed_or_err or nil, created = created,
+            consumed = type(consumed) == "number" and consumed or nil}
 end
 
 return _M
