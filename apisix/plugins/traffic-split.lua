@@ -135,7 +135,7 @@ function _M.check_schema(conf)
 end
 
 
-local function parse_domain_for_node(node)
+local function parse_domain_for_node(node, configured_node)
     local host = node.domain or node.host
     if not ipmatcher.parse_ipv4(host)
        and not ipmatcher.parse_ipv6(host)
@@ -145,6 +145,11 @@ local function parse_domain_for_node(node)
         local ip, err = core.resolver.parse_domain(host)
         if ip then
             node.host = ip
+            if configured_node and configured_node._last_resolved_ip ~= ip then
+                set_runtime_state(configured_node, "_last_resolved_ip", ip)
+            end
+        elseif configured_node and configured_node._last_resolved_ip then
+            node.host = configured_node._last_resolved_ip
         end
 
         if err then
@@ -160,9 +165,9 @@ local function set_upstream(upstream_info, ctx)
     if core.table.isarray(nodes) then
         for _, node in ipairs(nodes) do
             -- the resolved address goes into a copy: the node belongs to the conf
-            node = core.table.clone(node)
-            parse_domain_for_node(node)
-            table_insert(new_nodes, node)
+            local resolved = core.table.clone(node)
+            parse_domain_for_node(resolved, node)
+            table_insert(new_nodes, resolved)
         end
     else
         for addr, weight in pairs(nodes) do
