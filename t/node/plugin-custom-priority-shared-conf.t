@@ -129,7 +129,7 @@ passed
 
 
 
-=== TEST 4: the custom sort of the merged route gives no priority to the route's own conf
+=== TEST 4: the custom sort of the merged route gives no priority to the consumer's or the route's confs
 --- config
     location /t {
         content_by_lua_block {
@@ -138,14 +138,22 @@ passed
             local res = http.new():request_uri(uri, {headers = {apikey = "jack"}})
             ngx.say(res.status, " ", res.headers["X-R"])
 
+            for _, consumer in ipairs(require("apisix.consumer").consumers()) do
+                if consumer.value.username == "jack" then
+                    local conf = consumer.value.plugins["key-auth"]
+                    ngx.say("consumer key-auth priority: ", conf._meta and conf._meta.priority)
+                end
+            end
+
             for _, route in ipairs(require("apisix.router").http_routes()) do
                 if route.value.id == "3" then
                     local conf = route.value.plugins["response-rewrite"]
-                    ngx.say("priority: ", conf._meta and conf._meta.priority)
+                    ngx.say("route response-rewrite priority: ", conf._meta and conf._meta.priority)
                 end
             end
         }
     }
 --- response_body
 200 1
-priority: nil
+consumer key-auth priority: nil
+route response-rewrite priority: nil
