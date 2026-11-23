@@ -144,8 +144,16 @@ local function sort_plugin(l, r)
     return l.priority > r.priority
 end
 
+-- the plugin objects of the confs being sorted, set only while filter() sorts
+local sorting_plugin_objs
+
+local function effective_priority(plugin_conf)
+    local meta = plugin_conf._meta
+    return meta and meta.priority or sorting_plugin_objs[plugin_conf].priority
+end
+
 local function custom_sort_plugin(l, r)
-    return l._meta.priority > r._meta.priority
+    return effective_priority(l) > effective_priority(r)
 end
 
 local function check_disable(plugin_conf)
@@ -625,20 +633,11 @@ function _M.filter(ctx, conf, plugins, route_conf, phase)
 
             tmp_plugin_objs[plugin_conf] = plugin_obj
             core.table.insert(tmp_plugin_confs, plugin_conf)
-
-            -- a priority configured by the user is a raw field of _meta and
-            -- shadows the default set here
-            local meta = plugin_conf._meta
-            if not meta then
-                meta = {}
-                _M.set_runtime_state(plugin_conf, "_meta", meta)
-            end
-            if not meta.priority then
-                _M.set_runtime_state(meta, "priority", plugin_obj.priority)
-            end
         end
 
+        sorting_plugin_objs = tmp_plugin_objs
         sort_tab(tmp_plugin_confs, custom_sort_plugin)
+        sorting_plugin_objs = nil
 
         local index
         for i = 1, #tmp_plugin_confs do
