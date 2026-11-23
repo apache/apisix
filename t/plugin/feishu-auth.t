@@ -758,3 +758,122 @@ apisix:
 --- response_body
 admin secret_fallbacks[1]: my-secret-key-v1
 etcd secret_fallbacks[1] encrypted: true
+
+
+
+=== TEST 18: a session from another Feishu application is rejected
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local t = require("lib.test_admin").test
+            local oauth = require("lib.oauth_login")
+            local port = ngx.var.server_port
+            local base = "http://127.0.0.1:" .. port
+
+            local code = t('/apisix/admin/routes/1', ngx.HTTP_PUT, [[{
+                "methods": ["GET"],
+                "upstream": {"nodes": {"127.0.0.1:1980": 1}, "type": "roundrobin"},
+                "plugins": {
+                    "feishu-auth": {
+                        "app_id": "application-a",
+                        "app_secret": "secret-a",
+                        "secret": "shared-session-secret",
+                        "auth_redirect_uri": "https://a.example.com/callback",
+                        "access_token_url": "http://127.0.0.1:1980/token",
+                        "userinfo_url": "http://127.0.0.1:1980/userinfo",
+                        "redirect_uri": "/echo"
+                    }
+                },
+                "uri": "/hello"
+            }]])
+            assert(code <= 201, "setup application A failed: " .. tostring(code))
+
+            local res = oauth.login(port, "/hello", "passed")
+            assert(res and res.status == 200, "application A login failed")
+            local cookie = res.headers["Set-Cookie"]
+            assert(cookie, "application A did not issue a session cookie")
+
+            code = t('/apisix/admin/routes/2', ngx.HTTP_PUT, [[{
+                "methods": ["GET"],
+                "upstream": {"nodes": {"127.0.0.1:1980": 1}, "type": "roundrobin"},
+                "plugins": {
+                    "feishu-auth": {
+                        "app_id": "application-b",
+                        "app_secret": "secret-b",
+                        "secret": "shared-session-secret",
+                        "auth_redirect_uri": "https://b.example.com/callback",
+                        "access_token_url": "http://127.0.0.1:1980/token",
+                        "userinfo_url": "http://127.0.0.1:1980/userinfo",
+                        "redirect_uri": "/echo"
+                    }
+                },
+                "uri": "/hello-other"
+            }]])
+            assert(code <= 201, "setup application B failed: " .. tostring(code))
+
+            local replay = http.new():request_uri(base .. "/hello-other", {
+                headers = {["Cookie"] = cookie},
+            })
+            assert(replay, "failed to replay application A cookie")
+            assert(replay.status == 302,
+                "application B must restart login instead of accepting application A session, got "
+                .. replay.status)
+            ngx.say("passed")
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 19: session cookie is Secure by default and allows an explicit opt-out
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local oauth = require("lib.oauth_login")
+            local port = ngx.var.server_port
+            local route = [[{
+                "methods": ["GET"],
+                "upstream": {"nodes": {"127.0.0.1:1980": 1}, "type": "roundrobin"},
+                "plugins": {
+                    "feishu-auth": {
+                        "app_id": "application-a",
+                        "app_secret": "secret-a",
+                        "secret": "shared-session-secret",
+                        "auth_redirect_uri": "https://a.example.com/callback",
+                        "access_token_url": "http://127.0.0.1:1980/token",
+                        "userinfo_url": "http://127.0.0.1:1980/userinfo",
+                        "redirect_uri": "/echo"%s
+                    }
+                },
+                "uri": "/hello"
+            }]]
+
+            local code = t('/apisix/admin/routes/1', ngx.HTTP_PUT,
+                           string.format(route, ""))
+            assert(code <= 201, "setup default cookie failed: " .. tostring(code))
+            local res = oauth.login(port, "/hello", "passed")
+            assert(res and res.status == 200, "login with default cookie failed")
+            local cookie = res.headers["Set-Cookie"]
+            assert(cookie and cookie:find("; Secure", 1, true),
+                "default session cookie must carry Secure")
+
+            code = t('/apisix/admin/routes/1', ngx.HTTP_PUT,
+                     string.format(route, ',"cookie_secure": false'))
+            assert(code <= 201, "setup insecure cookie failed: " .. tostring(code))
+            res = oauth.login(port, "/hello", "passed")
+            assert(res and res.status == 200, "login with explicit opt-out failed")
+            cookie = res.headers["Set-Cookie"]
+            assert(cookie and not cookie:find("; Secure", 1, true),
+                "cookie_secure=false must omit Secure")
+            ngx.say("passed")
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed

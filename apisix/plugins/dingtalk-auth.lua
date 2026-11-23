@@ -18,6 +18,7 @@ local core = require("apisix.core")
 local http = require("resty.http")
 local session = require("resty.session")
 local resty_random = require("resty.random")
+local resty_sha256 = require("resty.sha256")
 local resty_string = require("resty.string")
 
 local base64_encode = ngx.encode_base64
@@ -90,6 +91,11 @@ local schema = {
             description = "Valid duration (in seconds) for the authorization cookie."
                         .. "This value defines how long the cookie remains valid after creation.",
             default = 86400,
+        },
+        cookie_secure = {
+            type = "boolean",
+            description = "Whether to set the Secure attribute on the session cookie",
+            default = true,
         },
     },
     encrypt_fields = {"app_secret", "secret", "secret_fallbacks"},
@@ -205,11 +211,32 @@ local function fetch_userinfo(conf, access_token, code)
 end
 
 
+local audience_cache = {}
+local function session_audience(conf)
+    local fingerprint = core.table.concat({
+        conf.app_key,
+        conf.access_token_url or DEFAULT_TOKEN_URL,
+        conf.userinfo_url or DEFAULT_USERINFO_URL,
+    }, "\0")
+    if audience_cache[fingerprint] then
+        return audience_cache[fingerprint]
+    end
+
+    local sha256 = resty_sha256:new()
+    sha256:update(fingerprint)
+    local audience = "dingtalk-auth:" .. resty_string.to_hex(sha256:final())
+    audience_cache[fingerprint] = audience
+    return audience
+end
+
+
 local function session_opts(conf)
     return {
         secret = conf.secret,
         secret_fallbacks = conf.secret_fallbacks,
         cookie_name = "dingtalk_session",
+        audience = session_audience(conf),
+        cookie_secure = conf.cookie_secure ~= false,
         absolute_timeout = conf.cookie_expires_in,
     }
 end
