@@ -1473,15 +1473,20 @@ failed to verify jwt: 'exp' claim expired at Tue, 23 Jul 2019 08:28:21 GMT
 
             -- valid ES256 header + payload (key claim = user-key-es256), with two
             -- malformed signatures: "YWJj" decodes to 3 bytes (not the required
-            -- 64), and "@@@@" is not valid base64url so decoding returns nil
+            -- 64) and fails in the verifier, while "@@@@" is not valid
+            -- base64url and is rejected by the strict parser first
             local header_payload = "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9"
                 .. ".eyJrZXkiOiJ1c2VyLWtleS1lczI1NiIsIm5iZiI6MTcyNzI3NDk4M30"
+            local expected_body = {
+                ["YWJj"] = "failed to verify jwt",
+                ["@@@@"] = "JWT token invalid",
+            }
             for _, sig in ipairs({"YWJj", "@@@@"}) do
                 local rc, rb = t('/hello?jwt=' .. header_payload .. "." .. sig,
                                  ngx.HTTP_GET)
                 assert(rc == 401, "signature '" .. sig .. "' expected 401 but got "
                        .. tostring(rc))
-                assert(string.find(rb, "failed to verify jwt", 1, true), rb)
+                assert(string.find(rb, expected_body[sig], 1, true), rb)
             end
             ngx.say("passed")
         }
