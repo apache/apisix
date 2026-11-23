@@ -110,7 +110,8 @@ local schema = {
             }
         }
     },
-    required = {"prompt", "provider", "auth"}
+    required = {"prompt", "provider", "auth"},
+    encrypt_fields = {"auth.header", "auth.query"},
 }
 
 local _M = {
