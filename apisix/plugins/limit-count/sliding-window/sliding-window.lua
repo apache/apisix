@@ -200,6 +200,9 @@ function _M.commit(self, key, cost)
     if not last_count then
         last_count = 0
     end
+    -- A retained bucket may be checked with a higher limit before the next
+    -- sync. Keep the unbounded count so its snapshot can be reweighted locally.
+    local last_count_raw = last_count
     if last_count > self.limit then
         last_count = self.limit
     end
@@ -214,7 +217,8 @@ function _M.commit(self, key, cost)
     local estimated_last_window_count = last_count / self.window_size * remaining_time
     local remaining = math_floor(self.limit - new_count - estimated_last_window_count)
     return 0, remaining, round_off_decimal_places(remaining_time, 2),
-           {now = now, count = new_count, last_count = last_count}
+           {now = now, count = new_count, last_count = last_count,
+            last_count_raw = last_count_raw}
 end
 
 return _M

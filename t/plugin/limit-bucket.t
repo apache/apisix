@@ -306,3 +306,79 @@ passed
 --- response_body
 passed
 --- timeout: 15
+
+
+
+=== TEST 8: raising a fixed-window count preserves over-limit consumption in an old snapshot
+--- config
+    location /t {
+        content_by_lua_block {
+            local helper = require("lib.limit_bucket").new("limit-count")
+            local conf = {count = 2, time_window = 60, policy = "redis", sync_interval = 30,
+                          redis_host = "127.0.0.1", rejected_code = 429}
+            helper:set(conf)
+            local old = require("apisix.plugins.limit-count.limit-count-redis").new(
+                "plugin-limit-count", 2, 60, helper.conf, "v1")
+            local _, err, reset, info = old:incoming(helper:key(), 4)
+            assert(err == "rejected" and info.count == 4)
+            assert(old.delayed_syncer:sync_to_shm(helper:key(), 0, reset, 0, info) == nil)
+            conf.count = 5
+            helper:set(conf)
+            local res = helper:hit()
+            assert(res.status == 200 and res.headers["X-RateLimit-Remaining"] == "0")
+            assert(helper:hit().status == 429)
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+--- timeout: 15
+
+
+
+=== TEST 9: a sliding-window threshold update keeps pending usage local and counts it once
+--- config
+    location /t {
+        content_by_lua_block {
+            local helper = require("lib.limit_bucket").new("limit-count")
+            local conf = {count = 2, time_window = 1000000000, window_type = "sliding",
+                          policy = "redis", redis_host = "127.0.0.1",
+                          rejected_code = 429, sync_interval = 30}
+            helper:set(conf)
+            assert(helper:hit().status == 200)
+            assert(helper:hit().status == 200)
+            conf.count = 3
+            helper:set(conf)
+
+            local redis = require("resty.redis")
+            local old_get, old_evalsha, old_eval = redis.get, redis.evalsha, redis.eval
+            local prefix = "plugin-limit-count:" .. helper:key() .. "."
+            local calls = 0
+            local function track(key)
+                if type(key) == "string" and key:find(prefix, 1, true) == 1 then
+                    calls = calls + 1
+                end
+            end
+            redis.get = function(self, key)
+                track(key)
+                return old_get(self, key)
+            end
+            redis.evalsha = function(self, sha, nkeys, key, ...)
+                track(key)
+                return old_evalsha(self, sha, nkeys, key, ...)
+            end
+            redis.eval = function(self, script, nkeys, key, ...)
+                track(key)
+                return old_eval(self, script, nkeys, key, ...)
+            end
+            local res = helper:hit()
+            redis.get, redis.evalsha, redis.eval = old_get, old_evalsha, old_eval
+            assert(res.status == 200 and res.headers["X-RateLimit-Remaining"] == "0")
+            assert(calls == 0, "a threshold update refreshed Redis on a cache hit")
+            assert(helper:hit().status == 429)
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+--- timeout: 15

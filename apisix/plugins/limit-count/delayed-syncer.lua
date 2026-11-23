@@ -28,6 +28,8 @@ local ipairs = ipairs
 local tab_insert = table.insert
 local type = type
 local pcall = pcall
+local math_min = math.min
+local math_floor = math.floor
 
 local ngx_now = ngx.now
 local ngx_shared = ngx.shared
@@ -105,10 +107,12 @@ function _M.sync_to_shm(self, key, remaining, reset, local_delta, info)
         reset = reset,
         sync_at = ngx_now(),
     }
-    -- window details of the synced counter, only reported in $rate_limiting_info
+    -- Retain actual usage for threshold changes, plus the window details
+    -- reported in $rate_limiting_info.
     if info then
         quota.count = info.count
         quota.last_count = info.last_count
+        quota.last_count_raw = info.last_count_raw
         quota.window_now = info.now
     end
 
@@ -209,12 +213,22 @@ function _M._delayed_sync(self, key, cost, syncer_id)
         remote_remaining, remote_reset, sync_at = quota.remaining, quota.reset, quota.sync_at
         local rebase = quota.limit and quota.limit ~= self.limit
         if rebase then
-            remote_remaining = remote_remaining + self.limit - quota.limit
+            if quota.count then
+                -- remaining can be clamped to zero after an over-limit sync.
+                remote_remaining = self.limit - quota.count
+                if self.conf.window_type == "sliding" and quota.window_now then
+                    local last_count = math_min(quota.last_count_raw or quota.last_count or 0,
+                                               self.limit)
+                    remote_remaining = math_floor(remote_remaining - last_count / self.window *
+                        (self.window - quota.window_now % self.window))
+                    quota.last_count = last_count
+                end
+            else
+                remote_remaining = remote_remaining + self.limit - quota.limit
+            end
         end
         reset = remote_reset - (ngx_now() - sync_at)
-        -- Sliding windows cap the previous count at the old limit, so the
-        -- new limit needs a fresh calculation from the underlying counters.
-        if reset < 0 or (rebase and self.conf.window_type == "sliding") then
+        if reset < 0 then
             reset = 0 -- flag that indicates needing to sync with redis
             time_to_sync_records[syncer_id] = nil
         end
