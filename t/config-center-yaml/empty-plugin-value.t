@@ -125,3 +125,53 @@ routes:
 --- request
 GET /hello
 --- error_code: 403
+
+
+
+=== TEST 3: the defaults an empty plugin value gets stay out of every other empty value
+--- apisix_yaml
+consumers:
+  - username: jack
+    plugins:
+      jwt-auth:
+        key: user-key
+        secret: my-secret-key
+routes:
+  - id: 1
+    uri: /hello
+    plugins:
+      key-auth:
+    upstream:
+      nodes:
+        "127.0.0.1:1980": 1
+      type: roundrobin
+  - id: 2
+    uri: /hello1
+    plugins:
+      jwt-auth:
+    upstream:
+      nodes:
+        "127.0.0.1:1980": 1
+      type: roundrobin
+#END
+--- config
+    location /t {
+        content_by_lua_block {
+            local jwt = require("resty.jwt")
+            local token = jwt:sign("my-secret-key", {
+                header = {typ = "JWT", alg = "HS256"},
+                payload = {key = "user-key", exp = ngx.time() + 3600},
+            })
+            local http = require("resty.http")
+            local res = http.new():request_uri("http://127.0.0.1:1984/hello1",
+                                               {headers = {Authorization = token}})
+            ngx.say("jwt in Authorization: ", res.status)
+            local null = require("lyaml").null
+            ngx.say("lyaml null carries key-auth defaults: ", null.header ~= nil)
+        }
+    }
+--- request
+GET /t
+--- response_body
+jwt in Authorization: 200
+lyaml null carries key-auth defaults: false
