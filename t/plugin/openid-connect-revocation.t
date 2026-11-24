@@ -742,23 +742,17 @@ failed to destroy session
         content_by_lua_block {
             local http = require("resty.http")
             local redis = require("resty.redis")
+            local base64 = require("ngx.base64")
             local keycloak = require("lib.keycloak")
             local test_admin = require("lib.test_admin").test
 
-            -- resty.redis has no ACL commands, so send them as raw RESP
+            -- resty.redis does not know the ACL commands, add them
+            redis.add_commands("acl")
+            local red = redis:new()
+            red:set_timeout(1000)
+            assert(red:connect("127.0.0.1", 6379))
             local function acl(...)
-                local args = { "ACL", ... }
-                local parts = { "*" .. #args .. "\r\n" }
-                for _, arg in ipairs(args) do
-                    parts[#parts + 1] = "$" .. #arg .. "\r\n" .. arg .. "\r\n"
-                end
-                local sock = ngx.socket.tcp()
-                sock:settimeout(1000)
-                assert(sock:connect("127.0.0.1", 6379))
-                assert(sock:send(table.concat(parts)))
-                local line = assert(sock:receive("*l"))
-                sock:close()
-                return line
+                return assert(red:acl(...))
             end
 
             -- keys are "<prefix>:<cookie name>:<base64url of the mark key>", and the
@@ -770,21 +764,19 @@ failed to destroy session
             acl("DELUSER", "partial")
             -- this user reads everything but may only write lineage marks
             assert(acl("SETUSER", "partial", "on", ">partialpw", "+@all", "%R~*",
-                       "%W~" .. lineage_keys) == "+OK")
+                       "%W~" .. lineage_keys) == "OK")
 
             -- the pattern has to allow the mark of any lineage ID, whichever
             -- character it starts with, and keep denying the session id marks
             local function mark_key(id)
-                local encoded = ngx.encode_base64("lineage:" .. id)
-                encoded = encoded:gsub("+", "-"):gsub("/", "_"):gsub("=", "")
-                return prefix .. ":session:" .. encoded
+                return prefix .. ":session:" .. base64.encode_base64url("lineage:" .. id)
             end
             for _, id in ipairs({ "Abc", "zbc", "0bc", "9bc", "-bc", "_bc" }) do
-                assert(acl("DRYRUN", "partial", "SET", mark_key(id), "1") == "+OK",
+                assert(acl("DRYRUN", "partial", "SET", mark_key(id), "1") == "OK",
                        "lineage mark of an ID starting with " .. id:sub(1, 1) .. " is denied")
             end
             assert(acl("DRYRUN", "partial", "SET", prefix .. ":session:c2lkLW1hcms", "1")
-                       :sub(1, 1) == "$", "session id marks must be denied")
+                       ~= "OK", "session id marks must be denied")
 
             local code, body = test_admin("/apisix/admin/routes/1",
                 ngx.HTTP_PUT,
@@ -834,9 +826,6 @@ failed to destroy session
 
             ngx.sleep(0.1)
 
-            local red = redis:new()
-            red:set_timeout(1000)
-            assert(red:connect("127.0.0.1", 6379))
             local function marks(pattern)
                 return #assert(red:keys(pattern))
             end
@@ -895,7 +884,7 @@ failed to destroy session
             local sid_marks = marks(prefix .. "*") - lineage_marks
 
             -- writes are allowed again; the browser sends the logout once more
-            assert(acl("SETUSER", "partial", "%W~*") == "+OK")
+            assert(acl("SETUSER", "partial", "%W~*") == "OK")
             res, err = httpc:request_uri(logout_uri, {
                 method = "GET",
                 headers = { Cookie = cookie },
