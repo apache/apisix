@@ -786,156 +786,162 @@ failed to destroy session
             local prefix = "oidc:revocation:partial:"
             local lineage_keys = prefix .. ":session:bGluZWFnZT[op]*"
             acl("DELUSER", "partial")
-            -- this user reads everything but may only write lineage marks
-            assert(acl("SETUSER", "partial", "on", ">partialpw", "+@all", "%R~*",
-                       "%W~" .. lineage_keys) == "OK")
+            -- the scenario runs in a function, so that the user is deleted
+            -- whatever happens in it, a failed assertion included
+            local ok, err = pcall(function()
+                -- this user reads everything but may only write lineage marks
+                assert(acl("SETUSER", "partial", "on", ">partialpw", "+@all", "%R~*",
+                           "%W~" .. lineage_keys) == "OK")
 
-            -- the pattern has to allow the mark of any lineage ID, whichever
-            -- character it starts with, and keep denying the session id marks
-            local function mark_key(id)
-                return prefix .. ":session:" .. base64.encode_base64url("lineage:" .. id)
-            end
-            for _, id in ipairs({ "Abc", "zbc", "0bc", "9bc", "-bc", "_bc" }) do
-                assert(acl("DRYRUN", "partial", "SET", mark_key(id), "1") == "OK",
-                       "lineage mark of an ID starting with " .. id:sub(1, 1) .. " is denied")
-            end
-            assert(acl("DRYRUN", "partial", "SET", prefix .. ":session:c2lkLW1hcms", "1")
-                       ~= "OK", "session id marks must be denied")
+                -- the pattern has to allow the mark of any lineage ID, whichever
+                -- character it starts with, and keep denying the session id marks
+                local function mark_key(id)
+                    return prefix .. ":session:" .. base64.encode_base64url("lineage:" .. id)
+                end
+                for _, id in ipairs({ "Abc", "zbc", "0bc", "9bc", "-bc", "_bc" }) do
+                    assert(acl("DRYRUN", "partial", "SET", mark_key(id), "1") == "OK",
+                           "lineage mark of an ID starting with " .. id:sub(1, 1) .. " is denied")
+                end
+                assert(acl("DRYRUN", "partial", "SET", prefix .. ":session:c2lkLW1hcms", "1")
+                           ~= "OK", "session id marks must be denied")
 
-            local code, body = test_admin("/apisix/admin/routes/1",
-                ngx.HTTP_PUT,
-                [[{
-                    "plugins": {
-                        "openid-connect": {
-                            "discovery": "http://127.0.0.1:8080/realms/University/.well-known/openid-configuration",
-                            "realm": "University",
-                            "client_id": "course_management",
-                            "client_secret": "d1ec69e9-55d2-4109-a3ea-befa071579d5",
-                            "redirect_uri": "http://127.0.0.1:]] .. ngx.var.server_port
-                                .. [[/authenticated",
-                            "ssl_verify": false,
-                            "session": {
-                                "secret": "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
-                                "storage": "cookie",
-                                "rolling_timeout": 20,
-                                "revocation": "redis",
-                                "revocation_fail_mode": "closed",
-                                "revocation_cache_ttl": 0,
-                                "revocation_error_cache_ttl": 0,
-                                "redis": {
-                                    "host": "127.0.0.1",
-                                    "port": 6379,
-                                    "username": "partial",
-                                    "password": "partialpw",
-                                    "prefix": "]] .. prefix .. [["
+                local code, body = test_admin("/apisix/admin/routes/1",
+                    ngx.HTTP_PUT,
+                    [[{
+                        "plugins": {
+                            "openid-connect": {
+                                "discovery": "http://127.0.0.1:8080/realms/University/.well-known/openid-configuration",
+                                "realm": "University",
+                                "client_id": "course_management",
+                                "client_secret": "d1ec69e9-55d2-4109-a3ea-befa071579d5",
+                                "redirect_uri": "http://127.0.0.1:]] .. ngx.var.server_port
+                                    .. [[/authenticated",
+                                "ssl_verify": false,
+                                "session": {
+                                    "secret": "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
+                                    "storage": "cookie",
+                                    "rolling_timeout": 20,
+                                    "revocation": "redis",
+                                    "revocation_fail_mode": "closed",
+                                    "revocation_cache_ttl": 0,
+                                    "revocation_error_cache_ttl": 0,
+                                    "redis": {
+                                        "host": "127.0.0.1",
+                                        "port": 6379,
+                                        "username": "partial",
+                                        "password": "partialpw",
+                                        "prefix": "]] .. prefix .. [["
+                                    }
                                 }
                             }
-                        }
-                    },
-                    "upstream": {
-                        "nodes": {
-                            "127.0.0.1:1980": 1
                         },
-                        "type": "roundrobin"
-                    },
-                    "uri": "/*"
-                }]]
-            )
-            if code >= 300 then
-                acl("DELUSER", "partial")
-                ngx.status = code
-                ngx.say(body)
-                return
-            end
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/*"
+                    }]]
+                )
+                if code >= 300 then
+                    ngx.status = code
+                    ngx.say(body)
+                    return
+                end
 
-            ngx.sleep(0.1)
+                ngx.sleep(0.1)
 
-            local function marks(pattern)
-                return #assert(red:keys(pattern))
-            end
+                local function marks(pattern)
+                    return #assert(red:keys(pattern))
+                end
 
-            local function fail(...)
-                acl("DELUSER", "partial")
-                ngx.status = 500
-                ngx.say(...)
-            end
+                local function fail(...)
+                    ngx.status = 500
+                    ngx.say(...)
+                end
 
-            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/uri"
-            local res, err = keycloak.login_keycloak(
-                uri, "teacher@gmail.com", "123456")
-            if err then
-                return fail(err)
-            end
+                local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/uri"
+                local res, err = keycloak.login_keycloak(
+                    uri, "teacher@gmail.com", "123456")
+                if err then
+                    return fail(err)
+                end
 
-            local cookie = keycloak.concatenate_cookies(res.headers["Set-Cookie"])
-            local httpc = http.new()
+                local cookie = keycloak.concatenate_cookies(res.headers["Set-Cookie"])
+                local httpc = http.new()
 
-            -- past 75% of rolling_timeout, where a request refreshes the
-            -- session and hands out a cookie with a new session id
-            ngx.sleep(16)
-            res, err = httpc:request_uri(uri, {
-                method = "GET",
-                headers = { Cookie = cookie },
-            })
-            if not res or res.status ~= 200 then
-                return fail("refreshing request failed: ", res and res.status or err)
-            end
-            local refreshed_cookie = keycloak.concatenate_cookies(res.headers["Set-Cookie"])
-            assert(cookie ~= refreshed_cookie)
-
-            for _, c in ipairs({ cookie, refreshed_cookie }) do
+                -- past 75% of rolling_timeout, where a request refreshes the
+                -- session and hands out a cookie with a new session id
+                ngx.sleep(16)
                 res, err = httpc:request_uri(uri, {
                     method = "GET",
-                    headers = { Cookie = c },
+                    headers = { Cookie = cookie },
                 })
                 if not res or res.status ~= 200 then
-                    return fail("cookie rejected before logout: ", res and res.status or err)
+                    return fail("refreshing request failed: ", res and res.status or err)
                 end
-            end
+                local refreshed_cookie = keycloak.concatenate_cookies(res.headers["Set-Cookie"])
+                assert(cookie ~= refreshed_cookie)
 
-            -- the first logout writes the lineage mark and is refused the other one
-            local logout_uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/logout"
-            res, err = httpc:request_uri(logout_uri, {
-                method = "GET",
-                headers = { Cookie = cookie },
-            })
-            if not res then
-                return fail(err)
-            end
-            local first_status = res.status
-            local cookie_cleared = res.headers["Set-Cookie"] ~= nil
-            local lineage_marks = marks(lineage_keys)
-            local sid_marks = marks(prefix .. "*") - lineage_marks
+                for _, c in ipairs({ cookie, refreshed_cookie }) do
+                    res, err = httpc:request_uri(uri, {
+                        method = "GET",
+                        headers = { Cookie = c },
+                    })
+                    if not res or res.status ~= 200 then
+                        return fail("cookie rejected before logout: ", res and res.status or err)
+                    end
+                end
 
-            -- writes are allowed again; the browser sends the logout once more
-            assert(acl("SETUSER", "partial", "%W~*") == "OK")
-            res, err = httpc:request_uri(logout_uri, {
-                method = "GET",
-                headers = { Cookie = cookie },
-            })
-            if not res then
-                return fail(err)
-            end
-            local retry_status = res.status
-
-            -- both cookies would still be valid if the retry had not revoked them
-            local statuses = {}
-            for _, c in ipairs({ cookie, refreshed_cookie }) do
-                res, err = httpc:request_uri(uri, {
+                -- the first logout writes the lineage mark and is refused the other one
+                local logout_uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/logout"
+                res, err = httpc:request_uri(logout_uri, {
                     method = "GET",
-                    headers = { Cookie = c },
+                    headers = { Cookie = cookie },
                 })
                 if not res then
                     return fail(err)
                 end
-                statuses[#statuses + 1] = res.status
-            end
+                local first_status = res.status
+                local cookie_cleared = res.headers["Set-Cookie"] ~= nil
+                local lineage_marks = marks(lineage_keys)
+                local sid_marks = marks(prefix .. "*") - lineage_marks
 
+                -- writes are allowed again; the browser sends the logout once more
+                assert(acl("SETUSER", "partial", "%W~*") == "OK")
+                res, err = httpc:request_uri(logout_uri, {
+                    method = "GET",
+                    headers = { Cookie = cookie },
+                })
+                if not res then
+                    return fail(err)
+                end
+                local retry_status = res.status
+
+                -- both cookies would still be valid if the retry had not revoked them
+                local statuses = {}
+                for _, c in ipairs({ cookie, refreshed_cookie }) do
+                    res, err = httpc:request_uri(uri, {
+                        method = "GET",
+                        headers = { Cookie = c },
+                    })
+                    if not res then
+                        return fail(err)
+                    end
+                    statuses[#statuses + 1] = res.status
+                end
+
+                ngx.say("first=", first_status, " cleared=", tostring(cookie_cleared),
+                        " lineage_marks=", lineage_marks, " sid_marks=", sid_marks,
+                        " retry=", retry_status,
+                        " cookie=", statuses[1], " refreshed=", statuses[2])
+            end)
             acl("DELUSER", "partial")
-            ngx.say("first=", first_status, " cleared=", tostring(cookie_cleared),
-                    " lineage_marks=", lineage_marks, " sid_marks=", sid_marks,
-                    " retry=", retry_status,
-                    " cookie=", statuses[1], " refreshed=", statuses[2])
+            if not ok then
+                ngx.status = 500
+                ngx.say(err)
+            end
         }
     }
 --- response_body
