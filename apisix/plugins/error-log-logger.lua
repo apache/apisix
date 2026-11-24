@@ -48,6 +48,7 @@ local metadata_schema = {
                 port = {type = "integer", minimum = 0},
                 tls = {type = "boolean", default = false},
                 tls_server_name = {type = "string"},
+                tls_verify = {type = "boolean", default = true},
             },
             required = {"host", "port"}
         },
@@ -221,14 +222,23 @@ local function send_to_tcp_server(data)
     sock:settimeout(config.timeout * 1000)
 
     local tcp_config = config.tcp
-    local ok, err = sock:connect(tcp_config.host, tcp_config.port)
+    local verify = tcp_config.tls_verify ~= false
+    local server_name = tcp_config.tls_server_name
+    if verify and (not server_name or server_name == "") then
+        server_name = tcp_config.host
+    end
+    -- keep verified and unverified TLS connections in separate keepalive pools
+    local pool = tcp_config.tls and "error-log-logger:tls:" .. tcp_config.host
+                 .. ":" .. tcp_config.port .. ":" .. (server_name or "") .. ":" .. tostring(verify)
+                 or nil
+    local ok, err = sock:connect(tcp_config.host, tcp_config.port, {pool = pool})
     if not ok then
         return false, "failed to connect the TCP server: host[" .. tcp_config.host
             .. "] port[" .. tostring(tcp_config.port) .. "] err: " .. err
     end
 
     if tcp_config.tls then
-        ok, err = sock:sslhandshake(false, tcp_config.tls_server_name, false)
+        ok, err = sock:sslhandshake(false, server_name, verify)
         if not ok then
             sock:close()
             return false, "failed to perform TLS handshake to TCP server: host["
@@ -467,7 +477,8 @@ local function process()
                 host = config.host,
                 port =  config.port,
                 tls = config.tls,
-                tls_server_name = config.tls_server_name
+                tls_server_name = config.tls_server_name,
+                tls_verify = config.tls_verify,
             }
             core.log.warn(
                 string.format("The schema is out of date. Please update to the new configuration, "

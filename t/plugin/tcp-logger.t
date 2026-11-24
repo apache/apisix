@@ -500,6 +500,7 @@ qr/.*logger format in plugin.*/
                                 "host": "127.0.0.1",
                                 "port": 43000,
                                 "tls": true,
+                                "tls_options": "test.com",
                                 "batch_max_size": 1
                             }
                         },
@@ -559,6 +560,7 @@ qr/.*route_id.*1.*/
                                 "host": "127.0.0.1",
                                 "port": 43000,
                                 "tls": true,
+                                "tls_options": "test.com",
                                 "batch_max_size": 1,
                                 "include_req_body": true
                             }
@@ -603,6 +605,7 @@ GET /t
                                 "host": "127.0.0.1",
                                 "port": 43000,
                                 "tls": true,
+                                "tls_options": "test.com",
                                 "batch_max_size": 1,
                                 "include_resp_body": true
                             }

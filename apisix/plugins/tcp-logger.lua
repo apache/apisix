@@ -31,6 +31,7 @@ local schema = {
         port = {type = "integer", minimum = 0},
         tls = {type = "boolean", default = false},
         tls_options = {type = "string"},
+        tls_verify = {type = "boolean", default = true},
         timeout = {type = "integer", minimum = 1, default= 1000},
         log_format = {type = "object"},
         log_format_extra = {type = "object"},
@@ -100,6 +101,11 @@ local function send_tcp_data(conf, log_message)
 
     core.log.info("sending a batch logs to ", conf.host, ":", conf.port)
 
+    local verify = conf.tls_verify ~= false
+    local server_name = conf.tls_options
+    if verify and (not server_name or server_name == "") then
+        server_name = conf.host
+    end
     local ok, err = sock:connect(conf.host, conf.port)
     if not ok then
         return false, "failed to connect to TCP server: host[" .. conf.host
@@ -107,8 +113,9 @@ local function send_tcp_data(conf, log_message)
     end
 
     if conf.tls then
-        ok, err = sock:sslhandshake(true, conf.tls_options, false)
+        ok, err = sock:sslhandshake(true, server_name, verify)
         if not ok then
+            sock:close()
             return false, "failed to perform TLS handshake to TCP server: host["
                           .. conf.host .. "] port[" .. tostring(conf.port) .. "] err: " .. err
         end
