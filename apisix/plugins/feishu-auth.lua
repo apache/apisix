@@ -232,14 +232,13 @@ end
 
 local function expire_legacy_cookies(ctx)
     local name = "feishu_session"
-    local suffix = ""
-    local index = 1
-    while ctx.var["cookie_" .. name .. suffix] do
-        core.response.add_header("Set-Cookie", name .. suffix
-            .. "=; Path=/; SameSite=Lax; HttpOnly;"
-            .. " Expires=Thu, 01 Jan 1970 00:00:01 GMT; Max-Age=0")
-        index = index + 1
-        suffix = tostring(index)
+    for i = 1, 9 do
+        local legacy_name = i == 1 and name or name .. i
+        if ctx.var["cookie_" .. legacy_name] then
+            core.response.add_header("Set-Cookie", legacy_name
+                .. "=; Path=/; SameSite=Lax; HttpOnly;"
+                .. " Expires=Thu, 01 Jan 1970 00:00:01 GMT; Max-Age=0")
+        end
     end
 end
 

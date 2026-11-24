@@ -698,28 +698,60 @@ passed
             for _, header in ipairs(legacy_headers) do
                 table.insert(legacy_pairs, header:match("^[^;]+"))
             end
+            assert(#legacy_pairs >= 2, "the legacy fixture must have multiple chunks")
             ngx.header["Set-Cookie"] = nil
-            replay = http.new():request_uri(base .. "/hello", {
-                headers = {["Cookie"] = table.concat(legacy_pairs, "; ")},
-            })
-            assert(replay and replay.status == 302,
-                "a legacy default-audience session must authenticate again")
 
-            local cleared = replay.headers["Set-Cookie"]
-            if type(cleared) == "string" then
-                cleared = {cleared}
-            end
-            local expired = {}
-            for _, header in ipairs(cleared) do
-                local name = header:match("^([^=]+)=")
-                if name and header:find("Max-Age=0", 1, true) then
-                    expired[name] = true
+            local function assert_expired(request_cookie, expected_pairs, label)
+                local response = assert(http.new():request_uri(base .. "/hello", {
+                    headers = {["Cookie"] = request_cookie},
+                }))
+                assert(response.status == 302,
+                    "a legacy default-audience session must authenticate again, got "
+                    .. tostring(response.status) .. " for " .. label)
+
+                local cleared = response.headers["Set-Cookie"]
+                if type(cleared) == "string" then
+                    cleared = {cleared}
+                end
+                local expired = {}
+                for _, header in ipairs(cleared) do
+                    local name = header:match("^([^=]+)=")
+                    if name and header:find("Max-Age=0", 1, true) then
+                        expired[name] = true
+                    end
+                end
+                for _, pair in ipairs(expected_pairs) do
+                    local name = pair:match("^([^=]+)=")
+                    assert(expired[name], "legacy cookie was not expired: " .. name)
                 end
             end
-            for _, pair in ipairs(legacy_pairs) do
-                local name = pair:match("^([^=]+)=")
-                assert(expired[name], "legacy cookie was not expired: " .. name)
+
+            assert_expired(table.concat(legacy_pairs, "; "), legacy_pairs, "complete chain")
+            local main_name = legacy_pairs[1]:match("^([^=]+)=")
+            local second_name = legacy_pairs[2]:match("^([^=]+)=")
+            local third_name = main_name .. "3"
+
+            local function assert_one_expired(request_cookie, expected_name)
+                local response = assert(http.new():request_uri(base .. "/hello", {
+                    headers = {Cookie = request_cookie},
+                }))
+                assert(response.status == 302, "expected 302, got " .. response.status)
+                local cleared = response.headers["Set-Cookie"]
+                if type(cleared) == "string" then
+                    cleared = {cleared}
+                end
+                local matched = false
+                for _, header in ipairs(cleared) do
+                    if header:find(expected_name .. "=;", 1, true)
+                       and header:find("Max-Age=0", 1, true) then
+                        matched = true
+                    end
+                end
+                assert(matched, "legacy cookie was not expired: " .. expected_name)
             end
+
+            assert_one_expired(second_name .. "=isolated", second_name)
+            assert_one_expired(main_name .. "=main; " .. third_name .. "=sparse", third_name)
             ngx.say("passed")
         }
     }
@@ -761,6 +793,7 @@ passed
             local cookie = res.headers["Set-Cookie"]
             assert(cookie and cookie:find("; Secure", 1, true),
                 "default session cookie must carry Secure")
+            local secure_cookie_name = cookie:match("^([^=]+)=")
 
             code = t('/apisix/admin/routes/1', ngx.HTTP_PUT,
                      string.format(route, ',"cookie_secure": false'))
@@ -770,6 +803,9 @@ passed
             cookie = res.headers["Set-Cookie"]
             assert(cookie and not cookie:find("; Secure", 1, true),
                 "cookie_secure=false must omit Secure")
+            local insecure_cookie_name = cookie:match("^([^=]+)=")
+            assert(secure_cookie_name ~= insecure_cookie_name,
+                "different Secure policies must not share a cookie name")
             ngx.say("passed")
         }
     }
