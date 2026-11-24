@@ -23,6 +23,7 @@ title: Changelog
 
 ## Table of Contents
 
+- [3.21.0](#3210)
 - [3.20.0](#3200)
 - [3.19.0](#3190)
 - [3.18.0](#3180)
@@ -87,6 +88,35 @@ title: Changelog
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 3.21.0
+
+**The changes marked with :warning: are not backward compatible.**
+
+### Change
+
+- :warning: fix(admin): require each configured Admin API key entry to specify the `admin` or `viewer` role when `admin_key_required` is enabled. Check traditional and control-plane configurations before upgrading, including traditional deployments with the Admin API disabled. Quote numeric-looking keys in YAML. Empty request keys are rejected. Only an explicitly empty string on an `admin` entry generates a key at startup. [#14203](https://github.com/apache/apisix/pull/14203)
+- :warning: feat(data_encryption): prefix newly encrypted plugin configuration and plugin metadata values with `$ENC$v1$`. With `enable_encrypt_fields` enabled, APISIX can read a marked value even if the current plugin schema no longer lists that field in `encrypt_fields`. Existing unmarked ciphertext remains readable in fields listed in `encrypt_fields`. Back up etcd before upgrading and avoid Admin API writes during a rolling upgrade. If encrypted resources have been re-saved, restore the pre-upgrade data before rolling back to a build without marker support, including the official 3.20.0 source archive. [#14162](https://github.com/apache/apisix/pull/14162)
+- :warning: chore(deps): upgrade APISIX Runtime from 1.4.2 to 1.4.3, which carries the NGINX 1.31.9 core in its OpenResty 1.31.8.1 build. NGINX now rejects HTTP header lines without a colon in client requests (400) and upstream responses (502), and rejects chunked request bodies with excessive framing overhead. When installing from the source archive, install Runtime 1.4.3 separately, then run `make deps APISIX_RUNTIME=1.4.3` to install the Lua dependencies. [#14223](https://github.com/apache/apisix/pull/14223)
+
+### Core
+
+- fix(security): incorporate the ten NGINX fixes released on November 18, 2026. They cover HTTP/2 (CVE-2026-123007, CVE-2026-123633), HTTP/3 (CVE-2026-121810), TLS request bodies (CVE-2026-118899), DNS resolution (CVE-2026-123634), stream TLS and PROXY protocol (CVE-2026-123640, CVE-2026-120967, CVE-2026-120993), static file handling (CVE-2026-125283) and the mail proxy (CVE-2026-113425). Applicability depends on the modules and configuration in use. The standard Runtime build disables mail proxy protocols. [NGINX security advisories](https://nginx.org/en/security_advisories.html) · [#14223](https://github.com/apache/apisix/pull/14223)
+- fix: stop writing sensitive configuration values to logs during etcd validation and plugin execution. For an invalid plugin configuration type, the Admin API reports the type without echoing the submitted value. [#14157](https://github.com/apache/apisix/pull/14157)
+- fix(router): with `normalize_uri_like_servlet` enabled, use the query arguments left by rewrite and access plugins when forwarding to the upstream. This preserves credential removal by `key-auth` and `jwt-auth`. Explicit upstream URI overrides also take precedence for mirrored requests. [#14163](https://github.com/apache/apisix/pull/14163)
+- fix(upstream): restart a round-robin node's slow-start ramp when it returns after a health check excluded it or after it was removed from the upstream. Even a short observed outage starts a new ramp. [#14188](https://github.com/apache/apisix/pull/14188)
+- fix(healthcheck): upgrade `lua-resty-healthcheck-api7` to 3.2.4 so a newly initialized checker observes health transitions while it polls. This prevents a worker from continuing to route requests to a target it recorded as healthy during initialization. [#14215](https://github.com/apache/apisix/pull/14215)
+- fix(redis): upgrade `lua-resty-redis-cluster` to 1.3.4 so probes of unhealthy nodes reuse the cluster's TLS and authentication settings and can recognize a recovered node. [#14181](https://github.com/apache/apisix/pull/14181)
+- fix(router): include the referring Route ID when the host-based router logs that it could not fetch a Service. [#13723](https://github.com/apache/apisix/pull/13723)
+
+### Plugins
+
+- fix(logger): correct batch backlog accounting after callback or timer failures and when entries are filtered out. Active batches now survive stale-processor cleanup. Body-filter expressions with IPv6 matches and plugin configurations containing JSON `null` can be processed without raising a configuration-version error. [#14192](https://github.com/apache/apisix/pull/14192)
+- fix(elasticsearch-logger): isolate batch processors by plugin configuration so each Route sends logs to its configured Elasticsearch endpoints with its own credentials and headers. Probe the cluster version when sending the first batch. [#14192](https://github.com/apache/apisix/pull/14192)
+- fix(data-mask): apply query masking rules to parameters in `upstream_uri` when writing access logs. [#14163](https://github.com/apache/apisix/pull/14163)
+- fix(tcp-logger): report JSON encoding failures to the batch processor. [#14004](https://github.com/apache/apisix/pull/14004)
+- fix(splunk-hec-logging): handle non-200 Splunk responses whose JSON body omits the `text` field. [#14012](https://github.com/apache/apisix/pull/14012)
+- fix(prometheus): count stream traffic from the first session on each new service in `apisix_stream_bandwidth`, including bytes transferred before the first metrics read. [#14101](https://github.com/apache/apisix/pull/14101)
 
 ## 3.20.0
 

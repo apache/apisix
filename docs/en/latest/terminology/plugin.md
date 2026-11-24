@@ -207,7 +207,7 @@ The above configuration means setting the priority of the serverless-pre-functio
 :::note
 
 - Custom plugin priority only affects the current object(route, service ...) of the plugin instance binding, not all instances of that plugin. For example, if the above plugin configuration belongs to Route A, the order of execution of the plugins serverless-post-function and serverless-post-function on Route B will not be affected and the default priority will be used.
-- Custom plugin priority does not apply to the rewrite phase of some plugins configured on the consumer. The rewrite phase of plugins configured on the route will be executed first, and then the rewrite phase of plugins (exclude auth plugins) from the consumer will be executed.
+- Route plugins run their `rewrite` handlers first. After APISIX identifies the Consumer, it runs `rewrite` for non-authentication plugins added by the Consumer or its Consumer Group. If both configure the same plugin, APISIX uses the Consumer configuration. Plugins already configured on the effective route skip this second pass, regardless of custom priority.
 
 :::
 

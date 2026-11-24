@@ -35,7 +35,7 @@ _EOC_
 
     $block->set_value("yaml_config", $yaml_config);
 
-    my $routes = <<_EOC_;
+    my $routes = $block->routes // <<_EOC_;
 routes:
   -
     uri: /hello
@@ -138,3 +138,56 @@ consumers:
 --- error_log
 failed to check the configuration of plugin example-plugin
 failed to fetch consumer group config by id: foobar
+
+
+
+=== TEST 5: Consumer rewrite overrides the group once on routes without the plugin
+--- apisix_yaml
+consumer_groups:
+  - id: rewrite-group
+    plugins:
+      proxy-rewrite:
+        headers:
+          add: {X-Rewrite: group}
+consumers:
+  - username: member
+    group_id: rewrite-group
+    plugins:
+      key-auth: {key: member}
+      proxy-rewrite:
+        headers:
+          add: {X-Rewrite: consumer}
+  - username: group-member
+    group_id: rewrite-group
+    plugins:
+      key-auth: {key: group-member}
+upstreams:
+  - id: rewrite-backend
+    type: roundrobin
+    nodes:
+      "127.0.0.1:1980": 1
+--- routes
+routes:
+  - id: consumer-only-rewrite
+    uri: /rewrite-consumer
+    upstream_id: rewrite-backend
+    plugins:
+      key-auth: {}
+  - id: route-rewrite
+    uri: /rewrite-route
+    upstream_id: rewrite-backend
+    plugins:
+      key-auth: {}
+      proxy-rewrite:
+        headers:
+          add: {X-Rewrite: route}
+#END
+--- upstream_server_config
+    location ~ ^/rewrite- {
+        echo $http_x_rewrite;
+    }
+--- request eval
+["GET /rewrite-consumer?apikey=group-member", "GET /rewrite-consumer?apikey=member",
+ "GET /rewrite-route?apikey=member", "GET /rewrite-consumer?apikey=member"]
+--- response_body eval
+["group\n", "consumer\n", "route\n", "consumer\n"]
