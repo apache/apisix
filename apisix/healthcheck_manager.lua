@@ -83,6 +83,17 @@ local function compute_targets(up_conf)
 end
 
 
+local function add_target(checker, target)
+    local is_healthy = checker:get_target_status(target.host, target.port, target.check_host)
+    if is_healthy == nil then
+        is_healthy = true
+    end
+
+    return checker:add_target(target.host, target.port, target.check_host,
+                              is_healthy, target.host_hdr)
+end
+
+
 local function create_checker(up_conf)
     if not up_conf.checks then
         return nil
@@ -142,8 +153,7 @@ local function create_checker(up_conf)
     -- a no-op except that it clears any pending purge_time, which is what un-marks
     -- surviving targets after a delayed_clear() on a checks-config rebuild.
     for _, target in ipairs(targets) do
-        local ok, err = checker:add_target(target.host, target.port, target.check_host,
-                                        true, target.host_hdr)
+        local ok, err = add_target(checker, target)
         if not ok then
             targets_complete = false
             core.log.error("failed to add healthcheck target: ", target.host, ":",
@@ -210,8 +220,7 @@ local function sync_checker_targets(checker, up_conf)
     -- a target that this checker must keep. Re-adding it cancels that purge.
     for _, target in ipairs(targets) do
         if not current[target.key] or current[target.key].purge_time ~= nil then
-            local ok, err = checker:add_target(target.host, target.port, target.check_host,
-                                            true, target.host_hdr)
+            local ok, err = add_target(checker, target)
             if not ok then
                 synced = false
                 core.log.error("failed to add healthcheck target: ", target.host, ":",

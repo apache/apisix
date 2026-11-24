@@ -38,6 +38,9 @@ our $RetryHook = <<'EOC';
         if key == state.fail_write then
             state.fail_write = nil
             state.failures = state.failures + 1
+            if state.delete_on_failure then
+                shm_set(dict, key, nil)
+            end
             return nil, "no memory"
         end
         return shm_set(dict, key, value, ...)
@@ -295,6 +298,101 @@ dead-node remove attempts: 2
 checkers created: 2
 healthy-node add attempts: 2
 healthy-node remove attempts: 0
+registered ports: 1980
+healthy responses: 40
+--- error_log
+failed to remove healthcheck target: 127.0.0.1:1970
+--- no_error_log
+failed to run timer_create_checker
+failed to run timer_working_pool_check
+lua entry thread aborted
+--- timeout: 40
+
+
+
+
+=== TEST 4: a deleted target list does not reset an unhealthy target to healthy
+--- extra_init_worker_by_lua eval: $::RetryHook
+--- config
+location /t {
+    content_by_lua_block {
+        local state = _G.hc_retry_test
+        state.uri = "/server_port"
+        state.put(1, true)
+        state.seed()
+        assert(state.wait_for(state.unhealthy), "initial probes did not finish")
+
+        state.armed = "add"
+        state.delete_on_failure = true
+        state.put(60, true)
+        state.wait_for(function()
+            return state.created >= 2 and state.add_calls >= 3 and #state.targets() == 2
+        end)
+        state.wait_for(state.unhealthy)
+
+        local state_key = state.current.TARGET_STATE .. ":127.0.0.1:1970:127.0.0.1"
+        ngx.say("failed writes: ", state.failures)
+        ngx.say("checkers created: ", state.created)
+        ngx.say("shared dead-node state: ",
+                ngx.shared["upstream-healthcheck"]:get(state_key))
+        ngx.say("dead node unhealthy: ", tostring(state.unhealthy()))
+        state.traffic()
+    }
+}
+--- request
+GET /t
+--- response_body
+failed writes: 1
+checkers created: 2
+shared dead-node state: 2
+dead node unhealthy: true
+healthy responses: 40
+--- error_log
+failed to add healthcheck target: 127.0.0.1:1970
+--- no_error_log
+failed to run timer_create_checker
+failed to run timer_working_pool_check
+lua entry thread aborted
+--- timeout: 40
+
+
+
+=== TEST 5: a deleted target list does not resurrect a removed target
+--- extra_init_worker_by_lua eval: $::RetryHook
+--- config
+location /t {
+    content_by_lua_block {
+        local state = _G.hc_retry_test
+        state.uri = "/server_port_hello"
+        state.put(1, true)
+        state.seed()
+        assert(state.wait_for(state.unhealthy), "initial probes did not finish")
+
+        state.armed = "remove"
+        state.delete_on_failure = true
+        state.put(60, false)
+        state.wait_for(function()
+            return state.created >= 2 and state.remove_calls >= 1 and #state.targets() == 1
+        end)
+
+        local ports = {}
+        for _, target in ipairs(state.targets()) do
+            ports[#ports + 1] = target.port
+        end
+        table.sort(ports)
+        ngx.say("failed writes: ", state.failures)
+        ngx.say("checkers created: ", state.created)
+        ngx.say("dead-node remove attempts: ", state.remove_calls)
+        ngx.say("registered ports: ", table.concat(ports, ","))
+        state.traffic()
+    }
+}
+--- request
+GET /t
+--- response_body
+failed writes: 1
+checkers created: 2
+dead-node remove attempts: 1
 registered ports: 1980
 healthy responses: 40
 --- error_log
