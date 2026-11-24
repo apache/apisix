@@ -272,11 +272,13 @@ function _M.body_filter(conf, ctx)
 
         local err
         if ctx.response_encoding ~= nil and body ~= "" then
-            local decoder = content_decode.dispatch_decoder(ctx.response_encoding)
+            local decoder, unavailable = content_decode.dispatch_decoder(ctx.response_encoding)
             if not decoder then
-                core.log.error("filters may not work as expected ",
-                               "due to unsupported compression encoding type: ",
-                               ctx.response_encoding)
+                if not unavailable then
+                    core.log.error("filters may not work as expected ",
+                                   "due to unsupported compression encoding type: ",
+                                   ctx.response_encoding)
+                end
                 return
             end
             body, err = decoder(body)

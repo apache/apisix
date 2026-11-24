@@ -33,7 +33,7 @@ The `brotli` Plugin dynamically sets the behavior of [brotli in Nginx](https://g
 
 ## Prerequisites
 
-This Plugin requires brotli shared libraries.
+APISIX installs the `resty.brotli` Lua module as a dependency. Its encoder and decoder require the Brotli shared libraries to be on the system library search path.
 
 The example commands to build and install brotli shared libraries:
 

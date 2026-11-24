@@ -706,12 +706,8 @@ passed
                 return
             end
 
-            local brotli = require "brotli"
-            local decompressor = brotli.decompressor:new()
-            local chunk = decompressor:decompress(res.body)
-            local chunk_fin = decompressor:finish()
-            local chunks = chunk .. chunk_fin
-            if #chunks == #req_body then
+            local brotli = require "resty.brotli"
+            if assert(brotli.decode(res.body)) == req_body then
                 ngx.say("ok")
             end
         }

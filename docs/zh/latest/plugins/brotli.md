@@ -33,7 +33,7 @@ description: 这个文档包含有关 Apache APISIX brotli 插件的相关信息
 
 ## 前提条件
 
-该插件依赖 brotli 共享库。
+APISIX 会安装依赖的 Lua 模块 `resty.brotli`。其编码器和解码器依赖 Brotli 共享库，需确保系统动态库搜索路径包含这些库。
 
 如下是构建和安装 brotli 共享库的示例脚本：
 
