@@ -849,16 +849,40 @@ etcd secret_fallbacks[1] encrypted: true
                 secret = "shared-session-secret",
                 cookie_name = "feishu_session",
                 audience = "default",
+                compression_threshold = 0,
             })
-            legacy:set("userinfo", '{"open_id":"legacy-user"}')
+            legacy:set("userinfo", '{"open_id":"legacy-user","padding":"'
+                       .. string.rep("x", 5000) .. '"}')
             assert(legacy:save())
-            local legacy_cookie = ngx.header["Set-Cookie"]
+            local legacy_headers = ngx.header["Set-Cookie"]
+            assert(type(legacy_headers) == "table",
+                "the legacy fixture must contain chunked cookies")
+            local legacy_pairs = {}
+            for _, header in ipairs(legacy_headers) do
+                table.insert(legacy_pairs, header:match("^[^;]+"))
+            end
             ngx.header["Set-Cookie"] = nil
             replay = http.new():request_uri(base .. "/hello", {
-                headers = {["Cookie"] = legacy_cookie},
+                headers = {["Cookie"] = table.concat(legacy_pairs, "; ")},
             })
             assert(replay and replay.status == 302,
                 "a legacy default-audience session must authenticate again")
+
+            local cleared = replay.headers["Set-Cookie"]
+            if type(cleared) == "string" then
+                cleared = {cleared}
+            end
+            local expired = {}
+            for _, header in ipairs(cleared) do
+                local name = header:match("^([^=]+)=")
+                if name and header:find("Max-Age=0", 1, true) then
+                    expired[name] = true
+                end
+            end
+            for _, pair in ipairs(legacy_pairs) do
+                local name = pair:match("^([^=]+)=")
+                assert(expired[name], "legacy cookie was not expired: " .. name)
+            end
             ngx.say("passed")
         }
     }
@@ -917,3 +941,213 @@ passed
 GET /t
 --- response_body
 passed
+
+
+
+
+=== TEST 20: application cookies isolate Secure attributes and absolute lifetimes
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local t = require("lib.test_admin").test
+            local oauth = require("lib.oauth_login")
+            local port = ngx.var.server_port
+            local base = "http://127.0.0.1:" .. port
+
+            local code = t('/apisix/admin/routes/1', ngx.HTTP_PUT, [[{
+                "methods": ["GET"],
+                "upstream": {"nodes": {"127.0.0.1:1980": 1}, "type": "roundrobin"},
+                "plugins": {
+                    "feishu-auth": {
+                        "app_id": "application-a",
+                        "app_secret": "secret-a",
+                        "secret": "shared-session-secret",
+                        "auth_redirect_uri": "https://a.example.com/callback",
+                        "access_token_url": "http://127.0.0.1:1980/token",
+                        "userinfo_url": "http://127.0.0.1:1980/userinfo",
+                        "cookie_expires_in": 300,
+                        "redirect_uri": "/echo"
+                    }
+                },
+                "uri": "/hello"
+            }]])
+            assert(code <= 201, "setup application A failed: " .. tostring(code))
+
+            local res = oauth.login(port, "/hello", "passed")
+            assert(res and res.status == 200, "application A login failed")
+            local cookie_a = res.headers["Set-Cookie"]
+            assert(cookie_a and cookie_a:find("; Secure", 1, true))
+            local pair_a = cookie_a:match("^[^;]+")
+            local name_a = pair_a:match("^([^=]+)=")
+
+            ngx.sleep(2)
+            code = t('/apisix/admin/routes/2', ngx.HTTP_PUT, [[{
+                "methods": ["GET"],
+                "upstream": {"nodes": {"127.0.0.1:1980": 1}, "type": "roundrobin"},
+                "plugins": {
+                    "feishu-auth": {
+                        "app_id": "application-b",
+                        "app_secret": "secret-b",
+                        "secret": "shared-session-secret",
+                        "auth_redirect_uri": "https://b.example.com/callback",
+                        "access_token_url": "http://127.0.0.1:1980/token",
+                        "userinfo_url": "http://127.0.0.1:1980/userinfo",
+                        "cookie_expires_in": 300,
+                        "cookie_secure": false,
+                        "redirect_uri": "/echo"
+                    },
+                    "proxy-rewrite": {"uri": "/hello"}
+                },
+                "uri": "/hello-other"
+            }]])
+            assert(code <= 201, "setup application B failed: " .. tostring(code))
+
+            local begin_b = assert(http.new():request_uri(base .. "/hello-other", {
+                headers = {Cookie = pair_a}
+            }))
+            assert(begin_b.status == 302, "application B must start a new login")
+            local pending_b = begin_b.headers["Set-Cookie"]
+            local pending_pair_b = pending_b:match("^[^;]+")
+            local name_b = pending_pair_b:match("^([^=]+)=")
+            assert(name_a ~= name_b,
+                "applications must not share cookie attributes or creation time")
+            assert(not pending_b:find("; Secure", 1, true),
+                "application B must not rewrite application A's cookie")
+
+            local state = begin_b.headers["Location"]:match("state=([0-9a-f]+)")
+            assert(state, "application B login did not carry state")
+            local callback_b = assert(http.new():request_uri(base .. "/hello-other", {
+                query = {code = "passed", state = state},
+                headers = {Cookie = pair_a .. "; " .. pending_pair_b}
+            }))
+            assert(callback_b.status == 200,
+                "application B login failed: " .. callback_b.status)
+            local cookie_b = callback_b.headers["Set-Cookie"]
+            assert(cookie_b and not cookie_b:find("; Secure", 1, true))
+            local pair_b = cookie_b:match("^[^;]+")
+
+            local sha256 = require("resty.sha256"):new()
+            sha256:update(table.concat({
+                "application-b",
+                "http://127.0.0.1:1980/token",
+                "http://127.0.0.1:1980/userinfo",
+                "false",
+            }, "\0"))
+            local fingerprint = require("resty.string").to_hex(sha256:final())
+            ngx.req.set_header("Cookie", pair_b)
+            local opened_b = require("resty.session").open({
+                secret = "shared-session-secret",
+                cookie_name = name_b,
+                audience = "feishu-auth:" .. fingerprint,
+                cookie_secure = false,
+                absolute_timeout = 300,
+            })
+            local remaining = opened_b:get_property("absolute_timeout")
+            assert(remaining and remaining > 298,
+                "application B inherited application A's creation time: "
+                .. tostring(remaining))
+
+            local replay_a = assert(http.new():request_uri(base .. "/hello", {
+                headers = {Cookie = pair_a .. "; " .. pair_b}
+            }))
+            assert(replay_a.status == 200,
+                "application A session must remain valid after application B login")
+            ngx.say("passed")
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 21: failed application login does not destroy another application's session
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local t = require("lib.test_admin").test
+            local oauth = require("lib.oauth_login")
+            local port = ngx.var.server_port
+            local base = "http://127.0.0.1:" .. port
+
+            local code = t('/apisix/admin/routes/1', ngx.HTTP_PUT, [[{
+                "methods": ["GET"],
+                "upstream": {"nodes": {"127.0.0.1:1980": 1}, "type": "roundrobin"},
+                "plugins": {
+                    "feishu-auth": {
+                        "app_id": "application-a",
+                        "app_secret": "secret-a",
+                        "secret": "shared-session-secret",
+                        "auth_redirect_uri": "https://a.example.com/callback",
+                        "access_token_url": "http://127.0.0.1:1980/token",
+                        "userinfo_url": "http://127.0.0.1:1980/userinfo",
+                        "redirect_uri": "/echo"
+                    }
+                },
+                "uri": "/hello"
+            }]])
+            assert(code <= 201, "setup application A failed: " .. tostring(code))
+            local res = oauth.login(port, "/hello", "passed")
+            assert(res and res.status == 200, "application A login failed")
+            local cookie_a = res.headers["Set-Cookie"]
+            local pair_a = cookie_a:match("^[^;]+")
+            local name_a = pair_a:match("^([^=]+)=")
+
+            code = t('/apisix/admin/routes/2', ngx.HTTP_PUT, [[{
+                "methods": ["GET"],
+                "upstream": {"nodes": {"127.0.0.1:1980": 1}, "type": "roundrobin"},
+                "plugins": {
+                    "feishu-auth": {
+                        "app_id": "application-b",
+                        "app_secret": "secret-b",
+                        "secret": "shared-session-secret",
+                        "auth_redirect_uri": "https://b.example.com/callback",
+                        "access_token_url": "http://127.0.0.1:1980/token",
+                        "userinfo_url": "http://127.0.0.1:1980/other-userinfo",
+                        "cookie_secure": false,
+                        "redirect_uri": "/echo"
+                    }
+                },
+                "uri": "/hello-other-failure"
+            }]])
+            assert(code <= 201, "setup application B failed: " .. tostring(code))
+
+            local begin_b = assert(http.new():request_uri(base .. "/hello-other-failure", {
+                headers = {Cookie = pair_a}
+            }))
+            assert(begin_b.status == 302)
+            local pending_b = begin_b.headers["Set-Cookie"]
+            local pair_b = pending_b:match("^[^;]+")
+            local name_b = pair_b:match("^([^=]+)=")
+            assert(name_a ~= name_b,
+                "a failed application must not destroy another application's cookie")
+
+            local state = begin_b.headers["Location"]:match("state=([0-9a-f]+)")
+            local callback_b = assert(http.new():request_uri(base .. "/hello-other-failure", {
+                query = {code = "passed", state = state},
+                headers = {Cookie = pair_a .. "; " .. pair_b}
+            }))
+            assert(callback_b.status == 401,
+                "application B userinfo failure must reject the login")
+            local destroyed_b = callback_b.headers["Set-Cookie"]
+            assert(destroyed_b:match("^([^=]+)=") == name_b)
+            assert(destroyed_b:find("Max-Age=0", 1, true),
+                "failed application login must clear only its own cookie")
+
+            local replay_a = assert(http.new():request_uri(base .. "/hello", {
+                headers = {Cookie = pair_a}
+            }))
+            assert(replay_a.status == 200,
+                "application B failure must not log out application A")
+            ngx.say("passed")
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- error_log
+unexpected http response status from feishu: 404

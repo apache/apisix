@@ -203,27 +203,43 @@ local function fetch_userinfo(conf, access_token)
 end
 
 
-local function session_audience(conf)
-    local fingerprint = core.table.concat({
+local function session_fingerprint(conf)
+    local input = core.table.concat({
         conf.app_id,
         conf.access_token_url or DEFAULT_TOKEN_URL,
         conf.userinfo_url or DEFAULT_USERINFO_URL,
+        tostring(conf.cookie_secure ~= false),
     }, "\0")
     local sha256 = resty_sha256:new()
-    sha256:update(fingerprint)
-    return "feishu-auth:" .. resty_string.to_hex(sha256:final())
+    sha256:update(input)
+    return resty_string.to_hex(sha256:final())
 end
 
 
 local function session_opts(conf)
+    local fingerprint = session_fingerprint(conf)
     return {
         secret = conf.secret,
         secret_fallbacks = conf.secret_fallbacks,
-        cookie_name = "feishu_session",
-        audience = session_audience(conf),
+        cookie_name = "feishu_session_" .. fingerprint,
+        audience = "feishu-auth:" .. fingerprint,
         cookie_secure = conf.cookie_secure ~= false,
         absolute_timeout = conf.cookie_expires_in,
     }
+end
+
+
+local function expire_legacy_cookies(ctx)
+    local name = "feishu_session"
+    local suffix = ""
+    local index = 1
+    while ctx.var["cookie_" .. name .. suffix] do
+        core.response.add_header("Set-Cookie", name .. suffix
+            .. "=; Path=/; SameSite=Lax; HttpOnly;"
+            .. " Expires=Thu, 01 Jan 1970 00:00:01 GMT; Max-Age=0")
+        index = index + 1
+        suffix = tostring(index)
+    end
 end
 
 
@@ -265,6 +281,8 @@ end
 
 function _M.rewrite(conf, ctx)
     local userinfo, err
+
+    expire_legacy_cookies(ctx)
 
     -- clear any client-supplied X-Userinfo before authentication
     core.request.set_header(ctx, "X-Userinfo", nil)

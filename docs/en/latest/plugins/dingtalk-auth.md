@@ -122,7 +122,7 @@ Once you have enabled the Plugin, incoming requests to the Route are processed a
 
 1. **No session and no code**: The Plugin generates a random `state`, stores it in the session cookie, and redirects the user to `redirect_uri` (typically a DingTalk OAuth login page) with a `302` response, appending `state` to the query string. Pass `state` through to DingTalk so that it is returned on the callback.
 2. **Authorization code present** (in the `code` query parameter or `X-DingTalk-Code` header): A code taken from the query parameter must arrive with the `state` bound to the session, otherwise the Plugin responds with `401`. This ties the code to the browser that started the flow. A code taken from the `X-DingTalk-Code` header is exempt, since such requests come from non-browser clients. The Plugin then exchanges the code for an access token via `access_token_url`, then retrieves user information from `userinfo_url`. On success, the user information is stored in an encrypted cookie session and the original request proceeds.
-3. **Valid session cookie**: Subsequent requests carrying the session cookie bypass DingTalk API calls entirely and proceed directly to the upstream. Sessions are scoped to the DingTalk application and Provider endpoints; a session issued for another application is not accepted.
+3. **Valid session cookie**: Subsequent requests carrying the session cookie bypass DingTalk API calls entirely and proceed directly to the upstream. The cookie name and audience are derived from the application identity, Provider endpoints, and `cookie_secure`, so applications do not share cookie attributes, creation time, or cleanup.
 
 When `set_userinfo_header` is `true` (the default), the upstream receives the DingTalk user information in the `X-Userinfo` header as a Base64-encoded JSON object.
 
@@ -187,7 +187,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 
 ## Upgrade compatibility
 
-The application-scoped session audience invalidates sessions issued by versions without it, so users need to authenticate again after upgrading. During a rolling upgrade, keep the OAuth initiation and callback on the same version, for example with sticky sessions or by draining old nodes before the callback; crossing versions can otherwise produce a 401. Sessions issued by the new version are also invalid after rolling back to an older version.
+The application-scoped session audience and cookie name invalidate sessions issued by versions without them, so users need to authenticate again after upgrading. When the new version receives a legacy fixed-name session cookie, it expires that cookie and all of its chunks, preventing the old session from being restored by a later rollback. During a rolling upgrade, keep the OAuth initiation and callback on the same version, for example with sticky sessions or by draining old nodes before the callback; crossing versions can otherwise produce a 401. Sessions issued by the new version are also invalid after rolling back to an older version.
 
 ## Delete Plugin
 
