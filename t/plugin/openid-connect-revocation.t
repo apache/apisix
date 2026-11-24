@@ -762,13 +762,29 @@ failed to destroy session
             end
 
             -- keys are "<prefix>:<cookie name>:<base64url of the mark key>", and the
-            -- mark keys of a lineage start with "lineage:", "bGluZWFnZTp" encoded
+            -- mark keys of a lineage start with "lineage:", "bGluZWFnZT" encoded.
+            -- The next character depends on the first one of the lineage ID: "o"
+            -- for digits and "-", "p" for letters and "_".
             local prefix = "oidc:revocation:partial:"
-            local lineage_keys = prefix .. ":session:bGluZWFnZTp*"
+            local lineage_keys = prefix .. ":session:bGluZWFnZT[op]*"
             acl("DELUSER", "partial")
             -- this user reads everything but may only write lineage marks
             assert(acl("SETUSER", "partial", "on", ">partialpw", "+@all", "%R~*",
                        "%W~" .. lineage_keys) == "+OK")
+
+            -- the pattern has to allow the mark of any lineage ID, whichever
+            -- character it starts with, and keep denying the session id marks
+            local function mark_key(id)
+                local encoded = ngx.encode_base64("lineage:" .. id)
+                encoded = encoded:gsub("+", "-"):gsub("/", "_"):gsub("=", "")
+                return prefix .. ":session:" .. encoded
+            end
+            for _, id in ipairs({ "Abc", "zbc", "0bc", "9bc", "-bc", "_bc" }) do
+                assert(acl("DRYRUN", "partial", "SET", mark_key(id), "1") == "+OK",
+                       "lineage mark of an ID starting with " .. id:sub(1, 1) .. " is denied")
+            end
+            assert(acl("DRYRUN", "partial", "SET", prefix .. ":session:c2lkLW1hcms", "1")
+                       :sub(1, 1) == "$", "session id marks must be denied")
 
             local code, body = test_admin("/apisix/admin/routes/1",
                 ngx.HTTP_PUT,
