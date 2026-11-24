@@ -23,6 +23,7 @@ local resty_string = require("resty.string")
 
 local base64_encode = ngx.encode_base64
 local ngx_time = ngx.time
+local tostring = tostring
 local type = type
 
 local STATE_BYTES = 16

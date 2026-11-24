@@ -22,6 +22,7 @@ local resty_sha256 = require("resty.sha256")
 local resty_string = require("resty.string")
 
 local base64_encode = ngx.encode_base64
+local tostring = tostring
 
 local STATE_BYTES = 16
 
