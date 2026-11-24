@@ -1506,9 +1506,8 @@ local function authenticate(plugin_conf, ctx)
                 return 401
             end
 
-            -- With revocation_fail_mode closed, an unreachable revocation store
-            -- fails opening or destroying a session. Reject without destroying
-            -- the cookie.
+            -- in closed fail mode an unreachable revocation store fails opening
+            -- or destroying the session: reject and keep the cookie
             if core.string.find(err, "unable to check session revocation")
                     or core.string.find(err, "unable to mark session revoked") then
                 if session then

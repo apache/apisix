@@ -454,10 +454,9 @@ done
 
             local refreshed = res.status
 
-            -- With lineage revocation both cookies are rejected whichever session
-            -- id logout marks, so check that it marked the one of the presented
-            -- cookie: had logout refreshed the session, it would be the new one.
-            -- The session id is the 32 bytes after the type and flags of the header.
+            -- with lineage revocation both cookies are rejected either way, so check
+            -- that logout marked the presented session id (the 32 bytes after the
+            -- type and flags of the header): after a refresh it would be the new one
             local value = ("; " .. cookie):match(";%s*session=([^;]+)")
             local sid = base64.decode_base64url(value:sub(1, 48)):sub(4, 35)
             local red = redis:new()
@@ -649,7 +648,7 @@ OIDC session revocation store unavailable
             -- answers reads but rejects writes
             local maxmemory = assert(red:config("get", "maxmemory"))[2]
             local policy = assert(red:config("get", "maxmemory-policy"))[2]
-            local function writes(allowed)
+            local function allow_writes(allowed)
                 if allowed then
                     assert(red:config("set", "maxmemory", maxmemory))
                     assert(red:config("set", "maxmemory-policy", policy))
@@ -686,13 +685,13 @@ OIDC session revocation store unavailable
             local refreshed_cookie = keycloak.concatenate_cookies(res.headers["Set-Cookie"])
 
             -- two distinct cookies of one login, both valid
-            for _, c in ipairs({ cookie, refreshed_cookie }) do
+            for _, login_cookie in ipairs({ cookie, refreshed_cookie }) do
                 res, err = httpc:request_uri(uri, {
                     method = "GET",
-                    headers = { Cookie = c },
+                    headers = { Cookie = login_cookie },
                 })
                 if not res or res.status ~= 200 then
-                    writes(true)
+                    allow_writes(true)
                     ngx.status = 500
                     ngx.say("cookie rejected before logout: ", res and res.status or err)
                     return
@@ -703,12 +702,12 @@ OIDC session revocation store unavailable
             local logout_uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/logout"
 
             -- the first logout cannot write its marks
-            writes(false)
+            allow_writes(false)
             res, err = httpc:request_uri(logout_uri, {
                 method = "GET",
                 headers = { Cookie = cookie },
             })
-            writes(true)
+            allow_writes(true)
             if not res then
                 ngx.status = 500
                 ngx.say(err)
@@ -732,10 +731,10 @@ OIDC session revocation store unavailable
 
             -- both cookies would still be valid if the retry had not revoked them
             local statuses = {}
-            for _, c in ipairs({ cookie, refreshed_cookie }) do
+            for _, login_cookie in ipairs({ cookie, refreshed_cookie }) do
                 res, err = httpc:request_uri(uri, {
                     method = "GET",
-                    headers = { Cookie = c },
+                    headers = { Cookie = login_cookie },
                 })
                 if not res then
                     ngx.status = 500
@@ -779,22 +778,21 @@ failed to destroy session
                 return assert(red:acl(...))
             end
 
-            -- keys are "<prefix>:<cookie name>:<base64url of the mark key>", and the
-            -- mark keys of a lineage start with "lineage:", "bGluZWFnZT" encoded.
-            -- The next character depends on the first one of the lineage ID: "o"
-            -- for digits and "-", "p" for letters and "_".
+            -- keys are "<prefix>:<cookie name>:<base64url of the mark key>"; lineage
+            -- keys start with "bGluZWFnZT" ("lineage:"), then "o" or "p" depending
+            -- on the first character of the lineage ID
             local prefix = "oidc:revocation:partial:"
             local lineage_keys = prefix .. ":session:bGluZWFnZT[op]*"
             acl("DELUSER", "partial")
-            -- the scenario runs in a function, so that the user is deleted
-            -- whatever happens in it, a failed assertion included
+            -- run the scenario in a function, so the user is deleted even when an
+            -- assertion fails
             local ok, err = pcall(function()
                 -- this user reads everything but may only write lineage marks
                 assert(acl("SETUSER", "partial", "on", ">partialpw", "+@all", "%R~*",
                            "%W~" .. lineage_keys) == "OK")
 
-                -- the pattern has to allow the mark of any lineage ID, whichever
-                -- character it starts with, and keep denying the session id marks
+                -- the pattern allows lineage marks whatever the first character of
+                -- the ID, and still denies session id marks
                 local function mark_key(id)
                     return prefix .. ":session:" .. base64.encode_base64url("lineage:" .. id)
                 end
@@ -884,10 +882,10 @@ failed to destroy session
                 local refreshed_cookie = keycloak.concatenate_cookies(res.headers["Set-Cookie"])
                 assert(cookie ~= refreshed_cookie)
 
-                for _, c in ipairs({ cookie, refreshed_cookie }) do
+                for _, login_cookie in ipairs({ cookie, refreshed_cookie }) do
                     res, err = httpc:request_uri(uri, {
                         method = "GET",
-                        headers = { Cookie = c },
+                        headers = { Cookie = login_cookie },
                     })
                     if not res or res.status ~= 200 then
                         return fail("cookie rejected before logout: ", res and res.status or err)
@@ -921,10 +919,10 @@ failed to destroy session
 
                 -- both cookies would still be valid if the retry had not revoked them
                 local statuses = {}
-                for _, c in ipairs({ cookie, refreshed_cookie }) do
+                for _, login_cookie in ipairs({ cookie, refreshed_cookie }) do
                     res, err = httpc:request_uri(uri, {
                         method = "GET",
-                        headers = { Cookie = c },
+                        headers = { Cookie = login_cookie },
                     })
                     if not res then
                         return fail(err)
