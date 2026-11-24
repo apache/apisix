@@ -33,6 +33,21 @@ our $receiver = <<'_EOC_';
             if data then ngx.log(ngx.WARN, "received log data") end
         }
     }
+    server {
+        listen 21984 ssl;
+        ssl_certificate cert/apisix.crt;
+        ssl_certificate_key cert/apisix.key;
+        content_by_lua_block {
+            local sock = assert(ngx.req.socket())
+            while true do
+                local data = sock:receiveany(4096)
+                if not data then
+                    return
+                end
+                ngx.log(ngx.WARN, "received kept-alive log data")
+            end
+        }
+    }
 _EOC_
 
 run_tests();
@@ -242,4 +257,61 @@ GET /trigger
 --- error_log
 received log data
 --- no_error_log
+certificate host mismatch
+
+
+
+=== TEST 8: tcp-logger does not reuse a TLS connection left unverified by another plugin
+--- stream_config eval: $::receiver
+--- apisix_yaml
+routes:
+  - uri: /sls
+    upstream:
+      type: roundrobin
+      nodes:
+        "127.0.0.1:1980": 1
+    plugins:
+      proxy-rewrite:
+        uri: /hello
+      sls-logger:
+        batch_max_size: 1
+        host: "127.0.0.1"
+        port: 21984
+        project: sample
+        logstore: sample
+        access_key_id: sample
+        access_key_secret: sample
+        ssl_verify: false
+  - uri: /tcp
+    upstream:
+      type: roundrobin
+      nodes:
+        "127.0.0.1:1980": 1
+    plugins:
+      proxy-rewrite:
+        uri: /hello
+      tcp-logger:
+        batch_max_size: 1
+        host: "127.0.0.1"
+        port: 21984
+        tls: true
+#END
+--- config
+    location = /trigger {
+        content_by_lua_block {
+            local http = require("resty.http")
+            for _, path in ipairs({"/sls", "/tcp"}) do
+                local httpc = http.new()
+                local res = assert(httpc:request_uri("http://127.0.0.1:1984" .. path))
+                ngx.say(path, " ", res.status)
+                ngx.sleep(0.5)
+            end
+        }
+    }
+--- request
+GET /trigger
+--- response_body
+/sls 200
+/tcp 200
+--- error_log
 certificate host mismatch

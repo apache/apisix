@@ -106,7 +106,10 @@ local function send_tcp_data(conf, log_message)
     if verify and (not server_name or server_name == "") then
         server_name = conf.host
     end
-    local ok, err = sock:connect(conf.host, conf.port)
+    -- other plugins may leave TLS connections in the default pool, verified or not
+    local pool = conf.tls and "tcp-logger:tls:" .. conf.host .. ":" .. conf.port
+                 .. ":" .. (server_name or "") .. ":" .. tostring(verify) or nil
+    local ok, err = sock:connect(conf.host, conf.port, {pool = pool})
     if not ok then
         return false, "failed to connect to TCP server: host[" .. conf.host
                       .. "] port[" .. tostring(conf.port) .. "] err: " .. err
