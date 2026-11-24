@@ -108,7 +108,8 @@ function _M.get_request_table(max_req_body_size)
     end
 
     if method == "POST" then
-        return ngx.req.get_post_args()
+        -- get_post_args cannot read a body buffered in a temporary file
+        return ngx.req.get_post_args() or {}
     end
 
     return ngx.req.get_uri_args()

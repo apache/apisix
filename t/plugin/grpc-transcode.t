@@ -866,3 +866,15 @@ Transfer-Encoding: chunked
 --- error_log
 attempt to read body from file
 request size 17 is greater than the maximum size 16 allowed
+
+
+
+=== TEST 34: map a file-backed POST without JSON to empty arguments
+--- config
+    client_body_in_file_only clean;
+--- request
+POST /grpctest
+--- more_headers
+Content-Length: 0
+--- response_body eval
+qr/"message":"Hello "/
