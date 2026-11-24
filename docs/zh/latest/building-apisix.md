@@ -242,6 +242,12 @@ APISIX 的一些特性需要在 OpenResty 中引入额外的 NGINX 模块。
 
 :::
 
+运行 TypeScript 测试前，先按测试套件的锁文件安装依赖。
+
+```shell
+pnpm --dir t install --frozen-lockfile
+```
+
 ### 故障排查
 
 以下是运行 APISIX 测试用例的常见故障排除步骤。

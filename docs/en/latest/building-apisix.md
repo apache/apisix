@@ -242,6 +242,12 @@ Some tests rely on external services and system configuration modification. See 
 
 :::
 
+Before running TypeScript tests, install the versions recorded in the test suite lockfile.
+
+```shell
+pnpm --dir t install --frozen-lockfile
+```
+
 ### Troubleshooting
 
 These are some common troubleshooting steps for running APISIX test cases.
