@@ -31,9 +31,10 @@ local resty_sha256 = require("resty.sha256")
 local schema_def = require("apisix.schema_def")
 local auth_utils = require("apisix.utils.auth")
 local string_lower = string.lower
-local setmetatable = setmetatable
+local tostring = tostring
+local lrucache = require("resty.lrucache")
 
-local legacy_unsigned_digest_warned = setmetatable({}, {__mode = "k"})
+local legacy_unsigned_digest_warned = lrucache.new(1024)
 
 local schema = {
     type = "object",
@@ -307,9 +308,10 @@ local function validate(ctx, conf, params)
         if ctx.matched_route and ctx.matched_route.value.service_id then
             warning_key = ctx.matched_route.value.service_id
         end
+        warning_key = tostring(warning_key)
         if not has_signed_header(params.headers, "digest")
-           and not legacy_unsigned_digest_warned[warning_key] then
-            legacy_unsigned_digest_warned[warning_key] = true
+           and not legacy_unsigned_digest_warned:get(warning_key) then
+            legacy_unsigned_digest_warned:set(warning_key, true)
             core.log.warn("hmac-auth accepted a request whose Digest header was not signed; ",
                           "this compatibility behavior will be removed in a future release")
         end

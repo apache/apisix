@@ -579,6 +579,8 @@ qr/validate_request_body requires 'digest' in signed_headers/
             local hmac = require("resty.hmac")
             local resty_sha256 = require("resty.sha256")
 
+            assert(core.etcd.delete("/routes/1"))
+
             local code, body = t.test('/apisix/admin/routes/multi-valid', ngx.HTTP_PUT, [[{
                 "plugins": {
                     "multi-auth": {
@@ -634,6 +636,8 @@ passed
             local t = require("lib.test_admin")
             local hmac = require("resty.hmac")
             local resty_sha256 = require("resty.sha256")
+
+            assert(core.etcd.delete("/routes/multi-valid"))
 
             local code, body = t.test('/apisix/admin/routes/mixed-case', ngx.HTTP_PUT, [[{
                 "plugins": {
@@ -692,7 +696,12 @@ passed
             assert(core.etcd.set("/services/shared-hmac", {
                 id = "shared-hmac",
                 plugins = {
-                    ["hmac-auth"] = {validate_request_body = true}
+                    ["multi-auth"] = {
+                        auth_plugins = {
+                            {["key-auth"] = {}},
+                            {["hmac-auth"] = {validate_request_body = true}},
+                        },
+                    },
                 },
                 upstream = {
                     nodes = {["127.0.0.1:1980"] = 1},
