@@ -18,6 +18,7 @@
 local ipairs       = ipairs
 local core         = require("apisix.core")
 local http         = require("resty.http")
+local http_headers = require("resty.http_headers")
 local http_client  = require("apisix.utils.http")
 local pairs        = pairs
 local setmetatable = setmetatable
@@ -247,13 +248,12 @@ end
 
 
 function _M.access(conf, ctx)
-    local auth_headers = {
-        ["X-Forwarded-Proto"] = core.request.get_scheme(ctx),
-        ["X-Forwarded-Method"] = core.request.get_method(),
-        ["X-Forwarded-Host"] = core.request.get_host(ctx),
-        ["X-Forwarded-Uri"] = ctx.var.request_uri,
-        ["X-Forwarded-For"] = core.request.get_remote_client_ip(ctx),
-    }
+    local auth_headers = http_headers.new()
+    auth_headers["X-Forwarded-Proto"] = core.request.get_scheme(ctx)
+    auth_headers["X-Forwarded-Method"] = core.request.get_method()
+    auth_headers["X-Forwarded-Host"] = core.request.get_host(ctx)
+    auth_headers["X-Forwarded-Uri"] = ctx.var.request_uri
+    auth_headers["X-Forwarded-For"] = core.request.get_remote_client_ip(ctx)
 
     if conf.request_method == "POST" then
         -- body is buffered and re-framed below, so only keep content-encoding.
@@ -281,7 +281,7 @@ function _M.access(conf, ctx)
     -- append headers that need to be get from the client request header
     if #conf.request_headers > 0 then
         for _, header in ipairs(conf.request_headers) do
-            if not auth_headers[header] then
+            if auth_headers[header] == nil then
                 auth_headers[header] = core.request.header(ctx, header)
             end
         end
