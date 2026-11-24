@@ -929,6 +929,7 @@ passed
             }]])
             assert(code <= 201, "setup application B failed: " .. tostring(code))
 
+            local before_b = ngx.time()
             local begin_b = assert(http.new():request_uri(base .. "/hello-other", {
                 headers = {Cookie = pair_a}
             }))
@@ -969,10 +970,10 @@ passed
                 cookie_secure = false,
                 absolute_timeout = 300,
             })
-            local remaining = opened_b:get_property("absolute_timeout")
-            assert(remaining and remaining > 298,
+            local creation_time = opened_b:get_property("creation_time")
+            assert(creation_time and creation_time >= before_b,
                 "application B inherited application A's creation time: "
-                .. tostring(remaining))
+                .. tostring(creation_time))
 
             local replay_a = assert(http.new():request_uri(base .. "/hello", {
                 headers = {Cookie = pair_a .. "; " .. pair_b}
