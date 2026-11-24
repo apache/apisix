@@ -306,9 +306,8 @@ local function validate(ctx, conf, params)
 
         local warning_key = conf._meta and conf._meta.parent or conf
         if ctx.matched_route and ctx.matched_route.value.service_id then
-            warning_key = ctx.matched_route.value.service_id
+            warning_key = tostring(ctx.matched_route.value.service_id)
         end
-        warning_key = tostring(warning_key)
         if not has_signed_header(params.headers, "digest")
            and not legacy_unsigned_digest_warned:get(warning_key) then
             legacy_unsigned_digest_warned:set(warning_key, true)
