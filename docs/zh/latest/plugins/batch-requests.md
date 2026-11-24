@@ -39,7 +39,7 @@ description: 本文介绍了关于 Apache APISIX `batch-request` 插件的基本
 
 管道中的每个请求都会继承外层请求头，但会跳过 `Transfer-Encoding` 和以 `Content-` 开头的请求头（如 `Content-Type`）。APISIX 会对每个请求分别执行路由匹配和认证。
 
-如果原始请求的请求头与插件中配置的请求头冲突，则以插件中配置的请求头优先（配置文件中指定的 real_ip_header 除外）。 HTTP 客户端根据每项请求的正文确定其消息边界。批次公共请求头或单项请求头中提供的 `Content-Length` 和 `Transfer-Encoding` 都会被忽略。
+如果原始请求的请求头与插件中配置的请求头冲突，则以插件中配置的请求头优先（配置文件中指定的 real_ip_header 除外）。HTTP 客户端根据每项请求的正文确定其消息边界。批次公共请求头或单项请求头中提供的 `Content-Length` 和 `Transfer-Encoding` 都会被忽略。
 
 :::
 
