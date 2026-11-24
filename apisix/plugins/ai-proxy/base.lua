@@ -215,6 +215,11 @@ end
 -- when on_error function is passed, before_proxy will keep on retrying until
 -- on_error returns abort code
 function _M.before_proxy(conf, ctx, on_error)
+    -- Each attempt writes the path it sent back to $upstream_uri, so read the
+    -- request's passthrough path once, before a fallback can see that value.
+    local request_path = ctx.ai_client_protocol == "passthrough"
+                         and passthrough_path(ctx)
+
     while true do
         local ai_instance = ctx.picked_ai_instance
 
@@ -259,7 +264,7 @@ function _M.before_proxy(conf, ctx, on_error)
             -- Catch-all: proxy to the request path, as rewritten for the upstream
             converter = nil
             target_proto = "passthrough"
-            target_path = passthrough_path(ctx)
+            target_path = request_path
         else
             -- Find a converter to bridge the gap
             local conv, target_protocol = protocols.find_converter(client_protocol, caps)
