@@ -376,7 +376,7 @@ Cookie sessions are stored by the client and cannot normally be invalidated indi
   "redis": {
     "host": "127.0.0.1",
     "port": 6379,
-    "prefix": "oidc:session:"
+    "prefix": "oidc:session"
   }
 }
 ```

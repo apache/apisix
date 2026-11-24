@@ -375,7 +375,7 @@ Cookie 会话存储在客户端，APISIX 通常无法单独将其失效。要启
   "redis": {
     "host": "127.0.0.1",
     "port": 6379,
-    "prefix": "oidc:session:"
+    "prefix": "oidc:session"
   }
 }
 ```

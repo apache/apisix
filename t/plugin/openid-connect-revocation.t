@@ -325,11 +325,13 @@ done
 
 
 === TEST 4: logout revokes the presented cookie and the cookie of a refresh, even when the session is due for a rolling refresh
---- timeout: 30
+--- timeout: 50
 --- config
     location /t {
         content_by_lua_block {
             local http = require("resty.http")
+            local redis = require("resty.redis")
+            local base64 = require("ngx.base64")
             local keycloak = require("lib.keycloak")
             local test_admin = require("lib.test_admin").test
 
@@ -348,7 +350,7 @@ done
                             "session": {
                                 "secret": "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
                                 "storage": "cookie",
-                                "rolling_timeout": 8,
+                                "rolling_timeout": 20,
                                 "revocation": "redis",
                                 "revocation_fail_mode": "closed",
                                 "redis": {
@@ -401,7 +403,7 @@ done
 
             -- past 75% of rolling_timeout, where opening the session with
             -- start() would save it under a new session id
-            ngx.sleep(7)
+            ngx.sleep(16)
 
             -- this request refreshes the session, so it hands out a cookie
             -- with a new session id
@@ -450,11 +452,26 @@ done
                 return
             end
 
-            ngx.say("replayed=", replayed, " refreshed=", res.status)
+            local refreshed = res.status
+
+            -- With lineage revocation both cookies are rejected whichever session
+            -- id logout marks, so check that it marked the one of the presented
+            -- cookie: had logout refreshed the session, it would be the new one.
+            -- The session id is the 32 bytes after the type and flags of the header.
+            local value = ("; " .. cookie):match(";%s*session=([^;]+)")
+            local sid = base64.decode_base64url(value:sub(1, 48)):sub(4, 35)
+            local red = redis:new()
+            red:set_timeout(1000)
+            assert(red:connect("127.0.0.1", 6379))
+            local marked = assert(red:exists("oidc:revocation:rolling::session:"
+                                             .. base64.encode_base64url(sid)))
+
+            ngx.say("replayed=", replayed, " refreshed=", refreshed,
+                    " presented_marked=", tostring(marked == 1))
         }
     }
 --- response_body
-replayed=302 refreshed=302
+replayed=302 refreshed=302 presented_marked=true
 
 
 
@@ -523,7 +540,7 @@ replayed=302 refreshed=302
             local cookie = keycloak.concatenate_cookies(res.headers["Set-Cookie"])
             local httpc = http.new()
 
-            -- the cache is per worker, so replay enough times to reach all of them
+            -- replay a few times: the worker that answers has the open-mode error cached
             local function replay()
                 local seen = {}
                 for _ = 1, 10 do
@@ -567,7 +584,7 @@ OIDC session revocation store unavailable
 
 
 === TEST 6: a logout that fails on a Redis write can be retried with the same cookie
---- timeout: 40
+--- timeout: 60
 --- config
     location /t {
         content_by_lua_block {
@@ -592,7 +609,7 @@ OIDC session revocation store unavailable
                             "session": {
                                 "secret": "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
                                 "storage": "cookie",
-                                "rolling_timeout": 8,
+                                "rolling_timeout": 20,
                                 "revocation": "redis",
                                 "revocation_fail_mode": "closed",
                                 "revocation_cache_ttl": 0,
@@ -628,12 +645,19 @@ OIDC session revocation store unavailable
             local function marks()
                 return #assert(red:keys(prefix .. "*"))
             end
-            -- a Redis that is over its memory limit still answers reads but
-            -- rejects writes
+            -- a Redis that is over its memory limit and does not evict still
+            -- answers reads but rejects writes
+            local maxmemory = assert(red:config("get", "maxmemory"))[2]
+            local policy = assert(red:config("get", "maxmemory-policy"))[2]
             local function writes(allowed)
-                assert(red:config("set", "maxmemory", allowed and 0 or 1))
+                if allowed then
+                    assert(red:config("set", "maxmemory", maxmemory))
+                    assert(red:config("set", "maxmemory-policy", policy))
+                else
+                    assert(red:config("set", "maxmemory-policy", "noeviction"))
+                    assert(red:config("set", "maxmemory", 1))
+                end
             end
-            writes(true)
 
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/uri"
             local res, err = keycloak.login_keycloak(
@@ -649,7 +673,7 @@ OIDC session revocation store unavailable
 
             -- past 75% of rolling_timeout, where a request refreshes the
             -- session and hands out a cookie with a new session id
-            ngx.sleep(7)
+            ngx.sleep(16)
             res, err = httpc:request_uri(uri, {
                 method = "GET",
                 headers = { Cookie = cookie },
@@ -736,7 +760,7 @@ failed to destroy session
 
 
 === TEST 7: a logout that wrote the lineage mark but not the session id mark can be retried
---- timeout: 40
+--- timeout: 60
 --- config
     location /t {
         content_by_lua_block {
@@ -793,7 +817,7 @@ failed to destroy session
                             "session": {
                                 "secret": "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
                                 "storage": "cookie",
-                                "rolling_timeout": 8,
+                                "rolling_timeout": 20,
                                 "revocation": "redis",
                                 "revocation_fail_mode": "closed",
                                 "revocation_cache_ttl": 0,
@@ -848,7 +872,7 @@ failed to destroy session
 
             -- past 75% of rolling_timeout, where a request refreshes the
             -- session and hands out a cookie with a new session id
-            ngx.sleep(7)
+            ngx.sleep(16)
             res, err = httpc:request_uri(uri, {
                 method = "GET",
                 headers = { Cookie = cookie },
