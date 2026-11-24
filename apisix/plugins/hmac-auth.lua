@@ -119,7 +119,7 @@ local hmac_funcs = {
 local function array_to_map(arr)
     local map = core.table.new(0, #arr)
     for _, v in ipairs(arr) do
-      map[v] = true
+      map[string_lower(v)] = true
     end
 
     return map
@@ -270,7 +270,7 @@ local function validate(ctx, conf, params)
     if conf.signed_headers and #conf.signed_headers >= 1 then
         local params_headers_map = params.headers and array_to_map(params.headers) or {}
         for _, header in ipairs(conf.signed_headers) do
-            if not params_headers_map[header] then
+            if not params_headers_map[string_lower(header)] then
                 return nil, [[expected header "]] .. header .. [[" missing in signing]]
             end
         end
@@ -303,9 +303,13 @@ local function validate(ctx, conf, params)
             return nil, "Invalid digest"
         end
 
+        local warning_key = conf._meta and conf._meta.parent or conf
+        if ctx.matched_route and ctx.matched_route.value.service_id then
+            warning_key = ctx.matched_route.value.service_id
+        end
         if not has_signed_header(params.headers, "digest")
-           and not legacy_unsigned_digest_warned[conf] then
-            legacy_unsigned_digest_warned[conf] = true
+           and not legacy_unsigned_digest_warned[warning_key] then
+            legacy_unsigned_digest_warned[warning_key] = true
             core.log.warn("hmac-auth accepted a request whose Digest header was not signed; ",
                           "this compatibility behavior will be removed in a future release")
         end

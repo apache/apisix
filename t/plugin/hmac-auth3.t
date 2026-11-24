@@ -537,3 +537,210 @@ qr/validate_request_body requires 'digest' in signed_headers/
 passed
 --- error_log
 hmac-auth accepted a request whose Digest header was not signed
+
+
+
+=== TEST 11: reject unsigned digest nested in multi-auth
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/multi-invalid', ngx.HTTP_PUT, [[{
+                "plugins": {
+                    "multi-auth": {
+                        "auth_plugins": [
+                            {"key-auth": {}},
+                            {"hmac-auth": {"validate_request_body": true}}
+                        ]
+                    }
+                },
+                "upstream": {
+                    "nodes": {"127.0.0.1:1980": 1},
+                    "type": "roundrobin"
+                },
+                "uri": "/multi-invalid"
+            }]])
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- error_code: 400
+--- response_body_like eval
+qr/validate_request_body requires 'digest' in signed_headers/
+
+
+
+=== TEST 12: accept signed digest nested in multi-auth
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin")
+            local hmac = require("resty.hmac")
+            local resty_sha256 = require("resty.sha256")
+
+            local code, body = t.test('/apisix/admin/routes/multi-valid', ngx.HTTP_PUT, [[{
+                "plugins": {
+                    "multi-auth": {
+                        "auth_plugins": [
+                            {"key-auth": {}},
+                            {"hmac-auth": {
+                                "validate_request_body": true,
+                                "signed_headers": ["date", "digest"]
+                            }}
+                        ]
+                    }
+                },
+                "upstream": {
+                    "nodes": {"127.0.0.1:1980": 1},
+                    "type": "roundrobin"
+                },
+                "uri": "/hello"
+            }]])
+            assert(code < 300, body)
+            ngx.sleep(1)
+
+            local body = "{\"name\":\"multi\"}"
+            local hash = resty_sha256:new()
+            hash:update(body)
+            local digest = "SHA-256=" .. ngx.encode_base64(hash:final())
+            local date = ngx.http_time(ngx.time())
+            local signing_string = "my-access-key\nPOST /hello\ndate: " .. date
+                .. "\ndigest: " .. digest .. "\n"
+            local signature = hmac:new("my-secret-key", hmac.ALGOS.SHA256):final(signing_string)
+            local authorization = "Signature keyId=\"my-access-key\",algorithm=\"hmac-sha256\""
+                .. ",headers=\"@request-target date digest\",signature=\""
+                .. ngx.encode_base64(signature) .. "\""
+
+            local code, response = t.test('/hello', ngx.HTTP_POST, body, nil, {
+                Date = date,
+                Digest = digest,
+                Authorization = authorization,
+            })
+            ngx.status = code
+            ngx.say(response)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 13: signed header names are case-insensitive
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin")
+            local hmac = require("resty.hmac")
+            local resty_sha256 = require("resty.sha256")
+
+            local code, body = t.test('/apisix/admin/routes/mixed-case', ngx.HTTP_PUT, [[{
+                "plugins": {
+                    "hmac-auth": {
+                        "validate_request_body": true,
+                        "signed_headers": ["date", "DiGeSt"]
+                    }
+                },
+                "upstream": {
+                    "nodes": {"127.0.0.1:1980": 1},
+                    "type": "roundrobin"
+                },
+                "uri": "/hello"
+            }]])
+            assert(code < 300, body)
+            ngx.sleep(1)
+
+            local body = "{\"name\":\"case\"}"
+            local hash = resty_sha256:new()
+            hash:update(body)
+            local digest = "SHA-256=" .. ngx.encode_base64(hash:final())
+            local date = ngx.http_time(ngx.time())
+            local signing_string = "my-access-key\nPOST /hello\ndate: " .. date
+                .. "\ndigest: " .. digest .. "\n"
+            local signature = hmac:new("my-secret-key", hmac.ALGOS.SHA256):final(signing_string)
+            local authorization = "Signature keyId=\"my-access-key\",algorithm=\"hmac-sha256\""
+                .. ",headers=\"@request-target date digest\",signature=\""
+                .. ngx.encode_base64(signature) .. "\""
+
+            local code, response = t.test('/hello', ngx.HTTP_POST, body, nil, {
+                Date = date,
+                Digest = digest,
+                Authorization = authorization,
+            })
+            ngx.status = code
+            ngx.say(response)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 14: shared service emits one compatibility warning
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin")
+            local hmac = require("resty.hmac")
+            local resty_sha256 = require("resty.sha256")
+
+            assert(core.etcd.delete("/routes/1"))
+            assert(core.etcd.delete("/routes/multi-valid"))
+            assert(core.etcd.delete("/routes/mixed-case"))
+            assert(core.etcd.set("/services/shared-hmac", {
+                id = "shared-hmac",
+                plugins = {
+                    ["hmac-auth"] = {validate_request_body = true}
+                },
+                upstream = {
+                    nodes = {["127.0.0.1:1980"] = 1},
+                    type = "roundrobin"
+                }
+            }))
+            assert(core.etcd.set("/routes/shared-a", {
+                id = "shared-a",
+                uri = "/hello",
+                service_id = "shared-hmac"
+            }))
+            assert(core.etcd.set("/routes/shared-b", {
+                id = "shared-b",
+                uri = "/hello1",
+                service_id = "shared-hmac"
+            }))
+            ngx.sleep(1)
+
+            local body = "{\"name\":\"shared\"}"
+            local hash = resty_sha256:new()
+            hash:update(body)
+            local digest = "SHA-256=" .. ngx.encode_base64(hash:final())
+            local date = ngx.http_time(ngx.time())
+
+            local function request(path)
+                local signing_string = "my-access-key\nPOST " .. path
+                    .. "\ndate: " .. date .. "\n"
+                local signature = hmac:new("my-secret-key", hmac.ALGOS.SHA256):final(signing_string)
+                local authorization = "Signature keyId=\"my-access-key\",algorithm=\"hmac-sha256\""
+                    .. ",headers=\"@request-target date\",signature=\""
+                    .. ngx.encode_base64(signature) .. "\""
+                local code, response = t.test(path, ngx.HTTP_POST, body, nil, {
+                    Date = date,
+                    Digest = digest,
+                    Authorization = authorization,
+                })
+                assert(code == 200, response)
+                return response
+            end
+
+            request("/hello")
+            request("/hello1")
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+--- grep_error_log eval
+qr/hmac-auth accepted a request whose Digest header was not signed/
+--- grep_error_log_out
+hmac-auth accepted a request whose Digest header was not signed

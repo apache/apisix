@@ -40,7 +40,7 @@ local _M = {
     schema = schema
 }
 
-function _M.check_schema(conf)
+function _M.check_schema(conf, schema_type, for_write)
     local ok, err = core.schema.check(schema, conf)
     if not ok then
         return false, err
@@ -56,7 +56,7 @@ function _M.check_schema(conf)
                 if auth.type ~= 'auth' then
                     return false, auth_plugin_name .. " plugin is not supported"
                 end
-                local ok, err = auth.check_schema(auth_plugin_conf, auth.schema)
+                local ok, err = auth.check_schema(auth_plugin_conf, auth.schema, for_write)
                 if not ok then
                     return false, "plugin " .. auth_plugin_name .. " check schema failed: " .. err
                 end
