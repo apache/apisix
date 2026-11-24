@@ -55,7 +55,7 @@ sudo ldconfig
 | min_length   | integer              | False | 20            | >= 1         | 动态设置 `brotli_min_length` 指令。                                                                                                               |
 | comp_level   | integer              | False | 6             | [0, 11]      | 动态设置 `brotli_comp_level` 指令。                                                                                                               |
 | mode         | integer              | False | 0             | [0, 2]       | 动态设置 `brotli decompress mode`，更多信息参考 [RFC 7932](https://tools.ietf.org/html/rfc7932)。                                                      |
-| lgwin        | integer              | False | 19            | [0, 10-24]   | 动态设置 `brotli sliding window size`，`lgwin` 是滑动窗口大小的以 2 为底的对数，将其设置为 0 会让压缩器自行决定最佳值，更多信息请参考 [RFC 7932](https://tools.ietf.org/html/rfc7932)。  |
+| lgwin        | integer              | False | 19            | [0, 10-24]   | 动态设置 `brotli sliding window size`，`lgwin` 是滑动窗口大小的以 2 为底的对数，设置为 0 时使用最小窗口值 10，更多信息请参考 [RFC 7932](https://tools.ietf.org/html/rfc7932)。  |
 | lgblock      | integer              | False | 0             | [0, 16-24]   | 动态设置 `brotli input block size`，`lgblock` 是最大输入块大小的以 2 为底的对数，将其设置为 0 会让压缩器自行决定最佳值，更多信息请参考 [RFC 7932](https://tools.ietf.org/html/rfc7932)。	 |
 | http_version | number               | False | 1.1           | 1.1, 1.0     | 与 `gzip_http_version` 指令类似，用于识别 http 的协议版本。                                                                                                |
 | vary         | boolean              | False | false         |              | 与 `gzip_vary` 指令类似，用于启用或禁用 `Vary: Accept-Encoding` 响应头。                                                                                    |

@@ -234,7 +234,8 @@ function _M.header_filter(conf, ctx)
     local compressor, err = lib.new_encoder({
         mode = conf.mode,
         quality = conf.comp_level,
-        lgwin = conf.lgwin,
+        -- The previous binding passed zero to libbrotli, which clamped it to 10.
+        lgwin = conf.lgwin == 0 and 10 or conf.lgwin,
         lgblock = conf.lgblock,
     })
     if not compressor then
