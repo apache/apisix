@@ -980,7 +980,6 @@ passed
 
 
 
-
 === TEST 20: application cookies isolate Secure attributes and absolute lifetimes
 --- config
     location /t {

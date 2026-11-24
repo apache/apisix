@@ -872,7 +872,6 @@ passed
 
 
 
-
 === TEST 21: application cookies isolate Secure attributes and absolute lifetimes
 --- config
     location /t {
