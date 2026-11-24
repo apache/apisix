@@ -116,6 +116,10 @@ passed: 30
                                     {i = i, s = "s" .. i, t = {i}})
                 assert(ok)
                 assert(err == nil)
+                -- Let the worker service the event broker between batches of full GCs.
+                if i % 100 == 0 then
+                    ngx.sleep(0)
+                end
             end
 
             ngx.say("passed")

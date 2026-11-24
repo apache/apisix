@@ -110,6 +110,7 @@ local function create_checker(up_conf)
     end
 
     local targets = compute_targets(up_conf)
+    local targets_complete = true
     local desired = {}
     for _, target in ipairs(targets) do
         desired[target.key] = true
@@ -130,6 +131,7 @@ local function create_checker(up_conf)
         if not desired[key] then
             local ok, err = checker:remove_target(t.ip, t.port, t.hostname)
             if not ok then
+                targets_complete = false
                 core.log.error("failed to remove healthcheck target: ", t.ip, ":",
                               t.port, " err: ", err)
             end
@@ -143,12 +145,13 @@ local function create_checker(up_conf)
         local ok, err = checker:add_target(target.host, target.port, target.check_host,
                                         true, target.host_hdr)
         if not ok then
+            targets_complete = false
             core.log.error("failed to add healthcheck target: ", target.host, ":",
                           target.port, " err: ", err)
         end
     end
 
-    return checker
+    return checker, targets_complete
 end
 
 
@@ -202,13 +205,11 @@ local function sync_checker_targets(checker, up_conf)
         end
     end
 
-    -- add targets that are desired but not present, in node order. Unlike
-    -- create_checker this does not re-add already-present targets, so it cannot
-    -- un-mark a pending purge_time. That is safe here only because sync runs on a
-    -- reuse-eligible checker (checks unchanged), which is never delayed_clear'd --
-    -- delayed_clear only happens on a checks-change rebuild or a destroy.
+    -- Add missing targets and retry desired targets still marked for cleanup.
+    -- A failed re-add during a checks-change rebuild can leave a purge_time on
+    -- a target that this checker must keep. Re-adding it cancels that purge.
     for _, target in ipairs(targets) do
-        if not current[target.key] then
+        if not current[target.key] or current[target.key].purge_time ~= nil then
             local ok, err = checker:add_target(target.host, target.port, target.check_host,
                                             true, target.host_hdr)
             if not ok then
@@ -394,7 +395,7 @@ local function timer_create_checker()
             if existing_checker then
                 existing_checker.checker:delayed_clear(DELAYED_CLEAR_TIMEOUT)
             end
-            local checker = create_checker(upstream)
+            local checker, targets_complete = create_checker(upstream)
             if not checker then
                 -- create_checker failed (upstream healthcheck disabled or
                 -- healthcheck.new errored). The old checker's shm targets were
@@ -414,7 +415,10 @@ local function timer_create_checker()
             end
             core.log.info("create new checker: ", tostring(checker), " for resource: ",
                         resource_path, " and version: ", resource_ver)
-            add_working_pool(resource_path, resource_ver, checker, upstream.checks)
+            -- Keep successful targets live, but let the existing version-mismatch
+            -- path retry registration until all additions and removals succeed.
+            local reconciled_ver = targets_complete and resource_ver or nil
+            add_working_pool(resource_path, reconciled_ver, checker, upstream.checks)
             if existing_checker then
                 existing_checker.checker.dead = true
                 existing_checker.checker:stop()
