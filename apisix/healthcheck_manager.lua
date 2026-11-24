@@ -176,8 +176,12 @@ local function sync_checker_targets(checker, up_conf)
     -- keep the ordered list too so adds preserve node order (deterministic)
     local targets = compute_targets(up_conf)
     local desired = {}
+    local desired_identities = {}
     for _, target in ipairs(targets) do
         desired[target.key] = target
+        local identity = target.host .. ":" .. tostring(target.port) .. ":"
+                         .. tostring(target.check_host or target.host)
+        desired_identities[identity] = true
     end
 
     -- index current targets the same way as desired. Read the authoritative
@@ -187,6 +191,7 @@ local function sync_checker_targets(checker, up_conf)
         healthcheck = require("resty.healthcheck")
     end
     local current = {}
+    local current_identities = {}
     local target_list = healthcheck.get_target_list(get_healthchecker_name(up_conf),
                                                     healthcheck_shdict_name) or {}
     for _, t in ipairs(target_list) do
@@ -194,6 +199,8 @@ local function sync_checker_targets(checker, up_conf)
         local key = t.ip .. ":" .. tostring(t.port) .. ":" .. tostring(t.hostname)
                     .. ":" .. tostring(t.hostheader or "")
         current[key] = t
+        local identity = t.ip .. ":" .. tostring(t.port) .. ":" .. tostring(t.hostname)
+        current_identities[identity] = true
     end
 
     local synced = true
@@ -206,6 +213,21 @@ local function sync_checker_targets(checker, up_conf)
     -- applies the new Host header instead of being a no-op on an existing target.
     for key, t in pairs(current) do
         if not desired[key] then
+            local ok, err = checker:remove_target(t.ip, t.port, t.hostname)
+            if not ok then
+                synced = false
+                core.log.error("failed to remove healthcheck target: ", t.ip, ":",
+                              t.port, " err: ", err)
+            end
+        end
+    end
+
+    -- A failed list replacement can drop the list without emitting remove
+    -- events. Clear local ghosts as well, so a later addition does not inherit
+    -- a target that was already removed from the authoritative list.
+    for _, t in ipairs(tab_clone(checker.targets or {})) do
+        local identity = t.ip .. ":" .. tostring(t.port) .. ":" .. tostring(t.hostname or t.ip)
+        if not current_identities[identity] and not desired_identities[identity] then
             local ok, err = checker:remove_target(t.ip, t.port, t.hostname)
             if not ok then
                 synced = false

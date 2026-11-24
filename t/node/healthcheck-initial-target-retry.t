@@ -26,7 +26,7 @@ our $RetryHook = <<'EOC';
     local new = healthcheck.new
     local state = {
         failures = 0, created = 0, add_calls = 0, remove_calls = 0,
-        healthy_add_calls = 0, healthy_remove_calls = 0,
+        healthy_add_calls = 0, healthy_remove_calls = 0, stale_remove_calls = 0,
     }
     _G.hc_retry_test = state
 
@@ -62,17 +62,21 @@ our $RetryHook = <<'EOC';
                 end
                 if port == 1970 then
                     state[operation .. "_calls"] = state[operation .. "_calls"] + 1
-                    if state.armed == operation then
-                        state.armed = nil
-                        local list = healthcheck.get_target_list(self.name,
-                                                               "upstream-healthcheck") or {}
-                        for _, target in ipairs(list) do
-                            if target.port == 1970 then
-                                state.failed_purge_time = target.purge_time
-                            end
+                end
+                if port == 1960 and operation == "remove" then
+                    state.stale_remove_calls = state.stale_remove_calls + 1
+                end
+                if state.armed == operation and port == (state.armed_port or 1970) then
+                    local armed_port = state.armed_port or 1970
+                    state.armed = nil
+                    local list = healthcheck.get_target_list(self.name,
+                                                           "upstream-healthcheck") or {}
+                    for _, target in ipairs(list) do
+                        if target.port == armed_port then
+                            state.failed_purge_time = target.purge_time
                         end
-                        state.fail_write = self.TARGET_LIST
                     end
+                    state.fail_write = self.TARGET_LIST
                 end
                 local ok, method_err = method(self, ip, port, ...)
                 assert(not state.fail_write, "the selected target-list write did not run")
@@ -94,10 +98,13 @@ our $RetryHook = <<'EOC';
         return true
     end
 
-    function state.put(interval, keep_dead)
+    function state.put(interval, keep_dead, keep_stale)
         local nodes = { { host = "127.0.0.1", port = 1980, weight = 1 } }
         if keep_dead then
             nodes[#nodes + 1] = { host = "127.0.0.1", port = 1970, weight = 1 }
+        end
+        if keep_stale then
+            nodes[#nodes + 1] = { host = "127.0.0.1", port = 1960, weight = 1 }
         end
         local code = require("lib.test_admin").test("/apisix/admin/routes/1", ngx.HTTP_PUT, {
             uri = state.uri,
@@ -134,7 +141,15 @@ our $RetryHook = <<'EOC';
                and state.current:get_target_status("127.0.0.1", 1970) == false
     end
 
-    function state.traffic()
+    function state.removed()
+        local status, err
+        if state.current then
+            status, err = state.current:get_target_status("127.0.0.1", 1970)
+        end
+        return status == nil and err == "target not found"
+    end
+
+    function state.traffic(label)
         local test = require("lib.test_admin").test
         local healthy = 0
         for _ = 1, 40 do
@@ -143,7 +158,7 @@ our $RetryHook = <<'EOC';
                 healthy = healthy + 1
             end
         end
-        ngx.say("healthy responses: ", healthy)
+        ngx.say(label or "healthy responses: ", healthy)
     end
 EOC
 
@@ -310,7 +325,6 @@ lua entry thread aborted
 
 
 
-
 === TEST 4: a deleted target list does not reset an unhealthy target to healthy
 --- extra_init_worker_by_lua eval: $::RetryHook
 --- config
@@ -325,10 +339,11 @@ location /t {
         state.armed = "add"
         state.delete_on_failure = true
         state.put(60, true)
-        state.wait_for(function()
+        assert(state.wait_for(function()
             return state.created >= 2 and state.add_calls >= 3 and #state.targets() == 2
-        end)
-        state.wait_for(state.unhealthy)
+        end), "target reconstruction did not finish")
+        assert(state.wait_for(state.unhealthy),
+               "reconstructed target did not remain unhealthy")
 
         local state_key = state.current.TARGET_STATE .. ":127.0.0.1:1970:127.0.0.1"
         ngx.say("failed writes: ", state.failures)
@@ -353,11 +368,11 @@ failed to add healthcheck target: 127.0.0.1:1970
 failed to run timer_create_checker
 failed to run timer_working_pool_check
 lua entry thread aborted
---- timeout: 40
+--- timeout: 60
 
 
 
-=== TEST 5: a deleted target list does not resurrect a removed target
+=== TEST 5: a deleted target list does not leave a local ghost
 --- extra_init_worker_by_lua eval: $::RetryHook
 --- config
 location /t {
@@ -371,19 +386,98 @@ location /t {
         state.armed = "remove"
         state.delete_on_failure = true
         state.put(60, false)
-        state.wait_for(function()
-            return state.created >= 2 and state.remove_calls >= 1 and #state.targets() == 1
-        end)
+        assert(state.wait_for(function()
+            return state.created >= 2 and state.remove_calls >= 2 and #state.targets() == 1
+        end), "stale-target removal did not finish")
+        assert(state.wait_for(state.removed), "the worker kept a removed target")
 
         local ports = {}
         for _, target in ipairs(state.targets()) do
             ports[#ports + 1] = target.port
         end
         table.sort(ports)
+        local removed_status, removed_err = state.current:get_target_status("127.0.0.1", 1970)
         ngx.say("failed writes: ", state.failures)
         ngx.say("checkers created: ", state.created)
         ngx.say("dead-node remove attempts: ", state.remove_calls)
         ngx.say("registered ports: ", table.concat(ports, ","))
+        ngx.say("removed target status: ", tostring(removed_status), "/", tostring(removed_err))
+        state.traffic()
+
+        state.put(60, true)
+        assert(state.wait_for(function()
+            return state.add_calls >= 2
+                   and state.current:get_target_status("127.0.0.1", 1970) == true
+        end), "the re-added target did not use the default health state")
+        ngx.say("readded target healthy: ",
+                tostring(state.current:get_target_status("127.0.0.1", 1970)))
+        state.traffic("healthy responses after readd: ")
+
+        state.put(1, true)
+        assert(state.wait_for(state.unhealthy), "the re-added dead node was not probed")
+        state.traffic("healthy responses after final probe: ")
+    }
+}
+--- request
+GET /t
+--- response_body
+failed writes: 1
+checkers created: 2
+dead-node remove attempts: 2
+registered ports: 1980
+removed target status: nil/target not found
+healthy responses: 40
+readded target healthy: true
+healthy responses after readd: 20
+healthy responses after final probe: 40
+--- error_log
+failed to remove healthcheck target: 127.0.0.1:1970
+--- no_error_log
+failed to run timer_create_checker
+failed to run timer_working_pool_check
+lua entry thread aborted
+--- timeout: 90
+
+
+
+=== TEST 6: reconstruction during create_checker preserves an unhealthy survivor
+--- extra_init_worker_by_lua eval: $::RetryHook
+--- config
+location /t {
+    content_by_lua_block {
+        local state = _G.hc_retry_test
+        state.uri = "/server_port"
+        state.put(1, true, true)
+        state.seed()
+        assert(state.wait_for(state.unhealthy), "initial probes did not finish")
+
+        state.armed = "remove"
+        state.armed_port = 1960
+        state.delete_on_failure = true
+        state.put(60, true, false)
+        assert(state.wait_for(function()
+            local stale_status = state.current:get_target_status("127.0.0.1", 1960)
+            return state.created >= 2 and state.add_calls >= 2
+                   and state.stale_remove_calls >= 2 and #state.targets() == 2
+                   and stale_status == nil
+        end), "create_checker reconstruction did not finish")
+        assert(state.wait_for(state.unhealthy),
+               "create_checker reset the surviving target's health")
+
+        local ports = {}
+        for _, target in ipairs(state.targets()) do
+            ports[#ports + 1] = target.port
+        end
+        table.sort(ports)
+        local state_key = state.current.TARGET_STATE .. ":127.0.0.1:1970:127.0.0.1"
+        ngx.say("failed writes: ", state.failures)
+        ngx.say("checkers created: ", state.created)
+        ngx.say("dead-node add attempts: ", state.add_calls)
+        ngx.say("stale-node remove attempts: ", state.stale_remove_calls)
+        ngx.say("registered ports: ", table.concat(ports, ","))
+        ngx.say("shared dead-node state: ",
+                ngx.shared["upstream-healthcheck"]:get(state_key))
+        ngx.say("dead node unhealthy: ", tostring(state.unhealthy()))
         state.traffic()
     }
 }
@@ -392,13 +486,16 @@ GET /t
 --- response_body
 failed writes: 1
 checkers created: 2
-dead-node remove attempts: 1
-registered ports: 1980
+dead-node add attempts: 2
+stale-node remove attempts: 2
+registered ports: 1970,1980
+shared dead-node state: 2
+dead node unhealthy: true
 healthy responses: 40
 --- error_log
-failed to remove healthcheck target: 127.0.0.1:1970
+failed to remove healthcheck target: 127.0.0.1:1960
 --- no_error_log
 failed to run timer_create_checker
 failed to run timer_working_pool_check
 lua entry thread aborted
---- timeout: 40
+--- timeout: 60
