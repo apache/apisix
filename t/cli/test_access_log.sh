@@ -277,10 +277,14 @@ deployment:
             admin_ssl_cert: '../t/certs/apisix_admin_ssl.crt'
             admin_ssl_cert_key: '../t/certs/apisix_admin_ssl.key'
 nginx_config:
+  http_admin_configuration_snippet: |
+    add_header X-Upstream-SNI \$ssl_server_name always;
   http:
+    access_log: logs/tls-upstream-test.log
     access_log_format: '\"\$upstream_scheme://\$upstream_host\" \$ssl_server_name'
 " > conf/config.yaml
 
+rm -f logs/tls-upstream-test.log
 make run
 sleep 2
 
@@ -288,21 +292,24 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 curl -k -i https://127.0.0.1:9180/apisix/admin/routes/1  -H "X-API-KEY: $admin_key" -X PUT -d \
     '{"uri":"/apisix/admin/routes/1", "upstream":{"nodes":{"localhost:9180":1},"scheme":"https","type":"roundrobin","pass_host":"node"}}'
 
-curl -i http://127.0.0.1:9080/apisix/admin/routes/1
+curl -sS -D output.log -o /dev/null http://127.0.0.1:9080/apisix/admin/routes/1
+if ! grep -iq '^X-Upstream-SNI: localhost[[:space:]]*$' output.log; then
+    echo "failed: the TLS upstream should receive localhost as SNI"
+    exit 1
+fi
 sleep 4
-tail -n 2 logs/access.log > output.log
 
 # APISIX
-if ! grep '"https://localhost:9180" -' output.log; then
+if ! grep '"https://localhost:9180" -' logs/tls-upstream-test.log; then
     echo "failed: should find upstream scheme"
-    cat output.log
+    cat logs/tls-upstream-test.log
     exit 1
 fi
 
 # admin
-if ! grep '"http://localhost:9180" localhost' output.log; then
-    echo "failed: should find upstream scheme"
-    cat output.log
+if ! grep -Eq '"GET /apisix/admin/routes/1 HTTP/[0-9.]+" 401 ' logs/tls-upstream-test.log; then
+    echo "failed: should find the proxied request in the admin access log"
+    cat logs/tls-upstream-test.log
     exit 1
 fi
 

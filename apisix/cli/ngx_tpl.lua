@@ -562,13 +562,13 @@ http {
     access_log off;
     {% else %}
     log_format main escape={* http.access_log_format_escape *} '{* http.access_log_format *}';
+    {% if enable_admin then %}
+    log_format apisix_admin '$remote_addr [$time_local] "$request_method $uri $server_protocol" '
+                            '$status $body_bytes_sent $request_time';
+    {% end %}
     uninitialized_variable_warn off;
 
-    {% if http.access_log_buffer then %}
-    access_log {* http.access_log *} main buffer={* http.access_log_buffer *} flush=3;
-    {% else %}
-    access_log {* http.access_log *} main buffer=16384 flush=3;
-    {% end %}
+    access_log {* http.access_log *} main buffer={* http.access_log_buffer or 16384 *} flush=3;
     {% end %}
     open_file_cache  max=1000 inactive=60;
     client_max_body_size {* http.client_max_body_size *};
@@ -770,6 +770,10 @@ http {
         listen {* admin_server_addr *};
         {%end%}
         log_not_found off;
+
+        {% if http.enable_access_log ~= false then %}
+        access_log {* http.access_log *} apisix_admin buffer={* http.access_log_buffer or 16384 *} flush=3;
+        {% end %}
 
         # admin configuration snippet starts
         {% if http_admin_configuration_snippet then %}
