@@ -51,6 +51,18 @@ add_block_preprocessor(sub {
             }
         }
 
+        location = /header-case {
+            content_by_lua_block {
+                local headers = ngx.req.get_headers()
+                local raw = ngx.req.get_headers(0, true)
+                assert(headers["x-forwarded-host"] == "configured.test")
+                assert(raw["X-Forwarded-Host"] == "configured.test")
+                assert(headers["x-note"] == "configured" and raw["X-Note"] == "configured")
+                assert(raw["X-Request-Tag"] == "tag")
+                ngx.say("ok")
+            }
+        }
+
         location /deny {
             content_by_lua_block {
                 ngx.status = 401
@@ -99,6 +111,10 @@ __DATA__
             local routes = {
                 {"fa-ip", {uri = "http://127.0.0.1:1986/auth",
                            request_headers = {"Authorization"}, upstream_headers = up}},
+                {"fa-header-case", {uri = "http://127.0.0.1:1986/header-case",
+                                    extra_headers = {["x-forwarded-host"] = "configured.test",
+                                                     ["X-Note"] = "configured"},
+                                    request_headers = {"x-note", "X-Request-Tag"}}},
                 {"fa-name", {uri = "http://localhost:1986/auth?a=1",
                              upstream_headers = up}},
                 {"fa-deny", {uri = "http://127.0.0.1:1986/deny",
@@ -464,5 +480,33 @@ plugin_attr:
 --- request
 GET /fa-empty-host
 --- error_code: 400
+--- no_error_log
+[error]
+
+
+
+=== TEST 22: ngx_http_ffi_client preserves header spelling and precedence
+--- request
+GET /fa-header-case
+--- more_headers
+X-Note: incoming
+X-Request-Tag: tag
+--- error_code: 200
+--- no_error_log
+[error]
+
+
+
+=== TEST 23: lua-resty-http preserves header spelling and precedence
+--- extra_yaml_config
+plugin_attr:
+  forward-auth:
+    http_client: lua-resty-http
+--- request
+GET /fa-header-case
+--- more_headers
+X-Note: incoming
+X-Request-Tag: tag
+--- error_code: 200
 --- no_error_log
 [error]
