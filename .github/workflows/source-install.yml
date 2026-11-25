@@ -57,7 +57,7 @@ jobs:
         run: echo "os=${ImageOS}" >> "$GITHUB_OUTPUT"
 
       - name: Cache deps
-        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v5
         env:
           cache-name: cache-deps
         with:
