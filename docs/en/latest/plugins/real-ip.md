@@ -62,6 +62,8 @@ APISIX can obtain a client address at several stages. Each trust setting checks 
 | Global `apisix.trusted_addresses` | `realip_remote_addr` | Retains incoming `Forwarded` and `X-Forwarded-*` information from configured trusted addresses. If a configured list does not trust the connection address, APISIX sanitizes these headers before Plugins and the upstream receive them. |
 | Plugin `trusted_addresses` | The current `remote_addr`, which may already reflect the NGINX rewrite | If the address is trusted, the Plugin replaces it with the address from `source`. |
 
+When the global trust list is omitted, APISIX preserves the inbound `X-Forwarded-For` chain and appends the connection address for compatibility. It still replaces forwarded protocol, host, and port values with information observed by APISIX and clears `Forwarded`. When a configured trust list does not include the connection address, APISIX also discards the inbound `X-Forwarded-For` chain.
+
 Trust only proxies you operate, and configure them to overwrite the source header with a verified client address. When the Plugin skips a request, it leaves `remote_addr` at the value received from NGINX.
 
 ## Examples

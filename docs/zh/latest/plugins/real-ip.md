@@ -62,6 +62,8 @@ APISIX 可以在多个阶段获取客户端地址。每项信任配置检查的�
 | 全局 `apisix.trusted_addresses` | `realip_remote_addr` | 保留来自所配置可信地址的 `Forwarded` 和 `X-Forwarded-*` 信息。如果已配置的列表不信任连接地址，APISIX 会在插件和上游收到这些请求头之前进行清理。 |
 | 插件的 `trusted_addresses` | 当前的 `remote_addr`，它可能已经被 NGINX 重写 | 如果地址可信，插件会使用 `source` 中的地址进行替换。 |
 
+未配置全局信任列表时，为了保持兼容性，APISIX 会保留传入的 `X-Forwarded-For` 地址链，并追加连接地址。APISIX 仍会使用自身观测到的值替换转发的协议、主机和端口，并清除 `Forwarded`。如果已配置的信任列表不包含连接地址，APISIX 还会丢弃传入的 `X-Forwarded-For` 地址链。
+
 只信任由你管理的代理，并配置这些代理使用已验证的客户端地址覆盖源请求头。当插件跳过请求时，`remote_addr` 会保留 NGINX 传入的值。
 
 ## 示例
