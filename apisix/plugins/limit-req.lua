@@ -20,7 +20,6 @@ local redis_schema                      = require("apisix.utils.redis-schema")
 local policy_to_additional_properties   = core.table.deepcopy(redis_schema.schema)
 local plugin_name                       = "limit-req"
 local sleep                             = core.sleep
-local apisix_plugin                     = require("apisix.plugin")
 local error                             = error
 
 local redis_single_new
@@ -131,7 +130,9 @@ local function gen_limit_key(conf, ctx, key)
         error("failed to generate key invalid parent: " .. core.json.encode(parent))
     end
 
-    return parent.resource_key .. ':' .. apisix_plugin.conf_version(conf) .. ':' .. key
+    -- the counter belongs to the resource, not to a version of the plugin
+    -- configuration, so a configuration update keeps the current state
+    return parent.resource_key .. ':' .. key
 end
 
 

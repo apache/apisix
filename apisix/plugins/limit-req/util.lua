@@ -38,7 +38,9 @@ local _M = {version = 0.1}
 --
 -- KEYS[1] = state key (hash with fields "excess" and "last")
 -- ARGV[1] = rate (req/s * 1000), ARGV[2] = burst (* 1000), ARGV[3] = now (ms),
--- ARGV[4] = ttl (seconds)
+-- ARGV[4] = ttl (seconds); the expiry is only extended, the state may have
+--           been written under a configuration that needed a longer ttl,
+--           and a rejection extends it to the time the state needs to drain
 -- Returns {1, excess} on allow  (state already stored)
 --         {0, excess} on reject (nothing stored)
 -- excess is returned as a string to keep its fractional part: Redis truncates
@@ -61,6 +63,12 @@ local redis_commit_script = core.string.compress_script([=[
         excess = math.max(tonumber(excess_raw) - rate * math.abs(elapsed) / 1000 + 1000, 0)
 
         if excess > burst then
+            -- keep the bucket until what it holds drains at the current rate:
+            -- it may have been filled under a faster one
+            local drain = math.ceil((excess - 1000) * 1000 / rate) + 1000
+            if redis.call('pttl', state_key) < drain then
+                redis.call('pexpire', state_key, drain)
+            end
             return {0, tostring(excess)}
         end
     else
@@ -71,7 +79,9 @@ local redis_commit_script = core.string.compress_script([=[
     end
 
     redis.call('hset', state_key, 'excess', excess, 'last', now)
-    redis.call('expire', state_key, ttl)
+    if redis.call('pttl', state_key) < ttl * 1000 then
+        redis.call('pexpire', state_key, ttl * 1000)
+    end
     return {1, tostring(excess)}
 ]=])
 

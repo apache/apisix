@@ -410,7 +410,10 @@ function _M.access(conf, ctx)
         core.response.set_header(QUERY_COST_HEADER, cost)
     end
 
-    local code, msg = limit_count.rate_limit(conf, ctx, plugin_name, cost)
+    -- the cost model is the unit of the consumption: a counter kept under
+    -- another cost_strategy or score_factor starts over, like a new time_window
+    local unit = conf.cost_strategy .. "*" .. (conf.score_factor or 1)
+    local code, msg = limit_count.rate_limit(conf, ctx, plugin_name, cost, nil, unit)
     -- A counter backend failure is reported as-is rather than masked by 403, but
     -- it has to be told apart from a rejection: limit-count returns a literal 500
     -- for the former and conf.rejected_code for the latter, and rejected_code

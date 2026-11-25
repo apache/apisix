@@ -16,7 +16,6 @@
 --
 local limit_conn_new = require("resty.limit.conn").new
 local core = require("apisix.core")
-local apisix_plugin = require("apisix.plugin")
 local is_http = ngx.config.subsystem == "http"
 local sleep = core.sleep
 local tonumber = tonumber
@@ -136,14 +135,15 @@ local function gen_limit_key(conf, ctx, key)
         return nil
     end
 
-    local new_key = parent.resource_key .. ':' .. apisix_plugin.conf_version(conf) .. ':' .. key
+    -- The counter belongs to the resource, not to a version of the plugin
+    -- configuration, so a configuration update keeps the current connections.
+    -- A workflow action (conf._vid) gets its own counter; its "#" tag sits
+    -- before the first ":" so it can't collide with an ordinary key.
     if conf._vid then
-        -- conf has _vid means it's from workflow plugin, add _vid to the key
-        -- so that the counter is unique per action.
-        return new_key .. ':' .. conf._vid
+        return parent.resource_key .. '#' .. conf._vid .. ':' .. key
     end
 
-    return new_key
+    return parent.resource_key .. ':' .. key
 end
 
 

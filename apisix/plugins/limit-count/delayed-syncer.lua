@@ -26,6 +26,9 @@ local tostring = tostring
 local pairs = pairs
 local ipairs = ipairs
 local tab_insert = table.insert
+local tab_concat = table.concat
+local tab_sort = table.sort
+local crc32 = ngx.crc32_long
 local type = type
 local pcall = pcall
 
@@ -67,9 +70,9 @@ local mt = {
 
 function _M.build_key(self, prefix, key)
     if self.shd_per_worker then
-        return prefix .. worker_id() .. "#" .. key
+        return prefix .. worker_id() .. "#" .. self.backend .. key
     end
-    return prefix .. key
+    return prefix .. self.backend .. key
 end
 
 
@@ -98,9 +101,30 @@ function _M.key_remote_quota(self, key)
 end
 
 
+-- The remaining of a rejected sync: the counter may be over the limit, and
+-- clamping it to 0 would lose by how much once the limit is raised.
+local function rejected_remaining(self, info)
+    local count = info and (info.count or info.consumed)
+    if not count then
+        return 0
+    end
+
+    local remaining = self.limit - count
+    -- a sliding window also counts its share of the previous window
+    if info.last_count and info.now then
+        local remaining_time = self.window - info.now % self.window
+        remaining = remaining - info.last_count / self.window * remaining_time
+    end
+    return remaining
+end
+
+
 function _M.sync_to_shm(self, key, remaining, reset, local_delta, info)
+    -- the limit the remaining was computed with: a syncer of an earlier
+    -- configuration may write it, and the reader rebases it on its own limit
     local quota = {
         remaining = remaining,
+        limit = self.limit,
         reset = reset,
         sync_at = ngx_now(),
     }
@@ -206,8 +230,14 @@ function _M._delayed_sync(self, key, cost, syncer_id)
         end
 
         remote_remaining, remote_reset, sync_at = quota.remaining, quota.reset, quota.sync_at
+        local rebase = quota.limit and quota.limit ~= self.limit
+        if rebase then
+            remote_remaining = remote_remaining + self.limit - quota.limit
+        end
         reset = remote_reset - (ngx_now() - sync_at)
-        if reset < 0 then
+        -- a sliding window weighs the previous window by a count capped at the
+        -- limit it was synced with, which a rebase can't undo: sync again
+        if reset < 0 or (rebase and self.conf.window_type == "sliding") then
             reset = 0 -- flag that indicates needing to sync with redis
             time_to_sync_records[syncer_id] = nil
         end
@@ -239,7 +269,7 @@ function _M._delayed_sync(self, key, cost, syncer_id)
                     core.log.error("sync to fallback_limiter failed: ",
                                         remaining_or_err, ", key: ", key)
                 else
-                    remote_remaining = 0
+                    remote_remaining = rejected_remaining(self, info)
                     remote_reset = reset
                 end
             else
@@ -247,7 +277,7 @@ function _M._delayed_sync(self, key, cost, syncer_id)
             end
         else
             -- rejected: rate limit exceeded on Redis
-            remote_remaining = 0
+            remote_remaining = rejected_remaining(self, info)
             remote_reset = reset
         end
 
@@ -388,11 +418,11 @@ local function sync_key(self, key)
                     core.log.error("sync to fallback_limiter failed: ",
                                         remaining_or_err, ", key: ", key)
                 else
-                    self:sync_to_shm(key, 0, reset, delta, info)
+                    self:sync_to_shm(key, rejected_remaining(self, info), reset, delta, info)
                 end
             end
         else
-            self:sync_to_shm(key, 0, reset, delta, info)
+            self:sync_to_shm(key, rejected_remaining(self, info), reset, delta, info)
         end
     end
 end
@@ -474,6 +504,35 @@ function _M.sync(self, syncer_id, time_to_sync)
 end
 
 
+-- The node-local accounting of a key belongs to the counter it is synced
+-- with: a configuration update that moves the counter to another Redis, or
+-- counts it with another window algorithm, keeps the same key, and must not
+-- judge on, or flush to, the other one. Credentials and the order of the
+-- cluster nodes don't change which counter that is.
+local function backend_id(conf)
+    local parts
+    if conf.policy == "redis" then
+        parts = {conf.redis_host, conf.redis_port or 6379, conf.redis_database or 0}
+    elseif conf.policy == "redis-cluster" then
+        local nodes = core.table.clone(conf.redis_cluster_nodes or {})
+        tab_sort(nodes)
+        parts = {conf.redis_cluster_name, tab_concat(nodes, ",")}
+    elseif conf.policy == "redis-sentinel" then
+        local sentinels = {}
+        for _, sentinel in ipairs(conf.redis_sentinels or {}) do
+            tab_insert(sentinels, sentinel.host .. ":" .. sentinel.port)
+        end
+        tab_sort(sentinels)
+        parts = {conf.redis_master_name, conf.redis_database or 0, conf.redis_role or "master",
+                 tab_concat(sentinels, ",")}
+    else
+        return ""
+    end
+    tab_insert(parts, conf.window_type or "fixed")
+    return crc32(conf.policy .. "#" .. tab_concat(parts, "#")) .. "#"
+end
+
+
 function _M.new(shdict_name, limit, window, conf, limiter)
     local shd = ngx_shared[shdict_name]
     if not shd then
@@ -489,6 +548,7 @@ function _M.new(shdict_name, limit, window, conf, limiter)
         window = window,
         limiter = limiter,
         sync_interval = conf.sync_interval,
+        backend = backend_id(conf),
     }
     -- self.shd_per_worker = true: simulate multiple nginx server instance
     if conf._shd_per_worker then

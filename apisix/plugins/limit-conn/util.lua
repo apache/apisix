@@ -24,6 +24,8 @@ local uuid              = require("resty.jit-uuid")
 local core              = require("apisix.core")
 
 local _M = {version = 0.3}
+-- The key's expiry is only ever extended for a positive key_ttl: the key may
+-- still hold leases admitted under a longer key_ttl than the current one.
 local redis_incoming_script = core.string.compress_script([=[
     local key = KEYS[1]
     local limit = tonumber(ARGV[1])
@@ -39,7 +41,11 @@ local redis_incoming_script = core.string.compress_script([=[
     end
 
     redis.call('ZADD', key, now + ttl, req_id)
-    redis.call('EXPIRE', key, ttl)
+    if ttl <= 0 then
+        redis.call('EXPIRE', key, ttl)
+    elseif redis.call('PTTL', key) < ttl * 1000 then
+        redis.call('PEXPIRE', key, ttl * 1000)
+    end
     return {1, count + 1}
 ]=])
 local redis_incoming_script_sha
@@ -57,16 +63,14 @@ end
 function _M.incoming(self, red, key, commit)
     local max = self.max
     self.committed = false
-    local raw_key = key
     key = "limit_conn" .. ":" .. key
 
     local conn
     if commit then
-        local req_id = ngx.ctx.request_id or uuid.generate_v4()
-        if not ngx.ctx.limit_conn_req_ids then
-            ngx.ctx.limit_conn_req_ids = {}
-        end
-        ngx.ctx.limit_conn_req_ids[raw_key] = req_id
+        -- a limiter object serves a single reservation, so the lease id is
+        -- kept on it rather than per key: two rules may resolve to the same key
+        local req_id = uuid.generate_v4()
+        self.req_id = req_id
 
         local now = ngx_time()
         local res, err

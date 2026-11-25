@@ -123,7 +123,7 @@ Done
                     "plugins": {
                         "limit-count": {
                             "count": 2,
-                            "time_window": 60
+                            "time_window": 61
                         }
                     },
                     "upstream": {

@@ -1943,3 +1943,68 @@ X-AI-Fixture: anthropic/messages-with-cache.json
 [200, 503]
 --- no_error_log
 [error]
+
+
+
+=== TEST 45: an instance keeps its counter when it gets a limit of its own
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local http = require("resty.http")
+
+            local function set_route(rate_limiting)
+                local code, body = t('/apisix/admin/routes/45', ngx.HTTP_PUT, core.json.encode({
+                    uri = "/ai45",
+                    plugins = {
+                        ["ai-proxy"] = {
+                            provider = "openai",
+                            auth = {header = {Authorization = "Bearer token"}},
+                            options = {model = "gpt-35-turbo-instruct"},
+                            override = {endpoint = "http://127.0.0.1:1980"},
+                            ssl_verify = false,
+                        },
+                        ["ai-rate-limiting"] = rate_limiting,
+                    },
+                    upstream = {type = "roundrobin", nodes = {["canbeanything.com"] = 1}},
+                }))
+                if code >= 300 then
+                    error(body)
+                end
+                ngx.sleep(0.5)
+            end
+
+            local function hit()
+                local res, err = http.new():request_uri(
+                    "http://127.0.0.1:" .. ngx.var.server_port .. "/ai45", {
+                        method = "POST",
+                        body = [[{"messages": [{"role": "user", "content": "What is 1+1?"}]}]],
+                        headers = {
+                            ["Content-Type"] = "application/json",
+                            ["X-AI-Fixture"] = "openai/chat-model-echo.json",
+                        },
+                    })
+                if not res then
+                    error(err)
+                end
+                ngx.say(res.status, " ", res.headers["X-AI-RateLimit-Limit-ai-proxy-openai"],
+                        " ", res.headers["X-AI-RateLimit-Remaining-ai-proxy-openai"])
+            end
+
+            set_route({limit = 30, time_window = 60})
+            hit()
+            hit()
+
+            set_route({
+                limit = 30,
+                time_window = 60,
+                instances = {{name = "ai-proxy-openai", limit = 25, time_window = 60}},
+            })
+            hit()
+        }
+    }
+--- response_body
+200 30 30
+200 30 20
+200 25 5

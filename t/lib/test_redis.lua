@@ -161,6 +161,28 @@ function _M.flush_all(opts)
     end
 end
 
+-- Deletes the keys matching a pattern on every default port, so that a test
+-- clears the counters of its own resources and leaves the others alone.
+-- A cluster node only lists the keys it holds, a replica refuses the delete.
+function _M.delete_keys(pattern, opts)
+    opts = opts or {}
+    local host = opts.host or DEFAULT_HOST
+
+    for _, port in ipairs(opts.ports or DEFAULT_PORTS) do
+        local red = connect(host, port, opts)
+        if red then
+            local keys = red:keys(pattern)
+            if type(keys) == "table" then
+                for _, key in ipairs(keys) do
+                    red:del(key)
+                end
+            end
+            release(red, host, port, opts)
+        end
+    end
+end
+
+
 function _M.flush_port(host, port, opts)
     if type(host) == "table" then
         opts = host

@@ -45,6 +45,8 @@ When a Plugin such as `limit-count` or `limit-conn` is used as a `workflow` acti
 
 :::
 
+The rate limiting counters of a `limit-count` or `limit-conn` action belong to the action, which is identified by the `case` of its rule and the action's Plugin. Reordering, adding or removing other rules keeps them, and so does changing the action's limits. Changing the `case` of a rule starts new counters for its action. Rules with the same `case` and the same action Plugin are told apart by their order.
+
 ## Attributes
 
 | Name | Type | Required | Default | Valid values | Description |

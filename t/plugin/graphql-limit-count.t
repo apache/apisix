@@ -747,3 +747,68 @@ Content-Type: application/json
 invalid graphql request: fragment spreads form a cycle
 --- response_body eval
 qr/fragment spreads must not form cycles/
+
+
+
+=== TEST 31: a new cost model starts a new counter, an unrelated change keeps it
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local http = require("resty.http")
+
+            local function set_route(conf)
+                local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, core.json.encode({
+                    uri = "/hello",
+                    plugins = {["graphql-limit-count"] = conf},
+                    upstream = {type = "roundrobin", nodes = {["127.0.0.1:1980"] = 1}},
+                }))
+                if code >= 300 then
+                    error(body)
+                end
+                ngx.sleep(0.5)
+            end
+
+            -- a query of depth 4
+            local out = {}
+            local function hit()
+                local res, err = http.new():request_uri(
+                    "http://127.0.0.1:" .. ngx.var.server_port .. "/hello", {
+                        method = "POST",
+                        headers = {["Content-Type"] = "application/json"},
+                        body = [[{"query": "query { foo { bar, baz { boo, bee, baa { bar_id } } } }"}]],
+                    })
+                if not res then
+                    error(err)
+                end
+                out[#out + 1] = res.status
+            end
+
+            local conf = {
+                count = 4,
+                time_window = 60,
+                rejected_code = 503,
+                key = "remote_addr",
+            }
+            set_route(conf)
+            hit()
+            hit()
+
+            conf.max_cost = 100
+            set_route(conf)
+            hit()
+
+            -- the query now costs 2 on a new counter
+            conf.score_factor = 0.5
+            set_route(conf)
+            hit()
+            hit()
+            hit()
+
+            ngx.say(table.concat(out, " "))
+        }
+    }
+--- response_body
+200 503 503 200 200 503
+--- timeout: 10
