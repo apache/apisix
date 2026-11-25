@@ -153,6 +153,44 @@ multi-line: bGluZTEKbGluZTI=
 
 
 
+=== TEST 4b: empty files, directories and symlinks like those of a mounted Kubernetes Secret
+--- config
+    location /t {
+        content_by_lua_block {
+            local file = require("apisix.secret.file")
+            local dir = ngx.config.prefix() .. "conf/k8s/"
+            os.execute("rm -rf " .. dir .. " && mkdir -p " .. dir .. "data-v1 " .. dir .. "subdir")
+
+            local f = assert(io.open(dir .. "data-v1/password", "w"))
+            f:write("s3cr3t" .. "\n")
+            f:close()
+            os.execute("ln -s data-v1 " .. dir .. "..data")
+            os.execute("ln -s ..data/password " .. dir .. "password")
+
+            f = assert(io.open(dir .. "empty", "w"))
+            f:close()
+            f = assert(io.open(dir .. "only-newline", "w"))
+            f:write("\n")
+            f:close()
+
+            local conf = {base_path = dir}
+            ngx.say("symlink: ", file.get(conf, "password"))
+            for _, key in ipairs({"empty", "only-newline"}) do
+                local value, err = file.get(conf, key)
+                ngx.say(key, ": ", value == nil and err:find("secret file is empty: ", 1, true) == 1)
+            end
+            local value, err = file.get(conf, "subdir")
+            ngx.say("directory: ", value == nil and err:find("failed to read secret file", 1, true) ~= nil)
+        }
+    }
+--- response_body
+symlink: s3cr3t
+empty: true
+only-newline: true
+directory: true
+
+
+
 === TEST 5: fetch a secret by uri
 --- user_files
 >>> ../conf/secrets/jack-key

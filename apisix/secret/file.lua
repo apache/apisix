@@ -72,6 +72,10 @@ function _M.get(conf, key)
         content = sub(content, 1, -2)
     end
 
+    if content == "" then
+        return nil, "secret file is empty: " .. path
+    end
+
     return content
 end
 
