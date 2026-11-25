@@ -28,6 +28,7 @@ add_block_preprocessor(sub {
 plugins:
     - public-api
     - batch-requests
+    - ip-restriction
 _EOC_
 
     $block->set_value("extra_yaml_config", $extra_yaml_config);
@@ -1484,3 +1485,61 @@ my $body = '{
 --- more_headers
 Transfer-Encoding: chunked
 --- response_body_like: "body":"3:one".*"body":"5:three"
+
+
+
+=== TEST 44: enforce the destination route's IP allowlist for a chunked batch
+--- yaml_config
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
+--- apisix_yaml
+routes:
+  - id: batch
+    uri: /apisix/batch-requests
+    plugins:
+      public-api: {}
+  - id: restricted
+    uri: /restricted
+    plugins:
+      ip-restriction:
+        whitelist:
+          - 192.0.2.10
+    upstream:
+      type: roundrobin
+      nodes:
+        "127.0.0.1:1980": 1
+#END
+--- http_config
+set_real_ip_from 127.0.0.1;
+real_ip_header X-Real-IP;
+--- config
+    location = /upstream-hits {
+        content_by_lua_block {
+            ngx.print(ngx.shared.test:get("restricted-hits") or 0)
+        }
+    }
+--- upstream_server_config
+    location = /restricted {
+        content_by_lua_block {
+            assert(ngx.shared.test:incr("restricted-hits", 1, 0))
+            ngx.req.read_body()
+            ngx.print(ngx.req.get_body_data())
+        }
+    }
+--- request eval
+my $body = '{"pipeline":[{"method":"POST","path":"/restricted","body":"hello"}]}';
+my $batch = "POST /apisix/batch-requests\n" . sprintf("%x\r\n%s\r\n0\r\n\r\n", length($body), $body);
+[$batch, "GET /upstream-hits", $batch, "GET /upstream-hits"]
+--- more_headers eval
+[
+    "Transfer-Encoding: chunked\nX-Real-IP: 192.0.2.20",
+    "",
+    "Transfer-Encoding: chunked\nX-Real-IP: 192.0.2.10",
+    ""
+]
+--- error_code eval
+[200, 200, 200, 200]
+--- response_body_like eval
+[qr/"status":403/, qr/^0$/, qr/(?=.*"status":200)(?=.*"body":"hello")/s, qr/^1$/]
