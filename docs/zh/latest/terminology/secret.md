@@ -41,7 +41,7 @@ APISIX 目前支持通过以下方式存储密钥：
 - [HashiCorp Vault](#使用-vault-管理密钥)
 - [AWS Secrets Manager](#使用-aws-secrets-manager-管理密钥)
 - [GCP Secrets Manager](#使用-gcp-secrets-manager-管理密钥)
-- [文件](#使用文件管理密钥)
+- [File Secrets Manager](#使用文件管理密钥)
 
 你可以在消费者配置或任何插件的配置中通过指定格式的变量来使用 APISIX Secret 功能，SSL 证书配置中同样支持。
 
