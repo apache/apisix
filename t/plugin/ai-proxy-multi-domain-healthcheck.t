@@ -336,3 +336,86 @@ passed
     }
 --- response_body
 passed
+
+
+
+=== TEST 5: refreshed DNS and reloaded configs use the healthy instances
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local json = require("cjson.safe")
+            local resolver = require("apisix.core.resolver")
+            local manager = require("apisix.healthcheck_manager")
+            local resolve = resolver.parse_domain_all
+            local address = "127.0.0.1"
+            resolver.parse_domain_all = function(host)
+                if host == "multi-ip.example.com" then
+                    return {address}
+                end
+                return resolve(host)
+            end
+
+            -- The manager returns the live checker until it reconciles a new DNS generation.
+            local checker = {status_ver = 0}
+            manager.fetch_checker = function() return checker end
+            manager.fetch_node_status = function(_, ip) return ip == "127.0.0.1" end
+
+            local function update_route(changes)
+                local resource = require("apisix.resource")
+                local function current()
+                    return resource.fetch_latest_conf("/apisix/routes/1")
+                end
+                local before = current()
+                local code, body = t("/apisix/admin/routes/1", ngx.HTTP_PATCH, changes)
+                assert(code < 300, body)
+                for _ = 1, 100 do
+                    if current() ~= before then
+                        return
+                    end
+                    ngx.sleep(0.01)
+                end
+                error("route update did not reach the worker")
+            end
+
+            local function send()
+                local code, _, body = t("/ai", ngx.HTTP_POST,
+                    {messages = {{role = "user", content = "hi"}}}, nil,
+                    {["Content-Type"] = "application/json"})
+                assert(code == 200, body)
+                ngx.say(json.decode(body).host)
+            end
+
+            for _, algorithm in ipairs({"roundrobin", "chash"}) do
+                local balancer = {algorithm = algorithm}
+                if algorithm == "chash" then
+                    balancer.hash_on = "vars"
+                    balancer.key = "remote_addr"
+                end
+                update_route({desc = "initial " .. algorithm,
+                              plugins = {["ai-proxy-multi"] = {balancer = balancer}}})
+                ngx.say(algorithm)
+                address = "127.0.0.1"
+                send()
+                address = "127.0.0.2"
+                send()
+                address = "127.0.0.1"
+                send()
+
+                update_route({desc = "reloaded " .. algorithm})
+                address = "127.0.0.2"
+                send()
+            end
+        }
+    }
+--- response_body
+roundrobin
+multi-ip.example.com:16724
+127.0.0.1:16724
+multi-ip.example.com:16724
+127.0.0.1:16724
+chash
+multi-ip.example.com:16724
+127.0.0.1:16724
+multi-ip.example.com:16724
+127.0.0.1:16724

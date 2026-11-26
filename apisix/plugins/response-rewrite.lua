@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core        = require("apisix.core")
+local plugin      = require("apisix.plugin")
 local secret      = require("apisix.secret")
 local expr        = require("resty.expr.v1")
 local re_compile  = require("resty.core.regex").re_match_compile
@@ -172,12 +173,13 @@ local function vars_matched(conf, ctx)
         return true
     end
 
-    if not conf.response_expr then
-        local response_expr, _ = expr.new(conf.vars)
-        conf.response_expr = response_expr
+    local response_expr = conf._response_expr
+    if not response_expr then
+        response_expr = expr.new(conf.vars)
+        plugin.set_runtime_state(conf, "_response_expr", response_expr)
     end
 
-    local match_result = conf.response_expr:eval(ctx.var)
+    local match_result = response_expr:eval(ctx.var)
 
     return match_result
 end

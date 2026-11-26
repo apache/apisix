@@ -126,7 +126,7 @@ end
 
 
 local function gen_limit_key(conf, ctx, key)
-    local parent = conf._meta and conf._meta.parent
+    local parent = conf._meta and conf._meta._parent
     if not parent or not parent.resource_key then
         error("failed to generate key invalid parent: " .. core.json.encode(parent))
     end

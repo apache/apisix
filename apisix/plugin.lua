@@ -39,7 +39,9 @@ local tostring      = tostring
 local error         = error
 local getmetatable  = getmetatable
 local setmetatable  = setmetatable
+local sub_str       = string.sub
 local tracer    = require("apisix.tracer")
+local yaml_null = require("lyaml").null
 -- make linter happy to avoid error: getting the Lua global "load"
 -- luacheck: globals load, ignore lua_load
 local lua_load          = load
@@ -143,8 +145,16 @@ local function sort_plugin(l, r)
     return l.priority > r.priority
 end
 
+-- the plugin objects of the confs being sorted, set only while filter() sorts
+local sorting_plugin_objs
+
+local function effective_priority(plugin_conf)
+    local meta = plugin_conf._meta
+    return meta and meta.priority or sorting_plugin_objs[plugin_conf].priority
+end
+
 local function custom_sort_plugin(l, r)
-    return l._meta.priority > r._meta.priority
+    return effective_priority(l) > effective_priority(r)
 end
 
 local function check_disable(plugin_conf)
@@ -624,18 +634,11 @@ function _M.filter(ctx, conf, plugins, route_conf)
 
             tmp_plugin_objs[plugin_conf] = plugin_obj
             core.table.insert(tmp_plugin_confs, plugin_conf)
-
-            if not plugin_conf._meta then
-                plugin_conf._meta = core.table.new(0, 1)
-                plugin_conf._meta.priority = plugin_obj.priority
-            else
-                if not plugin_conf._meta.priority then
-                    plugin_conf._meta.priority = plugin_obj.priority
-                end
-            end
         end
 
+        sorting_plugin_objs = tmp_plugin_objs
         sort_tab(tmp_plugin_confs, custom_sort_plugin)
+        sorting_plugin_objs = nil
 
         local index
         for i = 1, #tmp_plugin_confs do
@@ -984,21 +987,76 @@ local function encode_json_null(_, value, _, defaultmessage)
 end
 
 
+-- Request-time state of a conf table: the cached conf_version, merge flags,
+-- resolved DNS nodes, ... It is kept in the __index of the table's own metatable,
+-- so it reads as tab[key] but stays out of pairs() and so out of conf_version()
+-- and of JSON encoding: plugin confs are shared between routes, services,
+-- plugin_configs and consumers, and which request writes such state first
+-- differs between workers. A deep copy shares the metatable, and so reads the
+-- state of the table it was copied from until it writes its own.
+function _M.set_runtime_state(tab, key, value)
+    if sub_str(key, 1, 1) ~= "_" then
+        error("set_runtime_state: the key must start with '_': " .. key, 2)
+    end
+
+    local mt = getmetatable(tab)
+    -- an empty object of the configuration is decoded as an empty array, which
+    -- keeps the array metatable once check_schema has filled in the defaults
+    if mt == core.json.array_mt and tab[1] == nil then
+        setmetatable(tab, nil)
+        mt = nil
+    end
+    if mt and mt.runtime_state_of == nil then
+        error("set_runtime_state: the table has a metatable of its own", 2)
+    end
+
+    if not mt or mt.runtime_state_of ~= tab then
+        local state = {}
+        if mt then
+            for k, v in pairs(mt.__index) do
+                state[k] = v
+            end
+        end
+
+        mt = {__index = state, runtime_state_of = tab}
+        setmetatable(tab, mt)
+    end
+
+    mt.__index[key] = value
+end
+
+
+-- An empty value in a YAML configuration, such as `key-auth:`, is decoded as the
+-- null sentinel of lyaml, one table shared by the whole document. It is replaced
+-- by a table of its own before anything is written onto it.
+function _M.own_empty_yaml_value(parent, key)
+    local value = parent[key]
+    if value == yaml_null then
+        value = {}
+        parent[key] = value
+    end
+    return value
+end
+local own_empty_yaml_value = _M.own_empty_yaml_value
+
+
 -- conf_version returns a version which only depends on the value of conf,
 -- instead of where this plugin conf belongs to
 function _M.conf_version(conf)
-    if not conf._version then
+    local version = conf._version
+    if not version then
         -- a new state on every call: dkjson keeps its buffer in the state when it
         -- raises, and a reused state would then make encode() return true
         local data = core.json.stably_encode(conf, {
             sortkey = true,
             exception = encode_json_null,
         })
-        conf._version = tostring(crc32(data))
-        core.log.info("init plugin-level conf version: ", conf._version)
+        version = tostring(crc32(data))
+        _M.set_runtime_state(conf, "_version", version)
+        core.log.info("init plugin-level conf version: ", version)
     end
 
-    return conf._version
+    return version
 end
 
 
@@ -1312,8 +1370,18 @@ check_plugin_metadata = function(item)
 end
 
 
+local function own_empty_yaml_plugin_conf(plugins_conf, name)
+    local plugin_conf = own_empty_yaml_value(plugins_conf, name)
+    if type(plugin_conf) == "table" then
+        own_empty_yaml_value(plugin_conf, "_meta")
+    end
+    return plugin_conf
+end
+
+
 local function check_schema(plugins_conf, schema_type, skip_disabled_plugin)
-    for name, plugin_conf in pairs(plugins_conf) do
+    for name in pairs(plugins_conf) do
+        local plugin_conf = own_empty_yaml_plugin_conf(plugins_conf, name)
         local ok, err = check_single_plugin_schema(name, plugin_conf,
             schema_type, skip_disabled_plugin)
         if not ok then
@@ -1327,7 +1395,8 @@ _M.check_schema = check_schema
 
 
 local function stream_check_schema(plugins_conf, schema_type, skip_disabled_plugin)
-    for name, plugin_conf in pairs(plugins_conf) do
+    for name in pairs(plugins_conf) do
+        local plugin_conf = own_empty_yaml_plugin_conf(plugins_conf, name)
         core.log.info("check stream plugin schema, name: ", name)
         if type(plugin_conf) ~= "table" then
             return false, "invalid plugin conf type " .. type(plugin_conf) ..
@@ -1532,25 +1601,36 @@ function _M.run_plugin(phase, plugins, api_ctx)
     return api_ctx, plugin_run
 end
 
+local function set_meta_parent(plugin_conf, parent)
+    local meta = own_empty_yaml_value(plugin_conf, "_meta")
+    if not meta then
+        meta = {}
+        _M.set_runtime_state(plugin_conf, "_meta", meta)
+    end
+    if not meta._parent then
+        _M.set_runtime_state(meta, "_parent", {
+            resource_key = parent.key,
+            resource_version = tostring(parent.modifiedIndex)
+        })
+    end
+end
+
+
 function _M.set_plugins_meta_parent(plugins, parent)
     if not plugins then
         return
     end
-    for _, plugin_conf in pairs(plugins) do
-        if not plugin_conf._meta then
-            plugin_conf._meta = {}
-        end
-        if not plugin_conf._meta.parent then
-            local parent_info = {
-                resource_key = parent.key,
-                resource_version = tostring(parent.modifiedIndex)
-            }
-            local mt_table = getmetatable(plugin_conf._meta)
-            if mt_table then
-                mt_table.parent = parent_info
-            else
-                plugin_conf._meta = setmetatable(plugin_conf._meta,
-                                                    { __index = {parent = parent_info} })
+    for name, plugin_conf in pairs(plugins) do
+        set_meta_parent(plugin_conf, parent)
+
+        -- the actions of workflow run as plugins of the same parent
+        if name == "workflow" and type(plugin_conf.rules) == "table" then
+            for _, rule in ipairs(plugin_conf.rules) do
+                for _, action in ipairs(rule.actions or {}) do
+                    if type(action[2]) == "table" then
+                        set_meta_parent(action[2], parent)
+                    end
+                end
             end
         end
     end

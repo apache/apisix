@@ -213,15 +213,16 @@ end
 
 local function get_validator(conf)
     if conf.spec then
-        conf._meta = conf._meta or {}
-        if not conf._meta.validator then
-            local validator, err = ov.compile(conf.spec)
+        local validator = conf._validator
+        if not validator then
+            local err
+            validator, err = ov.compile(conf.spec)
             if not validator then
                 return nil, "failed to compile openapi spec, err: " .. err
             end
-            conf._meta.validator = validator
+            plugin.set_runtime_state(conf, "_validator", validator)
         end
-        return conf._meta.validator
+        return validator
     end
 
     local lrucache = get_spec_url_lrucache()

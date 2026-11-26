@@ -173,19 +173,22 @@ cookie=nil
         content_by_lua_block {
             local plugin = require("apisix.plugins.openid-connect")
             local build = plugin._build_session_opts
-            local opts = build({
+            local session_conf = {
                 secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
                 cookie = {
                     lifetime = 7200,
                 }
-            })
+            }
+            local opts = build(session_conf)
             ngx.say("absolute_timeout=", opts.absolute_timeout)
             ngx.say("cookie.lifetime=", opts.cookie.lifetime)
+            ngx.say("conf absolute_timeout=", tostring(session_conf.absolute_timeout))
         }
     }
 --- response_body
 absolute_timeout=7200
 cookie.lifetime=7200
+conf absolute_timeout=nil
 --- error_log
 session.cookie.lifetime is deprecated
 
@@ -362,3 +365,31 @@ session.cookie.lifetime is deprecated
     }
 --- response_body_like
 .*cookie_same_site.*
+
+
+
+=== TEST 13: the deprecated cookie.lifetime alias is warned about once per session conf
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local build = plugin._build_session_opts
+            local session_conf = {
+                secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
+                cookie = {
+                    lifetime = 7200,
+                }
+            }
+            for _ = 1, 3 do
+                ngx.say("absolute_timeout=", build(session_conf).absolute_timeout)
+            end
+        }
+    }
+--- response_body
+absolute_timeout=7200
+absolute_timeout=7200
+absolute_timeout=7200
+--- grep_error_log eval
+qr/session.cookie.lifetime is deprecated/
+--- grep_error_log_out
+session.cookie.lifetime is deprecated

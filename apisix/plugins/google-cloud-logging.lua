@@ -182,7 +182,10 @@ local function create_oauth_object(conf)
         return nil, err
     end
 
-    auth_conf.scope = auth_conf.scopes or auth_conf.scope
+    if auth_conf.scopes then
+        auth_conf = core.table.clone(auth_conf)
+        auth_conf.scope = auth_conf.scopes
+    end
 
     return google_oauth.new(auth_conf, conf.ssl_verify)
 end
