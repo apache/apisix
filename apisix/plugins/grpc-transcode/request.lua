@@ -26,8 +26,28 @@ local pcall = pcall
 local tonumber = tonumber
 local req_read_body = ngx.req.read_body
 
-return function (proto, service, method, pb_option, deadline, default_values)
-    core.log.info("proto: ", core.json.delay_encode(proto, true))
+
+local function map_request(proto, m, pb_option, default_values, request_table,
+                           canonical_protojson, string_scalars)
+    util.set_options(proto, pb_option, canonical_protojson)
+    local message, err
+    if canonical_protojson then
+        message, err = util.map_protojson_message(m.input_type, default_values,
+                                                  request_table, proto.json_names,
+                                                  string_scalars)
+    else
+        message, err = util.map_message(m.input_type, default_values or {},
+                                        request_table)
+    end
+    if not message then
+        return nil, err
+    end
+    return pb.encode(m.input_type, message)
+end
+
+
+return function (proto, service, method, pb_option, deadline, default_values,
+                 max_req_body_size, ctx, canonical_protojson)
     local m = util.find_method(proto, service, method)
     if not m then
         return false, "Undefined service method: " .. service .. "/" .. method
@@ -36,14 +56,33 @@ return function (proto, service, method, pb_option, deadline, default_values)
 
     req_read_body()
 
-    local pb_old_state = pb.state(proto.pb_state)
-    util.set_options(proto, pb_option)
+    -- Read the input before switching pb.state: body IO does not need the
+    -- shared protobuf state.
+    local request_table, request_err, string_scalars
+    if canonical_protojson then
+        request_table, request_err, string_scalars =
+            util.get_protojson_request_table(max_req_body_size, ctx)
+    else
+        request_table, request_err = util.get_request_table(max_req_body_size, ctx)
+    end
+    if not request_table then
+        core.log.warn("grpc-transcode invalid request: ", request_err)
+        local too_large = request_err and request_err:find("too large", 1, true)
+        return false, "invalid request body", too_large and 413 or 400
+    end
 
-    local map_message = util.map_message(m.input_type, default_values or {})
-    local ok, encoded = pcall(pb.encode, m.input_type, map_message)
+    local pb_old_state = pb.state(proto.pb_state)
+    -- pb.state is restored even when mapping or encoding raises an error.
+    local ok, encoded, map_err = pcall(map_request, proto, m, pb_option, default_values,
+                                       request_table, canonical_protojson, string_scalars)
     pb.state(pb_old_state)
 
-    if not ok or not encoded then
+    if not ok then
+        core.log.warn("grpc-transcode request encoding failed: ", encoded)
+        return false, "failed to encode request data to protobuf", 400
+    end
+    if not encoded then
+        core.log.warn("grpc-transcode request mapping failed: ", map_err)
         return false, "failed to encode request data to protobuf", 400
     end
 
