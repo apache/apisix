@@ -177,6 +177,54 @@ fi
 
 echo "passed: support specific IP listen in http and https"
 
+# check support backlog in node_listen
+
+git checkout conf/config.yaml
+
+echo "
+apisix:
+  node_listen:
+    - ip: 127.0.0.1
+      port: 9081
+      backlog: 8192
+    - ip: 127.0.0.2
+      port: 9082
+" > conf/config.yaml
+
+make init
+
+count_backlog=`grep "listen 127.0.0.1:9081" conf/nginx.conf | grep -c "backlog=8192" || true`
+if [ $count_backlog -ne 1 ]; then
+    echo "failed: failed to support backlog in node_listen"
+    exit 1
+fi
+
+count_no_backlog=`grep "listen 127.0.0.2:9082" conf/nginx.conf | grep -c "backlog" || true`
+if [ $count_no_backlog -ne 0 ]; then
+    echo "failed: backlog should not be rendered when it is not configured"
+    exit 1
+fi
+
+echo "passed: support backlog in node_listen"
+
+# check invalid backlog in node_listen
+
+echo "
+apisix:
+  node_listen:
+    - ip: 127.0.0.1
+      port: 9081
+      backlog: abc
+" > conf/config.yaml
+
+out=$(make init 2>&1 || true)
+if ! echo "$out" | grep 'backlog in node_listen must be a positive integer'; then
+    echo "failed: failed to detect invalid backlog in node_listen"
+    exit 1
+fi
+
+echo "passed: check invalid backlog in node_listen"
+
 # check deprecated enable_http2 in node_listen
 echo "
 apisix:
