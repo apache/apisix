@@ -2613,3 +2613,209 @@ colliding decoration: 201
 service with a checker: 201
 route: 201
 healthcheck: 200 names the service
+
+
+
+=== TEST 68: set a service whose first upstream node has zero weight
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            local code = t('/apisix/admin/services/zero-weight-graphql',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1979": 0,
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "plugins": {
+                        "graphql-limit-count": {
+                            "count": 100000,
+                            "time_window": 60,
+                            "rejected_code": 429,
+                            "key": "remote_addr",
+                            "cost_strategy": "node_quantifier"
+                        }
+                    }
+                }]])
+            if code >= 300 then
+                ngx.status = code
+                return
+            end
+
+            code = t('/apisix/admin/services/zero-weight-graphql/'
+                     .. 'graphql_cost_decorations/d1', ngx.HTTP_PUT,
+                     [[{"field_path": "Query.products", "mul_arguments": ["first"]}]])
+            if code >= 300 then
+                ngx.status = code
+                return
+            end
+
+            local body
+            code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT,
+                           [[{"service_id": "zero-weight-graphql", "uri": "/graphql"}]])
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 69: introspection skips the zero-weight node and uses the enabled one
+--- request
+POST /graphql
+{"query":"query { products(first: 50) { nodes { name } } }"}
+--- more_headers
+Content-Type: application/json
+--- error_code: 200
+--- response_headers
+X-Graphql-Query-Cost: 2
+
+
+
+=== TEST 70: introspection node representations use the real GraphQL backend
+--- config
+    location /t {
+        content_by_lua_block {
+            local introspection = require("apisix.plugins.graphql-limit-count.introspection")
+            local cases = {
+                {"mixed-map", {["127.0.0.1:8887"] = 0, ["127.0.0.1:8888"] = 1}},
+                {"mixed-array", {
+                    {host = "127.0.0.1", port = 8887, weight = 0},
+                    {host = "127.0.0.1", port = 8888, weight = 1},
+                }},
+                {"zero-map", {["127.0.0.1:8889"] = 0, ["127.0.0.1:8888"] = 0}},
+                {"zero-array", {
+                    {host = "127.0.0.1", port = 8889, weight = 0},
+                    {host = "127.0.0.1", port = 8888, weight = 0},
+                }},
+            }
+
+            for _, case in ipairs(cases) do
+                local schema, err = introspection.get({}, {
+                    service_id = "zero-weight-selector-" .. case[1],
+                    matched_route = {value = {upstream = {
+                        nodes = case[2], scheme = "http", pass_host = "node",
+                    }}},
+                    var = {uri = "/graphql"},
+                })
+                ngx.say(case[1], ": ", schema and schema.query_type or err)
+            end
+        }
+    }
+--- response_body
+mixed-map: Query
+mixed-array: Query
+zero-map: Query
+zero-array: Query
+
+
+
+=== TEST 71: zero-weight compatibility through the real GraphQL service
+--- timeout: 40
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local http = require("resty.http")
+            local t = require("lib.test_admin").test
+            local cases = {
+                {name = "mixed-map", nodes = {
+                    ["127.0.0.1:8887"] = 0, ["127.0.0.1:8888"] = 1,
+                }},
+                {name = "mixed-array", nodes = {
+                    {host = "127.0.0.1", port = 8887, weight = 0},
+                    {host = "127.0.0.1", port = 8888, weight = 1},
+                }},
+                {name = "single-map", nodes = {["127.0.0.1:8888"] = 0}},
+                {name = "single-array", nodes = {
+                    {host = "127.0.0.1", port = 8888, weight = 0},
+                }},
+                {name = "zero-map", override = true, nodes = {
+                    ["127.0.0.1:8889"] = 0, ["127.0.0.1:8888"] = 0,
+                }},
+                {name = "zero-array", override = true, nodes = {
+                    {host = "127.0.0.1", port = 8889, weight = 0},
+                    {host = "127.0.0.1", port = 8888, weight = 0},
+                }},
+                {name = "explicit", override = true, endpoint = true,
+                 nodes = {["127.0.0.1:8887"] = 0}},
+            }
+
+            for _, case in ipairs(cases) do
+                local id = "zero-weight-real-" .. case.name
+                local plugin = {
+                    count = 100000, time_window = 60, key = "remote_addr",
+                    cost_strategy = "complexity",
+                }
+                if case.endpoint then
+                    plugin.introspection_endpoint = "http://127.0.0.1:8888/graphql"
+                end
+
+                local code, body = t("/apisix/admin/services/" .. id, ngx.HTTP_PUT, {
+                    upstream = {type = "roundrobin", nodes = case.nodes, pass_host = "node"},
+                    plugins = {["graphql-limit-count"] = plugin},
+                })
+                assert(code and code < 300, body)
+                code, body = t("/apisix/admin/services/" .. id .. "/graphql_cost_decorations/d",
+                               ngx.HTTP_PUT, {field_path = "Query.__typename", add_value = 7})
+                assert(code and code < 300, body)
+
+                local route = {
+                    uri = "/graphql", hosts = {id .. ".example.test"}, service_id = id,
+                }
+                if case.override then
+                    route.upstream = {
+                        type = "roundrobin", nodes = {["127.0.0.1:8888"] = 1},
+                        pass_host = "node",
+                    }
+                end
+                code, body = t("/apisix/admin/routes/" .. id, ngx.HTTP_PUT, route)
+                assert(code and code < 300, body)
+
+                -- Wait for the route, service and decorations watchers. A plain
+                -- node-count response is not evidence that introspection worked.
+                local deadline = ngx.now() + 5
+                local res, err
+                repeat
+                    res, err = http.new():request_uri(
+                        "http://127.0.0.1:" .. ngx.var.server_port .. "/graphql", {
+                            method = "POST", keepalive = false,
+                            headers = {
+                                ["Content-Type"] = "application/json",
+                                Host = id .. ".example.test",
+                            },
+                            body = '{"query":"{ __typename }"}',
+                        })
+                    if res and res.status ~= 404 and res.status ~= 503
+                       and (res.status ~= 200 or res.headers["X-Graphql-Query-Cost"] == "9")
+                    then
+                        break
+                    end
+                    ngx.sleep(0.05)
+                until ngx.now() >= deadline
+
+                assert(res, err)
+                local data = core.json.decode(res.body)
+                ngx.say(case.name, ": ", res.status, " ",
+                        res.headers["X-Graphql-Query-Cost"] or "no-cost", " ",
+                        data and data.data and data.data.__typename or "no-data")
+            end
+        }
+    }
+--- response_body
+mixed-map: 200 9 Query
+mixed-array: 200 9 Query
+single-map: 200 9 Query
+single-array: 200 9 Query
+zero-map: 200 9 Query
+zero-array: 200 9 Query
+explicit: 200 9 Query
