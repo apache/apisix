@@ -23,7 +23,7 @@ RUN apt install -y cpanminus make libwww-perl
 RUN cpanm --notest Test::Nginx
 
 # Install development utils
-RUN apt install -y sudo git gawk curl nano vim inetutils-ping
+RUN DEBIAN_FRONTEND=noninteractive apt install -y sudo git gawk curl nano vim inetutils-ping cmake
 
 WORKDIR /apisix
 
