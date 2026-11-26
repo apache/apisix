@@ -29,11 +29,39 @@ description: This document contains information about the Apache APISIX openapi-
 #
 -->
 
+<head>
+  <link rel="canonical" href="https://docs.api7.ai/hub/openapi-to-mcp" />
+</head>
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 ## Description
 
 The `openapi-to-mcp` Plugin exposes an existing HTTP API to [Model Context Protocol](https://modelcontextprotocol.io/) (MCP) clients, such as LLM agents, without changing the API. It fetches the API's OpenAPI document, generates one MCP tool per operation, and answers the MCP protocol itself. When a client calls a tool, the Plugin sends the corresponding HTTP request to the API and returns the response as the tool result.
 
 The MCP server runs inside APISIX. No additional process or service is required.
+
+The following sequence shows how APISIX discovers tools and invokes the described API:
+
+```mermaid
+sequenceDiagram
+    participant Client as MCP Client
+    participant APISIX
+    participant Spec as OpenAPI Document
+    participant API as API Service
+
+    Client->>APISIX: List tools
+    opt Document fetch needed
+        APISIX->>Spec: Fetch document
+        Spec-->>APISIX: OpenAPI document
+    end
+    APISIX-->>Client: Tool definitions
+    Client->>APISIX: Call a tool
+    APISIX->>API: Send HTTP request
+    API-->>APISIX: API response
+    APISIX-->>Client: Tool result
+```
 
 The Plugin supports:
 
@@ -68,71 +96,172 @@ When a tool is called, the Plugin builds the request from the operation:
 * Header parameters are applied before the Plugin's own `headers`, so a tool call cannot replace a credential the route adds, and a header whose value contains a newline is dropped.
 * By default, a path parameter cannot contain `/` or `\`. Set `allow_encoded_path_separators` to `true` only for an upstream that consistently treats `%2F` and `%5C` as data; the Plugin then permits separators but still rejects a value with an empty, `.` or `..` separator-delimited component. Once every parameter is filled in, a segment an expression helped build also cannot be empty, `.` or `..`. What counts is the finished segment, so `/files/{name}.json` with `name` set to `..` is accepted and addresses `/files/...json`. These checks apply only to expressions in the URI path; an expression in a template's query suffix is encoded as query data, and a fragment suffix is removed because URI fragments are not sent in HTTP requests. A rejection fails the call with `isError` set.
 
-For the SSE transport, variables in `base_url` and in `headers` are resolved on the request that opens the stream, and the resolved values are used for every message of that session. This is what makes a configuration such as `"Authorization": "Bearer ${http_x_api_token}"` usable over SSE: the message requests that follow carry only the session id, so there is nothing left to resolve from at that point. Those resolved values are kept with the session record in the `mcp-session` shared dict for the life of the session, so a credential a caller supplied that way lives in gateway memory for up to 30 minutes; a configuration with no variable in it stores nothing.
-
-For the SSE transport, sessions are kept in the `mcp-session` shared dict, so the stream and the message requests of one session may be handled by different worker processes. Sessions are local to one APISIX instance: when several instances run behind a load balancer, the requests of an SSE session must reach the same instance. The Streamable HTTP transport is stateless and has no such requirement. A session belongs to the Route that issued it, and to the consumer authenticated on it, so a session id cannot be used on another Route.
-
-Each SSE stream holds a connection for up to 30 minutes, and a client that disappears without closing the connection is only noticed when a write to it fails. Configure [`limit-conn`](limit-conn.md) on an SSE Route that is reachable by untrusted clients.
-
-Failed tool-list builds are cached for five seconds per worker. Requests hitting that negative cache still receive an error, but do not fetch the document or repeat the build-error log. After expiry, the next request retries.
-
 ## Security considerations
 
-* **Origin validation protects browser access against DNS rebinding.** The defaults trust literal Route hosts or loopback addresses, and require the request and origin to use the same scheme and effective port (`80` for HTTP, `443` for HTTPS when omitted). Wildcard Route hosts provide no trust anchor. Configure `allowed_origins` for other trusted origins, including when TLS terminates before APISIX. Requests without `Origin` are accepted; this check does not replace authentication.
-* **The OpenAPI document is an input, not a trusted configuration.** Tool names, descriptions and schemas come from it and are read by the model, so a document host that is compromised can steer the agents using the Route. Point `openapi_url` at a source you control.
-* **`base_url` should not be built from client-controlled variables.** `http://${http_x_backend}` lets the caller choose where the tool call goes; use a fixed host, or a variable the gateway itself sets.
-* **An `http(s)` `$ref` is followed only to the document's own scheme, host and port** by default, so a document served from `127.0.0.1` cannot reach another port on that same address. Add `allowed_ref_hosts` to allow more, and keep internal addresses out of that list.
-* **The Plugin's `headers` reach every operation in the document.** Expose only operations intended to share those credentials. [`consumer-restriction`](consumer-restriction.md) controls consumer access to the Route; it does not authorize individual MCP tools.
-* **The Plugin's `headers` win over a header the caller supplies**, whichever case each is spelled in, so a tool call cannot replace a credential the gateway adds. A call also cannot set the headers that frame the request or belong to the connection -- `Transfer-Encoding`, `Content-Length`, `Host`, `Connection`, `Upgrade`, `Expect` and the other hop-by-hop ones -- even where the document declares them as header parameters.
+An OpenAPI-to-MCP Route turns an API description into tools and sends tool calls to the described API. This creates two trust boundaries: the document controls what the client sees, and tool arguments influence requests leaving APISIX.
 
-## Example usage
+### Trust the Document and API Destination
 
-The examples below use a Route with the ID `mcp`. An [admin key](../admin-api.md) is required for the Admin API calls:
+Load `openapi_url` from a source you control. Tool names, descriptions, input schemas, and operations come from the document, so a compromised document can influence the model using the Route.
+
+By default, an external `http(s)` `$ref` must use the same scheme, host, and port as `openapi_url`. Add only required hosts to `allowed_ref_hosts`, and do not allow references to internal services or metadata endpoints unless the document requires them.
+
+Keep `base_url` fixed or derive it from a gateway-controlled variable. A value such as `http://${http_x_backend}` lets the caller choose where tool calls are sent when the variable comes directly from a client header.
+
+### Validate Browser Origins
+
+Browser-based MCP clients send an `Origin` header. APISIX compares that origin with the Route and request to protect browser-accessible MCP Routes from DNS-rebinding attacks. This check is not authentication, and requests without an origin are accepted.
+
+When `allowed_origins` is not configured and the Route declares literal hosts, APISIX accepts an origin only when all the following conditions are met:
+
+* The origin host is a literal value in the Route's `host` or `hosts` field. A wildcard Route host does not establish trust.
+* The origin and request use the same protocol.
+* The origin and request use the same port. When the port is omitted, APISIX uses 80 for HTTP or 443 for HTTPS.
+
+If the Route has no literal host, APISIX also accepts an origin and request that both use loopback hosts, with matching protocols and ports. Configure `allowed_origins` when trusted browser origins differ from the Route host, including deployments where TLS terminates before APISIX.
+
+:::caution
+
+List trusted origins explicitly. Allowing every origin removes the DNS-rebinding protection provided by this check.
+
+:::
+
+### Constrain Tool Calls
+
+APISIX validates tool arguments against the generated input schema and applies declared defaults before validation. A call to an unknown tool or with invalid arguments returns a tool result with `isError: true` without calling the API.
+
+APISIX forwards only the path, query, and header parameters declared by the matching OpenAPI operation. Undeclared arguments are discarded. Headers configured on the Route take precedence over headers supplied by a tool call, including names that differ only by letter case. From tool-call header parameters, APISIX discards the following:
+
+* Headers that select the destination or define the request body: `Host`, `Content-Length`, and `Transfer-Encoding`.
+* Headers that alter connection behavior: `Connection`, `Upgrade`, `Expect`, `Keep-Alive`, `TE`, and `Trailer`.
+* Proxy authentication headers: `Proxy-Authenticate` and `Proxy-Authorization`.
+* Invalid header names and values containing a newline.
+
+Configured headers apply to every operation exposed by the document. Expose only operations that may share those credentials. The [`consumer-restriction`](consumer-restriction.md) Plugin can restrict access to the MCP Route, but it does not authorize individual tools.
+
+### Limit Resource Use
+
+Documents, expanded schemas, and tool responses can consume gateway memory. APISIX bounds each stage independently:
+
+| Resource | Behavior at the limit |
+| --- | --- |
+| Main and referenced OpenAPI documents | APISIX rejects a document that exceeds `max_document_size` |
+| Expanded operation definitions | Remaining references become generic object schemas when expansion reaches `max_expanded_nodes` |
+| Tool response bodies | The tool call fails with `RESPONSE_TOO_LARGE` when the response exceeds `max_response_body_size` |
+
+Set the limits for the largest trusted documents and API responses the Route needs.
+
+### Isolate SSE Sessions
+
+An SSE connection preserves state across multiple requests. APISIX resolves variables in `base_url` and `headers` when the stream opens and reuses the resolved values for the session, which can remain in memory for up to 30 minutes.
+
+| Scope | Behavior |
+| --- | --- |
+| Session identity | A session belongs to the Route that opened it and to the authenticated Consumer, if present. Requests from another Route or Consumer are rejected |
+| Gateway instance | Session state is shared by workers in one APISIX instance but not across instances. Configure session affinity so the stream and message requests reach the same instance |
+| Connection capacity | Each stream holds a connection until it closes or reaches its lifetime limit. Apply [`limit-conn`](limit-conn.md) to Routes reachable by untrusted clients |
+
+Streamable HTTP is stateless and does not require session affinity.
+
+:::info
+
+APISIX caches a failed tool-list build for five seconds in the worker that handled it. Requests reaching the same worker during that interval return the cached error without fetching the document or writing the same error log. After five seconds, the next request retries.
+
+:::
+
+## Examples
+
+The following examples configure the `openapi-to-mcp` Plugin for common MCP workflows.
+
+The Admin API commands use `${ADMIN_API_KEY}` for the [Admin API key](../admin-api.md).
+
+### Start the Example Upstream
+
+The examples use Petstore as the API. Petstore serves both the OpenAPI document and the operations exposed as MCP tools. Its container image is available for `linux/amd64`.
+
+Set `GATEWAY_CONTAINER` to the running APISIX container. Create a network for the example and connect APISIX to it. Skip a command if the network or connection already exists.
 
 ```shell
-admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+export GATEWAY_CONTAINER=replace-with-apisix-container-name
+
+docker network create gateway-petstore-net
+docker network connect gateway-petstore-net "$GATEWAY_CONTAINER"
 ```
 
-### Serve an API over Streamable HTTP
+Create a Compose file for Petstore on the shared network:
 
-Create a Route that serves the tools of the Swagger Petstore API:
+```yaml title="docker-compose.petstore.yaml"
+services:
+  petstore:
+    image: swaggerapi/petstore3:1.0.27
+    platform: linux/amd64
+    networks:
+      - gateway-petstore-net
+    ports:
+      - "18080:8080"
+
+networks:
+  gateway-petstore-net:
+    external: true
+```
+
+Start Petstore:
+
+```shell
+docker compose -f docker-compose.petstore.yaml up -d
+```
+
+Confirm that the OpenAPI document is available:
+
+```shell
+curl -fsS "http://127.0.0.1:18080/api/v3/openapi.json" > /dev/null
+```
+
+### Expose Petstore as MCP Tools
+
+Create a Streamable HTTP Route with the `openapi-to-mcp` Plugin:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
-  -H "X-API-KEY: ${admin_key}" \
+  -H "X-API-KEY: ${ADMIN_API_KEY}" \
   -d '{
-    "id": "mcp",
+    "id": "openapi-to-mcp-route",
     "uri": "/mcp",
+    "methods": ["POST"],
     "plugins": {
       "openapi-to-mcp": {
         "transport": "streamable_http",
-        "openapi_url": "https://petstore3.swagger.io/api/v3/openapi.json",
-        "base_url": "https://petstore3.swagger.io/api/v3"
+        "base_url": "http://petstore:8080/api/v3",
+        "openapi_url": "http://petstore:8080/api/v3/openapi.json"
       }
     }
   }'
 ```
 
-List the tools:
+List the generated tools. Streamable HTTP clients must accept both JSON and event-stream responses:
 
 ```shell
-curl "http://127.0.0.1:9080/mcp" -X POST \
+curl -N "http://127.0.0.1:9080/mcp" \
   -H "Content-Type: application/json" \
   -H "Accept: application/json, text/event-stream" \
-  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "tools/list"
+  }'
 ```
 
-The response is a single SSE event carrying the JSON-RPC result:
+The response should contain a tools list that includes `getPetById`:
 
 ```text
 event: message
-data: {"result":{"tools":[{"name":"updatePet","description":"Update an existing pet by Id", ...}]},"jsonrpc":"2.0","id":1}
+data: {"result":{"tools":[{"name":"getPetById", ...}]},"jsonrpc":"2.0","id":1}
 ```
 
-Call a tool:
+Call that tool to confirm that APISIX can reach Petstore:
 
 ```shell
-curl "http://127.0.0.1:9080/mcp" -X POST \
+curl -N "http://127.0.0.1:9080/mcp" \
   -H "Content-Type: application/json" \
   -H "Accept: application/json, text/event-stream" \
   -d '{
@@ -140,24 +269,217 @@ curl "http://127.0.0.1:9080/mcp" -X POST \
     "id": 2,
     "method": "tools/call",
     "params": {
-      "name": "findPetsByStatus",
-      "arguments": { "queryParameters": { "status": "sold" } }
+      "name": "getPetById",
+      "arguments": {
+        "pathParameters": {
+          "petId": 1
+        }
+      }
     }
   }'
 ```
 
-The tool result carries the status, status text, headers and body the API returned, as JSON text:
+The tool result contains the Petstore resource with ID `1`. It is returned as JSON text containing the API response status, status text, headers, and body.
 
 ```text
 event: message
 data: {"result":{"content":[{"type":"text","text":"{\n  \"status\": 200,\n  \"statusText\": \"OK\", ..."}]},"jsonrpc":"2.0","id":2}
 ```
 
-An MCP client connects to `http://127.0.0.1:9080/mcp` using its Streamable HTTP transport.
+Configure an MCP client to connect to the gateway address followed by `/mcp`:
 
-### Serve an API over SSE
+```json title="mcp.json"
+{
+  "mcpServers": {
+    "petstore-mcp": {
+      "url": "http://127.0.0.1:9080/mcp"
+    }
+  }
+}
+```
 
-With `transport` set to `sse`, or left unset, a client opens the stream with a `GET` request. The first event tells it where to send its messages:
+After the client connects, confirm that it lists `getPetById`, then ask it to retrieve pet `1`.
+
+#### Configure with Ingress Controller
+
+Deploy Petstore in the namespace used by the Ingress Controller. The following example uses `aic`:
+
+```yaml title="petstore.yaml"
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: aic
+  name: petstore
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: petstore
+  template:
+    metadata:
+      labels:
+        app: petstore
+    spec:
+      nodeSelector:
+        kubernetes.io/arch: amd64
+      containers:
+        - name: petstore
+          image: swaggerapi/petstore3:1.0.27
+          ports:
+            - containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: petstore
+spec:
+  selector:
+    app: petstore
+  ports:
+    - port: 8080
+      targetPort: 8080
+```
+
+Apply the manifest and wait for Petstore:
+
+```shell
+kubectl apply -f petstore.yaml
+kubectl rollout status -n aic deployment/petstore
+```
+
+Create the MCP Route using Gateway API or the APISIX custom resource:
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="openapi-to-mcp-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: openapi-to-mcp-plugin-config
+spec:
+  plugins:
+    - name: openapi-to-mcp
+      config:
+        transport: streamable_http
+        base_url: "http://petstore:8080/api/v3"
+        openapi_url: "http://petstore:8080/api/v3/openapi.json"
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: openapi-to-mcp-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /mcp
+          method: POST
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: openapi-to-mcp-plugin-config
+      backendRefs:
+        - name: petstore-external-domain
+          port: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: petstore-external-domain
+spec:
+  type: ExternalName
+  externalName: petstore.aic.svc.cluster.local
+  ports:
+    - port: 8080
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: BackendTrafficPolicy
+metadata:
+  namespace: aic
+  name: petstore-external-domain
+spec:
+  targetRefs:
+    - group: ""
+      kind: Service
+      name: petstore-external-domain
+  passHost: node
+  scheme: http
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="openapi-to-mcp-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: openapi-to-mcp-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: openapi-to-mcp-route
+      match:
+        paths:
+          - /mcp
+        methods:
+          - POST
+      plugins:
+        - name: openapi-to-mcp
+          enable: true
+          config:
+            transport: streamable_http
+            base_url: "http://petstore:8080/api/v3"
+            openapi_url: "http://petstore:8080/api/v3/openapi.json"
+```
+
+</TabItem>
+</Tabs>
+
+Apply the configuration:
+
+```shell
+kubectl apply -f openapi-to-mcp-ic.yaml
+```
+
+### Connect over SSE
+
+Use SSE when the MCP client expects a long-lived event stream and a separate message endpoint. For multiple APISIX instances, configure session affinity so the stream and message requests reach the same instance.
+
+Update the Petstore Route to accept both the SSE stream and message requests:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes/openapi-to-mcp-route" -X PATCH \
+  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -d '{
+    "methods": ["GET", "POST"],
+    "plugins": {
+      "openapi-to-mcp": {
+        "transport": "sse"
+      }
+    }
+  }'
+```
+
+Open the SSE stream. The first event contains the message endpoint for the session:
 
 ```shell
 curl -N "http://127.0.0.1:9080/mcp"
@@ -168,32 +490,654 @@ event: endpoint
 data: /mcp?sessionId=4c9b0a4e-1bb0-4f4d-9b0b-2f3c3e0f7a51
 ```
 
-The client then `POST`s each JSON-RPC message to that endpoint, receives `202 Accepted`, and reads the answer from the stream.
-
-### Forward credentials to the API
-
-Pass the caller's token through to the API by reading it from a request header:
+Send a tool-list request to the endpoint returned by APISIX:
 
 ```shell
-curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
-  -H "X-API-KEY: ${admin_key}" \
+curl "http://127.0.0.1:9080/mcp?sessionId=<SESSION_ID>" \
+  -H "Content-Type: application/json" \
   -d '{
-    "id": "mcp",
-    "uri": "/mcp",
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "tools/list"
+  }'
+```
+
+The POST returns `202 Accepted`. Read the tool list in a `message` event on the original stream.
+
+For the remaining examples, restore the Route to Streamable HTTP:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes/openapi-to-mcp-route" -X PATCH \
+  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -d '{
+    "methods": ["POST"],
     "plugins": {
       "openapi-to-mcp": {
-        "transport": "streamable_http",
-        "openapi_url": "https://petstore3.swagger.io/api/v3/openapi.json",
-        "base_url": "https://petstore3.swagger.io/api/v3",
-        "headers": {
-          "Authorization": "Bearer ${http_x_api_token}"
-        }
+        "transport": "streamable_http"
       }
     }
   }'
 ```
 
-Other Plugins on the Route keep working. For example, `key-auth` or `limit-count` run before the MCP request is answered, and a request they reject never reaches the tools.
+#### Configure SSE with Ingress Controller
+
+Update the manifest from [Expose Petstore as MCP Tools](#expose-petstore-as-mcp-tools) and preserve its other resources:
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="openapi-to-mcp-ic.yaml (updated resources)"
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: openapi-to-mcp-plugin-config
+spec:
+  plugins:
+    - name: openapi-to-mcp
+      config:
+        transport: sse
+        base_url: "http://petstore:8080/api/v3"
+        openapi_url: "http://petstore:8080/api/v3/openapi.json"
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: openapi-to-mcp-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /mcp
+          method: GET
+        - path:
+            type: Exact
+            value: /mcp
+          method: POST
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: openapi-to-mcp-plugin-config
+      backendRefs:
+        - name: petstore-external-domain
+          port: 8080
+```
+
+</TabItem>
+<TabItem value="apisix-crd">
+
+```yaml title="openapi-to-mcp-ic.yaml (updated ApisixRoute)"
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: openapi-to-mcp-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: openapi-to-mcp-route
+      match:
+        paths:
+          - /mcp
+        methods:
+          - GET
+          - POST
+      plugins:
+        - name: openapi-to-mcp
+          enable: true
+          config:
+            transport: sse
+            base_url: "http://petstore:8080/api/v3"
+            openapi_url: "http://petstore:8080/api/v3/openapi.json"
+```
+
+</TabItem>
+</Tabs>
+
+Reapply the manifest:
+
+```shell
+kubectl apply -f openapi-to-mcp-ic.yaml
+```
+
+Open the stream and leave it running, then use the returned endpoint from a second terminal as shown above. For the remaining examples, restore `transport: streamable_http` and the original Route methods.
+
+### Configure Authentication for MCP Routes
+
+Gateway authentication Plugins run before MCP requests are handled. The following example uses `key-auth` so that only a configured Consumer can list or call tools.
+
+Create a Consumer and credential:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
+  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -d '{
+    "username": "johndoe"
+  }'
+
+curl "http://127.0.0.1:9180/apisix/admin/consumers/johndoe/credentials" -X PUT \
+  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -d '{
+    "id": "johndoe-key-auth",
+    "plugins": {
+      "key-auth": {
+        "key": "john-key"
+      }
+    }
+  }'
+```
+
+Add `key-auth` to the existing MCP Route:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes/openapi-to-mcp-route" -X PATCH \
+  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -d '{
+    "plugins": {
+      "key-auth": {
+        "header": "apikey"
+      }
+    }
+  }'
+```
+
+A request without the credential now returns `401`. Configure the MCP client to send the credential with every request:
+
+```json title="mcp.json"
+{
+  "mcpServers": {
+    "petstore-mcp": {
+      "url": "http://127.0.0.1:9080/mcp",
+      "headers": {
+        "apikey": "john-key"
+      }
+    }
+  }
+}
+```
+
+If a client cannot send headers, `key-auth` reads the `apikey` query parameter by default when the header is absent. Use this option only where URLs containing credentials are protected from logs and other records.
+
+#### Configure Authentication with Ingress Controller
+
+Apply the complete example for the Kubernetes API used by the Ingress Controller:
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="openapi-to-mcp-ic.yaml"
+apiVersion: apisix.apache.org/v1alpha1
+kind: Consumer
+metadata:
+  namespace: aic
+  name: johndoe
+spec:
+  gatewayRef:
+    name: apisix
+  credentials:
+    - type: key-auth
+      name: primary-key
+      config:
+        key: john-key
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: openapi-to-mcp-plugin-config
+spec:
+  plugins:
+    - name: key-auth
+      config:
+        header: apikey
+    - name: openapi-to-mcp
+      config:
+        transport: streamable_http
+        base_url: "http://petstore:8080/api/v3"
+        openapi_url: "http://petstore:8080/api/v3/openapi.json"
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: openapi-to-mcp-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /mcp
+          method: POST
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: openapi-to-mcp-plugin-config
+      backendRefs:
+        - name: petstore-external-domain
+          port: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: petstore-external-domain
+spec:
+  type: ExternalName
+  externalName: petstore.aic.svc.cluster.local
+  ports:
+    - port: 8080
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: BackendTrafficPolicy
+metadata:
+  namespace: aic
+  name: petstore-external-domain
+spec:
+  targetRefs:
+    - group: ""
+      kind: Service
+      name: petstore-external-domain
+  passHost: node
+  scheme: http
+```
+
+</TabItem>
+<TabItem value="apisix-crd">
+
+```yaml title="openapi-to-mcp-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixConsumer
+metadata:
+  namespace: aic
+  name: johndoe
+spec:
+  ingressClassName: apisix
+  authParameter:
+    keyAuth:
+      value:
+        key: john-key
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: openapi-to-mcp-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: openapi-to-mcp-route
+      match:
+        paths:
+          - /mcp
+        methods:
+          - POST
+      plugins:
+        - name: key-auth
+          enable: true
+          config:
+            header: apikey
+        - name: openapi-to-mcp
+          enable: true
+          config:
+            transport: streamable_http
+            base_url: "http://petstore:8080/api/v3"
+            openapi_url: "http://petstore:8080/api/v3/openapi.json"
+```
+
+</TabItem>
+</Tabs>
+
+Apply the updated manifest:
+
+```shell
+kubectl apply -f openapi-to-mcp-ic.yaml
+```
+
+### Flatten Tool Schema Parameters
+
+By default, tool arguments are grouped by where the API expects them. The Petstore example sends `petId` inside `pathParameters`. Set `flatten_parameters` to `true` to place these arguments directly in the tool input. Keep the default when parameters in different locations share a name.
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes/openapi-to-mcp-route" -X PATCH \
+  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -d '{
+    "plugins": {
+      "openapi-to-mcp": {
+        "flatten_parameters": true
+      }
+    }
+  }'
+```
+
+List the tools again and inspect the `getPetById` input schema. Its `properties` should contain `petId` directly. Call it with `"arguments": {"petId": 1}`.
+
+#### Flatten Parameters with Ingress Controller
+
+Update the Plugin configuration and preserve the other resources:
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="openapi-to-mcp-ic.yaml (updated PluginConfig)"
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: openapi-to-mcp-plugin-config
+spec:
+  plugins:
+    - name: key-auth
+      config:
+        header: apikey
+    - name: openapi-to-mcp
+      config:
+        transport: streamable_http
+        base_url: "http://petstore:8080/api/v3"
+        openapi_url: "http://petstore:8080/api/v3/openapi.json"
+        flatten_parameters: true
+```
+
+</TabItem>
+<TabItem value="apisix-crd">
+
+```yaml title="openapi-to-mcp-ic.yaml (updated ApisixRoute)"
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: openapi-to-mcp-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: openapi-to-mcp-route
+      match:
+        paths:
+          - /mcp
+        methods:
+          - POST
+      plugins:
+        - name: key-auth
+          enable: true
+          config:
+            header: apikey
+        - name: openapi-to-mcp
+          enable: true
+          config:
+            transport: streamable_http
+            base_url: "http://petstore:8080/api/v3"
+            openapi_url: "http://petstore:8080/api/v3/openapi.json"
+            flatten_parameters: true
+```
+
+</TabItem>
+</Tabs>
+
+Reapply the manifest:
+
+```shell
+kubectl apply -f openapi-to-mcp-ic.yaml
+```
+
+### Customize MCP Tool Annotations
+
+APISIX infers common MCP annotations from the HTTP method. Add the operation-level `x-mcp-annotations` extension to override those defaults or provide additional hints:
+
+```yaml title="openapi.yaml"
+paths:
+  /pet/{petId}:
+    get:
+      operationId: getPetById
+      summary: Find pet by ID.
+      x-mcp-annotations:
+        title: Get Pet by ID
+        readOnlyHint: true
+        openWorldHint: false
+    delete:
+      operationId: deletePet
+      summary: Deletes a pet.
+      x-mcp-annotations:
+        title: Delete Pet
+        destructiveHint: true
+```
+
+Host the modified document and update `openapi_url` on the Route:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes/openapi-to-mcp-route" -X PATCH \
+  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -d '{
+    "plugins": {
+      "openapi-to-mcp": {
+        "openapi_url": "<ANNOTATED_OPENAPI_URL>"
+      }
+    }
+  }'
+```
+
+#### Update Annotations with Ingress Controller
+
+Replace `<ANNOTATED_OPENAPI_URL>` in the resource used by the Ingress Controller and preserve the other resources:
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX CRD', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="openapi-to-mcp-ic.yaml (updated PluginConfig)"
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: openapi-to-mcp-plugin-config
+spec:
+  plugins:
+    - name: key-auth
+      config:
+        header: apikey
+    - name: openapi-to-mcp
+      config:
+        transport: streamable_http
+        base_url: "http://petstore:8080/api/v3"
+        openapi_url: "<ANNOTATED_OPENAPI_URL>"
+        flatten_parameters: true
+```
+
+</TabItem>
+<TabItem value="apisix-crd">
+
+```yaml title="openapi-to-mcp-ic.yaml (updated ApisixRoute)"
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: openapi-to-mcp-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: openapi-to-mcp-route
+      match:
+        paths:
+          - /mcp
+        methods:
+          - POST
+      plugins:
+        - name: key-auth
+          enable: true
+          config:
+            header: apikey
+        - name: openapi-to-mcp
+          enable: true
+          config:
+            transport: streamable_http
+            base_url: "http://petstore:8080/api/v3"
+            openapi_url: "<ANNOTATED_OPENAPI_URL>"
+            flatten_parameters: true
+```
+
+</TabItem>
+</Tabs>
+
+Reapply the manifest:
+
+```shell
+kubectl apply -f openapi-to-mcp-ic.yaml
+```
+
+The extension accepts the following fields:
+
+```yaml
+x-mcp-annotations:
+  title: Tool title
+  readOnlyHint: true
+  destructiveHint: false
+  idempotentHint: true
+  openWorldHint: false
+```
+
+If the extension is absent, APISIX infers these defaults:
+
+| HTTP method | Inferred annotations |
+| --- | --- |
+| `GET`, `HEAD`, `OPTIONS` | `readOnlyHint: true` |
+| `DELETE` | `destructiveHint: true`, `idempotentHint: true` |
+| `PUT` | `idempotentHint: true` |
+
+Unsupported fields and invalid values are ignored. The operation's `summary` and `description` control the generated tool description; the tool title comes only from `x-mcp-annotations.title`.
+
+Ask the MCP client to list tools again. The `result.tools` response should include the configured annotations:
+
+```json
+{
+  "tools": [
+    {
+      "name": "getPetById",
+      "annotations": {
+        "title": "Get Pet by ID",
+        "readOnlyHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "deletePet",
+      "annotations": {
+        "title": "Delete Pet",
+        "destructiveHint": true,
+        "idempotentHint": true
+      }
+    }
+  ]
+}
+```
+
+### Forward Client Headers to an API
+
+Map selected client headers through APISIX variables when the described API needs per-client context. The following example protects an MCP Route with `key-auth` and forwards `X-Tenant-Id` to an HTTPBin operation:
+
+Complete [Configure Authentication for MCP Routes](#configure-authentication-for-mcp-routes) first. The example reuses the `johndoe` Consumer and `john-key` credential.
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes/openapi-to-mcp-client-headers" -X PUT \
+  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -d '{
+    "uri": "/mcp/headers",
+    "methods": ["POST"],
+    "plugins": {
+      "key-auth": {
+        "header": "apikey"
+      },
+      "openapi-to-mcp": {
+        "transport": "streamable_http",
+        "base_url": "https://httpbin.org",
+        "headers": {
+          "X-Tenant-Id": "${http_x_tenant_id}"
+        },
+        "openapi_url": "https://docs.api7.ai/openapi-to-mcp/httpbin-headers.yaml"
+      }
+    }
+  }'
+```
+
+Configure the MCP client with the gateway credential and tenant header:
+
+```json title="mcp.json"
+{
+  "mcpServers": {
+    "httpbin-headers": {
+      "url": "http://127.0.0.1:9080/mcp/headers",
+      "headers": {
+        "apikey": "john-key",
+        "X-Tenant-Id": "tenant-42"
+      }
+    }
+  }
+}
+```
+
+APISIX forwards client-provided values only for headers explicitly mapped in the Plugin configuration. Ask the client to call the `getHeaders` tool. The result should include:
+
+```json
+{
+  "headers": {
+    "X-Tenant-Id": "tenant-42"
+  }
+}
+```
+
+Other Plugins on the Route continue to run. For example, `key-auth` or `limit-count` can reject an MCP request before it reaches the tools.
+
+## Troubleshooting
+
+Inspect the APISIX error log first. If a client cannot list tools, request `openapi_url` from the gateway's network environment and confirm that it returns HTTP `200` with an OpenAPI document containing API paths. An HTML login page, redirect, authentication error, or document containing only components cannot produce tools.
+
+APISIX fetches `openapi_url` separately from API operation calls, so the Plugin's `headers` field does not authenticate the document request. If the document requires authentication, publish a reviewed copy at a location accessible to APISIX within a restricted network. Keep credentials out of the document URL.
+
+If the document uses a private CA, add that CA to the gateway runtime trust store.
+
+| Symptom | Likely cause | Action |
+| --- | --- | --- |
+| Browser request returns `403` with an origin error | The origin is not allowed, the Route has no matching literal host, or the protocol or port differs | Add the trusted origin to `allowed_origins`, accounting for TLS termination and external ports |
+| An external reference becomes a generic object | Its target is neither same-origin nor allowed, or it cannot be fetched or parsed | Add only the required host to `allowed_ref_hosts`, then check APISIX warning logs and connectivity |
+| A tool argument or header is not forwarded | The operation does not declare it, the header is protected, or its name or value is invalid | Correct the OpenAPI operation or configure the header on the Route |
+| A tool call reports an invalid path parameter | The value contains a disallowed separator or creates an empty or dot segment | Keep the value within one path segment, or enable encoded separators only for a compatible API |
+| Tool discovery returns an error | The document is unreachable, too large, invalid, or has no usable `paths` object | Check the document URL, response status, format, size, and APISIX error logs |
+| A tool response reports `RESPONSE_TOO_LARGE` | The API response exceeds the configured response-body limit | Reduce the response or raise the limit after evaluating gateway memory use |
+| An SSE message reports that the session was not found | The request reached another instance, Route, or Consumer, or the session expired | Check session affinity, Route selection, authentication, and session lifetime |
 
 ## Delete Plugin
 
@@ -201,9 +1145,9 @@ To remove the `openapi-to-mcp` Plugin, delete it from the Route configuration. A
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
-  -H "X-API-KEY: ${admin_key}" \
+  -H "X-API-KEY: ${ADMIN_API_KEY}" \
   -d '{
-    "id": "mcp",
+    "id": "openapi-to-mcp-route",
     "uri": "/mcp",
     "plugins": {},
     "upstream": {
