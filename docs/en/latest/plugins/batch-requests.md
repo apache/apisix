@@ -37,9 +37,9 @@ In cases where the client needs to access multiple APIs, this will significantly
 
 :::note
 
-The request headers in the user’s original request (except for headers starting with “Content-”, such as “Content-Type”) will be assigned to each request in the HTTP pipeline. Therefore, to the gateway, these HTTP pipeline requests sent to itself are no different from external requests initiated directly by users. They can only access pre-configured routes and will undergo a complete authentication process, so there are no security issues.
+Each pipeline request inherits headers from the outer request except for `Transfer-Encoding` and headers starting with `Content-`, such as `Content-Type`. APISIX routes and authenticates each request individually.
 
-If the request headers of the original request conflict with those configured in the plugin, the request headers configured in the plugin will take precedence (except for the real_ip_header specified in the configuration file).
+If the request headers of the original request conflict with those configured in the plugin, the request headers configured in the plugin will take precedence (except for the real_ip_header specified in the configuration file). The HTTP client determines the framing of each item from its body and ignores any `Content-Length` or `Transfer-Encoding` supplied in batch or item headers.
 
 :::
 

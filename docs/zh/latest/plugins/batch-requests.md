@@ -37,9 +37,9 @@ description: 本文介绍了关于 Apache APISIX `batch-request` 插件的基本
 
 :::note
 
-用户原始请求中的请求头（除了以 `Content-` 开始的请求头，例如：`Content-Type`）将被赋给 HTTP pipeline 中的每个请求，因此对于网关来说，这些以 HTTP pipeline 方式发送给自身的请求与用户直接发起的外部请求没有什么不同，只能访问已经配置好的路由，并将经历完整的鉴权过程，因此不存在安全问题。
+管道中的每个请求都会继承外层请求头，但会跳过 `Transfer-Encoding` 和以 `Content-` 开头的请求头（如 `Content-Type`）。APISIX 会对每个请求分别执行路由匹配和认证。
 
-如果原始请求的请求头与插件中配置的请求头冲突，则以插件中配置的请求头优先（配置文件中指定的 real_ip_header 除外）。
+如果原始请求的请求头与插件中配置的请求头冲突，则以插件中配置的请求头优先（配置文件中指定的 real_ip_header 除外）。HTTP 客户端根据每项请求的正文确定其消息边界。批次公共请求头或单项请求头中提供的 `Content-Length` 和 `Transfer-Encoding` 都会被忽略。
 
 :::
 
