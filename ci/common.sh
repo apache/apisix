@@ -21,6 +21,28 @@ export_version_info() {
     source ./.requirements
 }
 
+download_github_release() {
+    local repo="$1"
+    local tag="$2"
+    local name="$3"
+    local output="$4"
+    local release_json
+    local asset_url
+
+    if wget --verbose --tries=5 --timeout=60 --retry-connrefused \
+        "https://github.com/$repo/releases/download/$tag/$name" -O "$output"; then
+        return 0
+    fi
+
+    echo "Release download failed; retrying through the GitHub release asset API." >&2
+    release_json=$(wget --verbose --tries=5 --timeout=60 --retry-connrefused \
+        "https://api.github.com/repos/$repo/releases/tags/${tag//\//%2F}" -O -) || return
+    asset_url=$(printf '%s\n' "$release_json" | \
+        jq -er --arg name "$name" '.assets[] | select(.name == $name) | .url') || return
+    wget --verbose --tries=5 --timeout=60 --retry-connrefused \
+        --header="Accept: application/octet-stream" "$asset_url" -O "$output"
+}
+
 export_or_prefix() {
     export OPENRESTY_PREFIX="/usr/local/openresty"
 
@@ -107,7 +129,8 @@ install_apisix_runtime() {
 install_grpcurl () {
     # For more versions, visit https://github.com/fullstorydev/grpcurl/releases
     GRPCURL_VERSION="1.8.5"
-    wget -q https://github.com/fullstorydev/grpcurl/releases/download/v${GRPCURL_VERSION}/grpcurl_${GRPCURL_VERSION}_linux_x86_64.tar.gz
+    download_github_release fullstorydev/grpcurl "v$GRPCURL_VERSION" \
+        "grpcurl_${GRPCURL_VERSION}_linux_x86_64.tar.gz" "grpcurl_${GRPCURL_VERSION}_linux_x86_64.tar.gz"
     tar -xvf grpcurl_${GRPCURL_VERSION}_linux_x86_64.tar.gz -C /usr/local/bin
 }
 
@@ -199,7 +222,7 @@ GRPC_SERVER_EXAMPLE_VER=20210819
 
 linux_get_dependencies () {
     apt update
-    apt install -y cpanminus build-essential libncurses5-dev libreadline-dev libssl-dev perl libpcre2-dev xz-utils redis-tools
+    apt install -y cpanminus build-essential libncurses5-dev libreadline-dev libssl-dev perl libpcre2-dev xz-utils redis-tools jq
     apt remove -y curl
     apt-get install -y libyaml-dev
     wget https://github.com/mikefarah/yq/releases/download/3.4.1/yq_linux_amd64 -O /usr/bin/yq && sudo chmod +x /usr/bin/yq
