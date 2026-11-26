@@ -2165,3 +2165,65 @@ timeout 5 curl -X POST -N -sS http://localhost:1984/mcp \
     2>&1 | cat
 --- response_body eval
 qr/seen_path.*x\/v\/ok/
+
+
+
+=== TEST 130: query parameters extend a query suffix instead of adding a second ?
+--- config
+    location /t {
+        content_by_lua_block {
+            local fetch = require("apisix.plugins.openapi-to-mcp.fetch")
+            local real_request = fetch.request
+            fetch.request = function(url)
+                ngx.say(url)
+                return { status = 200, headers = {}, body = "" }
+            end
+
+            local handler = require("apisix.plugins.openapi-to-mcp.tools.handler")
+            handler.call({
+                method = "GET",
+                path_template = "/{Bucket}",
+                parameters = {
+                    { name = "Bucket", ["in"] = "path" },
+                    { name = "prefix", ["in"] = "query" },
+                },
+            }, {
+                pathParameters = { Bucket = "b" },
+                queryParameters = { prefix = "logs" },
+            }, {
+                base_url = "http://127.0.0.1:11460",
+            })
+            handler.call({
+                method = "GET",
+                path_template = "/{Bucket}?acl",
+                parameters = {
+                    { name = "Bucket", ["in"] = "path" },
+                    { name = "prefix", ["in"] = "query" },
+                },
+            }, {
+                pathParameters = { Bucket = "b" },
+                queryParameters = { prefix = "logs" },
+            }, {
+                base_url = "http://127.0.0.1:11460",
+            })
+            handler.call({
+                method = "GET",
+                path_template = "/{Bucket}?prefix=static",
+                parameters = {
+                    { name = "Bucket", ["in"] = "path" },
+                    { name = "prefix", ["in"] = "query" },
+                },
+            }, {
+                pathParameters = { Bucket = "b" },
+                queryParameters = { prefix = "dynamic" },
+            }, {
+                base_url = "http://127.0.0.1:11460",
+            })
+
+            fetch.request = real_request
+        }
+    }
+--- response_body
+http://127.0.0.1:11460/b?prefix=logs
+http://127.0.0.1:11460/b?acl&prefix=logs
+http://127.0.0.1:11460/b?prefix=static&prefix=dynamic
