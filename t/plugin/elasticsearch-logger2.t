@@ -1107,3 +1107,204 @@ qr/init plugin-level conf version: \d+ while logging request, client: /]
 failed to run log_by_lua
 is not supported by JSON
 failed to process entries
+
+
+
+=== TEST 27: a route on Elasticsearch 6 whose first version probe fails transiently
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, {
+                uri = "/hello",
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:1980"] = 1
+                    }
+                },
+                plugins = {
+                    ["elasticsearch-logger"] = {
+                        endpoint_addrs = {"http://127.0.0.1:1984/es6-flaky"},
+                        field = {
+                            index = "services"
+                        },
+                        auth = {
+                            username = "elastic",
+                            password = "123456"
+                        },
+                        batch_max_size = 1,
+                    }
+                }
+            })
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 28: Elasticsearch 6 recovers after a transient version probe failure with bounded backoff
+--- http_config
+    lua_shared_dict es_probe_test 1m;
+--- config
+    location = /es6-flaky {
+        access_by_lua_block {
+            local dict = ngx.shared.es_probe_test
+            local n = dict:incr("es6_probes", 1, 0)
+            if n == 1 then
+                ngx.status = 503
+                ngx.say("temporarily unavailable")
+                return ngx.exit(ngx.HTTP_OK)
+            end
+        }
+        proxy_pass http://127.0.0.1:9501/;
+    }
+    location /es6-flaky/ {
+        proxy_pass http://127.0.0.1:9501/;
+    }
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local dict = ngx.shared.es_probe_test
+
+            -- 1st request: initial version probe gets 503, bulk fails on ES 6
+            local res, err = http.new():request_uri(uri)
+            if not res or res.status ~= 200 then
+                ngx.say("request 1 failed: ", err or res.status)
+                return
+            end
+            ngx.sleep(0.3)
+
+            -- 2nd request within backoff window: must not re-probe
+            res, err = http.new():request_uri(uri)
+            if not res or res.status ~= 200 then
+                ngx.say("request 2 failed: ", err or res.status)
+                return
+            end
+            ngx.sleep(0.3)
+            local probes_during_backoff = dict:get("es6_probes") or 0
+
+            -- Wait past the 1s base backoff, then 3rd request probes and succeeds
+            ngx.sleep(0.8)
+            res, err = http.new():request_uri(uri)
+            if not res or res.status ~= 200 then
+                ngx.say("request 3 failed: ", err or res.status)
+                return
+            end
+            ngx.sleep(1.0)
+
+            -- 4th request uses the cached major version without probing again
+            res, err = http.new():request_uri(uri)
+            if not res or res.status ~= 200 then
+                ngx.say("request 4 failed: ", err or res.status)
+                return
+            end
+            ngx.sleep(1.0)
+
+            ngx.say("probes_during_backoff: ", probes_during_backoff)
+            ngx.say("probes_total: ", dict:get("es6_probes") or 0)
+        }
+    }
+--- response_body
+probes_during_backoff: 1
+probes_total: 2
+--- grep_error_log eval
+qr/failed to get Elasticsearch version|successfully processed the entries/
+--- grep_error_log_out
+failed to get Elasticsearch version
+successfully processed the entries
+successfully processed the entries
+--- error_log
+"_type":"_doc"
+--- timeout: 12
+
+
+
+=== TEST 29: a route on Elasticsearch 8 whose version probe always returns 503
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, {
+                uri = "/hello",
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:1980"] = 1
+                    }
+                },
+                plugins = {
+                    ["elasticsearch-logger"] = {
+                        endpoint_addrs = {"http://127.0.0.1:1984/es8-no-probe"},
+                        field = {
+                            index = "services"
+                        },
+                        batch_max_size = 1,
+                    }
+                }
+            })
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 30: Elasticsearch 8 stops retrying version probes once a bulk write succeeds
+--- http_config
+    lua_shared_dict es_probe_test 1m;
+--- config
+    location = /es8-no-probe {
+        content_by_lua_block {
+            local dict = ngx.shared.es_probe_test
+            dict:incr("es8_probes", 1, 0)
+            ngx.status = 503
+            ngx.say("probe blocked")
+        }
+    }
+    location /es8-no-probe/ {
+        proxy_pass http://127.0.0.1:9200/;
+    }
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local dict = ngx.shared.es_probe_test
+
+            for i = 1, 3 do
+                local res, err = http.new():request_uri(uri)
+                if not res or res.status ~= 200 then
+                    ngx.say("request ", i, " failed: ", err or res.status)
+                    return
+                end
+                ngx.sleep(1.2)
+            end
+            ngx.say("probes_total: ", dict:get("es8_probes") or 0)
+        }
+    }
+--- response_body
+probes_total: 1
+--- grep_error_log eval
+qr/failed to get Elasticsearch version|successfully processed the entries/
+--- grep_error_log_out
+failed to get Elasticsearch version
+successfully processed the entries
+successfully processed the entries
+successfully processed the entries
+--- timeout: 10
