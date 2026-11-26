@@ -1050,11 +1050,13 @@ APISIX 的 Upstream 除了基本的负载均衡算法选择外，还支持对上
 
 `hash_on` 详细信息如下：
 
-- 设为 `vars` 时，`key` 为必传参数。允许的值为 `uri`、`server_name`、`server_addr`、`request_uri`、`remote_port`、`remote_addr`、`query_string`、`host`、`hostname`、`mqtt_client_id`，以及 `arg_<name>` 形式的请求参数变量。`mqtt_client_id` 仅在 Stream Route 启用 `mqtt-proxy` 插件时可用。这里只支持固定范围，并非支持所有 [NGINX 变量](http://nginx.org/en/docs/varindex.html)。
-- 设为 `header` 时，`key` 为必传参数，其值为自定义的 Header name，即 "http\_`key`"。
-- 设为 `cookie` 时，`key` 为必传参数，其值为自定义的 cookie name，即 "cookie\_`key`"。请注意 cookie name 是**区分大小写字母**的。例如：`cookie_x_foo` 与 `cookie_X_Foo` 表示不同的 `cookie`。
-- 设为 `consumer` 时，`key` 不需要设置。此时哈希算法采用的 `key` 为认证通过的 `consumer_name`。
-- 设为 `vars_combinations` 时，`key` 为必传参数。它是组合请求变量的模板，例如 `$request_uri$remote_addr`。
+- 设为 `vars` 时，`key` 为必传参数。变量名不带 `$` 前缀。允许的值为 `uri`、`server_name`、`server_addr`、`request_uri`、`remote_port`、`remote_addr`、`query_string`、`host`、`hostname`、`mqtt_client_id`，以及 `arg_<name>` 形式的请求参数变量。`mqtt_client_id` 仅在 Stream Route 启用 `mqtt-proxy` 插件时可用。这里只支持固定范围，并非支持所有 [NGINX 变量](http://nginx.org/en/docs/varindex.html)。
+- 设为 `header` 时，`key` 为必传参数。填写请求头名称，不带 `http_` 前缀。
+- 设为 `cookie` 时，`key` 为必传参数。填写 Cookie 名称，不带 `cookie_` 前缀。Cookie 名称区分大小写。
+- 设为 `consumer` 时，不要配置 `key`。APISIX 使用认证插件捕获的 `consumer_name` 进行哈希。
+- 设为 `vars_combinations` 时，`key` 为必传参数。它是包含一个或多个以 `$` 开头的变量引用的模板，例如 `$request_uri$remote_addr`。
+
+如果 APISIX 无法解析请求中配置的哈希输入，则会回退到 `remote_addr`。
 
 APISIX 支持两种不同的方式来代理 WebSocket 连接，二者不能混用：
 

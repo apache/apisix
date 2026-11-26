@@ -1042,11 +1042,13 @@ An Upstream can be one of the following `types`:
 
 The following should be considered when setting the `hash_on` value:
 
-- When set to `vars`, a `key` is required. The permitted values are `uri`, `server_name`, `server_addr`, `request_uri`, `remote_port`, `remote_addr`, `query_string`, `host`, `hostname`, `mqtt_client_id`, and request argument variables in the form `arg_<name>`. `mqtt_client_id` is available for Stream Routes when the `mqtt-proxy` plugin is enabled. This is a restricted list, not every [NGINX variable](http://nginx.org/en/docs/varindex.html).
-- When set to `header`, a `key` is required. This is equal to "http\_`key`".
-- When set to `cookie`, a `key` is required. This key is equal to "cookie\_`key`". The cookie name is case-sensitive.
-- When set to `consumer`, the `key` is optional and the key is set to the `consumer_name` captured from the authentication Plugin.
-- When set to `vars_combinations`, a `key` is required. The value is a template that combines request variables, such as `$request_uri$remote_addr`.
+- When set to `vars`, a `key` is required. Write the variable name without a leading `$`. The permitted values are `uri`, `server_name`, `server_addr`, `request_uri`, `remote_port`, `remote_addr`, `query_string`, `host`, `hostname`, `mqtt_client_id`, and request argument variables in the form `arg_<name>`. `mqtt_client_id` is available for Stream Routes when the `mqtt-proxy` plugin is enabled. This is a restricted list, not every [NGINX variable](http://nginx.org/en/docs/varindex.html).
+- When set to `header`, a `key` is required. Specify the request header name without the `http_` prefix.
+- When set to `cookie`, a `key` is required. Specify the cookie name without the `cookie_` prefix. The cookie name is case-sensitive.
+- When set to `consumer`, omit `key`. APISIX hashes the `consumer_name` captured from the authentication Plugin.
+- When set to `vars_combinations`, a `key` is required. The value is a template containing one or more `$`-prefixed variable references, such as `$request_uri$remote_addr`.
+
+If APISIX cannot resolve the configured hash input for a request, it falls back to `remote_addr`.
 
 APISIX supports proxying WebSocket connections in two different ways, and they don't combine:
 
