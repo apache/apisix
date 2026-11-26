@@ -303,7 +303,54 @@ local schema = {
                             type = "integer", minimum = 1000, default = 10000,
                             description = "keepalive timeout in milliseconds",
                         },
-                    }
+                        sentinels = {
+                            type = "array",
+                            minItems = 1,
+                            description = "Redis Sentinel nodes. When set, "
+                                .. "lua-resty-session discovers the master "
+                                .. "through Sentinel and host/port are ignored.",
+                            items = {
+                                type = "object",
+                                properties = {
+                                    host = {
+                                        type = "string", 
+                                        minLength = 1
+                                    },
+                                    port = {
+                                        type = "integer", 
+                                        minimum = 1,
+                                        maximum = 65535,
+                                    },
+                                },
+                                required = {"host", "port"},
+                                additionalProperties = false,
+                            },
+                        },
+                        master = {
+                            type = "string",
+                            minLength = 1,
+                            description = "name of the master monitored by "
+                                .. "Redis Sentinel",
+                        },
+                        sentinel_username = {
+                            type = "string",
+                            minLength = 1,
+                            description = "username used to authenticate "
+                                .. "with Redis Sentinel",
+                        },
+                        sentinel_password = {
+                            type = "string",
+                            minLength = 0,
+                            description = "password used to authenticate "
+                                .. "with Redis Sentinel",
+                        },
+                    },
+                    dependencies = {
+                        sentinels = {"master"},
+                        master = {"sentinels"},
+                        sentinel_username = {"sentinels"},
+                        sentinel_password = {"sentinels"},
+                    },
                 }
             },
             required = {"secret"},
@@ -676,7 +723,8 @@ local schema = {
         },
     },
     encrypt_fields = {"client_secret", "client_rsa_private_key", "dpop.private_key",
-                      "session.secret", "session.redis.password"},
+                      "session.secret", "session.redis.password",
+                      "session.redis.sentinel_password"},
     required = {"client_id", "discovery"}
 }
 

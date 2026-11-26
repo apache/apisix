@@ -92,19 +92,23 @@ import TabItem from '@theme/TabItem';
 | session.cookie.lifetime | integer | 否 | | | 已弃用。当未设置 `session.absolute_timeout` 时，运行时会将该值映射到 `session.absolute_timeout`。请改用 `session.absolute_timeout`。 |
 | session.storage | string | 否 | cookie | ["cookie", "redis"] | 会话存储方式。 |
 | session.redis | object | 否 | | | `storage` 为 `redis` 时的 Redis 配置。 |
-| session.redis.host | string | 否 | 127.0.0.1 | | Redis 主机。 |
-| session.redis.port | integer | 否 | 6379 | | Redis 端口。 |
+| session.redis.host | string | 否 | 127.0.0.1 | | Redis 主机。设置 `session.redis.sentinels` 时忽略该参数。 |
+| session.redis.port | integer | 否 | 6379 | | Redis 端口。设置 `session.redis.sentinels` 时忽略该参数。 |
 | session.redis.username | string | 否 | | | Redis 用户名。 |
 | session.redis.password | string | 否 | | | Redis 密码。 |
 | session.redis.database | integer | 否 | 0 | | Redis 数据库索引。 |
 | session.redis.prefix | string | 否 | sessions | | Redis 键前缀。 |
-| session.redis.ssl | boolean | 否 | false | | 为 Redis 连接启用 SSL。 |
+| session.redis.ssl | boolean | 否 | false | | 为 Redis 连接启用 SSL。使用 Redis Sentinel 时，同时作用于 Sentinel 和主节点连接。 |
 | session.redis.ssl_verify | boolean | 否 | true | | 验证 Redis 连接的 SSL 证书。 |
 | session.redis.server_name | string | 否 | | | 用于 SNI 的 Redis 服务器名称。 |
 | session.redis.connect_timeout | integer | 否 | 1000 | | 连接超时时间，单位为毫秒。 |
 | session.redis.send_timeout | integer | 否 | 1000 | | 发送超时时间，单位为毫秒。 |
 | session.redis.read_timeout | integer | 否 | 1000 | | 读取超时时间，单位为毫秒。 |
 | session.redis.keepalive_timeout | integer | 否 | 10000 | | 保活超时时间，单位为毫秒。 |
+| session.redis.sentinels | array[object] | 否 | | | Redis Sentinel 节点列表，每项包含 `host` 和 `port`。设置后，插件将会话存储在通过 Redis Sentinel 发现的主节点中，并忽略 `session.redis.host` 和 `session.redis.port`。需要同时设置 `session.redis.master`。 |
+| session.redis.master | string | 否 | | | Redis Sentinel 监控的主节点名称。设置 `session.redis.sentinels` 时必填。 |
+| session.redis.sentinel_username | string | 否 | | | 用于 Redis Sentinel 认证的用户名。`session.redis.username` 和 `session.redis.password` 用于主节点认证。 |
+| session.redis.sentinel_password | string | 否 | | | 用于 Redis Sentinel 认证的密码。 |
 | session_contents | object | 否 | | | 会话内容配置。如果未配置，所有数据将存储在会话中。 |
 | session_contents.access_token | boolean | 否 | | | 如果为 true，则在会话中存储访问令牌。 |
 | session_contents.id_token | boolean | 否 | | | 如果为 true，则在会话中存储 ID 令牌。 |
