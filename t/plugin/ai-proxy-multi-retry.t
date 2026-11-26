@@ -218,10 +218,45 @@ passed
 
 
 
-=== TEST 4: fast failure falls back to the healthy instance and logs the upstream error body
---- request
-POST /anything
-{ "messages": [ { "role": "user", "content": "What is 1+1?"} ] }
+=== TEST 4: fast failure falls back, logs the error body and releases active counts
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local exporter = require("apisix.plugins.prometheus.exporter")
+            local res = assert(http.new():request_uri(
+                "http://127.0.0.1:" .. ngx.var.server_port .. "/anything", {
+                    method = "POST",
+                    headers = { ["Content-Type"] = "application/json" },
+                    body = [[{ "messages": [ { "role": "user", "content": "What is 1+1?"} ] }]],
+                }))
+            assert(res.status == 200, res.status)
+            assert(res.body == "success", res.body)
+
+            -- Allow the request log phase to release the final attempt.
+            local deadline = ngx.now() + 3
+            repeat
+                local seen, balanced = {}, true
+                for _, line in ipairs(exporter.metric_data()) do
+                    if line:find("apisix_llm_active_connections{", 1, true) == 1
+                        and line:find('route_id="1"', 1, true)
+                    then
+                        local node = line:match('node="([^"]*)"')
+                        if node == "fast-err" or node == "success" then
+                            seen[node] = true
+                            balanced = balanced and tonumber(line:match("}%s+(%S+)")) == 0
+                        end
+                    end
+                end
+                if balanced and seen["fast-err"] and seen["success"] then
+                    ngx.print(res.body)
+                    return
+                end
+                ngx.sleep(0.05)
+            until ngx.now() >= deadline
+            error("fallback active counts did not return to zero")
+        }
+    }
 --- response_body chomp
 success
 --- error_code: 200
