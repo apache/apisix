@@ -274,7 +274,7 @@ function _M.body_filter(conf, ctx)
 
         local err
         if ctx.response_encoding ~= nil and body ~= "" then
-            local decoder = content_decode.dispatch_decoder(ctx.response_encoding)
+            local decoder = ctx.response_rewrite_decoder
             if not decoder then
                 core.log.error("filters may not work as expected ",
                                "due to unsupported compression encoding type: ",
@@ -359,11 +359,16 @@ function _M.header_filter(conf, ctx)
         ngx.status = conf.status_code
     end
 
-    -- if filters have no any match, response body won't be modified.
     if conf.filters or conf.body then
-        local response_encoding = ngx_header["Content-Encoding"]
-        core.response.clear_header_as_body_modified()
-        ctx.response_encoding = response_encoding
+        ctx.response_encoding = ngx_header["Content-Encoding"]
+        if conf.filters and ctx.response_encoding then
+            local decoder, unavailable = content_decode.dispatch_decoder(ctx.response_encoding)
+            ctx.response_rewrite_decoder = decoder
+            ctx.response_rewrite_matched = not unavailable
+        end
+        if ctx.response_rewrite_matched then
+            core.response.clear_header_as_body_modified()
+        end
     end
 
     if not conf.headers then

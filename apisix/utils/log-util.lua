@@ -434,10 +434,12 @@ function _M.collect_body(conf, ctx)
                 return
             end
 
-            local decoder = content_decode.dispatch_decoder(response_encoding)
+            local decoder, unavailable = content_decode.dispatch_decoder(response_encoding)
             if not decoder then
-                core.log.warn("unsupported compression encoding type: ",
-                              response_encoding)
+                if not unavailable then
+                    core.log.warn("unsupported compression encoding type: ",
+                                  response_encoding)
+                end
                 ctx.resp_body = final_body
                 return
             end

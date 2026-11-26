@@ -14,10 +14,8 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local pcall = pcall
+local brotli = require("apisix.utils.brotli")
 local inflate_gzip = require("apisix.utils.gzip").inflate_gzip
-local str_buffer = require("string.buffer")
-local is_br_libs_loaded, brotli = pcall(require, "brotli")
 local _M = {}
 
 
@@ -29,74 +27,25 @@ local function gzip_decode(data, max_output)
 end
 
 
-local content_decode_funcs = {
-    gzip = gzip_decode,
-}
-
-
-local function brotli_stream_decode(read_inputs, write_outputs, partial)
-    -- read 64k data per times
-    local read_size = 64 * 1024
-    local decompressor = brotli.decompressor:new()
-
-    local chunk, ok, res
-    repeat
-        chunk = read_inputs(read_size)
-        if chunk then
-            ok, res = pcall(function()
-                return decompressor:decompress(chunk)
-            end)
-        elseif partial then
-            return true, nil
-        else
-            ok, res = pcall(function()
-                return decompressor:finish()
-            end)
-        end
-        if not ok then
-            return false, res
-        end
-        write_outputs(res)
-    until not chunk
-
-    return true, nil
-end
-
-
 local function brotli_decode(data, max_output)
-    local inputs = str_buffer.new():set(data)
-    local outputs = str_buffer.new()
-
-    local read_inputs = function(size)
-        if max_output and #outputs >= max_output then
-            return nil
-        end
-        local data = inputs:get(size)
-        if data == "" then
-            return nil
-        end
-        return data
-    end
-
-    local write_outputs = function(data)
-        return outputs:put(data)
-    end
-
-    local ok, err = brotli_stream_decode(read_inputs, write_outputs, max_output ~= nil)
-    if not ok then
+    local decoded, err = brotli.get().decode(data, max_output)
+    if not decoded then
         return nil, "brotli decode err: " .. err
     end
-
-    return outputs:get(max_output)
-end
-
-if is_br_libs_loaded then
-    content_decode_funcs.br = brotli_decode
+    return decoded
 end
 
 
 function _M.dispatch_decoder(response_encoding)
-    return content_decode_funcs[response_encoding]
+    if response_encoding == "gzip" then
+        return gzip_decode
+    end
+    if response_encoding == "br" then
+        if brotli.get() then
+            return brotli_decode
+        end
+        return nil, true
+    end
 end
 
 

@@ -99,6 +99,23 @@ add_block_preprocessor(sub {
         }
     }
 
+    server {
+        listen 11453;
+        location / {
+            content_by_lua_block {
+                local wire = ngx.decode_base64("jwWAaGVsbG8gYnJvdGxpAw==")
+                ngx.header["Content-Encoding"] = "br"
+                ngx.header["Content-Length"] = #wire
+                ngx.header["ETag"] = '"origin"'
+                ngx.header["X-Accel-Buffering"] = "no"
+                ngx.print(wire:sub(1, 6))
+                ngx.flush(true)
+                ngx.sleep(0.05)
+                ngx.print(wire:sub(7))
+            }
+        }
+    }
+
 _EOC_
 
     $block->set_value("http_config", $http_config);
@@ -734,3 +751,60 @@ GET /gzip_empty
 Content-Encoding:
 --- no_error_log
 filters may not work as expected
+
+
+
+=== TEST 25: unavailable br decoder passes chunks through and still applies independent rewrites
+--- extra_init_by_lua_start
+    package.preload["resty.brotli"] = function()
+        error("libbrotlidec.so.1 unavailable", 0)
+    end
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            for _, mode in ipairs({"filtered", "fixed"}) do
+                local rewrite = {status_code = 202, headers = {["X-Rewrite"] = mode}}
+                if mode == "filtered" then
+                    rewrite.filters = {{regex = "hello", replace = "new"}}
+                else
+                    rewrite.body = "replacement"
+                end
+                local status = t("/apisix/admin/routes/" .. mode, ngx.HTTP_PUT, {
+                    uri = "/" .. mode,
+                    upstream = {type = "roundrobin", nodes = {["127.0.0.1:11453"] = 1}},
+                    plugins = {["response-rewrite"] = rewrite},
+                })
+                assert(status < 300)
+            end
+            for i = 1, 2 do
+                local status, _, wire, h = t("/filtered", ngx.HTTP_GET)
+                ngx.say(status, " ", h["X-Rewrite"], " ", h["Content-Encoding"], " ",
+                        h["Content-Length"], " ", h["ETag"], " ", ngx.encode_base64(wire))
+            end
+            local status, _, body, h = t("/fixed", ngx.HTTP_GET)
+            ngx.say(status, " ", h["X-Rewrite"], " ", h["Content-Encoding"], " ", body)
+        }
+    }
+--- response_body
+202 filtered br 16 "origin" jwWAaGVsbG8gYnJvdGxpAw==
+202 filtered br 16 "origin" jwWAaGVsbG8gYnJvdGxpAw==
+202 fixed nil replacement
+--- grep_error_log eval
+qr/failed to load resty\.brotli: libbrotlidec\.so\.1 unavailable/
+--- grep_error_log_out
+failed to load resty.brotli: libbrotlidec.so.1 unavailable
+
+
+
+=== TEST 26: available br decoder rewrites the complete multi-chunk response
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local status, _, body, h = t("/filtered", ngx.HTTP_GET)
+            ngx.say(status, " ", h["X-Rewrite"], " ", h["Content-Encoding"], " ", body)
+        }
+    }
+--- response_body
+202 filtered nil new brotli
