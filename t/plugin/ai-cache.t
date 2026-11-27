@@ -1660,3 +1660,121 @@ plugins:
 X-AI-Cache-Status: HIT
 --- response_body_like eval
 qr/baby sea otter/
+
+
+
+=== TEST 67: configure a route with default authentication isolation
+--- config
+    location /t {
+        content_by_lua_block {
+            require("lib.test_redis").flush_port("127.0.0.1", 6379)
+
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/auth-isolated",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": { "query": { "api_key": "test-key" } },
+                            "options": { "model": "gpt-4o" },
+                            "override": { "endpoint": "http://127.0.0.1:1980" }
+                        },
+                        "ai-cache": {
+                            "redis_host": "127.0.0.1",
+                            "redis_port": 6379
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 68: first authentication context warms its own cache entry
+--- request
+POST /auth-isolated
+{"model":"gpt-4o","messages":[{"role":"user","content":"auth isolation"}]}
+--- more_headers
+Authorization: Bearer tenant-a
+X-AI-Fixture: openai/chat-basic.json
+--- response_headers
+X-AI-Cache-Status: MISS
+--- response_body_like eval
+qr/1 \+ 1 = 2/
+--- wait: 0.3
+
+
+
+=== TEST 69: the same prompt under another authentication context is isolated
+--- request
+POST /auth-isolated
+{"model":"gpt-4o","messages":[{"role":"user","content":"auth isolation"}]}
+--- more_headers
+Authorization: Bearer tenant-b
+X-AI-Fixture: openai/chat-with-reasoning.json
+--- response_headers
+X-AI-Cache-Status: MISS
+--- response_body_like eval
+qr/The answer is 42/
+--- wait: 0.3
+
+
+
+=== TEST 70: authentication isolation hashes every resolved identity input (key.lua unit)
+--- config
+    location /t {
+        content_by_lua_block {
+            local key = require("apisix.plugins.ai-cache.key")
+
+            local isolated = { cache_key = { share_across_routes = true } }
+            local function key_for(authorization, consumer, upstream_auth, conf)
+                ngx.req.set_header("Authorization", authorization)
+                return key.build(conf or isolated, {
+                    var = {},
+                    consumer_name = consumer,
+                    picked_ai_instance = { auth = upstream_auth },
+                }, "fp")
+            end
+
+            local base = key_for("Bearer tenant-a", "alice",
+                                 { header = { Authorization = "Bearer provider-a" } })
+            assert(key_for("Bearer tenant-a", "alice",
+                           { header = { Authorization = "Bearer provider-a" } }) == base,
+                   "identical authentication context must share a key")
+            assert(key_for("Bearer tenant-b", "alice",
+                           { header = { Authorization = "Bearer provider-a" } }) ~= base,
+                   "different inbound authorization must not share a key")
+            assert(key_for("Bearer tenant-a", "bob",
+                           { header = { Authorization = "Bearer provider-a" } }) ~= base,
+                   "different resolved consumer must not share a key")
+            assert(key_for("Bearer tenant-a", "alice",
+                           { header = { Authorization = "Bearer provider-b" } }) ~= base,
+                   "different upstream credentials must not share a key")
+            assert(not base:find("tenant%-a") and not base:find("provider%-a"),
+                   "credentials must not appear in the cache key")
+
+            local public = { cache_key = {
+                share_across_routes = true,
+                auth_isolation = false,
+            } }
+            assert(key_for("Bearer tenant-a", "alice",
+                           { header = { Authorization = "Bearer provider-a" } }, public)
+                   == key_for("Bearer tenant-b", "bob",
+                              { header = { Authorization = "Bearer provider-b" } }, public),
+                   "explicitly public caches must preserve shared keys")
+
+            ngx.req.clear_header("Authorization")
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed

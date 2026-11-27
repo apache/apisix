@@ -132,6 +132,17 @@ local function esc(v)
 end
 
 
+local function auth_digest(ctx)
+    local inst = ctx.picked_ai_instance or {}
+    local identity = {
+        authorization = core.request.header(ctx, "Authorization"),
+        consumer = ctx.consumer_name,
+        upstream = inst.auth,
+    }
+    return hex_digest(core.json.canonical_encode(identity))
+end
+
+
 local function scope(conf, ctx)
     local ck = conf.cache_key or {}
 
@@ -146,6 +157,9 @@ local function scope(conf, ctx)
         for _, name in ipairs(ck.include_vars) do
             parts[#parts + 1] = name .. "=" .. esc(ctx.var[name])
         end
+    end
+    if ck.auth_isolation ~= false then
+        parts[#parts + 1] = "auth=" .. auth_digest(ctx)
     end
 
     if #parts == 0 then
