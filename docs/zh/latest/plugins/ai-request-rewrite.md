@@ -47,8 +47,8 @@ import TabItem from '@theme/TabItem';
 | `prompt` | string | 是 | | | 发送到 LLM 服务用于重写客户端请求的提示词。 |
 | `provider` | string | 是 | | [openai, deepseek, azure-openai, aimlapi, gemini, vertex-ai, anthropic, openrouter, openai-compatible] | LLM 服务提供商。设置为 `aimlapi` 时，插件使用 OpenAI 兼容驱动并将请求代理到 `https://api.aimlapi.com/v1/chat/completions`。设置为 `openai-compatible` 时，插件将请求代理到 `override` 中配置的自定义端点。设置为 `azure-openai` 时，插件同样将请求代理到 `override` 中配置的自定义端点，并会额外移除用户请求中的 `model` 参数。 |
 | `auth` | object | 是 | | | 身份验证配置。 |
-| `auth.header` | object | 否 | | | 身份验证请求头。键必须匹配模式 `^[a-zA-Z0-9._-]+$`。`header` 和 `query` 至少需要配置其中一个。 |
-| `auth.query` | object | 否 | | | 身份验证查询参数。键必须匹配模式 `^[a-zA-Z0-9._-]+$`。`header` 和 `query` 至少需要配置其中一个。 |
+| `auth.header` | object | 否 | | | 身份验证请求头。键必须匹配模式 `^[a-zA-Z0-9._-]+$`。`header` 和 `query` 至少需要配置其中一个。启用 `data_encryption.enable_encrypt_fields` 后，APISIX 会在写入 etcd 前加密每个值。 |
+| `auth.query` | object | 否 | | | 身份验证查询参数。键必须匹配模式 `^[a-zA-Z0-9._-]+$`。`header` 和 `query` 至少需要配置其中一个。启用 `data_encryption.enable_encrypt_fields` 后，APISIX 会在写入 etcd 前加密每个值。 |
 | `options` | object | 否 | | | 模型配置。除了 `model` 之外，还可以配置 `temperature` 和 `top_p` 等非流式生成参数，这些参数会转发给上游 LLM 服务。插件必须收到完整的 JSON 响应，才能替换原始请求体。 |
 | `options.model` | string | 否 | | | LLM 模型名称，例如 `gpt-4` 或 `gpt-3.5`。更多可用模型请参阅 LLM 提供商的 API 文档。 |
 | `override` | object | 否 | | | 覆盖设置。 |

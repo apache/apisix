@@ -562,3 +562,217 @@ val: nil
 err: base64 decode failed
 --- no_error_log
 base64 decode failed
+
+
+
+=== TEST 9: ai-request-rewrite: encrypt auth.header and auth.query (maps of strings)
+--- yaml_config
+apisix:
+    data_encryption:
+        enable_encrypt_fields: true
+        keyring:
+            - edd1c9f0985e76a2
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/echo",
+                    "plugins": {
+                        "ai-request-rewrite": {
+                            "prompt": "some prompt",
+                            "provider": "openai",
+                            "auth": {
+                                "header": {
+                                    "Authorization": "Bearer token"
+                                },
+                                "query": {
+                                    "api_key": "apikey"
+                                }
+                            },
+                            "override": {
+                                "endpoint": "http://127.0.0.1:1980"
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            -- admin API should return decrypted values
+            local code, message, res = t('/apisix/admin/routes/1',
+                ngx.HTTP_GET
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(message)
+                return
+            end
+            res = json.decode(res)
+
+            local conf = res.value.plugins["ai-request-rewrite"]
+            ngx.say("header.Authorization: ", conf.auth.header.Authorization)
+            ngx.say("query.api_key: ", conf.auth.query.api_key)
+
+            -- etcd should have encrypted values
+            local etcd = require("apisix.core.etcd")
+            local res = assert(etcd.get('/routes/1'))
+            local conf_etcd = res.body.node.value.plugins["ai-request-rewrite"]
+            ngx.say("etcd header encrypted: ",
+                    conf_etcd.auth.header.Authorization ~= "Bearer token")
+            ngx.say("etcd query encrypted: ",
+                    conf_etcd.auth.query.api_key ~= "apikey")
+        }
+    }
+--- response_body
+header.Authorization: Bearer token
+query.api_key: apikey
+etcd header encrypted: true
+etcd query encrypted: true
+
+
+
+=== TEST 10: ai-request-rewrite: encrypted auth.header and auth.query are decrypted before the LLM call
+--- yaml_config
+apisix:
+    data_encryption:
+        enable_encrypt_fields: true
+        keyring:
+            - edd1c9f0985e76a2
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            -- the LLM mock rejects the call unless it receives
+            -- "Authorization: Bearer token" or "?api_key=apikey"
+            local auths = {
+                [[{"header": {"Authorization": "Bearer token"}}]],
+                [[{"query": {"api_key": "apikey"}}]],
+            }
+            for _, auth in ipairs(auths) do
+                local code, body = t('/apisix/admin/routes/1',
+                    ngx.HTTP_PUT,
+                    [[{
+                        "uri": "/echo",
+                        "plugins": {
+                            "ai-request-rewrite": {
+                                "prompt": "some prompt",
+                                "provider": "openai",
+                                "auth": ]] .. auth .. [[,
+                                "override": {
+                                    "endpoint": "http://127.0.0.1:1980"
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        }
+                    }]]
+                )
+                if code >= 300 then
+                    ngx.status = code
+                    ngx.say(body)
+                    return
+                end
+
+                ngx.sleep(0.5)
+
+                local code, _, body = t("/echo", ngx.HTTP_POST, "some random content",
+                                        nil, {["Content-Type"] = "text/plain"})
+                ngx.say(code, " ", body)
+            end
+        }
+    }
+--- response_body
+200 some prompt some random content
+200 some prompt some random content
+
+
+
+=== TEST 11: ai-request-rewrite: auth stored as plaintext before encrypt_fields was declared keeps working
+--- yaml_config
+apisix:
+    data_encryption:
+        enable_encrypt_fields: true
+        keyring:
+            - edd1c9f0985e76a2
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            -- write the route to etcd directly, bypassing the Admin API encryption
+            local _, err = core.etcd.set("/routes/1", json.decode([[{
+                "uri": "/echo",
+                "plugins": {
+                    "ai-request-rewrite": {
+                        "prompt": "some prompt",
+                        "provider": "openai",
+                        "auth": {
+                            "header": {
+                                "Authorization": "Bearer token"
+                            },
+                            "query": {
+                                "api_key": "apikey"
+                            }
+                        },
+                        "override": {
+                            "endpoint": "http://127.0.0.1:1980"
+                        }
+                    }
+                },
+                "upstream": {
+                    "nodes": {
+                        "127.0.0.1:1980": 1
+                    },
+                    "type": "roundrobin"
+                }
+            }]]))
+            if err then
+                ngx.say(err)
+                return
+            end
+
+            local code, message, res = t('/apisix/admin/routes/1', ngx.HTTP_GET)
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(message)
+                return
+            end
+            res = json.decode(res)
+            local conf = res.value.plugins["ai-request-rewrite"]
+            ngx.say("header.Authorization: ", conf.auth.header.Authorization)
+            ngx.say("query.api_key: ", conf.auth.query.api_key)
+
+            ngx.sleep(0.5)
+
+            local code, _, body = t("/echo", ngx.HTTP_POST, "some random content",
+                                    nil, {["Content-Type"] = "text/plain"})
+            ngx.say(code, " ", body)
+        }
+    }
+--- response_body
+header.Authorization: Bearer token
+query.api_key: apikey
+200 some prompt some random content
+--- error_log
+failed to decrypt the conf of plugin [ai-request-rewrite] key [header.Authorization]
+failed to decrypt the conf of plugin [ai-request-rewrite] key [query.api_key]
