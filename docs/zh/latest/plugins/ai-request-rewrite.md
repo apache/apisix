@@ -36,7 +36,7 @@ import TabItem from '@theme/TabItem';
 
 ## 描述
 
-`ai-request-rewrite` 插件在将客户端请求转发到上游服务之前，先将请求发送到 LLM 服务进行转换处理。这使得 LLM 能够对请求进行数据脱敏、内容增强或格式转换等修改。该插件支持集成 OpenAI、DeepSeek、Gemini、Vertex AI、Anthropic、OpenRouter 以及其他 OpenAI 兼容的 API。
+`ai-request-rewrite` 插件在将客户端请求转发到上游服务之前，先将请求发送到 LLM 服务进行转换处理。这使得 LLM 能够对请求进行数据脱敏、内容增强或格式转换等修改。该插件支持集成 OpenAI、DeepSeek、Gemini、Vertex AI、Anthropic、OpenRouter、MartLLM 以及其他 OpenAI 兼容的 API。
 
 用于重写的 LLM 调用与客户端请求格式相互独立。使用 `openai` 提供商时，插件会根据配置的提示词和原始请求体构建非流式 Chat Completions 请求。它不会将客户端请求识别为 AI 协议，也不会按 AI 协议代理该请求。内部请求使用插件配置的凭据，不会转发客户端请求头。
 
@@ -45,7 +45,7 @@ import TabItem from '@theme/TabItem';
 | 名称 | 类型 | 必选项 | 默认值 | 有效值 | 描述 |
 | --- | --- | --- | --- | --- | --- |
 | `prompt` | string | 是 | | | 发送到 LLM 服务用于重写客户端请求的提示词。 |
-| `provider` | string | 是 | | [openai, deepseek, azure-openai, aimlapi, gemini, vertex-ai, anthropic, openrouter, openai-compatible] | LLM 服务提供商。设置为 `aimlapi` 时，插件使用 OpenAI 兼容驱动并将请求代理到 `https://api.aimlapi.com/v1/chat/completions`。设置为 `openai-compatible` 时，插件将请求代理到 `override` 中配置的自定义端点。设置为 `azure-openai` 时，插件同样将请求代理到 `override` 中配置的自定义端点，并会额外移除用户请求中的 `model` 参数。 |
+| `provider` | string | 是 | | [openai, deepseek, azure-openai, aimlapi, gemini, vertex-ai, anthropic, openrouter, martllm, openai-compatible] | LLM 服务提供商。设置为 `aimlapi` 时，插件使用 OpenAI 兼容驱动并将请求代理到 `https://api.aimlapi.com/v1/chat/completions`。设置为 `openai-compatible` 时，插件将请求代理到 `override` 中配置的自定义端点。设置为 `azure-openai` 时，插件同样将请求代理到 `override` 中配置的自定义端点，并会额外移除用户请求中的 `model` 参数。 |
 | `auth` | object | 是 | | | 身份验证配置。 |
 | `auth.header` | object | 否 | | | 身份验证请求头。键必须匹配模式 `^[a-zA-Z0-9._-]+$`。`header` 和 `query` 至少需要配置其中一个。 |
 | `auth.query` | object | 否 | | | 身份验证查询参数。键必须匹配模式 `^[a-zA-Z0-9._-]+$`。`header` 和 `query` 至少需要配置其中一个。 |

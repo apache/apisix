@@ -36,7 +36,7 @@ import TabItem from '@theme/TabItem';
 
 ## Description
 
-The `ai-request-rewrite` Plugin processes client requests by forwarding them to LLM services for transformation before relaying them to Upstream services. This enables LLM-powered modifications such as data redaction, content enrichment, or reformatting. The Plugin supports integration with OpenAI, DeepSeek, Gemini, Vertex AI, Anthropic, OpenRouter, and other OpenAI-compatible APIs.
+The `ai-request-rewrite` Plugin processes client requests by forwarding them to LLM services for transformation before relaying them to Upstream services. This enables LLM-powered modifications such as data redaction, content enrichment, or reformatting. The Plugin supports integration with OpenAI, DeepSeek, Gemini, Vertex AI, Anthropic, OpenRouter, MartLLM, and other OpenAI-compatible APIs.
 
 The LLM call used for rewriting is separate from the client's request format. With the `openai` provider, the Plugin builds a non-streaming Chat Completions request from the configured prompt and the original request body. It does not classify or proxy the client's request as an AI protocol. The internal request uses the Plugin's configured credentials and does not forward client headers.
 
@@ -46,7 +46,7 @@ The LLM call used for rewriting is separate from the client's request format. Wi
 | --- | --- | --- | --- | --- | --- |
 | `max_req_body_size` | integer | False | 67108864 | >= 1 | Maximum request body size in bytes buffered into memory. Requests with a larger body are rejected. |
 | `prompt` | string | True | | | The prompt to send to the LLM service for rewriting the client request. |
-| `provider` | string | True | | [openai, deepseek, azure-openai, aimlapi, gemini, vertex-ai, anthropic, openrouter, openai-compatible] | LLM service provider. When set to `aimlapi`, the Plugin uses the OpenAI-compatible driver and proxies the request to `https://api.aimlapi.com/v1/chat/completions`. When set to `openai-compatible`, the Plugin proxies requests to the custom endpoint configured in `override`. When set to `azure-openai`, the Plugin also proxies requests to the custom endpoint configured in `override` and additionally omits the `model` parameter from the request body sent to Azure OpenAI. |
+| `provider` | string | True | | [openai, deepseek, azure-openai, aimlapi, gemini, vertex-ai, anthropic, openrouter, martllm, openai-compatible] | LLM service provider. When set to `aimlapi`, the Plugin uses the OpenAI-compatible driver and proxies the request to `https://api.aimlapi.com/v1/chat/completions`. When set to `openai-compatible`, the Plugin proxies requests to the custom endpoint configured in `override`. When set to `azure-openai`, the Plugin also proxies requests to the custom endpoint configured in `override` and additionally omits the `model` parameter from the request body sent to Azure OpenAI. |
 | `auth` | object | True | | | Authentication configurations. |
 | `auth.header` | object | False | | | Authentication headers. Key must match pattern `^[a-zA-Z0-9._-]+$`. At least one of `header` and `query` should be configured. |
 | `auth.query` | object | False | | | Authentication query parameters. Key must match pattern `^[a-zA-Z0-9._-]+$`. At least one of `header` and `query` should be configured. |
