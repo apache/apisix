@@ -41,6 +41,7 @@ APISIX currently supports storing secrets in the following ways:
 - [HashiCorp Vault](#use-hashicorp-vault-to-manage-secrets)
 - [AWS Secrets Manager](#use-aws-secrets-manager-to-manage-secrets)
 - [GCP Secrets Manager](#use-gcp-secrets-manager-to-manage-secrets)
+- [Files](#use-files-to-manage-secrets)
 
 You can use APISIX Secret functions by specifying format variables in the consumer configuration or the plugin configuration of any plugin, as well as in SSL certificate configurations.
 
@@ -365,3 +366,70 @@ curl http://127.0.0.1:9180/apisix/admin/secrets/gcp/1 \
 }'
 
 ```
+
+## Use files to manage secrets
+
+Using files to manage secrets means APISIX reads the secret from a file on the local file system. This fits secrets that are mounted into the APISIX container as files, such as a Kubernetes Secret mounted as a volume, without exposing them as environment variables.
+
+### Reference Format
+
+```
+$secret://file/$id/$key
+```
+
+- id: APISIX Secrets resource ID, which needs to be consistent with the one specified when adding the APISIX Secrets resource
+- key: path of the secret file, relative to `base_path`. It can contain `/` for files in subdirectories, but must not start with `/` or contain `..` segments.
+
+The value is the whole content of the file. A single trailing newline (`
+` or `
+`) is removed, since most tools add one when writing a file.
+
+### Required Parameters
+
+| Name      | Required | Default | Description                                                     |
+|-----------|----------|---------|-----------------------------------------------------------------|
+| base_path | True     |         | Absolute path of the directory that holds the secret files.     |
+
+The files must be readable by the APISIX worker processes.
+
+### Example: use in key-auth plugin
+
+Mount the Kubernetes Secret `jack` into the APISIX pod, so that its key `auth-key` is available as the file `/etc/apisix/secrets/jack/auth-key`:
+
+```yaml
+volumes:
+  - name: jack
+    secret:
+      secretName: jack
+containers:
+  - name: apisix
+    volumeMounts:
+      - name: jack
+        mountPath: /etc/apisix/secrets/jack
+        readOnly: true
+```
+
+Add the APISIX Secrets resource:
+
+```shell
+curl http://127.0.0.1:9180/apisix/admin/secrets/file/1 -H "X-API-KEY: $admin_key" -X PUT -d '
+{
+    "base_path": "/etc/apisix/secrets"
+}'
+```
+
+Reference the file in the consumer:
+
+```shell
+curl http://127.0.0.1:9180/apisix/admin/consumers -H "X-API-KEY: $admin_key" -X PUT -d '
+{
+    "username": "jack",
+    "plugins": {
+        "key-auth": {
+            "key": "$secret://file/1/jack/auth-key"
+        }
+    }
+}'
+```
+
+Resolved values are cached like the values from other secret managers, see `apisix.lru.secret` in `config.yaml`. When the mounted Secret is updated, APISIX picks up the new value once the cached one expires, without a restart.
