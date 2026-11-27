@@ -48,7 +48,35 @@ description: proxy-rewrite 插件支持重写 APISIX 转发到上游服务的请
 | headers.add | object | 否 | | | 要附加到请求的标头。如果请求中已经存在该标头，插件会追加配置值。值可以是常量、一个或多个 [NGINX 变量](https://nginx.org/en/docs/http/ngx_http_core_module.html)，或者 `$1-$2-$3` 等 `regex_uri` 捕获结果。值也可以是数组；插件会分别解析每个元素，并按数组顺序将其追加为单独的标头行。APISIX 3.18.0 及后续版本支持数组值。|
 | headers.set | object | 否 | | | 要在请求中设置的标头。如果请求中已经存在该标头，插件会覆盖原有值。值可以是常量、一个或多个 [NGINX 变量](https://nginx.org/en/docs/http/ngx_http_core_module.html)，或者 `$1-$2-$3` 等 `regex_uri` 捕获结果。值也可以是数组；插件会分别解析每个元素，并用按数组顺序生成的多个标头行替换原有值。APISIX 3.18.0 及后续版本支持数组值。请勿使用此字段设置 `Host`。|
 | headers.remove | array[string] | 否 | | | 从请求中删除的标头。
+| args | object | 否 | | | 非空对象，至少配置 `add`、`set`、`remove` 中的一项。对已构造完成的上游 query 按 `add`、`set`、`remove` 的固定顺序执行操作。 |
+| args.add | object | 否 | | | 非空对象，参数名为非空字符串。值支持字符串、数字或由字符串和数字组成的非空数组。保留已有值并追加配置值，不去重；参数不存在时创建。 |
+| args.set | object | 否 | | | 支持与 `args.add` 相同的值类型。替换指定参数的全部同名值，不存在时创建，未指定的参数保留。空字符串生成 `name=`，不表示删除参数。 |
+| args.remove | array[string] | 否 | | | 非空数组，每项为非空字符串参数名。删除该名称的全部值，不存在时不操作。 |
 | use_real_request_uri_unsafe | boolean | 否 | false | | 如果为 True，则绕过 URI 规范化并允许完整的原始请求 URI。启用此选项被视为不安全。|
+
+## 改写 Query 参数
+
+在路由的 `plugins` 对象中配置以下片段：
+
+```json
+{
+  "proxy-rewrite": {
+    "args": {
+      "add": {"tag": ["b", "c"]},
+      "set": {"page": "1"},
+      "remove": ["token"]
+    }
+  }
+}
+```
+
+请求 `/demo?tag=a&page=2&page=3&token=tmp` 的上游参数等价于 `/demo?tag=a&tag=b&tag=c&page=1`。
+
+参数名区分大小写，按 URL 解码后的名称匹配。同名参数的已有值保持顺序，追加值按配置数组顺序放在已有值之后。使用数组设置参数会替换该名称的整个值列表。数组编码为重复的 query 参数，不会编码成 JSON 或逗号分隔的字符串。不同参数名之间可能重新排序，原始百分号编码形式不保证保留。
+
+配置值按常量处理，不展开变量或模板。允许空字符串，不支持空数组、布尔值、null、对象或嵌套数组作为配置值。向已有的无等号参数（如 `flag`）追加时，会保留其原有形式。删除操作按名称处理，不支持按值或数组下标删除。
+
+参数操作在现有 URI 改写完成后、header 改写前执行。同名参数的 `set` 覆盖 `add`，`remove` 最后删除。不配置 `args` 时保持原有 URI 处理逻辑，不对 query 解码再编码。
 
 ## 示例
 
