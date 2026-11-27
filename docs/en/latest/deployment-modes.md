@@ -346,18 +346,89 @@ routes:
 
 *WARNING*: APISIX will not load the rules into memory from file `conf/apisix.yaml` if there is no `#END` at the end.
 
-Environment variables can also be used like so:
+##### Environment variables in standalone YAML
+
+The following rules apply to the file-driven `conf/apisix.yaml` configuration.
+The substitution behavior of `config.yaml`, standalone JSON, and Admin API
+request bodies is unchanged.
+
+Use `${{VAR}}` in a scalar value or a string key, or
+`${{VAR:=default_value}}` to provide a fallback when the variable is unset:
 
 ```yaml
 routes:
   -
     uri: /hello
+    plugins:
+        response-rewrite:
+            status_code: ${{STATUS_CODE:=200}}
+            body: "${{RESPONSE_BODY:=hello}}"
     upstream:
         nodes:
             "${{UPSTREAM_ADDR}}": 1
         type: roundrobin
 #END
 ```
+
+Plain scalars use YAML type inference after substitution. For example,
+`${{STATUS_CODE:=200}}` produces the number `200`. Without an explicit type tag,
+single-quoted, double-quoted, and literal/folded block scalars remain strings, so
+`"${{RESPONSE_BODY}}"` preserves a numeric-looking response body as text.
+Explicit tags such as `!!int ${{PORT}}` apply their conversion after
+substitution.
+
+Each scalar is substituted once. A placeholder contained in an environment
+variable's value is kept literally rather than expanded recursively. This also
+applies to string keys. Placeholders in full-line and inline YAML comments are
+ignored. A missing variable in an actual value or key, without a default,
+rejects the configuration with a missing-environment-variable error.
+
+Environment values containing actual newlines retain those newlines. For
+example, load a PEM certificate and private key into the environment:
+
+```shell
+export TLS_CERT="$(cat server.crt)"
+export TLS_KEY="$(cat server.key)"
+```
+
+Then reference them directly in `conf/apisix.yaml`:
+
+```yaml
+ssls:
+  - id: example-tls
+    snis:
+      - example.com
+    cert: "${{TLS_CERT}}"
+    key: "${{TLS_KEY}}"
+#END
+```
+
+Plain, quoted, and block placeholders preserve the multiline environment value.
+Block folding and chomping apply to the YAML template before substitution; they
+do not fold or trim newlines supplied by the environment value.
+
+Compared with APISIX 3.19, substitution operates on scalar data instead of the
+raw YAML document. This fixes placeholders in comments and multiline PEM
+values, and prevents environment values from injecting YAML structure. When
+updating an existing configuration:
+
+- Write lists, mappings, and fields in the YAML file itself, and place variables
+  in their scalar values. A variable containing `[a, b]` or `{a: 1}` remains a
+  string; characters such as `#`, a colon followed by a space, and newlines do not
+  create comments or additional fields.
+- Use quoted placeholders for strings in flow collections, for example
+  `snis: ["${{SERVER_NAME}}"]`. A bare placeholder such as
+  `[${{NUM}}]` is not valid YAML before substitution. For an inferred numeric
+  item, use block sequence syntax with `- ${{NUM}}`.
+- Put the intended characters in the environment value. Quotes, backslashes,
+  and literal `\n` sequences in that value are preserved as data. To supply a
+  newline, use an actual newline, for example
+  `export RESPONSE_BODY=$'first\nsecond'` in Bash. YAML escapes written directly
+  in the configuration file still follow YAML's normal rules.
+
+A null root document, such as `~`, is rejected. If a reload fails this document
+check, YAML parsing, or environment substitution, APISIX keeps serving the
+previous valid configuration and can accept a later valid update.
 
 *WARNING*: When using docker to deploy APISIX in standalone mode. New environment variables added to `apisix.yaml` while APISIX has been initialized will only take effect after a reload.
 
