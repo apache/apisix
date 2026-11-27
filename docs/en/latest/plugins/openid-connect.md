@@ -92,7 +92,11 @@ The `openid-connect` Plugin supports the integration with [OpenID Connect (OIDC)
 | session.absolute_timeout | integer | False | | | Absolute session lifetime in seconds. Forwarded to lua-resty-session as `absolute_timeout`. |
 | session.cookie.lifetime | integer | False | | | Deprecated. Mapped to `session.absolute_timeout` at runtime when `absolute_timeout` is not set. Use `session.absolute_timeout` instead. |
 | session.storage | string | False | cookie | ["cookie", "redis"] | Session storage method. |
-| session.redis | object | False | | | Redis configuration when `storage` is `redis`. |
+| session.revocation | string | False | | ["redis"] | Session revocation backend. Set to `redis` to enable revocation for cookie sessions. Requires `session.redis` and cannot be used when `session.storage` is `redis`. |
+| session.revocation_fail_mode | string | False | open | ["open", "closed"] | When the revocation store is unreachable, `open` treats the session as not revoked, while `closed` rejects session open and destroy operations. |
+| session.revocation_cache_ttl | integer | False | 5 | | Worker-local TTL in seconds for successful revocation lookups. `0` disables. |
+| session.revocation_error_cache_ttl | integer | False | 5 | | Worker-local TTL in seconds for revocation store errors. `0` disables. |
+| session.redis | object | False | | | Redis connection. Required when `storage` is `redis`, or when `revocation` is `redis`. |
 | session.redis.host | string | False | 127.0.0.1 | | Redis host. |
 | session.redis.port | integer | False | 6379 | | Redis port. |
 | session.redis.username | string | False | | | Redis username. |
@@ -356,6 +360,40 @@ spec:
 </Tabs>
 
 See [Implement Authorization Code Grant](../tutorials/keycloak-oidc.md#implement-authorization-code-grant) for a complete example to use the `openid-connect` Plugin to integrate with Keycloak using the authorization code flow.
+
+### Cookie Session Revocation
+
+Cookie sessions are stored by the client and cannot normally be invalidated individually by APISIX. To enable server-side revocation, set `session.revocation` to `redis` and configure a Redis denylist:
+
+```json
+"session": {
+  "secret": "your-session-secret-min-16-chars",
+  "storage": "cookie",
+  "revocation": "redis",
+  "revocation_fail_mode": "closed",
+  "revocation_cache_ttl": 5,
+  "revocation_error_cache_ttl": 1,
+  "redis": {
+    "host": "127.0.0.1",
+    "port": 6379,
+    "prefix": "oidc:session"
+  }
+}
+```
+
+`revocation_fail_mode` defaults to `open`, which keeps accepting sessions when the revocation store is unavailable; `closed` rejects session open and destroy instead. Each worker caches lookups for `revocation_cache_ttl` seconds and store errors for `revocation_error_cache_ttl` seconds, so not every request calls Redis. Set both to `0` to check Redis on every request. Omit `revocation` to disable revocation.
+
+A logout takes effect at once on the worker that handled it, and on other workers when their cached entry expires, so `revocation_cache_ttl` bounds how long a revoked session can still be accepted elsewhere. Routes with the same `session.redis` settings share their cache in each worker.
+
+Each worker caches up to 1024 lookups and 1024 store errors. To change that, define the nginx variables `$session_revocation_cache_size` and `$session_revocation_error_cache_size` in an `http` configuration snippet, for example `map $host $session_revocation_cache_size { default 4096; }`. Workers read them once, so a change needs a reload.
+
+#### Logout behavior and limitations
+
+- **Logout revokes every cookie of the same login.** Each save of the session, such as a token renewal or rolling refresh, gives it a new session ID; logout revokes them all, including cookies refreshed before or after the logout. A new login is not affected.
+- **Cookies issued before lineage IDs existed are revoked one by one.** A cookie saved by a `lua-resty-session` version without lineage IDs, and still valid after an upgrade, is revoked by its own session ID only; its older copies expire at their timeout.
+- **In `open` mode (the default), a logout can succeed without revoking anything.** If Redis is unavailable during logout, the cookie is cleared but no marker is written, so a copied cookie stays valid until it times out. Use `closed` if you rely on revocation: the failed write is reported and the session is kept.
+- **Revocation markers live only in Redis.** If Redis loses its data, revoked cookies are accepted again until they expire. Use persistence if logouts must survive a restart.
+- In `closed` mode, requests with a cookie session get `503` while Redis is unavailable.
 
 ### Authorization Code Flow with PAR and DPoP
 
