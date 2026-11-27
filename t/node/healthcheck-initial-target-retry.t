@@ -432,9 +432,9 @@ location /t {
             return state.add_calls >= 2
                    and state.current:get_target_status("127.0.0.1", 1970) == true
         end), "the re-added target did not use the default health state")
-        ngx.say("readded target healthy: ",
+        ngx.say("re-added target healthy: ",
                 tostring(state.current:get_target_status("127.0.0.1", 1970)))
-        state.traffic("healthy responses after readd: ")
+        state.traffic("healthy responses after re-add: ")
 
         state.put(1, true)
         assert(state.wait_for(state.unhealthy), "the re-added dead node was not probed")
@@ -450,8 +450,8 @@ dead-node remove attempts: 2
 registered ports: 1980
 removed target status: nil/target not found
 healthy responses: 40
-readded target healthy: true
-healthy responses after readd: 20
+re-added target healthy: true
+healthy responses after re-add: 20
 healthy responses after final probe: 40
 --- error_log
 failed to remove healthcheck target: 127.0.0.1:1970
