@@ -133,8 +133,8 @@ $ curl http://127.0.0.1:9180/apisix/admin/routes/2 -H "X-API-KEY: $admin_key" -X
 测试：
 
 ```shell
-curl http://127.0.0.1:1980/hello
-1980
+curl http://127.0.0.1:9080/hello
+# 1980
 ```
 
 所有请求只到达端口 `1980` 的路由。
@@ -209,6 +209,44 @@ apisix:
 ```
 
 此时将匹配 `/blog/dog` 和 `/blog/cat`。
+
+两条参数路由都能匹配同一请求时，可以通过 `priority` 指定由哪条路由处理。
+例如，将 `/languages/:tenant/all` 的优先级设得比 `/languages/:tenant/:language` 高，
+以 `/all` 结尾的请求就会命中带字面量路径段的路由。下面的路由使用 `mocking` 插件显示匹配结果。
+
+```shell
+curl http://127.0.0.1:9180/apisix/admin/routes/languages-one \
+  -H "X-API-KEY: $admin_key" -X PUT -d '
+{
+  "uri": "/languages/:tenant/:language",
+  "methods": ["GET"],
+  "priority": 0,
+  "plugins": {
+    "mocking": {"content_type": "text/plain", "response_example": "one language"}
+  }
+}'
+
+curl http://127.0.0.1:9180/apisix/admin/routes/languages-all \
+  -H "X-API-KEY: $admin_key" -X PUT -d '
+{
+  "uri": "/languages/:tenant/all",
+  "methods": ["GET"],
+  "priority": 10,
+  "plugins": {
+    "mocking": {"content_type": "text/plain", "response_example": "all languages"}
+  }
+}'
+```
+
+通过 APISIX 发送以下请求。
+
+```shell
+curl http://127.0.0.1:9080/languages/acme/all
+# all languages
+
+curl http://127.0.0.1:9080/languages/acme/en
+# one language
+```
 
 更多使用方式请参考：[lua-resty-radixtree#parameters-in-path](https://github.com/api7/lua-resty-radixtree/#parameters-in-path)
 

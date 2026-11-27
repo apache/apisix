@@ -117,8 +117,8 @@ $ curl http://127.0.0.1:9180/apisix/admin/routes/2 -H "X-API-KEY: $admin_key" -X
 Test:
 
 ```shell
-curl http://127.0.0.1:1980/hello
-1980
+curl http://127.0.0.1:9080/hello
+# 1980
 ```
 
 All requests will only hit the route of port `1980` because it has a priority of 3 while the route with the port of `1981` has a priority of 2.
@@ -195,6 +195,46 @@ route like
 will match both `/blog/dog` and `/blog/cat`.
 
 Named parameters match one path segment. A trailing wildcard parameter matches the remaining path segments.
+
+When two parameterized routes match the same request, use `priority` to
+choose which route handles it. Give `/languages/:tenant/all` a higher priority
+than `/languages/:tenant/:language` to send requests ending in `/all` to the
+route with the literal segment. The routes below use the `mocking` Plugin
+to show which one matched.
+
+```shell
+curl http://127.0.0.1:9180/apisix/admin/routes/languages-one \
+  -H "X-API-KEY: $admin_key" -X PUT -d '
+{
+  "uri": "/languages/:tenant/:language",
+  "methods": ["GET"],
+  "priority": 0,
+  "plugins": {
+    "mocking": {"content_type": "text/plain", "response_example": "one language"}
+  }
+}'
+
+curl http://127.0.0.1:9180/apisix/admin/routes/languages-all \
+  -H "X-API-KEY: $admin_key" -X PUT -d '
+{
+  "uri": "/languages/:tenant/all",
+  "methods": ["GET"],
+  "priority": 10,
+  "plugins": {
+    "mocking": {"content_type": "text/plain", "response_example": "all languages"}
+  }
+}'
+```
+
+Send both requests through APISIX.
+
+```shell
+curl http://127.0.0.1:9080/languages/acme/all
+# all languages
+
+curl http://127.0.0.1:9080/languages/acme/en
+# one language
+```
 
 By default, an URL-encoded slash (`%2F`) inside a parameter is decoded by Nginx
 into a real `/` before route matching, so a request like `/blog/cat%2Fdog` is
