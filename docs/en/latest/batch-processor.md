@@ -64,6 +64,8 @@ The cost grows roughly in proportion to the body size, so lower `max_pending_ent
 
 The limit only comes into play when delivery falls behind. With a log server that keeps up, the backlog stays close to `batch_max_size` — under 1000 entries at 3000 requests per second in the same setup — so the default leaves about eight times the room healthy operation needs. Raising `batch_max_size` raises the healthy backlog with it, so raise `max_pending_entries` too if you do.
 
+OpenResty can discard expired timers when a worker reaches `lua_max_running_timers` (`nginx_config.max_running_timers`). After timer pressure eases, the batch processor counts batches whose send timers never started as dropped and releases their backlog slots. It also recovers lost buffer-flush timers, so logging resumes without a reload. Sends already in progress and retries whose delay has not elapsed remain pending.
+
 The following code shows an example of how to use batch processor in your plugin:
 
 ```lua
