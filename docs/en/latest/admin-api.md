@@ -37,6 +37,8 @@ The Admin API lets users control their deployed Apache APISIX instance. The [arc
 
 When APISIX is started, the Admin API will listen on port `9180` by default and take the API prefixed with `/apisix/admin`.
 
+When HTTP access logging is enabled, the Admin API listener writes to `nginx_config.http.access_log` using a fixed format. Each entry records the client address, timestamp, method, path, protocol, status, response size, and duration. The path omits query parameters. If you configure a JSON access log format for proxy traffic, the same destination will also receive plain-text Admin API entries.
+
 Therefore, to avoid conflicts between your designed API and `/apisix/admin`, you can modify the configuration file [`/conf/config.yaml`](https://github.com/apache/apisix/blob/master/conf/config.yaml) to modify the default listening port.
 
 APISIX supports setting the IP access allowlist of Admin API to prevent APISIX from being illegally accessed and attacked. You can configure the IP addresses to allow access in the `deployment.admin.allow_admin` option in the `./conf/config.yaml` file.

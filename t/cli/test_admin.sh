@@ -23,7 +23,12 @@
 
 git checkout conf/config.yaml
 
+rm -f logs/admin-query-test.log
 echo "
+nginx_config:
+    http:
+        access_log: logs/admin-query-test.log
+        access_log_buffer: 8192
 deployment:
     admin:
         admin_listen:
@@ -49,6 +54,19 @@ echo "admin key is " $admin_key
 code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} https://127.0.0.1:9180/apisix/admin/routes -H "X-API-KEY: $admin_key")
 if [ ! $code -eq 200 ]; then
     echo "failed: failed to enable https for admin"
+    exit 1
+fi
+
+# A rejected query credential should leave an audit entry without the query string.
+curl -ksS --max-time 10 -o /dev/null \
+    'https://127.0.0.1:9180/apisix/admin/routes?api_key=admin-log-test-marker'
+for _ in {1..10}; do
+    grep -q ' 401 ' logs/admin-query-test.log && break
+    sleep 1
+done
+if ! grep -Eq '"GET /apisix/admin/routes HTTP/[0-9.]+" 401 ' logs/admin-query-test.log ||
+    grep -Fq 'admin-log-test-marker' logs/admin-query-test.log; then
+    echo "failed: admin access log should record the request without its query"
     exit 1
 fi
 
