@@ -22,12 +22,20 @@ local bp_manager_mod  = require("apisix.utils.batch-processor-manager")
 local ngx             = ngx
 local ngx_re          = ngx.re
 local str_format      = core.string.format
+local math_min        = math.min
 local math_random     = math.random
 local os_date         = os.date
+local error           = error
 local pcall           = pcall
 local type            = type
 local pairs           = pairs
 local ipairs          = ipairs
+
+local ok_time, resty_time = pcall(require, "resty.core.time")
+local monotonic_now = (ok_time and resty_time and resty_time.monotonic_time) or ngx.now
+
+local PROBE_RETRY_BASE_DELAY = 1
+local PROBE_RETRY_MAX_DELAY = 60
 
 local plugin_name = "elasticsearch-logger"
 local batch_processor_manager = bp_manager_mod.new(plugin_name)
@@ -157,7 +165,7 @@ end
 local function get_es_major_version(uri, conf)
     local httpc = http.new()
     if not httpc then
-        return nil, "failed to create http client"
+        return nil, "failed to create http client", true
     end
 
     local headers = {}
@@ -181,25 +189,26 @@ local function get_es_major_version(uri, conf)
         headers = headers,
     })
     if not res then
-        return false, err
+        return nil, err, true
     end
     if res.status ~= 200 then
+        local retryable = res.status == 408 or res.status == 429 or res.status >= 500
         return nil, str_format("server returned status: %d, body: %s",
-            res.status, res.body or "")
+            res.status, res.body or ""), retryable
     end
     local json_body, err = core.json.decode(res.body)
     if not json_body then
-        return nil, "failed to decode response body: " .. err
+        return nil, "failed to decode response body: " .. err, false
     end
     -- checked before use: a probe that raises would fail its batch, and the next one
     local version = type(json_body) == "table" and json_body.version
     if type(version) ~= "table" or type(version.number) ~= "string" then
-        return nil, "failed to get version from response body"
+        return nil, "failed to get version from response body", false
     end
 
     local major_version = version.number:match("^(%d+)%.")
     if not major_version then
-        return nil, "invalid version format: " .. version.number
+        return nil, "invalid version format: " .. version.number, false
     end
 
     return major_version
@@ -257,14 +266,24 @@ end
 
 
 -- conf._es_version is the major version of the cluster the conf sends to, or false once
--- its probe has failed. The version is probed from the batch timer, so that no request
--- waits for it. Batches sent before the first probe returns probe as well; after that,
--- a failed probe is not repeated: only Elasticsearch 5 and 6 need the version, while a
--- cluster that refuses GET / (it needs the `monitor` cluster privilege) would otherwise
--- cost a request and an error line for every batch.
+-- its probe has failed permanently (or once a bulk write succeeded without `_type`).
+-- The version is probed from the batch timer, so that no request waits for it. Batches
+-- sent before the first probe returns probe as well; after a permanent failure (such as
+-- 401/403 when credentials lack the `monitor` cluster privilege), the probe is not
+-- repeated. After a transient failure (network error, timeout, 408, 429, or 5xx),
+-- retries are rate-bounded with capped exponential backoff so Elasticsearch 5 and 6
+-- clusters can recover once reachable without probing on every batch.
 local function fetch_and_update_es_version(conf)
     if conf._es_version ~= nil then
         return
+    end
+
+    local probe = conf._es_version_probe
+    if probe then
+        if probe.in_flight or monotonic_now() < probe.next_probe_at then
+            return
+        end
+        probe.in_flight = true
     end
 
     local selected_endpoint_addr
@@ -273,16 +292,48 @@ local function fetch_and_update_es_version(conf)
     else
         selected_endpoint_addr = conf.endpoint_addrs[math_random(#conf.endpoint_addrs)]
     end
-    local major_version, err = get_es_major_version(selected_endpoint_addr, conf)
+    local ok, major_version, err, retryable = pcall(get_es_major_version,
+                                                    selected_endpoint_addr, conf)
+    if probe then
+        probe.in_flight = false
+    end
+    if not ok then
+        error(major_version)
+    end
     if err then
         core.log.error("failed to get Elasticsearch version: ", err)
         -- keep a version that a concurrent batch has got in the meantime
-        if conf._es_version == nil then
+        if conf._es_version ~= nil then
+            return
+        end
+
+        if not retryable then
             set_runtime_state(conf, "_es_version", false)
+            if conf._es_version_probe ~= nil then
+                set_runtime_state(conf, "_es_version_probe", nil)
+            end
+            return
+        end
+
+        local state = conf._es_version_probe
+        if not state then
+            state = {
+                delay = PROBE_RETRY_BASE_DELAY,
+                next_probe_at = monotonic_now() + PROBE_RETRY_BASE_DELAY,
+                in_flight = false,
+            }
+            set_runtime_state(conf, "_es_version_probe", state)
+        elseif probe then
+            state.delay = math_min(state.delay * 2, PROBE_RETRY_MAX_DELAY)
+            state.next_probe_at = monotonic_now() + state.delay
         end
         return
     end
+
     set_runtime_state(conf, "_es_version", major_version)
+    if conf._es_version_probe ~= nil then
+        set_runtime_state(conf, "_es_version_probe", nil)
+    end
 end
 
 
@@ -351,6 +402,16 @@ local function send_to_elasticsearch(conf, entries)
     if resp.status ~= 200 then
         return false, str_format("elasticsearch server returned status: %d, body: %s",
         resp.status, resp.body or "")
+    end
+
+    if conf._es_version == nil and conf._es_version_probe ~= nil then
+        local resp_body = resp.body and core.json.decode(resp.body)
+        if not (type(resp_body) == "table" and resp_body.errors == true) then
+            -- The cluster accepted a bulk request without `_type`, so it does not
+            -- need Elasticsearch 5/6 handling; stop retrying failed version probes.
+            set_runtime_state(conf, "_es_version", false)
+            set_runtime_state(conf, "_es_version_probe", nil)
+        end
     end
 
     return true
