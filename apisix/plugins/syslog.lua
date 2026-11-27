@@ -100,6 +100,10 @@ end
 
 function _M.log(conf, ctx)
     local entry = log_util.get_log_entry(plugin_name, conf, ctx)
+    if not entry then
+        return
+    end
+
     syslog.push_entry(conf, ctx, entry)
 end
 

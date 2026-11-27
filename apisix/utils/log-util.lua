@@ -326,7 +326,7 @@ function _M.get_log_entry(plugin_name, conf, ctx)
             entry = get_full_log(ngx, conf)
             -- enrich the default rich log with extra user-defined fields without
             -- replacing it, so callers keep every default field and add their own
-            if has_extra then
+            if entry and has_extra then
                 -- get_custom_format_log also appends route_id/service_id; keep only
                 -- the user-declared keys so callers don't leak unrequested fields
                 local tmp = get_custom_format_log(ctx, log_format_extra,
@@ -344,6 +344,10 @@ function _M.get_log_entry(plugin_name, conf, ctx)
             -- get_full_log doesn't work in stream
             core.log.error(plugin_name, "'s log_format is not set")
         end
+    end
+
+    if not entry then
+        return
     end
 
     if ctx.llm_summary then

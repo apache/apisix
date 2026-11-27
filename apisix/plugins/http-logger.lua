@@ -178,6 +178,9 @@ end
 
 function _M.log(conf, ctx)
     local entry = log_util.get_log_entry(plugin_name, conf, ctx)
+    if not entry then
+        return
+    end
 
     if not entry.route_id then
         entry.route_id = "no-matched"

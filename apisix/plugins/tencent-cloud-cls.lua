@@ -130,6 +130,9 @@ function _M.log(conf, ctx)
     end
 
     local entry = log_util.get_log_entry(plugin_name, conf, ctx)
+    if not entry then
+        return
+    end
 
     if conf.global_tag then
         for k, v in pairs(conf.global_tag) do

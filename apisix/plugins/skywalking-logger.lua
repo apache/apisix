@@ -148,6 +148,10 @@ end
 
 function _M.log(conf, ctx)
     local log_body = log_util.get_log_entry(plugin_name, conf, ctx)
+    if not log_body then
+        return
+    end
+
     local trace_context
     local sw_header = ngx.req.get_headers()["sw8"]
     if sw_header then

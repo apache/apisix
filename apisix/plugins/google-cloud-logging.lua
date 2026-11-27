@@ -193,6 +193,10 @@ end
 
 local function get_logger_entry(conf, ctx, oauth)
     local entry, customized, extra = log_util.get_log_entry(plugin_name, conf, ctx)
+    if not entry then
+        return nil
+    end
+
     local google_entry
     if not customized then
         google_entry = {
@@ -265,6 +269,9 @@ function _M.log(conf, ctx)
     end
 
     local entry = get_logger_entry(conf, ctx, oauth)
+    if not entry then
+        return
+    end
 
     if batch_processor_manager:add_entry(conf, entry) then
         return

@@ -106,6 +106,10 @@ end
 
 local function get_logger_entry(conf, ctx)
     local entry, customized, extra = log_util.get_log_entry(plugin_name, conf, ctx)
+    if not entry then
+        return nil
+    end
+
     local splunk_entry = {
         time = ngx_now(),
         source = DEFAULT_SPLUNK_HEC_ENTRY_SOURCE,
@@ -185,6 +189,9 @@ end
 
 function _M.log(conf, ctx)
     local entry = get_logger_entry(conf, ctx)
+    if not entry then
+        return
+    end
 
     if batch_processor_manager:add_entry(conf, entry) then
         return

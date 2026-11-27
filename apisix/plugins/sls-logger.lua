@@ -174,6 +174,10 @@ end
 -- log phase in APISIX
 function _M.log(conf, ctx)
     local entry = log_util.get_log_entry(plugin_name, conf, ctx)
+    if not entry then
+        return
+    end
+
     local json_str, err = core.json.encode(entry)
     if not json_str then
         core.log.error('error occurred while encoding the data: ', err)
