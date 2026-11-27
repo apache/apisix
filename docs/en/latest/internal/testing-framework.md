@@ -322,6 +322,14 @@ Assume your current work directory is the root of the apisix source code.
 1. Git clone the latest [test-nginx](https://github.com/openresty/test-nginx) to `../test-nginx`.
 2. Run the test: `prove -I. -I../test-nginx/inc -I../test-nginx/lib -r t/path/to/file.t`.
 
+### Run the Python gRPC compatibility test
+
+On Ubuntu, install `python3-grpcio` and run `/usr/bin/python3 t/cli/test_grpc_te_trailers.py`
+from an APISIX checkout with OpenResty and the APISIX dependencies installed. The test starts
+a loopback Python gRPC server and makes a request through the Nginx configuration generated
+by the APISIX CLI. It uses a temporary standalone configuration and listens on
+`127.0.0.1:19280`.
+
 ## Tips
 
 ### Debugging test cases

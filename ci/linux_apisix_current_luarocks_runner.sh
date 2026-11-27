@@ -21,6 +21,7 @@
 do_install() {
     linux_get_dependencies
     install_brotli
+    apt-get install -y --no-install-recommends python3-grpcio
 
     export_or_prefix
 
@@ -78,6 +79,8 @@ script() {
     ulimit -n 10240
     ulimit -n -S
     ulimit -n -H
+
+    /usr/bin/python3 t/cli/test_grpc_te_trailers.py
 
     for f in ./t/cli/test_*.sh; do
         # skip docker test - runs in separate container
