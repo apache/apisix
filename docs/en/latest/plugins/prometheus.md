@@ -835,4 +835,9 @@ plus one per Service seen on it, about 760 slots for `1m`; at most three
 quarters of them go to Services. When they run out, sessions of a new Service
 are only counted in their `listen_addr` total and a warning is logged.
 
+If a stream bandwidth counter survives the loss of its publication baseline,
+APISIX resumes counting from the next observed zone total. Bytes between the
+last publication and that observation may be omitted. If shared metric storage
+cannot save the baseline, APISIX skips that update and logs an error.
+
 :::

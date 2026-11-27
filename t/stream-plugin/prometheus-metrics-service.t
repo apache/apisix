@@ -438,9 +438,7 @@ qr/apisix_stream_status\{code="200",listen_addr="0\.0\.0\.0:1985",service="Order
 
 
 
-=== TEST 9: a slot that lost its baseline is counted from zero
-There is no telling a slot whose baseline was evicted from a new one, so it
-replays its total once, and later traffic is counted as usual.
+=== TEST 9: losing a baseline does not replay bytes in a surviving counter
 --- config
     location /probe {
         content_by_lua_block {
@@ -477,19 +475,19 @@ replays its total once, and later traffic is counted as usual.
             local dict = ngx.shared["prometheus-metrics"]
             local key = "stream_bytes_published:0.0.0.0:1985\31svc-a\31svc-a"
                         .. "\31downstream_ingress"
-            ngx.say("baseline dropped: ", dict:get(key) ~= nil)
-            dict:delete(key)
-
-            body, err = scrape()
-            if not body then
-                ngx.say(err)
-                return
-            end
             local zone = svc_a_zone_ingress()
             ngx.say("zone holds traffic: ", (zone or 0) > 0)
-            local replayed = before + (zone or 0)
-            before = tonumber(svc_a_ingress(body))
-            ngx.say("after the lost baseline: ", before == replayed)
+            for _ = 1, 2 do
+                ngx.say("baseline present before removal: ", dict:get(key) ~= nil)
+                dict:delete(key)
+
+                body, err = scrape()
+                if not body then
+                    ngx.say(err)
+                    return
+                end
+                ngx.say("counter unchanged: ", tonumber(svc_a_ingress(body)) == before)
+            end
 
             body, err = scrape_live_session()
             if not body then
@@ -506,9 +504,11 @@ GET /probe
 --- stream_enable
 --- timeout: 20
 --- response_body
-baseline dropped: true
 zone holds traffic: true
-after the lost baseline: true
+baseline present before removal: true
+counter unchanged: true
+baseline present before removal: true
+counter unchanged: true
 after one more session: +5
 
 
