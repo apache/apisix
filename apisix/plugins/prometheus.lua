@@ -98,6 +98,12 @@ function _M.check_schema(conf, schema_type)
         return false, err
     end
 
+    -- disabled_labels is only read from the plugin metadata, so reject it here
+    -- instead of accepting a setting that has no effect
+    if conf.disabled_labels ~= nil then
+        return false, "disabled_labels can only be set in the prometheus plugin metadata"
+    end
+
     return true
 end
 
