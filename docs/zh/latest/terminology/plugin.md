@@ -119,7 +119,7 @@ plugins:
 
 ## 插件合并优先顺序
 
-当同一个插件在全局规则中和局部规则（例如路由）中同时配置时，两个插件将顺序执行。
+当同一个插件在全局规则中和局部规则（例如路由）中同时配置时，两个插件将顺序执行。如果只希望执行路由上的插件，可以将 [`_meta.run_policy`](#由路由接管全局插件) 设置为 `prefer_route`。
 
 然而，如果相同的插件在多个对象上本地配置，例如在[`Route`](route.md), [`Service`](service.md), [`Consumer`](consumer.md) 或[`Plugin Config`](plugin-config.md) 上，每个非全局插件只会执行一次，因为在执行期间，针对特定的优先顺序，这些对象中配置的插件会被合并：
 
@@ -137,6 +137,7 @@ plugins:
 | error_response | string/object | 自定义错误响应。 |
 | priority       | integer       | 自定义插件优先级。 |
 | filter         | array         | 根据请求的参数，在运行时控制插件是否执行。此配置由一个或多个 {var, operator, val} 元素组成列表，类似：`{{var, operator, val}, {var, operator, val}, ...}}`。例如 `{"arg_version", "==", "v2"}`，表示当前请求参数 `version` 是 `v2`。这里的 `var` 与 NGINX 内部自身变量命名保持一致。条件格式和支持的操作符请参考 [APISIX 表达式](../router-radixtree.md#如何通过-nginx-内置变量过滤路由)。|
+| run_policy     | string        | 当设置为 `prefer_route` 时，如果匹配的路由也配置了该插件，则跳过全局规则中的该插件。可选值为 `prefer_route`。 |
 
 ### 禁用指定插件
 
@@ -307,6 +308,52 @@ plugins:
     "url": "http://httpbin.org/anything?version=v2"
     }
     ```
+
+### 由路由接管全局插件
+
+默认情况下，同时配置在全局规则和路由上的插件会执行两次。在任意一处配置中将 `_meta.run_policy` 设置为 `prefer_route` 后，对于同样配置了该插件的路由，全局规则中的该插件会被跳过，只执行路由上的插件。访问其他路由的请求，以及没有匹配到路由的请求，仍会执行全局规则中的插件。
+
+例如，通过全局 `cors` 允许任意来源，但在某个路由上只允许 `https://example.com`：
+
+```shell
+curl http://127.0.0.1:9180/apisix/admin/global_rules/1 \
+-H "X-API-KEY: $admin_key" -X PUT -d '
+{
+    "plugins": {
+        "cors": {
+            "allow_origins": "*"
+        }
+    }
+}'
+```
+
+```shell
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H "X-API-KEY: $admin_key" -X PUT -d '
+{
+    "uri": "/anything",
+    "plugins": {
+        "cors": {
+            "_meta": {
+                "run_policy": "prefer_route"
+            },
+            "allow_origins": "https://example.com"
+        }
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "httpbin.org:80": 1
+        }
+    }
+}'
+```
+
+如果没有设置 `run_policy`，来自 `https://evil.com` 的请求仍会从全局规则中得到 `Access-Control-Allow-Origin: *`。设置后，只执行路由上的 `cors`，该请求不会得到 `Access-Control-Allow-Origin` 响应头。
+
+如果路由上的插件通过 `_meta.disable` 被禁用，则执行全局规则中的插件。如果路由上的插件因 `_meta.filter` 未匹配而被跳过，则两者都不执行，因为该插件已由路由接管。
+
+部分插件（例如 `prometheus` 和 `skywalking`）在代码中设置了 `run_policy`，因此始终按此方式执行。
 
 ## 热加载
 

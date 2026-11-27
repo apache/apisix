@@ -582,6 +582,24 @@ local function meta_filter(ctx, plugin_name, plugin_conf)
 end
 
 
+-- `_meta.run_policy` on the route's or the global rule's configuration of the
+-- plugin takes effect as well as the `run_policy` defined by the plugin itself.
+-- The route's configuration comes first.
+local function get_run_policy(plugin_obj, plugin_conf, plugin_conf_in_route)
+    local meta = type(plugin_conf_in_route) == "table" and plugin_conf_in_route._meta
+    if meta and meta.run_policy then
+        return meta.run_policy
+    end
+
+    meta = plugin_conf._meta
+    if meta and meta.run_policy then
+        return meta.run_policy
+    end
+
+    return plugin_obj.run_policy
+end
+
+
 function _M.filter(ctx, conf, plugins, route_conf)
     local user_plugin_conf = conf.value.plugins
     if user_plugin_conf == nil or
@@ -606,10 +624,12 @@ function _M.filter(ctx, conf, plugins, route_conf)
             goto continue
         end
 
-        if plugin_obj.run_policy == "prefer_route" and route_plugin_conf ~= nil then
+        if route_plugin_conf ~= nil then
             local plugin_conf_in_route = route_plugin_conf[name]
-            local disable_in_route = check_disable(plugin_conf_in_route)
-            if plugin_conf_in_route and not disable_in_route then
+            if plugin_conf_in_route and not check_disable(plugin_conf_in_route)
+               and get_run_policy(plugin_obj, plugin_conf, plugin_conf_in_route)
+                   == "prefer_route"
+            then
                 goto continue
             end
         end

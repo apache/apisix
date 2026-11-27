@@ -1225,6 +1225,13 @@ _M.plugin_injected_schema = {
                               "to two arguments: `conf` and `ctx`.",
                 type = "string",
             },
+            run_policy = {
+                description = "when set to prefer_route, the global rule's instance " ..
+                              "of the plugin is skipped if the matched route also " ..
+                              "configures the plugin",
+                type = "string",
+                enum = {"prefer_route"},
+            },
         },
         additionalProperties = false,
     }
