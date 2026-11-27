@@ -143,6 +143,10 @@ GET /compare
   "client": {
     "token": "${KUBERNETES_CLIENT_TOKEN}"
   },
+  "watch_timeout_seconds": 1800,
+  "watch_jitter_seconds": 990,
+  "watch_retry_interval_seconds": 40,
+  "watch_retry_max_seconds": 40,
   "watch_endpoint_slices": false,
   "shared_size": "64m",
   "default_weight": 50
@@ -178,6 +182,10 @@ GET /compare
   "client": {
     "token": "${KUBERNETES_CLIENT_TOKEN}"
   },
+  "watch_timeout_seconds": 1800,
+  "watch_jitter_seconds": 990,
+  "watch_retry_interval_seconds": 40,
+  "watch_retry_max_seconds": 40,
   "watch_endpoint_slices": false,
   "shared_size": "64m",
   "default_weight": 50
@@ -220,6 +228,10 @@ GET /compare
   "client": {
     "token": "${KUBERNETES_CLIENT_TOKEN}"
   },
+  "watch_timeout_seconds": 1800,
+  "watch_jitter_seconds": 990,
+  "watch_retry_interval_seconds": 40,
+  "watch_retry_max_seconds": 40,
   "watch_endpoint_slices": false,
   "shared_size": "2m",
   "default_weight": 50
@@ -257,6 +269,10 @@ GET /compare
   "client": {
     "token": "${KUBERNETES_CLIENT_TOKEN}"
   },
+  "watch_timeout_seconds": 1800,
+  "watch_jitter_seconds": 990,
+  "watch_retry_interval_seconds": 40,
+  "watch_retry_max_seconds": 40,
   "watch_endpoint_slices": false,
   "shared_size": "64m",
   "default_weight": 33
@@ -309,6 +325,10 @@ GET /compare
     "client": {
       "token": "${KUBERNETES_CLIENT_TOKEN}"
     },
+    "watch_timeout_seconds": 1800,
+    "watch_jitter_seconds": 990,
+    "watch_retry_interval_seconds": 40,
+    "watch_retry_max_seconds": 40,
     "watch_endpoint_slices": false,
     "default_weight": 50,
     "shared_size": "64m"
@@ -323,6 +343,10 @@ GET /compare
     "client": {
       "token": "${KUBERNETES_CLIENT_TOKEN}"
     },
+    "watch_timeout_seconds": 1800,
+    "watch_jitter_seconds": 990,
+    "watch_retry_interval_seconds": 40,
+    "watch_retry_max_seconds": 40,
     "watch_endpoint_slices": false,
     "default_weight": 33,
     "shared_size": "2m"
@@ -360,6 +384,10 @@ GET /compare
   "client": {
     "token": "${KUBERNETES_CLIENT_TOKEN}"
   },
+  "watch_timeout_seconds": 1800,
+  "watch_jitter_seconds": 990,
+  "watch_retry_interval_seconds": 40,
+  "watch_retry_max_seconds": 40,
   "watch_endpoint_slices": true,
   "shared_size": "64m",
   "default_weight": 33
@@ -419,6 +447,10 @@ GET /compare
   "client": {
     "token": "${KUBERNETES_CLIENT_TOKEN}"
   },
+  "watch_timeout_seconds": 1800,
+  "watch_jitter_seconds": 990,
+  "watch_retry_interval_seconds": 40,
+  "watch_retry_max_seconds": 40,
   "watch_endpoint_slices": false,
   "shared_size": "1000m",
   "default_weight": 50
