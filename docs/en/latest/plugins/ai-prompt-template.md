@@ -51,7 +51,7 @@ The Plugin replaces the incoming request body with the selected rendered JSON te
 | `templates.template.model` | string | False | | | Name of the LLM model, such as `gpt-4` or `gpt-3.5`. See your LLM provider API documentation for more available models. |
 | `templates.template.messages` | array[object] | False | | | Template message specification. |
 | `templates.template.messages.role` | string | True | | [`system`, `user`, `assistant`] | Role of the message. |
-| `templates.template.messages.content` | string | True | | | Content of the message (prompt). Use `{{variable_name}}` syntax to define template variables that will be filled from the request body. |
+| `templates.template.messages.content` | string | True | | length >= 1 | Content of the message (prompt). Use `{{variable_name}}` syntax to define template variables that will be filled from the request body. Values are encoded as JSON strings, so quotes, newlines, and markup are preserved without corrupting the request body. |
 
 ## Examples
 

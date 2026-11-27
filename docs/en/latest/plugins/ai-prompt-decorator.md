@@ -47,14 +47,17 @@ See [request protocol detection](./ai-proxy.md#request-protocol-detection) for t
 | Name | Type | Required | Default | Valid values | Description |
 | --- | --- | --- | --- | --- | --- |
 | `max_req_body_size` | integer | False | 67108864 | >= 1 | Maximum request body size in bytes buffered into memory. Requests with a larger body are rejected. |
-| `prepend` | array | Conditionally\* | | | An array of prompt objects to be prepended. |
+| `prepend` | array | Conditionally\* | | length >= 1 | An array of prompt objects to be prepended. |
 | `prepend.role` | string | True | | [`system`, `user`, `assistant`] | Role of the message. |
 | `prepend.content` | string | True | | length >= 1 | Content of the message (prompt). |
-| `append` | array | Conditionally\* | | | An array of prompt objects to be appended. |
+| `append` | array | Conditionally\* | | length >= 1 | An array of prompt objects to be appended. |
 | `append.role` | string | True | | [`system`, `user`, `assistant`] | Role of the message. |
 | `append.content` | string | True | | length >= 1 | Content of the message (prompt). |
+| `fail_mode` | string | False | `skip` | [`skip`, `warn`, `error`] | Behavior when the request does not match a supported chat protocol. `skip` passes the request through, `warn` passes it through and logs a warning, and `error` rejects it. |
 
 \* **Conditionally Required**: At least one of `prepend` or `append` must be provided.
+
+The Plugin recognizes OpenAI Chat Completions, OpenAI Responses, Anthropic Messages, and Amazon Bedrock Converse request formats. It places system prompts in each protocol's native system or instructions field and preserves user and assistant roles in the conversation.
 
 ## Examples
 
