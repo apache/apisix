@@ -61,6 +61,8 @@ import TabItem from '@theme/TabItem';
 
 ### APISIX 向 OPA 发送信息
 
+如果请求携带 W3C `traceparent` 请求头（例如由 [`opentelemetry`](./opentelemetry.md) 插件注入），APISIX 还会将其作为请求头发送给 OPA，使 OPA 的 span 加入同一条链路。
+
 下述示例展示了 APISIX 向 OPA 服务发送的数据格式：
 
 ```json
