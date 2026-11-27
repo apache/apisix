@@ -92,8 +92,8 @@ end
 
 -- Apply upstream.tls.verify / upstream.tls.ca_certs to the current request.
 -- Both settings live in the apisix-nginx-module request context, which is wiped
--- by the internal redirect to @grpc_pass, so grpcs has to apply them again from
--- `grpc_access_phase` just like the client certificate does.
+-- by internal redirects, so named upstream locations must restore these
+-- settings along with the client certificate.
 local function set_upstream_ssl_opts(up_conf)
     local tls = up_conf.tls
     if not tls then
@@ -329,7 +329,7 @@ local function set_stream_upstream_client_cert(api_ctx, up_conf)
 end
 
 
-local function set_http_upstream_tls(api_ctx, up_conf)
+function _M.set_http_upstream_tls(api_ctx, up_conf)
     local scheme = up_conf.scheme
     if scheme == "https" then
         -- grpcs applies these in `set_grpcs_upstream_param` instead, after the
@@ -390,7 +390,7 @@ function _M.set_by_route(route, api_ctx)
 
     if api_ctx.upstream_conf then
         -- upstream_conf has been set by traffic-split plugin
-        return set_http_upstream_tls(api_ctx, api_ctx.upstream_conf)
+        return _M.set_http_upstream_tls(api_ctx, api_ctx.upstream_conf)
     end
 
     local up_conf = api_ctx.matched_upstream
@@ -499,7 +499,7 @@ function _M.set_by_route(route, api_ctx)
     local checker = healthcheck_manager.fetch_checker(up_conf.resource_key, resource_version)
     api_ctx.up_checker = checker
 
-    return set_http_upstream_tls(api_ctx, up_conf)
+    return _M.set_http_upstream_tls(api_ctx, up_conf)
 end
 
 

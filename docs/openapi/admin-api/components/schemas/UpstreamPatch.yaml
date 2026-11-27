@@ -76,6 +76,8 @@ properties:
           - wss
         default: http
       - type: "null"
+  http_version:
+    $ref: ./UpstreamHTTPVersionPatch.yaml
   retries:
     anyOf:
       - minimum: 0

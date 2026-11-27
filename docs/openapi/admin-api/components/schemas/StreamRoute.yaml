@@ -157,6 +157,8 @@ properties:
   upstream:
     additionalProperties: false
     properties:
+      http_version:
+        $ref: ./UpstreamHTTPVersion.yaml
       tls:
         properties:
           ca_certs:
@@ -588,6 +590,9 @@ properties:
             type: array
       update_time:
         type: integer
+    dependentSchemas:
+      http_version:
+        $ref: ./UpstreamHTTPVersionScheme.yaml
     oneOf:
       - required:
           - nodes

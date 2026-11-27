@@ -863,6 +863,8 @@ Please modify "admin_key" in conf/config.yaml .
         enabled_discoveries = enabled_discoveries,
         enabled_plugins = enabled_plugins,
         enabled_stream_plugins = enabled_stream_plugins,
+        upstream_http2 = version_greater_equal(or_ver, "1.29.4")
+                         and str_find(or_info, "--with-http_v2_module", 1, true),
         dubbo_upstream_multiplex_count = dubbo_upstream_multiplex_count,
         status_server_addr = status_server_addr,
         admin_server_addr = admin_server_addr,

@@ -9772,6 +9772,9 @@
               "wss": "Frame-aware WebSocket proxying over TLS; uses the shared CA trust store, not `tls.ca_certs`."
             }
           },
+          "http_version": {
+            "$ref": "#/components/schemas/UpstreamHTTPVersion"
+          },
           "upstream_host": {
             "pattern": "^\\*$|^\\*?[0-9a-zA-Z-._\\[\\]:]+$",
             "type": "string"
@@ -9943,6 +9946,11 @@
           "update_time": {
             "type": "integer",
             "readOnly": true
+          }
+        },
+        "dependentSchemas": {
+          "http_version": {
+            "$ref": "#/components/schemas/UpstreamHTTPVersionScheme"
           }
         },
         "oneOf": [
@@ -10342,6 +10350,9 @@
               "wss": "Frame-aware WebSocket proxying over TLS; uses the shared CA trust store, not `tls.ca_certs`."
             }
           },
+          "http_version": {
+            "$ref": "#/components/schemas/UpstreamHTTPVersion"
+          },
           "upstream_host": {
             "pattern": "^\\*$|^\\*?[0-9a-zA-Z-._\\[\\]:]+$",
             "type": "string"
@@ -10513,6 +10524,11 @@
           "update_time": {
             "type": "integer",
             "readOnly": true
+          }
+        },
+        "dependentSchemas": {
+          "http_version": {
+            "$ref": "#/components/schemas/UpstreamHTTPVersionScheme"
           }
         },
         "oneOf": [
@@ -10846,6 +10862,9 @@
           "upstream": {
             "additionalProperties": false,
             "properties": {
+              "http_version": {
+                "$ref": "#/components/schemas/UpstreamHTTPVersion"
+              },
               "tls": {
                 "properties": {
                   "ca_certs": {
@@ -11422,6 +11441,11 @@
               },
               "update_time": {
                 "type": "integer"
+              }
+            },
+            "dependentSchemas": {
+              "http_version": {
+                "$ref": "#/components/schemas/UpstreamHTTPVersionScheme"
               }
             },
             "oneOf": [
@@ -12072,6 +12096,9 @@
           "upstream": {
             "additionalProperties": false,
             "properties": {
+              "http_version": {
+                "$ref": "#/components/schemas/UpstreamHTTPVersion"
+              },
               "tls": {
                 "properties": {
                   "ca_certs": {
@@ -12648,6 +12675,11 @@
               },
               "update_time": {
                 "type": "integer"
+              }
+            },
+            "dependentSchemas": {
+              "http_version": {
+                "$ref": "#/components/schemas/UpstreamHTTPVersionScheme"
               }
             },
             "oneOf": [
@@ -13459,6 +13491,9 @@
           "upstream": {
             "additionalProperties": false,
             "properties": {
+              "http_version": {
+                "$ref": "#/components/schemas/UpstreamHTTPVersion"
+              },
               "tls": {
                 "properties": {
                   "ca_certs": {
@@ -14035,6 +14070,11 @@
               },
               "update_time": {
                 "type": "integer"
+              }
+            },
+            "dependentSchemas": {
+              "http_version": {
+                "$ref": "#/components/schemas/UpstreamHTTPVersionScheme"
               }
             },
             "oneOf": [
@@ -14894,6 +14934,9 @@
               {
                 "type": "object",
                 "properties": {
+                  "http_version": {
+                    "$ref": "#/components/schemas/UpstreamHTTPVersionPatch"
+                  },
                   "tls": {
                     "anyOf": [
                       {
@@ -16290,6 +16333,9 @@
               {
                 "type": "object",
                 "properties": {
+                  "http_version": {
+                    "$ref": "#/components/schemas/UpstreamHTTPVersionPatch"
+                  },
                   "tls": {
                     "anyOf": [
                       {
@@ -17438,6 +17484,9 @@
                 "type": "null"
               }
             ]
+          },
+          "http_version": {
+            "$ref": "#/components/schemas/UpstreamHTTPVersionPatch"
           },
           "retries": {
             "anyOf": [
@@ -19493,7 +19542,15 @@
       },
       "ConfigValidationUpstream": {
         "additionalProperties": false,
+        "dependentSchemas": {
+          "http_version": {
+            "$ref": "#/components/schemas/UpstreamHTTPVersionScheme"
+          }
+        },
         "properties": {
+          "http_version": {
+            "$ref": "#/components/schemas/UpstreamHTTPVersion"
+          },
           "tls": {
             "$ref": "#/components/schemas/UpstreamTLS"
           },
@@ -20506,6 +20563,36 @@
           }
         },
         "additionalProperties": false
+      },
+      "UpstreamHTTPVersionScheme": {
+        "required": [
+          "scheme"
+        ],
+        "properties": {
+          "scheme": {
+            "enum": [
+              "https"
+            ]
+          }
+        }
+      },
+      "UpstreamHTTPVersion": {
+        "description": "Set to \"2\" to use HTTP/2 with an HTTPS upstream. When omitted, HTTPS proxying uses HTTP/1.1.",
+        "type": "string",
+        "enum": [
+          "2"
+        ]
+      },
+      "UpstreamHTTPVersionPatch": {
+        "description": "Set to \"2\" to use HTTP/2, or null to restore HTTP/1.1. The resulting Upstream must use the HTTPS scheme for HTTP/2.",
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/UpstreamHTTPVersion"
+          },
+          {
+            "type": "null"
+          }
+        ]
       }
     },
     "responses": {

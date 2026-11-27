@@ -15,7 +15,12 @@
 # limitations under the License.
 #
 additionalProperties: false
+dependentSchemas:
+  http_version:
+    $ref: ./UpstreamHTTPVersionScheme.yaml
 properties:
+  http_version:
+    $ref: ./UpstreamHTTPVersion.yaml
   tls:
     $ref: ./UpstreamTLS.yaml
   update_time:

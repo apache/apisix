@@ -20,6 +20,8 @@ properties:
     anyOf:
       - type: object
         properties:
+          http_version:
+            $ref: ./UpstreamHTTPVersionPatch.yaml
           tls:
             anyOf:
               - type: object

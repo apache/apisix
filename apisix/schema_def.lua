@@ -555,6 +555,11 @@ local upstream_schema = {
                 " For L4 proxy, it can be one of tcp/tls/udp." ..
                 " For specific protocols, it can be kafka."
         },
+        http_version = {
+            description = "Explicitly use HTTP/2 with an HTTPS upstream.",
+            type = "string",
+            enum = {"2"},
+        },
         discovery_type = {
             description = "discovery type",
             type = "string",
@@ -597,6 +602,12 @@ local upstream_schema = {
     oneOf = {
         {required = {"nodes"}},
         {required = {"service_name", "discovery_type"}},
+    },
+    dependencies = {
+        http_version = {
+            properties = {scheme = {enum = {"https"}}},
+            required = {"scheme"},
+        },
     },
     additionalProperties = false
 }

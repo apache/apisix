@@ -1040,6 +1040,11 @@ APISIX 的 Upstream 除了基本的负载均衡算法选择外，还支持对上
 |warm_up_conf.aggression | 否 | 数值 | 爬坡曲线。`1`（默认）为线性，大于 `1` 前期增长更快，小于 `1` 前期增长更慢。最小值为 `0.01`。 |
 |warm_up_conf.startup_grace_period_seconds | 否 | 整型 | 网关启动后的宽限时间，单位为秒。在此期间首次观察到的节点直接视为已完成预热，避免重启后整组节点重新爬坡。已经观察到的节点变为不可用后再回来，即使在此期间内也会重新爬坡。默认为 `0`。 |
 
+在 `scheme` 为 `https` 的上游中，将 `http_version` 设置为 `"2"`，即可让 APISIX
+通过 HTTP/2 访问上游。HTTPS 上游默认使用 HTTP/1.1。APISIX 数据面需要 NGINX 内核
+1.29.4 或更高版本，并编译 `ngx_http_v2_module`。该设置适用于普通 HTTPS 代理。
+基于 HTTP/1.1 的 WebSocket 升级需要使用默认代理版本。
+
 `type` 详细信息如下：
 
 - `roundrobin`: 带权重的 Round Robin。

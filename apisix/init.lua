@@ -79,6 +79,9 @@ if ngx.config.subsystem == "http" then
     is_http = true
     control_api_router = require("apisix.control.router")
 end
+local supports_upstream_http2 = is_http and ngx.config.nginx_version >= 1029004
+                               and str_find(ngx.config.nginx_configure(),
+                                            "--with-http_v2_module", 1, true)
 
 local ok, apisix_base_flags = pcall(require, "resty.apisix.patch")
 if not ok then
@@ -807,6 +810,22 @@ function _M.handle_upstream(api_ctx, route, enable_websocket)
     end
 
     local up_scheme = api_ctx.upstream_scheme
+    if api_ctx.upstream_conf and api_ctx.upstream_conf.http_version == "2" then
+        if not supports_upstream_http2 then
+            core.log.error("upstream HTTP/2 requires NGINX 1.29.4 or newer with HTTP/2 support")
+            return core.response.exit(503)
+        end
+        if up_scheme ~= "https" then
+            core.log.error("upstream HTTP/2 requires the effective upstream scheme to be https")
+            return core.response.exit(503)
+        end
+
+        local location = ngx.ctx.disable_proxy_buffering and "@https_upstream_http2_unbuffered"
+                         or "@https_upstream_http2"
+        stash_ngx_ctx()
+        return ngx.exec(location)
+    end
+
     if up_scheme == "grpcs" or up_scheme == "grpc" then
         stash_ngx_ctx()
         return ngx.exec("@grpc_pass")
@@ -1131,6 +1150,22 @@ function _M.disable_proxy_buffering_access_phase()
 end
 
 
+local function restore_proxy_request_options(api_ctx)
+    if api_ctx.enable_mirror == true and has_mod then
+        apisix_ngx_client.enable_mirror()
+    end
+
+    if api_ctx.client_max_body_size then
+        local ok, err = apisix_ngx_client.set_client_max_body_size(
+            api_ctx.client_max_body_size)
+        if not ok then
+            core.log.error("failed to set client max body size: ", err)
+            core.response.exit(503)
+        end
+    end
+end
+
+
 function _M.grpc_access_phase()
     ngx.ctx = fetch_ctx()
 
@@ -1145,18 +1180,21 @@ function _M.grpc_access_phase()
         core.response.exit(code)
     end
 
-    if api_ctx.enable_mirror == true and has_mod then
-        apisix_ngx_client.enable_mirror()
+    restore_proxy_request_options(api_ctx)
+end
+
+
+function _M.https_upstream_http2_access_phase()
+    ngx.ctx = fetch_ctx()
+
+    local api_ctx = ngx.ctx.api_ctx
+    local code, err = apisix_upstream.set_http_upstream_tls(api_ctx, api_ctx.upstream_conf)
+    if code then
+        core.log.error("failed to set HTTP/2 upstream TLS parameters: ", err)
+        return core.response.exit(code)
     end
 
-    if api_ctx.client_max_body_size then
-        local ok, err = apisix_ngx_client.set_client_max_body_size(
-            api_ctx.client_max_body_size)
-        if not ok then
-            core.log.error("failed to set client max body size: ", err)
-            core.response.exit(503)
-        end
-    end
+    restore_proxy_request_options(api_ctx)
 end
 
 
