@@ -2791,3 +2791,53 @@ qr/127\.0\.0\.1:1980 200 [\d.]+ \"\S+\" \S+ \S+ [\d.]+ 30 15 45 true false 0 \S*
 OK
 --- no_error_log
 [error]
+
+
+=== TEST 76: streaming - tool_calls without "index" are converted
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local converter = require("apisix.plugins.ai-protocols.converters.anthropic-messages-to-openai-chat")
+
+            local state = { is_first = true }
+            local events = {}
+            local function feed(delta, finish_reason)
+                local out = converter.convert_sse_events({
+                    type = "data",
+                    data = { id = "x", model = "m",
+                             choices = {{ delta = delta, finish_reason = finish_reason }} },
+                }, {}, state)
+                for _, e in ipairs(out or {}) do
+                    table.insert(events, { type = e.type, data = core.json.decode(e.data) })
+                end
+            end
+
+            -- two complete calls, each in one chunk, neither carries an index
+            feed({ tool_calls = {{ id = "call_1",
+                   ["function"] = { name = "f", arguments = '{"a":1}' } }} })
+            feed({ tool_calls = {{ id = "call_2",
+                   ["function"] = { name = "g", arguments = '{"b":2}' } }} })
+            -- a third call split over chunks: the argument-only chunk continues it
+            feed({ tool_calls = {{ id = "call_3",
+                   ["function"] = { name = "h", arguments = '{"c":' } }} })
+            feed({ tool_calls = {{ ["function"] = { arguments = '3}' } }} })
+            feed({}, "tool_calls")
+
+            local starts, args = {}, {}
+            for _, e in ipairs(events) do
+                if e.type == "content_block_start" then
+                    table.insert(starts, e.data.content_block.name .. "@" .. e.data.index)
+                elseif e.type == "content_block_delta" then
+                    args[e.data.index] = (args[e.data.index] or "") .. e.data.delta.partial_json
+                end
+            end
+            ngx.say(table.concat(starts, ","))
+            ngx.say(args[0], args[1], args[2])
+        }
+    }
+--- response_body
+f@0,g@1,h@2
+{"a":1}{"b":2}{"c":3}
+--- no_error_log
+[error]
