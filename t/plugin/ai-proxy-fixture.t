@@ -158,7 +158,7 @@ fixture not found
             local code, body = t('/apisix/admin/routes/2',
                 ngx.HTTP_PUT,
                 [[{
-                    "uri": "/anthropic",
+                    "uri": "/anthropic/v1/messages",
                     "plugins": {
                         "ai-proxy-multi": {
                             "instances": [
@@ -196,9 +196,33 @@ passed
 
 
 
-=== TEST 7: JSON fixture - Anthropic messages
+=== TEST 7: Anthropic messages use the expected upstream request
+--- upstream_server_config
+    location = /v1/messages {
+        content_by_lua_block {
+            local json = require("cjson.safe")
+            assert(ngx.req.get_method() == "POST", "expected POST for Anthropic Messages")
+            assert(ngx.req.get_headers()["x-api-key"] == "test-key", "expected Anthropic x-api-key")
+
+            ngx.req.read_body()
+            local body = json.decode(ngx.req.get_body_data() or "")
+            assert(type(body) == "table", "expected a JSON request body")
+            assert(body.model == "claude-3-5-sonnet-20241022", "unexpected Anthropic model")
+            assert(body.max_tokens == 100, "unexpected Anthropic max_tokens")
+            assert(type(body.messages) == "table" and #body.messages == 1,
+                   "expected one Anthropic message")
+
+            local message = body.messages[1]
+            assert(type(message) == "table" and message.role == "user"
+                   and message.content == "hello",
+                   "unexpected Anthropic message")
+
+            ngx.log(ngx.INFO, "Anthropic Messages fixture request verified")
+            require("lib.fixture_loader").dispatch()
+        }
+    }
 --- request
-POST /anthropic
+POST /anthropic/v1/messages
 {"model":"claude-3-5-sonnet-20241022","messages":[{"role":"user","content":"hello"}],"max_tokens":100}
 --- more_headers
 X-AI-Fixture: anthropic/messages-basic.json
@@ -206,12 +230,16 @@ X-AI-Fixture: anthropic/messages-basic.json
 qr/"stop_reason":\s*"end_turn"/
 --- response_headers_like
 Content-Type: application/json
+--- error_log
+Anthropic Messages fixture request verified
+--- no_error_log
+[error]
 
 
 
 === TEST 8: SSE fixture - Anthropic streaming messages
 --- request
-POST /anthropic
+POST /anthropic/v1/messages
 {"model":"claude-3-5-sonnet-20241022","messages":[{"role":"user","content":"hello"}],"max_tokens":100,"stream":true}
 --- more_headers
 X-AI-Fixture: anthropic/messages-streaming.sse
