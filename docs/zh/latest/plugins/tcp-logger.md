@@ -41,8 +41,9 @@ description: 本文介绍了 API 网关 Apache APISIX 如何使用 tcp-logger �
 | port             | integer | 是     |        | [0,...] | 目标端口。                                        |
 | timeout          | integer | 否     | 1000   | [1,...] | 发送数据超时间。                                   |
 | log_format       | object  | 否   |          |         | 日志格式以 JSON 的键值对声明。值支持字符串和嵌套对象（最多五层，超出部分将被截断）。字符串中可通过在前面加上 `$` 来引用 [APISIX 变量](../apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
-| tls              | boolean | 否     | false  |         | 用于控制是否执行 SSL 验证。                        |
-| tls_options      | string  | 否     |        |         | TLS 选项。                                        |
+| tls              | boolean | 否     | false  |         | 设置为 `true` 时通过 TLS 连接 TCP 服务。                        |
+| tls_options      | string  | 否     |        |         | 用于 SNI 和证书校验的服务端名称。未设置且 `tls_verify` 为 `true` 时使用 `host`。                                        |
+| tls_verify       | boolean | 否     | true   |         | 设置为 `true` 时，使用 `apisix.ssl.ssl_trusted_certificate` 校验服务端证书，并校验证书名称是否与 `tls_options` 匹配。`tls` 为 `false` 时不生效。 |
 | include_req_body | boolean | 否     |        | [false, true] | 当设置为 `true` 时，日志中将包含请求体。           |
 | include_req_body_expr | array | 否 |       |           | 当 `include_req_body` 属性设置为 `true` 时的过滤器。只有当此处设置的表达式求值为 `true` 时，才会记录请求体。有关更多信息，请参阅 [lua-resty-expr](https://github.com/api7/lua-resty-expr) 。    |
 | include_resp_body | boolean | 否     | false | [false, true]| 当设置为 `true` 时，日志中将包含响应体。                                                     |
