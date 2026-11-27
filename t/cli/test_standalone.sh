@@ -620,6 +620,50 @@ sleep 0.5
 
 echo "passed: env var substitution inside YAML key"
 
+# test: Admin API keys from config.yaml must preserve their exact text
+echo '
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: yaml
+  admin:
+    admin_key:
+      - name: numeric
+        key: ${{TEST_NUMERIC_ADMIN_KEY}}
+        role: admin
+      - name: boolean
+        key: ${{TEST_BOOLEAN_ADMIN_KEY}}
+        role: admin
+      - name: zero
+        key: ${{TEST_ZERO_ADMIN_KEY}}
+        role: admin
+' > conf/config.yaml
+
+printf 'routes: []\n#END\n' > conf/apisix.yaml
+TEST_NUMERIC_ADMIN_KEY=00123456 TEST_BOOLEAN_ADMIN_KEY=false TEST_ZERO_ADMIN_KEY=0 make init
+TEST_NUMERIC_ADMIN_KEY=00123456 TEST_BOOLEAN_ADMIN_KEY=false TEST_ZERO_ADMIN_KEY=0 make run
+wait_for_tcp 127.0.0.1 9180
+
+for key in 00123456 false 0; do
+    code=$(curl -o /dev/null -s -m 5 -w '%{http_code}' -H "X-API-KEY: $key" \
+        http://127.0.0.1:9180/apisix/admin/configs)
+    if [ "$code" -ne 200 ]; then
+        echo "failed: expected 200 with the exact Admin API key, got: $code"
+        exit 1
+    fi
+done
+
+code=$(curl -o /dev/null -s -m 5 -w '%{http_code}' -H 'X-API-KEY: 123456' \
+    http://127.0.0.1:9180/apisix/admin/configs)
+if [ "$code" -ne 401 ]; then
+    echo "failed: expected 401 without the leading zeros, got: $code"
+    exit 1
+fi
+
+make stop
+sleep 0.5
+echo "passed: Admin API keys from env vars preserve their exact text"
+
 # test: missing env var (no default) should produce a clear startup error
 echo '
 apisix:
