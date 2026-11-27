@@ -1032,6 +1032,12 @@ In addition to the equalization algorithm selections, Upstream also supports pas
 | warm_up_conf.aggression | False | Number | Shape of the ramp. `1` (default) is linear, above `1` ramps up faster at the beginning, below `1` slower. At least `0.01`. | 1 |
 | warm_up_conf.startup_grace_period_seconds | False | Integer | Seconds after the gateway starts during which a node observed for the first time is treated as already warmed up, so that a restart does not ramp the whole node set again. A node that was already observed and then becomes unavailable still ramps when it comes back, also during this period. Defaults to `0`. | 180 |
 
+Set `http_version` to `"2"` on an Upstream with `scheme: https` to use HTTP/2
+from APISIX to the Upstream. HTTPS Upstreams use HTTP/1.1 by default. The APISIX
+data plane needs an NGINX core of version 1.29.4 or later built with
+`ngx_http_v2_module`. This setting applies to ordinary HTTPS proxying. The
+HTTP/1.1 WebSocket upgrade requires the default proxy version.
+
 An Upstream can be one of the following `types`:
 
 - `roundrobin`: Round robin balancing with weights.

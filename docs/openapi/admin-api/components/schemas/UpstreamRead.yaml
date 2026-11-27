@@ -308,6 +308,8 @@ properties:
       kafka: Apache Kafka protocol.
       ws: Frame-aware WebSocket proxying; `enable_websocket` is ignored.
       wss: Frame-aware WebSocket proxying over TLS; uses the shared CA trust store, not `tls.ca_certs`.
+  http_version:
+    $ref: ./UpstreamHTTPVersion.yaml
   upstream_host:
     pattern: ^\*$|^\*?[0-9a-zA-Z-._\[\]:]+$
     type: string
@@ -437,6 +439,9 @@ properties:
   update_time:
     type: integer
     readOnly: true
+dependentSchemas:
+  http_version:
+    $ref: ./UpstreamHTTPVersionScheme.yaml
 oneOf:
   - required:
       - nodes

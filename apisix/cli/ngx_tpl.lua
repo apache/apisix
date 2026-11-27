@@ -944,6 +944,9 @@ http {
         proxy_ssl_server_name on;
         {% end %}
 
+        {% local proxy_versions = upstream_http2 and {"1.1", "2"} or {"1.1"} %}
+        {% for _, proxy_version in ipairs(proxy_versions) do %}
+        {% if proxy_version == "1.1" then %}
         location / {
             set $upstream_mirror_host        '';
             set $upstream_mirror_uri         '';
@@ -1002,14 +1005,23 @@ http {
             access_by_lua_block {
                 apisix.http_access_phase()
             }
+        {% else %}
+        location @https_upstream_http2 {
+            access_by_lua_block {
+                apisix.https_upstream_http2_access_phase()
+            }
+        {% end %}
 
-            proxy_http_version 1.1;
+            proxy_http_version {* proxy_version *};
             proxy_set_header   Host              $upstream_host;
+            {% if proxy_version == "1.1" then %}
             proxy_set_header   Upgrade           $upstream_upgrade;
             proxy_set_header   Connection        $upstream_connection;
+            {% end %}
             proxy_set_header   X-Real-IP         $remote_addr;
             proxy_pass_header  Date;
 
+            {% if proxy_version == "1.1" then %}
             ### the following x-forwarded-* headers is to send to upstream server
 
             # Take copies before neutralizing, so a trusted peer's own values can
@@ -1041,6 +1053,7 @@ http {
             more_set_input_headers "X-Forwarded-Host: $var_x_forwarded_host";
             more_set_input_headers "X-Forwarded-Port: $var_x_forwarded_port";
             more_set_input_headers "Forwarded: ";
+            {% end %}
 
             # X-Forwarded-Proto/Host/Port are not set here: `r->headers_in` already
             # holds the values this request should carry, and proxy_pass forwards it
@@ -1052,10 +1065,12 @@ http {
 
             {% if enabled_plugins["proxy-cache"] or enabled_plugins["graphql-proxy-cache"] then %}
             ###  the following configuration is to cache response content from upstream server
+            {% if proxy_version == "1.1" then %}
             set $upstream_cache_zone            off;
             set $upstream_cache_key             '';
             set $upstream_cache_bypass          '';
             set $upstream_no_cache              '';
+            {% end %}
 
             proxy_cache                         $upstream_cache_zone;
             proxy_cache_valid                   any {% if proxy_cache.cache_ttl then %} {* proxy_cache.cache_ttl *} {% else %} 10s {% end %};
@@ -1087,6 +1102,7 @@ http {
                 apisix.http_log_phase()
             }
         }
+        {% end %}
 
         location @grpc_pass {
 
@@ -1152,15 +1168,25 @@ http {
         {% end %}
 
         {% if enabled_plugins["proxy-buffering"] then %}
+        {% for _, proxy_version in ipairs(proxy_versions) do %}
+        {% if proxy_version == "1.1" then %}
         location @disable_proxy_buffering {
             access_by_lua_block {
                 apisix.disable_proxy_buffering_access_phase()
             }
+        {% else %}
+        location @https_upstream_http2_unbuffered {
+            access_by_lua_block {
+                apisix.https_upstream_http2_access_phase()
+            }
+        {% end %}
 
-            proxy_http_version 1.1;
+            proxy_http_version {* proxy_version *};
             proxy_set_header   Host              $upstream_host;
+            {% if proxy_version == "1.1" then %}
             proxy_set_header   Upgrade           $upstream_upgrade;
             proxy_set_header   Connection        $upstream_connection;
+            {% end %}
             proxy_set_header   X-Real-IP         $remote_addr;
             proxy_pass_header  Date;
 
@@ -1192,6 +1218,7 @@ http {
 
             proxy_buffering off;
         }
+        {% end %}
         {% end %}
 
         location @websocket_pass {

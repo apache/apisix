@@ -457,7 +457,9 @@ do
             pool_opt.pool_size = size
 
             local scheme = up_conf.scheme
-            local pool = scheme .. "#" .. server.host .. "#" .. server.port
+            -- A TLS connection negotiated for HTTP/2 cannot carry HTTP/1.1 requests.
+            local protocol = up_conf.http_version == "2" and "https+h2" or scheme
+            local pool = protocol .. "#" .. server.host .. "#" .. server.port
             -- other TLS schemes don't use http balancer keepalive
             if (scheme == "https" or scheme == "grpcs") then
                 local sni = ctx.var.upstream_host
