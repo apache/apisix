@@ -98,13 +98,13 @@ our $RetryHook = <<'EOC';
         return true
     end
 
-    function state.put(interval, keep_dead, keep_stale)
+    function state.put(interval, keep_dead, extra_port)
         local nodes = { { host = "127.0.0.1", port = 1980, weight = 1 } }
         if keep_dead then
             nodes[#nodes + 1] = { host = "127.0.0.1", port = 1970, weight = 1 }
         end
-        if keep_stale then
-            nodes[#nodes + 1] = { host = "127.0.0.1", port = 1960, weight = 1 }
+        if extra_port then
+            nodes[#nodes + 1] = { host = "127.0.0.1", port = extra_port, weight = 1 }
         end
         local code = require("lib.test_admin").test("/apisix/admin/routes/1", ngx.HTTP_PUT, {
             uri = state.uri,
@@ -141,6 +141,29 @@ our $RetryHook = <<'EOC';
                and state.current:get_target_status("127.0.0.1", 1970) == false
     end
 
+    function state.prepare_nodes_update(extra_port)
+        state.put(1, true, extra_port)
+        state.seed()
+        assert(state.wait_for(function()
+            return state.unhealthy() and (not extra_port or
+                   state.current:get_target_status("127.0.0.1", extra_port) == false)
+        end), "initial probes did not finish")
+
+        -- Slow down probes of healthy targets before the nodes-only change.
+        -- A probe must not repair a wrongly reset target during the retry.
+        state.put(60, true, extra_port)
+        assert(state.wait_for(function()
+            return state.created == 2 and state.unhealthy()
+        end), "the slow-probe checker was not ready")
+        state.delete_on_failure = true
+        return state.current
+    end
+
+    function state.shared_status(port)
+        local key = state.current.TARGET_STATE .. ":127.0.0.1:" .. port .. ":127.0.0.1"
+        return ngx.shared["upstream-healthcheck"]:get(key)
+    end
+
     function state.removed()
         local status, err
         if state.current then
@@ -149,12 +172,12 @@ our $RetryHook = <<'EOC';
         return status == nil and err == "target not found"
     end
 
-    function state.traffic(label)
+    function state.traffic(label, second_healthy)
         local test = require("lib.test_admin").test
         local healthy = 0
         for _ = 1, 40 do
             local code, _, body = test(state.uri, ngx.HTTP_GET)
-            if code == 200 and body == "1980" then
+            if code == 200 and (body == "1980" or (second_healthy and body == second_healthy)) then
                 healthy = healthy + 1
             end
         end
@@ -447,7 +470,7 @@ location /t {
     content_by_lua_block {
         local state = _G.hc_retry_test
         state.uri = "/server_port"
-        state.put(1, true, true)
+        state.put(1, true, 1960)
         state.seed()
         assert(state.wait_for(state.unhealthy), "initial probes did not finish")
 
@@ -492,6 +515,99 @@ registered ports: 1970,1980
 shared dead-node state: 2
 dead node unhealthy: true
 healthy responses: 40
+--- error_log
+failed to remove healthcheck target: 127.0.0.1:1960
+--- no_error_log
+failed to run timer_create_checker
+failed to run timer_working_pool_check
+lua entry thread aborted
+--- timeout: 60
+
+
+
+=== TEST 7: retry a nodes-only addition with the same checker after losing the target list
+--- extra_init_worker_by_lua eval: $::RetryHook
+--- config
+location /t {
+    content_by_lua_block {
+        local state = _G.hc_retry_test
+        state.uri = "/server_port_aa"
+        local checker = state.prepare_nodes_update()
+
+        state.armed = "add"
+        state.armed_port = 1981
+        state.put(60, true, 1981)
+        -- No route traffic or further configuration change drives the retry.
+        assert(state.wait_for(function()
+            return state.failures == 1 and #state.targets() == 3
+                   and state.current:get_target_status("127.0.0.1", 1981) == true
+        end), "the working-pool timer did not finish the addition")
+
+        ngx.say("same checker: ", checker == state.current)
+        ngx.say("shared dead-node state: ", state.shared_status(1970))
+        ngx.say("dead node unhealthy: ", tostring(state.unhealthy()))
+        state.traffic("healthy responses: ", "1981")
+    }
+}
+--- request
+GET /t
+--- response_body
+same checker: true
+shared dead-node state: 2
+dead node unhealthy: true
+healthy responses: 40
+--- error_log
+failed to add healthcheck target: 127.0.0.1:1981
+--- no_error_log
+failed to run timer_create_checker
+failed to run timer_working_pool_check
+lua entry thread aborted
+--- timeout: 60
+
+
+
+=== TEST 8: retry a nodes-only removal and allow a later addition to start healthy
+--- extra_init_worker_by_lua eval: $::RetryHook
+--- config
+location /t {
+    content_by_lua_block {
+        local state = _G.hc_retry_test
+        state.uri = "/server_port_route2"
+        local checker = state.prepare_nodes_update(1960)
+
+        state.armed = "remove"
+        state.armed_port = 1960
+        state.put(60, true)
+        assert(state.wait_for(function()
+            local status, err = state.current:get_target_status("127.0.0.1", 1960)
+            return state.failures == 1 and #state.targets() == 2
+                   and status == nil and err == "target not found"
+                   and state.shared_status(1960) == nil
+        end), "the working-pool timer did not finish the removal")
+
+        ngx.say("same checker: ", checker == state.current)
+        ngx.say("shared dead-node state: ", state.shared_status(1970))
+        ngx.say("surviving dead node unhealthy: ", tostring(state.unhealthy()))
+        state.traffic()
+
+        state.put(60, true, 1960)
+        assert(state.wait_for(function()
+            return #state.targets() == 3
+                   and state.current:get_target_status("127.0.0.1", 1960) == true
+        end), "the re-added node did not start healthy")
+        ngx.say("same checker after re-add: ", checker == state.current)
+        ngx.say("shared re-added node state: ", state.shared_status(1960))
+    }
+}
+--- request
+GET /t
+--- response_body
+same checker: true
+shared dead-node state: 2
+surviving dead node unhealthy: true
+healthy responses: 40
+same checker after re-add: true
+shared re-added node state: 1
 --- error_log
 failed to remove healthcheck target: 127.0.0.1:1960
 --- no_error_log

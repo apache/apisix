@@ -397,21 +397,20 @@ local function timer_create_checker()
             -- (only the nodes changed), reconcile its targets in place instead of
             -- rebuilding. Rebuilding leaves fetch_checker with no checker for the
             -- rebuild window (traffic then skips health filtering) and discards the
-            -- accumulated health state. sync_checker_targets is the last condition so
-            -- it runs only when the checker is reuse-eligible; a partial failure makes
-            -- the guard false and falls through to the full rebuild below.
-            -- upstream.nodes is non-empty here (guaranteed by the 0-node guard above).
+            -- accumulated health state. If a target update fails, keep the old
+            -- version so the working-pool timer retries with the same checker.
             local existing_checker = working_pool[resource_path]
             if existing_checker and existing_checker.checker
                and not existing_checker.checker.dead
                and upstream.checks
-               and core.table.deep_eq(existing_checker.checks, upstream.checks)
-               and sync_checker_targets(existing_checker.checker, upstream) then
-                add_working_pool(resource_path, resource_ver, existing_checker.checker,
-                                 upstream.checks)
-                core.log.info("reused checker with incremental targets: ",
-                              tostring(existing_checker.checker), " for resource: ",
-                              resource_path, " and version: ", resource_ver)
+               and core.table.deep_eq(existing_checker.checks, upstream.checks) then
+                if sync_checker_targets(existing_checker.checker, upstream) then
+                    add_working_pool(resource_path, resource_ver, existing_checker.checker,
+                                     upstream.checks)
+                    core.log.info("reused checker with incremental targets: ",
+                                  tostring(existing_checker.checker), " for resource: ",
+                                  resource_path, " and version: ", resource_ver)
+                end
                 goto continue
             end
 
