@@ -127,7 +127,7 @@ hello world
 --- error_log
 check stream plugin schema, name: limit-conn
 merge service [1] into stream route [1]
-init plugin-level conf version
+create new limit-conn redis plugin instance
 
 
 
@@ -256,7 +256,7 @@ hello world
 --- error_log
 check stream plugin schema, name: limit-conn
 merge service [1] into stream route [1]
-init plugin-level conf version
+create new limit-conn redis plugin instance
 
 
 
@@ -397,3 +397,99 @@ done
 --- error_log
 invalid plugin conf type string for plugin [limit-count]
 key: /apisix/routes/1
+
+
+
+=== TEST 13: HTTP route with a secret in a plugin that computes a conf version
+--- config
+    location /t {
+        content_by_lua_block {
+            put("/routes/conf-version-secret", {
+                uri = "/hello",
+                plugins = {
+                    ["limit-req"] = {
+                        rate = 2,
+                        burst = 0,
+                        key = "remote_addr",
+                        policy = "redis",
+                        redis_host = "127.0.0.1",
+                        redis_port = 1,
+                        redis_password = "plaintext-redis-secret",
+                        allow_degradation = true,
+                    },
+                },
+                upstream = {nodes = {["127.0.0.1:1980"] = 1}, type = "roundrobin"},
+            })
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 14: load the HTTP route on start and compute the conf version without logging its secret
+--- request
+GET /hello
+--- response_body
+hello world
+--- error_log
+init plugin-level conf version
+
+
+
+=== TEST 15: HTTP route with a marked secret in a plugin that computes a conf version
+--- config
+    location /t {
+        content_by_lua_block {
+            put("/routes/conf-version-secret", {
+                uri = "/hello",
+                plugins = {
+                    ["limit-req"] = {
+                        rate = 2,
+                        burst = 0,
+                        key = "remote_addr",
+                        policy = "redis",
+                        redis_host = "127.0.0.1",
+                        redis_port = 1,
+                        redis_password = mark("marked-redis-secret"),
+                        allow_degradation = true,
+                    },
+                    ["serverless-pre-function"] = {
+                        phase = "access",
+                        functions = {[[return function(_, ctx)
+                            assert(ctx.matched_route.value.plugins["limit-req"].redis_password
+                                   == "marked-redis-secret", "marked password was not decrypted")
+                        end]]},
+                    },
+                },
+                upstream = {nodes = {["127.0.0.1:1980"] = 1}, type = "roundrobin"},
+            })
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 16: load the marked HTTP route and compute the conf version without logging its secret
+--- request
+GET /hello
+--- response_body
+hello world
+--- error_log
+init plugin-level conf version
+
+
+
+=== TEST 17: remove the marked HTTP route
+--- config
+    location /t {
+        content_by_lua_block {
+            del("/routes/conf-version-secret")
+            ngx.say("done")
+        }
+    }
+--- response_body
+done
