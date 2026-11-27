@@ -51,6 +51,7 @@ The `feishu-auth` Plugin authenticates requests using the [Feishu (Lark) OAuth 2
 | `userinfo_url`         | string   | False    | `"https://open.feishu.cn/open-apis/authen/v1/user_info"`         | URL to retrieve user information using the access token.                                                    |
 | `set_userinfo_header`  | boolean  | False    | `true`                                                            | When enabled, sets the `X-Userinfo` request header with Base64-encoded Feishu user information.            |
 | `cookie_expires_in`    | integer  | False    | `86400`                                                           | Validity duration (in seconds) for the session cookie.                                                      |
+| `cookie_secure`        | boolean  | False    | `true`                                                            | When enabled, sets the `Secure` attribute on the session cookie. Disable only for local HTTP development. |
 | `secret_fallbacks`     | array    | False    |                                                                   | List of fallback secrets used during key rotation.                                                          |
 | `timeout`              | integer  | False    | `6000`                                                            | Timeout (in milliseconds) for HTTP requests to Feishu endpoints.                                            |
 | `ssl_verify`           | boolean  | False    | `true`                                                            | When enabled, verifies the SSL certificate when connecting to Feishu endpoints.                             |
@@ -106,8 +107,12 @@ The authentication flow proceeds as follows:
 3. After the user authorizes, Feishu redirects back to `auth_redirect_uri` with an authorization `code`. The plugin extracts the code either from the `code_query` query parameter or the `code_header` HTTP header.
 4. A code taken from the query string must arrive with the `state` bound to the session, otherwise the plugin responds with HTTP 401. This ties the code to the browser that started the flow. A code taken from the `code_header` HTTP header is exempt, since such requests come from non-browser clients.
 5. The plugin exchanges the code for an access token at `access_token_url`, then fetches user information from `userinfo_url`.
-6. User information is stored in an encrypted session cookie (`feishu_session`). Subsequent requests with a valid cookie bypass the OAuth flow.
+6. User information is stored in an encrypted, application-specific session cookie. The cookie name and audience are derived from the application identity, Provider endpoints, and `cookie_secure`, so applications do not share cookie attributes, creation time, or cleanup. Subsequent requests with a valid cookie bypass the OAuth flow.
 7. If `set_userinfo_header` is `true`, the plugin encodes the user information as Base64 JSON and sets it in the `X-Userinfo` request header before forwarding to the upstream.
+
+## Upgrade compatibility
+
+The application-scoped session audience and cookie name invalidate sessions issued by versions without them, so users need to authenticate again after upgrading. When the new version receives a legacy fixed-name session cookie, it expires that cookie and all of its chunks, preventing the old session from being restored by a later rollback. During a rolling upgrade, keep the OAuth initiation and callback on the same version, for example with sticky sessions or by draining old nodes before the callback; crossing versions can otherwise produce a 401. Sessions issued by the new version are also invalid after rolling back to an older version.
 
 ## Delete Plugin
 

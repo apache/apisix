@@ -51,6 +51,7 @@ description: 本篇文档介绍了 Apache APISIX feishu-auth 插件的相关信�
 | `userinfo_url`        | string  | 否     | `"https://open.feishu.cn/open-apis/authen/v1/user_info"`          | 使用 access token 获取用户信息的接口地址。                                                   |
 | `set_userinfo_header` | boolean | 否     | `true`                                                             | 开启后，插件将飞书用户信息以 Base64 编码的 JSON 格式设置到 `X-Userinfo` 请求头中。          |
 | `cookie_expires_in`   | integer | 否     | `86400`                                                            | session Cookie 的有效时长（秒）。                                                            |
+| `cookie_secure`       | boolean | 否     | `true`                                                             | 是否为 session Cookie 设置 `Secure` 属性。仅在本地 HTTP 开发环境中建议显式关闭。       |
 | `secret_fallbacks`    | array   | 否     |                                                                    | 密钥轮换时使用的备用密钥列表。                                                               |
 | `timeout`             | integer | 否     | `6000`                                                             | 请求飞书接口的超时时间（毫秒）。                                                             |
 | `ssl_verify`          | boolean | 否     | `true`                                                             | 开启后，连接飞书接口时会验证 SSL 证书。                                                      |
@@ -103,8 +104,12 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X P
 3. 用户授权后，飞书将携带授权 `code` 重定向回 `auth_redirect_uri`。插件从 `code_query` 查询参数或 `code_header` 请求头中提取该授权码。
 4. 从查询参数中获取的授权码必须携带与当前 session 绑定的 `state`，否则插件返回 HTTP 401。该校验将授权码与发起流程的浏览器绑定。从 `code_header` 请求头中获取的授权码不做此校验，因为此类请求来自非浏览器客户端。
 5. 插件向 `access_token_url` 发起请求，使用授权码换取 access token，再从 `userinfo_url` 获取用户信息。
-6. 用户信息存储在加密的 session Cookie（`feishu_session`）中。后续携带有效 Cookie 的请求将跳过 OAuth 流程。
+6. 用户信息存储在加密的、按应用隔离的 session Cookie 中。Cookie 名和 audience 由应用标识、Provider 端点及 `cookie_secure` 派生，因此不同应用不会共享 Cookie 属性、创建时间或清理操作。后续携带有效 Cookie 的请求将跳过 OAuth 流程。
 7. 若 `set_userinfo_header` 为 `true`，插件将用户信息 Base64 编码后设置到 `X-Userinfo` 请求头，随请求转发至上游服务。
+
+## 升级兼容性
+
+按应用隔离的会话 audience 和 Cookie 名会使不支持该功能的旧版本所签发的会话失效，用户升级后需要重新认证。新版本收到旧固定名 session Cookie 时，会使该 Cookie 及其所有分片过期，避免后续回滚时恢复旧会话。滚动升级期间，应通过会话保持或先摘除旧节点等方式，确保 OAuth 发起请求与回调使用相同版本，否则可能返回 401。新版本签发的会话在回滚到旧版本后同样失效。
 
 ## 删除插件
 

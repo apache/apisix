@@ -598,3 +598,391 @@ passed
     }
 --- response_body
 passed
+
+
+
+=== TEST 18: a session from another DingTalk application is rejected
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local t = require("lib.test_admin").test
+            local oauth = require("lib.oauth_login")
+            local port = ngx.var.server_port
+            local base = "http://127.0.0.1:" .. port
+
+            local code = t('/apisix/admin/routes/1', ngx.HTTP_PUT, [[{
+                "methods": ["GET"],
+                "upstream": {"nodes": {"127.0.0.1:1980": 1}, "type": "roundrobin"},
+                "plugins": {
+                    "dingtalk-auth": {
+                        "app_key": "application-a",
+                        "app_secret": "secret-a",
+                        "secret": "shared-session-secret",
+                        "access_token_url": "http://127.0.0.1:10421/v1.0/oauth2/accessToken",
+                        "userinfo_url": "http://127.0.0.1:10421/topapi/v2/user/getuserinfo",
+                        "redirect_uri": "/login"
+                    }
+                },
+                "uri": "/hello"
+            }]])
+            assert(code <= 201, "setup application A failed: " .. tostring(code))
+
+            local res = oauth.login(port, "/hello", "valid_code")
+            assert(res and res.status == 200, "application A login failed")
+            local cookie = res.headers["Set-Cookie"]
+            assert(cookie, "application A did not issue a session cookie")
+
+            code = t('/apisix/admin/routes/2', ngx.HTTP_PUT, [[{
+                "methods": ["GET"],
+                "upstream": {"nodes": {"127.0.0.1:1980": 1}, "type": "roundrobin"},
+                "plugins": {
+                    "dingtalk-auth": {
+                        "app_key": "application-b",
+                        "app_secret": "secret-b",
+                        "secret": "shared-session-secret",
+                        "access_token_url": "http://127.0.0.1:10421/v1.0/oauth2/accessToken",
+                        "userinfo_url": "http://127.0.0.1:10421/topapi/v2/user/getuserinfo",
+                        "redirect_uri": "/login"
+                    }
+                },
+                "uri": "/hello-other"
+            }]])
+            assert(code <= 201, "setup application B failed: " .. tostring(code))
+
+            local replay = http.new():request_uri(base .. "/hello-other", {
+                headers = {["Cookie"] = cookie},
+            })
+            assert(replay, "failed to replay application A cookie")
+            assert(replay.status == 302,
+                "application B must restart login instead of accepting application A session, got "
+                .. replay.status)
+
+            code = t('/apisix/admin/routes/3', ngx.HTTP_PUT, [[{
+                "methods": ["GET"],
+                "upstream": {"nodes": {"127.0.0.1:1980": 1}, "type": "roundrobin"},
+                "plugins": {
+                    "dingtalk-auth": {
+                        "app_key": "application-a",
+                        "app_secret": "secret-a",
+                        "secret": "shared-session-secret",
+                        "access_token_url": "http://127.0.0.1:10421/v1.0/oauth2/accessToken",
+                        "userinfo_url": "http://127.0.0.1:10421/other-userinfo",
+                        "redirect_uri": "/login"
+                    }
+                },
+                "uri": "/hello-other-provider"
+            }]])
+            assert(code <= 201, "setup alternate Provider failed: " .. tostring(code))
+
+            replay = http.new():request_uri(base .. "/hello-other-provider", {
+                headers = {["Cookie"] = cookie},
+            })
+            assert(replay and replay.status == 302,
+                "a changed Provider endpoint must use a different audience")
+
+            local session = require("resty.session")
+            local legacy = session.start({
+                secret = "shared-session-secret",
+                cookie_name = "dingtalk_session",
+                audience = "default",
+                compression_threshold = 0,
+            })
+            legacy:set("userinfo", '{"userid":"legacy-user","padding":"'
+                       .. string.rep("x", 5000) .. '"}')
+            assert(legacy:save())
+            local legacy_headers = ngx.header["Set-Cookie"]
+            assert(type(legacy_headers) == "table",
+                "the legacy fixture must contain chunked cookies")
+            local legacy_pairs = {}
+            for _, header in ipairs(legacy_headers) do
+                table.insert(legacy_pairs, header:match("^[^;]+"))
+            end
+            assert(#legacy_pairs >= 2, "the legacy fixture must have multiple chunks")
+            ngx.header["Set-Cookie"] = nil
+
+            local function assert_expired(request_cookie, expected_pairs, label)
+                local response = assert(http.new():request_uri(base .. "/hello", {
+                    headers = {["Cookie"] = request_cookie},
+                }))
+                assert(response.status == 302,
+                    "a legacy default-audience session must authenticate again, got "
+                    .. tostring(response.status) .. " for " .. label)
+
+                local cleared = response.headers["Set-Cookie"]
+                if type(cleared) == "string" then
+                    cleared = {cleared}
+                end
+                local expired = {}
+                for _, header in ipairs(cleared) do
+                    local name = header:match("^([^=]+)=")
+                    if name and header:find("Max-Age=0", 1, true) then
+                        expired[name] = true
+                    end
+                end
+                for _, pair in ipairs(expected_pairs) do
+                    local name = pair:match("^([^=]+)=")
+                    assert(expired[name], "legacy cookie was not expired: " .. name)
+                end
+            end
+
+            assert_expired(table.concat(legacy_pairs, "; "), legacy_pairs, "complete chain")
+            local main_name = legacy_pairs[1]:match("^([^=]+)=")
+            local second_name = legacy_pairs[2]:match("^([^=]+)=")
+            local third_name = main_name .. "3"
+
+            local function assert_one_expired(request_cookie, expected_name)
+                local response = assert(http.new():request_uri(base .. "/hello", {
+                    headers = {Cookie = request_cookie},
+                }))
+                assert(response.status == 302, "expected 302, got " .. response.status)
+                local cleared = response.headers["Set-Cookie"]
+                if type(cleared) == "string" then
+                    cleared = {cleared}
+                end
+                local matched = false
+                for _, header in ipairs(cleared) do
+                    if header:find(expected_name .. "=;", 1, true)
+                       and header:find("Max-Age=0", 1, true) then
+                        matched = true
+                    end
+                end
+                assert(matched, "legacy cookie was not expired: " .. expected_name)
+            end
+
+            assert_one_expired(second_name .. "=isolated", second_name)
+            assert_one_expired(main_name .. "=main; " .. third_name .. "=sparse", third_name)
+            ngx.say("passed")
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 19: session cookie is Secure by default and allows an explicit opt-out
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local oauth = require("lib.oauth_login")
+            local port = ngx.var.server_port
+            local route = [[{
+                "methods": ["GET"],
+                "upstream": {"nodes": {"127.0.0.1:1980": 1}, "type": "roundrobin"},
+                "plugins": {
+                    "dingtalk-auth": {
+                        "app_key": "application-a",
+                        "app_secret": "secret-a",
+                        "secret": "shared-session-secret",
+                        "access_token_url": "http://127.0.0.1:10421/v1.0/oauth2/accessToken",
+                        "userinfo_url": "http://127.0.0.1:10421/topapi/v2/user/getuserinfo",
+                        "redirect_uri": "/login"%s
+                    }
+                },
+                "uri": "/hello"
+            }]]
+
+            local code = t('/apisix/admin/routes/1', ngx.HTTP_PUT,
+                           string.format(route, ""))
+            assert(code <= 201, "setup default cookie failed: " .. tostring(code))
+            local res = oauth.login(port, "/hello", "valid_code")
+            assert(res and res.status == 200, "login with default cookie failed")
+            local cookie = res.headers["Set-Cookie"]
+            assert(cookie and cookie:find("; Secure", 1, true),
+                "default session cookie must carry Secure")
+            local secure_cookie_name = cookie:match("^([^=]+)=")
+
+            code = t('/apisix/admin/routes/1', ngx.HTTP_PUT,
+                     string.format(route, ',"cookie_secure": false'))
+            assert(code <= 201, "setup insecure cookie failed: " .. tostring(code))
+            res = oauth.login(port, "/hello", "valid_code")
+            assert(res and res.status == 200, "login with explicit opt-out failed")
+            cookie = res.headers["Set-Cookie"]
+            assert(cookie and not cookie:find("; Secure", 1, true),
+                "cookie_secure=false must omit Secure")
+            local insecure_cookie_name = cookie:match("^([^=]+)=")
+            assert(secure_cookie_name ~= insecure_cookie_name,
+                "different Secure policies must not share a cookie name")
+            ngx.say("passed")
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 20: secret_fallbacks keeps an existing session during key rotation
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local t = require("lib.test_admin").test
+            local oauth = require("lib.oauth_login")
+            local port = ngx.var.server_port
+            local uri = "http://127.0.0.1:" .. port .. "/hello"
+            local route = [[{
+                "methods": ["GET"],
+                "upstream": {"nodes": {"127.0.0.1:1980": 1}, "type": "roundrobin"},
+                "plugins": {
+                    "dingtalk-auth": {
+                        "app_key": "application-a",
+                        "app_secret": "secret-a",
+                        "secret": "%s",
+                        "access_token_url": "http://127.0.0.1:10421/v1.0/oauth2/accessToken",
+                        "userinfo_url": "http://127.0.0.1:10421/topapi/v2/user/getuserinfo",
+                        "redirect_uri": "/login"%s
+                    }
+                },
+                "uri": "/hello"
+            }]]
+
+            local code = t('/apisix/admin/routes/1', ngx.HTTP_PUT,
+                           string.format(route, "secret-v1", ""))
+            assert(code <= 201, "setup secret-v1 failed: " .. tostring(code))
+            local res = oauth.login(port, "/hello", "valid_code")
+            assert(res and res.status == 200, "login with secret-v1 failed")
+            local old_cookie = res.headers["Set-Cookie"]
+            assert(old_cookie, "secret-v1 did not issue a session cookie")
+
+            code = t('/apisix/admin/routes/1', ngx.HTTP_PUT,
+                     string.format(route, "secret-v2", ', "secret_fallbacks": ["secret-v1"]'))
+            assert(code <= 201, "setup fallback failed: " .. tostring(code))
+            res = http.new():request_uri(uri, {headers = {["Cookie"] = old_cookie}})
+            assert(res and res.status == 200,
+                "old cookie must be accepted through secret_fallbacks")
+
+            code = t('/apisix/admin/routes/1', ngx.HTTP_PUT,
+                     string.format(route, "secret-v2", ""))
+            assert(code <= 201, "removing fallback failed: " .. tostring(code))
+            res = http.new():request_uri(uri, {headers = {["Cookie"] = old_cookie}})
+            assert(res and res.status == 302,
+                "old cookie must be rejected after removing the fallback")
+            ngx.say("passed")
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 21: application cookies isolate Secure attributes and absolute lifetimes
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local t = require("lib.test_admin").test
+            local oauth = require("lib.oauth_login")
+            local port = ngx.var.server_port
+            local base = "http://127.0.0.1:" .. port
+
+            local code = t('/apisix/admin/routes/1', ngx.HTTP_PUT, [[{
+                "methods": ["GET"],
+                "upstream": {"nodes": {"127.0.0.1:1980": 1}, "type": "roundrobin"},
+                "plugins": {
+                    "dingtalk-auth": {
+                        "app_key": "application-a",
+                        "app_secret": "secret-a",
+                        "secret": "shared-session-secret",
+                        "access_token_url": "http://127.0.0.1:10421/v1.0/oauth2/accessToken",
+                        "userinfo_url": "http://127.0.0.1:10421/topapi/v2/user/getuserinfo",
+                        "cookie_expires_in": 300,
+                        "redirect_uri": "/login"
+                    }
+                },
+                "uri": "/hello"
+            }]])
+            assert(code <= 201, "setup application A failed: " .. tostring(code))
+
+            local res = oauth.login(port, "/hello", "valid_code")
+            assert(res and res.status == 200, "application A login failed")
+            local cookie_a = res.headers["Set-Cookie"]
+            assert(cookie_a and cookie_a:find("; Secure", 1, true))
+            local pair_a = cookie_a:match("^[^;]+")
+            local name_a = pair_a:match("^([^=]+)=")
+
+            ngx.sleep(2)
+            code = t('/apisix/admin/routes/2', ngx.HTTP_PUT, [[{
+                "methods": ["GET"],
+                "upstream": {"nodes": {"127.0.0.1:1980": 1}, "type": "roundrobin"},
+                "plugins": {
+                    "dingtalk-auth": {
+                        "app_key": "application-b",
+                        "app_secret": "secret-b",
+                        "secret": "shared-session-secret",
+                        "access_token_url": "http://127.0.0.1:10421/v1.0/oauth2/accessToken",
+                        "userinfo_url": "http://127.0.0.1:10421/topapi/v2/user/getuserinfo",
+                        "cookie_expires_in": 300,
+                        "cookie_secure": false,
+                        "redirect_uri": "/login"
+                    },
+                    "proxy-rewrite": {"uri": "/hello"}
+                },
+                "uri": "/hello-other"
+            }]])
+            assert(code <= 201, "setup application B failed: " .. tostring(code))
+
+            local before_b = ngx.time()
+            local begin_b = assert(http.new():request_uri(base .. "/hello-other", {
+                headers = {Cookie = pair_a}
+            }))
+            assert(begin_b.status == 302, "application B must start a new login")
+            local pending_b = begin_b.headers["Set-Cookie"]
+            local pending_pair_b = pending_b:match("^[^;]+")
+            local name_b = pending_pair_b:match("^([^=]+)=")
+            assert(name_a ~= name_b,
+                "applications must not share cookie attributes or creation time")
+            assert(not pending_b:find("; Secure", 1, true),
+                "application B must not rewrite application A's cookie")
+
+            local state = begin_b.headers["Location"]:match("state=([0-9a-f]+)")
+            assert(state, "application B login did not carry state")
+            local callback_b = assert(http.new():request_uri(base .. "/hello-other", {
+                query = {code = "valid_code", state = state},
+                headers = {Cookie = pair_a .. "; " .. pending_pair_b}
+            }))
+            assert(callback_b.status == 200,
+                "application B login failed: " .. callback_b.status)
+            local cookie_b = callback_b.headers["Set-Cookie"]
+            assert(cookie_b and not cookie_b:find("; Secure", 1, true))
+            local pair_b = cookie_b:match("^[^;]+")
+
+            local sha256 = require("resty.sha256"):new()
+            sha256:update(table.concat({
+                "application-b",
+                "http://127.0.0.1:10421/v1.0/oauth2/accessToken",
+                "http://127.0.0.1:10421/topapi/v2/user/getuserinfo",
+                "false",
+            }, "\0"))
+            local fingerprint = require("resty.string").to_hex(sha256:final())
+            ngx.req.set_header("Cookie", pair_b)
+            local opened_b = require("resty.session").open({
+                secret = "shared-session-secret",
+                cookie_name = name_b,
+                audience = "dingtalk-auth:" .. fingerprint,
+                cookie_secure = false,
+                absolute_timeout = 300,
+            })
+            local creation_time = opened_b:get_property("creation_time")
+            assert(creation_time and creation_time >= before_b,
+                "application B inherited application A's creation time: "
+                .. tostring(creation_time))
+
+            local replay_a = assert(http.new():request_uri(base .. "/hello", {
+                headers = {Cookie = pair_a .. "; " .. pair_b}
+            }))
+            assert(replay_a.status == 200,
+                "application A session must remain valid after application B login")
+            ngx.say("passed")
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed

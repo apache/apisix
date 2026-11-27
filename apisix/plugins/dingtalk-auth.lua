@@ -18,9 +18,11 @@ local core = require("apisix.core")
 local http = require("resty.http")
 local session = require("resty.session")
 local resty_random = require("resty.random")
+local resty_sha256 = require("resty.sha256")
 local resty_string = require("resty.string")
 
 local base64_encode = ngx.encode_base64
+local tostring = tostring
 
 local STATE_BYTES = 16
 
@@ -90,6 +92,11 @@ local schema = {
             description = "Valid duration (in seconds) for the authorization cookie."
                         .. "This value defines how long the cookie remains valid after creation.",
             default = 86400,
+        },
+        cookie_secure = {
+            type = "boolean",
+            description = "Whether to set the Secure attribute on the session cookie",
+            default = true,
         },
     },
     encrypt_fields = {"app_secret", "secret", "secret_fallbacks"},
@@ -205,13 +212,42 @@ local function fetch_userinfo(conf, access_token, code)
 end
 
 
+local function session_fingerprint(conf)
+    local input = core.table.concat({
+        conf.app_key,
+        conf.access_token_url or DEFAULT_TOKEN_URL,
+        conf.userinfo_url or DEFAULT_USERINFO_URL,
+        tostring(conf.cookie_secure ~= false),
+    }, "\0")
+    local sha256 = resty_sha256:new()
+    sha256:update(input)
+    return resty_string.to_hex(sha256:final())
+end
+
+
 local function session_opts(conf)
+    local fingerprint = session_fingerprint(conf)
     return {
         secret = conf.secret,
         secret_fallbacks = conf.secret_fallbacks,
-        cookie_name = "dingtalk_session",
+        cookie_name = "dingtalk_session_" .. fingerprint,
+        audience = "dingtalk-auth:" .. fingerprint,
+        cookie_secure = conf.cookie_secure ~= false,
         absolute_timeout = conf.cookie_expires_in,
     }
+end
+
+
+local function expire_legacy_cookies(ctx)
+    local name = "dingtalk_session"
+    for i = 1, 9 do
+        local legacy_name = i == 1 and name or name .. i
+        if ctx.var["cookie_" .. legacy_name] then
+            core.response.add_header("Set-Cookie", legacy_name
+                .. "=; Path=/; SameSite=Lax; HttpOnly;"
+                .. " Expires=Thu, 01 Jan 1970 00:00:01 GMT; Max-Age=0")
+        end
+    end
 end
 
 
@@ -253,6 +289,8 @@ end
 
 function _M.rewrite(conf, ctx)
     local userinfo, err
+
+    expire_legacy_cookies(ctx)
 
     -- clear any client-supplied X-Userinfo before authentication
     core.request.set_header(ctx, "X-Userinfo", nil)
