@@ -27,6 +27,7 @@ return {
         fetch_interval = {type = "integer", minimum = 1, default = 30},
         prefix = {type = "string"},
         weight = {type = "integer", minimum = 0},
+        ssl_verify = {type = "boolean", default = true},
         timeout = {
             type = "object",
             properties = {

@@ -108,7 +108,7 @@ local function request(request_uri, basic_auth, method, path, query, body)
         headers = headers,
         query = query,
         body = body,
-        ssl_verify = false,
+        ssl_verify = local_conf.discovery.eureka.ssl_verify ~= false,
     })
 end
 

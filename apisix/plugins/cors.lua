@@ -284,20 +284,14 @@ local function process_with_allow_origins_by_regex(allow_origin_type,
         return
     end
 
-    local allow_origins_by_regex_rules_concat_conf_key =
-            "allow_origins_by_regex_rules_concat_" .. allow_origin_type
-
-    if not conf[allow_origins_by_regex_rules_concat_conf_key] then
-        local allow_origins_by_regex_rules = {}
-        for i, re_rule in ipairs(allow_origins_by_regex) do
-            allow_origins_by_regex_rules[i] = re_rule
-        end
-        conf[allow_origins_by_regex_rules_concat_conf_key] = core.table.concat(
-            allow_origins_by_regex_rules, "|")
+    local state_key = "_allow_origins_by_regex_rules_concat_" .. allow_origin_type
+    local rules_concat = conf[state_key]
+    if not rules_concat then
+        rules_concat = core.table.concat(allow_origins_by_regex, "|")
+        plugin.set_runtime_state(conf, state_key, rules_concat)
     end
 
-    -- core.log.warn("regex: ", conf[allow_origins_by_regex_rules_concat_conf_key], "\n ")
-    local matched = re_find(req_origin, conf[allow_origins_by_regex_rules_concat_conf_key], "jo")
+    local matched = re_find(req_origin, rules_concat, "jo")
     if matched then
         return req_origin
     end

@@ -399,6 +399,7 @@ nginx_config:                     # Config for render the template to generate n
 #    prefix: /eureka/
 #    fetch_interval: 30           # Default 30s
 #    weight: 100                  # Default weight for node
+#    ssl_verify: true             # Verify the certificate of https hosts against apisix.ssl.ssl_trusted_certificate. Default true
 #    timeout:
 #      connect: 2000              # Default 2000ms
 #      send: 2000                 # Default 2000ms

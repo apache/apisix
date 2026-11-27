@@ -174,11 +174,14 @@ discovery:
     prefix: "/eureka/"
     fetch_interval: 30               # 30s
     weight: 100                      # default weight for node
+    ssl_verify: true                 # verify the certificate of https hosts, default true
     timeout:
       connect: 2000                  # 2000ms
       send: 2000                     # 2000ms
       read: 5000                     # 5000ms
 ```
+
+For `https` hosts, APISIX verifies the Eureka server certificate against `apisix.ssl.ssl_trusted_certificate` by default. If the server uses a private CA, add the CA to `apisix.ssl.ssl_trusted_certificate`. Setting `ssl_verify` to `false` skips verification. `ssl_verify` has no effect on `http` hosts.
 
 ## Upstream setting
 

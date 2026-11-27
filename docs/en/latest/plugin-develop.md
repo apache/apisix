@@ -271,6 +271,21 @@ conf:
 }
 ```
 
+Treat `conf` as read-only once `check_schema` has returned: `check_schema` may fill in defaults or normalise fields, but the same table is then shared by every route, service, plugin config and consumer that it is merged into, and `plugin.conf_version(conf)` hashes its fields. Facts about the current request belong in `ctx`. To cache state derived from the conf at request time, such as a resolved address or a compiled expression, use `plugin.set_runtime_state(conf, key, value)` instead of assigning `conf[key]`. The value can still be read as `conf[key]`, but `pairs()`, JSON encoding and `conf_version` do not see it, so the version of the conf does not depend on which request wrote the state first:
+
+```lua
+local plugin = require("apisix.plugin")
+
+function _M.access(conf, ctx)
+    if not conf._resolved_host then
+        plugin.set_runtime_state(conf, "_resolved_host", resolve(conf.host))
+    end
+    ......
+end
+```
+
+Runtime fields are set only through `plugin.set_runtime_state`, and their keys always start with `_`; the helper raises an error for any other key. The parent resource of a plugin conf (the route, service, consumer and so on that it belongs to) is one of them: read it from `conf._meta._parent`, which carries `resource_key` and `resource_version`.
+
 #### ctx parameter
 
 The `ctx` parameter caches data information related to the request. You can use `core.log.warn(core.json.encode(ctx, true))` to output it to `error.log` for viewing, as shown below :

@@ -22,8 +22,9 @@ local req_http_version = ngx.req.http_version
 local str_sub = string.sub
 local ipairs = ipairs
 local tonumber = tonumber
+local assert = assert
 local type = type
-local is_loaded, brotli = pcall(require, "brotli")
+local brotli = require("apisix.utils.brotli")
 
 
 local schema = {
@@ -101,17 +102,6 @@ function _M.check_schema(conf)
 end
 
 
-local function create_brotli_compressor(mode, comp_level, lgwin, lgblock)
-    local options = {
-        mode = mode,
-        quality = comp_level,
-        lgwin = lgwin,
-        lgblock = lgblock,
-    }
-    return brotli.compressor:new(options)
-end
-
-
 local function check_accept_encoding(ctx)
     local accept_encoding = core.request.header(ctx, "Accept-Encoding")
     -- no Accept-Encoding
@@ -181,8 +171,8 @@ end
 
 
 function _M.header_filter(conf, ctx)
-    if not is_loaded then
-        core.log.error("please check the brotli library")
+    local lib = brotli.get()
+    if not lib then
         return
     end
 
@@ -241,10 +231,15 @@ function _M.header_filter(conf, ctx)
         core.response.add_header("Vary", "Accept-Encoding")
     end
 
-    local compressor = create_brotli_compressor(conf.mode, conf.comp_level,
-                                                conf.lgwin, conf.lgblock)
+    local compressor, err = lib.new_encoder({
+        mode = conf.mode,
+        quality = conf.comp_level,
+        -- The previous binding passed zero to libbrotli, which clamped it to 10.
+        lgwin = conf.lgwin == 0 and 10 or conf.lgwin,
+        lgblock = conf.lgblock,
+    })
     if not compressor then
-        core.log.error("failed to create brotli compressor")
+        core.log.error("failed to create brotli compressor: ", err)
         return
     end
 
@@ -263,13 +258,12 @@ function _M.body_filter(conf, ctx)
 
     local chunk, eof = ngx.arg[1], ngx.arg[2]
     if type(chunk) == "string" and chunk ~= "" then
-        local encode_chunk = ctx.compressor:compress(chunk)
-        ngx.arg[1] = encode_chunk .. ctx.compressor:flush()
+        ngx.arg[1] = assert(ctx.compressor:write(chunk))
     end
 
     if eof then
         -- overwriting the arg[1], results into partial response
-        ngx.arg[1] = ngx.arg[1] .. ctx.compressor:finish()
+        ngx.arg[1] = ngx.arg[1] .. assert(ctx.compressor:finish())
     end
 end
 

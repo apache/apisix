@@ -36,7 +36,7 @@ import TabItem from '@theme/TabItem';
 
 ## 描述
 
-`real-ip` 插件允许 APISIX 通过 HTTP 请求头或 HTTP 查询字符串中传递的 IP 地址设置客户端的真实 IP。当 APISIX 位于反向代理之后时，此功能尤其有用，因为在这种情况下，代理可能会被视为请求发起客户端。
+`real-ip` 插件使用请求头或查询参数中的 IP 地址替换客户端地址。当可信代理传递已验证的客户端地址，而 APISIX 会将该代理识别为客户端时，可以使用此插件。
 
 该插件在功能上类似于 NGINX 的 [ngx_http_realip_module](https://nginx.org/en/docs/http/ngx_http_realip_module.html)，但提供了更多的灵活性。
 
@@ -44,21 +44,31 @@ import TabItem from '@theme/TabItem';
 
 | 名称              | 类型          | 是否必需 | 默认值 | 有效值                     | 描述                                                                 |
 |-------------------|---------------|----------|--------|----------------------------|----------------------------------------------------------------------|
-| source            | string        | 是       |        |                            | 内置变量，例如 `http_x_forwarded_for` 或 `arg_realip`。变量值应为一个有效的 IP 地址，表示客户端的真实 IP 地址，可选地包含端口。 |
-| trusted_addresses | array[string] | 否       |        | IPv4 或 IPv6 地址数组 (接受 CIDR 表示法) | 已知会发送正确替代地址的可信地址。此配置设置 [`set_real_ip_from`](https://nginx.org/en/docs/http/ngx_http_realip_module.html#set_real_ip_from) 指令。 |
-| recursive         | boolean       | 否       | false  |                            | 如果为 false，则将匹配可信地址之一的原始客户端地址替换为配置的 `source` 中发送的最后一个地址。<br />如果为 true，则将匹配可信地址之一的原始客户端地址替换为配置的 `source` 中发送的最后一个非可信地址。 |
-
-:::note
-只有发送自 `apisix.trusted_addresses` 配置 (支持 IP 和 CIDR) 地址的 `X-Forwarded-*` 头才会被信任，并传递给插件或上游。如果未配置 `apisix.trusted_addresses` 或 ip 不在配置地址范围内的，`X-Forwarded-Proto`、`X-Forwarded-Host`、`X-Forwarded-Port` 头将被可信值覆盖，并清除 `Forwarded` 头。对于 `X-Forwarded-For`：当配置了 `apisix.trusted_addresses` 且请求来自不可信地址时，该头会被重置，使上游仅获取到 APISIX 观测到的连接 IP；当未配置 `apisix.trusted_addresses` 时，该头会被保留，并追加连接 IP（兼容的默认行为）。
-:::
+| source            | string        | 是       |        |                            | 内置的 [APISIX 变量](https://apisix.apache.org/zh/docs/apisix/apisix-variable/)或 [NGINX 变量](https://nginx.org/en/docs/varindex.html)，例如 `http_x_forwarded_for` 或 `arg_realip`。变量值应为表示真实客户端的有效 IP 地址，可以包含端口。 |
+| trusted_addresses | array[string] | 否       |        | IPv4 或 IPv6 地址数组（支持 CIDR 表示法） | 可以通过 `source` 提供替代地址的可信代理地址。如果配置了此属性，只有当前的 `remote_addr` 与列表匹配时，插件才会更改客户端地址。如果省略此属性，插件会接受任意对端在 `source` 中提供的值。当不可信客户端可以控制源值时，应配置可信地址。 |
+| recursive         | boolean       | 否       | false  |                            | 当 `source` 为 `http_x_forwarded_for` 且配置了 `trusted_addresses` 时，控制插件如何选择地址。设为 `false` 时，插件选择请求头中的最后一个地址。设为 `true` 时，插件从右向左扫描请求头，跳过可信的中间代理地址，并选择最后一个非可信地址。如果所有地址都可信，则选择最左侧地址。对于其他 `source` 或未配置 `trusted_addresses` 的情况，此属性不生效。 |
 
 :::note
 如果 `source` 属性中设置的地址丢失或者无效，该插件将不会更改客户端地址。
 :::
 
+## 信任转发的客户端信息
+
+APISIX 可以在多个阶段获取客户端地址。每项信任配置检查的地址及其作用均不同。
+
+| 阶段 | 检查的地址 | 作用 |
+| --- | --- | --- |
+| NGINX 静态真实 IP 配置 | 根据 `nginx_config.http.real_ip_from` 检查连接地址。APISIX 默认信任 `127.0.0.1` 和 `unix:`。 | 对于可信来源，`real_ip_header` 读取配置的请求头（默认为 `X-Real-IP`），替换 `remote_addr`，并将连接地址保存在 `realip_remote_addr` 中。 |
+| 全局 `apisix.trusted_addresses` | `realip_remote_addr` | 保留来自所配置可信地址的 `Forwarded` 和 `X-Forwarded-*` 信息。如果已配置的列表不信任连接地址，APISIX 会在插件和上游收到这些请求头之前进行清理。 |
+| 插件的 `trusted_addresses` | 当前的 `remote_addr`，它可能已经被 NGINX 重写 | 如果地址可信，插件会使用 `source` 中的地址进行替换。 |
+
+未配置全局信任列表时，为了保持兼容性，APISIX 会保留传入的 `X-Forwarded-For` 地址链，并追加连接地址。APISIX 仍会使用自身观测到的值替换转发的协议、主机和端口，并清除 `Forwarded`。如果已配置的信任列表不包含连接地址，APISIX 还会丢弃传入的 `X-Forwarded-For` 地址链。
+
+只信任由你管理的代理，并配置这些代理使用已验证的客户端地址覆盖源请求头。当插件跳过请求时，`remote_addr` 会保留 NGINX 传入的值。
+
 ## 示例
 
-以下示例展示了如何在不同场景中配置 `real-ip`。
+以下示例分别从查询参数、可信代理请求头或多级代理链中设置客户端地址。
 
 :::note
 
@@ -286,7 +296,7 @@ remote_port: 9080
 
 ### 从请求头获取真实客户端地址
 
-以下示例展示了当 APISIX 位于反向代理 (例如负载均衡器) 之后时，如何设置真实客户端 IP，此时代理在 [`X-Forwarded-For`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-For) 请求头中暴露了真实客户端 IP。
+本示例从 `X-Verified-Client-IP` 读取已验证的客户端地址，并展示请求头缺失或直连对端不可信时的行为。
 
 创建如下路由：
 
@@ -309,7 +319,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     "uri": "/get",
     "plugins": {
       "real-ip": {
-        "source": "http_x_forwarded_for",
+        "source": "http_x_verified_client_ip",
         "trusted_addresses": ["127.0.0.0/24"]
       },
       "response-rewrite": {
@@ -340,7 +350,7 @@ services:
           - /get
         plugins:
           real-ip:
-            source: http_x_forwarded_for
+            source: http_x_verified_client_ip
             trusted_addresses:
               - 127.0.0.0/24
           response-rewrite:
@@ -393,7 +403,7 @@ spec:
   plugins:
     - name: real-ip
       config:
-        source: http_x_forwarded_for
+        source: http_x_verified_client_ip
         trusted_addresses:
           - 127.0.0.0/24
     - name: response-rewrite
@@ -458,7 +468,7 @@ spec:
       plugins:
         - name: real-ip
           config:
-            source: http_x_forwarded_for
+            source: http_x_verified_client_ip
             trusted_addresses:
               - 127.0.0.0/24
         - name: response-rewrite
@@ -481,24 +491,32 @@ kubectl apply -f real-ip-ic.yaml
 
 </Tabs>
 
-向路由发送请求：
+发送一个请求，模拟可信的本地代理提供已验证的客户端地址：
 
 ```shell
 curl -i "http://127.0.0.1:9080/get" \
-  -H "X-Forwarded-For: 10.26.3.19"
+  -H "X-Verified-Client-IP: 198.51.100.20"
 ```
 
 你应看到响应包含以下头：
 
 ```text
-remote_addr: 10.26.3.19
+remote_addr: 198.51.100.20
 ```
 
-IP 地址应对应于请求发起客户端的 IP 地址。
+不提供 `X-Verified-Client-IP`，再次发送请求：
+
+```shell
+curl -i "http://127.0.0.1:9080/get"
+```
+
+APISIX 会记录 `missing real address` 日志，并保留原有客户端地址。对于本地直连请求，响应包含 `remote_addr: 127.0.0.1`。
+
+如需验证信任边界，请将 `trusted_addresses` 改为 `["192.0.2.10/32"]`，使用同一配置方式重新应用配置，然后再次发送第一个请求。直连对端不再匹配可信地址列表，因此 APISIX 会忽略提供的请求头，响应中将显示网关观测到的对端地址。测试后请恢复可信地址。
 
 ### 在多个代理之后获取真实客户端地址
 
-以下示例展示了当 APISIX 位于多个代理之后时，如何获取真实客户端 IP，此时 [`X-Forwarded-For`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-For) 请求头包含了一系列代理 IP 地址。
+本示例从多个可信代理添加的 [`X-Forwarded-For`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-For) 地址链中解析原始客户端地址。
 
 创建如下路由：
 

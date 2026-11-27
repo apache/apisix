@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core        = require("apisix.core")
+local plugin      = require("apisix.plugin")
 local secret      = require("apisix.secret")
 local expr        = require("resty.expr.v1")
 local re_compile  = require("resty.core.regex").re_match_compile
@@ -172,12 +173,13 @@ local function vars_matched(conf, ctx)
         return true
     end
 
-    if not conf.response_expr then
-        local response_expr, _ = expr.new(conf.vars)
-        conf.response_expr = response_expr
+    local response_expr = conf._response_expr
+    if not response_expr then
+        response_expr = expr.new(conf.vars)
+        plugin.set_runtime_state(conf, "_response_expr", response_expr)
     end
 
-    local match_result = conf.response_expr:eval(ctx.var)
+    local match_result = response_expr:eval(ctx.var)
 
     return match_result
 end
@@ -272,7 +274,7 @@ function _M.body_filter(conf, ctx)
 
         local err
         if ctx.response_encoding ~= nil and body ~= "" then
-            local decoder = content_decode.dispatch_decoder(ctx.response_encoding)
+            local decoder = ctx.response_rewrite_decoder
             if not decoder then
                 core.log.error("filters may not work as expected ",
                                "due to unsupported compression encoding type: ",
@@ -357,11 +359,16 @@ function _M.header_filter(conf, ctx)
         ngx.status = conf.status_code
     end
 
-    -- if filters have no any match, response body won't be modified.
     if conf.filters or conf.body then
-        local response_encoding = ngx_header["Content-Encoding"]
-        core.response.clear_header_as_body_modified()
-        ctx.response_encoding = response_encoding
+        ctx.response_encoding = ngx_header["Content-Encoding"]
+        if conf.filters and ctx.response_encoding then
+            local decoder, unavailable = content_decode.dispatch_decoder(ctx.response_encoding)
+            ctx.response_rewrite_decoder = decoder
+            ctx.response_rewrite_matched = not unavailable
+        end
+        if ctx.response_rewrite_matched then
+            core.response.clear_header_as_body_modified()
+        end
     end
 
     if not conf.headers then

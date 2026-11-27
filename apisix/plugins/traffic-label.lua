@@ -16,12 +16,12 @@
 --
 
 local core          = require("apisix.core")
+local plugin        = require("apisix.plugin")
 local proxy_rewrite = require("apisix.plugins.proxy-rewrite")
 local expr          = require("resty.expr.v1")
 local roundrobin    = require("resty.roundrobin")
 local ipairs        = ipairs
 local pairs         = pairs
-local setmetatable  = setmetatable
 
 local lrucache = core.lrucache.new({
     ttl = 0, count = 512
@@ -202,11 +202,10 @@ function _M.access(conf, ctx)
                 return
             end
 
-            -- Hide the compiled expression in a metatable so that it stays out of
-            -- the configuration: the "ipmatch" operator compiles into an ipmatcher,
-            -- whose lookup tables are keyed by integers, and a configuration holding
-            -- one can no longer be JSON encoded.
-            setmetatable(rule, {__index = {_expr = rule_expr}})
+            -- the "ipmatch" operator compiles into an ipmatcher, whose lookup tables
+            -- are keyed by integers, and a configuration holding one can no longer
+            -- be JSON encoded
+            plugin.set_runtime_state(rule, "_expr", rule_expr)
         end
 
         match_result = rule._expr:eval(ctx.var)

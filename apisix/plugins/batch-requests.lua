@@ -217,6 +217,10 @@ local function set_common_header(data)
         end
 
         req.headers[real_ip_hdr] = core.request.get_remote_client_ip()
+
+        -- Let the HTTP client frame each request using its own body.
+        req.headers["content-length"] = nil
+        req.headers["transfer-encoding"] = nil
     end
 end
 

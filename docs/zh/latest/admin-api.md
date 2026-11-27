@@ -1014,12 +1014,12 @@ APISIX 的 Upstream 除了基本的负载均衡算法选择外，还支持对上
 | nodes          | 是，与 `service_name` 二选一。                       | Node           | 哈希表或数组。当它是哈希表时，内部元素的 key 是上游机器地址列表，格式为`地址 +（可选的）端口`，其中地址部分可以是 IP 也可以是域名，比如 `192.168.1.100:80`、`foo.com:80`等。对于哈希表的情况，如果 key 是 IPv6 地址加端口，则必须用中括号将 IPv6 地址括起来。`value` 则是节点的权重。当它是数组时，数组中每个元素都是一个哈希表，其中包含 `host`、`weight` 以及可选的 `port`、`priority`。`nodes` 可以为空，这通常用作占位符。客户端命中这样的上游会返回 `502`。                                        | `192.168.1.100:80`, `[::1]:80`                               |
 | service_name   | 是，与 `nodes` 二选一。                              | string         | 服务发现时使用的服务名，请参考 [集成服务发现注册中心](./discovery.md)。                                                                                                                                                                                                                                                                                            | `a-bootiful-client`                              |
 | discovery_type | 是，与 `service_name` 配合使用。                      | string         | 服务发现类型，请参考 [集成服务发现注册中心](./discovery.md)。                                                                                                                                                                                                                                                                                                      | `eureka`                                         |
-| key            | 条件必需                                          | 匹配类型       | 该选项只有类型是 `chash` 才有效。根据 `key` 来查找对应的节点 `id`，相同的 `key` 在同一个对象中，则返回相同 id。目前支持的 NGINX 内置变量有 `uri, server_name, server_addr, request_uri, remote_port, remote_addr, query_string, host, hostname, arg_***`，其中 `arg_***` 是来自 URL 的请求参数，详细信息请参考 [NGINX 变量列表](http://nginx.org/en/docs/varindex.html)。 |                                                  |
+| key            | 条件必需                                          | 匹配类型       | 该选项仅在类型为 `chash` 时有效。根据 `hash_on` 选择哈希输入。`vars`、`header`、`cookie` 和 `vars_combinations` 需要配置 `key`，`consumer` 不需要。详细规则见下文。 | `uri`、`request_uri`、`remote_addr`、`arg_user`、`$request_uri$remote_addr` |
 | checks         | 否                                             | health_checker | 配置健康检查的参数，详细信息请参考 [health-check](./tutorials/health-check.md)。                                                                                                                                                                                                                                                                                               |                                                  |
 | retries        | 否                                             | 整型           | 使用 NGINX 重试机制将请求传递给下一个上游，默认启用重试机制且次数为后端可用的节点数量。如果指定了具体重试次数，它将覆盖默认值。当设置为 `0` 时，表示不启用重试机制。                                                                                                                                                                                                 |                                                  |
 | retry_timeout  | 否                                             | number         | 限制是否继续重试的时间，若之前的请求和重试请求花费太多时间就不再继续重试。当设置为 `0` 时，表示不启用重试超时机制。                                                                                                                                                                                                 |                                                  |
 | timeout        | 否                                             | 超时时间对象   | 设置连接、发送消息、接收消息的超时时间，以秒为单位。| `{"connect": 0.5,"send": 0.5,"read": 0.5}` |
-| hash_on        | 否                                             | 辅助           | `hash_on` 支持的类型有 `vars`（NGINX 内置变量），`header`（自定义 header），`cookie`，`consumer`，默认值为 `vars`。                                                                                                                                                                                                                                           |
+| hash_on        | 否                                             | 辅助           | 仅在类型为 `chash` 时有效。支持指定变量（`vars`）、自定义请求头（`header`）、`cookie`、认证消费者（`consumer`）和变量组合（`vars_combinations`），默认值为 `vars`。                                                                                                                                                                                                                                           |
 | name           | 否                                             | 辅助           | 标识上游服务名称、使用场景等。                                                                                                                                                                                                                                                                                                                              |                                                  |
 | desc           | 否                                             | 辅助           | 上游服务描述、使用场景等。                                                                                                                                                                                                                                                                                                                                  |                                                  |
 | pass_host      | 否                                             | 枚举           | 请求发给上游时的 `host` 设置选型。 [`pass`，`node`，`rewrite`] 之一，默认是 `pass`。`pass`: 将客户端的 host 透传给上游； `node`: 使用 `upstream` node 中配置的 `host`； `rewrite`: 使用配置项 `upstream_host` 的值。                                                                                                                                                                        |                                                  |
@@ -1031,9 +1031,9 @@ APISIX 的 Upstream 除了基本的负载均衡算法选择外，还支持对上
 | tls.client_cert_id | 否，不能和 `tls.client_cert`、`tls.client_key` 一起使用 | SSL           | 设置引用的 SSL id，详见 [SSL](#ssl)。                                                                                                                                                                                                                                                                                                              | |
 | tls.verify         | 否                                             | Boolean       | 开启或关闭上游证书校验，不设置时沿用 nginx 的配置，详细信息请参考下文。Kafka 上游同样使用该字段。                                                                                                                                                                                                                                                              | |
 | tls.ca_certs       | 否                                             | https 证书数组 | 用于校验上游证书的 CA 证书，设置后将取代 `ssl_trusted_certificate` 中加载的证书，详细信息请参考下文。`scheme` 为 `ws` 或 `wss` 时不支持该字段，只会信任 `ssl_trusted_certificate`。                                                                                                                                                                                                                                                              | |
-|keepalive_pool.size  | 否                                             | 辅助 | 动态设置 `keepalive` 指令，详细信息请参考下文。 |
-|keepalive_pool.idle_timeout  | 否                                             | 辅助 | 动态设置 `keepalive_timeout` 指令，详细信息请参考下文。 |
-|keepalive_pool.requests  | 否                                             | 辅助 | 动态设置 `keepalive_requests` 指令，详细信息请参考下文。 |
+|keepalive_pool.size  | 否                                             | 辅助 | 每个 Worker 为一个 Upstream 节点保留的最大空闲连接数。连接池已满时，会关闭最近最少使用的空闲连接。配置 `keepalive_pool` 时，默认值为 `320`。 |
+|keepalive_pool.idle_timeout  | 否                                             | 辅助 | 连接在池中保持空闲的最长时间，单位为秒。超过该时间后关闭连接。设置为 `0` 时禁用空闲过期。配置 `keepalive_pool` 时，默认值为 `60`。 |
+|keepalive_pool.requests  | 否                                             | 辅助 | 一条连接可以处理的最大请求数。达到上限后关闭连接。配置 `keepalive_pool` 时，默认值为 `1000`。 |
 |warm_up_conf.slow_start_time_seconds | 设置 `warm_up_conf` 时必填 | 整型 | 慢启动窗口，单位为秒。网关首次观察到的节点先承接较少的流量，并在该窗口内逐步恢复到配置的权重。最小值为 1。 |
 |warm_up_conf.min_weight_percent | 设置 `warm_up_conf` 时必填 | 整型 | 爬坡期间有效权重的下限，以配置权重的百分比表示，取值范围 1 到 100。 |
 |warm_up_conf.interval | 否 | 整型 | 两次刷新有效权重之间的间隔，单位为秒。默认为 `1`，不能大于 `slow_start_time_seconds`。 |
@@ -1050,10 +1050,13 @@ APISIX 的 Upstream 除了基本的负载均衡算法选择外，还支持对上
 
 `hash_on` 详细信息如下：
 
-- 设为 `vars` 时，`key` 为必传参数，目前支持的 NGINX 内置变量有 `uri, server_name, server_addr, request_uri, remote_port, remote_addr, query_string, host, hostname, arg_***`，其中 `arg_***` 是来自 URL 的请求参数。详细信息请参考 [NGINX 变量列表](http://nginx.org/en/docs/varindex.html)。
-- 设为 `header` 时，`key` 为必传参数，其值为自定义的 Header name，即 "http\_`key`"。
-- 设为 `cookie` 时，`key` 为必传参数，其值为自定义的 cookie name，即 "cookie\_`key`"。请注意 cookie name 是**区分大小写字母**的。例如：`cookie_x_foo` 与 `cookie_X_Foo` 表示不同的 `cookie`。
-- 设为 `consumer` 时，`key` 不需要设置。此时哈希算法采用的 `key` 为认证通过的 `consumer_name`。
+- 设为 `vars` 时，`key` 为必传参数。变量名不带 `$` 前缀。允许的值为 `uri`、`server_name`、`server_addr`、`request_uri`、`remote_port`、`remote_addr`、`query_string`、`host`、`hostname`、`mqtt_client_id`，以及 `arg_<name>` 形式的请求参数变量。`mqtt_client_id` 仅在 Stream Route 启用 `mqtt-proxy` 插件时可用。这里只支持固定范围，并非支持所有 [NGINX 变量](http://nginx.org/en/docs/varindex.html)。
+- 设为 `header` 时，`key` 为必传参数。填写请求头名称，不带 `http_` 前缀。
+- 设为 `cookie` 时，`key` 为必传参数。填写 Cookie 名称，不带 `cookie_` 前缀。Cookie 名称区分大小写。
+- 设为 `consumer` 时，不要配置 `key`。APISIX 使用认证插件捕获的 `consumer_name` 进行哈希。
+- 设为 `vars_combinations` 时，`key` 为必传参数。它是包含一个或多个以 `$` 开头的变量引用的模板，例如 `$request_uri$remote_addr`。
+
+如果 APISIX 无法解析请求中配置的哈希输入，则会回退到 `remote_addr`。
 
 APISIX 支持两种不同的方式来代理 WebSocket 连接，二者不能混用：
 
@@ -1081,13 +1084,45 @@ APISIX 支持两种不同的方式来代理 WebSocket 连接，二者不能混�
   }
   ```
 
-- `keepalive_pool` 允许 Upstream 有自己单独的连接池。它下属的字段，比如 `requests`，可以用于配置上游连接保持的参数。
-- `warm_up_conf` 为 `roundrobin` 类型的 Upstream 开启节点慢启动。节点是否为新节点由网关根据自己观察到的节点集合判断，每次爬坡的起点记录在本地的 `upstream-slow-start` 共享字典中：
-  - 网关首次为 Upstream 构建负载均衡器时已有的节点视为已完成预热，开启 `warm_up_conf` 时 Upstream 已有的节点同样如此。
-  - 之后新增的节点从 `min_weight_percent` 开始，在 `slow_start_time_seconds` 内逐步恢复到配置的权重。被健康检查挡在负载均衡器之外的节点，从它首次可用时开始爬坡。
-  - 节点一旦不可用，无论是被健康检查排除出负载均衡器，还是离开了 Upstream，其爬坡或已完成预热的状态都会结束。再次可用时，无论不可用的时间多短，都会从 `min_weight_percent` 重新开始爬坡，因为该地址上响应的进程可能刚刚重启。修改节点权重（包括改为 `0`）不算不可用。
-  - 每个 APISIX 实例独立计时，起点为该实例观察到节点的时刻。
-  - `warm_up_conf` 仅支持节点优先级一致的 `roundrobin` 类型 Upstream，`traffic-split` 插件中的 Upstream 每请求重建，不允许配置。与其他只对 HTTP 生效的 Upstream 字段一样，该字段在 stream route 使用的 Upstream 上会被忽略。爬坡只在节点之间调整流量：单节点 Upstream，或所有节点都是新节点时，请求仍会全部发往这些节点。
+使用 `keepalive_pool` 配置 APISIX 与当前 Upstream 节点之间的连接复用。每个 Worker 分别维护空闲连接池。当一条连接达到请求数上限、空闲时间超过限制，或连接池已满而被淘汰时，APISIX 会关闭该连接。这些正常关闭可能使主动关闭 TCP 连接的一侧出现 `TIME_WAIT` 套接字。
+
+未配置 `keepalive_pool` 时，Upstream 使用 `config.yaml` 中的全局 `nginx_config.http.upstream.keepalive`、`keepalive_requests` 和 `keepalive_timeout` 值。
+
+Upstream 的 `keepalive_pool` 只控制代理 Route 流量所使用的连接，不控制插件创建的独立出站客户端。例如，[`forward-auth`](./plugins/forward-auth.md) 插件使用自己的 `keepalive_pool` 和 `keepalive_timeout` 字段，不使用 Upstream 的 `keepalive_pool.requests`。
+
+各连接池字段的生效时机不同：
+
+- Worker 创建具名连接池时应用 `size`。已有连接池不会改变大小。该连接池完全排空并重新创建，或 Worker reload 或重启后，新值才会生效。
+- APISIX 在请求结束并将连接放回连接池时检查 `requests`。因此，活跃连接或复用连接完成后续请求时会使用更新后的上限。
+- APISIX 将连接放回连接池时设置 `idle_timeout`。已经处于空闲状态的连接继续使用原来的计时器，直到被复用或关闭。设置为 `0` 会禁用空闲过期，但请求数上限、连接池淘汰、对端关闭、连接失败和 Worker 生命周期仍可能关闭连接。
+
+#### 排查连接复用和 `TIME_WAIT`
+
+使用受控的请求负载区分正常连接退役和连接未复用问题：
+
+1. 确定 APISIX 实例、Upstream 节点地址和端口。通过 `GET /apisix/admin/upstreams/{id}` 读取 Upstream。记录其中的 `keepalive_pool` 值；如果未配置该对象，则记录 `config.yaml` 中的全局值。如果连接指向插件调用的服务，应改为检查该插件的连接池配置。
+2. 在同一个 APISIX 实例上，记录测试前该 Upstream 节点的已建立连接数和 `TIME_WAIT` 数。将示例地址和端口替换为节点的访问地址：
+
+   ```shell
+   export UPSTREAM_ENDPOINT="192.0.2.10:8080"
+   ss -Htan state established dst "$UPSTREAM_ENDPOINT" | wc -l
+   ss -Htan state time-wait dst "$UPSTREAM_ENDPOINT" | wc -l
+   ```
+
+3. 通过一条 Route 发送固定数量的请求。同时使用抓包或连接监控，统计该 APISIX 实例向 Upstream 节点新建 TCP 连接时发送的 SYN 数。多个请求只产生较少的新连接，说明连接复用正常。需要确认哪一侧关闭连接时，还应记录 FIN 的方向。
+4. 将套接字数量和新建连接速率与请求速率对比。连接达到 `requests` 或 `idle_timeout` 时，`TIME_WAIT` 逐渐增加属于正常现象。如果几乎每个请求都新建连接、上游反复失败、发生 reload，或连接在发送应用数据前关闭，需要分别排查；仅凭 `TIME_WAIT` 无法确定原因。
+5. 如果证据指向连接池压力，每次只修改一个字段，并在该字段生效后使用相同负载复测。只有 Worker 在淘汰仍可复用的空闲连接时才增加 `size`；只有计划内连接退役过于频繁时才增加 `requests`；只有可复用连接在两次请求之间过期时才增加 `idle_timeout`。增大 `size` 或 `idle_timeout` 可能会保留更多连接，并占用更多上游连接容量和文件描述符。增大 `requests` 会让每条连接在计划退役前处理更多请求。
+
+在每个受影响的 APISIX 实例上重复测量。连接池占用是每个 Worker 的本地状态，集群总数可能掩盖只发生在单个实例或 Worker 上的问题。
+
+`warm_up_conf` 为 `roundrobin` 类型的 Upstream 开启节点慢启动。节点是否为新节点由网关根据自己观察到的节点集合判断，每次爬坡的起点记录在本地的 `upstream-slow-start` 共享字典中：
+
+- 网关首次为 Upstream 构建负载均衡器时已有的节点视为已完成预热，开启 `warm_up_conf` 时 Upstream 已有的节点同样如此。
+- 之后新增的节点从 `min_weight_percent` 开始，在 `slow_start_time_seconds` 内逐步恢复到配置的权重。被健康检查挡在负载均衡器之外的节点，从它首次可用时开始爬坡。
+- 节点一旦不可用，无论是被健康检查排除出负载均衡器，还是离开了 Upstream，其爬坡或已完成预热的状态都会结束。再次可用时，无论不可用的时间多短，都会从 `min_weight_percent` 重新开始爬坡，因为该地址上响应的进程可能刚刚重启。修改节点权重（包括改为 `0`）不算不可用。
+- 每个 APISIX 实例独立计时，起点为该实例观察到节点的时刻。
+
+`warm_up_conf` 仅支持节点优先级一致的 `roundrobin` 类型 Upstream，`traffic-split` 插件中的 Upstream 每请求重建，不允许配置。与其他只对 HTTP 生效的 Upstream 字段一样，该字段在 stream route 使用的 Upstream 上会被忽略。爬坡只在节点之间调整流量：单节点 Upstream，或所有节点都是新节点时，请求仍会全部发往这些节点。
 
 Upstream 对象 JSON 配置示例：
 

@@ -368,7 +368,7 @@ local function gen_limit_key(conf, ctx, key)
     -- Here we use plugin-level conf version to prevent the counter from being resetting
     -- because of the change elsewhere.
     -- A route which reuses a previous route's ID will inherits its counter.
-    local parent = conf._meta and conf._meta.parent
+    local parent = conf._meta and conf._meta._parent
     if not parent or not parent.resource_key then
         core.log.error("failed to generate key invalid parent: ", core.json.encode(parent))
         return nil

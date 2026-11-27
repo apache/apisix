@@ -16,6 +16,7 @@
 --
 local core       = require("apisix.core")
 local upstream   = require("apisix.upstream")
+local set_runtime_state = require("apisix.plugin").set_runtime_state
 local schema_def = require("apisix.schema_def")
 local roundrobin = require("resty.roundrobin")
 local ipmatcher  = require("resty.ipmatcher")
@@ -134,7 +135,7 @@ function _M.check_schema(conf)
 end
 
 
-local function parse_domain_for_node(node)
+local function parse_domain_for_node(node, configured_node)
     local host = node.domain or node.host
     if not ipmatcher.parse_ipv4(host)
        and not ipmatcher.parse_ipv6(host)
@@ -144,6 +145,11 @@ local function parse_domain_for_node(node)
         local ip, err = core.resolver.parse_domain(host)
         if ip then
             node.host = ip
+            if configured_node and configured_node._last_resolved_ip ~= ip then
+                set_runtime_state(configured_node, "_last_resolved_ip", ip)
+            end
+        elseif configured_node and configured_node._last_resolved_ip then
+            node.host = configured_node._last_resolved_ip
         end
 
         if err then
@@ -158,8 +164,10 @@ local function set_upstream(upstream_info, ctx)
     local new_nodes = {}
     if core.table.isarray(nodes) then
         for _, node in ipairs(nodes) do
-            parse_domain_for_node(node)
-            table_insert(new_nodes, node)
+            -- the resolved address goes into a copy: the node belongs to the conf
+            local resolved = core.table.clone(node)
+            parse_domain_for_node(resolved, node)
+            table_insert(new_nodes, resolved)
         end
     else
         for addr, weight in pairs(nodes) do
@@ -197,9 +205,9 @@ local function set_upstream(upstream_info, ctx)
     local matched_route = ctx.matched_route
     up_conf.parent = matched_route
     local upstream_key = up_conf.type .. "#route_" ..
-                         matched_route.value.id .. "_" .. upstream_info.vid
-    if upstream_info.node_tid then
-        upstream_key = upstream_key .. "_" .. upstream_info.node_tid
+                         matched_route.value.id .. "_" .. upstream_info._vid
+    if upstream_info._node_tid then
+        upstream_key = upstream_key .. "_" .. upstream_info._node_tid
     end
     core.log.info("upstream_key: ", upstream_key)
     upstream.set(ctx, upstream_key, ctx.conf_version, up_conf)
@@ -219,13 +227,13 @@ local function new_rr_obj(weighted_upstreams)
             server_list[upstream_obj.upstream_id] = upstream_obj.weight
         elseif upstream_obj.upstream then
             -- Add a virtual id field to uniquely identify the upstream key.
-            upstream_obj.upstream.vid = i
+            set_runtime_state(upstream_obj.upstream, "_vid", i)
             -- Get the table id of the nodes as part of the upstream_key,
             -- avoid upstream_key duplicate because vid is the same in the loop
             -- when multiple rules with multiple weighted_upstreams under each rule.
             -- see https://github.com/apache/apisix/issues/5276
             local node_tid = tostring(upstream_obj.upstream.nodes):sub(#"table: " + 1)
-            upstream_obj.upstream.node_tid = node_tid
+            set_runtime_state(upstream_obj.upstream, "_node_tid", node_tid)
             server_list[upstream_obj.upstream] = upstream_obj.weight
         else
             -- If the upstream object has only the weight value, it means

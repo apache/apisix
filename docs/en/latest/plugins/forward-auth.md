@@ -45,6 +45,8 @@ The `forward-auth` Plugin supports the integration with an external authorizatio
 - `X-Forwarded-Uri`: normalized URI, including the query string
 - `X-Forwarded-For`: source IP
 
+Header names are matched case-insensitively. For requests to the authorization service, `extra_headers` can override headers that APISIX sets. APISIX copies a header from `request_headers` only if that field is still missing.
+
 :::note
 
 These headers describe the request as the client sent it. If the Route also rewrites the request with [proxy-rewrite](./proxy-rewrite.md), the Upstream service receives the rewritten scheme, method, host, and URI, while the headers above keep carrying the client values.

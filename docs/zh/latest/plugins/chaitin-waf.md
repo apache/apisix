@@ -110,7 +110,7 @@ description: chaitin-waf 插件与长亭雷池 WAF 集成，以检测和阻止�
 继续操作之前，请确保您已安装 [长亭雷池 WAF](https://docs.waf.chaitin.com/en/GetStarted/Deploy)。
 
 :::note
-只有发送自 `apisix.trusted_addresses` 配置（支持 IP 和 CIDR）地址的 `X-Forwarded-*` 头才会被信任，并传递给插件或上游。如果未配置 `apisix.trusted_addresses` 或 ip 不在配置地址范围内的，`X-Forwarded-Proto`、`X-Forwarded-Host`、`X-Forwarded-Port` 头将被可信值覆盖，并清除 `Forwarded` 头。对于 `X-Forwarded-For`：当配置了 `apisix.trusted_addresses` 且请求来自不可信地址时，该头会被重置，使上游仅获取到 APISIX 观测到的连接 IP；当未配置 `apisix.trusted_addresses` 时，该头会被保留，并追加连接 IP（兼容的默认行为）。
+在接受转发请求头中的客户端地址之前，请参阅[信任转发的客户端信息](real-ip.md#信任转发的客户端信息)。
 :::
 
 :::note
