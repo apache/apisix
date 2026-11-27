@@ -706,12 +706,8 @@ passed
                 return
             end
 
-            local brotli = require "brotli"
-            local decompressor = brotli.decompressor:new()
-            local chunk = decompressor:decompress(res.body)
-            local chunk_fin = decompressor:finish()
-            local chunks = chunk .. chunk_fin
-            if #chunks == #req_body then
+            local brotli = require "resty.brotli"
+            if assert(brotli.decode(res.body)) == req_body then
                 ngx.say("ok")
             end
         }
@@ -907,3 +903,35 @@ Etag:
 Content-Length:
 --- no_error_log
 [error]
+
+
+
+=== TEST 38: lgwin in the compressed stream, including the legacy zero setting
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local brotli = require("resty.brotli")
+            local plain = ("0123456789abcd"):rep(512)
+            for _, window in ipairs({0, 10, 19, 24}) do
+                local status = t("/apisix/admin/routes/1", ngx.HTTP_PUT, {
+                    uri = "/echo",
+                    upstream = {type = "roundrobin", nodes = {["127.0.0.1:1980"] = 1}},
+                    plugins = {brotli = {types = "*", lgwin = window}},
+                })
+                assert(status < 300)
+                local _, _, data, headers = t("/echo", ngx.HTTP_POST, plain, nil,
+                                              {["Accept-Encoding"] = "br"})
+                assert(headers["Content-Encoding"] == "br")
+                assert(brotli.decode(data) == plain)
+                -- RFC 7932 section 9.1: WBITS 10 occupies 7 bits, 19 and 24 occupy 4.
+                local mask = window <= 10 and 0x7f or 0x0f
+                ngx.say(window, " ", bit.band(data:byte(), mask))
+            end
+        }
+    }
+--- response_body
+0 33
+10 33
+19 5
+24 15

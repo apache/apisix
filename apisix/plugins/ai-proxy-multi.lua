@@ -20,6 +20,7 @@ local secret = require("apisix.secret")
 local schema = require("apisix.plugins.ai-proxy.schema")
 local base   = require("apisix.plugins.ai-proxy.base")
 local plugin = require("apisix.plugin")
+local set_runtime_state = plugin.set_runtime_state
 local ipmatcher  = require("resty.ipmatcher")
 local healthcheck_manager = require("apisix.healthcheck_manager")
 local resource = require("apisix.resource")
@@ -36,6 +37,7 @@ local pcall = pcall
 local error = error
 local tostring = tostring
 local ipairs = ipairs
+local next = next
 local type = type
 local string = string
 local sub = string.sub
@@ -367,10 +369,10 @@ local function use_node_for_request(instance_conf, node)
         return
     end
 
-    instance_conf._dns_value = node
-    instance_conf._resolved_endpoint = make_endpoint(node)
-    instance_conf._resolved_host_header = make_host_header(node)
-    instance_conf._resolved_ssl_server_name = node.domain
+    set_runtime_state(instance_conf, "_dns_value", node)
+    set_runtime_state(instance_conf, "_resolved_endpoint", make_endpoint(node))
+    set_runtime_state(instance_conf, "_resolved_host_header", make_host_header(node))
+    set_runtime_state(instance_conf, "_resolved_ssl_server_name", node.domain)
 end
 
 
@@ -423,8 +425,8 @@ local function resolve_endpoint(instance_conf)
     local nodes_changed = not nodes_equal(instance_conf._dns_nodes, new_nodes)
 
     if nodes_changed then
-        instance_conf._dns_nodes = new_nodes
-        instance_conf._nodes_ver = (instance_conf._nodes_ver or 0) + 1
+        set_runtime_state(instance_conf, "_dns_nodes", new_nodes)
+        set_runtime_state(instance_conf, "_nodes_ver", (instance_conf._nodes_ver or 0) + 1)
         core.log.info("DNS resolution changed for instance: ", instance_conf.name,
                      " new nodes: ", core.json.delay_encode(new_nodes))
     end
@@ -433,26 +435,13 @@ local function resolve_endpoint(instance_conf)
 end
 
 
-local function get_checkers_status_ver(conf, checkers)
-    local parts = core.table.new(#conf.instances, 0)
-    for i, ins in ipairs(conf.instances) do
-        local checker = checkers[ins.name]
-        -- "x" distinguishes "checker not created yet" from a created checker
-        -- whose status_ver is still 0. Otherwise the server picker built
-        -- without health filtering before the checker exists would share the
-        -- same cache key with the post-creation state and be reused even
-        -- after the shm already marks some nodes unhealthy.
-        parts[i] = checker and checker.status_ver or "x"
-    end
-    return table_concat(parts, "-")
-end
-
-
-local function fetch_all_instances(conf)
+local function fetch_instances(conf, status)
     local instances = conf.instances
     local new_instances = core.table.new(0, #instances)
     for _, ins in ipairs(instances) do
-        transform_instances(new_instances, ins)
+        if not status or status[ins.name] then
+            transform_instances(new_instances, ins)
+        end
     end
 
     return new_instances
@@ -498,7 +487,7 @@ local function create_health_status(conf, checkers)
 
     if not has_healthy_instance then
         core.log.warn("all upstream nodes is unhealthy, use default")
-        return {all_unhealthy = true}
+        return {}
     end
 
     return {
@@ -508,51 +497,11 @@ local function create_health_status(conf, checkers)
 end
 
 
-local function apply_health_status(conf, health_status)
-    if not health_status or health_status.all_unhealthy then
-        for _, ins in ipairs(conf.instances) do
-            ins._healthy_dns_nodes = nil
-        end
-
-        return nil
-    end
-
-    for _, ins in ipairs(conf.instances) do
-        ins._healthy_dns_nodes = health_status.healthy_dns_nodes[ins.name]
-    end
-
-    return health_status.status
-end
-
-
--- Build the picker instance set from the healthy subset, reusing
--- create_health_status/apply_health_status so the per-instance health lookup
--- lives in exactly one place.
-local function fetch_health_instances(conf, checkers)
-    if not checkers then
-        return fetch_all_instances(conf)
-    end
-
-    local status = apply_health_status(conf, create_health_status(conf, checkers))
-    if not status then
-        return fetch_all_instances(conf)
-    end
-
-    local new_instances = core.table.new(0, #conf.instances)
-    for _, ins in ipairs(conf.instances) do
-        if status[ins.name] then
-            transform_instances(new_instances, ins)
-        end
-    end
-
-    return new_instances
-end
-
-
 local function get_health_status_ver(conf, checkers)
     local parts = core.table.new(#conf.instances, 0)
     for i, ins in ipairs(conf.instances) do
         local checker = checkers[ins.name]
+        -- A checker that has just appeared can still have status_ver 0.
         parts[i] = (ins._nodes_ver or 0) .. ":" .. (checker and checker.status_ver or "x")
     end
 
@@ -560,31 +509,18 @@ local function get_health_status_ver(conf, checkers)
 end
 
 
-local function fetch_health_status(conf, checkers, key, version)
-    if not checkers then
-        return nil
-    end
-
-    local health_status = lrucache_health_status(key, version .. "#" ..
-                                                 get_health_status_ver(conf, checkers),
-                                                 create_health_status, conf, checkers)
-    return apply_health_status(conf, health_status)
-end
-
-
-local function create_server_picker(conf, ups_tab, checkers)
+local function create_server_picker(conf, ups_tab, health_status)
     local picker = pickers[conf.balancer.algorithm] -- nil check
     if not picker then
         pickers[conf.balancer.algorithm] = require("apisix.balancer." .. conf.balancer.algorithm)
         picker = pickers[conf.balancer.algorithm]
     end
 
-    local new_instances
     if conf.balancer.algorithm == "chash" then
-        new_instances = fetch_all_instances(conf)
-    else
-        new_instances = fetch_health_instances(conf, checkers)
+        -- Keep the hash ring stable across health changes.
+        health_status = nil
     end
+    local new_instances = fetch_instances(conf, health_status)
     core.log.info("fetch health instances: ", core.json.delay_encode(new_instances))
 
     if #new_instances._priority_index > 1 then
@@ -618,7 +554,7 @@ end
 
 local function pick_target(ctx, conf, ups_tab)
     local checkers = {}
-    local res_conf = resource.fetch_latest_conf(conf._meta.parent.resource_key)
+    local res_conf = resource.fetch_latest_conf(conf._meta._parent.resource_key)
     if not res_conf then
         return nil, nil, "failed to fetch the parent config"
     end
@@ -627,30 +563,35 @@ local function pick_target(ctx, conf, ups_tab)
         if instance.checks then
             resolve_endpoint(instance)
             local resource_path = instance_resource_path(
-                                      conf._meta.parent.resource_key, i)
-            local resource_version = conf._meta.parent.resource_version
+                                      conf._meta._parent.resource_key, i)
+            local resource_version = conf._meta._parent.resource_version
             if instance._nodes_ver then
                 resource_version = resource_version .. instance._nodes_ver
             end
-            instances[i]._dns_nodes = instance._dns_nodes
-            instances[i]._nodes_ver = instance._nodes_ver
+            set_runtime_state(instances[i], "_dns_nodes", instance._dns_nodes)
+            set_runtime_state(instances[i], "_nodes_ver", instance._nodes_ver)
             local checker = healthcheck_manager.fetch_checker(resource_path, resource_version)
             checkers[instance.name] = checker
         end
     end
 
-    local health_status
+    local health_status, healthy_dns_nodes
     local version = plugin.conf_version(conf)
-    if conf.balancer.algorithm == "chash" then
-        health_status = fetch_health_status(conf, checkers, ctx.matched_route.key, version)
-    else
-        version = version .. "#" .. get_checkers_status_ver(conf, checkers)
+    if next(checkers) then
+        -- DNS generations start at one on each fresh configuration.
+        local health = lrucache_health_status(conf, get_health_status_ver(conf, checkers),
+                                              create_health_status, conf, checkers)
+        health_status = health.status
+        healthy_dns_nodes = health.healthy_dns_nodes
+        if conf.balancer.algorithm ~= "chash" then
+            version = health
+        end
     end
 
     local server_picker = ctx.server_picker
     if not server_picker then
         server_picker = lrucache_server_picker(ctx.matched_route.key, version,
-                                               create_server_picker, conf, ups_tab, checkers)
+                                               create_server_picker, conf, ups_tab, health_status)
     end
     if not server_picker then
         return nil, nil, "failed to fetch server picker"
@@ -700,7 +641,7 @@ local function pick_target(ctx, conf, ups_tab)
     ctx.balancer_server = instance_name
 
     local instance_conf = get_instance_conf(conf.instances, instance_name)
-    local nodes = instance_conf._healthy_dns_nodes or instance_conf._dns_nodes
+    local nodes = healthy_dns_nodes and healthy_dns_nodes[instance_name] or instance_conf._dns_nodes
     use_node_for_request(instance_conf, pick_request_node(nodes))
     return instance_name, instance_conf
 end

@@ -75,8 +75,8 @@ local function new_enforcer_if_need(conf)
     if conf.model_path and conf.policy_path then
         local model_path = conf.model_path
         local policy_path = conf.policy_path
-        if not conf.casbin_enforcer then
-            conf.casbin_enforcer = casbin:new(model_path, policy_path)
+        if not conf._casbin_enforcer then
+            plugin.set_runtime_state(conf, "_casbin_enforcer", casbin:new(model_path, policy_path))
         end
         return true
     end
@@ -84,8 +84,9 @@ local function new_enforcer_if_need(conf)
     if conf.model and conf.policy then
         local model = conf.model
         local policy = conf.policy
-        if not conf.casbin_enforcer then
-            conf.casbin_enforcer = casbin:newEnforcerFromText(model, policy)
+        if not conf._casbin_enforcer then
+            plugin.set_runtime_state(conf, "_casbin_enforcer",
+                                     casbin:newEnforcerFromText(model, policy))
         end
         return true
     end
@@ -119,8 +120,8 @@ function _M.rewrite(conf, ctx)
     local headers = core.request.headers(ctx)
     local username = headers[conf.username] or "anonymous"
 
-    if conf.casbin_enforcer then
-        if not conf.casbin_enforcer:enforce(username, path, method) then
+    if conf._casbin_enforcer then
+        if not conf._casbin_enforcer:enforce(username, path, method) then
             return 403, {message = "Access Denied"}
         end
     else

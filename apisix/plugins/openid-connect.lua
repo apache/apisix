@@ -32,6 +32,7 @@ local tostring          = tostring
 local pcall             = pcall
 local concat            = table.concat
 local unpack            = unpack
+local setmetatable      = setmetatable
 
 local ngx_encode_base64 = ngx.encode_base64
 
@@ -57,15 +58,23 @@ local MAX_AUTH_FLOW_RESTARTS = 3
 -- translation is the legacy session.cookie.lifetime alias from the
 -- lua-resty-session 3.x schema, which is mapped to absolute_timeout
 -- when the latter is unset.
+-- the session confs already warned about the deprecated alias, so that the
+-- warning is logged once per conf and not on every request
+local lifetime_alias_warned = setmetatable({}, {__mode = "k"})
+
 local function build_session_opts(session_conf)
     if not session_conf then
         return nil
     end
     if session_conf.cookie and session_conf.cookie.lifetime then
         if not session_conf.absolute_timeout then
+            if not lifetime_alias_warned[session_conf] then
+                lifetime_alias_warned[session_conf] = true
+                core.log.warn("session.cookie.lifetime is deprecated; ",
+                              "use session.absolute_timeout instead")
+            end
+            session_conf = core.table.clone(session_conf)
             session_conf.absolute_timeout = session_conf.cookie.lifetime
-            core.log.warn("session.cookie.lifetime is deprecated; ",
-                          "use session.absolute_timeout instead")
         end
     end
     return session_conf

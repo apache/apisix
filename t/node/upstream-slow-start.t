@@ -294,17 +294,9 @@ slow start finished for node 127.0.0.1:1981
                 )
             end
 
-            local function split(times)
-                local ports = {}
-                for _ = 1, times do
-                    local httpc = http.new()
-                    local res, err = httpc:request_uri(uri)
-                    if not res then
-                        return nil, err
-                    end
-                    ports[res.body] = (ports[res.body] or 0) + 1
-                end
-                return ports
+            local function request()
+                local res = assert(http.new():request_uri(uri))
+                assert(res.status == 200, res.status)
             end
 
             local one = [=[[{"host": "127.0.0.1", "port": 1980, "weight": 100}]]=]
@@ -335,37 +327,32 @@ slow start finished for node 127.0.0.1:1981
             end
 
             ngx.sleep(0.5)
-            split(1)
+            request()
 
             -- 1981 joins and starts its ramp
             set_upstream(two)
             ngx.sleep(0.5)
-            split(1)
+            request()
 
-            -- it leaves, and comes back well inside the 20s window
+            local dict = ngx.shared["upstream-slow-start"]
+            local upstream = require("apisix.upstream").get_by_id(2)
+            local key = upstream.resource_key .. "|127.0.0.1:1981"
+            local original_start = assert(dict:get(key))
+            assert(original_start > 0, "node did not start its first ramp")
+
             set_upstream(one)
             ngx.sleep(0.5)
-            split(1)
-            ngx.sleep(4)
+            request()
+
+            local readded_at = ngx.now()
             set_upstream(two)
             ngx.sleep(0.5)
+            request()
 
-            local ports, err = split(100)
-            if not ports then
-                ngx.say(err)
-                return
-            end
-
-            -- whatever answers on 1981 now may have just started, so it ramps
-            -- from the first bucket again, a twentieth of the weight. Resuming
-            -- the ramp it had would have given it about a quarter
-            local mature, warming = ports["1980"] or 0, ports["1981"] or 0
-            ngx.log(ngx.WARN, "re-added split: 1980=", mature, " 1981=", warming)
-            if warming >= 1 and warming <= 10 then
-                ngx.say("passed")
-            else
-                ngx.say("failed: 1980=", mature, " 1981=", warming)
-            end
+            local new_start = assert(dict:get(key))
+            assert(new_start >= readded_at, "node resumed its old ramp")
+            assert(new_start - original_start < 20, "first ramp already expired")
+            ngx.say("passed")
         }
     }
 --- response_body

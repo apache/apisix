@@ -21,7 +21,6 @@ local content_decode = require("apisix.utils.content-decode")
 local ngx = ngx
 local pairs = pairs
 local type = type
-local setmetatable = setmetatable
 local ngx_now = ngx.now
 local ngx_header = ngx.header
 local os_date = os.date
@@ -42,12 +41,6 @@ local lru_log_format = core.lrucache.new({
     ttl = 300, count = 512
 })
 
--- The compiled include_req_body_expr and include_resp_body_expr of each conf. They are
--- not kept in the conf: plugin.conf_version() encodes the conf with sorted keys, and
--- the matcher an exact IPv6 address in `ipmatch` compiles to mixes number and string
--- keys, so the encoding raised in the log phase of every request of that conf.
-local request_exprs = setmetatable({}, {__mode = "k"})
-local response_exprs = setmetatable({}, {__mode = "k"})
 
 
 local _M = {}
@@ -242,7 +235,7 @@ local function get_full_log(ngx, conf)
 
         if conf.include_req_body_expr then
 
-            local request_expr = request_exprs[conf]
+            local request_expr = conf._request_expr
             if not request_expr then
                 local err
                 request_expr, err = expr.new(conf.include_req_body_expr)
@@ -250,7 +243,7 @@ local function get_full_log(ngx, conf)
                     core.log.error('generate request expr err ' .. err)
                     return log
                 end
-                request_exprs[conf] = request_expr
+                plugin.set_runtime_state(conf, "_request_expr", request_expr)
             end
 
             local result = request_expr:eval(ctx.var)
@@ -407,7 +400,7 @@ function _M.collect_body(conf, ctx)
         local log_response_body = true
 
         if conf.include_resp_body_expr then
-            local response_expr = response_exprs[conf]
+            local response_expr = conf._response_expr
             if not response_expr then
                 local err
                 response_expr, err = expr.new(conf.include_resp_body_expr)
@@ -415,7 +408,7 @@ function _M.collect_body(conf, ctx)
                     core.log.error('generate response expr err ' .. err)
                     return
                 end
-                response_exprs[conf] = response_expr
+                plugin.set_runtime_state(conf, "_response_expr", response_expr)
             end
 
             if ctx.res_expr_eval_result == nil then
@@ -441,10 +434,12 @@ function _M.collect_body(conf, ctx)
                 return
             end
 
-            local decoder = content_decode.dispatch_decoder(response_encoding)
+            local decoder, unavailable = content_decode.dispatch_decoder(response_encoding)
             if not decoder then
-                core.log.warn("unsupported compression encoding type: ",
-                              response_encoding)
+                if not unavailable then
+                    core.log.warn("unsupported compression encoding type: ",
+                                  response_encoding)
+                end
                 ctx.resp_body = final_body
                 return
             end
@@ -477,7 +472,7 @@ function _M.check_and_read_req_body(conf, ctx)
     if conf.include_req_body then
         local should_read_body = true
         if conf.include_req_body_expr then
-            local request_expr = request_exprs[conf]
+            local request_expr = conf._request_expr
             if not request_expr then
                 local err
                 request_expr, err = expr.new(conf.include_req_body_expr)
@@ -485,7 +480,7 @@ function _M.check_and_read_req_body(conf, ctx)
                     core.log.error('generate request expr err ', err)
                     return
                 end
-                request_exprs[conf] = request_expr
+                plugin.set_runtime_state(conf, "_request_expr", request_expr)
             end
 
             local result = request_expr:eval(ctx.var)

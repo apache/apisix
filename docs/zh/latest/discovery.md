@@ -166,11 +166,14 @@ discovery:
     prefix: "/eureka/"
     fetch_interval: 30 # 从 eureka 中拉取数据的时间间隔，默认 30 秒
     weight: 100 # default weight for node
+    ssl_verify: true # 是否校验 https 地址的服务端证书，默认 true
     timeout:
       connect: 2000 # 连接 eureka 的超时时间，默认 2000ms
       send: 2000 # 向 eureka 发送数据的超时时间，默认 2000ms
       read: 5000 # 从 eureka 读数据的超时时间，默认 5000ms
 ```
+
+对于 `https` 地址，APISIX 默认使用 `apisix.ssl.ssl_trusted_certificate` 校验 eureka 的服务端证书。如果服务端使用私有 CA，请将该 CA 加入 `apisix.ssl.ssl_trusted_certificate`。将 `ssl_verify` 设置为 `false` 可跳过校验。`ssl_verify` 对 `http` 地址不生效。
 
 通过 `discovery.eureka.host` 配置 eureka 的服务器地址。
 

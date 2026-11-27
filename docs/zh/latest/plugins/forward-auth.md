@@ -45,6 +45,8 @@ import TabItem from '@theme/TabItem';
 - `X-Forwarded-Uri`：规范化后的 URI，包含查询字符串
 - `X-Forwarded-For`：源 IP
 
+请求头名称不区分大小写。向授权服务发送请求时，`extra_headers` 可以覆盖 APISIX 设置的请求头。仅当同名请求头尚未设置时，APISIX 才会从客户端复制 `request_headers` 中指定的请求头。
+
 :::note
 
 这些请求头描述的是客户端发送的原始请求。如果该路由同时使用 [proxy-rewrite](./proxy-rewrite.md) 改写请求，上游服务收到的是改写后的协议、方法、主机和 URI，而上述请求头仍然携带客户端的值。

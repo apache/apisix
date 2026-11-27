@@ -204,7 +204,7 @@ plugins:
 :::note 注意
 
 - 自定义插件优先级只会影响插件实例绑定的主体，不会影响该插件的所有实例。比如上面的插件配置属于路由 A，路由 B 上的插件 `serverless-post-function` 和 `serverless-post-function` 插件执行顺序不会受到影响，会使用默认优先级。
-- 自定义插件优先级不适用于 Consumer 上配置的插件的 `rewrite` 阶段。路由上配置的插件的 `rewrite` 阶段将会优先运行，然后才会运行 Consumer 上除 `auth` 类插件之外的其他插件的 `rewrite` 阶段。
+- 路由插件先执行 `rewrite`。识别 Consumer 后，APISIX 再执行 Consumer 或 Consumer Group 新增的非认证插件的 `rewrite`。两者配置同名插件时，使用 Consumer 的配置。已在生效路由中配置的插件会跳过第二轮执行，自定义优先级不会改变这一顺序。
 
 :::
 

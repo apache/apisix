@@ -42,15 +42,18 @@ add_block_preprocessor(sub {
                     ["text-gzip"] = {"gzip", gzip.deflate_gzip(text)},
                     ["stored-gzip"] = {"gzip", gzip.deflate_gzip(stored, nil, {level = 0})},
                     ["not-gzip"] = {"gzip", "not a gzip stream"},
+                    ["not-br"] = {"br", "not a brotli stream"},
+                    ["hello-br"] = {"br", ngx.decode_base64("jwWAaGVsbG8gYnJvdGxpAw==")},
                 }
-                local ok, brotli = pcall(require, "brotli")
-                if ok then
+                if ngx.var[1] == "text-br" then
+                    local brotli = require("resty.brotli")
                     local numbers = {}
                     for i = 1, 20000 do
                         numbers[i] = i
                     end
-                    bodies["text-br"] = {"br", brotli:compress(table.concat(numbers, " "))}
-                    bodies["not-br"] = {"br", "not a brotli stream"}
+                    local encoder = assert(brotli.new_encoder())
+                    local encoded = assert(encoder:write(table.concat(numbers, " ")))
+                    bodies["text-br"] = {"br", encoded .. assert(encoder:finish())}
                 end
 
                 local case = ngx.var[1]
@@ -640,6 +643,7 @@ contain with target
                 {uri = "/compressed/not-gzip"},
                 {uri = "/compressed/text-gzip-under", upstream = "/compressed/text-gzip",
                  max = 10000},
+                {uri = "/compressed/hello-br"},
                 {uri = "/compressed/empty-br"},
                 {uri = "/compressed/text-br", max = 5000},
                 {uri = "/compressed/text-br-under", upstream = "/compressed/text-br",
@@ -862,3 +866,52 @@ try decode compressed data err
 not a brotli stream
 --- error_log
 try decode compressed data err: brotli decode err
+
+
+
+=== TEST 24: a complete br response is decoded only for the log
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local _, _, wire, headers = t("/compressed/hello-br", ngx.HTTP_GET)
+            ngx.say(headers["Content-Encoding"], " ", ngx.encode_base64(wire))
+            local file = assert(io.open("file-logger-compressed.log"))
+            local last
+            for line in file:lines() do
+                last = line
+            end
+            file:close()
+            ngx.say(require("apisix.core").json.decode(last).response.body)
+        }
+    }
+--- response_body
+br jwWAaGVsbG8gYnJvdGxpAw==
+hello brotli
+
+
+
+=== TEST 25: a missing native library is diagnosed once for repeated br responses
+--- extra_init_by_lua_start
+    package.preload["resty.brotli"] = function()
+        error("libbrotlidec.so.1 unavailable", 0)
+    end
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            for i = 1, 2 do
+                local _, _, wire, headers = t("/compressed/hello-br", ngx.HTTP_GET)
+                ngx.say(headers["Content-Encoding"], " ", ngx.encode_base64(wire))
+            end
+        }
+    }
+--- response_body
+br jwWAaGVsbG8gYnJvdGxpAw==
+br jwWAaGVsbG8gYnJvdGxpAw==
+--- grep_error_log eval
+qr/failed to load resty\.brotli: libbrotlidec\.so\.1 unavailable/
+--- grep_error_log_out
+failed to load resty.brotli: libbrotlidec.so.1 unavailable
+--- no_error_log
+unsupported compression encoding type: br

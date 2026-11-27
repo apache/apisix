@@ -742,3 +742,45 @@ qr/\([^)]+\) while connecting to upstream/
 (111: Connection refused) while connecting to upstream
 (111: Connection refused) while connecting to upstream
 (111: Connection refused) while connecting to upstream
+
+
+
+=== TEST 20: array nodes keep their last resolved address during a DNS outage
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local resolver = require("apisix.core.resolver")
+            local resolve = resolver.parse_domain
+            local address = "127.0.0.1"
+            resolver.parse_domain = function(host)
+                if host == "traffic-split.example.test" then
+                    if address then
+                        return address
+                    end
+                    return nil, "test DNS unavailable"
+                end
+                return resolve(host)
+            end
+
+            local node = {host = "traffic-split.example.test", port = 1981, weight = 1}
+            local code, body = t("/apisix/admin/routes/dns", ngx.HTTP_PUT, {
+                uri = "/server_port",
+                priority = 100,
+                plugins = {["traffic-split"] = {rules = {{weighted_upstreams = {{
+                    weight = 1, upstream = {type = "roundrobin", nodes = {node}},
+                }}}}}},
+            })
+            assert(code < 300, body)
+            for i = 1, 2 do
+                local code, _, port = t("/server_port", ngx.HTTP_GET)
+                ngx.say(code, " ", code == 200 and tonumber(port))
+                address = nil
+            end
+        }
+    }
+--- response_body
+200 1981
+200 1981
+--- error_log
+test DNS unavailable

@@ -73,7 +73,8 @@
             "plugins/ai-prompt-decorator",
             "plugins/ai-prompt-template",
             "plugins/ai-rag",
-            "plugins/ai-request-rewrite"
+            "plugins/ai-request-rewrite",
+            "plugins/openapi-to-mcp"
           ]
         },
         {
@@ -240,8 +241,7 @@
             "plugins/dubbo-proxy",
             "plugins/mqtt-proxy",
             "plugins/websocket-proxy",
-            "plugins/http-dubbo",
-            "plugins/openapi-to-mcp"
+            "plugins/http-dubbo"
           ]
         }
       ]

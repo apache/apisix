@@ -18,9 +18,10 @@
 local ipairs       = ipairs
 local core         = require("apisix.core")
 local http         = require("resty.http")
+local http_headers = require("resty.http_headers")
 local http_client  = require("apisix.utils.http")
+local plugin       = require("apisix.plugin")
 local pairs        = pairs
-local setmetatable = setmetatable
 local type         = type
 local tostring     = tostring
 local unpack       = unpack
@@ -150,11 +151,10 @@ end
 
 
 local SLASH = str_byte("/")
-local parsed_uris = setmetatable({}, {__mode = "k"})
 
 
 local function parse_uri(conf)
-    local parsed = parsed_uris[conf]
+    local parsed = conf._parsed_uri
     if parsed then
         return parsed
     end
@@ -167,7 +167,7 @@ local function parse_uri(conf)
 
     -- a scheme-relative uri takes the scheme of the current request
     if str_byte(conf.uri, 1) ~= SLASH then
-        parsed_uris[conf] = parsed
+        plugin.set_runtime_state(conf, "_parsed_uri", parsed)
     end
 
     return parsed
@@ -247,13 +247,12 @@ end
 
 
 function _M.access(conf, ctx)
-    local auth_headers = {
-        ["X-Forwarded-Proto"] = core.request.get_scheme(ctx),
-        ["X-Forwarded-Method"] = core.request.get_method(),
-        ["X-Forwarded-Host"] = core.request.get_host(ctx),
-        ["X-Forwarded-Uri"] = ctx.var.request_uri,
-        ["X-Forwarded-For"] = core.request.get_remote_client_ip(ctx),
-    }
+    local auth_headers = http_headers.new()
+    auth_headers["X-Forwarded-Proto"] = core.request.get_scheme(ctx)
+    auth_headers["X-Forwarded-Method"] = core.request.get_method()
+    auth_headers["X-Forwarded-Host"] = core.request.get_host(ctx)
+    auth_headers["X-Forwarded-Uri"] = ctx.var.request_uri
+    auth_headers["X-Forwarded-For"] = core.request.get_remote_client_ip(ctx)
 
     if conf.request_method == "POST" then
         -- body is buffered and re-framed below, so only keep content-encoding.
@@ -281,7 +280,7 @@ function _M.access(conf, ctx)
     -- append headers that need to be get from the client request header
     if #conf.request_headers > 0 then
         for _, header in ipairs(conf.request_headers) do
-            if not auth_headers[header] then
+            if auth_headers[header] == nil then
                 auth_headers[header] = core.request.header(ctx, header)
             end
         end

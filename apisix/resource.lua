@@ -24,7 +24,7 @@ local require = require
 local _M = {}
 
 
--- resource types whose config may attach plugins via `_meta.parent`
+-- resource types whose config may attach plugins via `_meta._parent`
 -- (set by plugin.set_plugins_meta_parent) and thus reach fetch_latest_conf.
 -- Every type maps to its own "/<type>" top-level config key.
 local SUPPORTED_RESOURCE_TYPES = {
@@ -68,7 +68,7 @@ local function fetch_latest_conf(resource_path)
     end
 
     -- all resource types that can carry plugins (and thus reach here via
-    -- _meta.parent) map their type to their own top-level config key
+    -- _meta._parent) map their type to their own top-level config key
     if not SUPPORTED_RESOURCE_TYPES[resource_type] then
         log.error("unsupported resource type: ", resource_type)
         return nil
