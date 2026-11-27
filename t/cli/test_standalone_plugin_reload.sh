@@ -166,7 +166,7 @@ echo "passed: no etcd sync was attempted"
 # a plugin's api() routes live in a module-level registry that is rebuilt by
 # plugin.load(), so this tells a real reload from a per-route plugin lookup
 status_of_uri() {
-    curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:9080$1"
+    curl -s --max-time 1 -o /dev/null -w '%{http_code}' "http://127.0.0.1:9080$1"
 }
 
 wait_for_uri_status() {
@@ -189,10 +189,7 @@ timer_runs_since() {
     tail -c "+$1" logs/error.log | grep -c "run timer\[plugin#error-log-logger\]" || true
 }
 
-if [ "$(status_of_uri /apisix/status)" = "404" ]; then
-    echo "failed: node-status is loaded, its api route should be registered"
-    exit 1
-fi
+wait_for_uri_status /apisix/status 200 "node-status should register its api route after reload"
 
 # the background timer runs once a second, so this is bounded, not a race
 sleep 2
