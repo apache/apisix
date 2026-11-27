@@ -23,6 +23,7 @@ local response    = require("apisix.plugins.grpc-transcode.response")
 
 
 local plugin_name = "grpc-transcode"
+local default_max_req_body_size = 64 * 1024 * 1024
 
 local pb_option_def = {
     {   description = "enum as result",
@@ -47,6 +48,12 @@ local pb_option_def = {
 local schema = {
     type = "object",
     properties = {
+        max_req_body_size = {
+            type = "integer",
+            minimum = 1,
+            default = default_max_req_body_size,
+            description = "maximum JSON request body size in bytes buffered for transcoding",
+        },
         max_resp_body_size = {
             type = "integer",
             minimum = 1,
@@ -159,8 +166,8 @@ function _M.access(conf, ctx)
         return
     end
 
-    local ok, err, err_code = request(proto_obj, conf.service,
-                                      conf.method, conf.pb_option, conf.deadline)
+    local max_req_body_size = conf.max_req_body_size or default_max_req_body_size
+    local ok, err, err_code = request(proto_obj, conf, max_req_body_size)
     if not ok then
         core.log.error("transform request error: ", err)
         return err_code

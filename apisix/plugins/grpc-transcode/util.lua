@@ -87,23 +87,29 @@ function _M.set_options(proto, options)
 end
 
 
-local function get_request_table()
+function _M.get_request_table(max_req_body_size)
     local method = ngx.req.get_method()
     local content_type = ngx.req.get_headers()["Content-Type"] or ""
     if string.find(content_type, "application/json", 1, true) and
         (method == "POST" or method == "PUT" or method == "PATCH")
     then
-        local req_body, _ = core.request.get_body()
+        local req_body, err, kind = core.request.get_body(max_req_body_size)
+        if err then
+            return nil, err, kind == "too_large" and 413 or 500
+        end
         if req_body then
             local data, _ = json.decode(req_body)
             if data then
                 return data
             end
         end
+    else
+        ngx.req.read_body()
     end
 
     if method == "POST" then
-        return ngx.req.get_post_args()
+        -- get_post_args cannot read a body buffered in a temporary file
+        return ngx.req.get_post_args() or {}
     end
 
     return ngx.req.get_uri_args()
@@ -137,9 +143,6 @@ function _M.map_message(field, default_values, request_table, real_key)
 
     local request = {}
     local sub, err
-    if not request_table then
-        request_table = get_request_table()
-    end
 
     for name, _, field_type in pb.fields(field) do
         local _, _, ty = pb.type(field_type)

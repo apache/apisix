@@ -24,9 +24,9 @@ local string = string
 local table  = table
 local pcall = pcall
 local tonumber = tonumber
-local req_read_body = ngx.req.read_body
 
-return function (proto, service, method, pb_option, deadline, default_values)
+return function (proto, conf, max_req_body_size, default_values)
+    local service, method = conf.service, conf.method
     core.log.info("proto: ", core.json.delay_encode(proto, true))
     local m = util.find_method(proto, service, method)
     if not m then
@@ -34,12 +34,15 @@ return function (proto, service, method, pb_option, deadline, default_values)
                       .. " end", 503
     end
 
-    req_read_body()
+    local request_table, err, status = util.get_request_table(max_req_body_size)
+    if not request_table then
+        return false, err, status or 400
+    end
 
     local pb_old_state = pb.state(proto.pb_state)
-    util.set_options(proto, pb_option)
+    util.set_options(proto, conf.pb_option)
 
-    local map_message = util.map_message(m.input_type, default_values or {})
+    local map_message = util.map_message(m.input_type, default_values or {}, request_table)
     local ok, encoded = pcall(pb.encode, m.input_type, map_message)
     pb.state(pb_old_state)
 
@@ -63,7 +66,7 @@ return function (proto, service, method, pb_option, deadline, default_values)
     ngx.req.set_uri_args({})
     ngx.req.set_body_data(message)
 
-    local dl = tonumber(deadline)
+    local dl = tonumber(conf.deadline)
     if dl~= nil and dl > 0 then
         ngx.req.set_header("grpc-timeout",  dl .. "m")
     end
