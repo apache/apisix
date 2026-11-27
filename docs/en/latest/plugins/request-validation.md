@@ -55,6 +55,12 @@ At least one of `header_schema` or `body_schema` should be filled in.
 
 :::
 
+:::note
+
+`header_schema` is checked against the first 100 request headers, the default limit of [`ngx.req.get_headers()`](https://github.com/openresty/lua-nginx-module#ngxreqget_headers). Headers after the 100th are not validated and are still forwarded to the Upstream. To keep a header from reaching the Upstream, remove it with the `headers.remove` attribute of the [`proxy-rewrite`](./proxy-rewrite.md) Plugin.
+
+:::
+
 ## Examples
 
 The examples below demonstrate how you can configure `request-validation` for different scenarios.
