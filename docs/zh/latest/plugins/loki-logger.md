@@ -47,6 +47,7 @@ description: loki-logger 插件通过 Loki HTTP API /loki/api/v1/push 将请求�
 | tenant_id | string | 否 | fake | | Loki 租户 ID。根据 Loki 的 [多租户文档](https://grafana.com/docs/loki/latest/operations/multi-tenancy/#multi-tenancy)，在单租户下默认值设置为 `fake`。 |
 | headers | object | 否 |  |  | 请求头键值对（对 `X-Scope-OrgID` 和 `Content-Type` 的设置将会被忽略）。 |
 | log_labels | object | 否 | {job = "apisix"} | | Loki 日志标签。支持 [NGINX 变量](https://nginx.org/en/docs/varindex.html) 和值中的常量字符串。变量应以 `$` 符号为前缀。例如，标签可以是 `{"origin" = "apisix"}` 或 `{"origin" = "$remote_addr"}`。|
+| structured_metadata | object | 否 |  | | 附加到每条日志的 Loki [结构化元数据](https://grafana.com/docs/loki/latest/get-started/labels/structured-metadata/)，以键值对形式配置。适用于请求 ID、客户端 IP 等不适合作为标签的高基数字段。值支持 [NGINX 变量](https://nginx.org/en/docs/varindex.html) 和常量字符串，例如 `{"trace_id": "$http_x_trace_id"}`。解析结果为空字符串的键不会被发送。需要 Loki 版本支持结构化元数据（Loki 3.0 起默认启用）。|
 | ssl_verify | boolean | 否 | false | | 如果为 true，则验证 Loki 的 SSL 证书。|
 | timeout | integer | 否 | 3000 | [1, 60000] | Loki 服务 HTTP 调用的超时时间（以毫秒为单位）。|
 | keepalive | boolean | 否 | true | | 如果为 true，则保持连接以应对多个请求。|

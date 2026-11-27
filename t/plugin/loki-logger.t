@@ -681,3 +681,207 @@ apisix:
 --- response_body
 Basic ZWxhc3RpYzoxMjM0NTY=
 encrypted
+
+
+
+=== TEST 23: structured_metadata schema
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.loki-logger")
+            local cases = {
+                {endpoint_addrs = {"http://127.0.0.1:8199"},
+                 structured_metadata = {trace_id = "$http_x_trace_id"}},
+                {endpoint_addrs = {"http://127.0.0.1:8199"}, structured_metadata = "trace_id"},
+                {endpoint_addrs = {"http://127.0.0.1:8199"}, structured_metadata = {trace_id = ""}},
+            }
+
+            for _, case in ipairs(cases) do
+                local ok, err = plugin.check_schema(case)
+                ngx.say(ok and "done" or err)
+            end
+        }
+    }
+--- response_body
+done
+property "structured_metadata" validation failed: wrong type: expected object, got string
+property "structured_metadata" validation failed: failed to validate trace_id (matching ".*"): string too short, expected at least 1, got 0
+
+
+
+=== TEST 24: setup route (with structured_metadata)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "loki-logger": {
+                            "endpoint_addrs": ["http://127.0.0.1:12011"],
+                            "endpoint_uri": "/loki/api/v1/push",
+                            "structured_metadata": {
+                                "client_ip": "$remote_addr",
+                                "trace_id": "$http_x_trace_id"
+                            },
+                            "batch_max_size": 2
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 25: structured metadata is sent per line, empty values are dropped
+--- http_config
+    server {
+        listen 12011;
+
+        location /loki/api/v1/push {
+            content_by_lua_block {
+                local cjson = require("cjson.safe")
+                ngx.req.read_body()
+                local body = cjson.decode(ngx.req.get_body_data())
+
+                for _, stream in ipairs(body.streams) do
+                    for i, value in ipairs(stream.values) do
+                        if value[2]:find("loki_", 1, true) then
+                            ngx.log(ngx.ERR, "internal field leaked into log line: ", value[2])
+                        end
+
+                        local metadata = value[3]
+                        local parts = {}
+                        if metadata then
+                            local keys = {}
+                            for k in pairs(metadata) do
+                                keys[#keys + 1] = k
+                            end
+                            table.sort(keys)
+                            for _, k in ipairs(keys) do
+                                parts[#parts + 1] = k .. "=" .. metadata[k]
+                            end
+                        end
+
+                        ngx.log(ngx.WARN, "loki value ", i, ": elements=", #value,
+                                " metadata=", table.concat(parts, ","))
+                    end
+                end
+
+                ngx.status = 204
+            }
+        }
+    }
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local req_headers = {
+                { ["x-trace-id"] = "abc123" },
+                {},
+            }
+            for _, headers in ipairs(req_headers) do
+                local httpc = http.new()
+                local res, err = httpc:request_uri(
+                    "http://127.0.0.1:" .. ngx.var.server_port .. "/hello",
+                    { headers = headers })
+                assert(res, "request failed: " .. (err or ""))
+                assert(res.status == 200, "unexpected status: " .. res.status)
+            end
+
+            ngx.sleep(1)
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+--- error_log
+loki value 1: elements=3 metadata=client_ip=127.0.0.1,trace_id=abc123
+loki value 2: elements=3 metadata=client_ip=127.0.0.1
+--- no_error_log
+internal field leaked into log line
+
+
+
+=== TEST 26: no structured_metadata keeps two-element values
+--- http_config
+    server {
+        listen 12011;
+
+        location /loki/api/v1/push {
+            content_by_lua_block {
+                local cjson = require("cjson.safe")
+                ngx.req.read_body()
+                local body = cjson.decode(ngx.req.get_body_data())
+
+                for _, stream in ipairs(body.streams) do
+                    for i, value in ipairs(stream.values) do
+                        ngx.log(ngx.WARN, "loki value ", i, ": elements=", #value)
+                    end
+                end
+
+                ngx.status = 204
+            }
+        }
+    }
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "loki-logger": {
+                            "endpoint_addrs": ["http://127.0.0.1:12011"],
+                            "batch_max_size": 1
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local http = require("resty.http")
+            local httpc = http.new()
+            local res, err = httpc:request_uri(
+                "http://127.0.0.1:" .. ngx.var.server_port .. "/hello")
+            assert(res, "request failed: " .. (err or ""))
+
+            ngx.sleep(1)
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+--- error_log
+loki value 1: elements=2
+--- no_error_log
+elements=3
+[error]
