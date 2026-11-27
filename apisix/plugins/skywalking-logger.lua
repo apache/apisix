@@ -38,6 +38,7 @@ local schema = {
         log_format = {type = "object"},
         log_format_extra = {type = "object"},
         timeout = {type = "integer", minimum = 1, default = 3},
+        ssl_verify = {type = "boolean", default = true},
         include_req_body = {type = "boolean", default = false},
         include_req_body_expr = {
             type = "array",
@@ -89,6 +90,7 @@ function _M.check_schema(conf, schema_type)
     end
     local check = {"endpoint_addr"}
     core.utils.check_https(check, conf, plugin_name)
+    core.utils.check_tls_bool({"ssl_verify"}, conf, plugin_name)
     return core.schema.check(schema, conf)
 end
 
@@ -104,7 +106,13 @@ local function send_http_data(conf, log_message)
 
     local httpc = http.new()
     httpc:set_timeout(conf.timeout * 1000)
-    local ok, err = httpc:connect(host, port)
+    local ok, err = httpc:connect({
+        scheme = url_decoded.scheme,
+        host = host,
+        port = port,
+        ssl_server_name = host,
+        ssl_verify = conf.ssl_verify ~= false,
+    })
 
     if not ok then
         return false, "failed to connect to host[" .. host .. "] port["
