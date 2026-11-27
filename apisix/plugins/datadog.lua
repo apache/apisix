@@ -254,8 +254,8 @@ function _M.log(conf, ctx)
         if entry.service_id and entry.service_id ~= "" then
             local svc = service_fetch(entry.service_id)
 
-            if svc and svc.value.name ~= "" then
-                entry.service_id =  svc.value.name
+            if svc and svc.value.name and svc.value.name ~= "" then
+                entry.service_id = svc.value.name
             end
         end
 
