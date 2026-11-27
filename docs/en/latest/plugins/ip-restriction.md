@@ -47,6 +47,7 @@ The `ip-restriction` Plugin supports restricting access to Upstream resources by
 | blacklist     | array[string] | False    |                                  |              | List of IPs or CIDR ranges to deny. Exactly one of `whitelist` or `blacklist` must be configured.  |
 | message       | string        | False    | "Your IP address is not allowed" | [1, 1024]    | Message returned to the client when the IP is blocked.                                         |
 | response_code | integer       | False    | 403                              | [403, 404]   | HTTP response code returned when the request is rejected due to IP address restriction.        |
+| phase         | string        | False    | "access"                         | ["rewrite", "access"] | Phase in which the check runs. Set to `rewrite` to reject requests before rewrite-phase authentication Plugins, such as `openid-connect`, `key-auth` or `jwt-auth`, act on them. For example, a blocked client is then not redirected to the identity provider's login page. An `ip-restriction` configured on a Consumer still applies after authentication, but cannot loosen a Route's `rewrite` check. Ignored by the stream Plugin. |
 
 ## Examples
 
@@ -477,3 +478,224 @@ curl -i "http://127.0.0.1:9080/anything?realip=192.168.10.24"
 ```
 
 You should receive an `HTTP/1.1 403 Forbidden` response.
+
+### Reject Requests Before Authentication
+
+By default, `ip-restriction` runs in the `access` phase, after rewrite-phase authentication Plugins such as `key-auth`, `jwt-auth` or `openid-connect`. The following example demonstrates how you can set `phase` to `rewrite`, so that requests from IPs outside the whitelist are rejected before authentication. With `openid-connect`, this means a blocked client is not redirected to the identity provider's login page.
+
+<Tabs
+groupId="api"
+defaultValue="admin-api"
+values={[
+{label: 'Admin API', value: 'admin-api'},
+{label: 'ADC', value: 'adc'},
+{label: 'Ingress Controller', value: 'aic'}
+]}>
+
+<TabItem value="admin-api">
+
+Create a Route with the `key-auth` and `ip-restriction` Plugins, and run the IP check in the `rewrite` phase:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "ip-restriction-route",
+    "uri": "/anything",
+    "plugins": {
+      "key-auth": {},
+      "ip-restriction": {
+        "whitelist": [
+          "192.168.0.1/24"
+        ],
+        "phase": "rewrite"
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
+    }
+  }'
+```
+
+</TabItem>
+
+<TabItem value="adc">
+
+```yaml title="adc.yaml"
+services:
+  - name: ip-restriction-service
+    routes:
+      - name: ip-restriction-route
+        uris:
+          - /anything
+        plugins:
+          key-auth: {}
+          ip-restriction:
+            whitelist:
+              - "192.168.0.1/24"
+            phase: rewrite
+    upstream:
+      type: roundrobin
+      nodes:
+        - host: httpbin.org
+          port: 80
+          weight: 1
+```
+
+Synchronize the configuration to the gateway:
+
+```shell
+adc sync -f adc.yaml
+```
+
+</TabItem>
+
+<TabItem value="aic">
+
+<Tabs
+groupId="k8s-api"
+defaultValue="gateway-api"
+values={[
+{label: 'Gateway API', value: 'gateway-api'},
+{label: 'APISIX Ingress Controller', value: 'apisix-crd'}
+]}>
+
+<TabItem value="gateway-api">
+
+```yaml title="ip-restriction-ic.yaml"
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  type: ExternalName
+  externalName: httpbin.org
+---
+apiVersion: apisix.apache.org/v1alpha1
+kind: PluginConfig
+metadata:
+  namespace: aic
+  name: ip-restriction-plugin-config
+spec:
+  plugins:
+    - name: key-auth
+      config:
+        _meta:
+          disable: false
+    - name: ip-restriction
+      config:
+        whitelist:
+          - "192.168.0.1/24"
+        phase: rewrite
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  namespace: aic
+  name: ip-restriction-route
+spec:
+  parentRefs:
+    - name: apisix
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /anything
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: apisix.apache.org
+            kind: PluginConfig
+            name: ip-restriction-plugin-config
+      backendRefs:
+        - name: httpbin-external-domain
+          port: 80
+```
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f ip-restriction-ic.yaml
+```
+
+</TabItem>
+
+<TabItem value="apisix-crd">
+
+```yaml title="ip-restriction-ic.yaml"
+apiVersion: apisix.apache.org/v2
+kind: ApisixUpstream
+metadata:
+  namespace: aic
+  name: httpbin-external-domain
+spec:
+  ingressClassName: apisix
+  externalNodes:
+  - type: Domain
+    name: httpbin.org
+---
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  namespace: aic
+  name: ip-restriction-route
+spec:
+  ingressClassName: apisix
+  http:
+    - name: ip-restriction-route
+      match:
+        paths:
+          - /anything
+      upstreams:
+      - name: httpbin-external-domain
+      plugins:
+      - name: key-auth
+        enable: true
+        config:
+          _meta:
+            disable: false
+      - name: ip-restriction
+        enable: true
+        config:
+          whitelist:
+            - "192.168.0.1/24"
+          phase: rewrite
+```
+
+Apply the configuration to your cluster:
+
+```shell
+kubectl apply -f ip-restriction-ic.yaml
+```
+
+</TabItem>
+
+</Tabs>
+
+</TabItem>
+
+</Tabs>
+
+Send a request to the Route without an API key:
+
+```shell
+curl -i "http://127.0.0.1:9080/anything"
+```
+
+If your IP is not allowed, you should receive an `HTTP/1.1 403 Forbidden` response before `key-auth` runs:
+
+```text
+{"message":"Your IP address is not allowed"}
+```
+
+Without `"phase": "rewrite"`, the same request would receive an `HTTP/1.1 401 Unauthorized` response from `key-auth` instead.
+
+:::caution
+
+In a Global Rule, the `rewrite` phase runs before the Plugins of the Route and Service. If the client IP is set by the `real-ip` Plugin on a Route or Service, a Global Rule `ip-restriction` with `"phase": "rewrite"` checks the address before that change, such as the load balancer's IP. Set the client IP with the NGINX `real_ip_*` directives or a Global Rule `real-ip` Plugin instead.
+
+:::

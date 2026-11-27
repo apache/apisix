@@ -20,7 +20,30 @@ local base = require("apisix.plugins.ip-restriction.init")
 
 -- avoid unexpected data sharing
 local ip_restriction = core.table.clone(base)
-ip_restriction.access = base.restrict
+
+
+function ip_restriction.rewrite(conf, ctx)
+    if conf.phase == "rewrite" then
+        -- remember the conf, so the access phase does not check it twice
+        local checked = ctx._ip_restriction_checked
+        if not checked then
+            checked = {}
+            ctx._ip_restriction_checked = checked
+        end
+        checked[conf] = true
+        return base.restrict(conf, ctx)
+    end
+end
+
+
+-- Also the fallback for a "rewrite" conf that did not run in the rewrite phase,
+-- such as a consumer conf merged into the route after authentication.
+function ip_restriction.access(conf, ctx)
+    local checked = ctx._ip_restriction_checked
+    if not (checked and checked[conf]) then
+        return base.restrict(conf, ctx)
+    end
+end
 
 
 return ip_restriction
