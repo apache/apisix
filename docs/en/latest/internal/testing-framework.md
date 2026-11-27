@@ -319,7 +319,10 @@ Note that before adding new methods to `t/lib/server.lua`, make sure that you ca
 
 Assume your current work directory is the root of the apisix source code.
 
-1. Git clone the latest [test-nginx](https://github.com/openresty/test-nginx) to `../test-nginx`.
+1. Clone [Test::Nginx](https://github.com/openresty/test-nginx) to `../test-nginx` and check
+   out the revision pinned in the [Linux OpenResty CI runner](https://github.com/apache/apisix/blob/master/ci/linux_openresty_common_runner.sh).
+   The Dev Container checks out this revision to `test-nginx` inside the APISIX checkout.
+   The latest Test::Nginx can generate duplicate `http2` directives for APISIX tests that use `--- http2`.
 2. Run the test: `prove -I. -I../test-nginx/inc -I../test-nginx/lib -r t/path/to/file.t`.
 
 ## Tips
