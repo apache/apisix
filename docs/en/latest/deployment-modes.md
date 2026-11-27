@@ -154,6 +154,30 @@ deployment:
 
 This makes it possible to disable the Admin API and discover configuration changes and reloads based on the local file system.
 
+##### Route File Location and Updates
+
+The `-c` option in `apisix start -c <path>` selects the startup `config.yaml`.
+By default, APISIX still watches `conf/apisix.yaml` or `conf/apisix.json`
+under the APISIX prefix, depending on the selected provider. When you set
+`APISIX_PROFILE=prod`, the watched file is `conf/apisix-prod.yaml` or
+`conf/apisix-prod.json`.
+
+On Kubernetes, mount the ConfigMap as a directory volume, for example at
+`/etc/apisix/routes`, and project the route file with the filename
+`apisix.yaml`. Before starting APISIX, link the watched file in its writable
+`conf` directory to the projected file. For the default container prefix and
+YAML provider, use this command.
+
+```shell
+ln -sfn /etc/apisix/routes/apisix.yaml /usr/local/apisix/conf/apisix.yaml
+```
+
+Keep `#END` as the last line of the YAML file. For JSON, use `apisix.json`
+in both paths. Kubernetes eventually updates the files in a ConfigMap
+directory volume. A single-file `subPath` mount keeps its initial version
+while the container runs.
+[ConfigMap update behavior](https://kubernetes.io/docs/concepts/configuration/configmap/#mounted-configmaps-are-updated-automatically)
+
 #### API-driven
 
 The API-drive standalone mode is designed specifically for the APISIX Ingress Controller and is primarily intended for integration with ADC. APISIX provides an official, end-to-end, stateless Ingress Controller implementation. Do not use this feature directly unless you fully understand its internal workings and behavior.
