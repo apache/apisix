@@ -458,3 +458,55 @@ GET /t
 failed
 --- error_log
 property \"secret\" is required when using HS based algorithms
+
+
+
+=== TEST 12: accept nbf at the current second plus the consumer's clock leeway
+--- apisix_yaml
+consumers:
+  - username: strict
+    plugins:
+      jwt-auth:
+        key: strict
+        secret: test-secret
+  - username: tolerant
+    plugins:
+      jwt-auth:
+        key: tolerant
+        secret: test-secret
+        lifetime_grace_period: 2
+routes:
+  - id: 1
+    uri: /hello
+    plugins:
+      serverless-pre-function:
+        phase: rewrite
+        functions:
+          - |
+            return function()
+                -- Sign within the same rewrite phase as verification to share nginx's cached time.
+                local parser = require("apisix.plugins.jwt-auth.parser")
+                local payload = {
+                    key = ngx.var.arg_key,
+                    nbf = ngx.time() + tonumber(ngx.var.arg_offset),
+                }
+                local token = assert(parser.encode("HS256", "test-secret", nil, payload))
+                ngx.req.set_header("Authorization", token)
+            end
+      jwt-auth: {}
+    upstream:
+      type: roundrobin
+      nodes:
+        "127.0.0.1:1980": 1
+#END
+--- pipelined_requests eval
+["GET /hello?key=strict&offset=-1", "GET /hello?key=strict&offset=0",
+ "GET /hello?key=strict&offset=1", "GET /hello?key=tolerant&offset=1",
+ "GET /hello?key=tolerant&offset=2", "GET /hello?key=tolerant&offset=3"]
+--- error_code eval
+[200, 200, 401, 200, 200, 401]
+--- response_body eval
+["hello world\n", "hello world\n", "{\"message\":\"failed to verify jwt\"}\n",
+ "hello world\n", "hello world\n", "{\"message\":\"failed to verify jwt\"}\n"]
+--- no_error_log
+lua entry thread aborted

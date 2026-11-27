@@ -191,7 +191,7 @@ local claims_checker = {
         type = "number",
         check = function(nbf, conf)
             local clock_leeway = conf and conf.lifetime_grace_period or 0
-            if nbf < ngx_time() + clock_leeway then
+            if nbf <= ngx_time() + clock_leeway then
                 return true
             end
             return false, string_fmt("'nbf' claim not valid until %s", http_time(nbf))
