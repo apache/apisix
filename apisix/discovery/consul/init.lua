@@ -22,6 +22,8 @@ local consul_client      = require("apisix.discovery.consul.client")
 local util               = require("apisix.cli.util")
 local ipairs             = ipairs
 local pairs              = pairs
+local setmetatable       = setmetatable
+local sort               = table.sort
 local error              = error
 local ngx                = ngx
 local tonumber           = tonumber
@@ -50,6 +52,20 @@ local nodes_cache = core.lrucache.new({
     neg_ttl = 1,
     neg_count = 64,
 })
+
+-- Per-worker cache of the nodes handed to upstreams when metadata is kept,
+-- versioned by the cached node list they were built from.
+local upstream_nodes_cache = core.lrucache.new({
+    ttl = 1,
+    count = 1024,
+    invalid_stale = true,
+})
+
+-- cache key suffix of each discovery_args.metadata table, so the key is not
+-- rebuilt on every request
+local metadata_key_suffix = setmetatable({}, {__mode = "k"})
+-- discovery_args.metadata tables already warned about
+local ignored_metadata = setmetatable({}, {__mode = "k"})
 
 local default_skip_services = {"consul"}
 
@@ -517,11 +533,57 @@ function _M.get_nodes(key, metadata)
 end
 
 
+local function get_metadata_key_suffix(metadata)
+    local suffix = metadata_key_suffix[metadata]
+    if suffix then
+        return suffix
+    end
+
+    local keys = core.table.new(4, 0)
+    for k in pairs(metadata) do
+        core.table.insert(keys, k)
+    end
+    sort(keys)
+
+    local parts = core.table.new(#keys * 2, 0)
+    for _, k in ipairs(keys) do
+        core.table.insert(parts, k)
+        core.table.insert(parts, metadata[k])
+    end
+
+    suffix = "#" .. core.json.encode(parts)
+    metadata_key_suffix[metadata] = suffix
+    return suffix
+end
+
+
+-- Filter the nodes by metadata (when given) and drop their metadata field.
+-- The metadata tables are decoded again every time the cached node list is
+-- refreshed, so leaving them on the nodes would make the upstream see a node
+-- change on every refresh.
+local function build_upstream_nodes(nodes, metadata)
+    local res = core.table.new(#nodes, 0)
+    for _, node in ipairs(nodes) do
+        if match_metadata(node.metadata, metadata) then
+            if node.metadata == nil then
+                core.table.insert(res, node)
+            else
+                local n = core.table.clone(node)
+                n.metadata = nil
+                core.table.insert(res, n)
+            end
+        end
+    end
+    return res
+end
+
+
 -- ─── Standard discovery interface ─────────────────────────────────────
 
-function _M.nodes(service_name)
+function _M.nodes(service_name, discovery_args)
     local default_reg = registries["default"]
     local default_svc = default_reg and default_reg.default_service
+    local metadata = discovery_args and discovery_args.metadata
 
     -- reuse the cached fetch with "default/" prefix for BC
     local nodes, err = nodes_cache("default/" .. service_name, nil,
@@ -532,10 +594,51 @@ function _M.nodes(service_name)
         return default_svc and {default_svc}
     end
 
+    local preserve_metadata = default_reg and default_reg.preserve_metadata
+    if metadata and not preserve_metadata then
+        if not ignored_metadata[metadata] then
+            ignored_metadata[metadata] = true
+            log.warn("discovery_args.metadata of service ", service_name,
+                     " is ignored, set discovery.consul.preserve_metadata",
+                     " to true to filter nodes by metadata")
+        end
+    end
+
+    if preserve_metadata then
+        local cache_key = "default/" .. service_name
+        if metadata then
+            cache_key = cache_key .. get_metadata_key_suffix(metadata)
+        end
+
+        nodes = upstream_nodes_cache(cache_key, nodes, build_upstream_nodes,
+                                     nodes, metadata)
+    end
+
     log.info("process id: ", ngx_worker_id(), ", [", service_name, "] = ",
         json_delay_encode(nodes, true))
 
     return nodes
+end
+
+
+function _M.check_discovery_args(discovery_args, _, in_dp)
+    if not (discovery_args and discovery_args.metadata) then
+        return true
+    end
+
+    -- on the data plane, nodes() warns and ignores the filter instead of
+    -- dropping the whole upstream
+    if in_dp then
+        return true
+    end
+
+    local consul_conf = local_conf.discovery and local_conf.discovery.consul
+    if not (consul_conf and consul_conf.preserve_metadata) then
+        return false, "discovery_args.metadata requires "
+                      .. "discovery.consul.preserve_metadata to be true"
+    end
+
+    return true
 end
 
 
@@ -596,7 +699,9 @@ function _M.init_worker()
     conf.id = "default"
 
     -- create default registry on all workers so nodes()/control_api() work
-    local reg = _M.create_registry(conf)
+    local reg = _M.create_registry(conf, {
+        preserve_metadata = conf.preserve_metadata,
+    })
 
     -- only the privileged agent runs timers / writes to shared dict
     if process.type() ~= "privileged agent" then
