@@ -439,10 +439,11 @@ uninstall:
 
 ### test : Run the test case
 .PHONY: test
+test: TEST_NGINX_LIB := $(if $(wildcard test-nginx/lib/Test/Nginx/Socket.pm),test-nginx/lib,../test-nginx/lib)
 test: runtime
 	@$(call func_echo_status, "$@ -> [ Start ]")
 	$(ENV_GIT) submodule update --init --recursive
-	prove -I../test-nginx/lib -I./ -r -s t/
+	prove -I"$(TEST_NGINX_LIB)" -I./ -r -s t/
 	@$(call func_echo_success_status, "$@ -> [ Done ]")
 
 
