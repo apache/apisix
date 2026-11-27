@@ -60,7 +60,10 @@ location /t {
                 local dict = ngx.shared["upstream-healthcheck"]
                 assert(dict:get(self.TARGET_LIST), "the shared target list was already absent")
                 dict:delete(self.TARGET_LIST)
-                assert(#state.targets() == 0, "a protected registration list is still readable")
+                local targets, err = require("resty.healthcheck").get_target_list(
+                    self.name, "upstream-healthcheck")
+                assert(targets, err)
+                assert(#targets == 0, "a protected registration list is still readable")
                 evicted = true
             end
             return remove_target(self, ip, port, ...)
