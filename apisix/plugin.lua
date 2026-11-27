@@ -19,6 +19,7 @@ local core          = require("apisix.core")
 local config_util   = require("apisix.core.config_util")
 local enable_debug  = require("apisix.debug").enable_debug
 local wasm          = require("apisix.wasm")
+local registry      = require("apisix.plugin_registry")
 local expr          = require("resty.expr.v1")
 local secret        = require("apisix.secret")
 
@@ -210,9 +211,11 @@ local function unload_plugin(name, plugin_type)
 end
 
 
-local function load_plugin(name, plugins_list, plugin_type)
+local function load_plugin(name, plugins_list, plugin_type, candidate)
     local ok, plugin
-    if plugin_type == PLUGIN_TYPE_HTTP_WASM  then
+    if candidate then
+        ok, plugin = true, candidate
+    elseif plugin_type == PLUGIN_TYPE_HTTP_WASM  then
         -- for wasm plugin, we pass the whole attrs instead of name
         ok, plugin = wasm.require(name)
         name = name.name
@@ -457,6 +460,8 @@ function _M.load(config)
             core.log.error("failed to load stream plugins: ", err)
         end
     end
+
+    registry.reapply()
 
     -- for test
     return local_plugins
@@ -918,10 +923,25 @@ function _M.init_prometheus()
 end
 
 
+local function activate_registry_plugin(release)
+    local subsystem, name = registry.split(release.id)
+    if subsystem == "stream" then
+        return registry.activate(release, name, stream_local_plugins, stream_local_plugins_hash,
+                                 PLUGIN_TYPE_STREAM, load_plugin, sort_plugin, _M)
+    end
+    if subsystem == "http" and is_http then
+        return registry.activate(release, name, local_plugins, local_plugins_hash,
+                                 PLUGIN_TYPE_HTTP, load_plugin, sort_plugin, _M)
+    end
+    return true
+end
+
+
 function _M.init_worker()
     -- someone's plugin needs to be initialized after prometheus
     -- see https://github.com/apache/apisix/issues/3286
     _M.load()
+    registry.init_worker(activate_registry_plugin)
 
     if local_conf and not local_conf.apisix.enable_admin then
         init_plugins_syncer()

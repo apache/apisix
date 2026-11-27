@@ -16,6 +16,7 @@
 --
 local require   = require
 local core = require("apisix.core")
+local registry = require("apisix.admin.plugin_registry")
 local check_schema = require("apisix.plugin").check_schema
 local ipairs    = ipairs
 local table_sort = table.sort
@@ -26,6 +27,15 @@ local plugin_get_http = require("apisix.plugin").get
 local plugin_get_stream = require("apisix.plugin").get_stream
 local encrypt_conf = require("apisix.plugin").encrypt_conf
 local pairs = pairs
+local setmetatable = setmetatable
+local type = type
+
+-- HTTP dispatch hooks, including the conditional WebSocket and Lua response paths.
+local http_phases = {
+    "rewrite", "access", "before_proxy", "ws_handshake", "header_filter",
+    "body_filter", "delayed_body_filter", "lua_body_filter",
+    "ws_client_frame", "ws_upstream_frame", "ws_close", "log",
+}
 
 local _M = {}
 
@@ -67,6 +77,19 @@ function _M.get(name)
 
         if arg["subsystem"] == "stream" then
             return 200, stream_plugins
+        end
+
+        if arg["include_phases"] == "true" then
+            for plugin_name, metadata in pairs(http_plugins) do
+                local plugin = plugin_get_http(plugin_name)
+                local phases = core.table.new(#http_phases, 0)
+                for _, phase in ipairs(http_phases) do
+                    if type(plugin[phase]) == "function" then
+                        table_insert(phases, phase)
+                    end
+                end
+                metadata.phases = setmetatable(phases, core.json.array_mt)
+            end
         end
 
         return 200, http_plugins
@@ -129,6 +152,8 @@ function _M.get_plugins_list(subsystem)
             end
         end
     end
+
+    registry.include_loaded_plugins(subsystem, priorities, success)
 
     local function cmp(x, y)
         return priorities[x] > priorities[y]
