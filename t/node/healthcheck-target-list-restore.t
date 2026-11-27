@@ -275,8 +275,10 @@ location /t {
         state.unavailable_primary = nil
         state.put(60, true, 1960)
         assert(state.wait_for(function()
-            return #state.targets() == 3 and checker:get_target_status("127.0.0.1", 1960) == true
+            return checker:get_target_status("127.0.0.1", 1960) == true
+                   and shm:get(checker.TARGET_LIST) ~= nil
         end), "re-add from the committed list did not finish")
+        assert(#state.targets() == 3, "expected all three registered targets")
         ngx.say("primary republished: ", shm:get(checker.TARGET_LIST) ~= nil)
         ngx.say("shared re-added node state: ", state.shared_status(1960))
     }
