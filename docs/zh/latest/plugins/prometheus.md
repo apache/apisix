@@ -815,4 +815,6 @@ apisix_stream_bandwidth{listen_addr="0.0.0.0:9100",service="",service_id="",type
 
 `apisix_stream_active_connections` 和 `apisix_stream_bandwidth` 使用由 `nginx_config.stream.metrics_zone_size` 配置的 NGINX 共享内存区，默认大小为 `1m`。这两个指标依赖 APISIX-Runtime；如果运行时不提供对应模块，则不会发布这两个指标。该共享内存区为每个监听地址及其上出现的每个 Service 各分配一个 slot，`1m` 约可容纳 760 个 slot，其中最多四分之三分配给 Service。slot 用尽后，新 Service 的会话只计入其 `listen_addr` 的总量，并记录一条警告日志。
 
+如果 Stream 带宽计数器在发布基线丢失后仍然存在，APISIX 会从共享内存区中下次读取的总字节数开始累计。上次发布到下次读取之间的字节可能漏计。共享指标存储无法保存基线时，APISIX 会跳过该次更新并记录错误。
+
 :::

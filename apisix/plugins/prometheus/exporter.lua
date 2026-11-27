@@ -49,6 +49,7 @@ local process_metrics = require("apisix.plugins.prometheus.process_metrics")
 local unpack = unpack
 local next = next
 local str_sub = string.sub
+local utf8_invalid_offset = require("lua-utf8").invalidoffset
 local process = require("ngx.process")
 local tonumber = tonumber
 local shdict_prometheus_cache = ngx.shared["prometheus-cache"]
@@ -390,6 +391,23 @@ local function stream_metrics_zone()
 end
 
 
+local function stream_bandwidth_counter_exists(dict, counter, values)
+    -- Match lua-prometheus's unprefixed shared-dictionary keys. The prefix is
+    -- only added when the metric is rendered.
+    local labels = core.table.new(#values, 0)
+    for i, name in ipairs(counter.label_names) do
+        local value = values[i]
+        local invalid = utf8_invalid_offset(value)
+        if invalid then
+            value = str_sub(value, 1, invalid - 1)
+        end
+        value = value:gsub("\\", "\\\\"):gsub('"', '\\"'):gsub("\n", "\\n")
+        labels[i] = name .. '="' .. value .. '"'
+    end
+    return dict:get(counter.name .. "{" .. core.table.concat(labels, ",") .. "}") ~= nil
+end
+
+
 local function publish_stream_bytes(dict, listen_addr, service, service_id, direction,
                                     total)
     local field = direction[1]
@@ -404,19 +422,26 @@ local function publish_stream_bytes(dict, listen_addr, service, service_id, dire
     local key = STREAM_PUBLISHED_PREFIX .. listen_addr .. "\31" .. service .. "\31"
                 .. service_id .. "\31" .. field
 
-    -- Baselines outlive a reload like the zone, so a slot without one has had
-    -- nothing counted: it is new, or the process just started. The cost is
-    -- that a baseline evicted from a full dict replays the total of its slot
-    -- once.
-    local published = dict:get(key) or 0
-
+    local published = dict:get(key)
     if total == published then
         return
     end
 
+    local counter = metrics.stream_bandwidth
+    local labels = gen_arr(listen_addr, service, service_id, direction[2], direction[3])
+    if published == nil then
+        local exists = stream_bandwidth_counter_exists(dict, counter, labels)
+        if total == 0 and not exists then
+            return
+        end
+        -- With a surviving counter, the missing delta cannot be recovered.
+        -- Rebaseline at the current total to avoid replaying historical bytes.
+        published = exists and total or 0
+    end
+
     -- Advance the baseline before counting: a write that failed while the
     -- delta was counted would re-count the same range on every later read.
-    local ok, err = dict:set(key, total)
+    local ok, err = dict:safe_set(key, total)
     if not ok then
         core.log.error("failed to advance the stream bandwidth baseline for ",
                        key, ": ", err)
@@ -426,8 +451,7 @@ local function publish_stream_bytes(dict, listen_addr, service, service_id, dire
     -- a total below what was published means the zone was recreated, which
     -- rebaselines rather than emitting a negative delta
     if total > published then
-        metrics.stream_bandwidth:inc(total - published,
-            gen_arr(listen_addr, service, service_id, direction[2], direction[3]))
+        counter:inc(total - published, labels)
     end
 end
 
@@ -449,8 +473,8 @@ local function collect_stream_zone_metrics()
     -- the older sample would pull the baseline back over a range the fresher
     -- one had already counted. shdict has no compare-and-set, so this is an
     -- expiring key rather than a real mutex.
-    local publishing, add_err = dict:add(STREAM_PUBLISH_LOCK, true,
-                                         STREAM_PUBLISH_LOCK_TTL)
+    local publishing, add_err = dict:safe_add(STREAM_PUBLISH_LOCK, true,
+                                              STREAM_PUBLISH_LOCK_TTL)
     if not publishing and add_err ~= "exists" then
         core.log.error("failed to take the stream bandwidth lock: ", add_err)
     end
@@ -489,6 +513,9 @@ local function collect_stream_zone_metrics()
     end
 
     if publishing then
+        -- Commit the buffered counter increments before another reader can
+        -- use the shared counters to recover a missing baseline.
+        prometheus._counter:sync()
         dict:delete(STREAM_PUBLISH_LOCK)
     end
 end
