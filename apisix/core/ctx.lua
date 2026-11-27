@@ -284,6 +284,7 @@ do
             end
 
             local val
+            local cache_key = key
             local method = var_methods[key]
             if method then
                 val = method()
@@ -335,9 +336,13 @@ do
                 end
 
             elseif core_str.has_prefix(key, "http_") then
-                local arg_key = key:lower()
-                arg_key = re_gsub(arg_key, "-", "_", "jo")
-                val = get_var(arg_key, t._request)
+                -- every spelling of a header shares one cache entry, so that
+                -- core.request.set_header can invalidate it
+                cache_key = re_gsub(key:lower(), "-", "_", "jo")
+                val = t._cache[cache_key]
+                if val == nil then
+                    val = get_var(cache_key, t._request)
+                end
 
             elseif core_str.has_prefix(key, "graphql_") then
                 -- trim the "graphql_" prefix
@@ -390,7 +395,7 @@ do
             end
 
             if val ~= nil and not no_cacheable_var_names[key] then
-                t._cache[key] = val
+                t._cache[cache_key] = val
             end
 
             return val
@@ -405,6 +410,10 @@ do
             -- Track writes rather than comparing the resulting URI with its seed.
             if key == "upstream_uri" and t._ctx and t._ctx.servlet_upstream_uri then
                 t._ctx.servlet_upstream_uri_overridden = true
+            end
+
+            if core_str.has_prefix(key, "http_") then
+                key = re_gsub(key:lower(), "-", "_", "jo")
             end
 
             -- log.info("key: ", key, " new val: ", val)

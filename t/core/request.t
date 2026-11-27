@@ -676,3 +676,39 @@ apisix:
 CORE::join("", map { "X-Pad-$_: $_\n" } 1 .. 300) . "X-Last: yes\n"
 --- response_body
 x-last: yes
+
+
+
+=== TEST 23: modifying a header invalidates ctx.var under every spelling of its name
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            ngx.ctx.api_ctx = {}
+            local ctx = ngx.ctx.api_ctx
+            core.ctx.set_vars_meta(ctx)
+
+            local function show(step)
+                ngx.say(step, ": ", ctx.var.http_x_foo, " ", ctx.var["http_x-foo"],
+                        " ", ctx.var["http_X-Foo"])
+            end
+
+            show("init")
+            core.request.set_header(ctx, "X-Foo", "set")
+            show("set")
+            core.request.add_header(ctx, "x-foo", "added")
+            show("add")
+            core.request.set_header(ctx, "X-FOO", nil)
+            show("clear")
+            ctx.var["http_x-foo"] = "written"
+            show("write")
+        }
+    }
+--- more_headers
+X-Foo: old
+--- response_body
+init: old old old
+set: set set set
+add: set, added set, added set, added
+clear: nil nil nil
+write: written written written
