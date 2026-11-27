@@ -31,7 +31,7 @@ local jp = require("jsonpath")
 local config_util = require("apisix.core.config_util")
 
 local _M = {}
--- Items hold the live checker, its configuration version, and removals to retry.
+-- resource_path -> {version = ver, checker = checker, checks = checks}
 local working_pool = {}
 local waiting_pool = {}      -- resource_path -> resource_ver
 
@@ -70,92 +70,20 @@ local function compute_targets(up_conf)
         -- add_target defaults the hostname to the ip when checks.active.host is
         -- unset, so mirror that here to match the shm entry's stored hostname
         local hostname = host or node.host
-        local identity = node.host .. ":" .. tostring(target_port) .. ":" .. hostname
         targets[#targets + 1] = {
             host = node.host,
             port = target_port,
             check_host = host,
             host_hdr = host_hdr,
-            identity = identity,
-            key = identity .. ":" .. tostring(host_hdr or ""),
+            key = node.host .. ":" .. tostring(target_port) .. ":" .. tostring(hostname)
+                  .. ":" .. tostring(host_hdr or ""),
         }
     end
     return targets
 end
 
 
--- A checker being created re-adds every target to cancel delayed cleanup.
--- Subsequent reconciliations need only add missing targets or cancel a purge.
-local function reconcile_targets(checker, up_conf, pending_removals, add_all)
-    local targets = compute_targets(up_conf)
-    local desired = {}
-    local desired_identities = {}
-    for _, target in ipairs(targets) do
-        desired[target.key] = true
-        desired_identities[target.identity] = true
-    end
-
-    local current = {}
-    local current_identities = {}
-    local target_list = healthcheck.get_target_list(get_healthchecker_name(up_conf),
-                                                    healthcheck_shdict_name) or {}
-    for _, t in ipairs(target_list) do
-        local identity = t.ip .. ":" .. tostring(t.port) .. ":" .. (t.hostname or t.ip)
-        local key = identity .. ":" .. tostring(t.hostheader or "")
-        current[key] = t
-        current_identities[identity] = true
-        if desired[key] then
-            -- Another worker may already have installed the desired registration.
-            pending_removals[identity] = nil
-        else
-            pending_removals[identity] = t
-        end
-    end
-
-    -- A failed list replacement can leave a stale target in the local cache.
-    -- Record it before issuing removals, which can change that cache.
-    for _, t in ipairs(checker.targets) do
-        local identity = t.ip .. ":" .. tostring(t.port) .. ":" .. (t.hostname or t.ip)
-        if not current_identities[identity] and not desired_identities[identity] then
-            pending_removals[identity] = t
-        end
-    end
-
-    local complete = true
-    for identity, t in pairs(pending_removals) do
-        local ok, err = checker:remove_target(t.ip, t.port, t.hostname)
-        if ok then
-            pending_removals[identity] = nil
-        else
-            -- The library can lose both list entries while the per-target state
-            -- remains in shm. Keep the identity until an explicit remove succeeds.
-            complete = false
-            core.log.error("failed to remove healthcheck target: ", t.ip, ":",
-                           t.port, " err: ", err)
-        end
-    end
-
-    for _, target in ipairs(targets) do
-        local present = current[target.key]
-        -- A Host-header change reuses the library identity. The old registration
-        -- must be removed before a new one can receive its own initial health.
-        if not pending_removals[target.identity]
-           and (add_all or not present or present.purge_time) then
-            local ok, err = checker:add_target(target.host, target.port, target.check_host,
-                                               true, target.host_hdr)
-            if not ok then
-                complete = false
-                core.log.error("failed to add healthcheck target: ", target.host, ":",
-                               target.port, " err: ", err)
-            end
-        end
-    end
-
-    return complete
-end
-
-
-local function create_checker(up_conf, pending_removals)
+local function create_checker(up_conf)
     if not up_conf.checks then
         return nil
     end
@@ -181,7 +109,118 @@ local function create_checker(up_conf, pending_removals)
         return nil
     end
 
-    return checker, reconcile_targets(checker, up_conf, pending_removals, true)
+    local targets = compute_targets(up_conf)
+    local targets_complete = true
+    local desired = {}
+    for _, target in ipairs(targets) do
+        desired[target.key] = true
+    end
+
+    -- Remove stale targets from the shared shm BEFORE adding, mirroring
+    -- sync_checker_targets. resty.healthcheck keys a target by ip+port+hostname
+    -- (the Host header is not part of that identity), so a Host-header-only change
+    -- must free the old identity first -- otherwise add_target is a no-op on the
+    -- existing identity and the following remove_target then wipes the
+    -- still-desired target. The shm may also hold nodes another worker created and
+    -- this config later dropped (apache/apisix#13282, multi-worker).
+    local target_list = healthcheck.get_target_list(get_healthchecker_name(up_conf),
+                                                    healthcheck_shdict_name) or {}
+    for _, t in ipairs(target_list) do
+        local key = t.ip .. ":" .. tostring(t.port) .. ":" .. tostring(t.hostname)
+                    .. ":" .. tostring(t.hostheader or "")
+        if not desired[key] then
+            local ok, err = checker:remove_target(t.ip, t.port, t.hostname)
+            if not ok then
+                targets_complete = false
+                core.log.error("failed to remove healthcheck target: ", t.ip, ":",
+                              t.port, " err: ", err)
+            end
+        end
+    end
+
+    -- Add all desired nodes, in node order. Re-adding an already-present target is
+    -- a no-op except that it clears any pending purge_time, which is what un-marks
+    -- surviving targets after a delayed_clear() on a checks-config rebuild.
+    for _, target in ipairs(targets) do
+        local ok, err = checker:add_target(target.host, target.port, target.check_host,
+                                        true, target.host_hdr)
+        if not ok then
+            targets_complete = false
+            core.log.error("failed to add healthcheck target: ", target.host, ":",
+                          target.port, " err: ", err)
+        end
+    end
+
+    return checker, targets_complete
+end
+
+
+-- Incrementally reconcile an existing checker's targets to match up_conf.
+-- Used when only the upstream nodes changed but the `checks` config did not,
+-- so the checker can keep running (and keep its accumulated health state)
+-- instead of being destroyed and rebuilt.
+-- Returns true only if every add/remove succeeded; on a partial failure the
+-- caller must not treat the checker as reconciled for this version.
+local function sync_checker_targets(checker, up_conf)
+    -- index the desired targets by key so they can be diffed against current;
+    -- keep the ordered list too so adds preserve node order (deterministic)
+    local targets = compute_targets(up_conf)
+    local desired = {}
+    for _, target in ipairs(targets) do
+        desired[target.key] = target
+    end
+
+    -- index current targets the same way as desired. Read the authoritative
+    -- shm target list (the per-worker checker.targets array can lag behind a
+    -- recent add/remove event).
+    if not healthcheck then
+        healthcheck = require("resty.healthcheck")
+    end
+    local current = {}
+    local target_list = healthcheck.get_target_list(get_healthchecker_name(up_conf),
+                                                    healthcheck_shdict_name) or {}
+    for _, t in ipairs(target_list) do
+        -- target_list entries carry hostheader; map it back to our key shape
+        local key = t.ip .. ":" .. tostring(t.port) .. ":" .. tostring(t.hostname)
+                    .. ":" .. tostring(t.hostheader or "")
+        current[key] = t
+    end
+
+    local synced = true
+
+    -- Remove stale targets BEFORE adding new ones. resty.healthcheck identifies a
+    -- target by ip+port+hostname; the Host header is not part of that identity. A
+    -- Host-header-only change (e.g. pass_host/upstream_host) therefore produces a
+    -- removal of the old key and an addition of the new key for the same identity.
+    -- Removing first frees that identity so the following add_target actually
+    -- applies the new Host header instead of being a no-op on an existing target.
+    for key, t in pairs(current) do
+        if not desired[key] then
+            local ok, err = checker:remove_target(t.ip, t.port, t.hostname)
+            if not ok then
+                synced = false
+                core.log.error("failed to remove healthcheck target: ", t.ip, ":",
+                              t.port, " err: ", err)
+            end
+        end
+    end
+
+    -- Add missing targets and retry desired targets still marked for cleanup.
+    -- A failed re-add during a checks-change rebuild can leave a purge_time on
+    -- a target that this checker must keep. Re-adding it cancels that purge.
+    for _, target in ipairs(targets) do
+        if not current[target.key] or current[target.key].purge_time ~= nil then
+            local ok, err = checker:add_target(target.host, target.port, target.check_host,
+                                            true, target.host_hdr)
+            if not ok then
+                synced = false
+                core.log.error("failed to add healthcheck target: ", target.host, ":",
+                              target.port, " err: ", err)
+            end
+        end
+    end
+
+    return synced
 end
 
 
@@ -234,6 +273,14 @@ function _M.fetch_node_status(checker, ip, port, hostname)
     return ok, err
 end
 
+
+local function add_working_pool(resource_path, resource_ver, checker, checks)
+    working_pool[resource_path] = {
+        version = resource_ver,
+        checker = checker,
+        checks = checks,
+    }
+end
 
 local function find_in_working_pool(resource_path, resource_ver)
     local checker = working_pool[resource_path]
@@ -315,20 +362,17 @@ local function timer_create_checker()
                 goto continue
             end
 
-            -- Reuse path: if a checker exists and the `checks` config is unchanged
-            -- (only the nodes changed), reconcile its targets in place instead of
-            -- rebuilding. Rebuilding leaves fetch_checker with no checker for the
-            -- rebuild window (traffic then skips health filtering) and discards the
-            -- accumulated health state. If a target update fails, keep the old
-            -- version so the working-pool timer retries with the same checker.
+            -- A nodes-only change can reuse the live checker. If updating its
+            -- targets fails, keep the old version so the working-pool timer
+            -- retries without losing health filtering or requiring route traffic.
             local existing_checker = working_pool[resource_path]
-            local pending_removals = existing_checker and existing_checker.pending_removals or {}
             if existing_checker and existing_checker.checker
                and not existing_checker.checker.dead
                and upstream.checks
                and core.table.deep_eq(existing_checker.checks, upstream.checks) then
-                if reconcile_targets(existing_checker.checker, upstream, pending_removals) then
-                    existing_checker.version = resource_ver
+                if sync_checker_targets(existing_checker.checker, upstream) then
+                    add_working_pool(resource_path, resource_ver, existing_checker.checker,
+                                     upstream.checks)
                     core.log.info("reused checker with incremental targets: ",
                                   tostring(existing_checker.checker), " for resource: ",
                                   resource_path, " and version: ", resource_ver)
@@ -347,7 +391,7 @@ local function timer_create_checker()
             if existing_checker then
                 existing_checker.checker:delayed_clear(DELAYED_CLEAR_TIMEOUT)
             end
-            local checker, targets_complete = create_checker(upstream, pending_removals)
+            local checker, targets_complete = create_checker(upstream)
             if not checker then
                 -- create_checker failed (upstream healthcheck disabled or
                 -- healthcheck.new errored). The old checker's shm targets were
@@ -369,12 +413,8 @@ local function timer_create_checker()
                         resource_path, " and version: ", resource_ver)
             -- Keep successful targets live, but let the existing version-mismatch
             -- path retry registration until all additions and removals succeed.
-            working_pool[resource_path] = {
-                version = targets_complete and resource_ver or nil,
-                checker = checker,
-                checks = upstream.checks,
-                pending_removals = pending_removals,
-            }
+            local reconciled_ver = targets_complete and resource_ver or nil
+            add_working_pool(resource_path, reconciled_ver, checker, upstream.checks)
             if existing_checker then
                 existing_checker.checker.dead = true
                 existing_checker.checker:stop()
