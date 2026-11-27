@@ -41,11 +41,12 @@ description: 本文介绍了如何用 Docker 的方式在 Mac 上快速构建 AP
 
 ### 实现步骤
 
-首先，我们需要拉取 APISIX 源码，并构建一个可以运行测试用例以及编译运行 Apache APISIX 的镜像：
+首先，我们需要拉取 APISIX 源码和测试用例依赖的 `t/toolkit` 子模块，并构建一个可以运行测试用例以及编译运行 Apache APISIX 的镜像：
 
 ```shell
 git clone https://github.com/apache/apisix.git
 cd apisix
+git submodule update --init t/toolkit
 docker build -t apisix-dev-env -f example/build-dev-image.dockerfile .
 ```
 
