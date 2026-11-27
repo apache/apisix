@@ -486,3 +486,203 @@ akey: secret
 zname: foo
 --- no_error_log
 no matching AI protocol
+
+
+
+=== TEST 18: set route whose path is rewritten by proxy-rewrite before passthrough
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/llm/*",
+                    "plugins": {
+                        "proxy-rewrite": {
+                            "regex_uri": ["^/llm/(.*)", "/$1"]
+                        },
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": {
+                                "header": {
+                                    "Authorization": "Bearer token"
+                                }
+                            },
+                            "override": {
+                                "endpoint": "http://127.0.0.1:1980"
+                            },
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 19: passthrough forwards the path produced by proxy-rewrite
+--- request
+POST /llm/plugin_proxy_rewrite_args?name=foo
+{"prompt":"x"}
+--- more_headers
+Content-Type: application/json
+--- response_body
+uri: /plugin_proxy_rewrite_args
+name: foo
+--- no_error_log
+no matching AI protocol
+
+
+
+=== TEST 20: set route whose primary instance has its own path and falls back
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/plugin_proxy_rewrite_args",
+                    "plugins": {
+                        "ai-proxy-multi": {
+                            "fallback_strategy": ["http_5xx"],
+                            "instances": [
+                                {
+                                    "name": "primary",
+                                    "provider": "openai",
+                                    "weight": 1,
+                                    "priority": 10,
+                                    "auth": {"header": {"Authorization": "Bearer token"}},
+                                    "override": {"endpoint": "http://127.0.0.1:6740/primary-specific"}
+                                },
+                                {
+                                    "name": "fallback",
+                                    "provider": "openai",
+                                    "weight": 1,
+                                    "priority": 0,
+                                    "auth": {"header": {"Authorization": "Bearer token"}},
+                                    "override": {"endpoint": "http://127.0.0.1:1980"}
+                                }
+                            ],
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 21: the fallback instance receives the request path, not the primary's
+--- http_config
+    server {
+        listen 6740;
+        default_type 'application/json';
+        location / {
+            content_by_lua_block {
+                ngx.log(ngx.WARN, "primary instance received ", ngx.var.uri)
+                ngx.status = 503
+                ngx.say([[{"error":{"message":"primary unavailable"}}]])
+            }
+        }
+    }
+--- request
+POST /plugin_proxy_rewrite_args?name=foo
+{"prompt":"x"}
+--- more_headers
+Content-Type: application/json
+--- response_body
+uri: /plugin_proxy_rewrite_args
+name: foo
+--- error_log
+primary instance received /primary-specific
+
+
+
+=== TEST 22: set route whose fallback instance has its own path
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/passthrough-request-path",
+                    "plugins": {
+                        "ai-proxy-multi": {
+                            "fallback_strategy": ["http_5xx"],
+                            "instances": [
+                                {
+                                    "name": "primary",
+                                    "provider": "openai",
+                                    "weight": 1,
+                                    "priority": 10,
+                                    "auth": {"header": {"Authorization": "Bearer token"}},
+                                    "override": {"endpoint": "http://127.0.0.1:6740"}
+                                },
+                                {
+                                    "name": "fallback",
+                                    "provider": "openai",
+                                    "weight": 1,
+                                    "priority": 0,
+                                    "auth": {"header": {"Authorization": "Bearer token"}},
+                                    "override": {"endpoint": "http://127.0.0.1:1980/plugin_proxy_rewrite_args"}
+                                }
+                            ],
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 23: each instance keeps its own path: request path first, endpoint path on fallback
+--- http_config
+    server {
+        listen 6740;
+        default_type 'application/json';
+        location / {
+            content_by_lua_block {
+                ngx.log(ngx.WARN, "primary instance received ", ngx.var.uri)
+                ngx.status = 503
+                ngx.say([[{"error":{"message":"primary unavailable"}}]])
+            }
+        }
+    }
+--- request
+POST /passthrough-request-path?name=foo
+{"prompt":"x"}
+--- more_headers
+Content-Type: application/json
+--- response_body
+uri: /plugin_proxy_rewrite_args
+name: foo
+--- error_log
+primary instance received /passthrough-request-path
