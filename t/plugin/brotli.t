@@ -935,3 +935,45 @@ Content-Length:
 10 33
 19 5
 24 15
+
+
+
+=== TEST 39: explicit zero quality and wildcard precedence in Accept-Encoding
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local brotli = require("resty.brotli")
+            local plain = ("0123456789abcd"):rep(64)
+            local status = t("/apisix/admin/routes/1", ngx.HTTP_PUT, {
+                uri = "/echo",
+                upstream = {type = "roundrobin", nodes = {["127.0.0.1:1980"] = 1}},
+                plugins = {brotli = {types = "*"}},
+            })
+            assert(status < 300)
+
+            for _, case in ipairs({
+                {"br;q=0.1", "br"},
+                {"br;q=0.0", nil},
+                {"br;q=0.000", nil},
+                {"br; q=0", nil},
+                {"br;q=0, *;q=0.9", nil},
+                {"*;q=0.9, br;q=0", nil},
+                {{"br;q=0", "*;q=0.9"}, nil},
+                {"*;q=0.0", nil},
+            }) do
+                local code, _, data, headers = t("/echo", ngx.HTTP_POST, plain, nil,
+                                                 {["Accept-Encoding"] = case[1]})
+                assert(code == 200)
+                assert(headers["Content-Encoding"] == case[2])
+                if case[2] == "br" then
+                    assert(brotli.decode(data) == plain)
+                else
+                    assert(data == plain)
+                end
+            end
+            ngx.say("ok")
+        }
+    }
+--- response_body
+ok
