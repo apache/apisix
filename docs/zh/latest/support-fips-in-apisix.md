@@ -29,7 +29,7 @@ description: 本文将介绍如何在 Apache APISIX 中使用 OpenSSL 3.0 来编
 #
 -->
 
-目前，OpenSSL 3.0 [支持了](https://www.openssl.org/blog/blog/2022/08/24/FIPS-validation-certificate-issued/) [FIPS](https://en.wikipedia.org/wiki/FIPS_140-2) 模式。为了在 APISIX 中支持 FIPS 模式，你应该使用 OpenSSL 3.0 来编译 apisix-runtime。
+目前，OpenSSL 3.0 [支持了](https://openssl-library.org/post/2022-08-24-fips-validation-certificate-issued/) [FIPS](https://en.wikipedia.org/wiki/FIPS_140-2) 模式。为了在 APISIX 中支持 FIPS 模式，你应该使用 OpenSSL 3.0 来编译 apisix-runtime。
 
 ## 编译
 
