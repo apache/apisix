@@ -1370,6 +1370,12 @@ For notes on ID syntax please refer to: [ID Syntax](#quick-note-on-id-syntax)
 | POST   | /apisix/admin/ssls      | {...}        | Creates a resource and assigns a random id.           |
 | DELETE | /apisix/admin/ssls/{id} | NULL         | Removes the resource with the specified id.     |
 
+### Certificate validity in GET responses
+
+The SSL list and detail responses include `validity_start` and `validity_end` in each resource's `value`. These are Unix timestamps in seconds, taken from the first certificate in the PEM stored in `cert`. The fields are omitted if the certificate cannot be parsed or is a Secret or environment variable reference.
+
+If `certs` is non-empty, `certs_validity` contains one entry per additional certificate in the same order. Each entry contains `validity_start` and `validity_end`, or is `null` if the certificate cannot be parsed or is a reference. These fields are computed when the resource is read.
+
 ### Request Body Parameters
 
 | Parameter    | Required | Type                     | Description                                                                                                    | Example                                          |

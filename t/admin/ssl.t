@@ -803,7 +803,7 @@ GET /t
 
 
 
-=== TEST 24: GET single ssl strips keys array from multi-cert response
+=== TEST 24: GET single SSL returns certificate validity and omits private keys
 --- config
     location /t {
         content_by_lua_block {
@@ -858,6 +858,12 @@ GET /t
                 return
             end
 
+            assert(value.validity_start == 1561414685, "unexpected primary validity_start")
+            assert(value.validity_end == 4715014685, "unexpected primary validity_end")
+            assert(#value.certs_validity == 1, "unexpected additional certificate count")
+            assert(value.certs_validity[1].validity_start == 1597739077)
+            assert(value.certs_validity[1].validity_end == 1629275077)
+
             ngx.say("passed")
         }
     }
@@ -868,7 +874,7 @@ passed
 
 
 
-=== TEST 25: GET list ssl strips key and keys from all items
+=== TEST 25: GET SSL list returns certificate validity and omits private keys
 --- config
     location /t {
         content_by_lua_block {
@@ -891,6 +897,7 @@ passed
                 return
             end
 
+            local found = false
             for i, item in ipairs(list) do
                 local value = item.value
                 if value then
@@ -902,8 +909,17 @@ passed
                         ngx.say("FAIL: item ", i, " keys field not stripped")
                         return
                     end
+                    if value.id == "1" then
+                        found = true
+                        assert(value.validity_start == 1561414685)
+                        assert(value.validity_end == 4715014685)
+                        assert(#value.certs_validity == 1)
+                        assert(value.certs_validity[1].validity_start == 1597739077)
+                        assert(value.certs_validity[1].validity_end == 1629275077)
+                    end
                 end
             end
+            assert(found, "SSL resource missing from list")
 
             ngx.say("passed")
         }
@@ -928,3 +944,94 @@ passed
 GET /t
 --- response_body
 [delete] code: 200 message: passed
+
+
+
+=== TEST 27: GET SSL derives updated leaf dates and keeps positions for certificate references
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin")
+            local cert = t.read_file("t/certs/apisix.crt")
+            local key = t.read_file("t/certs/apisix.key")
+            local ecc_cert = t.read_file("t/certs/apisix_ecc.crt")
+            local ecc_key = t.read_file("t/certs/apisix_ecc.key")
+            local ref = "$ENV://SSL_VALIDITY_TEST_" .. string.rep("X", 128)
+            local uri = "/apisix/admin/ssls/validity"
+            local conf = {sni = "test.com", cert = ref, key = ref}
+
+            local code, err = t.test(uri, ngx.HTTP_PUT, conf)
+            assert(code == 200 or code == 201, err)
+            local status, _, body = t.test(uri, ngx.HTTP_GET)
+            assert(status == 200)
+            local value = core.json.decode(body).value
+            assert(value.cert == ref and value.validity_start == nil and value.validity_end == nil)
+
+            conf.cert = ecc_cert .. cert
+            conf.key = ecc_key
+            conf.certs = {ref, cert}
+            conf.keys = {ref, key}
+            code, err = t.test(uri, ngx.HTTP_PUT, conf)
+            assert(code == 200 or code == 201, err)
+
+            status, _, body = t.test(uri, ngx.HTTP_GET)
+            assert(status == 200)
+            value = core.json.decode(body).value
+            assert(value.validity_start == 1597739077 and value.validity_end == 1629275077)
+            assert(value.certs_validity[1] == ngx.null)
+            assert(value.certs_validity[2].validity_start == 1561414685)
+            assert(value.certs_validity[2].validity_end == 4715014685)
+
+            local res = assert(core.etcd.get("/ssls/validity"))
+            local stored = res.body.node.value
+            assert(stored.validity_start == nil and stored.validity_end == nil)
+            assert(stored.certs_validity == nil)
+
+            assert(t.test(uri, ngx.HTTP_DELETE) == 200)
+            ngx.say("passed")
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+=== TEST 28: reject mismatched SSL keys on create and patch
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin")
+            local uri = "/apisix/admin/ssls/key-pair-check"
+            local conf = {
+                sni = "match.example.com",
+                cert = t.read_file("t/certs/apisix.crt"),
+                key = t.read_file("t/certs/test2.key"),
+            }
+            local code, _, body = t.test(uri, ngx.HTTP_PUT, conf)
+            assert(code == 400 and body:find("certificate and private key do not match", 1, true))
+
+            conf.key = t.read_file("t/certs/apisix.key")
+            local ecc_key = t.read_file("t/certs/apisix_ecc.key")
+            conf.certs = {t.read_file("t/certs/apisix_ecc.crt")}
+            conf.keys = {ecc_key}
+            assert(t.test(uri, ngx.HTTP_PUT, conf) == 201)
+
+            code, _, body = t.test(uri, ngx.HTTP_PATCH, {keys = {conf.key}})
+            assert(code == 400 and body:find("cert-key pair[1]", 1, true))
+            code, _, body = t.test(uri, ngx.HTTP_PATCH, {key = ecc_key})
+            assert(code == 400 and body:find("certificate and private key do not match", 1, true))
+
+            -- The expired additional certificate is allowed and survives the failed patch.
+            assert(t.test(uri, ngx.HTTP_PATCH, {status = 0}) == 200)
+            assert(t.test(uri, ngx.HTTP_DELETE) == 200)
+            ngx.say("checked")
+        }
+    }
+--- request
+GET /t
+--- response_body
+checked
+--- no_error_log
+[error]

@@ -19,6 +19,7 @@ local core          = require("apisix.core")
 local config_util   = require("apisix.core.config_util")
 local enable_debug  = require("apisix.debug").enable_debug
 local wasm          = require("apisix.wasm")
+local registry      = require("apisix.plugin_registry")
 local expr          = require("resty.expr.v1")
 local secret        = require("apisix.secret")
 
@@ -210,9 +211,11 @@ local function unload_plugin(name, plugin_type)
 end
 
 
-local function load_plugin(name, plugins_list, plugin_type)
+local function load_plugin(name, plugins_list, plugin_type, candidate)
     local ok, plugin
-    if plugin_type == PLUGIN_TYPE_HTTP_WASM  then
+    if candidate then
+        ok, plugin = true, candidate
+    elseif plugin_type == PLUGIN_TYPE_HTTP_WASM  then
         -- for wasm plugin, we pass the whole attrs instead of name
         ok, plugin = wasm.require(name)
         name = name.name
@@ -294,28 +297,30 @@ end
 local function load(plugin_names, wasm_plugin_names)
     local processed = {}
     for _, name in ipairs(plugin_names) do
-        if processed[name] == nil then
+        if not registry.status("http~" .. name) then
             processed[name] = true
         end
     end
     for _, attrs in ipairs(wasm_plugin_names) do
-        if processed[attrs.name] == nil then
+        local status = registry.status("http~" .. attrs.name)
+        if not processed[attrs.name] and not (status and status.effective) then
             processed[attrs.name] = attrs
         end
     end
 
     core.log.warn("new plugins: ", core.json.delay_encode(processed))
 
-    for name, plugin in pairs(local_plugins_hash) do
-        local ty = PLUGIN_TYPE_HTTP
-        if plugin.type == "wasm" then
-            ty = PLUGIN_TYPE_HTTP_WASM
-        end
-        unload_plugin(name, ty)
-    end
-
     core.table.clear(local_plugins)
-    core.table.clear(local_plugins_hash)
+    for name, plugin in pairs(local_plugins_hash) do
+        local status = registry.status("http~" .. name)
+        if status and status.effective then
+            core.table.insert(local_plugins, plugin)
+        else
+            local ty = plugin.type == "wasm" and PLUGIN_TYPE_HTTP_WASM or PLUGIN_TYPE_HTTP
+            unload_plugin(name, ty)
+            local_plugins_hash[name] = nil
+        end
+    end
 
     for name, value in pairs(processed) do
         local ty = PLUGIN_TYPE_HTTP
@@ -349,19 +354,23 @@ end
 local function load_stream(plugin_names)
     local processed = {}
     for _, name in ipairs(plugin_names) do
-        if processed[name] == nil then
+        if not registry.status("stream~" .. name) then
             processed[name] = true
         end
     end
 
     core.log.warn("new plugins: ", core.json.delay_encode(processed))
 
-    for name in pairs(stream_local_plugins_hash) do
-        unload_plugin(name, PLUGIN_TYPE_STREAM)
-    end
-
     core.table.clear(stream_local_plugins)
-    core.table.clear(stream_local_plugins_hash)
+    for name, plugin in pairs(stream_local_plugins_hash) do
+        local status = registry.status("stream~" .. name)
+        if status and status.effective then
+            core.table.insert(stream_local_plugins, plugin)
+        else
+            unload_plugin(name, PLUGIN_TYPE_STREAM)
+            stream_local_plugins_hash[name] = nil
+        end
+    end
 
     for name in pairs(processed) do
         load_plugin(name, stream_local_plugins, PLUGIN_TYPE_STREAM)
@@ -428,9 +437,18 @@ end
 
 
 function _M.load(config)
+    if not registry.ready() then
+        return local_plugins
+    end
+
     local ignored, http_plugin_names, stream_plugin_names = get_plugin_names(config)
     if ignored then
         return local_plugins
+    end
+
+    if not registry.file_plugins_enabled() then
+        http_plugin_names = {}
+        stream_plugin_names = {}
     end
 
     if ngx.config.subsystem == "http" then
@@ -918,14 +936,29 @@ function _M.init_prometheus()
 end
 
 
+local function activate_registry_plugin(release)
+    local subsystem, name = registry.split(release.id)
+    if subsystem == "stream" then
+        return registry.activate(release, name, stream_local_plugins, stream_local_plugins_hash,
+                                 PLUGIN_TYPE_STREAM, load_plugin, sort_plugin, _M)
+    end
+    if subsystem == "http" and is_http then
+        return registry.activate(release, name, local_plugins, local_plugins_hash,
+                                 PLUGIN_TYPE_HTTP, load_plugin, sort_plugin, _M)
+    end
+    return true
+end
+
+
 function _M.init_worker()
     -- someone's plugin needs to be initialized after prometheus
     -- see https://github.com/apache/apisix/issues/3286
-    _M.load()
-
-    if local_conf and not local_conf.apisix.enable_admin then
-        init_plugins_syncer()
-    end
+    registry.init_worker(activate_registry_plugin, function()
+        _M.load()
+        if not local_conf.apisix.enable_admin then
+            init_plugins_syncer()
+        end
+    end)
 
     local plugin_metadatas, err = core.config.new("/plugin_metadata",
         {

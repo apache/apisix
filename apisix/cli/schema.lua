@@ -85,6 +85,9 @@ local config_schema = {
     properties = {
         apisix = {
             properties = {
+                enable_file_plugins = {
+                    type = "boolean",
+                },
                 lua_module_hook = {
                     pattern = "^[a-zA-Z._-]+$",
                 },

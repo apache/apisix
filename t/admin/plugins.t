@@ -494,3 +494,24 @@ qr/\{"error_msg":"plugin not found in subsystem stream"\}/
     }
 --- response_body eval
 qr/this is a mark for our injected plugin schema/
+
+
+
+=== TEST 16: optionally report HTTP phase handlers for loaded plugins
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+            local path = "/apisix/admin/plugins?all=true&include_phases=true"
+            local code, _, res = t(path, ngx.HTTP_GET)
+            ngx.status = code
+            local plugins = json.decode(res)
+            for _, name in ipairs({"limit-count", "http-logger"}) do
+                local entry = plugins[name]
+                ngx.say(name, " ", entry.priority, " ", table.concat(entry.phases, ","))
+            end
+        }
+    }
+--- response_body_like
+^limit-count 1002 access\nhttp-logger 410 access,body_filter,log\n$

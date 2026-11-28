@@ -18,20 +18,34 @@ local pcall   = pcall
 local require = require
 local core    = require("apisix.core")
 local resource = require("apisix.admin.resource")
-local plugin_encrypt_conf = require("apisix.plugin").encrypt_conf
+local plugin = require("apisix.plugin")
+local registry = require("apisix.plugin_registry")
 
 local injected_mark = "injected metadata_schema"
 
 
 local function validate_plugin(name)
-    local pkg_name = "apisix.plugins." .. name
-    local ok, plugin_object = pcall(require, pkg_name)
-    if ok then
-        return true, plugin_object
+    local loaded = plugin.get(name)
+    if loaded then
+        return true, loaded
     end
 
-    pkg_name = "apisix.stream.plugins." .. name
-    return pcall(require, pkg_name)
+    local files_enabled = registry.ready() and registry.file_plugins_enabled()
+    if files_enabled and not registry.status("http~" .. name) then
+        local ok, plugin_object = pcall(require, "apisix.plugins." .. name)
+        if ok then
+            return true, plugin_object
+        end
+    end
+
+    loaded = plugin.get_stream(name)
+    if loaded then
+        return true, loaded
+    end
+    if files_enabled and not registry.status("stream~" .. name) then
+        return pcall(require, "apisix.stream.plugins." .. name)
+    end
+    return false
 end
 
 
@@ -98,7 +112,7 @@ local function encrypt_conf(plugin_name, conf)
     -- check_schema, or a plugin that validates via core.schema.check would leak
     -- its metadata encrypt_fields in plaintext
     if schema['$comment'] ~= injected_mark then
-        plugin_encrypt_conf(plugin_name, conf, core.schema.TYPE_METADATA)
+        plugin.encrypt_conf(plugin_name, conf, core.schema.TYPE_METADATA)
     end
 end
 

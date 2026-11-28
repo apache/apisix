@@ -20,6 +20,7 @@ return {
     RPC_HTTP_REQ_CALL = 2,
     RPC_EXTRA_INFO = 3,
     RPC_HTTP_RESP_CALL = 4,
+    PLUGIN_REGISTRY_ACTIVE_PATH = "/plugin_registry_active",
     HTTP_ETCD_DIRECTORY = {
         ["/upstreams"] = true,
         ["/plugins"] = true,

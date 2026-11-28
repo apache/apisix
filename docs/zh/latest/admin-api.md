@@ -1371,6 +1371,12 @@ SSL 资源请求地址：/apisix/admin/ssls/{id}
 | POST   | /apisix/admin/ssls      | {...}    | 创建资源，id 由后台服务自动生成。 |
 | DELETE | /apisix/admin/ssls/{id} | 无       | 删除资源。                        |
 
+### GET 响应中的证书有效期
+
+SSL 列表和详情响应的 `value` 包含 `validity_start` 和 `validity_end`，分别表示证书的生效和到期时间，单位为 Unix 秒。时间取自 `cert` 中的第一张 PEM 证书。证书无法解析，或使用 Secret 或环境变量引用时，省略这两个字段。
+
+`certs` 非空时，`certs_validity` 按相同顺序返回每张附加证书的 `validity_start` 和 `validity_end`。无法解析的证书和引用对应的位置返回 `null`。这些字段在读取资源时计算。
+
 ### body 请求参数 {#ssl-body-request-methods}
 
 | 名称        | 必选项 | 类型           | 描述                                                                                                   | 示例                                             |

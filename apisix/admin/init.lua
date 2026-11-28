@@ -69,6 +69,7 @@ local resources = {
     stream_routes   = require("apisix.admin.stream_routes"),
     plugin_metadata = require("apisix.admin.plugin_metadata"),
     plugin_configs  = require("apisix.admin.plugin_config"),
+    plugin_registry = require("apisix.admin.plugin_registry"),
     consumer_groups = require("apisix.admin.consumer_group"),
     secrets         = require("apisix.admin.secrets"),
     graphql_cost_decorations = require("apisix.admin.graphql_cost_decorations"),

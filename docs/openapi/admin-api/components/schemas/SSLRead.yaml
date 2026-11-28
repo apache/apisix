@@ -53,6 +53,35 @@ properties:
   cert:
     $ref: ./CertificateOrReference.yaml
     description: Stored PEM certificate or APISIX secret/environment reference.
+  validity_start:
+    description: Unix timestamp in seconds when the first certificate in cert becomes valid. Omitted if unavailable.
+    type: integer
+    format: int64
+    readOnly: true
+  validity_end:
+    description: Unix timestamp in seconds when the first certificate in cert expires. Omitted if unavailable.
+    type: integer
+    format: int64
+    readOnly: true
+  certs_validity:
+    description: Validity periods in the same order as certs. A null entry indicates an unparseable certificate or reference.
+    type: array
+    readOnly: true
+    items:
+      type: [object, "null"]
+      additionalProperties: false
+      required:
+        - validity_start
+        - validity_end
+      properties:
+        validity_start:
+          description: Unix timestamp in seconds when the additional certificate becomes valid.
+          type: integer
+          format: int64
+        validity_end:
+          description: Unix timestamp in seconds when the additional certificate expires.
+          type: integer
+          format: int64
   client:
     required:
       - ca
