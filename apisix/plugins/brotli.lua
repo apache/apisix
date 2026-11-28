@@ -16,9 +16,11 @@
 --
 local core = require("apisix.core")
 local ngx = ngx
-local ngx_re_gmatch = ngx.re.gmatch
+local ngx_re_match = ngx.re.match
 local ngx_header = ngx.header
 local req_http_version = ngx.req.http_version
+local str_find = string.find
+local str_lower = string.lower
 local str_sub = string.sub
 local ipairs = ipairs
 local tonumber = tonumber
@@ -102,8 +104,69 @@ function _M.check_schema(conf)
 end
 
 
+local CODING_ITEM_REGEX =
+    [=[^[ \t]*([!#$%&'*+\-.^_`|~0-9A-Za-z]+)[ \t]*(.*)\z]=]
+local WEIGHT_REGEX =
+    [[^;[ \t]*[qQ]=(0(?:\.[0-9]{0,3})?|1(?:\.0{0,3})?)[ \t]*\z]]
+
+
+local function parse_accept_encoding_line(line, br_q, wildcard_q)
+    local pos = 1
+    local len = #line
+
+    while pos <= len do
+        local comma = str_find(line, ",", pos, true)
+        local item
+        if comma then
+            item = str_sub(line, pos, comma - 1)
+            pos = comma + 1
+        else
+            item = str_sub(line, pos)
+            pos = len + 1
+        end
+
+        local captures, err = ngx_re_match(item, CODING_ITEM_REGEX, "sjo")
+        if err then
+            core.log.error("failed to match accept-encoding item: ", err)
+            return 0, 0
+        end
+
+        if captures then
+            local coding = str_lower(captures[1])
+            if coding == "br" or coding == "*" then
+                local q = 0
+                local rest = captures[2]
+                if rest == "" then
+                    q = 1
+                else
+                    local weight, w_err = ngx_re_match(rest, WEIGHT_REGEX, "jo")
+                    if w_err then
+                        core.log.error("failed to match qvalue: ", w_err)
+                        return 0, 0
+                    end
+                    if weight then
+                        q = tonumber(weight[1])
+                    end
+                end
+
+                if coding == "br" then
+                    if br_q ~= 0 then
+                        br_q = q
+                    end
+
+                elseif wildcard_q ~= 0 then
+                    wildcard_q = q
+                end
+            end
+        end
+    end
+
+    return br_q, wildcard_q
+end
+
+
 local function check_accept_encoding(ctx)
-    local accept_encoding = core.request.header(ctx, "Accept-Encoding")
+    local accept_encoding = core.request.headers(ctx)["accept-encoding"]
     -- no Accept-Encoding
     if not accept_encoding then
         return false
@@ -114,31 +177,23 @@ local function check_accept_encoding(ctx)
         return true
     end
 
-    -- multi Accept-Encoding
-    local iterator, err = ngx_re_gmatch(accept_encoding,
-                                        [[([a-z\*]+)(;q=)?([0-9.]*)?]], "jo")
-    if not iterator then
-        core.log.error("gmatch failed, error: ", err)
-        return false
+    local br_q = nil
+    local wildcard_q = nil
+    if type(accept_encoding) == "table" then
+        for _, line in ipairs(accept_encoding) do
+            br_q, wildcard_q = parse_accept_encoding_line(line, br_q,
+                                                          wildcard_q)
+        end
+    else
+        br_q, wildcard_q = parse_accept_encoding_line(accept_encoding, nil,
+                                                      nil)
     end
 
-    local captures
-    while true do
-        captures, err = iterator()
-        if not captures then
-            break
-        end
-        if err then
-            core.log.error("iterator failed, error: ", err)
-            return false
-        end
-        if (captures[1] == "br" or captures[1] == "*") and
-           (not captures[2] or captures[3] ~= "0") then
-            return true
-        end
+    if br_q ~= nil then
+        return br_q > 0
     end
 
-    return false
+    return wildcard_q ~= nil and wildcard_q > 0
 end
 
 
