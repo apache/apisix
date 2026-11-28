@@ -15,12 +15,14 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
+local constants = require("apisix.constants")
 local lfs = require("lfs")
 local source_dir = debug.getinfo(1, "S").source:match("^@(.*)/plugin_registry.lua$")
 local statuses = {}
+local awaiting_snapshot = false
 
 local _M = {
-    active_path = "/plugin_registry_active",
+    active_path = constants.PLUGIN_REGISTRY_ACTIVE_PATH,
     draft_path = "/plugin_registry_drafts",
     version_path = "/plugin_registry_versions",
     max_source = 256 * 1024,
@@ -33,6 +35,17 @@ function _M.enabled()
     local opts = conf and conf.plugin_attr and conf.plugin_attr.plugin_registry
     return type(opts) == "table" and opts.enabled == true
         and conf.deployment.config_provider == "etcd"
+end
+
+
+function _M.file_plugins_enabled()
+    local conf = core.config.local_conf()
+    return conf and conf.apisix and conf.apisix.enable_file_plugins == true
+end
+
+
+function _M.ready()
+    return not awaiting_snapshot
 end
 
 
@@ -205,6 +218,9 @@ function _M.activate(release, name, plugins, hash, kind, load, order, plugin_mod
 
     local source = release.source
     if release.version == _M.bundled then
+        if not _M.file_plugins_enabled() then
+            return nil, "file-based Lua plugin loading is disabled"
+        end
         source = _M.builtin_source(release.id)
     end
     local candidate, err = _M.compile(release.id, source)
@@ -287,18 +303,19 @@ function _M.reconciler(swap)
 end
 
 
-local watcher
-local reconcile
-
-
-function _M.init_worker(swap)
+function _M.init_worker(swap, on_first_load)
     if not _M.enabled() then
+        on_first_load()
         return
     end
-    reconcile = _M.reconciler(swap)
-    local err
-    watcher, err = core.config.new(_M.active_path, {
+    awaiting_snapshot = true
+    local reconcile = _M.reconciler(swap)
+    local watcher, err = core.config.new(_M.active_path, {
         automatic = true,
+        on_first_load = function()
+            awaiting_snapshot = false
+            on_first_load()
+        end,
         item_schema = {
             type = "object",
             properties = {
@@ -313,19 +330,6 @@ function _M.init_worker(swap)
     })
     if not watcher then
         core.log.error("failed to watch plugin registry: ", err)
-    end
-end
-
-
-function _M.reapply()
-    if not watcher then
-        return
-    end
-    for _, item in ipairs(watcher.values) do
-        if item and item.value then
-            statuses[item.value.id] = nil
-            reconcile(item.value)
-        end
     end
 end
 

@@ -21,6 +21,7 @@ local _M = {
   apisix = {
     node_listen = { 9080 },
     enable_admin = true,
+    enable_file_plugins = false,
     enable_dev_mode = false,
     enable_reuseport = true,
     show_upstream_status_in_response_header = false,

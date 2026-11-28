@@ -131,3 +131,115 @@ local code, result = admin:post(id, publish)
 assert(code == 200 and result.revision == '14' and writes == 2)
 assert(nodes[version_key].value.source == base and nodes[active_key].value.version == 'v2')
 print('plugin registry publication transaction passed')
+
+-- Only execute configured file entrypoints after the active registry is known.
+local function check_loading(enable_files, releases, delayed)
+    package.loaded['apisix.plugin'] = nil
+    package.loaded['apisix.plugin_registry'] = nil
+    ngx.config = {subsystem = 'http'}
+    local conf = {
+        apisix = {enable_file_plugins = enable_files, enable_admin = true},
+        deployment = {config_provider = 'etcd'},
+        plugin_attr = {plugin_registry = {enabled = true}},
+        plugins = {'published', 'broken', 'local-only'},
+        stream_plugins = {'published', 'local-only'},
+        wasm = {plugins = {{name = 'wasm-only'}}},
+    }
+    core.table = {
+        new = function() return {} end,
+        insert = table.insert,
+        clear = function(t)
+            for key in pairs(t) do
+                t[key] = nil
+            end
+        end,
+        try_read_attr = function() end,
+    }
+    core.json = {delay_encode = function() end}
+    core.lrucache = {new = function() end}
+    core.log.warn = function() end
+    core.log.info = function() end
+    package.loaded['apisix.debug'] = {enable_debug = function() return false end}
+    package.loaded['apisix.wasm'] = {require = function()
+        return true, {version = 0.1, priority = 2, schema = {}, type = 'wasm'}
+    end}
+    for _, module in ipairs({'apisix.core.config_util', 'resty.expr.v1', 'apisix.secret',
+                             'apisix.tracer', 'lyaml'}) do
+        package.loaded[module] = {}
+    end
+
+    local file_loads = 0
+    for _, prefix in ipairs({'apisix.plugins.', 'apisix.stream.plugins.'}) do
+        for _, name in ipairs({'published', 'broken', 'local-only'}) do
+            local entry = prefix .. name
+            package.loaded[entry] = nil
+            package.preload[entry] = function()
+                file_loads = file_loads + 1
+                return {version = 0.1, priority = 1, schema = {}, source = 'file'}
+            end
+        end
+    end
+
+    local finish_snapshot
+    core.config = {
+        local_conf = function() return conf end,
+        new = function(path, opts)
+            local watcher = {values = {}}
+            if path == '/plugin_registry_active' then
+                finish_snapshot = function()
+                    for _, release in ipairs(releases) do
+                        local item = {value = release}
+                        table.insert(watcher.values, item)
+                        opts.filter(item)
+                    end
+                    if opts.on_first_load then
+                        opts.on_first_load()
+                    end
+                end
+                if not delayed then
+                    finish_snapshot()
+                end
+            end
+            return watcher
+        end,
+    }
+
+    local plugin = require('apisix.plugin')
+    plugin.init_worker()
+    if delayed then
+        plugin.load()
+        assert(file_loads == 0, 'wait for the registry snapshot before any file fallback')
+        finish_snapshot()
+    end
+    if #releases > 0 then
+        local published = plugin.get('published')
+        assert(published and published.source == 'etcd')
+        assert(plugin.get_stream('published').source == 'etcd')
+        assert(not plugin.get('broken'), 'failed etcd activation must not load the same file')
+        assert(file_loads == (enable_files and 2 or 0), 'skip published Lua entrypoints')
+        plugin.load()
+        assert(plugin.get('published') == published, 'reload must keep the active registry module')
+    elseif enable_files then
+        assert(file_loads == 5, 'an empty registry permits configured file loading')
+    end
+
+    assert((plugin.get('local-only') ~= nil) == (enable_files == true))
+    assert((plugin.get_stream('local-only') ~= nil) == (enable_files == true))
+    assert(plugin.get('wasm-only'), 'Wasm loading is independent of the Lua file switch')
+    if not enable_files then
+        assert(file_loads == 0, 'Lua files are disabled by default')
+    end
+end
+
+local published_source = [[return {version = 0.1, priority = 99, schema = {}, source = 'etcd'}]]
+local releases = {
+    {id = 'http~published', version = 'v1', source = published_source},
+    {id = 'stream~published', version = 'v1', source = published_source},
+    {id = 'http~broken', version = 'v1', source = 'return {}'},
+}
+check_loading(nil, {}, false)
+check_loading(false, releases, false)
+check_loading(true, releases, false)
+check_loading(true, releases, true)
+check_loading(true, {}, true)
+print('plugin registry startup precedence passed')

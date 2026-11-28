@@ -699,6 +699,12 @@ local function load_full_data(self, dir_res, headers, prev_values, prev_values_h
 
     self.need_reload = false
     sync_status_to_shdict(true)
+
+    local on_first_load = self.on_first_load
+    if on_first_load then
+        self.on_first_load = nil
+        on_first_load()
+    end
 end
 
 
@@ -1039,6 +1045,7 @@ end
 --  * automatic: whether to get the latest etcd data automatically
 --  * item_schema: the jsonschema that checks the value of each item under the **key** directory
 --  * filter: the custom function to filter the value of each item under the **key** directory
+--  * on_first_load: called once after the first successful full read, even if empty
 --  * timeout: the timeout for watch operation, default is 30s
 --  * single_item: whether only one item under the **key** directory
 --  * checker: the custom function to check the value of each item under the **key** directory
@@ -1094,6 +1101,7 @@ function _M.new(key, opts)
         timeout = timeout,
         single_item = single_item,
         filter = filter_fun,
+        on_first_load = opts and opts.on_first_load,
     }, mt)
 
     if automatic then
@@ -1153,7 +1161,8 @@ function _M.server_version(self)
 end
 
 
-local function create_formatter(prefix)
+local function create_formatter(prefix, registry_nodes)
+    local registry_prefix = prefix .. constants.PLUGIN_REGISTRY_ACTIVE_PATH .. "/"
     return function (res)
         res.body.nodes = {}
 
@@ -1167,6 +1176,13 @@ local function create_formatter(prefix)
         local curr_dir_data
         local curr_key
         for _, item in ipairs(res.body.kvs) do
+            -- The registry stores direct children without writing a directory marker.
+            if registry_nodes and core_str.has_prefix(item.key, registry_prefix) then
+                if #item.key > #registry_prefix then
+                    table.insert(registry_nodes, etcd_apisix.kvs_to_node(item))
+                end
+                goto CONTINUE
+            end
             if curr_dir_data then
                 if core_str.has_prefix(item.key, curr_key) then
                     table.insert(curr_dir_data, etcd_apisix.kvs_to_node(item))
@@ -1206,7 +1222,7 @@ local function create_formatter(prefix)
 end
 
 
-local function init_loaded_configuration()
+local function init_loaded_configuration(local_conf)
     loaded_configuration = {}
     loaded_configuration_rev = nil
     local etcd_cli, prefix, err = etcd_apisix.new_without_proxy()
@@ -1214,9 +1230,20 @@ local function init_loaded_configuration()
         return "failed to start a etcd instance: " .. err
     end
 
-    local res, err = readdir(etcd_cli, prefix, create_formatter(prefix))
+    local registry_nodes
+    if table.try_read_attr(local_conf, "plugin_attr", "plugin_registry", "enabled") == true then
+        registry_nodes = {}
+    end
+    local res, err = readdir(etcd_cli, prefix, create_formatter(prefix, registry_nodes))
     if not res then
         return err
+    end
+
+    if registry_nodes then
+        loaded_configuration[constants.PLUGIN_REGISTRY_ACTIVE_PATH] = {
+            body = {nodes = registry_nodes},
+            headers = res.headers,
+        }
     end
 
     -- One readdir backs every entry create_formatter() stored, so there is a
@@ -1244,7 +1271,7 @@ function _M.init()
         return true
     end
 
-    local err = init_loaded_configuration()
+    local err = init_loaded_configuration(local_conf)
     if err then
         return nil, err
     end
@@ -1268,7 +1295,7 @@ function _M.init_worker()
     if configuration_loaded_time and ngx_time() - configuration_loaded_time > threshold then
         log.warn("master process has been running for a long time, ",
                      "reloading the full configuration from etcd for this new worker")
-        local err = init_loaded_configuration()
+        local err = init_loaded_configuration(local_conf)
         if err then
             return nil, err
         end

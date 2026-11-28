@@ -293,7 +293,10 @@ local function validate(id, candidate_source, active)
     if loaded and loaded.type == "wasm" then
         return failure(409, "plugin name is already in use by a Wasm plugin")
     end
-    local previous = active and active.source or registry.builtin_source(id)
+    local previous = active and active.source
+    if not previous and not loaded and registry.ready() and registry.file_plugins_enabled() then
+        previous = registry.builtin_source(id)
+    end
     local baseline = loaded
     if previous then
         local err
@@ -350,6 +353,9 @@ function _M:post(id, body, sub_path)
         end
         source = draft.value.source
     elseif body.version == registry.bundled then
+        if not registry.file_plugins_enabled() then
+            return failure(409, "file-based Lua plugin loading is disabled")
+        end
         source = registry.builtin_source(id)
     else
         local previous, previous_err = read(key)

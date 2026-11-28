@@ -83,6 +83,7 @@ my $test_default_config = <<_EOC_;
     -- cache will persist it for loading by other entrypoints
     -- it is used to replace the test::nginx implementation
     local default_config = require("apisix.cli.config")
+    default_config.apisix.enable_file_plugins = true
     default_config.plugin_attr.prometheus.enable_export_server = false
 _EOC_
 
