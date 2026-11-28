@@ -30,7 +30,7 @@ description: 本文介绍了关于 Apache APISIX `authz-casbin` 插件的基本�
 
 ## 描述
 
-`authz-casbin` 插件是一个基于 [Lua Casbin](https://github.com/casbin/lua-casbin/) 的访问控制插件，该插件支持各种 [access control models](https://casbin.org/docs/en/supported-models) 的强大授权场景。
+`authz-casbin` 插件是一个基于 [Lua Casbin](https://github.com/casbin/lua-casbin/) 的访问控制插件，该插件支持各种 [access control models](https://casbin.org/docs/supported-models) 的强大授权场景。
 
 ## 属性
 

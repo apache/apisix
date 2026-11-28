@@ -317,7 +317,7 @@ The introspection endpoint will be obtained from the discovery document.
 
 ### Verify With Valid Access Token
 
-Obtain an access token for the Keycloak server at the [token endpoint](https://www.keycloak.org/docs/latest/securing_apps/#token-endpoint):
+Obtain an access token for the Keycloak server at the [token endpoint](https://www.keycloak.org/securing-apps/oidc-layers#_token_endpoint):
 
 ```shell
 curl -i "http://$KEYCLOAK_IP:8080/realms/quickstart-realm/protocol/openid-connect/token" -X POST \
@@ -399,7 +399,7 @@ curl -i "http://127.0.0.1:9180/apisix/admin/routes" -X PUT -d '
 
 ### Verify With Valid Access Token
 
-Obtain an access token for the Keycloak server at the [token endpoint](https://www.keycloak.org/docs/latest/securing_apps/#token-endpoint):
+Obtain an access token for the Keycloak server at the [token endpoint](https://www.keycloak.org/securing-apps/oidc-layers#_token_endpoint):
 
 ```shell
 OIDC_USER=quickstart-user

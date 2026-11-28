@@ -35,7 +35,7 @@ import TabItem from '@theme/TabItem';
 
 ## 描述
 
-`proxy-cache` 插件提供了根据缓存键缓存响应的功能。该插​​件支持基于磁盘和基于内存的缓存选项，用于缓存 [GET](https://anything.org/learn/serving-over-http/#get-request)、[POST](https://anything.org/learn/serving-over-http/#post-request) 和 [HEAD](https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods/HEAD) 请求。
+`proxy-cache` 插件提供了根据缓存键缓存响应的功能。该插​​件支持基于磁盘和基于内存的缓存选项，用于缓存 [GET](https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods/GET)、[POST](https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods/POST) 和 [HEAD](https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods/HEAD) 请求。
 
 可以根据请求 HTTP 方法、响应状态代码、请求标头值等有条件地缓存响应。
 

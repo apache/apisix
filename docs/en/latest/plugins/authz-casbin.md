@@ -30,7 +30,7 @@ description: This document contains information about the Apache APISIX authz-ca
 
 ## Description
 
-The `authz-casbin` Plugin is an authorization Plugin based on [Lua Casbin](https://github.com/casbin/lua-casbin/). This Plugin supports powerful authorization scenarios based on various [access control models](https://casbin.org/docs/en/supported-models).
+The `authz-casbin` Plugin is an authorization Plugin based on [Lua Casbin](https://github.com/casbin/lua-casbin/). This Plugin supports powerful authorization scenarios based on various [access control models](https://casbin.org/docs/supported-models).
 
 ## Attributes
 
